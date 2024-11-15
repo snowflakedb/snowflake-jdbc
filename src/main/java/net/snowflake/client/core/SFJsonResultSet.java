@@ -108,7 +108,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
    *
    * @param columnIndex the column index
    * @return an object of type long or BigDecimal depending on number size
-   * @throws SFException
+   * @throws SFException if an error occurs
    */
   private Object getBigInt(int columnIndex, Object obj) throws SFException {
     return converters.getNumberConverter().getBigInt(obj, columnIndex);

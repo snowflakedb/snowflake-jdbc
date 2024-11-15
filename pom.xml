@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.19.1-SNAPSHOT</version>
+    <version>3.20.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.19.1-SNAPSHOT</version>
+  <version>3.20.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -823,13 +823,58 @@
                       <pattern>com.google</pattern>
                       <shadedPattern>${shadeBase}.google</shadedPattern>
                     </relocation>
+                    <!-- google packages should be relocated explicitly to avoid problems with properties files renaming -->
+                    <relocation>
+                      <pattern>google.api</pattern>
+                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.apps</pattern>
+                      <shadedPattern>${shadeBase}.google.apps</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.cloud</pattern>
+                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                    </relocation>
                     <relocation>
                       <pattern>google.geo</pattern>
                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>google.iam</pattern>
+                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.logging</pattern>
+                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.longrunning</pattern>
+                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.monitoring</pattern>
+                      <shadedPattern>${shadeBase}.google.monitoring</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.protobuf</pattern>
+                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.rpc</pattern>
+                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.shopping</pattern>
+                      <shadedPattern>${shadeBase}.google.shopping</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>google.storage</pattern>
                       <shadedPattern>${shadeBase}.google.storage</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.type</pattern>
+                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.joda</pattern>
@@ -880,48 +925,20 @@
                       <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.type</pattern>
-                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.rpc</pattern>
-                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.iam</pattern>
-                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>io.opencensus</pattern>
                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.opentelemetry</pattern>
+                      <shadedPattern>${shadeBase}.opentelemetry</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.threeten</pattern>
                       <shadedPattern>${shadeBase}.threeten</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.protobuf</pattern>
-                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.api</pattern>
-                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>io.grpc</pattern>
                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.longrunning</pattern>
-                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.cloud</pattern>
-                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.logging</pattern>
-                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.checkerframework</pattern>
@@ -1031,6 +1048,7 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1040,12 +1058,16 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/22/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
+                    <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>

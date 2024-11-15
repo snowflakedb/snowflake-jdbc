@@ -100,7 +100,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * Helper function to remove sensitive data (error message, reason) from the stacktrace.
    *
    * @param stackTrace original stacktrace
-   * @return
+   * @return stack trace with sensitive data removed
    */
   static String maskStacktrace(String stackTrace) {
     Pattern STACKTRACE_BEGINNING =
@@ -118,9 +118,9 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   /**
    * Helper function to create JSONObject node for OOB telemetry log
    *
-   * @param queryId
-   * @param SQLState
-   * @param vendorCode
+   * @param queryId query ID
+   * @param SQLState the SQL state
+   * @param vendorCode the vendor code
    * @return JSONObject with data about SQLException
    */
   static JSONObject createOOBValue(String queryId, String SQLState, int vendorCode) {
@@ -143,10 +143,10 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   /**
    * Helper function to create ObjectNode for IB telemetry log
    *
-   * @param queryId
-   * @param SQLState
-   * @param vendorCode
-   * @return
+   * @param queryId query ID
+   * @param SQLState the SQL state
+   * @param vendorCode the vendor code
+   * @return ObjectNode for IB telemetry log
    */
   static ObjectNode createIBValue(String queryId, String SQLState, int vendorCode) {
     ObjectNode ibValue = mapper.createObjectNode();
@@ -224,17 +224,35 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     }
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param reason exception reason
+   * @param SQLState the SQL state
+   * @param vendorCode the vendor code
+   * @param queryId the query ID
+   */
   public SnowflakeSQLLoggedException(
       SFBaseSession session, String reason, String SQLState, int vendorCode, String queryId) {
     super(queryId, reason, SQLState, vendorCode);
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param vendorCode the vendor code
+   * @param SQLState the SQL state
+   */
   public SnowflakeSQLLoggedException(SFBaseSession session, int vendorCode, String SQLState) {
     super(SQLState, vendorCode);
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param vendorCode the vendor code
+   * @param SQLState the SQL state
+   */
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, int vendorCode, String SQLState) {
     super(queryId, SQLState, vendorCode);
@@ -244,41 +262,85 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   /**
    * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
    * String, String)}
+   *
+   * @param session SFBaseSession
+   * @param SQLState the SQL state
+   * @param reason exception reason
    */
   @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, String SQLState, String reason) {
     this(null, session, SQLState, reason);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param SQLState the SQL state
+   * @param reason the exception reason
+   */
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, String SQLState, String reason) {
     super(reason, SQLState);
     sendTelemetryData(queryId, SQLState, -1, session, this);
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param vendorCode the vendor code
+   * @param SQLState the SQL state
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       SFBaseSession session, int vendorCode, String SQLState, Object... params) {
     this(null, session, vendorCode, SQLState, params);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param vendorCode the vendor code
+   * @param SQLState the SQL state
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, int vendorCode, String SQLState, Object... params) {
     super(queryId, SQLState, vendorCode, params);
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param errorCode the error code
+   * @param ex Throwable exception
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       SFBaseSession session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
     sendTelemetryData(null, errorCode.getSqlState(), errorCode.getMessageCode(), session, this);
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param SQLState the SQL state
+   * @param vendorCode the vendor code
+   * @param ex Throwable exception
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       SFBaseSession session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param SQLState the SQL state
+   * @param vendorCode the vendor code
+   * @param ex Throwable exception
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       String queryId,
       SFBaseSession session,
@@ -293,18 +355,32 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   /**
    * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
    * ErrorCode, Object...)}
+   *
+   * @param session SFBaseSession
+   * @param errorCode the error code
+   * @param params additional parameters
    */
   @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, ErrorCode errorCode, Object... params) {
     this(null, session, errorCode, params);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param errorCode the error code
+   * @param params additional parameters
+   */
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, ErrorCode errorCode, Object... params) {
     super(queryId, errorCode, params);
     sendTelemetryData(queryId, null, -1, session, this);
   }
 
+  /**
+   * @param session SFBaseSession
+   * @param e throwable exception
+   */
   public SnowflakeSQLLoggedException(SFBaseSession session, SFException e) {
     super(e);
     sendTelemetryData(null, null, -1, session, this);
@@ -313,12 +389,20 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   /**
    * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
    * String)}
+   *
+   * @param session SFBaseSession
+   * @param reason exception reason
    */
   @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, String reason) {
     this(null, session, reason);
   }
 
+  /**
+   * @param queryId the query ID
+   * @param session SFBaseSession
+   * @param reason exception reason
+   */
   public SnowflakeSQLLoggedException(String queryId, SFBaseSession session, String reason) {
     super(queryId, reason, null);
     sendTelemetryData(queryId, null, -1, session, this);

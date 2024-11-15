@@ -106,6 +106,7 @@ public class RestRequest {
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
+   * @param execTimeData ExecTimeTelemetryData
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc

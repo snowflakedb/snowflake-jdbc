@@ -212,6 +212,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
    *
    * @param resultSetSerializable the result set serializable object which includes required
    *     metadata to start chunk downloader
+   * @throws SnowflakeSQLException if an error is encountered
    */
   public SnowflakeChunkDownloader(SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SnowflakeSQLException {

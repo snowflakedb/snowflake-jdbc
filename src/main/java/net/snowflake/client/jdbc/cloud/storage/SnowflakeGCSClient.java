@@ -186,8 +186,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *
    * @param remoteStorageLocation bucket name
    * @param prefix Path
-   * @return
-   * @throws StorageProviderException
+   * @return a collection of storage summary objects
+   * @throws StorageProviderException cloud storage provider error
    */
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
@@ -1036,7 +1036,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     final InputStream stream;
     FileInputStream srcFileStream = null;
     try {
-      if (isEncrypting() && getEncryptionKeySize() < 256) {
+      if (isEncrypting() && getEncryptionKeySize() <= 256) {
         try {
           final InputStream uploadStream =
               uploadFromStream
@@ -1371,13 +1371,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);

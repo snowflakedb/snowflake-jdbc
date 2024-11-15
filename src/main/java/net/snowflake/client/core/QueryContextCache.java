@@ -274,6 +274,8 @@ public class QueryContextCache {
    * Deserialize the QueryContext cache from a QueryContextDTO object. This function currently is
    * only used in QueryContextCacheTest.java where we check that after serialization and
    * deserialization, the cache is the same as before.
+   *
+   * @param queryContextDTO QueryContextDTO to deserialize.
    */
   public void deserializeQueryContextDTO(QueryContextDTO queryContextDTO) {
     synchronized (this) {
@@ -335,6 +337,8 @@ public class QueryContextCache {
   /**
    * Serialize the QueryContext cache to a QueryContextDTO object, which can be serialized to JSON
    * automatically later.
+   *
+   * @return {@link QueryContextDTO}
    */
   public QueryContextDTO serializeQueryContextDTO() {
     synchronized (this) {

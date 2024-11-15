@@ -11,11 +11,40 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.category.TestCategoryCore;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
+@Category(TestCategoryCore.class)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
+  private static String originalProxyHost;
+  private static String originalProxyPort;
+  private static String originalNonProxyHosts;
 
+  @BeforeClass
+  public static void setUp() throws Exception {
+    originalProxyHost = System.getProperty("https.proxyHost");
+    originalProxyPort = System.getProperty("https.proxyPort");
+    originalNonProxyHosts = System.getProperty("https.nonProxyHosts");
+  }
+
+  private static void restoreProperty(String key, String value) {
+    if (value != null) {
+      System.setProperty(key, value);
+    } else {
+      System.clearProperty(key);
+    }
+  }
+
+  @AfterClass
+  public static void tearDown() throws Exception {
+    restoreProperty("https.proxyHost", originalProxyHost);
+    restoreProperty("https.proxyPort", originalProxyPort);
+    restoreProperty("https.nonProxyHosts", originalNonProxyHosts);
+  }
   /**
    * Tests that the chunk downloader uses the maxHttpRetries and doesn't enter and infinite loop of
    * retries.
