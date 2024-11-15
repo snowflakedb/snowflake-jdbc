@@ -36,7 +36,7 @@ LOG_PROPERTY_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)/src/test/resour
 export CLIENT_DRIVER_NAME=JDBC
 
 function setup_log_env() {
-    if ["$WORKSPACE" == "/mnt/workspace"]; then
+    if [ "$WORKSPACE" == "/mnt/workspace" ]; then
         CLIENT_LOG_DIR_PATH=$LOCAL_CLIENT_LOG_DIR_PATH_DOCKER
         CLIENT_LOG_FILE_PATH=$CLIENT_LOG_FILE_PATH_DOCKER
         CLIENT_KNOWN_SSM_FILE_PATH=$CLIENT_KNOWN_SSM_FILE_PATH_DOCKER
