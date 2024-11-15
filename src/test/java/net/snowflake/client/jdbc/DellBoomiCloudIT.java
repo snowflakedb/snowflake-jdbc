@@ -27,7 +27,7 @@ public class DellBoomiCloudIT extends AbstractDriverIT {
   }
 
   @Test
-  @Disabled
+  @Disabled //TODO: SNOW-1805239
   public void testSelectLargeResultSet() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();
