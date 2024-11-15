@@ -18,14 +18,14 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
-public class StructuredTypesGetStringArrowJsonCompatibilityIT
+public class StructuredTypesArrowJsonCompatibilityLatestIT
     extends StructuredTypesGetStringBaseIT {
 
   private final String expectedStructureTypeRepresentation;
   private final String selectSql;
   private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();
 
-  public StructuredTypesGetStringArrowJsonCompatibilityIT(
+  public StructuredTypesArrowJsonCompatibilityLatestIT(
       ResultSetFormatType queryResultFormat,
       String selectSql,
       String expectedStructureTypeRepresentation) {
@@ -65,6 +65,14 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
         connections.get(queryResultFormat),
         selectSql,
         (resultSet) -> assertGetObjectIsCompatible(resultSet, expectedStructureTypeRepresentation));
+  }
+
+  @Test
+  public void testRunAsGetBytes() throws SQLException {
+    withFirstRow(
+        connections.get(queryResultFormat),
+        selectSql,
+        (resultSet) -> assertGetBytesIsCompatible(resultSet, expectedStructureTypeRepresentation));
   }
 
   @Parameterized.Parameters(name = "format={0},sql={1}")

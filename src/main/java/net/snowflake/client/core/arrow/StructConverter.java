@@ -27,6 +27,11 @@ public class StructConverter extends AbstractArrowVectorConverter {
   }
 
   @Override
+  public byte[] toBytes(int index) throws SFException {
+    return isNull(index) ? null : toString(index).getBytes();
+  }
+
+  @Override
   public String toString(int index) throws SFException {
     ArrowObjectStringRepresentationBuilder builder = new ArrowObjectStringRepresentationBuilder();
     for (String childName : structVector.getChildFieldNames()) {
