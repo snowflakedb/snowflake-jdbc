@@ -71,6 +71,7 @@ public interface SnowflakeResultSetSerializable {
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @return a ResultSet which represents for the data wrapped in the object
+   * @throws SQLException if an error occurs
    * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
@@ -84,6 +85,7 @@ public interface SnowflakeResultSetSerializable {
    *
    * @param info The proxy server information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
+   * @throws SQLException if an error occurs
    * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
@@ -94,6 +96,7 @@ public interface SnowflakeResultSetSerializable {
    *
    * @param resultSetRetrieveConfig The extra info to retrieve the result set.
    * @return a ResultSet which represents for the data wrapped in the object
+   * @throws SQLException if an error occurs
    */
   ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig) throws SQLException;
 
@@ -101,6 +104,7 @@ public interface SnowflakeResultSetSerializable {
    * Retrieve total row count included in the ResultSet Serializable object.
    *
    * @return the total row count from metadata
+   * @throws SQLException if an error occurs
    */
   long getRowCount() throws SQLException;
 
@@ -108,6 +112,7 @@ public interface SnowflakeResultSetSerializable {
    * Retrieve compressed data size included in the ResultSet Serializable object.
    *
    * @return the total compressed data size in bytes from metadata
+   * @throws SQLException if an error occurs
    */
   long getCompressedDataSizeInBytes() throws SQLException;
 
@@ -115,6 +120,7 @@ public interface SnowflakeResultSetSerializable {
    * Retrieve uncompressed data size included in the ResultSet Serializable object.
    *
    * @return the total uncompressed data size in bytes from metadata
+   * @throws SQLException if an error occurs
    */
   long getUncompressedDataSizeInBytes() throws SQLException;
 }

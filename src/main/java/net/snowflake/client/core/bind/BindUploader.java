@@ -187,7 +187,13 @@ public class BindUploader implements Closeable {
     return new BindUploader(session, stageDir);
   }
 
-  /** Wrapper around upload() with default compression to true. */
+  /**
+   * Wrapper around upload() with default compression to true.
+   *
+   * @param bindValues the bind map to upload
+   * @throws BindException if there is an error when uploading bind values
+   * @throws SQLException if any error occurs
+   */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
       throws BindException, SQLException {
     upload(bindValues, true);
@@ -199,8 +205,8 @@ public class BindUploader implements Closeable {
    *
    * @param bindValues the bind map to upload
    * @param compressData whether or not to compress data
-   * @throws BindException
-   * @throws SQLException
+   * @throws BindException if there is an error when uploading bind values
+   * @throws SQLException if any error occurs
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues, boolean compressData)
       throws BindException, SQLException {
@@ -254,6 +260,7 @@ public class BindUploader implements Closeable {
    * @param destFileName destination file name to use
    * @param compressData whether compression is requested fore uploading data
    * @throws SQLException raises if any error occurs
+   * @throws BindException if there is an error when uploading bind values
    */
   private void uploadStreamInternal(
       InputStream inputStream, String destFileName, boolean compressData)

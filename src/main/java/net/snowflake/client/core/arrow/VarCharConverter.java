@@ -22,6 +22,11 @@ import org.apache.arrow.vector.VarCharVector;
 public class VarCharConverter extends AbstractArrowVectorConverter {
   private VarCharVector varCharVector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public VarCharConverter(ValueVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TEXT.name(), valueVector, columnIndex, context);
     this.varCharVector = (VarCharVector) valueVector;

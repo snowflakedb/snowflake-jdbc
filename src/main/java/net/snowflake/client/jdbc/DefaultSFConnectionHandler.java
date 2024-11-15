@@ -81,6 +81,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
    * schemaName from the URL if it is specified there.
    *
    * @param conStr Connection string object
+   * @return a map containing accountName, databaseName and schemaName if specified
    */
   public static Map<String, Object> mergeProperties(SnowflakeConnectString conStr) {
     conStr.getParameters().remove("SSL");
