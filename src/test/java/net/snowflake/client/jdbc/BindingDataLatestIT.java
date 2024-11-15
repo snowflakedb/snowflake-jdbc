@@ -153,13 +153,12 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   }
 
   /**
-   * Test that stage binding and regular binding insert and return the same value for timestamp_ntz
-   * when exceeding binding threshold.
+   * Test that stage binding and regular binding insert and return the expected value for
+   * timestamp_ntz, timestamp_ltz, and timestamp_tz when exceeding binding threshold.
    *
-   * @throws SQLException
+   * @throws SQLException if there is an error during query execution.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZTypeExceedingBindingThreshold() throws SQLException {
     TimeZone.setDefault(tokyoTz);
     try (Connection connection = getConnection();
@@ -174,15 +173,11 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
-        executePsStatementForTimestampTest(connection, "regularinsert", currT);
-        executePsStatementForTimestampTest(connection, "regularinsert", currT);
-        executePsStatementForTimestampTest(connection, "regularinsert", currT);
+        executePrepStmtForNumRows(connection, "regularinsert", currT, 3);
 
         // insert using stage binding
         statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-        executePsStatementForTimestampTest(connection, "stageinsert", currT);
-        executePsStatementForTimestampTest(connection, "stageinsert", currT);
-        executePsStatementForTimestampTest(connection, "stageinsert", currT);
+        executePrepStmtForNumRows(connection, "stageinsert", currT, 3);
 
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
@@ -206,6 +201,22 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         statement.execute("drop table if exists regularinsert");
         TimeZone.setDefault(origTz);
       }
+    }
+  }
+
+  private void executePrepStmtForNumRows(
+      Connection connection, String tableName, Timestamp timestamp, int numRows)
+      throws SQLException {
+    try (PreparedStatement prepStatement =
+        connection.prepareStatement("insert into " + tableName + " values (?,?,?,?)")) {
+      for (int i = 0; i < numRows; i++) {
+        prepStatement.setInt(1, 1);
+        prepStatement.setTimestamp(2, timestamp);
+        prepStatement.setTimestamp(3, timestamp);
+        prepStatement.setTimestamp(4, timestamp);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
     }
   }
 
