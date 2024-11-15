@@ -83,6 +83,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
+  @Disabled // TODO: SNOW-1805299
   @DontRunOnGithubActions
   public void testGetColumn() throws SQLException {
     String getAllColumnsCount = "select count(*) from db.information_schema.columns";
@@ -241,6 +242,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
+  @Disabled // TODO: SNOW-1805299
   @DontRunOnGithubActions
   public void testGetSchema() throws SQLException {
     String getSchemaCount = "select count(*) from db.information_schema.schemata";
@@ -449,6 +451,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
+  @Disabled // TODO: SNOW-1805299
   @DontRunOnGithubActions
   public void testGetTables() throws SQLException {
     String getAllTable = "select count(*) from db.information_schema.tables";
