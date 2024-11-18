@@ -10,7 +10,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -154,10 +153,5 @@ public class TestUtil {
    */
   public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
     assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
-  }
-
-  public static void assertByteStringEqualsIgnoringWhitespace(byte[] expected, byte[] actual) {
-    assertEqualsIgnoringWhitespace(
-        new String(expected, StandardCharsets.UTF_8), new String(actual, StandardCharsets.UTF_8));
   }
 }

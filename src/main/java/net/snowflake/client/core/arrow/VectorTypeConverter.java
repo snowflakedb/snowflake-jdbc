@@ -1,5 +1,6 @@
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
@@ -33,7 +34,7 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    return isNull(index) ? null : toString(index).getBytes();
+    return isNull(index) ? null : toString(index).getBytes(StandardCharsets.UTF_8);
   }
 
   @Override

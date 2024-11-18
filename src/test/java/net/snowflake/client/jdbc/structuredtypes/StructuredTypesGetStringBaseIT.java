@@ -67,8 +67,8 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
 
   protected void assertGetBytesIsCompatible(ResultSet resultSet, String expected)
       throws SQLException {
-    TestUtil.assertByteStringEqualsIgnoringWhitespace(
-        expected.getBytes(StandardCharsets.UTF_8), resultSet.getBytes(1));
+    TestUtil.assertEqualsIgnoringWhitespace(
+        expected, new String(resultSet.getBytes(1), StandardCharsets.UTF_8));
   }
 
   protected void withFirstRow(
