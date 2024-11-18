@@ -18,8 +18,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
-public class StructuredTypesArrowJsonCompatibilityLatestIT
-    extends StructuredTypesGetStringBaseIT {
+public class StructuredTypesArrowJsonCompatibilityLatestIT extends StructuredTypesGetStringBaseIT {
 
   private final String expectedStructureTypeRepresentation;
   private final String selectSql;
