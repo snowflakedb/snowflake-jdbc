@@ -2,7 +2,7 @@ package net.snowflake.client.jdbc.structuredtypes;
 
 import static org.junit.Assert.assertTrue;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -67,8 +67,10 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
 
   protected void assertGetBytesIsCompatible(ResultSet resultSet, String expected)
       throws SQLException {
+    byte[] expectedBytes = expected.getBytes();
     TestUtil.assertEqualsIgnoringWhitespace(
-        expected, new String(resultSet.getBytes(1), Charset.defaultCharset()));
+        new String(expectedBytes, StandardCharsets.UTF_8),
+        new String(resultSet.getBytes(1), StandardCharsets.UTF_8));
   }
 
   protected void withFirstRow(
