@@ -35,7 +35,7 @@ public class VarCharConverter extends AbstractArrowVectorConverter {
   @Override
   public String toString(int index) {
     byte[] bytes = toBytes(index);
-    return bytes == null ? null : new String(bytes, StandardCharsets.UTF_8);
+    return bytes == null ? null : new String(bytes);
   }
 
   @Override
