@@ -23,6 +23,8 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,19 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @TempDir public File tmpFolder;
   String homePath = systemGetProperty("user.home");
+  static private Level originalLevel;
+
+  @BeforeAll
+  static void saveLevel(){
+    originalLevel = JDK14Logger.getLevel();
+  }
+
+  @AfterAll
+  static void restoreLevel(){
+    if (originalLevel != null) {
+      JDK14Logger.setLevel(originalLevel);
+    }
+  }
 
   @Test
   @Disabled
