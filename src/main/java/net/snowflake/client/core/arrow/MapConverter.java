@@ -1,6 +1,5 @@
 package net.snowflake.client.core.arrow;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

@@ -1,6 +1,5 @@
 package net.snowflake.client.core.arrow;
 
-import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.tostringhelpers.ArrowArrayStringRepresentationBuilder;
