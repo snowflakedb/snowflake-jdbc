@@ -53,7 +53,7 @@ public class BytesConverter {
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)
-              .getBytes(StandardCharsets.UTF_8);
+              .getBytes();
         case Types.BOOLEAN:
           return converters.getBooleanConverter().getBoolean(obj, columnType)
               ? new byte[] {1}

@@ -31,7 +31,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    return isNull(index) ? null : toString(index).getBytes(StandardCharsets.UTF_8);
+    return isNull(index) ? null : toString(index).getBytes();
   }
 
   @Override
