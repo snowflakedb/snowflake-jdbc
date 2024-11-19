@@ -12,11 +12,14 @@ import java.util.UUID;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnection;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
 public class CloudStorageClientLatestIT extends BaseJDBCTest {
+  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   /**
    * Test for SNOW-565154 - it was waiting for ~5 minutes so the test is waiting much shorter time

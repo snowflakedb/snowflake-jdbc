@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -70,6 +71,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -266,6 +268,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
         assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
+    }
+  }
+
+  @Test
+  @Ignore
+  public void putGetSameContentForCBC() throws Throwable {
+    putGetSameContent("AES_CBC");
+  }
+
+  @Test
+  @Ignore
+  public void putGetSameContentForGCM() throws Throwable {
+    putGetSameContent("AES_GCM");
+  }
+
+  private void putGetSameContent(String encryptionCiphers) throws Throwable {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute(
+          "ALTER SESSION SET FORCE_STAGE_CLIENT_ENCRYPTION_CIPHERS = " + encryptionCiphers);
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      String sourceFileContent = IOUtils.toString(new FileReader(sourceFilePath));
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+      statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage AUTO_COMPRESS=false");
+      statement.execute(
+          "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+      String resultFileContent =
+          IOUtils.toString(
+              new FileReader(destFolderCanonicalPath + File.separator + TEST_DATA_FILE));
+      assertEquals(resultFileContent, sourceFileContent);
     }
   }
 

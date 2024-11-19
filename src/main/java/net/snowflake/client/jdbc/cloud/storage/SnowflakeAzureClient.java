@@ -8,10 +8,6 @@ import static net.snowflake.client.core.HttpUtil.setProxyForAzure;
 import static net.snowflake.client.core.HttpUtil.setSessionlessProxyForAzure;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.OperationContext;
 import com.microsoft.azure.storage.StorageCredentials;
 import com.microsoft.azure.storage.StorageCredentialsAnonymous;
@@ -35,15 +31,12 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
@@ -82,8 +75,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   private OperationContext opContext = null;
   private SFBaseSession session;
 
+  private StorageClientHelper storageClientHelper;
+
   private SnowflakeAzureClient() {}
-  ;
 
   /*
    * Factory method for a SnowflakeAzureClient object
@@ -162,6 +156,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
     }
+    storageClientHelper = new StorageClientHelper(this, encMat, session, stageInfo.getCiphers());
   }
 
   // Returns the Max number of retry attempts
@@ -352,26 +347,17 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
+        DecryptionHelper decryptionHelper =
+            storageClientHelper.parseEncryptionDataFromJson(
+                userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
           stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
+          decryptionHelper.validate();
 
           // Decrypt file
           try {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            decryptionHelper.decryptFile(localFile, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -452,24 +438,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
+        DecryptionHelper decryptionHelper =
+            storageClientHelper.parseEncryptionDataFromJson(
+                userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          decryptionHelper.validate();
           stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
-
           try {
-            InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
+            InputStream is = decryptionHelper.decryptStream(stream, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -706,9 +683,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           toClose.add(srcFileStream);
 
           // Encrypt
-          stream =
-              EncryptionProvider.encrypt(
-                  meta, originalContentLength, uploadStream, this.encMat, this);
+          stream = storageClientHelper.encrypt(meta, originalContentLength, uploadStream);
           uploadFromStream = true;
         } catch (Exception ex) {
           logger.error("Failed to encrypt input", ex);
@@ -935,51 +910,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     return storageEndpoint;
   }
 
-  /*
-   * buildEncryptionMetadataJSON
-   * Takes the base64-encoded iv and key and creates the JSON block to be
-   * used as the encryptiondata metadata field on the blob.
-   */
-  private String buildEncryptionMetadataJSON(String iv64, String key64) {
-    return String.format(
-        "{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\""
-            + ":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\""
-            + ",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":"
-            + "{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":"
-            + "\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\""
-            + ",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":"
-            + "\"Java 5.3.0\"}}",
-        key64, iv64);
-  }
-
-  /*
-   * parseEncryptionData
-   * Takes the json string in the encryptiondata metadata field of the encrypted
-   * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
-   */
-  private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData, String queryId)
-      throws SnowflakeSQLException {
-    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-    JsonFactory factory = mapper.getFactory();
-    try {
-      JsonParser parser = factory.createParser(jsonEncryptionData);
-      JsonNode encryptionDataNode = mapper.readTree(parser);
-
-      String iv = encryptionDataNode.get("ContentEncryptionIV").asText();
-      String key = encryptionDataNode.get("WrappedContentKey").get("EncryptedKey").asText();
-
-      return new SimpleEntry<String, String>(key, iv);
-    } catch (Exception ex) {
-      throw new SnowflakeSQLLoggedException(
-          queryId,
-          session,
-          SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
-          ex,
-          "Error parsing encryption data as json" + ": " + ex.getMessage());
-    }
-  }
-
   /** Returns the material descriptor key */
   @Override
   public String getMatdescKey() {
@@ -997,9 +927,31 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         AZ_ENCRYPTIONDATAPROP,
-        buildEncryptionMetadataJSON(
+        storageClientHelper.buildEncryptionMetadataJSONForEcbCbc(
             Base64.getEncoder().encodeToString(ivData),
             Base64.getEncoder().encodeToString(encryptedKey)));
+    meta.setContentLength(contentLength);
+  }
+
+  @Override
+  public void addEncryptionMetadataForGcm(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] encryptedKey,
+      byte[] dataIvBytes,
+      byte[] keyIvBytes,
+      byte[] keyAad,
+      byte[] dataAad,
+      long contentLength) {
+    meta.addUserMetadata(getMatdescKey(), matDesc.toString());
+    meta.addUserMetadata(
+        AZ_ENCRYPTIONDATAPROP,
+        storageClientHelper.buildEncryptionMetadataJSONForGcm(
+            Base64.getEncoder().encodeToString(keyIvBytes),
+            Base64.getEncoder().encodeToString(encryptedKey),
+            Base64.getEncoder().encodeToString(dataIvBytes),
+            Base64.getEncoder().encodeToString(keyAad),
+            Base64.getEncoder().encodeToString(dataAad)));
     meta.setContentLength(contentLength);
   }
 
