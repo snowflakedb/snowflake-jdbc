@@ -1,7 +1,6 @@
 package net.snowflake.client.core.json;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
@@ -54,7 +53,7 @@ public class BytesConverter {
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)
-              .getBytes();
+              .getBytes(StandardCharsets.UTF_8);
         case Types.BOOLEAN:
           return converters.getBooleanConverter().getBoolean(obj, columnType)
               ? new byte[] {1}
