@@ -83,7 +83,7 @@ if [[ "$is_old_driver" == "true" ]]; then
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -Dtest="$JDBC_TEST_CATEGORY" \
+            -DintegrationTestSuites="$JDBC_TEST_CATEGORY" \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             verify \
             --batch-mode --show-version
@@ -94,7 +94,7 @@ elif [[ "$JDBC_TEST_CATEGORY" == "FipsTestSuite" ]]; then
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -Dtest=UnitTestSuite,FipsTestSuite \
+            -DintegrationTestSuites=FipsTestSuite \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             -Dnot-self-contained-jar \
             verify \
@@ -105,7 +105,7 @@ else
     $MVNW_EXE -DjenkinsIT \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \
-        -Dtest=UnitTestSuite,"$JDBC_TEST_CATEGORY" \
+        -DintegrationTestSuites="$JDBC_TEST_CATEGORY" \
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
         verify \
