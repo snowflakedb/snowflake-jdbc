@@ -39,7 +39,6 @@ public class JDK14Logger implements SFLogger {
   public static String STDOUT = "STDOUT";
 
   public JDK14Logger(String name) {
-    System.out.println("SNOWFLAKE LOGGER IS BEING USED!");
     this.jdkLogger = Logger.getLogger(name);
   }
 

@@ -35,18 +35,16 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @TempDir public File tmpFolder;
   String homePath = systemGetProperty("user.home");
-  static private Level originalLevel;
+  private static Level originalLevel;
 
   @BeforeAll
-  static void saveLevel(){
+  static void saveLevel() {
     originalLevel = JDK14Logger.getLevel();
   }
 
   @AfterAll
-  static void restoreLevel(){
-    if (originalLevel != null) {
-      JDK14Logger.setLevel(originalLevel);
-    }
+  static void restoreLevel() {
+    JDK14Logger.setLevel(originalLevel);
   }
 
   @Test
