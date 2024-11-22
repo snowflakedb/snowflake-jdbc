@@ -419,9 +419,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <test>UnitTestSuite</test>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
@@ -434,26 +431,14 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>DefaultIT</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <configuration>
-              <systemPropertyVariables>
-                <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
-                <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
-              </systemPropertyVariables>
-              <test>${integrationTestSuites}</test>
-            </configuration>
-          </execution>
-        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>3.5.1</version>
+          </dependency>
+        </dependencies>
+        <version>3.5.1</version>
       </plugin>
     </plugins>
   </build>
@@ -469,40 +454,39 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
-              </dependency>
-            </dependencies>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <failIfNoTests>false</failIfNoTests>
+            </configuration>
             <executions>
-              <!--
+              <execution>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
               <execution>
                 <id>DefaultIT</id>
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <excludes>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                  </excludes>
                   <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>
-                      net.snowflake.client.log.JDK14Logger
-                    </net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>
-                      ${basedir}/../src/test/resources/logging.properties
-                    </java.util.logging.config.file>
+                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
+                  <test>${integrationTestSuites}</test>
                 </configuration>
-              </execution>
-              -->
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>
