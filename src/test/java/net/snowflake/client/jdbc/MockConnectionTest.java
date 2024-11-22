@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryContextDTO;
@@ -52,7 +51,6 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
