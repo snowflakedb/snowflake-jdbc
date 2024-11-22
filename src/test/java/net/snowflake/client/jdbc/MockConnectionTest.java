@@ -61,7 +61,8 @@ import org.junit.jupiter.api.Test;
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
 // @Category(TestCategoryConnection.class)
-@Tag(TestTags.CONNECTION)
+// TODO: SNOW-1821554
+// @Tag(TestTags.CONNECTION)
 public class MockConnectionTest extends BaseJDBCTest {
 
   // Simple pair class container for the error test.
