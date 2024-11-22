@@ -241,11 +241,111 @@ abstract class FileUploaderPrep extends BaseJDBCTest {
           + "  \"message\": null,\n"
           + "  \"success\": true\n"
           + "}";
+  private final String exampleGCSJsonStringWithUseRegionalUrl =
+      "{\n"
+          + "  \"data\": {\n"
+          + "    \"uploadInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"useRegionalUrl\": true,\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"\"\n"
+          + "    },\n"
+          + "    \"src_locations\": [\n"
+          + "      \"/foo/bart/orders_100.csv\"\n"
+          + "    ],\n"
+          + "    \"parallel\": 4,\n"
+          + "    \"threshold\": 209715200,\n"
+          + "    \"autoCompress\": true,\n"
+          + "    \"overwrite\": false,\n"
+          + "    \"sourceCompression\": \"auto_detect\",\n"
+          + "    \"clientShowEncryptionParameter\": false,\n"
+          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "    \"encryptionMaterial\": {\n"
+          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
+          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "      \"smkId\": 123\n"
+          + "    },\n"
+          + "    \"stageInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"useRegionalUrl\": true,\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"\"\n"
+          + "    },\n"
+          + "    \"command\": \"UPLOAD\",\n"
+          + "    \"kind\": null,\n"
+          + "    \"operation\": \"Node\"\n"
+          + "  },\n"
+          + "  \"code\": null,\n"
+          + "  \"message\": null,\n"
+          + "  \"success\": true\n"
+          + "}";
+  private final String exampleGCSJsonStringWithEndpoint =
+      "{\n"
+          + "  \"data\": {\n"
+          + "    \"uploadInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"example.com\"\n"
+          + "    },\n"
+          + "    \"src_locations\": [\n"
+          + "      \"/foo/bart/orders_100.csv\"\n"
+          + "    ],\n"
+          + "    \"parallel\": 4,\n"
+          + "    \"threshold\": 209715200,\n"
+          + "    \"autoCompress\": true,\n"
+          + "    \"overwrite\": false,\n"
+          + "    \"sourceCompression\": \"auto_detect\",\n"
+          + "    \"clientShowEncryptionParameter\": false,\n"
+          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "    \"encryptionMaterial\": {\n"
+          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
+          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "      \"smkId\": 123\n"
+          + "    },\n"
+          + "    \"stageInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"example.com\"\n"
+          + "    },\n"
+          + "    \"command\": \"UPLOAD\",\n"
+          + "    \"kind\": null,\n"
+          + "    \"operation\": \"Node\"\n"
+          + "  },\n"
+          + "  \"code\": null,\n"
+          + "  \"message\": null,\n"
+          + "  \"success\": true\n"
+          + "}";
 
   protected JsonNode exampleS3JsonNode;
   protected JsonNode exampleS3StageEndpointJsonNode;
   protected JsonNode exampleAzureJsonNode;
   protected JsonNode exampleGCSJsonNode;
+  protected JsonNode exampleGCSJsonNodeWithUseRegionalUrl;
+  protected JsonNode exampleGCSJsonNodeWithEndPoint;
   protected List<JsonNode> exampleNodes;
 
   @Before
@@ -254,6 +354,8 @@ abstract class FileUploaderPrep extends BaseJDBCTest {
     exampleS3StageEndpointJsonNode = mapper.readTree(exampleS3JsonStringWithStageEndpoint);
     exampleAzureJsonNode = mapper.readTree(exampleAzureJsonString);
     exampleGCSJsonNode = mapper.readTree(exampleGCSJsonString);
+    exampleGCSJsonNodeWithUseRegionalUrl = mapper.readTree(exampleGCSJsonStringWithUseRegionalUrl);
+    exampleGCSJsonNodeWithEndPoint = mapper.readTree(exampleGCSJsonStringWithEndpoint);
     exampleNodes = Arrays.asList(exampleS3JsonNode, exampleAzureJsonNode, exampleGCSJsonNode);
   }
 }
