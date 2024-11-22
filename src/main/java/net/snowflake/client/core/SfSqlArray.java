@@ -27,8 +27,7 @@ public class SfSqlArray implements Array {
   }
 
   public SfSqlArray(int baseType, Object elements) {
-    this.baseType = baseType;
-    this.elements = elements;
+    this(null, baseType, elements);
   }
 
   @Override

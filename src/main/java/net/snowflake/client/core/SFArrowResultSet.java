@@ -577,10 +577,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     Object obj = converter.toObject(index);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter) {
-      if (obj == null) {
-        return null;
+      if (obj != null) {
+        return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
       }
-      return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
     }
     return obj;
   }
