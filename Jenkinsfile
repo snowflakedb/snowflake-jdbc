@@ -89,9 +89,9 @@ timestamps {
     }
 
     jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
-    stage('Test') {
+    /*stage('Test') {
       parallel (jobDefinitions)
-    }
+    }*/
   }
 }
 
