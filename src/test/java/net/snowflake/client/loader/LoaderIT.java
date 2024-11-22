@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Loader IT */
-// @Category(TestCategoryLoader.class)
 @Tag(TestTags.LOADER)
 public class LoaderIT extends LoaderBase {
   @Test

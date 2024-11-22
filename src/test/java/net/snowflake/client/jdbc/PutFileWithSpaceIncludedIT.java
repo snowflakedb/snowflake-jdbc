@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;

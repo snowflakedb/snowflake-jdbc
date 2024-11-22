@@ -58,7 +58,6 @@ import org.junit.jupiter.api.Test;
  * and ResultSet. These tests will query Snowflake normally, retrieve the JSON result, and replay it
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
-// @Category(TestCategoryConnection.class)
 // TODO: SNOW-1821554
 // @Tag(TestTags.CONNECTION)
 public class MockConnectionTest extends BaseJDBCTest {

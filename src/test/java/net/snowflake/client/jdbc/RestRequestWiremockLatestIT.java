@@ -10,7 +10,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class RestRequestWiremockLatestIT extends BaseWiremockTest {
 

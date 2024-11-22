@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());

@@ -18,7 +18,6 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public final class SessionVariablesIT extends AbstractDriverIT {
   @Test

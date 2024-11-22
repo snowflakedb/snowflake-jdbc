@@ -24,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 

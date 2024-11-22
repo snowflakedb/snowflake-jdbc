@@ -18,7 +18,6 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryLoader.class)
 @Tag(TestTags.LOADER)
 public class LoaderTimestampIT extends LoaderBase {
   @Test

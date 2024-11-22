@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Test OpenGroup CLI */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class OpenGroupCLIFuncIT extends BaseJDBCWithSharedConnectionIT {
 

@@ -20,7 +20,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class StructuredTypesGetStringArrowJsonCompatibilityIT
     extends StructuredTypesGetStringBaseIT {

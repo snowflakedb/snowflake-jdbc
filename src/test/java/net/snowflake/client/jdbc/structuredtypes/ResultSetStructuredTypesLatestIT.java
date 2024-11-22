@@ -46,7 +46,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @BeforeEach

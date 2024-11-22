@@ -31,7 +31,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeAzureClient handle exception function */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;

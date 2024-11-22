@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
  * is not applicable. If it is applicable, move tests to LoaderIT so that both the latest and oldest
  * supported driver run the tests.
  */
-// @Category(TestCategoryLoader.class)
 @Tag(TestTags.LOADER)
 public class LoaderLatestIT extends LoaderBase {
   @Test

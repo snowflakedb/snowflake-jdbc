@@ -39,7 +39,6 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   static TimeZone ogTz;

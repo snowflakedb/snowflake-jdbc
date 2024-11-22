@@ -110,7 +110,7 @@
             <dependency>
               <groupId>org.apache.maven.surefire</groupId>
               <artifactId>surefire-junit-platform</artifactId>
-              <version>3.5.1</version>
+              <version>${version.plugin.surefire}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -157,7 +157,7 @@
             <dependency>
               <groupId>org.apache.maven.surefire</groupId>
               <artifactId>surefire-junit-platform</artifactId>
-              <version>3.5.1</version>
+              <version>${version.plugin.surefire}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -1185,7 +1185,7 @@
               <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <version>${version.plugin.surefire}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1343,7 +1343,7 @@
               <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <version>${version.plugin.surefire}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1395,7 +1395,7 @@
               <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <version>${version.plugin.surefire}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1441,7 +1441,7 @@
               <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <version>${version.plugin.surefire}</version>
               </dependency>
             </dependencies>
             <executions>

@@ -65,7 +65,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** General integration tests */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;

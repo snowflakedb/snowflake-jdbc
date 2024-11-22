@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Large update test. No JSON/ARROW specific test case is required. */
-// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class StatementLargeUpdateIT extends BaseJDBCTest {
   @Test

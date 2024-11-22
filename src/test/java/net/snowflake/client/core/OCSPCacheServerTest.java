@@ -67,9 +67,6 @@ public class OCSPCacheServerTest {
     }
   }
 
-  // @Parameterized.Parameters(
-  //  name = "For host {0} cache server fetch url should be {1} and retry url {2}")
-
   @ParameterizedTest(name = "For host {0} cache server fetch url should be {1} and retry url {2}")
   @ArgumentsSource(URLProvider.class)
   public void shouldChooseOcspCacheServerUrls(

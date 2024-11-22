@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
-//@Category(TestCategoryFips.class)
 @Tag("fips")
 public class ConnectionFipsIT extends AbstractDriverIT {
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";

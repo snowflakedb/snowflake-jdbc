@@ -16,7 +16,6 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
 

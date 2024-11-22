@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class CloudStorageClientLatestIT extends BaseJDBCTest {
 

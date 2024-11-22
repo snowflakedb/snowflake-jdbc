@@ -85,7 +85,6 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;

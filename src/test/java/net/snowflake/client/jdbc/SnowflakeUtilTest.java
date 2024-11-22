@@ -28,7 +28,6 @@ import org.apache.http.message.BasicHeader;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 

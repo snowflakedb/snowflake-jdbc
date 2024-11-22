@@ -36,7 +36,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class LobSizeLatestIT extends BaseJDBCTest {
 

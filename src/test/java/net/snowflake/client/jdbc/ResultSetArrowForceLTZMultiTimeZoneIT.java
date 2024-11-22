@@ -20,7 +20,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Compare json and arrow resultSet behaviors 1/2 */
-// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
 

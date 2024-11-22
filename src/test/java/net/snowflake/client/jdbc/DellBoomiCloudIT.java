@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** A simple run on fetch result under boomi cloud environment's policy file */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class DellBoomiCloudIT extends AbstractDriverIT {
   @BeforeEach

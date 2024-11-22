@@ -14,4 +14,4 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 @Retention(RetentionPolicy.RUNTIME)
 @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_ACCOUNT", matches = "testaccount")
 @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = ".*")
-public @interface RunOnTestaccount {}
+public @interface RunOnTestaccountNotOnGithubActions {}

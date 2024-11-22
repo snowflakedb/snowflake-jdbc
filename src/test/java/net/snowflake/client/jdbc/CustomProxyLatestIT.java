@@ -36,7 +36,6 @@ import org.junit.jupiter.api.io.TempDir;
 // 2.) Enter your own username and password for the account you're connecting to
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class CustomProxyLatestIT {
   @TempDir private File tmpFolder;

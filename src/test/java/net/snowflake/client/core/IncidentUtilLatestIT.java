@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class IncidentUtilLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
@@ -50,8 +49,8 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
         EventUtil.getDumpPathPrefix() + "/" + INC_DUMP_FILE_NAME + incidentId + INC_DUMP_FILE_EXT;
 
     // Read back the file contents
-    try (FileInputStream fis = new FileInputStream(targetVMFileLocation)) {
-      GZIPInputStream gzip = new GZIPInputStream(fis);
+    try (FileInputStream fis = new FileInputStream(targetVMFileLocation);
+         GZIPInputStream gzip = new GZIPInputStream(fis)) {
       StringWriter sWriter = new StringWriter();
       IOUtils.copy(gzip, sWriter, "UTF-8");
       String output = sWriter.toString();

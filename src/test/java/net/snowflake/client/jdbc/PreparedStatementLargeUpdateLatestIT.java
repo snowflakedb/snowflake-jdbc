@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
 

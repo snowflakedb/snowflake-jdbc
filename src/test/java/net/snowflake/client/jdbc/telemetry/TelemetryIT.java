@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;

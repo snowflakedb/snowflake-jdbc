@@ -31,7 +31,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** SnowflakeResultSetSerializable tests */
-// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;

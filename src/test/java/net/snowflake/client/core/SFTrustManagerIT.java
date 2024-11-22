@@ -40,7 +40,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SFTrustManagerIT extends BaseJDBCTest {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);

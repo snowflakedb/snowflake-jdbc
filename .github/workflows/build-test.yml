@@ -65,7 +65,7 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
+                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: ci\\test_windows.bat
 
@@ -100,7 +100,7 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
+                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: /usr/local/bin/bash ./ci/test_mac.sh
 
@@ -126,7 +126,7 @@ jobs:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
+                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: ./ci/test.sh
 
@@ -150,6 +150,6 @@ jobs:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
+                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh

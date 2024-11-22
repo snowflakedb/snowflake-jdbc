@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SFTrustManagerMockitoMockLatestIT {
 

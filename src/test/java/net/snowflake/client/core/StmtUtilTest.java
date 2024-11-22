@@ -23,7 +23,6 @@ import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class StmtUtilTest extends BaseJDBCTest {
 

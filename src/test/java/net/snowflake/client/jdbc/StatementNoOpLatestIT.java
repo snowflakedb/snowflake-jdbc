@@ -14,7 +14,6 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class StatementNoOpLatestIT {
   @Test

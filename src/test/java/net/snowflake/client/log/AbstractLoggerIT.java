@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =

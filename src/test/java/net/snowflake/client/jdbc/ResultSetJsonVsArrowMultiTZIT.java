@@ -28,7 +28,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionIT {
   static String originalTz;

@@ -69,7 +69,6 @@ import org.junit.jupiter.api.io.TempDir;
  * is not applicable. If it is applicable, move tests to SnowflakeDriverIT so that both the latest
  * and oldest supported driver run the tests.
  */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
@@ -1491,7 +1490,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Disabled // ignored until SNOW-1616480 is resolved
+  @Disabled // TODO: ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
     File destFolder = new File(tmpFolder, "dest");
     destFolder.mkdirs();

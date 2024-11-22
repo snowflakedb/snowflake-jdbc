@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 /**
  * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
  */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT {
   private static Logger LOGGER =

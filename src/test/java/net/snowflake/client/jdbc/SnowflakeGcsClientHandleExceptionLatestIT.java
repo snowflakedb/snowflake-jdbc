@@ -28,7 +28,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;

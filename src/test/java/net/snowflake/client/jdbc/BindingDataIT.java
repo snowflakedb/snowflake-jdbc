@@ -32,7 +32,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Integration tests for binding variable */
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
   static TimeZone timeZone;

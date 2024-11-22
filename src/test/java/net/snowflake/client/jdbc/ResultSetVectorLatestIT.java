@@ -26,7 +26,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * If it is applicable, move tests to ResultSetVectorIT so that both the latest and oldest supported
  * driver run the tests.
  */
-// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetVectorLatestIT extends ResultSet0IT {
 
@@ -162,7 +161,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         assertGetObjectAndGetStringBeTheSame(resultSet, "[-1,5]", 1);
         String floatArrayRepresentation =
-            "JSON".equals(queryResultFormat)
+            "json".equalsIgnoreCase(queryResultFormat)
                 // in json we have slightly different format that we accept in the result
                 ? "[-1.200000,5.100000,15.870000]"
                 : "[-1.2,5.1,15.87]";

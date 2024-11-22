@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;

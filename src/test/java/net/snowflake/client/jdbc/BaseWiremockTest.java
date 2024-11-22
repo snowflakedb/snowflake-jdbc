@@ -4,7 +4,6 @@ import static net.snowflake.client.AbstractDriverIT.getConnectionParameters;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-// import static org.junit.jupiter.api.Assumptions.assumeNoException;
 
 import java.io.File;
 import java.io.IOException;

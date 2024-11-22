@@ -38,7 +38,6 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to StatementIT so that both
  * the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";

@@ -111,7 +111,7 @@ echo "MAVEN OPTIONS %MAVEN_OPTS%"
 REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
 
-if "%JDBC_TEST_CATEGORY%"=="FipsTestSuite" (
+if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
     echo "[INFO] Run Fips tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
@@ -133,11 +133,11 @@ if "%JDBC_TEST_CATEGORY%"=="FipsTestSuite" (
     )
     popd
 ) else (
-    echo "[INFO] Run %JDBC_TEST_CATEGORY% tests"
+    echo "[INFO] Run %JDBC_TEST_SUITES% tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
-        -DintegrationTestSuites="%JDBC_TEST_CATEGORY%" ^
+        -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
         verify ^

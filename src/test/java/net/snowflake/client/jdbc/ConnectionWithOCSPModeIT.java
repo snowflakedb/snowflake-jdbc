@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
  *
  * <p>hang_webserver.py 12345
  */
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testUser = "fakeuser";

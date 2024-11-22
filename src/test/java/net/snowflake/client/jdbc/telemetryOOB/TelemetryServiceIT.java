@@ -14,7 +14,7 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.annotations.RunOnTestaccount;
+import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Standalone test cases for the out of band telemetry service */
-// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class TelemetryServiceIT extends BaseJDBCTest {
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
@@ -230,7 +229,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @RunOnTestaccount
+  @RunOnTestaccountNotOnGithubActions
   public void testSnowflakeSQLLoggedExceptionOOBTelemetry()
       throws SQLException, InterruptedException {
     // make a connection to initialize telemetry instance
@@ -265,7 +264,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @RunOnTestaccount
+  @RunOnTestaccountNotOnGithubActions
   public void testSQLFeatureNotSupportedOOBTelemetry() throws InterruptedException {
     // with null session, OOB telemetry will be thrown
     try {

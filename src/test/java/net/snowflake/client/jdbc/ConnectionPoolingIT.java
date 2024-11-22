@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class ConnectionPoolingIT {
   private BasicDataSource bds = null;

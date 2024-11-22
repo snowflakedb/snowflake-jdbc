@@ -45,7 +45,7 @@ import java.util.concurrent.Executors;
 import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.annotations.RunOnTestaccount;
+import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -56,7 +56,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
@@ -840,7 +839,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @RunOnTestaccount
+  @RunOnTestaccountNotOnGithubActions
   public void testOKTAConnection() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
@@ -857,7 +856,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @RunOnTestaccount
+  @RunOnTestaccountNotOnGithubActions
   public void testOKTAConnectionWithOktauserParam() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();

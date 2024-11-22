@@ -34,7 +34,6 @@ import net.snowflake.client.jdbc.SnowflakeDriver;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class LogicalConnectionLatestIT extends BaseJDBCTest {
   Map<String, String> properties = getConnectionParameters();
