@@ -45,8 +45,8 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
-      Properties conectionProperties = new Properties();
-      conectionProperties.putAll(fileConnectionConfiguration);
+      Properties connectionProperties = new Properties();
+      connectionProperties.putAll(fileConnectionConfiguration);
 
       String url = createUrl(fileConnectionConfiguration);
       logger.debug("Url created using parameters from connection configuration file: {}", url);
@@ -68,7 +68,7 @@ public class SFConnectionConfigParser {
           }
           String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
           if (!token.isEmpty()) {
-            putPropertyIfNotNull(conectionProperties, "token", token.trim());
+              putPropertyIfNotNull(connectionProperties, "token", token.trim());
           } else {
             logger.warn("The token has empty value");
           }
@@ -76,7 +76,7 @@ public class SFConnectionConfigParser {
           throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
         }
       }
-      return new ConnectionParameters(url, conectionProperties);
+      return new ConnectionParameters(url, connectionProperties);
     } else {
       return null;
     }
