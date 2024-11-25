@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -38,7 +37,11 @@ import org.junit.Test;
 public class SFConnectionConfigParserTest {
 
   private static final List<String> ENV_VARIABLES_KEYS =
-          new ArrayList<>(Arrays.asList(SNOWFLAKE_HOME_KEY, SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION));
+      new ArrayList<>(
+          Arrays.asList(
+              SNOWFLAKE_HOME_KEY,
+              SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY,
+              SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION));
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
   private Map<String, String> envVariables = new HashMap();
@@ -46,9 +49,9 @@ public class SFConnectionConfigParserTest {
   @Before
   public void setUp() throws IOException {
     tempPath = Files.createTempDirectory(".snowflake");
-    ENV_VARIABLES_KEYS
-            .stream()
-            .forEach(key -> {
+    ENV_VARIABLES_KEYS.stream()
+        .forEach(
+            key -> {
               if (SnowflakeUtil.systemGetEnv(key) != null) {
                 envVariables.put(key, SnowflakeUtil.systemGetEnv(key));
               }
@@ -62,8 +65,7 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemUnsetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION);
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
-    envVariables
-            .forEach((key, value)  -> SnowflakeUtil.systemSetEnv(key, value));
+    envVariables.forEach((key, value) -> SnowflakeUtil.systemSetEnv(key, value));
   }
 
   @Test
@@ -165,15 +167,16 @@ public class SFConnectionConfigParserTest {
     Assert.assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
+
   @Test
   public void shouldThrowExceptionIfTokenIsNotSetForOauth() throws IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     SnowflakeUtil.systemSetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, "true");
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
-//    File emptyTokenFile = new File(Paths.get(tempPath.toString(), "emptyToken").toUri());
+    //    File emptyTokenFile = new File(Paths.get(tempPath.toString(), "emptyToken").toUri());
     prepareConnectionConfigurationTomlFile(
-            Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
+        Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
 
     Assert.assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
@@ -188,13 +191,17 @@ public class SFConnectionConfigParserTest {
   }
 
   private void prepareConnectionConfigurationTomlFile(
-          Map moreParameters, boolean onlyUserPermissionConnection, boolean onlyUserPermissionToken)
-          throws IOException {
-     prepareConnectionConfigurationTomlFile(moreParameters, onlyUserPermissionConnection, onlyUserPermissionToken, "token_from_file");
+      Map moreParameters, boolean onlyUserPermissionConnection, boolean onlyUserPermissionToken)
+      throws IOException {
+    prepareConnectionConfigurationTomlFile(
+        moreParameters, onlyUserPermissionConnection, onlyUserPermissionToken, "token_from_file");
   }
 
   private void prepareConnectionConfigurationTomlFile(
-      Map moreParameters, boolean onlyUserPermissionConnection, boolean onlyUserPermissionToken, String token)
+      Map moreParameters,
+      boolean onlyUserPermissionConnection,
+      boolean onlyUserPermissionToken,
+      String token)
       throws IOException {
     Path path = Paths.get(tempPath.toString(), "connections.toml");
     Path filePath = createFilePathWithPermission(path, onlyUserPermissionConnection);
@@ -221,7 +228,11 @@ public class SFConnectionConfigParserTest {
       Files.write(tokenFilePath, token.getBytes());
       Path emptyTokenFilePath =
           createFilePathWithPermission(
-              Paths.get(configurationParams.get("token_file_path").toString().replaceAll("token", "emptytoken")),
+              Paths.get(
+                  configurationParams
+                      .get("token_file_path")
+                      .toString()
+                      .replaceAll("token", "emptytoken")),
               onlyUserPermissionToken);
       Files.write(emptyTokenFilePath, "".getBytes());
     }
