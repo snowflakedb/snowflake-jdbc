@@ -18,6 +18,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -595,6 +596,8 @@ public class SFSession extends SFBaseSession {
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
+            //or from sessionParametersMap
+        .setAdditionalHttpHeadersForSnowsight(getHttpHeaders())
         .setConnectionTimeout(httpClientConnectionTimeout)
         .setSocketTimeout(httpClientSocketTimeout)
         .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
@@ -716,6 +719,27 @@ public class SFSession extends SFBaseSession {
     startHeartbeatForThisSession();
     stopwatch.stop();
     logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+  }
+
+  public Map<String, String> getHttpHeaders() {
+    if (getConnectionPropertiesMap() != null && getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders) != null) {
+      return getHttpHeaders((String) getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders));
+    }
+    return Collections.emptyMap();
+  }
+
+  public Map<String, String> getHttpHeaders(String headers) {
+    if(headers!=null && !headers.isEmpty()) {
+      Map<String, String> headersMap = new HashMap<>();
+      for (String headerKeyPair : headers.split(";")) {
+        String[] split = headerKeyPair.split(":");
+        if (split.length >= 2) {
+          headersMap.put(split[0], split[1]);
+        }
+      }
+      return headersMap;
+    }
+    return null;
   }
 
   /**
@@ -988,6 +1012,11 @@ public class SFSession extends SFBaseSession {
                 + "\"");
 
         logger.debug("Executing heartbeat request: {}", postRequest.toString());
+
+        Map<String, String> httpHeaders = getHttpHeaders();
+        if (httpHeaders != null) {
+          httpHeaders.forEach(postRequest::addHeader);
+        }
 
         // the following will retry transient network issues
         // increase heartbeat timeout from 60 sec to 300 sec
