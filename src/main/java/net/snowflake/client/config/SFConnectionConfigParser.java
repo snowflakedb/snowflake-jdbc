@@ -70,7 +70,7 @@ public class SFConnectionConfigParser {
           if (!token.isEmpty()) {
               putPropertyIfNotNull(connectionProperties, "token", token.trim());
           } else {
-            throw new SnowflakeSQLException("Token must be set when the authenticator type is OAUTH");
+            throw new SnowflakeSQLException("Non-empty token must be set when the authenticator type is OAUTH");
           }
         } catch (Exception ex) {
           throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
