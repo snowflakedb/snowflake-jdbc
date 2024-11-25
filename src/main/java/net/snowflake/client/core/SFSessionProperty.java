@@ -48,6 +48,7 @@ public enum SFSessionProperty {
   PROXY_HOST("proxyHost", false, String.class),
   PROXY_PORT("proxyPort", false, String.class),
   PROXY_USER("proxyUser", false, String.class),
+  PROXY_CRT_FILE("proxyCrtFile", false, String.class),
   PROXY_PASSWORD("proxyPassword", false, String.class),
   NON_PROXY_HOSTS("nonProxyHosts", false, String.class),
   PROXY_PROTOCOL("proxyProtocol", false, String.class),
@@ -68,6 +69,8 @@ public enum SFSessionProperty {
 
   // Adds a suffix to the user agent header in the http requests made by the jdbc driver
   USER_AGENT_SUFFIX("user_agent_suffix", false, String.class),
+
+  AdditionalHttpHeaders("additional_http_headers", false, String.class),
 
   CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED(
       "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", false, Boolean.class),

@@ -335,6 +335,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         boolean booleanV = v0 instanceof Boolean ? (Boolean) v0 : Boolean.parseBoolean((String) v0);
         sfSession.setSfSQLMode(booleanV);
       }
+      //here we add properties
       sfSession.addSFSessionProperty(property.getKey(), property.getValue());
     }
 
