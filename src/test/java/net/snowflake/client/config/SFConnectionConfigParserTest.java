@@ -174,7 +174,6 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     SnowflakeUtil.systemSetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, "true");
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
-    //    File emptyTokenFile = new File(Paths.get(tempPath.toString(), "emptyToken").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
 
