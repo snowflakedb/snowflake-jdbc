@@ -18,9 +18,11 @@ import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpStorageOptions;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
@@ -1312,6 +1314,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (accessToken != null) {
         // We are authenticated with an oauth access token.
         StorageOptions.Builder builder = StorageOptions.newBuilder();
+        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+
         if (areDisabledGcsDefaultCredentials(session)) {
           logger.debug(
               "Adding explicit credentials to avoid default credential lookup by the GCS client");
@@ -1329,7 +1333,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 .getService();
       } else {
         // Use anonymous authentication.
-        this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
+        HttpStorageOptions.Builder builder =
+            HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
+        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+        this.gcsClient = builder.build().getService();
       }
 
       if (encMat != null) {

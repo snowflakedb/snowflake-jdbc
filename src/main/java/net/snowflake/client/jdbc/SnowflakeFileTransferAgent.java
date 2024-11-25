@@ -1111,8 +1111,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // specifically
     // for FIPS or VPCE S3 endpoint. SNOW-652696
     String endPoint = null;
-    if ("AZURE".equalsIgnoreCase(stageLocationType) || "S3".equalsIgnoreCase(stageLocationType)) {
+    if ("AZURE".equalsIgnoreCase(stageLocationType)
+        || "S3".equalsIgnoreCase(stageLocationType)
+        || "GCS".equalsIgnoreCase(stageLocationType)) {
       endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+      if ("GCS".equalsIgnoreCase(stageLocationType)
+          && endPoint != null
+          && (endPoint.trim().isEmpty() || "null".equals(endPoint))) {
+        // setting to null to preserve previous behaviour for GCS
+        endPoint = null;
+      }
     }
 
     String stgAcct = null;
@@ -1179,6 +1187,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
+    setupUseRegionalUrl(jsonNode, stageInfo);
+
     if (stageInfo.getStageType() == StageInfo.StageType.S3) {
       if (session == null) {
         // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
@@ -1198,6 +1208,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     return stageInfo;
+  }
+
+  private static void setupUseRegionalUrl(JsonNode jsonNode, StageInfo stageInfo) {
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS
+        && stageInfo.getStageType() != StageInfo.StageType.S3) {
+      return;
+    }
+    JsonNode useRegionalURLNode = jsonNode.path("data").path("stageInfo").path("useRegionalUrl");
+    if (!useRegionalURLNode.isMissingNode()) {
+      boolean useRegionalURL = useRegionalURLNode.asBoolean(false);
+      stageInfo.setUseRegionalUrl(useRegionalURL);
+    }
   }
 
   /**
