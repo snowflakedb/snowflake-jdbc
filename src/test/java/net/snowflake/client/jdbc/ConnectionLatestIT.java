@@ -274,7 +274,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
     String queryID = null;
-    QueryStatusV2 statusV2 = null;
     try (Connection con = getConnection();
         Statement statement = con.createStatement();
         ResultSet rs1 =
@@ -288,7 +287,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       await()
           .atMost(Duration.ofSeconds(5))
           .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
-      statusV2 = sfrs.getStatusV2();
+      QueryStatusV2 statusV2 = sfrs.getStatusV2();
       // Query should take 60 seconds so should be running
       assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
       assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
@@ -305,7 +304,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       }
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
-        statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        QueryStatusV2 statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
         // Assert status of query is a success
         assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
         assertEquals("No error reported", statusV2.getErrorMessage());
@@ -318,27 +317,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     .unwrap(SnowflakeStatement.class)
                     .executeAsyncQuery("select * from nonexistentTable")) {
           Thread.sleep(100);
-          statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-          // when GS response is slow, allow up to 1 second of retries to get final query status
           SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
           await()
               .atMost(Duration.ofSeconds(10))
-              .until(
-                  () -> {
-                    QueryStatus qs = sfrs1.getStatusV2().getStatus();
-                    return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
-                  });
-          // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
-          // response has returned,
-          // assert it is the error message that we are expecting.
-          if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-            assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-            assertEquals(2003, statusV2.getErrorCode());
-            assertEquals(
-                "SQL compilation error:\n"
-                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-                statusV2.getErrorMessage());
-          }
+              .until(() -> sfrs1.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+          statusV2 = sfrs1.getStatusV2();
+          assertEquals(2003, statusV2.getErrorCode());
+          assertEquals(
+              "SQL compilation error:\n"
+                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+              statusV2.getErrorMessage());
         }
       }
     }
