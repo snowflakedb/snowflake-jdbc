@@ -18,10 +18,14 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -33,12 +37,18 @@ import org.junit.Test;
 
 public class SFConnectionConfigParserTest {
 
+  private static final List<String> ENV_VARIABLES_KEYS =
+          new ArrayList<>(Arrays.asList(SNOWFLAKE_HOME_KEY, SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION));
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
+  private Map<String, String> envVariables = new HashMap();
 
   @Before
   public void setUp() throws IOException {
     tempPath = Files.createTempDirectory(".snowflake");
+    ENV_VARIABLES_KEYS
+            .stream()
+            .forEach(key -> envVariables.put(key, SnowflakeUtil.systemGetEnv(key)));
   }
 
   @After
@@ -48,6 +58,9 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemUnsetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION);
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
+    ENV_VARIABLES_KEYS
+            .stream()
+            .forEach(key ->  SnowflakeUtil.systemSetEnv(key, envVariables.get(key)));
   }
 
   @Test
