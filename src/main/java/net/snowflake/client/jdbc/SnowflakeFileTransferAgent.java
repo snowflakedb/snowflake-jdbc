@@ -1116,6 +1116,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         || "GCS".equalsIgnoreCase(stageLocationType)) {
       endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
       if ("GCS".equalsIgnoreCase(stageLocationType)
+          && endPoint != null
           && (endPoint.trim().isEmpty() || "null".equals(endPoint))) {
         // setting to null to preserve previous behaviour for GCS
         endPoint = null;

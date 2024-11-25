@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -320,7 +321,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     JsonNode downloadNode = mapper.readTree("{\"data\": {\"command\": \"DOWNLOAD\"}}");
     try {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(downloadNode);
-      assertTrue(false);
+      fail();
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       Assert.assertEquals(
@@ -333,7 +334,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": [1, 2]}}");
     try {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
-      assertTrue(false);
+      fail();
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(
@@ -348,7 +349,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     foo.put("locationType", "LOCAL_FS");
     try {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
-      assertTrue(false);
+      fail();
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(err.getMessage().contains("JDBC driver internal error: This API only supports"));
@@ -360,7 +361,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": \"abc\"}}");
     try {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
-      assertTrue(false);
+      fail();
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(
@@ -375,7 +376,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     foo.put("encryptionMaterial", "[1, 2, 3]]");
     try {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
-      assertTrue(false);
+      fail();
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(err.getMessage().contains("Failed to parse encryptionMaterial"));
