@@ -654,6 +654,8 @@ public class SFSession extends SFBaseSession {
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
+            //or from sessionParametersMap
+        .setAdditionalHttpHeadersForSnowsight(getHttpHeaders((String)connectionPropertiesMap.get(SFSessionProperty.AdditionalHttpHeaders)))
         .setConnectionTimeout(
             connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT) != null
                 ? Duration.ofMillis(
@@ -789,6 +791,20 @@ public class SFSession extends SFBaseSession {
     startHeartbeatForThisSession();
     stopwatch.stop();
     logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+  }
+
+  private Map<String, String> getHttpHeaders(String headers) {
+    if(headers!=null && !headers.isEmpty()) {
+      Map<String, String> headersMap = new HashMap<>();
+      for (String headerKeyPair : headers.split(";")) {
+        String[] split = headerKeyPair.split(":");
+        if (split.length >= 2) {
+          headersMap.put(split[0], split[1]);
+        }
+      }
+      return headersMap;
+    }
+    return null;
   }
 
   /**
