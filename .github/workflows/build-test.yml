@@ -29,7 +29,7 @@ jobs:
         name: Build
         runs-on: ubuntu-20.04
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Build
               shell: bash
               env:
@@ -53,7 +53,7 @@ jobs:
                 java-version: ${{ matrix.runConfig.javaVersion }}
                 distribution: 'temurin'
                 cache: maven
-            - uses: actions/setup-python@v4
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -83,7 +83,7 @@ jobs:
                 java-version: ${{ matrix.runConfig.javaVersion }}
                 distribution: 'temurin'
                 cache: maven
-            - uses: actions/setup-python@v4
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
             - name: Install Homebrew Bash
@@ -110,7 +110,7 @@ jobs:
                 category: ['TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader', 'TestCategoryOthers', 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Tests
               shell: bash
               env:
@@ -132,7 +132,7 @@ jobs:
                 category: ['TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader,TestCategoryResultSet']
                 is_old_driver: ['true']
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Tests
               shell: bash
               env:
