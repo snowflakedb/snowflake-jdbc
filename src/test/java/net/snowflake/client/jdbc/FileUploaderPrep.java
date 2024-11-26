@@ -6,6 +6,8 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeAll;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
