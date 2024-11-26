@@ -45,6 +45,7 @@ import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.SfTest;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
