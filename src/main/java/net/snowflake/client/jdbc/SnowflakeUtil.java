@@ -756,6 +756,7 @@ public class SnowflakeUtil {
         String proxyUser = info.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
         String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
+        String proxyCrtFile = info.getProperty(SFSessionProperty.PROXY_CRT_FILE.getPropertyKey());
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
         String userAgentSuffix =
             info.getProperty(SFSessionProperty.USER_AGENT_SUFFIX.getPropertyKey());
@@ -776,6 +777,7 @@ public class SnowflakeUtil {
             proxyPassword,
             proxyProtocol,
             userAgentSuffix,
+            proxyCrtFile,
             gzipDisabled);
       }
     }
