@@ -52,7 +52,7 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
   }
 
   protected void assertResultSetIsCompatible(ResultSet resultSet, String expected)
-          throws SQLException {
+      throws SQLException {
     // Test getString
     String result = resultSet.getString(1);
     TestUtil.assertEqualsIgnoringWhitespace(expected, result);
@@ -65,7 +65,7 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
 
     // Test getBytes
     TestUtil.assertEqualsIgnoringWhitespace(
-            expected, new String(resultSet.getBytes(1), StandardCharsets.UTF_8));
+        expected, new String(resultSet.getBytes(1), StandardCharsets.UTF_8));
   }
 
   protected void withFirstRow(
