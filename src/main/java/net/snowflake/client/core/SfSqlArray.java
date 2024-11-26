@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaForType;
+import static net.snowflake.client.core.FieldSchemaCreator.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.Array;
@@ -19,6 +20,7 @@ public class SfSqlArray implements Array {
   private String text;
   private int baseType;
   private Object elements;
+  private String jsonStringFromElements;
 
   public SfSqlArray(String text, int baseType, Object elements) {
     this.text = text;
@@ -87,11 +89,19 @@ public class SfSqlArray implements Array {
   @Override
   public void free() throws SQLException {}
 
-  public String getJsonString() throws SQLException {
+  public String getText() {
     if (text == null) {
-      text = buildJsonStringFromElements(elements);
+      logger.warn("Text field wasn't initialized. Should never happen.");
     }
     return text;
+  }
+
+  public String getJsonString() throws SQLException {
+    if (jsonStringFromElements == null) {
+      jsonStringFromElements = buildJsonStringFromElements(elements);
+    }
+
+    return jsonStringFromElements;
   }
 
   private static String buildJsonStringFromElements(Object elements) throws SQLException {

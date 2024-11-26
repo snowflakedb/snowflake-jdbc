@@ -279,7 +279,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     } else if (object instanceof StructObjectWrapper) {
       return ((StructObjectWrapper) object).getJsonString();
     } else if (object instanceof SfSqlArray) {
-      return ((SfSqlArray) object).getJsonString();
+      return ((SfSqlArray) object).getText();
     } else if (object instanceof ArrowSqlInput) {
       throw new SQLException(
           "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
