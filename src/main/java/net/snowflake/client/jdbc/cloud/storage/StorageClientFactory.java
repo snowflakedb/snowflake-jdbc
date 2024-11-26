@@ -59,8 +59,9 @@ public class StorageClientFactory {
     switch (stage.getStageType()) {
       case S3:
         boolean useS3RegionalUrl =
-            (stage.getUseS3RegionalUrl()
-                || (session != null && session.getUseRegionalS3EndpointsForPresignedURL()));
+            stage.getUseS3RegionalUrl()
+                || stage.getUseRegionalUrl()
+                || session != null && session.getUseRegionalS3EndpointsForPresignedURL();
         return createS3Client(
             stage.getCredentials(),
             parallel,
