@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc.structuredtypes;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +24,7 @@ public class StructuredTypesArrowJsonCompatibilityLatestIT extends StructuredTyp
   private final String expectedStructureTypeRepresentation;
   private final String selectSql;
   private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();
+  private static Map<ResultSetFormatType, Map<String, ResultSet>> resultSets = new HashMap<>();
 
   public StructuredTypesArrowJsonCompatibilityLatestIT(
       ResultSetFormatType queryResultFormat,
@@ -51,27 +53,11 @@ public class StructuredTypesArrowJsonCompatibilityLatestIT extends StructuredTyp
   }
 
   @Test
-  public void testRunAsGetString() throws SQLException {
+  public void testArrowJsonCompatibility() throws SQLException {
     withFirstRow(
         connections.get(queryResultFormat),
         selectSql,
-        (resultSet) -> assertGetStringIsCompatible(resultSet, expectedStructureTypeRepresentation));
-  }
-
-  @Test
-  public void testRunAsGetObject() throws SQLException {
-    withFirstRow(
-        connections.get(queryResultFormat),
-        selectSql,
-        (resultSet) -> assertGetObjectIsCompatible(resultSet, expectedStructureTypeRepresentation));
-  }
-
-  @Test
-  public void testRunAsGetBytes() throws SQLException {
-    withFirstRow(
-        connections.get(queryResultFormat),
-        selectSql,
-        (resultSet) -> assertGetBytesIsCompatible(resultSet, expectedStructureTypeRepresentation));
+        (resultSet) -> assertResultSetIsCompatible(resultSet, expectedStructureTypeRepresentation));
   }
 
   @Parameterized.Parameters(name = "format={0},sql={1}")
