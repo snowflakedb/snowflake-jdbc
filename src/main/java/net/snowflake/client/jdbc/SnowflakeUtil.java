@@ -837,6 +837,22 @@ public class SnowflakeUtil {
     }
     return defaultValue;
   }
+  /**
+   * Helper function to convert environment variable to boolean
+   *
+   * @param envVariableKey property name of the environment variable
+   * @param defaultValue default value used
+   * @return the value of the environment variable as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemGetEnvToBooleanValue(
+      String envVariableKey, boolean defaultValue) {
+    String environmentVariableValue = systemGetEnv(envVariableKey);
+    if (environmentVariableValue != null) {
+      return Boolean.parseBoolean(environmentVariableValue);
+    }
+    return defaultValue;
+  }
 
   @SnowflakeJdbcInternalApi
   public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
