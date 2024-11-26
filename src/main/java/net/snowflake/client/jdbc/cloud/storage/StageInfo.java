@@ -2,10 +2,17 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
-/** Encapsulates all the required stage properties used by GET/PUT for Azure and S3 stages */
+/** Encapsulates all the required stage properties used by GET/PUT for Azure, GCS and S3 stages */
 public class StageInfo implements Serializable {
+
+  // me-central2 GCS region always use regional urls
+  // TODO SNOW-1818804: the value is hardcoded now, but it should be server driven
+  private static final String GCS_REGION_ME_CENTRAL_2 = "me-central2";
+
   public enum StageType {
     S3,
     AZURE,
@@ -17,12 +24,18 @@ public class StageInfo implements Serializable {
   private StageType stageType; // The stage type
   private String location; // The container or bucket
   private Map<?, ?> credentials; // the credentials required for the  stage
-  private String region; // AWS/S3/GCS region (S3/GCS only)
-  private String endPoint; // The Azure Storage endpoint (Azure only)
+  private String region; // S3/GCS region
+  // An endpoint (Azure, AWS FIPS and GCS custom endpoint override)
+  private String endPoint;
   private String storageAccount; // The Azure Storage account (Azure only)
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
   private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
-  private boolean useS3RegionalUrl; // whether to use s3 regional URL (AWS Only)
+  // whether to use s3 regional URL (AWS Only)
+  // TODO SNOW-1818804: this field will be deprecated when the server returns {@link
+  // #useRegionalUrl}
+  private boolean useS3RegionalUrl;
+  // whether to use regional URL (AWS and GCS only)
+  private boolean useRegionalUrl;
   private Properties proxyProperties;
 
   /*
@@ -166,6 +179,16 @@ public class StageInfo implements Serializable {
     return useS3RegionalUrl;
   }
 
+  @SnowflakeJdbcInternalApi
+  public void setUseRegionalUrl(boolean useRegionalUrl) {
+    this.useRegionalUrl = useRegionalUrl;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public boolean getUseRegionalUrl() {
+    return useRegionalUrl;
+  }
+
   private static boolean isSpecified(String arg) {
     return !(arg == null || arg.equalsIgnoreCase(""));
   }
@@ -173,9 +196,22 @@ public class StageInfo implements Serializable {
   public void setProxyProperties(Properties proxyProperties) {
     this.proxyProperties = proxyProperties;
   }
-  ;
 
   public Properties getProxyProperties() {
     return proxyProperties;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public Optional<String> gcsCustomEndpoint() {
+    if (stageType != StageType.GCS) {
+      return Optional.empty();
+    }
+    if (endPoint != null && !endPoint.trim().isEmpty() && !"null".equals(endPoint)) {
+      return Optional.of(endPoint);
+    }
+    if (GCS_REGION_ME_CENTRAL_2.equalsIgnoreCase(region) || useRegionalUrl) {
+      return Optional.of(String.format("storage.%s.rep.googleapis.com", region.toLowerCase()));
+    }
+    return Optional.empty();
   }
 }

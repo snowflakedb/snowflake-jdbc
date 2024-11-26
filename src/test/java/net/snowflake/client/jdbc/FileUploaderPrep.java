@@ -6,251 +6,45 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
 abstract class FileUploaderPrep extends BaseJDBCTest {
-  private ObjectMapper mapper = new ObjectMapper();
 
-  private final String exampleS3JsonStringWithStageEndpoint =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"example/location\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": null\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/tmp/files/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": true,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"stage/location/foo/\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": \"s3-fips.us-east-1.amazonaws.com\"\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
+  private static final ObjectMapper mapper = new ObjectMapper();
 
-  private final String exampleS3JsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"example/location\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": null\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/tmp/files/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": true,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"stage/location/foo/\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"useS3RegionalUrl\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": null\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
+  static JsonNode exampleS3JsonNode;
+  static JsonNode exampleS3StageEndpointJsonNode;
+  static JsonNode exampleAzureJsonNode;
+  static JsonNode exampleGCSJsonNode;
+  static JsonNode exampleGCSJsonNodeWithUseRegionalUrl;
+  static JsonNode exampleGCSJsonNodeWithEndPoint;
+  static List<JsonNode> exampleNodes;
 
-  private final String exampleAzureJsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"AZURE\",\n"
-          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
-          + "      \"path\": \"EXAMPLE_PATH/\",\n"
-          + "      \"region\": \"westus\",\n"
-          + "      \"storageAccount\": \"sfcdev2stage\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": \"blob.core.windows.net\"\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/foo/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": false,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"AZURE\",\n"
-          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
-          + "      \"path\": \"EXAMPLE_PATH/\",\n"
-          + "      \"region\": \"westus\",\n"
-          + "      \"storageAccount\": \"EXAMPLE_STORAGE_ACCOUNT\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": \"blob.core.windows.net\"\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
+  private static JsonNode readJsonFromFile(String name) throws IOException {
+    try (InputStream is =
+        FileUploaderPrep.class.getResourceAsStream("/FileUploaderPrep/" + name + ".json")) {
+      return mapper.readTree(is);
+    }
+  }
 
-  private final String exampleGCSJsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"GCS\",\n"
-          + "      \"location\": \"foo/tables/9224/\",\n"
-          + "      \"path\": \"tables/9224/\",\n"
-          + "      \"region\": \"US-WEST1\",\n"
-          + "      \"storageAccount\": \"\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {},\n"
-          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
-          + "      \"endPoint\": \"\"\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/foo/bart/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": false,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"GCS\",\n"
-          + "      \"location\": \"foo/tables/9224/\",\n"
-          + "      \"path\": \"tables/9224/\",\n"
-          + "      \"region\": \"US-WEST1\",\n"
-          + "      \"storageAccount\": \"\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {},\n"
-          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
-          + "      \"endPoint\": \"\"\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
-
-  protected JsonNode exampleS3JsonNode;
-  protected JsonNode exampleS3StageEndpointJsonNode;
-  protected JsonNode exampleAzureJsonNode;
-  protected JsonNode exampleGCSJsonNode;
-  protected List<JsonNode> exampleNodes;
-
-  @BeforeEach
-  public void setup() throws Exception {
-    exampleS3JsonNode = mapper.readTree(exampleS3JsonString);
-    exampleS3StageEndpointJsonNode = mapper.readTree(exampleS3JsonStringWithStageEndpoint);
-    exampleAzureJsonNode = mapper.readTree(exampleAzureJsonString);
-    exampleGCSJsonNode = mapper.readTree(exampleGCSJsonString);
-    exampleNodes = Arrays.asList(exampleS3JsonNode, exampleAzureJsonNode, exampleGCSJsonNode);
+  @BeforeAll
+  public static void setup() throws Exception {
+    exampleS3JsonNode = readJsonFromFile("exampleS3");
+    exampleS3StageEndpointJsonNode = readJsonFromFile("exampleS3WithStageEndpoint");
+    exampleAzureJsonNode = readJsonFromFile("exampleAzure");
+    exampleGCSJsonNode = readJsonFromFile("exampleGCS");
+    exampleGCSJsonNodeWithUseRegionalUrl = readJsonFromFile("exampleGCSWithUseRegionalUrl");
+    exampleGCSJsonNodeWithEndPoint = readJsonFromFile("exampleGCSWithEndpoint");
+    exampleNodes =
+        Arrays.asList(
+            exampleS3JsonNode,
+            exampleAzureJsonNode,
+            exampleGCSJsonNode,
+            exampleGCSJsonNodeWithUseRegionalUrl,
+            exampleGCSJsonNodeWithEndPoint);
   }
 }
