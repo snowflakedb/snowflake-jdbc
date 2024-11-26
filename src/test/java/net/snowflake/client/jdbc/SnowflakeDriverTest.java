@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,7 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 /** Driver unit test */
@@ -391,8 +391,8 @@ public class SnowflakeDriverTest {
     int majorVersion = snowflakeDriver.getMajorVersion();
     int minorVersion = snowflakeDriver.getMinorVersion();
 
-    MatcherAssert.assertThat(majorVersion, greaterThanOrEqualTo(3));
-    MatcherAssert.assertThat(minorVersion, greaterThanOrEqualTo(0));
+    assertThat(majorVersion, greaterThanOrEqualTo(3));
+    assertThat(minorVersion, greaterThanOrEqualTo(0));
   }
 
   @Test

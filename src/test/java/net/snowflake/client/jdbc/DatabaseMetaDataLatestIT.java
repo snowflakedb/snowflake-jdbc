@@ -9,6 +9,7 @@ import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDa
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,7 +35,6 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -180,32 +180,32 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             databaseMetaData = connection.getMetaData();
 
             try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
             }
 
             try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
             }
 
             try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet =
                 databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
-              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
           });
     }
@@ -2156,11 +2156,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             assertEquals(
                 2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2178,11 +2178,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             assertEquals(
                 1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2197,11 +2197,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             assertEquals(
                 1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2264,13 +2264,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                     dbmd.getCrossReference(
                         database, schema, table1, database, schemaPattern2, null)));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, null, tablePattern1, database, schema, table2)),
                 greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, null, tablePattern2, database, schema, table2)),
@@ -2288,13 +2288,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                     dbmd.getCrossReference(
                         database, schema, tablePattern2, database, schema, table2)));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, schema, table1, database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(
+            assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, schema, table1, database, null, tablePattern2)),

@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,7 +23,6 @@ import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -862,8 +862,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
     }
     assertEquals(expectedTotalRowCount, rowCount);
-    MatcherAssert.assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
-    MatcherAssert.assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
+    assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
+    assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);

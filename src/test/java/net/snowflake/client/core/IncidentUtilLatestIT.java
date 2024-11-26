@@ -50,7 +50,7 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
 
     // Read back the file contents
     try (FileInputStream fis = new FileInputStream(targetVMFileLocation);
-         GZIPInputStream gzip = new GZIPInputStream(fis)) {
+        GZIPInputStream gzip = new GZIPInputStream(fis)) {
       StringWriter sWriter = new StringWriter();
       IOUtils.copy(gzip, sWriter, "UTF-8");
       String output = sWriter.toString();

@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +32,6 @@ import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -1752,7 +1752,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
             assertEquals(testTimestampLTZValues.get(j)[1], data2.toString());
 
             Object data3 = resultSet.getObject(3);
-            MatcherAssert.assertThat(data3, instanceOf(Timestamp.class));
+            assertThat(data3, instanceOf(Timestamp.class));
             assertEquals(
                 parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
                 ((Timestamp) data3).getTime() / 1000);

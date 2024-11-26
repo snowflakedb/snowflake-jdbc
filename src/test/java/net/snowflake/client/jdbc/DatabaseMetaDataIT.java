@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -30,7 +31,6 @@ import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +117,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         // nop
       }
     }
-    MatcherAssert.assertThat(cnt, greaterThanOrEqualTo(1));
+    assertThat(cnt, greaterThanOrEqualTo(1));
     try {
       assertTrue(resultSet.isAfterLast());
       fail("The result set is automatically closed when all rows are fetched.");
@@ -155,7 +155,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
     }
-    MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(1));
+    assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
     Set<String> schemasInDb = new HashSet<>();
     try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
@@ -166,9 +166,9 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
     }
-    MatcherAssert.assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
-    MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
-    schemasInDb.forEach(schemaInDb -> MatcherAssert.assertThat(schemas, hasItem(schemaInDb)));
+    assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
+    assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
+    schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
     assertTrue(schemas.contains(currentSchema));
     assertTrue(schemasInDb.contains(currentSchema));
 
@@ -184,7 +184,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         while (resultSet.next()) {
           schemas2.add(resultSet.getString(1));
         }
-        MatcherAssert.assertThat(schemas2.size(), equalTo(1));
+        assertThat(schemas2.size(), equalTo(1));
       }
     }
   }
