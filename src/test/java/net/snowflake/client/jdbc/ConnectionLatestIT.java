@@ -270,7 +270,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Disabled // TODO SNOW-1821563
   public void testAsyncQueryOpenAndCloseConnection()
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
