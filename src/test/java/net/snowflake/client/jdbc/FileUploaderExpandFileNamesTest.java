@@ -4,9 +4,9 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,23 +23,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
 public class FileUploaderExpandFileNamesTest {
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
-  @Rule public TemporaryFolder secondFolder = new TemporaryFolder();
+  @TempDir private File folder;
   private String localFSFileSep = systemGetProperty("file.separator");
 
   @Test
   public void testProcessFileNames() throws Exception {
-    folder.newFile("TestFileA");
-    folder.newFile("TestFileB");
+    new File(folder, "TestFileA").createNewFile();
+    new File(folder, "TestFileB").createNewFile();
 
-    String folderName = folder.getRoot().getCanonicalPath();
+    String folderName = folder.getCanonicalPath();
+    String originalUserDir = System.getProperty("user.dir");
+    String originalUserHome = System.getProperty("user.home");
     System.setProperty("user.dir", folderName);
     System.setProperty("user.home", folderName);
 
@@ -58,6 +57,17 @@ public class FileUploaderExpandFileNamesTest {
     assertTrue(files.contains(folderName + File.separator + "TestFileC"));
     assertTrue(files.contains(folderName + File.separator + "TestFileD"));
     assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
+
+    if (originalUserHome != null) {
+      System.setProperty("user.home", originalUserHome);
+    } else {
+      System.clearProperty("user.home");
+    }
+    if (originalUserDir != null) {
+      System.setProperty("user.dir", originalUserDir);
+    } else {
+      System.clearProperty("user.dir");
+    }
   }
 
   @Test
@@ -69,8 +79,8 @@ public class FileUploaderExpandFileNamesTest {
     try {
       SnowflakeFileTransferAgent.expandFileNames(locations, null);
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals(200007, err.getErrorCode());
-      Assert.assertEquals("22000", err.getSQLState());
+      assertEquals(200007, err.getErrorCode());
+      assertEquals("22000", err.getSQLState());
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
@@ -150,8 +160,8 @@ public class FileUploaderExpandFileNamesTest {
    */
   @Test
   public void testFileListingDoesNotFailOnMissingFilesOfAnotherPattern() throws Exception {
-    folder.newFolder("TestFiles");
-    String folderName = folder.getRoot().getCanonicalPath();
+    new File(folder, "TestFiles").mkdirs();
+    String folderName = folder.getCanonicalPath();
 
     int filePatterns = 10;
     int filesPerPattern = 100;
@@ -211,8 +221,8 @@ public class FileUploaderExpandFileNamesTest {
 
   @Test
   public void testFileListingDoesNotFailOnNotExistingDirectory() throws Exception {
-    folder.newFolder("TestFiles");
-    String folderName = folder.getRoot().getCanonicalPath();
+    new File(folder, "TestFiles").mkdirs();
+    String folderName = folder.getCanonicalPath();
     String[] locations = {
       folderName + localFSFileSep + "foo*",
     };

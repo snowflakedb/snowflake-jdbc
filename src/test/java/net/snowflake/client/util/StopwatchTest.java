@@ -7,18 +7,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class StopwatchTest {
   Stopwatch stopwatch = new Stopwatch();
 
-  @Before
+  @BeforeEach
   public void before() {
     stopwatch = new Stopwatch();
   }
@@ -36,7 +36,7 @@ public class StopwatchTest {
   @Test
   public void testGetMillisWithoutStopping() throws InterruptedException {
     stopwatch.start();
-    TimeUnit.MILLISECONDS.sleep(20);
+    TimeUnit.MILLISECONDS.sleep(100);
     assertThat(
         stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(500L)));
   }

@@ -7,12 +7,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Sets;
 import java.math.BigDecimal;
@@ -28,27 +28,21 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import java.util.TimeZone;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement2IT extends PreparedStatement0IT {
-  public PreparedStatement2IT() {
-    super("json");
-  }
-
-  PreparedStatement2IT(String queryFormat) {
-    super(queryFormat);
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testStageBatchDates() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testStageBatchDates(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       Date dEpoch = new Date(0);
       Date dAfterEpoch = new Date(24 * 60 * 60 * 1000);
@@ -111,9 +105,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
             for (int i = 0; i < dates.length; i++) {
               assertEquals(
-                  "Stage binding date should match non-stage binding date",
                   nonStageResult[i],
-                  stageResult[i]);
+                  stageResult[i],
+                  "Stage binding date should match non-stage binding date");
             }
           }
         }
@@ -123,9 +117,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testBindWithNullValue() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testBindWithNullValue(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace table testBindNull(cola date, colb time, colc timestamp, cold number)");
@@ -183,9 +178,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareDDL() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareDDL(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         try (PreparedStatement prepStatement =
@@ -203,9 +199,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareSCL() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareSCL(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("use SCHEMA  PUBLIC")) {
         prepStatement.execute();
       }
@@ -217,9 +214,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareTCL() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareTCL(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       connection.setAutoCommit(false);
       String[] testCases = {"BEGIN", "COMMIT"};
 
@@ -234,9 +232,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareShowCommand() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareShowCommand(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("show databases")) {
         try (ResultSet resultSet = prepStatement.executeQuery()) {
           assertTrue(resultSet.next());
@@ -253,14 +252,16 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * @throws SQLException Will be thrown if any of driver calls fail
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPrepareTimeout() throws SQLException, InterruptedException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testPrepareTimeout(String queryResultFormat)
+      throws SQLException, InterruptedException {
     try (Connection adminCon = getSnowflakeAdminConnection();
         Statement adminStatement = adminCon.createStatement()) {
       adminStatement.execute("alter system set enable_combined_describe=true");
       try {
-        try (Connection connection = init();
+        try (Connection connection = getConn(queryResultFormat);
             Statement statement = connection.createStatement()) {
           statement.execute("create or replace table t(c1 string) as select 1");
           statement.execute("alter session set jdbc_enable_combined_describe=true");
@@ -281,11 +282,12 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   /** Test case to make sure 2 non null bind refs was not constant folded into one */
-  @Test
-  public void testSnow36284() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSnow36284(String queryResultFormat) throws Exception {
     String query = "select * from (values ('a'), ('b')) x where x.COLUMN1 in (?,?);";
 
-    try (Connection connection = init();
+    try (Connection connection = getConn(queryResultFormat);
         PreparedStatement preparedStatement = connection.prepareStatement(query)) {
       preparedStatement.setString(1, "a");
       preparedStatement.setString(2, "b");
@@ -296,17 +298,18 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           rowcount++;
           valuesReturned.add(rs.getString(1));
         }
-        assertEquals("Should get back 2 rows", 2, rowcount);
-        assertEquals("", valuesReturned, Sets.newHashSet("a", "b"));
+        assertEquals(2, rowcount, "Should get back 2 rows");
+        assertEquals(valuesReturned, Sets.newHashSet("a", "b"), "");
       }
     }
   }
 
   /** Test for coalesce with bind and null arguments in a prepared statement */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSnow35923() throws Exception {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testSnow35923(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set " + "optimizer_eliminate_scans_for_constant_select=false");
@@ -325,14 +328,15 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * Tests binding of object literals, including binding with object names as well as binding with
    * object IDs
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testBindObjectLiteral() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testBindObjectLiteral(String queryResultFormat) throws Exception {
     long t1Id = 0;
     long t2Id = 0;
     String t1 = null;
 
-    try (Connection conn = init();
+    try (Connection conn = getConn(queryResultFormat);
         Statement stmt = conn.createStatement()) {
 
       String sqlText = "create or replace table identifier(?) (c1 number)";
@@ -480,9 +484,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testBindTimestampTZViaString() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testBindTimestampTZViaString(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute(
@@ -509,16 +514,23 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * Ensures binding a string type with TIMESTAMP_TZ works. The customer has to use the specific
    * timestamp format: YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testBindTimestampTZViaStringBatch() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testBindTimestampTZViaStringBatch(String queryResultFormat) throws SQLException {
+    TimeZone originalTimeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
         statement.execute(
             "create or replace table testbindtstz(cola timestamp_tz, colb timestamp_ntz)");
+        statement.execute(
+            "ALTER SESSION SET TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+        statement.execute(
+            "ALTER SESSION SET TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
 
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("insert into testbindtstz values(?,?)")) {
@@ -546,6 +558,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       } finally {
         statement.execute("drop table if exists testbindtstz");
       }
+    } finally {
+      TimeZone.setDefault(originalTimeZone);
     }
   }
 
@@ -555,9 +569,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    *
    * @throws Exception raises if any error occurs
    */
-  @Test
-  public void testSnow41620() throws Exception {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSnow41620(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       // Create a table and insert 3 records
       statement.execute("CREATE or REPLACE TABLE SNOW41620 (c1 varchar(20)," + "c2 int" + "  )");
@@ -592,9 +607,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testSnow50141() throws Exception {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSnow50141(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("select 1 where true=?")) {
         prepStatement.setObject(1, true);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
@@ -617,9 +633,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   private void checkResultSetEqual(ResultSet rs1, ResultSet rs2) throws SQLException {
     int columns = rs1.getMetaData().getColumnCount();
     assertEquals(
-        "Resultsets do not match in the number of columns returned",
         columns,
-        rs2.getMetaData().getColumnCount());
+        rs2.getMetaData().getColumnCount(),
+        "Resultsets do not match in the number of columns returned");
 
     while (rs1.next() && rs2.next()) {
       for (int columnIndex = 1; columnIndex <= columns; columnIndex++) {
@@ -627,19 +643,20 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         final Object res2 = rs2.getObject(columnIndex);
 
         assertEquals(
-            String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex),
             res1,
-            res2);
+            res2,
+            String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex));
       }
 
       assertEquals(
-          "Number of records returned by the results does not match", rs1.isLast(), rs2.isLast());
+          rs1.isLast(), rs2.isLast(), "Number of records returned by the results does not match");
     }
   }
 
-  @Test
-  public void testPreparedStatementWithSkipParsing() throws Exception {
-    try (Connection con = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPreparedStatementWithSkipParsing(String queryResultFormat) throws Exception {
+    try (Connection con = getConn(queryResultFormat)) {
       PreparedStatement stmt =
           con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select 1", true);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -649,9 +666,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPreparedStatementWithSkipParsingAndBinding() throws Exception {
-    try (Connection con = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPreparedStatementWithSkipParsingAndBinding(String queryResultFormat)
+      throws Exception {
+    try (Connection con = getConn(queryResultFormat);
         Statement statement = con.createStatement()) {
       statement.execute("create or replace table t(c1 int)");
       try {
@@ -679,9 +698,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * workaround is added. More specifically, ErrorCode returned for this statement is caught in
    * SnowflakePreparedStatementV1 so that execution can continue
    */
-  @Test
-  public void testSnow44393() throws Exception {
-    try (Connection con = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSnow44393(String queryResultFormat) throws Exception {
+    try (Connection con = getConn(queryResultFormat)) {
       assertFalse(
           con.createStatement()
               .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
@@ -697,10 +717,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testAddBatchNumericNullFloatMixed() throws Exception {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testAddBatchNumericNullFloatMixed(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat)) {
       for (int threshold = 0; threshold < 2; ++threshold) {
         connection
             .createStatement()
@@ -776,9 +797,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testInvalidUsageOfApi() throws Exception {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testInvalidUsageOfApi(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat);
         PreparedStatement preparedStatement = connection.prepareStatement("select 1")) {
       final int expectedCode =
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode();
@@ -815,7 +837,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   private void assertException(RunnableWithSQLException runnable, int expectedCode) {
     try {
       runnable.run();
-      Assert.fail();
+      fail();
     } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(expectedCode));
     }
@@ -825,9 +847,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     void run() throws SQLException;
   }
 
-  @Test
-  public void testCreatePreparedStatementWithParameters() throws Throwable {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testCreatePreparedStatementWithParameters(String queryResultFormat) throws Throwable {
+    try (Connection connection = getConn(queryResultFormat)) {
       connection.prepareStatement(
           "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       try {
@@ -855,9 +878,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareAndGetMeta() throws SQLException {
-    try (Connection con = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareAndGetMeta(String queryResultFormat) throws SQLException {
+    try (Connection con = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = con.prepareStatement("select 1 where 1 > ?")) {
         ResultSetMetaData meta = prepStatement.getMetaData();
         assertThat(meta.getColumnCount(), is(1));

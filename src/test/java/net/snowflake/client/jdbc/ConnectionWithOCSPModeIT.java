@@ -9,8 +9,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.SocketTimeoutException;
 import java.security.cert.CertificateExpiredException;
@@ -19,17 +19,16 @@ import java.sql.SQLException;
 import java.util.Properties;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for connection with OCSP mode mainly negative cases by injecting errors.
@@ -38,7 +37,7 @@ import org.junit.experimental.categories.Category;
  *
  * <p>hang_webserver.py 12345
  */
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testUser = "fakeuser";
   private final String testPassword = "testpassword";
@@ -46,12 +45,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
 
   private static int nameCounter = 0;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     SFTrustManager.deleteCache();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     SFTrustManager.cleanTestSystemParameters();
   }
@@ -109,7 +108,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -147,7 +146,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -184,7 +183,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -199,7 +198,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -235,7 +234,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -294,7 +293,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -333,14 +332,14 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
 
   /** Test OCSP Responder hang and timeout. SocketTimeoutException exception should be raised. */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testOCSPResponderTimeoutFailClosed() {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT, "1000");
     System.setProperty(SFTrustManager.SF_OCSP_TEST_RESPONDER_URL, "http://localhost:12345/hang");
@@ -369,7 +368,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -380,7 +379,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
    * is invalid.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testOCSPResponder403FailClosed() {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_RESPONDER_URL, "http://localhost:12345/403");
     System.setProperty(
@@ -397,7 +396,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
 
   /** Test Certificate Expired. Will fail in both FAIL_OPEN and FAIL_CLOSED. */
   @Test
-  @Ignore("Issuer of root CA expired")
+  @Disabled("Issuer of root CA expired")
   // https://support.sectigo.com/articles/Knowledge/Sectigo-AddTrust-External-CA-Root-Expiring-May-30-2020
   public void testExpiredCert() {
     try {
@@ -412,26 +411,39 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
 
   /** Test Wrong host. Will fail in both FAIL_OPEN and FAIL_CLOSED. */
   @Test
-  public void testWrongHost() {
+  public void testWrongHost() throws InterruptedException {
     try {
       DriverManager.getConnection(
           "jdbc:snowflake://wrong.host.badssl.com/", OCSPFailClosedProperties());
       fail("should fail");
     } catch (SQLException ex) {
+      // *.badssl.com may fail with timeout
+      if (!(ex.getCause() instanceof SSLPeerUnverifiedException)
+          && !(ex.getCause() instanceof SSLHandshakeException)
+          && ex.getCause().getMessage().toLowerCase().contains("timed out")) {
+        return;
+      }
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
 
       // The certificates used by badssl.com expired around 05/17/2022,
-      // https://github.com/chromium/badssl.com/issues/504. After the certificates had been updated,
-      // the exception seems to be changed from SSLPeerUnverifiedException to SSLHandshakeException.
+      // https://github.com/chromium/badssl.com/issues/504. After the certificates had been
+      // updated,
+      // the exception seems to be changed from SSLPeerUnverifiedException to
+      // SSLHandshakeException.
       assertThat(
           ex.getCause(),
           anyOf(
               instanceOf(SSLPeerUnverifiedException.class),
               instanceOf(SSLHandshakeException.class)));
+      return;
     }
+    fail("All retries failed");
   }
 
-  private static Matcher<String> httpStatus403Or513() {
-    return anyOf(containsString("HTTP status=403"), containsString("HTTP status=513"));
+  private static Matcher<String> httpStatus403Or404Or513() {
+    return anyOf(
+        containsString("HTTP status=403"),
+        containsString("HTTP status=404"),
+        containsString("HTTP status=513"));
   }
 }

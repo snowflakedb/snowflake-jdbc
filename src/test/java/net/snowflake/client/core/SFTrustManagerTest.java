@@ -11,10 +11,24 @@ import java.util.Base64;
 import java.util.Properties;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class SFTrustManagerTest {
   /** Test building OCSP retry URL */
+  static String originalRetryUrlPattern;
+
+  @BeforeAll
+  public static void saveStaticValues() {
+    originalRetryUrlPattern = SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
+  }
+
+  @AfterAll
+  public static void restoreStaticValues() {
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = originalRetryUrlPattern;
+  }
+
   @Test
   public void testBuildRetryURL() throws Exception {
     // private link

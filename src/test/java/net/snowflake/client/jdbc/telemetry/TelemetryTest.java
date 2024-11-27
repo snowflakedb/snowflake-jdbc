@@ -3,13 +3,13 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.LinkedList;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Telemetry unit tests */
 public class TelemetryTest {

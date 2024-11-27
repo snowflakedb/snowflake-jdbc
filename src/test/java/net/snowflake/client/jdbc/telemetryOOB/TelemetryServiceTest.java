@@ -6,21 +6,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TelemetryServiceTest {
   private boolean defaultState;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
     defaultState = service.isEnabled();
     service.enable();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws InterruptedException {
     TelemetryService service = TelemetryService.getInstance();
     if (defaultState) {

@@ -9,13 +9,13 @@ import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDa
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -30,15 +30,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -46,8 +46,8 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
-public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
+@Tag(TestTags.OTHERS)
+public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"
           + "    returns varchar\n"
@@ -80,10 +80,30 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String ENABLE_PATTERN_SEARCH =
       SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey();
 
+  private static final String startingSchema;
+  private static final String startingDatabase;
+
+  static {
+    try {
+      startingSchema = connection.getSchema();
+      startingDatabase = connection.getCatalog();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /** Create catalog and schema for tests with double quotes */
   public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
     statement.execute("create or replace database \"dbwith\"\"quotes\"");
     statement.execute("create or replace schema \"dbwith\"\"quotes\".\"schemawith\"\"quotes\"");
+  }
+
+  @BeforeEach
+  public void setUp() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
+      stmt.execute("USE DATABASE " + startingDatabase);
+      stmt.execute("USE SCHEMA " + startingSchema);
+    }
   }
 
   /**
@@ -199,9 +219,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testDoubleQuotedDatabaseAndSchema() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
       // To query the schema and table, we can use a normal java escaped quote. Wildcards are also
       // escaped here
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
@@ -226,7 +245,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             statement.execute(
                 "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number,"
                     + " \"COL_\"\"QUOTED\"\"\" string)");
-            DatabaseMetaData metaData = con.getMetaData();
+            DatabaseMetaData metaData = connection.getMetaData();
             try (ResultSet rs = metaData.getTables(database, querySchema, queryTable, null)) {
               // Assert 1 row returned for the testtable_"with_quotes"
               assertEquals(1, getSizeOfResultSet(rs));
@@ -252,15 +271,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests the ability to have quotes inside a database or schema within getSchemas() function.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database with double quotes inside the database name
       statement.execute("create or replace database \"\"\"quoteddb\"\"\"");
       // Create a database, lowercase, with no double quotes inside the database name
       statement.execute("create or replace database \"unquoteddb\"");
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
       try (ResultSet rs = metaData.getSchemas("\"quoteddb\"", null)) {
         assertEquals(2, getSizeOfResultSet(rs));
@@ -281,16 +299,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with two columns
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet rs = metaData.getTables("dbwith\"quotes", "schemawith\"quotes", null, null)) {
         assertEquals(1, getSizeOfResultSet(rs));
       }
@@ -298,16 +315,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with two columns
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\"  (col1 string, col2 string)");
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet rs = metaData.getColumns("dbwith\"quotes", "schemawith\"quotes", null, null)) {
         assertEquals(2, getSizeOfResultSet(rs));
       }
@@ -315,10 +331,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with a primary key constraint
@@ -328,7 +343,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // key constraint
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null)) {
         // Assert 2 rows are returned for primary key constraint for table and schema with quotes
         assertEquals(2, getSizeOfResultSet(rs));
@@ -345,7 +360,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * getPrimaryKeys and getImportedKeys functions by setting enablePatternSearch = false.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeysWithPatternSearchDisabled()
       throws SQLException {
     Properties properties = new Properties();
@@ -374,17 +389,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a procedure
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       statement.execute(
           "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC")) {
         assertEquals(1, getSizeOfResultSet(rs));
       }
@@ -392,16 +406,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table under the current user and role
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
-      DatabaseMetaData metaData = con.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet rs = metaData.getTablePrivileges("dbwith\"quotes", null, "%")) {
         assertEquals(1, getSizeOfResultSet(rs));
       }
@@ -455,9 +468,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testGetProcedureColumnsWildcards() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
       String schemaPrefix =
           TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
       String schema1 = schemaPrefix + "SCH1";
@@ -473,7 +485,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                 () -> {
                   statement.execute(TEST_PROC);
                   // Create 2 schemas, each with the same stored procedure declared in them
-                  DatabaseMetaData metaData = con.getMetaData();
+                  DatabaseMetaData metaData = connection.getMetaData();
                   try (ResultSet rs =
                       metaData.getProcedureColumns(
                           database, schemaPrefix + "SCH_", "TESTPROC", "PARAM1")) {
@@ -489,17 +501,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetFunctions() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metadata = connection.getMetaData();
-      String supportedStringFuncs = metadata.getStringFunctions();
-      assertEquals(StringFunctionsSupported, supportedStringFuncs);
+    DatabaseMetaData metadata = connection.getMetaData();
+    String supportedStringFuncs = metadata.getStringFunctions();
+    assertEquals(StringFunctionsSupported, supportedStringFuncs);
 
-      String supportedNumberFuncs = metadata.getNumericFunctions();
-      assertEquals(NumericFunctionsSupported, supportedNumberFuncs);
+    String supportedNumberFuncs = metadata.getNumericFunctions();
+    assertEquals(NumericFunctionsSupported, supportedNumberFuncs);
 
-      String supportedSystemFuncs = metadata.getSystemFunctions();
-      assertEquals(SystemFunctionsSupported, supportedSystemFuncs);
-    }
+    String supportedSystemFuncs = metadata.getSystemFunctions();
+    assertEquals(SystemFunctionsSupported, supportedSystemFuncs);
   }
 
   @Test
@@ -553,10 +563,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetColumnsNullable() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
+      String schema = startingSchema;
       final String targetTable = "T0";
 
       statement.execute(
@@ -579,7 +588,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSessionDatabaseParameter() throws Throwable {
     String altdb = "ALTERNATEDB";
     String altschema1 = "ALTERNATESCHEMA1";
@@ -746,12 +755,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * returns 1 row per return value and 1 row per input parameter.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctionColumns() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
+      String schema = startingSchema;
 
       /* Create a table and put values into it */
       statement.execute(
@@ -1010,8 +1018,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testHandlingSpecialChars() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       DatabaseMetaData metaData = connection.getMetaData();
@@ -1120,9 +1127,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
       TestUtil.withRandomSchema(
           statement,
           customSchema -> {
@@ -1132,7 +1138,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                 "create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
             statement.execute(
                 "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
-            DatabaseMetaData metaData = con.getMetaData();
+            DatabaseMetaData metaData = connection.getMetaData();
             try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
               assertEquals(1, getSizeOfResultSet(rs));
             }
@@ -1215,8 +1221,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetColumns() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
@@ -1610,18 +1615,17 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   public void testGetStreams() throws SQLException {
     final String targetStream = "S0";
     final String targetTable = "T0";
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
-      String owner = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      String owner = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
       String tableName = database + "." + schema + "." + targetTable;
 
       try {
         statement.execute("create or replace table " + targetTable + "(C1 int)");
         statement.execute("create or replace stream " + targetStream + " on table " + targetTable);
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         // match stream
         try (ResultSet resultSet =
@@ -1662,23 +1666,20 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests that an empty resultset will be returned for getProcedures when using a reader account.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testGetProceduresWithReaderAccount() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metadata = connection.getMetaData();
-      try (ResultSet rs = metadata.getProcedures(null, null, null)) {
-        assertEquals(0, getSizeOfResultSet(rs));
-      }
+    DatabaseMetaData metadata = connection.getMetaData();
+    try (ResultSet rs = metadata.getProcedures(null, null, null)) {
+      assertEquals(0, getSizeOfResultSet(rs));
     }
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetProcedureColumns() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = startingDatabase;
+      String schema = startingSchema;
       try {
         statement.execute(PI_PROCEDURE);
         DatabaseMetaData metaData = connection.getMetaData();
@@ -1724,8 +1725,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table testtable (id int, name varchar(20), address varchar(20));");
@@ -1739,9 +1739,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                 + "  begin\n"
                 + "    return table(res);\n"
                 + "  end';");
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
         try (ResultSet res =
-            metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%")) {
+            metaData.getProcedureColumns(connection.getCatalog(), null, "PROCTEST", "%")) {
           res.next();
           assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
           assertEquals("id", res.getString("COLUMN_NAME"));
@@ -1772,12 +1772,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetProcedureColumnsReturnsValue() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement(); ) {
-      DatabaseMetaData metaData = con.getMetaData();
+    try (Statement statement = connection.createStatement(); ) {
+      DatabaseMetaData metaData = connection.getMetaData();
       // create a procedure with no parameters that has a return value
       statement.execute(PI_PROCEDURE);
-      try (ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "GETPI", "%")) {
+      try (ResultSet res =
+          metaData.getProcedureColumns(connection.getCatalog(), null, "GETPI", "%")) {
         res.next();
         assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
         assertEquals("", res.getString("COLUMN_NAME"));
@@ -1790,7 +1790,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // create a procedure that returns the value of the argument that is passed in
       statement.execute(MESSAGE_PROCEDURE);
       try (ResultSet res =
-          metaData.getProcedureColumns(con.getCatalog(), null, "MESSAGE_PROC", "%")) {
+          metaData.getProcedureColumns(connection.getCatalog(), null, "MESSAGE_PROC", "%")) {
         res.next();
         assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
         assertEquals("", res.getString("COLUMN_NAME"));
@@ -1813,9 +1813,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetProcedureColumnsReturnsNull() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement(); ) {
-      DatabaseMetaData metaData = con.getMetaData();
+    try (Statement statement = connection.createStatement(); ) {
+      DatabaseMetaData metaData = connection.getMetaData();
       // The CREATE PROCEDURE statement must include a RETURNS clause that defines a return type,
       // even
       // if the procedure does not explicitly return anything.
@@ -1830,7 +1829,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
               + "snowflake.execute({sqlText: sqlcommand}); \n"
               + "';");
       try (ResultSet res =
-          metaData.getProcedureColumns(con.getCatalog(), null, "INSERTPROC", "%")) {
+          metaData.getProcedureColumns(connection.getCatalog(), null, "INSERTPROC", "%")) {
         res.next();
         // the procedure will return null as the value but column type will be varchar.
         assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
@@ -1847,10 +1846,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testUpdateLocatorsCopyUnsupported() throws SQLException {
-    try (Connection con = getConnection()) {
-      DatabaseMetaData metaData = con.getMetaData();
-      assertFalse(metaData.locatorsUpdateCopy());
-    }
+    DatabaseMetaData metaData = connection.getMetaData();
+    assertFalse(metaData.locatorsUpdateCopy());
   }
 
   /**
@@ -2106,8 +2103,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     final String table1 = "PATTERN_SEARCH_TABLE1";
     final String table2 = "PATTERN_SEARCH_TABLE2";
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
       String schemaName =
           "\""
@@ -2327,28 +2323,23 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testGetJDBCVersion() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metaData = connection.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
 
-      // JDBC x.x compatible
-      assertEquals(4, metaData.getJDBCMajorVersion());
-      assertEquals(2, metaData.getJDBCMinorVersion());
-    }
+    // JDBC x.x compatible
+    assertEquals(4, metaData.getJDBCMajorVersion());
+    assertEquals(2, metaData.getJDBCMinorVersion());
   }
 
   /** Added in > 3.15.1 */
   @Test
   public void testKeywordsCount() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals(43, metaData.getSQLKeywords().split(",").length);
-    }
+    DatabaseMetaData metaData = connection.getMetaData();
+    assertEquals(43, metaData.getSQLKeywords().split(",").length);
   }
   /** Added in > 3.16.1 */
   @Test
   public void testVectorDimension() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace table JDBC_VECTOR(text_col varchar(32), float_vec VECTOR(FLOAT, 256), int_vec VECTOR(INT, 16))");
       DatabaseMetaData metaData = connection.getMetaData();

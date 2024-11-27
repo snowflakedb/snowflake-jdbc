@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-test</artifactId>
-  <version>3.9.2</version>
+  <version>3.13.21</version>
 
   <name>snowflake-jdbc-test</name>
   <url>http://maven.apache.org</url>
@@ -18,33 +18,82 @@
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <jna.version>5.13.0</jna.version>
+    <junit.version>5.11.1</junit.version>
+    <surefire.version>3.5.1</surefire.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
   </properties>
 
   <dependencies>
     <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
-      <version>4.1.111.Final</version>
+      <version>4.1.115.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
-      <version>4.1.111.Final</version>
+      <version>4.1.115.Final</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-failsafe-plugin</artifactId>
       <version>3.0.0-M1</version>
+
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <type>jar</type>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-engine</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-runner</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite-api</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite-engine</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>1.11.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -371,7 +420,26 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${surefire.version}</version>
+          </dependency>
+        </dependencies>
+        <version>${surefire.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${surefire.version}</version>
+          </dependency>
+        </dependencies>
+        <version>${surefire.version}</version>
       </plugin>
     </plugins>
   </build>
@@ -387,34 +455,39 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
+            <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-                <groups>${testCategory}</groups>
+              <failIfNoTests>false</failIfNoTests>
             </configuration>
             <executions>
+              <execution>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
               <execution>
                 <id>DefaultIT</id>
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <excludes>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                  </excludes>
                   <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>
-                      net.snowflake.client.log.JDK14Logger
-                    </net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>
-                      ${basedir}/../src/test/resources/logging.properties
-                    </java.util.logging.config.file>
+                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
+                  <test>${integrationTestSuites}</test>
                 </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>

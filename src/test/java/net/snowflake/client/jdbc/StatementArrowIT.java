@@ -1,9 +1,9 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryArrow;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 
-@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class StatementArrowIT extends StatementIT {
   public StatementArrowIT() {
     super();

@@ -3,11 +3,11 @@
  */
 package net.snowflake.client.jdbc.structuredtypes;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -24,10 +24,10 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
-import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
@@ -38,34 +38,17 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.NestedStructSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.StringClass;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import net.snowflake.client.providers.ResultFormatProvider;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
-@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
-
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data() {
-    return new Object[][] {
-      {ResultSetFormatType.JSON},
-      {ResultSetFormatType.ARROW_WITH_JSON_STRUCTURED_TYPES},
-      {ResultSetFormatType.NATIVE_ARROW}
-    };
-  }
-
-  private final ResultSetFormatType queryResultFormat;
-
-  public ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
-  }
-
-  @Before
+  @BeforeEach
   public void setup() {
     SnowflakeObjectTypeFactories.register(StringClass.class, StringClass::new);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
@@ -73,7 +56,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     SnowflakeObjectTypeFactories.register(NullableFieldsSqlData.class, NullableFieldsSqlData::new);
   }
 
-  @After
+  @AfterEach
   public void clean() {
     SnowflakeObjectTypeFactories.unregister(StringClass.class);
     SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
@@ -81,7 +64,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     SnowflakeObjectTypeFactories.unregister(NullableFieldsSqlData.class);
   }
 
-  public Connection init() throws SQLException {
+  public Connection init(ResultSetFormatType format) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
@@ -89,9 +72,9 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
       stmt.execute(
           "alter session set jdbc_query_result_format = '"
-              + queryResultFormat.sessionParameterTypeValue
+              + format.sessionParameterTypeValue
               + "'");
-      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
+      if (format == ResultSetFormatType.NATIVE_ARROW) {
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
         stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
       }
@@ -99,20 +82,23 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     return conn;
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapStructToObjectWithFactory() throws SQLException {
-    testMapJson(true);
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapStructToObjectWithFactory(ResultSetFormatType format) throws SQLException {
+    testMapJson(true, format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapStructToObjectWithReflection() throws SQLException {
-    testMapJson(false);
-    testMapJson(true);
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapStructToObjectWithReflection(ResultSetFormatType format) throws SQLException {
+    testMapJson(false, format);
+    testMapJson(true, format);
   }
 
-  private void testMapJson(boolean registerFactory) throws SQLException {
+  private void testMapJson(boolean registerFactory, ResultSetFormatType format)
+      throws SQLException {
     if (registerFactory) {
       SnowflakeObjectTypeFactories.register(StringClass.class, StringClass::new);
     } else {
@@ -123,64 +109,32 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           StringClass object = resultSet.getObject(1, StringClass.class);
           assertEquals("a", object.getString());
-        });
+        },
+        format);
     SnowflakeObjectTypeFactories.register(StringClass.class, StringClass::new);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapNullStruct() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapNullStruct(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select null::OBJECT(string VARCHAR)",
         (resultSet) -> {
           StringClass object = resultSet.getObject(1, StringClass.class);
           assertNull(object);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapStructAllTypes() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapStructAllTypes(ResultSetFormatType format) throws SQLException {
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      try (ResultSet resultSet =
-          statement.executeQuery(
-              "select {"
-                  + "'string': 'a', "
-                  + "'b': 1, "
-                  + "'s': 2, "
-                  + "'i': 3, "
-                  + "'l': 4, "
-                  + "'f': 1.1, "
-                  + "'d': 2.2, "
-                  + "'bd': 3.3, "
-                  + "'bool': true, "
-                  + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
-                  + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
-                  + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
-                  + "'date': '2023-12-24'::DATE, "
-                  + "'time': '12:34:56'::TIME, "
-                  + "'binary': TO_BINARY('616263', 'HEX'), "
-                  + "'simpleClass': {'string': 'b', 'intValue': 2}"
-                  + "}::OBJECT("
-                  + "string VARCHAR, "
-                  + "b TINYINT, "
-                  + "s SMALLINT, "
-                  + "i INTEGER, "
-                  + "l BIGINT, "
-                  + "f FLOAT, "
-                  + "d DOUBLE, "
-                  + "bd DOUBLE, "
-                  + "bool BOOLEAN, "
-                  + "timestamp_ltz TIMESTAMP_LTZ, "
-                  + "timestamp_ntz TIMESTAMP_NTZ, "
-                  + "timestamp_tz TIMESTAMP_TZ, "
-                  + "date DATE, "
-                  + "time TIME, "
-                  + "binary BINARY, "
-                  + "simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
-                  + ")"); ) {
+      try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
         assertEquals("a", object.getString());
@@ -213,15 +167,25 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         assertTrue(object.getBool());
         assertEquals("b", object.getSimpleClass().getString());
         assertEquals(Integer.valueOf(2), object.getSimpleClass().getIntValue());
+
+        if (format == ResultSetFormatType.NATIVE_ARROW) {
+          // Only verify getString for Arrow since JSON representations have difficulties with
+          // floating point toString conversion (3.300000000000000e+00 vs 3.3 in native arrow)
+          String expectedArrowGetStringResult =
+              "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,\"bool\": true,\"timestamp_ltz\": \"Wed, 22 Dec 2021 09:43:44 +0100\",\"timestamp_ntz\": \"Thu, 23 Dec 2021 09:44:44 Z\",\"timestamp_tz\": \"Fri, 24 Dec 2021 09:45:45 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\",\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
+          assertEquals(expectedArrowGetStringResult, resultSet.getString(1));
+        }
       }
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnStructAsStringIfTypeWasNotIndicated() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnStructAsStringIfTypeWasNotIndicated(ResultSetFormatType format)
+      throws SQLException {
+    Assumptions.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
@@ -234,43 +198,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3'");
 
-      try (ResultSet resultSet =
-          statement.executeQuery(
-              "select {"
-                  + "'string': 'a', "
-                  + "'b': 1, "
-                  + "'s': 2, "
-                  + "'i': 3, "
-                  + "'l': 4, "
-                  + "'f': 1.1, "
-                  + "'d': 2.2, "
-                  + "'bd': 3.3, "
-                  + "'bool': true, "
-                  + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
-                  + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
-                  + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
-                  + "'date': '2023-12-24'::DATE, "
-                  + "'time': '12:34:56'::TIME, "
-                  + "'binary': TO_BINARY('616263', 'HEX'), "
-                  + "'simpleClass': {'string': 'b', 'intValue': 2}"
-                  + "}::OBJECT("
-                  + "string VARCHAR, "
-                  + "b TINYINT, "
-                  + "s SMALLINT, "
-                  + "i INTEGER, "
-                  + "l BIGINT, "
-                  + "f FLOAT, "
-                  + "d DOUBLE, "
-                  + "bd DOUBLE, "
-                  + "bool BOOLEAN, "
-                  + "timestamp_ltz TIMESTAMP_LTZ, "
-                  + "timestamp_ntz TIMESTAMP_NTZ, "
-                  + "timestamp_tz TIMESTAMP_TZ, "
-                  + "date DATE, "
-                  + "time TIME, "
-                  + "binary BINARY, "
-                  + "simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
-                  + ")"); ) {
+      try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         String object = (String) resultSet.getObject(1);
         String expected =
@@ -300,26 +228,30 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow()
-      throws SQLException {
-    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow(
+      ResultSetFormatType format) throws SQLException {
+    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR)",
         (resultSet) -> {
           assertThrows(SQLException.class, () -> resultSet.getObject(1));
-        });
+        },
+        format);
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
           assertThrows(SQLException.class, () -> resultSet.getObject(1, Map.class));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsArrayOfSqlData() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsArrayOfSqlData(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'string':'one'}, {'string':'two'}, {'string':'three'})::ARRAY(OBJECT(string VARCHAR))",
         (resultSet) -> {
@@ -328,12 +260,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", resultArray[0].getString());
           assertEquals("two", resultArray[1].getString());
           assertEquals("three", resultArray[2].getString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsArrayOfNullableFieldsInSqlData() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsArrayOfNullableFieldsInSqlData(ResultSetFormatType format)
+      throws SQLException {
     withFirstRow(
         "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, "
             + "'date', null, 'bd', null, 'bytes', null, 'longValue', null)"
@@ -350,13 +285,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertNull(result.getBd());
           assertNull(result.getBytes());
           assertEquals(Long.valueOf(0), result.getLongValue());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullsForAllTpesInSqlData() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnNullsForAllTpesInSqlData(ResultSetFormatType format) throws SQLException {
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
       try (ResultSet resultSet =
@@ -387,9 +324,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsArrayOfString() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsArrayOfString(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -398,13 +336,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", resultArray[0]);
           assertEquals("two", resultArray[1]);
           assertEquals("three", resultArray[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsArrayOfNullableString() throws SQLException {
-    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsArrayOfNullableString(ResultSetFormatType format) throws SQLException {
+    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two', null)::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -413,24 +353,28 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", resultArray[0]);
           assertEquals("two", resultArray[1]);
           assertNull(resultArray[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullAsArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnNullAsArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT null::ARRAY(VARCHAR)",
         (resultSet) -> {
           String[] resultArray =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class);
           assertNull(resultArray);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsListOfIntegers() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsListOfIntegers(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1,2,3)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -439,12 +383,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Integer.valueOf(1), resultList.get(0));
           assertEquals(Integer.valueOf(2), resultList.get(1));
           assertEquals(Integer.valueOf(3), resultList.get(2));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsListOfFloat() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsListOfFloat(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
         (resultSet) -> {
@@ -453,12 +399,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Float.valueOf(1.1f), resultList[0]);
           assertEquals(Float.valueOf(2.2f), resultList[1]);
           assertEquals(Float.valueOf(3.3f), resultList[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsListOfDouble() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsListOfDouble(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(DOUBLE)",
         (resultSet) -> {
@@ -467,12 +415,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Double.valueOf(1.1), resultList.get(0));
           assertEquals(Double.valueOf(2.2), resultList.get(1));
           assertEquals(Double.valueOf(3.3), resultList.get(2));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMap() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
@@ -481,13 +431,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").getString());
           assertEquals("two", map.get("y").getString());
           assertEquals("three", map.get("z").getString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapByGetObject() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapByGetObject(ResultSetFormatType format) throws SQLException {
+    Assumptions.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
@@ -495,12 +447,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").get("string"));
           assertEquals("two", map.get("y").get("string"));
           assertEquals("three", map.get("z").get("string"));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapWithNullableValues() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapWithNullableValues(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select {'x':{'string':'one'},'y':null,'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
@@ -509,36 +463,42 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").getString());
           assertNull(map.get("y"));
           assertEquals("three", map.get("z").getString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullAsObjectOfTypeMap() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnNullAsObjectOfTypeMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
           Map<String, Object> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, Map.class);
           assertNull(map);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullAsMap() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnNullAsMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
           Map<String, StringClass> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, StringClass.class);
           assertNull(map);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfTimestampsNtz() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfTimestampsNtz(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
         (resultSet) -> {
@@ -554,12 +514,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .atZone(ZoneId.of("Europe/Warsaw"))
                   .toInstant(),
               map.get("y").toInstant());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfTimestampsLtz() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfTimestampsLtz(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x': TO_TIMESTAMP_LTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_LTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP_LTZ)",
         (resultSet) -> {
@@ -575,12 +537,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .atZone(ZoneId.of("Europe/Warsaw"))
                   .toInstant(),
               map.get("y").toInstant());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfLong() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfLong(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x':1, 'y':2, 'z':3}::MAP(VARCHAR, BIGINT)",
         (resultSet) -> {
@@ -589,12 +553,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf(1), map.get("x"));
           assertEquals(Long.valueOf(2), map.get("y"));
           assertEquals(Long.valueOf(3), map.get("z"));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfDate() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfDate(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x':'2023-12-24', 'y':'2023-12-25'}::MAP(VARCHAR, DATE)",
         (resultSet) -> {
@@ -604,12 +570,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), map.get("x").toString());
           assertEquals(
               Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), map.get("y").toString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfTime() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfTime(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x':'12:34:56', 'y':'12:34:58'}::MAP(VARCHAR, TIME)",
         (resultSet) -> {
@@ -617,12 +585,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Time.class);
           assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), map.get("x"));
           assertEquals(Time.valueOf(LocalTime.of(12, 34, 58)), map.get("y"));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapOfBoolean() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsMapOfBoolean(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT {'x':'true', 'y':0}::MAP(VARCHAR, BOOLEAN)",
         (resultSet) -> {
@@ -630,12 +600,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Boolean.class);
           assertEquals(Boolean.TRUE, map.get("x"));
           assertEquals(Boolean.FALSE, map.get("y"));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsList() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testReturnAsList(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select [{'string':'one'},{'string': 'two'}]::ARRAY(OBJECT(string varchar))",
         (resultSet) -> {
@@ -643,12 +615,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, StringClass.class);
           assertEquals("one", map.get(0).getString());
           assertEquals("two", map.get(1).getString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapStructsFromChunks() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapStructsFromChunks(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))",
         (resultSet) -> {
@@ -656,12 +630,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
             StringClass object = resultSet.getObject(1, StringClass.class);
             assertEquals("a", object.getString());
           }
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapIntegerArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapIntegerArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -669,12 +645,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf(10), resultArray[0]);
           assertEquals(Long.valueOf(20), resultArray[1]);
           assertEquals(Long.valueOf(30), resultArray[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapFixedToLongArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapFixedToLongArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(SMALLINT)",
         (resultSet) -> {
@@ -682,14 +660,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf("10"), resultArray[0]);
           assertEquals(Long.valueOf("20"), resultArray[1]);
           assertEquals(Long.valueOf("30"), resultArray[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapDecimalArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapDecimalArray(ResultSetFormatType format) throws SQLException {
     //    when: jdbc_treat_decimal_as_int=true scale=0
-    try (Connection connection = init();
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement();
         ResultSet resultSet =
             statement.executeQuery(
@@ -702,7 +682,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
 
     //    when: jdbc_treat_decimal_as_int=true scale=2
-    try (Connection connection = init();
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement();
         ResultSet resultSet =
             statement.executeQuery(
@@ -715,7 +695,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
 
     //    when: jdbc_treat_decimal_as_int=false scale=0
-    try (Connection connection = init();
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement(); ) {
       statement.execute("alter session set jdbc_treat_decimal_as_int = false");
       try (ResultSet resultSet =
@@ -729,9 +709,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapVarcharArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapVarcharArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT 'text', ARRAY_CONSTRUCT('10', '20','30')::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -740,12 +721,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("10", resultArray[0]);
           assertEquals("20", resultArray[1]);
           assertEquals("30", resultArray[2]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapDatesArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapDatesArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
         (resultSet) -> {
@@ -754,12 +737,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
           assertEquals(
               Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapTimeArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapTimeArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('09:12:20.123'))::ARRAY(TIME)",
         (resultSet) -> {
@@ -767,12 +752,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(
               Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
           assertEquals(Time.valueOf(LocalTime.of(9, 12, 20)).toString(), resultArray[1].toString());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapTimestampArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapTimestampArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
@@ -787,36 +774,42 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .atZone(ZoneId.of("Europe/Warsaw"))
                   .toInstant(),
               resultArray[1].toInstant());
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapBooleanArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapBooleanArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(true,false)::ARRAY(BOOLEAN)",
         (resultSet) -> {
           Boolean[] resultArray = (Boolean[]) resultSet.getArray(1).getArray();
           assertEquals(true, resultArray[0]);
           assertEquals(false, resultArray[1]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapBinaryArray() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapBinaryArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_BINARY('616263', 'HEX'),TO_BINARY('616263', 'HEX'))::ARRAY(BINARY)",
         (resultSet) -> {
           Byte[][] resultArray = (Byte[][]) resultSet.getArray(1).getArray();
           assertArrayEquals(new Byte[] {'a', 'b', 'c'}, resultArray[0]);
           assertArrayEquals(new Byte[] {'a', 'b', 'c'}, resultArray[1]);
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapArrayOfStructToMap() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapArrayOfStructToMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2} )::ARRAY(OBJECT(x VARCHAR, y INTEGER))",
         (resultSet) -> {
@@ -827,12 +820,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(firstEntry.get("y").toString(), "1");
           assertEquals(secondEntry.get("x").toString(), "def");
           assertEquals(secondEntry.get("y").toString(), "2");
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapArrayOfArrays() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapArrayOfArrays(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y INTEGER)))",
         (resultSet) -> {
@@ -843,13 +838,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(firstEntry.get("y").toString(), "1");
           assertEquals(secondEntry.get("x").toString(), "def");
           assertEquals(secondEntry.get("y").toString(), "2");
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapNestedStructures() throws SQLException {
-    withFirstRow(
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapNestedStructures(ResultSetFormatType format) throws SQLException {
+    String structSelectStatement =
         "SELECT {'simpleClass': {'string': 'a', 'intValue': 2}, "
             + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
             + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
@@ -863,7 +860,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
             + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)),"
             + "texts ARRAY(VARCHAR),"
             + "arrayOfDates ARRAY(DATE),"
-            + "mapOfIntegers MAP(VARCHAR, INTEGER))",
+            + "mapOfIntegers MAP(VARCHAR, INTEGER))";
+    String expectedQueryResult =
+        "{\"simpleClass\": {\"string\": \"a\",\"intValue\": 2},\"simpleClasses\": [{\"string\": \"a\",\"intValue\": 2},{\"string\": \"b\",\"intValue\": 2}],\"arrayOfSimpleClasses\": [{\"string\": \"a\",\"intValue\": 2},{\"string\": \"b\",\"intValue\": 2}],\"mapOfSimpleClasses\": {\"x\": {\"string\": \"c\",\"intValue\": 2},\"y\": {\"string\": \"d\",\"intValue\": 2}},\"texts\": [\"string\",\"a\"],\"arrayOfDates\": [\"2023-12-24\",\"2023-12-25\"],\"mapOfIntegers\": {\"x\": 3,\"y\": 4}}";
+    withFirstRow(
+        structSelectStatement,
         (resultSet) -> {
           NestedStructSqlData nestedStructSqlData =
               resultSet.getObject(1, NestedStructSqlData.class);
@@ -908,22 +909,29 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
           assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
           assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
-        });
+          TestUtil.assertEqualsIgnoringWhitespace(expectedQueryResult, resultSet.getString(1));
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testColumnTypeWhenStructureTypeIsDisabled(ResultSetFormatType format)
+      throws Exception {
     withFirstRow(
         "SELECT {'string':'a'}",
         resultSet -> {
           assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
-        });
+        },
+        format);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned(ResultSetFormatType format)
+      throws Exception {
     withFirstRow(
         "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
         resultSet -> {
@@ -951,12 +959,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .getColumnFields(1)
                   .get(0)
                   .getName());
-        });
+        },
+        format);
   }
 
-  private void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)
+  private void withFirstRow(
+      String sqlText,
+      ThrowingConsumer<ResultSet, SQLException> consumer,
+      ResultSetFormatType format)
       throws SQLException {
-    try (Connection connection = init();
+    try (Connection connection = init(format);
         Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery(sqlText); ) {
       assertTrue(rs.next());

@@ -29,6 +29,11 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   private IntVector timeZoneIndices;
   private TimeZone timeZone = TimeZone.getTimeZone("UTC");
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public ThreeFieldStructToTimestampTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);

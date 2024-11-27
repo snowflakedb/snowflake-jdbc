@@ -27,6 +27,11 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   private static final TimeZone NTZ = TimeZone.getTimeZone("UTC");
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public TwoFieldStructToTimestampNTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_NTZ.name(), fieldVector, columnIndex, context);

@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,15 +19,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Stream API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -35,10 +33,10 @@ import org.junit.rules.TemporaryFolder;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class StreamLatestIT extends BaseJDBCTest {
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /**
    * Test Upload Stream with atypical stage names
@@ -72,7 +70,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
         statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
 
@@ -92,7 +90,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
@@ -101,7 +99,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();
@@ -118,8 +116,8 @@ public class StreamLatestIT extends BaseJDBCTest {
       } catch (Exception ex) {
         assertTrue(ex instanceof SQLException);
         assertTrue(
-            "Wrong exception message: " + ex.getMessage(),
-            ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+            ex.getMessage().contains("File not found"),
+            "Wrong exception message: " + ex.getMessage());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -127,7 +125,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
     final String DEST_PREFIX = "testUploadStream";
 
@@ -141,7 +139,7 @@ public class StreamLatestIT extends BaseJDBCTest {
                   + " @testgcpstage/"
                   + DEST_PREFIX)) {
         assertTrue(rset.next());
-        assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
+        assertEquals("UPLOADED", rset.getString(7), "Error message:" + rset.getString(8));
 
         InputStream out =
             connection
@@ -162,7 +160,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamGCS() throws SQLException, IOException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();
@@ -202,7 +200,8 @@ public class StreamLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       try {
         // Create a temporary file with special characters in the name and write to it
-        File specialCharFile = tmpFolder.newFile("(special char@).txt");
+        File specialCharFile = new File(tmpFolder, "(special char@).txt");
+        specialCharFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(specialCharFile))) {
           bw.write("Creating test file for downloadStream test");
         }

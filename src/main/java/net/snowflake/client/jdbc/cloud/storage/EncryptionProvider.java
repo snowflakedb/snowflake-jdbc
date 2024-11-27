@@ -43,7 +43,22 @@ public class EncryptionProvider {
   private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
   private static SecureRandom secRnd;
 
-  /** Decrypt a InputStream */
+  /**
+   * Decrypt a InputStream
+   *
+   * @param inputStream input stream
+   * @param keyBase64 keyBase64
+   * @param ivBase64 ivBase64
+   * @param encMat RemoteStoreFileEncryptionMaterial
+   * @return InputStream
+   * @throws NoSuchPaddingException when padding mechanism is not available for this environment
+   * @throws NoSuchAlgorithmException when the requested algorithm is not available for this
+   *     environment
+   * @throws InvalidKeyException when there is an issue with the key value
+   * @throws BadPaddingException when the data is not padded as expected
+   * @throws IllegalBlockSizeException when the length of data is incorrect
+   * @throws InvalidAlgorithmParameterException when the provided KeyStore has no trustAnchors
+   */
   public static InputStream decryptStream(
       InputStream inputStream,
       String keyBase64,

@@ -24,6 +24,11 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
   private static final TimeZone NTZ = TimeZone.getTimeZone("UTC");
   private ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public BigIntToTimestampNTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_NTZ.name(), fieldVector, columnIndex, context);

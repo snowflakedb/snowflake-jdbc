@@ -791,6 +791,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param encMat remote store encryption material
    * @param parallel number of parallel threads for downloading
    * @param presignedUrl Presigned URL for file download
+   * @param queryId the query ID
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(
@@ -925,10 +926,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
+    if (!locationsNode.isArray()) {
+      throw new SnowflakeSQLException(
+          queryID, ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
+    }
 
     queryID = jsonNode.path("data").path("queryId").asText();
-
-    assert locationsNode.isArray();
 
     String[] src_locations;
 
@@ -1108,8 +1111,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // specifically
     // for FIPS or VPCE S3 endpoint. SNOW-652696
     String endPoint = null;
-    if ("AZURE".equalsIgnoreCase(stageLocationType) || "S3".equalsIgnoreCase(stageLocationType)) {
+    if ("AZURE".equalsIgnoreCase(stageLocationType)
+        || "S3".equalsIgnoreCase(stageLocationType)
+        || "GCS".equalsIgnoreCase(stageLocationType)) {
       endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+      if ("GCS".equalsIgnoreCase(stageLocationType)
+          && endPoint != null
+          && (endPoint.trim().isEmpty() || "null".equals(endPoint))) {
+        // setting to null to preserve previous behaviour for GCS
+        endPoint = null;
+      }
     }
 
     String stgAcct = null;
@@ -1176,6 +1187,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
+    setupUseRegionalUrl(jsonNode, stageInfo);
+
     if (stageInfo.getStageType() == StageInfo.StageType.S3) {
       if (session == null) {
         // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
@@ -1195,6 +1208,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     return stageInfo;
+  }
+
+  private static void setupUseRegionalUrl(JsonNode jsonNode, StageInfo stageInfo) {
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS
+        && stageInfo.getStageType() != StageInfo.StageType.S3) {
+      return;
+    }
+    JsonNode useRegionalURLNode = jsonNode.path("data").path("stageInfo").path("useRegionalUrl");
+    if (!useRegionalURLNode.isMissingNode()) {
+      boolean useRegionalURL = useRegionalURLNode.asBoolean(false);
+      stageInfo.setUseRegionalUrl(useRegionalURL);
+    }
   }
 
   /**
@@ -1459,7 +1484,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     // For UPLOAD we expect encryptionMaterial to have length 1
-    assert encryptionMaterial.size() == 1;
+    if (encryptionMaterial.size() != 1) {
+      throw new SnowflakeSQLException(
+          queryId,
+          ErrorCode.INTERNAL_ERROR,
+          "Encryption material for UPLOAD should have size 1 but have "
+              + encryptionMaterial.size());
+    }
 
     final Set<String> sourceFiles = expandFileNames(srcLocations, queryId);
 
@@ -1649,6 +1680,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /** Download a file from remote, and return an input stream */
   @Override
   public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
+    logger.debug("Downloading file as stream: {}", fileName);
     if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
       logger.error("downloadStream function doesn't support local file system", false);
 
@@ -1662,14 +1694,32 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     remoteLocation remoteLocation = extractLocationAndPath(stageInfo.getLocation());
 
-    String stageFilePath = fileName;
+    // when downloading files as stream there should be only one file in source files
+    String sourceLocation =
+        sourceFiles.stream()
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new SnowflakeSQLException(
+                        queryID,
+                        SqlState.NO_DATA,
+                        ErrorCode.FILE_NOT_FOUND.getMessageCode(),
+                        session,
+                        "File not found: " + fileName));
+
+    if (!fileName.equals(sourceLocation)) {
+      // filename may be different from source location e.g. in git repositories
+      logger.debug("Changing file to download location from {} to {}", fileName, sourceLocation);
+    }
+    String stageFilePath = sourceLocation;
 
     if (!remoteLocation.path.isEmpty()) {
-      stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path, fileName, "/");
+      stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path, sourceLocation, "/");
     }
+    logger.debug("Stage file path for {} is {}", sourceLocation, stageFilePath);
 
-    RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(fileName);
-    String presignedUrl = srcFileToPresignedUrl.get(fileName);
+    RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(sourceLocation);
+    String presignedUrl = srcFileToPresignedUrl.get(sourceLocation);
 
     return storageFactory
         .createClient(stageInfo, parallel, encMat, session)
@@ -3346,7 +3396,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   @Deprecated
   public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
@@ -3361,7 +3411,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @param queryId the query ID
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   public static void throwNoSpaceLeftError(
       SFSession session, String operation, Exception ex, String queryId)

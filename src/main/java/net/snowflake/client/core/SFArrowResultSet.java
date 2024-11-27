@@ -189,7 +189,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    *
    * @param resultSetSerializable data returned in query response
    * @param telemetryClient telemetryClient
-   * @throws SQLException
+   * @param sortResult set if results should be sorted
+   * @throws SQLException if exception encountered
    */
   public SFArrowResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,

@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import static java.util.Arrays.stream;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,10 +33,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
@@ -53,6 +56,7 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 
 /**
  * @author jhuang
@@ -172,7 +176,15 @@ public class SnowflakeUtil {
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState, errorCode);
   }
 
-  /** This method should only be used internally */
+  /**
+   * This method should only be used internally
+   *
+   * @param colNode JsonNode
+   * @param jdbcTreatDecimalAsInt true if should treat Decimal as Int
+   * @param session SFBaseSession
+   * @return SnowflakeColumnMetadata
+   * @throws SnowflakeSQLException if an error occurs
+   */
   @Deprecated
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
@@ -661,7 +673,12 @@ public class SnowflakeUtil {
     return null;
   }
 
-  /** System.setEnv function. Can be used for unit tests. */
+  /**
+   * System.setEnv function. Can be used for unit tests.
+   *
+   * @param key key
+   * @param value value
+   */
   public static void systemSetEnv(String key, String value) {
     try {
       Map<String, String> env = System.getenv();
@@ -692,7 +709,7 @@ public class SnowflakeUtil {
   /**
    * System.unsetEnv function to remove a system environment parameter in the map
    *
-   * @param key
+   * @param key key value
    */
   public static void systemUnsetEnv(String key) {
     try {
@@ -714,6 +731,8 @@ public class SnowflakeUtil {
    *
    * @param mode OCSP mode
    * @param info proxy server properties.
+   * @return HttpClientSettingsKey
+   * @throws SnowflakeSQLException if an error occurs
    */
   public static HttpClientSettingsKey convertProxyPropertiesToHttpClientKey(
       OCSPMode mode, Properties info) throws SnowflakeSQLException {
@@ -769,8 +788,8 @@ public class SnowflakeUtil {
    * SimpleDateFormatter. Negative values have to be rounded to the next negative value, while
    * positive values should be cut off with no rounding.
    *
-   * @param millis
-   * @return
+   * @param millis milliseconds
+   * @return seconds as long value
    */
   public static long getSecondsFromMillis(long millis) {
     long returnVal;
@@ -818,6 +837,22 @@ public class SnowflakeUtil {
     }
     return defaultValue;
   }
+  /**
+   * Helper function to convert environment variable to boolean
+   *
+   * @param envVariableKey property name of the environment variable
+   * @param defaultValue default value used
+   * @return the value of the environment variable as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemGetEnvToBooleanValue(
+      String envVariableKey, boolean defaultValue) {
+    String environmentVariableValue = systemGetEnv(envVariableKey);
+    if (environmentVariableValue != null) {
+      return Boolean.parseBoolean(environmentVariableValue);
+    }
+    return defaultValue;
+  }
 
   @SnowflakeJdbcInternalApi
   public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
@@ -834,5 +869,38 @@ public class SnowflakeUtil {
       return null;
     }
     return node.isValueNode() ? node.asText() : node.toString();
+  }
+
+  /**
+   * Method introduced to avoid inconsistencies in custom headers handling, since these are defined
+   * on drivers side e.g. some drivers might internally convert headers to canonical form.
+   *
+   * @param input map input
+   * @return case insensitive map
+   */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> createCaseInsensitiveMap(Map<String, String> input) {
+    Map<String, String> caseInsensitiveMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    if (input != null) {
+      caseInsensitiveMap.putAll(input);
+    }
+    return caseInsensitiveMap;
+  }
+
+  /**
+   * toCaseInsensitiveMap, but adjusted to Headers[] argument type
+   *
+   * @param headers array of headers
+   * @return case insensitive map
+   */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> createCaseInsensitiveMap(Header[] headers) {
+    if (headers != null) {
+      return createCaseInsensitiveMap(
+          stream(headers)
+              .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+    } else {
+      return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
   }
 }

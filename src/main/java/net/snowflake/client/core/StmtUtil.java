@@ -270,6 +270,7 @@ public class StmtUtil {
    * submission, but continue the ping pong process.
    *
    * @param stmtInput input statement
+   * @param execTimeData ExecTimeTelemetryData
    * @return StmtOutput output statement
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
@@ -584,8 +585,6 @@ public class StmtUtil {
   /**
    * Issue get-result call to get query result given an in-progress response.
    *
-   * <p>
-   *
    * @param getResultPath path to results
    * @param stmtInput object with context information
    * @return results in string form
@@ -645,8 +644,6 @@ public class StmtUtil {
   /**
    * Issue get-result call to get query result given an in progress response.
    *
-   * <p>
-   *
    * @param queryId id of query to get results for
    * @param session the current session
    * @return results in JSON
@@ -681,8 +678,23 @@ public class StmtUtil {
    * @param stmtInput input statement
    * @throws SFException if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
+   * @deprecated use {@link #cancel(StmtInput, CancellationReason)} instead
    */
+  @Deprecated
   public static void cancel(StmtInput stmtInput) throws SFException, SnowflakeSQLException {
+    cancel(stmtInput, CancellationReason.UNKNOWN);
+  }
+
+  /**
+   * Cancel a statement identifiable by a request id
+   *
+   * @param stmtInput input statement
+   * @param cancellationReason reason for the cancellation
+   * @throws SFException if there is an internal exception
+   * @throws SnowflakeSQLException if failed to cancel the statement
+   */
+  public static void cancel(StmtInput stmtInput, CancellationReason cancellationReason)
+      throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(
@@ -701,7 +713,7 @@ public class StmtUtil {
 
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
-
+      logger.warn("Cancelling query {} with reason {}", stmtInput.requestId, cancellationReason);
       logger.debug("Aborting query: {}", stmtInput.sql);
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);

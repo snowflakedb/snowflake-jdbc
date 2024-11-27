@@ -5,8 +5,8 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -33,14 +33,14 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**
@@ -50,7 +50,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
    * @throws SFException
    * @throws SnowflakeSQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testJwtAuthTimeoutRetry() throws SFException, SnowflakeSQLException {
     final SFLoginInput loginInput = initMockLoginInput();

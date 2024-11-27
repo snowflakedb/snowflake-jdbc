@@ -7,10 +7,11 @@ import static net.snowflake.client.jdbc.SnowflakeDriver.getClientVersionStringFr
 import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.storage.StorageException;
@@ -39,11 +40,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.DontRunOnTestaccount;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -58,11 +58,10 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * General JDBC tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -70,10 +69,10 @@ import org.junit.rules.TemporaryFolder;
  * is not applicable. If it is applicable, move tests to SnowflakeDriverIT so that both the latest
  * and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
+  @TempDir private File tmpFolder;
+  @TempDir private File tmpFolder2;
 
   public String testStageName =
       String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
@@ -105,7 +104,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
+  @DontRunOnTestaccount
   public void testClientInfoConnectionProperty() throws Throwable {
     String clientInfoJSONStr = null;
     JsonNode clientInfoJSON = null;
@@ -122,11 +121,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       clientInfoJSONStr = res.getString(1);
       clientInfoJSON = mapper.readTree(clientInfoJSONStr);
       // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals("3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
       assertEquals(
-          "spark app mismatch",
           "SnowflakeSourceSuite",
-          clientInfoJSON.get("spark.app.name").asText());
+          clientInfoJSON.get("spark.app.name").asText(),
+          "spark app mismatch");
     }
 
     // Test that when session property is set, connection parameter overrides it
@@ -142,11 +141,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       clientInfoJSONStr = res.getString(1);
       clientInfoJSON = mapper.readTree(clientInfoJSONStr);
       // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals("3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
       assertEquals(
-          "spark app mismatch",
           "SnowflakeSourceSuite",
-          clientInfoJSON.get("spark.app.name").asText());
+          clientInfoJSON.get("spark.app.name").asText(),
+          "spark app mismatch");
     }
     System.clearProperty("snowflake.client.info");
   }
@@ -163,7 +162,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutThreshold() throws SQLException {
     try (Connection connection = getConnection()) {
       // assert that threshold equals default 200 from server side
@@ -202,9 +201,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Test API for Spark connector for FileTransferMetadata */
   @Test
-  @Ignore
+  @Disabled
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     try (Connection connection = getConnection("gcpaccount");
@@ -266,9 +266,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // Download two files and verify their content.
         assertTrue(
-            "Failed to get files",
             statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"),
+            "Failed to get files");
 
         // Make sure that the downloaded files are EQUAL,
         // they should be gzip compressed
@@ -284,9 +284,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Test API for Kafka connector for FileTransferMetadata */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAzureS3FileTransferMetadataWithOneFile() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
@@ -353,13 +354,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           // Download two files and verify their content.
           assertTrue(
-              "Failed to get files",
               statement.execute(
                   "GET @"
                       + testStageName
                       + " 'file://"
                       + destFolderCanonicalPath
-                      + "/' parallel=8"));
+                      + "/' parallel=8"),
+              "Failed to get files");
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
@@ -376,7 +377,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
@@ -392,7 +393,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
         String getCommand = "get @" + testStageName + " file://" + destFolderCanonicalPath;
@@ -487,23 +489,26 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutOverwriteFalseNoDigest() throws Throwable {
 
     // create 2 files: an original, and one that will overwrite the original
-    File file1 = tmpFolder.newFile("testfile.csv");
+    File file1 = new File(tmpFolder, "testfile.csv");
+    file1.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file1))) {
       bw.write("Writing original file content. This should get overwritten.");
     }
 
-    File file2 = tmpFolder2.newFile("testfile.csv");
+    File file2 = new File(tmpFolder2, "testfile.csv");
+    file2.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file2))) {
       bw.write("This is all new! This should be the result of the overwriting.");
     }
     String sourceFilePathOriginal = file1.getCanonicalPath();
     String sourceFilePathOverwrite = file2.getCanonicalPath();
 
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -518,25 +523,25 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE testing_stage");
           assertTrue(
-              "Failed to put a file",
-              statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+              statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"),
+              "Failed to put a file");
           // check that file exists in stage after PUT
           findFile(statement, "ls @testing_stage/");
 
           // put another file in same stage with same filename with overwrite = true
           assertTrue(
-              "Failed to put a file",
               statement.execute(
-                  "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+                  "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"),
+              "Failed to put a file");
 
           // check that file exists in stage after PUT
           findFile(statement, "ls @testing_stage/");
 
           // get file from new stage
           assertTrue(
-              "Failed to get files",
               statement.execute(
-                  "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+                  "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+              "Failed to get files");
 
           // Make sure that the downloaded file exists; it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
@@ -564,11 +569,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutDisable() throws Throwable {
 
     // create a file
-    File file = tmpFolder.newFile("testfile99.csv");
+    File file = new File(tmpFolder, "testfile99.csv");
+    file.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
       bw.write("This content won't be uploaded as PUT is disabled.");
     }
@@ -584,7 +590,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           Statement statement = connection.createStatement()) {
         statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
 
-        assertTrue("Shouldn't come here", false);
+        assertTrue(false, "Shouldn't come here");
       } catch (Exception ex) {
         // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
@@ -598,11 +604,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetDisable() throws Throwable {
 
     // create a folder
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     Properties paramProperties = new Properties();
@@ -616,7 +623,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute(
             "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
 
-        assertTrue("Shouldn't come here", false);
+        assertTrue(false, "Shouldn't come here");
       } catch (Exception ex) {
         // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
@@ -798,7 +805,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeoOutputTypes() throws Throwable {
 
     Properties paramProperties = new Properties();
@@ -862,7 +869,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeoMetadata() throws Throwable {
     Properties paramProperties = new Properties();
 
@@ -913,7 +920,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeometryOutputTypes() throws Throwable {
     Properties paramProperties = new Properties();
 
@@ -967,7 +974,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeometryMetadata() throws Throwable {
 
     Properties paramProperties = new Properties();
@@ -1015,7 +1022,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1027,7 +1034,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.15.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetGcsDownscopedCredentialWithDisabledDefaultCredentials() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1041,7 +1048,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   private void putAndGetFile(Statement statement) throws Throwable {
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
 
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -1049,16 +1057,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
       assertTrue(
-          "Failed to put a file",
-          statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+          statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"),
+          "Failed to put a file");
 
       findFile(statement, "ls @testPutGet_stage/");
 
       // download the file we just uploaded to stage
       assertTrue(
-          "Failed to get a file",
           statement.execute(
-              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+          "Failed to get a file");
 
       // Make sure that the downloaded file exists, it should be gzip compressed
       File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
@@ -1088,25 +1096,28 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetLargeFileGCSDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
     try (Connection connection = getConnection("gcpaccount", paramProperties);
         Statement statement = connection.createStatement()) {
       try {
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        File largeTempFile = new File(tmpFolder, "largeFile.csv");
+        largeTempFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
         }
-        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        File largeTempFile2 = new File(tmpFolder, "largeFile2.csv");
+        largeTempFile2.createNewFile();
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
 
@@ -1120,8 +1131,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE largefile_stage");
         assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"),
+            "Failed to put a file");
 
         // check that file exists in stage after PUT
         findFile(statement, "ls @largefile_stage/");
@@ -1136,9 +1147,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // get file from new stage
         assertTrue(
-            "Failed to get files",
             statement.execute(
-                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+            "Failed to get files");
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
@@ -1165,24 +1176,27 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetLargeFileAzure() throws Throwable {
     Properties paramProperties = new Properties();
     try (Connection connection = getConnection("azureaccount", paramProperties);
         Statement statement = connection.createStatement()) {
       try {
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        File largeTempFile = new File(tmpFolder, "largeFile.csv");
+        largeTempFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
           bw.write("Creating large test file for Azure PUT/GET test");
           bw.write(System.lineSeparator());
           bw.write("Creating large test file for Azure PUT/GET test");
           bw.write(System.lineSeparator());
         }
-        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        File largeTempFile2 = new File(tmpFolder, "largeFile2.csv");
+        largeTempFile2.createNewFile();
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
 
@@ -1196,8 +1210,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE largefile_stage");
         assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"),
+            "Failed to put a file");
 
         // check that file exists in stage after PUT
         findFile(statement, "ls @largefile_stage/");
@@ -1212,9 +1226,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // get file from new stage
         assertTrue(
-            "Failed to get files",
             statement.execute(
-                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+            "Failed to get files");
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
@@ -1259,9 +1273,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutS3RegionalUrl() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
@@ -1344,13 +1359,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           // Download two files and verify their content.
           assertTrue(
-              "Failed to get files",
               statement.execute(
                   "GET @"
                       + testStageName
                       + " 'file://"
                       + destFolderCanonicalPath
-                      + "/' parallel=8"));
+                      + "/' parallel=8"),
+              "Failed to get files");
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
@@ -1370,7 +1385,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * and Azure
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAzureS3UploadStreamingIngestFileMetadata() throws Throwable {
     String clientName = "clientName";
     String clientKey = "clientKey";
@@ -1433,7 +1448,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test(expected = SnowflakeSQLException.class)
+  @Test
+  @DontRunOnGithubActions
   public void testNoSpaceLeftOnDeviceException() throws SQLException {
     List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
@@ -1452,16 +1468,19 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             SnowflakeStorageClient client =
                 StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
 
-            client.handleStorageException(
-                new StorageException(
-                    client.getMaxRetries(),
-                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-                client.getMaxRetries(),
-                "download",
-                null,
-                command,
-                null);
+            assertThrows(
+                SnowflakeSQLException.class,
+                () ->
+                    client.handleStorageException(
+                        new StorageException(
+                            client.getMaxRetries(),
+                            Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                            new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                        client.getMaxRetries(),
+                        "download",
+                        null,
+                        command,
+                        null));
           } finally {
             statement.execute("DROP STAGE if exists testPutGet_stage");
           }
@@ -1471,9 +1490,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore // ignored until SNOW-1616480 is resolved
+  @Disabled // TODO: ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     // set parameter for presignedUrl upload instead of downscoped token
     Properties paramProperties = new Properties();
@@ -1508,9 +1528,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         }
 
         assertTrue(
-            "Failed to get files",
             statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"),
+            "Failed to get files");
         assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
@@ -1519,14 +1539,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testUploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
     uploadWithGCSDownscopedCredentialWithoutConnection();
   }
 
   /** Added in > 3.15.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void
       testUploadWithGCSDownscopedCredentialAndDisabledGcsDefaultCredentialsWithoutConnection()
           throws Throwable {
@@ -1539,7 +1559,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   private void uploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1577,9 +1598,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                     .setOcspMode(OCSPMode.FAIL_OPEN)
                     .build());
             assertTrue(
-                "Failed to get files with down-scoped token",
                 statement.execute(
-                    "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"));
+                    "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"),
+                "Failed to get files with down-scoped token");
             assertTrue(
                 isFileContentEqual(
                     srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
@@ -1599,7 +1620,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testHTAPOptimizations() throws SQLException {
     try {
       // Set the HTAP test parameter to true
@@ -1671,7 +1692,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testHTAPStatementParameterCaching() throws SQLException {
     // Set the HTAP test parameter to true
     try (Connection con = getSnowflakeAdminConnection()) {
@@ -1730,9 +1751,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testS3PutInGS() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     Properties paramProperties = new Properties();
     try (Connection connection = getConnection("s3testaccount", paramProperties);
@@ -1759,7 +1781,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             new FileInputStream(destFolderCanonicalPath + "/" + fileName);
         String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
         assertTrue(
-            "downloaded content does not equal uploaded content", content.equals(downloadedFile));
+            content.equals(downloadedFile), "downloaded content does not equal uploaded content");
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }

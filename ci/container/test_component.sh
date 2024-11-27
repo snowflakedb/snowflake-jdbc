@@ -68,9 +68,6 @@ echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
 python3 $THIS_DIR/hang_webserver.py 12345&
 
-IFS=','
-read -ra CATEGORY <<< "$JDBC_TEST_CATEGORY" 
-
 # Avoid connection timeouts
 export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
 
@@ -79,41 +76,39 @@ cd $SOURCE_ROOT
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 $MVNW_EXE --batch-mode --show-version dependency:go-offline
 
-for c in "${CATEGORY[@]}"; do
-    c=$(echo $c | sed 's/ *$//g')
-    if [[ "$is_old_driver" == "true" ]]; then
-        pushd TestOnly >& /dev/null
-            JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
-            echo "[INFO] Run JDBC $JDBC_VERSION tests"
-            $MVNW_EXE -DjenkinsIT \
-                -Djava.io.tmpdir=$WORKSPACE \
-                -Djacoco.skip.instrument=false \
-                -DtestCategory=net.snowflake.client.category.$c \
-                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                verify \
-                --batch-mode --show-version
-        popd >& /dev/null
-    elif [[ "$c" == "TestCategoryFips" ]]; then
-        pushd FIPS >& /dev/null
-            echo "[INFO] Run Fips tests"
-            $MVNW_EXE -DjenkinsIT \
-                -Djava.io.tmpdir=$WORKSPACE \
-                -Djacoco.skip.instrument=false \
-                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                -Dnot-self-contained-jar \
-                verify \
-                --batch-mode --show-version
-        popd >& /dev/null
-    else
-        echo "[INFO] Run $c tests"
+if [[ "$is_old_driver" == "true" ]]; then
+    pushd TestOnly >& /dev/null
+        JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        echo "[INFO] Run JDBC $JDBC_VERSION tests"
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -DtestCategory=net.snowflake.client.category.$c \
+            -DintegrationTestSuites="$JDBC_TEST_SUITES" \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-            -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
             verify \
             --batch-mode --show-version
-    fi
-done
+    popd >& /dev/null
+elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
+    pushd FIPS >& /dev/null
+        echo "[INFO] Run Fips tests"
+        $MVNW_EXE -DjenkinsIT \
+            -Djava.io.tmpdir=$WORKSPACE \
+            -Djacoco.skip.instrument=false \
+            -DintegrationTestSuites=FipsTestSuite \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            -Dnot-self-contained-jar \
+            verify \
+            --batch-mode --show-version
+    popd >& /dev/null
+else
+    echo "[INFO] Run $JDBC_TEST_SUITES tests"
+    $MVNW_EXE -DjenkinsIT \
+        -Djava.io.tmpdir=$WORKSPACE \
+        -Djacoco.skip.instrument=false \
+        -DintegrationTestSuites="$JDBC_TEST_SUITES" \
+        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
+        verify \
+        --batch-mode --show-version
+fi
 IFS=' '
