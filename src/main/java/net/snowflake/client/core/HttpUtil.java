@@ -17,6 +17,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -470,7 +471,14 @@ public class HttpUtil {
   }
 
   private static SSLContext buildSslContext(String crtFile) {
-    List<Certificate> certificates = CertificateUtils.loadCertificate(crtFile);
+    InputStream targetStream;
+    try {
+      File initialFile = new File(crtFile);
+      targetStream = new FileInputStream(initialFile);
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException("crt file not found", e);
+    }
+    List<Certificate> certificates = CertificateUtils.loadCertificate(targetStream);
 
     SSLFactory sslFactory = SSLFactory.builder()
             .withTrustMaterial(certificates)
