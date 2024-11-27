@@ -3,21 +3,22 @@
  */
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestTags;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class HttpUtilLatestIT {
 
   private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
@@ -30,7 +31,8 @@ public class HttpUtilLatestIT {
   }
 
   /** Added in > 3.14.5 */
-  @Test(timeout = 1000L)
+  @Test
+  @Timeout(1)
   public void shouldOverrideConnectionAndSocketTimeouts() {
     // it's hard to test connection timeout so there is only a test for socket timeout
     HttpUtil.setConnectionTimeout(100);

@@ -3,10 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,8 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
 public class FileUploaderSessionlessTest extends FileUploaderPrep {
@@ -37,8 +37,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
         SnowflakeFileTransferAgent.getEncryptionMaterial(
             SFBaseFileTransferAgent.CommandType.UPLOAD, modifiedNode);
 
-    Assert.assertEquals(1, encryptionMaterials.size());
-    Assert.assertNull(encryptionMaterials.get(0));
+    assertEquals(1, encryptionMaterials.size());
+    assertNull(encryptionMaterials.get(0));
   }
 
   @Test
@@ -54,12 +54,12 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
           SnowflakeFileTransferAgent.getEncryptionMaterial(
               SFBaseFileTransferAgent.CommandType.UPLOAD, exampleNode);
 
-      Assert.assertEquals(1, encryptionMaterials.size());
-      Assert.assertEquals(
+      assertEquals(1, encryptionMaterials.size());
+      assertEquals(
           expected.get(0).getQueryStageMasterKey(),
           encryptionMaterials.get(0).getQueryStageMasterKey());
-      Assert.assertEquals(expected.get(0).getQueryId(), encryptionMaterials.get(0).getQueryId());
-      Assert.assertEquals(expected.get(0).getSmkId(), encryptionMaterials.get(0).getSmkId());
+      assertEquals(expected.get(0).getQueryId(), encryptionMaterials.get(0).getQueryId());
+      assertEquals(expected.get(0).getSmkId(), encryptionMaterials.get(0).getSmkId());
     }
   }
 
@@ -73,14 +73,14 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
     expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals("null", stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
-    Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
+    assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    assertEquals("stage/location/foo/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("us-west-2", stageInfo.getRegion());
+    assertEquals("null", stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(true, stageInfo.getUseS3RegionalUrl());
   }
 
   @Test
@@ -94,13 +94,13 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
     expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals("s3-fips.us-east-1.amazonaws.com", stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    assertEquals("stage/location/foo/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("us-west-2", stageInfo.getRegion());
+    assertEquals("s3-fips.us-east-1.amazonaws.com", stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
   }
 
   @Test
@@ -109,13 +109,13 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AZURE_SAS_TOKEN", "EXAMPLE_AZURE_SAS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
-    Assert.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("westus", stageInfo.getRegion());
-    Assert.assertEquals("blob.core.windows.net", stageInfo.getEndPoint());
-    Assert.assertEquals("EXAMPLE_STORAGE_ACCOUNT", stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
+    assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("westus", stageInfo.getRegion());
+    assertEquals("blob.core.windows.net", stageInfo.getEndPoint());
+    assertEquals("EXAMPLE_STORAGE_ACCOUNT", stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
   }
 
   @Test
@@ -123,20 +123,20 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleGCSJsonNode, null);
     Map<String, String> expectedCreds = new HashMap<>();
 
-    Assert.assertEquals(StageInfo.StageType.GCS, stageInfo.getStageType());
-    Assert.assertEquals("foo/tables/9224/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("US-WEST1", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.GCS, stageInfo.getStageType());
+    assertEquals("foo/tables/9224/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("US-WEST1", stageInfo.getRegion());
+    assertEquals(null, stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
   }
 
   @Test
   public void testGetFileTransferMetadatasS3() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleS3JsonNode);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -151,25 +151,25 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
     expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals("null", stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    assertEquals("stage/location/foo/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("us-west-2", stageInfo.getRegion());
+    assertEquals("null", stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
     // EncryptionMaterial check
-    Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assert.assertEquals(
+    assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
+    assertEquals(
         "EXAMPLE_QUERY_STAGE_MASTER_KEY",
         metadata.getEncryptionMaterial().getQueryStageMasterKey());
-    Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
+    assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
-    Assert.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
-    Assert.assertNull(metadata.getPresignedUrl());
-    Assert.assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
+    assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
+    assertNull(metadata.getPresignedUrl());
+    assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
   }
 
   @Test
@@ -180,7 +180,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
 
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -195,30 +195,30 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
     expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals("null", stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    assertEquals("stage/location/foo/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("us-west-2", stageInfo.getRegion());
+    assertEquals("null", stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
     // EncryptionMaterial check
-    Assert.assertNull(metadata.getEncryptionMaterial().getQueryId());
-    Assert.assertNull(metadata.getEncryptionMaterial().getQueryStageMasterKey());
-    Assert.assertNull(metadata.getEncryptionMaterial().getSmkId());
+    assertNull(metadata.getEncryptionMaterial().getQueryId());
+    assertNull(metadata.getEncryptionMaterial().getQueryStageMasterKey());
+    assertNull(metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
-    Assert.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
-    Assert.assertNull(metadata.getPresignedUrl());
-    Assert.assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
+    assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
+    assertNull(metadata.getPresignedUrl());
+    assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
   }
 
   @Test
   public void testGetFileTransferMetadatasAzure() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleAzureJsonNode);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -229,32 +229,32 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AZURE_SAS_TOKEN", "EXAMPLE_AZURE_SAS_TOKEN");
 
-    Assert.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
-    Assert.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("westus", stageInfo.getRegion());
-    Assert.assertEquals("blob.core.windows.net", stageInfo.getEndPoint());
-    Assert.assertEquals("EXAMPLE_STORAGE_ACCOUNT", stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
+    assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("westus", stageInfo.getRegion());
+    assertEquals("blob.core.windows.net", stageInfo.getEndPoint());
+    assertEquals("EXAMPLE_STORAGE_ACCOUNT", stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
     // EncryptionMaterial check
-    Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assert.assertEquals(
+    assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
+    assertEquals(
         "EXAMPLE_QUERY_STAGE_MASTER_KEY",
         metadata.getEncryptionMaterial().getQueryStageMasterKey());
-    Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
+    assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
-    Assert.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
-    Assert.assertNull(metadata.getPresignedUrl());
-    Assert.assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
+    assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
+    assertNull(metadata.getPresignedUrl());
+    assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
   }
 
   @Test
   public void testGetFileTransferMetadatasGCS() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleGCSJsonNode);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -264,33 +264,33 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
 
     Map<String, String> expectedCreds = new HashMap<>();
 
-    Assert.assertEquals(StageInfo.StageType.GCS, stageInfo.getStageType());
-    Assert.assertEquals("foo/tables/9224/", stageInfo.getLocation());
-    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
-    Assert.assertEquals("US-WEST1", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
-    Assert.assertEquals(null, stageInfo.getStorageAccount());
-    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    assertEquals(StageInfo.StageType.GCS, stageInfo.getStageType());
+    assertEquals("foo/tables/9224/", stageInfo.getLocation());
+    assertEquals(expectedCreds, stageInfo.getCredentials());
+    assertEquals("US-WEST1", stageInfo.getRegion());
+    assertEquals(null, stageInfo.getEndPoint());
+    assertEquals(null, stageInfo.getStorageAccount());
+    assertEquals(true, stageInfo.getIsClientSideEncrypted());
     assertEquals(Optional.empty(), stageInfo.gcsCustomEndpoint());
 
     // EncryptionMaterial check
-    Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assert.assertEquals(
+    assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
+    assertEquals(
         "EXAMPLE_QUERY_STAGE_MASTER_KEY",
         metadata.getEncryptionMaterial().getQueryStageMasterKey());
-    Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
+    assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
-    Assert.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
-    Assert.assertEquals("EXAMPLE_PRESIGNED_URL", metadata.getPresignedUrl());
-    Assert.assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
+    assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
+    assertEquals("EXAMPLE_PRESIGNED_URL", metadata.getPresignedUrl());
+    assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
   }
 
   @Test
   public void testGetFileTransferMetadataGCSWithUseRegionalUrl() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleGCSJsonNodeWithUseRegionalUrl);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -305,7 +305,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
   public void testGetFileTransferMetadataGCSWithEndPoint() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
         SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleGCSJsonNodeWithEndPoint);
-    Assert.assertEquals(1, metadataList.size());
+    assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) metadataList.get(0);
@@ -323,8 +323,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(downloadNode);
       fail();
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assert.assertEquals(
+      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      assertEquals(
           "JDBC driver internal error: This API only supports PUT commands.", err.getMessage());
     }
   }
@@ -336,7 +336,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
       fail();
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(
           err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
     }
@@ -351,7 +351,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
       fail();
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(err.getMessage().contains("JDBC driver internal error: This API only supports"));
     }
   }
@@ -363,7 +363,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
       fail();
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(
           err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
     }
@@ -378,7 +378,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
       SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
       fail();
     } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       assertTrue(err.getMessage().contains("Failed to parse encryptionMaterial"));
     }
   }

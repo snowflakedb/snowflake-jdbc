@@ -2,8 +2,8 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
 import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -17,13 +17,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -31,17 +30,17 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     try (Connection con = getConnection()) {
       initMetaData(con);
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     try (Connection con = getConnection()) {
       endMetaData(con);
@@ -49,7 +48,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -79,7 +78,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctionColumns() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -253,7 +252,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   /** Tests that calling getTables() concurrently doesn't cause data race condition. */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablesRaceCondition()
       throws SQLException, ExecutionException, InterruptedException {
     try (Connection connection = getConnection()) {

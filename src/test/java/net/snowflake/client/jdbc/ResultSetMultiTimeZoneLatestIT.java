@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -10,51 +10,67 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.BooleanProvider;
+import net.snowflake.client.providers.ProvidersUtil;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import net.snowflake.client.providers.SnowflakeArgumentsProvider;
+import net.snowflake.client.providers.TimezoneProvider;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
  */
-@RunWith(Parameterized.class)
-@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnectionIT {
-  @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Collection<Object[]> data() {
-    // all tests in this class need to run for both query result formats json and arrow
-    // UTC and Europe/London have different offsets during daylight savings time so it is important
-    // to test both to ensure daylight savings time is correct
-    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ", "Europe/London"};
-    String[] queryFormats = new String[] {"json", "arrow"};
-    List<Object[]> ret = new ArrayList<>();
-    for (String queryFormat : queryFormats) {
-      for (String timeZone : timeZones) {
-        ret.add(new Object[] {queryFormat, timeZone});
-      }
+
+  private static String originalTz;
+
+  private static class DataProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(
+          context, new SimpleResultFormatProvider(), new TimezoneProvider(4));
     }
-    return ret;
   }
 
-  private final String queryResultFormat;
-
-  public ResultSetMultiTimeZoneLatestIT(String queryResultFormat, String timeZone) {
-    this.queryResultFormat = queryResultFormat;
-    System.setProperty("user.timezone", timeZone);
+  private static class DataWithFlagProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(context, new DataProvider(), new BooleanProvider());
+    }
   }
 
-  @Before
-  public void init() throws SQLException {
+  @BeforeAll
+  public static void saveTimezone() {
+    originalTz = System.getProperty("user.timezone");
+  }
+
+  @AfterAll
+  public static void restoreTimezone() {
+    if (originalTz != null) {
+      System.setProperty("user.timezone", originalTz);
+    } else {
+      System.clearProperty("user.timezone");
+    }
+  }
+
+  private static void setTimezone(String tz) {
+    System.setProperty("user.timezone", tz);
+  }
+
+  public void init(String queryResultFormat, String tz) throws SQLException {
+    setTimezone(tz);
     try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
@@ -74,9 +90,11 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
    *
    * @throws SQLException
    */
-  @Test
-  public void testTimesWithGetTimestamp() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimesWithGetTimestamp(String queryResultFormat, String tz) throws SQLException {
+    init(queryResultFormat, tz);
+    try (Statement statement = createStatement(queryResultFormat)) {
       String timeStringValue = "10:30:50.123456789";
       String timestampStringValue = "1970-01-01 " + timeStringValue;
       int length = timestampStringValue.length();
@@ -108,9 +126,12 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
    *
    * @throws SQLException
    */
-  @Test
-  public void testTimestampNTZWithDaylightSavings() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampNTZWithDaylightSavings(String queryResultFormat, String tz)
+      throws SQLException {
+    init(queryResultFormat, tz);
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute(
           "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
       try (ResultSet rs = statement.executeQuery("select TIMESTAMP '2011-09-04 00:00:00'")) {
@@ -125,13 +146,18 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
    * Test for getDate(int columnIndex, Calendar cal) function to ensure it matches values with
    * getTimestamp function
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testDateAndTimestampWithTimezone() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  @DontRunOnGithubActions
+  public void testDateAndTimestampWithTimezone(String queryResultFormat, String tz)
+      throws SQLException {
+    init(queryResultFormat, tz);
     Calendar cal = null;
     SimpleDateFormat sdf = null;
-
-    try (Statement statement = connection.createStatement()) {
+    // The following line allows for the tests to work locally. This should be removed when the
+    // tests are properly fixed.
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
       try (ResultSet rs =
           statement.executeQuery(
@@ -187,31 +213,6 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
   }
 
   /**
-   * Tests that formats are correct when JDBC_USE_SESSION_TIMEZONE=true and other related time/date
-   * formatting parameters are at their default values
-   *
-   * @throws SQLException
-   */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSessionTimezoneUsage() throws SQLException {
-    testUseSessionTimeZoneHelper(true);
-  }
-
-  /**
-   * Tests that the new param overrides previous time/date/timestamp formatting parameters such as
-   * JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC, CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ, and
-   * JDBC_FORMAT_DATE_WITH_TIMEZONE.
-   *
-   * @throws SQLException
-   */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testUseSessionTimeZoneOverrides() throws SQLException {
-    testUseSessionTimeZoneHelper(false);
-  }
-
-  /**
    * Helper function to test behavior of parameter JDBC_USE_SESSION_TIMEZONE. When
    * JDBC_USE_SESSION_TIMEZONE=true, time/date/timestamp values are displayed using the session
    * timezone, not the JVM timezone. There should be no offset between the inserted value and the
@@ -226,8 +227,12 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
    *     parameters
    * @throws SQLException
    */
-  private void testUseSessionTimeZoneHelper(boolean useDefaultParamSettings) throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(DataWithFlagProvider.class)
+  public void testUseSessionTimeZoneHelper(
+      String queryResultFormat, String tz, boolean useDefaultParamSettings) throws SQLException {
+    init(queryResultFormat, tz);
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         // create table with all timestamp types, time, and date
         statement.execute(

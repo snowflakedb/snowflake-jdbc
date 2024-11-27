@@ -14,13 +14,13 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.AnyOf.anyOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,11 +51,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnAWS;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnAWS;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -73,13 +72,12 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -87,14 +85,14 @@ import org.junit.rules.TemporaryFolder;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionLatestIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
 
   private boolean defaultState;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
     service.updateContextForIT(getConnectionParameters());
@@ -103,7 +101,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     TelemetryService.enable();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws InterruptedException {
     TelemetryService service = TelemetryService.getInstance();
     // wait 5 seconds while the service is flushing
@@ -193,12 +191,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryID() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
@@ -210,7 +209,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String statementPutQueryId = snowflakeStatement.getQueryID();
         TestUtil.assertValidQueryId(statementPutQueryId);
         assertNotEquals(
-            "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+            createStageQueryId, statementPutQueryId, "create query id is override by put query id");
         resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetPutQueryId);
         assertEquals(resultSetPutQueryId, statementPutQueryId);
@@ -222,7 +221,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetGetQueryId);
         assertNotEquals(
-            "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
+            resultSetGetQueryId, resultSetPutQueryId, "put and get query id should be different");
         assertEquals(resultSetGetQueryId, statementGetQueryId);
       }
     }
@@ -230,12 +229,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.14.4 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryIDEvenWhenFail() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
       try {
@@ -255,7 +255,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String getQueryId = snowflakeStatement.getQueryID();
-      assertNotEquals("put and get query id should be different", putQueryId, getQueryId);
+      assertNotEquals(putQueryId, getQueryId, "put and get query id should be different");
       String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       statement.execute("CREATE OR REPLACE STAGE " + stageName);
       TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
@@ -707,7 +707,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testKeyPairFileDataSourceSerialization() throws Exception {
     // test with key/pair authentication where key is in file
     // set up DataSource object and ensure connection works
@@ -727,7 +727,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       connectAndExecuteSelect1(ds);
 
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -752,7 +753,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Works in > 3.18.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testKeyPairBase64DataSourceSerialization() throws Exception {
     // test with key/pair authentication where key is passed as a Base64 string value
     // set up DataSource object and ensure connection works
@@ -772,7 +773,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       connectAndExecuteSelect1(ds);
 
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -795,7 +797,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * executions
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyInConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -898,7 +900,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   // This will only work with JDBC driver versions higher than 3.15.1
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
     testPrivateKeyInConnectionString();
@@ -911,7 +913,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * executions
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyBase64InConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -999,7 +1001,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Works in > 3.18.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyBase64InConnectionStringWithBouncyCastle()
       throws SQLException, IOException {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
@@ -1007,7 +1009,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicDataSourceSerialization() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -1022,7 +1024,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     connectAndExecuteSelect1(ds);
 
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+    serializedFile.createNewFile();
     // serialize datasource object into a file
     try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
         ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -1233,7 +1236,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * likely not having the test account we used here.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAuthenticatorEndpointWithDashInAccountName() throws Exception {
     Map<String, String> params = getConnectionParameters();
     String serverUrl =
@@ -1292,7 +1295,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnAWS.class)
+  @RunOnAWS
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1354,19 +1357,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String passphrase = System.getenv(passphraseEnv);
 
     assertNotNull(
+        passphrase,
         privateKeyFileNameEnv
             + " environment variable can't be empty. "
-            + "Please provide the filename for your private key located in the resource folder",
-        passphrase);
+            + "Please provide the filename for your private key located in the resource folder");
 
     assertNotNull(
+        passphrase,
         publicKeyFileNameEnv
             + " environment variable can't be empty. "
-            + "Please provide the filename for your public key located in the resource folder",
-        passphrase);
+            + "Please provide the filename for your public key located in the resource folder");
 
     assertNotNull(
-        passphraseEnv + " environment variable is required to decrypt private key.", passphrase);
+        passphrase, passphraseEnv + " environment variable is required to decrypt private key.");
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
     Properties properties = new Properties();
@@ -1424,8 +1427,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws IOException
    */
   @Test
-  @Ignore
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled
+  @DontRunOnGithubActions
   public void testPbes2Support() throws SQLException, IOException {
     System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
     boolean pbes2Supported = isPbes2KeySupported();
@@ -1438,7 +1441,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String failureMessage =
         "The failure means that the JDK version can decrypt a private key generated by OpenSSL v3 and "
             + "BouncyCastle shouldn't be needed anymore";
-    assertFalse(failureMessage, pbes2Supported);
+    assertFalse(pbes2Supported, failureMessage);
 
     // The expectation is that this is going to pass once we add Bouncy Castle in the list of
     // providers
@@ -1448,12 +1451,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         "Bouncy Castle Provider should have been loaded with the -D"
             + SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM
             + "JVM argument and this should have decrypted the private key generated by OpenSSL v3";
-    assertTrue(failureMessage, pbes2Supported);
+    assertTrue(pbes2Supported, failureMessage);
   }
 
   // Test for regenerating okta one-time token for versions > 3.15.1
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaGenerates429StatusCode() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -1551,26 +1554,26 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     arrowResultSet.getTimestamp(column).getTimezoneOffset(),
                     arrowResultSet.getTimestamp(column).getClass());
                 assertEquals(
+                    jsonResultSet.getString(column),
+                    arrowResultSet.getString(column),
                     "Expecting that string representation are the same for row "
                         + rowIdx
                         + " and column "
-                        + column,
-                    jsonResultSet.getString(column),
-                    arrowResultSet.getString(column));
+                        + column);
                 assertEquals(
+                    jsonResultSet.getTimestamp(column).toString(),
+                    arrowResultSet.getTimestamp(column).toString(),
                     "Expecting that string representation (via toString) are the same for row "
                         + rowIdx
                         + " and column "
-                        + column,
-                    jsonResultSet.getTimestamp(column).toString(),
-                    arrowResultSet.getTimestamp(column).toString());
+                        + column);
                 assertEquals(
+                    jsonResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column),
                     "Expecting that timestamps are the same for row "
                         + rowIdx
                         + " and column "
-                        + column,
-                    jsonResultSet.getTimestamp(column),
-                    arrowResultSet.getTimestamp(column));
+                        + column);
               }
               rowIdx++;
             }

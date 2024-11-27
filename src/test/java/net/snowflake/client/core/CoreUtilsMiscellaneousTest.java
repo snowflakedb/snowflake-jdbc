@@ -4,10 +4,10 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
@@ -16,13 +16,12 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CoreUtilsMiscellaneousTest {
 
@@ -41,7 +40,7 @@ public class CoreUtilsMiscellaneousTest {
 
   /** Test that Constants.getOS function is working as expected */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testgetOS() {
     Constants.clearOSForTesting();
     String originalOS = systemGetProperty("os.name");

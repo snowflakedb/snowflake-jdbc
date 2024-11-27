@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,20 +13,20 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestTags;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class ProxyLatestIT extends BaseWiremockTest {
 
-  @After
+  @AfterEach
   public void tearDown() {
     super.tearDown();
     unsetJvmProperties();
@@ -122,9 +122,9 @@ public class ProxyLatestIT extends BaseWiremockTest {
       ObjectMapper mapper = new ObjectMapper();
       JsonNode json = mapper.readTree(responseString);
       assertEquals(
-          "expected request count not matched for pattern: " + pathPattern,
           expectedCount,
-          json.get("count").asInt());
+          json.get("count").asInt(),
+          "expected request count not matched for pattern: " + pathPattern);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

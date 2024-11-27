@@ -3,13 +3,13 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Driver unit test */
 public class SnowflakeDriverTest {
@@ -52,16 +52,16 @@ public class SnowflakeDriverTest {
       int port = sc.getPort();
       Map<String, Object> parameters = sc.getParameters();
 
-      assertEquals("URL scheme: " + url, this.scheme, scheme);
-      assertEquals("URL scheme: " + url, this.host, host);
-      assertEquals("URL scheme: " + url, this.port, port);
-      assertEquals("URL scheme: " + url, this.parameters.size(), parameters.size());
-      assertEquals("URL scheme. " + url, this.account, account);
+      assertEquals(this.scheme, scheme, "URL scheme: " + url);
+      assertEquals(this.host, host, "URL scheme: " + url);
+      assertEquals(this.port, port, "URL scheme: " + url);
+      assertEquals(this.parameters.size(), parameters.size(), "URL scheme: " + url);
+      assertEquals(this.account, account, "URL scheme. " + url);
 
       for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
         String k = entry.getKey().toUpperCase(Locale.US);
         Object v = parameters.get(k);
-        assertEquals("URL scheme: " + url + ", key: " + k, entry.getValue(), v);
+        assertEquals(entry.getValue(), v, "URL scheme: " + url + ", key: " + k);
       }
     }
   }
@@ -355,7 +355,7 @@ public class SnowflakeDriverTest {
             expectedParameters));
 
     for (TestCase t : testCases) {
-      assertTrue("URL is not valid: " + t.url, snowflakeDriver.acceptsURL(t.url));
+      assertTrue(snowflakeDriver.acceptsURL(t.url), "URL is not valid: " + t.url);
       t.match(t.url, SnowflakeConnectString.parse(t.url, SnowflakeDriver.EMPTY_PROPERTIES));
     }
 

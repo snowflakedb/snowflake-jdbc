@@ -5,15 +5,15 @@ package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.base.Strings;
 import java.sql.Connection;
@@ -28,15 +28,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
@@ -205,7 +204,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTables() throws Throwable {
     Set<String> tables = null;
     try (Statement statement = connection.createStatement()) {
@@ -564,7 +563,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablePrivileges() throws Exception {
     try (Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();

@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc.structuredtypes;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -13,15 +13,10 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 
 abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
+  public StructuredTypesGetStringBaseIT() {}
 
-  protected final ResultSetFormatType queryResultFormat;
-
-  public StructuredTypesGetStringBaseIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
-  }
-
-  protected Connection init() throws SQLException {
-    return initConnection(this.queryResultFormat);
+  protected Connection init(ResultSetFormatType queryResultFormat) throws SQLException {
+    return initConnection(queryResultFormat);
   }
 
   protected static Connection initConnection(ResultSetFormatType queryResultFormat)

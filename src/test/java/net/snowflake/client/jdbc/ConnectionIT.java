@@ -3,16 +3,16 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnGithubActions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,23 +42,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;
@@ -70,7 +67,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
 
   String errorMessage = null;
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testSimpleConnection() throws SQLException {
@@ -86,7 +83,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
     int size = 300;
@@ -214,7 +211,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     final String SECOND_DATABASE = "SECOND_DATABASE";
     final String SECOND_SCHEMA = "SECOND_SCHEMA";
@@ -350,7 +347,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaSerialization() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -368,7 +365,8 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -391,7 +389,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -449,7 +447,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       DriverManager.getConnection(uri, properties);
       fail();
     } catch (SQLException e) {
-      Assert.assertEquals(390144, e.getErrorCode());
+      assertEquals(390144, e.getErrorCode());
     }
     // test multiple key pair
     try (Connection connection = getConnection();
@@ -506,7 +504,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDifferentKeyLength() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -840,7 +838,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccountNotOnGithubActions
   public void testOKTAConnection() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
@@ -857,7 +855,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccountNotOnGithubActions
   public void testOKTAConnectionWithOktauserParam() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
@@ -888,7 +886,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       fail("should fail");
     } catch (SQLException ex) {
       assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // schema is invalid
@@ -899,7 +897,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       fail("should fail");
     } catch (SQLException ex) {
       assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // warehouse is invalid
@@ -910,7 +908,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       fail("should fail");
     } catch (SQLException ex) {
       assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // role is invalid
@@ -920,7 +918,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       DriverManager.getConnection(params.get("uri"), props);
       fail("should fail");
     } catch (SQLException ex) {
-      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
+      assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
     }
   }
 
@@ -950,7 +948,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       DriverManager.getConnection(params.get("uri"), props);
       fail("should fail");
     } catch (SQLException ex) {
-      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
+      assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
     }
   }
 
@@ -961,7 +959,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
    *
    * @throws SQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrl() throws SQLException {
     Properties props = new Properties();
@@ -987,7 +985,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
    * @throws SQLException
    * @throws NoSuchAlgorithmException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
 
@@ -1042,7 +1040,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
-    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
+    assumeRunningOnGithubActions();
 
     Map<String, String> kvParams = getConnectionParameters(null, "ORG");
     Properties connProps = kvMap2Properties(kvParams, false);

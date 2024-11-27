@@ -4,10 +4,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -17,12 +17,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import java.util.TimeZone;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -30,19 +32,13 @@ import org.junit.experimental.categories.Category;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement1IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
-  public PreparedStatement1LatestIT() {
-    super("json");
-  }
 
-  PreparedStatement1LatestIT(String queryResultFormat) {
-    super(queryResultFormat);
-  }
-
-  @Test
-  public void testPrepStWithCacheEnabled() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepStWithCacheEnabled(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       // ensure enable the cache result use
       statement.execute(enableCacheReuse);
@@ -107,10 +103,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    *
    * @throws SQLException arises if any exception occurs
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testInsertStageArrayBindWithTime() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testInsertStageArrayBindWithTime(String queryResultFormat) throws SQLException {
+    TimeZone originalTimeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
@@ -140,6 +139,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       } finally {
         statement.execute("drop table if exists testStageBindTime");
         statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
+        TimeZone.setDefault(originalTimeZone);
       }
     }
   }
@@ -154,10 +154,11 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    *
    * @throws SQLException
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSetObjectForTimestampTypes() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testSetObjectForTimestampTypes(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       // set timestamp mapping to default value
       try {
@@ -210,14 +211,15 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    *
    * @throws SQLException arises if any exception occurs
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testExecuteEmptyBatch() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testExecuteEmptyBatch(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
         assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
 
       connection
@@ -228,7 +230,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
         assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
     }
   }
@@ -238,9 +240,10 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testSetObjectMethodWithVarbinaryColumn() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSetObjectMethodWithVarbinaryColumn(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_binary(b VARBINARY)");
 
       try (PreparedStatement prepStatement =
@@ -251,16 +254,17 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testSetObjectMethodWithBigIntegerColumn() {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSetObjectMethodWithBigIntegerColumn(String queryResultFormat) {
+    try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into test_bigint(id) values(?)")) {
         prepStatement.setObject(1, BigInteger.valueOf(9999));
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -270,9 +274,10 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testSetObjectMethodWithLargeBigIntegerColumn() {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSetObjectMethodWithLargeBigIntegerColumn(String queryResultFormat) {
+    try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
 
       try (PreparedStatement prepStatement =
@@ -280,7 +285,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         BigInteger largeBigInt = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
         prepStatement.setObject(1, largeBigInt);
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -290,9 +295,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testBatchInsertWithTimestampInputFormatSet() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testBatchInsertWithTimestampInputFormatSet(String queryResultFormat)
+      throws SQLException {
+    TimeZone originalTimeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("alter session set TIMESTAMP_INPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
@@ -315,6 +324,8 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         statement.execute("drop table if exists testStageBindTypes");
         statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
       }
+    } finally {
+      TimeZone.setDefault(originalTimeZone);
     }
   }
 
@@ -324,10 +335,11 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    *
    * @throws SQLException
    */
-  @Test
-  @Ignore
-  public void testCallStatement() throws SQLException {
-    try (Connection connection = getConnection();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @Disabled
+  public void testCallStatement(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.executeQuery(

@@ -1,8 +1,8 @@
 package net.snowflake.client.jdbc.diagnostic;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -11,15 +11,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.category.TestCategoryDiagnostic;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryDiagnostic.class)
+@Tag(TestTags.DIAGNOSTIC)
 public class DiagnosticContextLatestIT {
 
   private static final String HTTP_NON_PROXY_HOSTS = "http.nonProxyHosts";
@@ -34,7 +34,7 @@ public class DiagnosticContextLatestIT {
   private static String oldJvmHttpsProxyHost;
   private static String oldJvmHttpsProxyPort;
 
-  @BeforeClass
+  @BeforeAll
   public static void init() {
     oldJvmNonProxyHosts = System.getProperty(HTTP_NON_PROXY_HOSTS);
     oldJvmHttpProxyHost = System.getProperty(HTTP_PROXY_HOST);
@@ -43,7 +43,7 @@ public class DiagnosticContextLatestIT {
     oldJvmHttpsProxyPort = System.getProperty(HTTPS_PROXY_PORT);
   }
 
-  @Before
+  @BeforeEach
   public void clearJvmProperties() {
     System.clearProperty(HTTP_NON_PROXY_HOSTS);
     System.clearProperty(HTTP_PROXY_HOST);
@@ -97,7 +97,7 @@ public class DiagnosticContextLatestIT {
 
     String testFailedMessage =
         "The lists of SnowflakeEndpoints in mockEndpoints and endpointsFromTestFile should be identical";
-    assertTrue(testFailedMessage, endpointsFromTestFile.containsAll(mockEndpoints));
+    assertTrue(endpointsFromTestFile.containsAll(mockEndpoints), testFailedMessage);
   }
 
   /**
@@ -112,24 +112,24 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    assertFalse("Proxy configurations should be empty", diagnosticContext.isProxyEnabled());
+    assertFalse(diagnosticContext.isProxyEnabled(), "Proxy configurations should be empty");
     assertTrue(
-        "getHttpProxyHost() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpProxyHost().isEmpty());
+        diagnosticContext.getHttpProxyHost().isEmpty(),
+        "getHttpProxyHost() must return an empty string in the absence of proxy configuration");
     assertEquals(
-        "getHttpProxyPort() must return -1 in the absence of proxy configuration",
         -1,
-        diagnosticContext.getHttpProxyPort());
+        diagnosticContext.getHttpProxyPort(),
+        "getHttpProxyPort() must return -1 in the absence of proxy configuration");
     assertTrue(
-        "getHttpsProxyHost() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpsProxyHost().isEmpty());
+        diagnosticContext.getHttpsProxyHost().isEmpty(),
+        "getHttpsProxyHost() must return an empty string in the absence of proxy configuration");
     assertEquals(
-        "getHttpsProxyPort() must return -1 in the absence of proxy configuration",
         -1,
-        diagnosticContext.getHttpsProxyPort());
+        diagnosticContext.getHttpsProxyPort(),
+        "getHttpsProxyPort() must return -1 in the absence of proxy configuration");
     assertTrue(
-        "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpNonProxyHosts().isEmpty());
+        diagnosticContext.getHttpNonProxyHosts().isEmpty(),
+        "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration");
   }
 
   /** Test added in version > 3.16.1 */
@@ -329,7 +329,7 @@ public class DiagnosticContextLatestIT {
     assertEquals(noProxy, diagnosticContext.getProxy(host4));
   }
 
-  @After
+  @AfterEach
   public void restoreJvmArguments() {
     System.clearProperty(HTTP_NON_PROXY_HOSTS);
     System.clearProperty(HTTP_PROXY_HOST);

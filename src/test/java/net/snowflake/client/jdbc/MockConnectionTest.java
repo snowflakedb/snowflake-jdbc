@@ -1,8 +1,8 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryContextDTO;
@@ -52,15 +51,15 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
  * and ResultSet. These tests will query Snowflake normally, retrieve the JSON result, and replay it
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
-@Category(TestCategoryConnection.class)
+// TODO: SNOW-1821554
+// @Tag(TestTags.CONNECTION)
 public class MockConnectionTest extends BaseJDBCTest {
 
   // Simple pair class container for the error test.
@@ -277,7 +276,7 @@ public class MockConnectionTest extends BaseJDBCTest {
         mockConnection.prepareStatement("select count(*) from " + testTableName).executeQuery();
     fakeResultSet.next();
     String val = fakeResultSet.getString(1);
-    assertEquals("colA value from the mock connection was not what was expected", "rowOne", val);
+    assertEquals("rowOne", val, "colA value from the mock connection was not what was expected");
 
     mockConnection.close();
   }
@@ -411,7 +410,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     InputStream downloadStream1 = mockConnection.downloadStream("@fakeStage", "file1", false);
     byte[] outputBytes1 = new byte[downloadStream1.available()];
     downloadStream1.read(outputBytes1);
-    assertArrayEquals("downloaded bytes not what was expected", outputBytes1, inputBytes1);
+    assertArrayEquals(outputBytes1, inputBytes1, "downloaded bytes not what was expected");
   }
 
   private JsonNode createDummyResponseWithRows(List<List<Object>> rows, List<DataType> dataTypes) {
@@ -540,7 +539,7 @@ public class MockConnectionTest extends BaseJDBCTest {
       resultSetRows++;
     }
 
-    assertEquals("row-count was not what was expected", numRows, resultSetRows);
+    assertEquals(numRows, resultSetRows, "row-count was not what was expected");
   }
 
   // DataTypes supported with mock responses in test:

@@ -10,13 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
 abstract class FileUploaderPrep extends BaseJDBCTest {
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -35,7 +32,7 @@ abstract class FileUploaderPrep extends BaseJDBCTest {
     }
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws Exception {
     exampleS3JsonNode = readJsonFromFile("exampleS3");
     exampleS3StageEndpointJsonNode = readJsonFromFile("exampleS3WithStageEndpoint");

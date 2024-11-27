@@ -106,6 +106,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${version.plugin.failsafe}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit-platform</artifactId>
+              <version>${version.plugin.surefire}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -146,6 +153,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.plugin.surefire}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit-platform</artifactId>
+              <version>${version.plugin.surefire}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -944,6 +958,22 @@
                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>META-INF.native.io_grpc_netty_shaded_netty_tcnative</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libio_grpc_netty_shaded_netty_tcnative</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.io_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libio_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>org.checkerframework</pattern>
                       <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
                     </relocation>
@@ -958,6 +988,18 @@
                     <relocation>
                       <pattern>org.conscrypt</pattern>
                       <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>conscrypt_openjdk_jni</pattern>
+                      <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>opencensus</pattern>
@@ -1169,10 +1211,28 @@
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
+            <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <groups>${testCategory}</groups>
+              <test>UnitTestSuite</test>
             </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
                 <goals>
@@ -1185,13 +1245,11 @@
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <excludes>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                  </excludes>
                   <systemPropertyVariables>
                     <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
                     <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
+                  <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>
             </executions>
@@ -1310,26 +1368,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
-                  </includes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1348,20 +1403,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>DellBoomiIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <test>DellBoomiCloudIT.java</test>
-                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1380,26 +1438,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
-                  </includes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
               </execution>
             </executions>
           </plugin>

@@ -1,15 +1,15 @@
 package com.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class SnowflakeDriverIT extends AbstractDriverIT {
 
   @Test

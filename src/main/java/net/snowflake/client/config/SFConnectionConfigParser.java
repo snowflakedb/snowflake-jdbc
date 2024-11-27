@@ -1,5 +1,6 @@
 package net.snowflake.client.config;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemGetEnvToBooleanValue;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
@@ -34,6 +35,53 @@ public class SFConnectionConfigParser {
       "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
   public static final String DEFAULT = "default";
   public static final String SNOWFLAKE_TOKEN_FILE_PATH = "/snowflake/session/token";
+  public static final String SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION =
+      "SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION";
+
+  public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
+    String defaultConnectionName =
+        Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
+    Map<String, String> fileConnectionConfiguration =
+        loadDefaultConnectionConfiguration(defaultConnectionName);
+
+    if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
+      Properties connectionProperties = new Properties();
+      connectionProperties.putAll(fileConnectionConfiguration);
+
+      String url = createUrl(fileConnectionConfiguration);
+      logger.debug("Url created using parameters from connection configuration file: {}", url);
+
+      if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
+          && fileConnectionConfiguration.get("token") == null) {
+        Path path =
+            Paths.get(
+                Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
+                    .orElse(SNOWFLAKE_TOKEN_FILE_PATH));
+        logger.debug("Token used in connect is read from file: {}", path);
+        try {
+          boolean shouldSkipTokenFilePermissionsVerification =
+              convertSystemGetEnvToBooleanValue(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, false);
+          if (!shouldSkipTokenFilePermissionsVerification) {
+            verifyFilePermissionSecure(path);
+          } else {
+            logger.debug("Skip token file permissions verification");
+          }
+          String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
+          if (!token.isEmpty()) {
+            putPropertyIfNotNull(connectionProperties, "token", token.trim());
+          } else {
+            throw new SnowflakeSQLException(
+                "Non-empty token must be set when the authenticator type is OAUTH");
+          }
+        } catch (Exception ex) {
+          throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
+        }
+      }
+      return new ConnectionParameters(url, connectionProperties);
+    } else {
+      return null;
+    }
+  }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
@@ -85,44 +133,6 @@ public class SFConnectionConfigParser {
                 "Reading from file %s is not safe because file permissions are different than read/write for user",
                 configFilePath));
       }
-    }
-  }
-
-  public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
-    String defaultConnectionName =
-        Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
-    Map<String, String> fileConnectionConfiguration =
-        loadDefaultConnectionConfiguration(defaultConnectionName);
-
-    if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
-      Properties conectionProperties = new Properties();
-      conectionProperties.putAll(fileConnectionConfiguration);
-
-      String url = createUrl(fileConnectionConfiguration);
-      logger.debug("Url created using parameters from connection configuration file: {}", url);
-
-      if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
-          && fileConnectionConfiguration.get("token") == null) {
-        Path path =
-            Paths.get(
-                Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
-                    .orElse(SNOWFLAKE_TOKEN_FILE_PATH));
-        logger.debug("Token used in connect is read from file: {}", path);
-        try {
-          verifyFilePermissionSecure(path);
-          String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
-          if (!token.isEmpty()) {
-            putPropertyIfNotNull(conectionProperties, "token", token.trim());
-          } else {
-            logger.warn("The token has empty value");
-          }
-        } catch (Exception ex) {
-          throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
-        }
-      }
-      return new ConnectionParameters(url, conectionProperties);
-    } else {
-      return null;
     }
   }
 

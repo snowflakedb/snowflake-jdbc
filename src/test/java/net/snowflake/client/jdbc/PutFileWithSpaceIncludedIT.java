@@ -3,8 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,23 +13,22 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /** Test PUT command to send a data file, which file name contains a space. */
   @Test
-  @Ignore
+  @Disabled
   public void putFileWithSpaceIncluded() throws Exception {
     String AWS_SECRET_KEY = TestUtil.systemGetEnv("AWS_SECRET_ACCESS_KEY");
     String AWS_KEY_ID = TestUtil.systemGetEnv("AWS_ACCESS_KEY_ID");
@@ -43,7 +42,8 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
     assertNotNull(AWS_SECRET_KEY);
     assertNotNull(AWS_KEY_ID);
 
-    File dataFolder = tmpFolder.newFolder();
+    File dataFolder = new File(tmpFolder, "data");
+    dataFolder.mkdirs();
     String tarFile = getFullPathFileInResource("snow-13400.tar");
     FileInputStream fis = new FileInputStream(tarFile);
     TarArchiveInputStream tis = new TarArchiveInputStream(fis);
