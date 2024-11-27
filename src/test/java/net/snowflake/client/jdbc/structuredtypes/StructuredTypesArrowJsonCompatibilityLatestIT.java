@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import jdk.jpackage.internal.Arguments;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.ResultSetFormatType;
@@ -23,8 +21,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag(TestTags.RESULT_SET)
-public class StructuredTypesGetStringArrowJsonCompatibilityIT
-    extends StructuredTypesGetStringBaseIT {
+public class StructuredTypesArrowJsonCompatibilityLatestIT extends StructuredTypesGetStringBaseIT {
   private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();
 
   @BeforeAll
