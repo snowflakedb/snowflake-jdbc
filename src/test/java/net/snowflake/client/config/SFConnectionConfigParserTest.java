@@ -175,7 +175,7 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
 
-    Assert.assertThrows(
+    assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
