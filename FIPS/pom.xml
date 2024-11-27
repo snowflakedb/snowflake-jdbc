@@ -725,6 +725,13 @@
         <plugins>
           <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <version>${version.plugin.failsafe}</version>
             <configuration>
               <argLine>
@@ -769,6 +776,13 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <version>${version.plugin.failsafe}</version>
             <executions>
               <execution>

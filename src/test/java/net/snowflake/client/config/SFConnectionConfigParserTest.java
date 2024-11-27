@@ -1,13 +1,13 @@
 package net.snowflake.client.config;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
 import static net.snowflake.client.config.SFConnectionConfigParser.SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
@@ -25,14 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SFConnectionConfigParserTest {
 
@@ -46,7 +44,7 @@ public class SFConnectionConfigParserTest {
   private TomlMapper tomlMapper = new TomlMapper();
   private Map<String, String> envVariables = new HashMap();
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     tempPath = Files.createTempDirectory(".snowflake");
     ENV_VARIABLES_KEYS.stream()
@@ -58,7 +56,7 @@ public class SFConnectionConfigParserTest {
             });
   }
 
-  @After
+  @AfterEach
   public void close() throws IOException {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
@@ -107,7 +105,7 @@ public class SFConnectionConfigParserTest {
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), false, false);
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeRunningOnLinuxMac();
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
@@ -118,7 +116,7 @@ public class SFConnectionConfigParserTest {
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeRunningOnLinuxMac();
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
@@ -164,7 +162,7 @@ public class SFConnectionConfigParserTest {
     extraparams.put("host", null);
     extraparams.put("account", null);
     prepareConnectionConfigurationTomlFile(extraparams);
-    Assert.assertThrows(
+    assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
@@ -177,7 +175,7 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
 
-    Assert.assertThrows(
+    assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 

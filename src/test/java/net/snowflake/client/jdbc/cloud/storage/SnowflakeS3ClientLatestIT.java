@@ -3,8 +3,9 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -13,26 +14,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testS3Client256Encryption() throws SQLException {
     try (Connection connection = getConnection("s3testaccount")) {
       SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -73,7 +72,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testS3ConnectionWithProxyEnvVariablesSet() throws SQLException {
     String testStageName = "s3TestStage";
 
@@ -103,7 +102,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIsClientException400Or404() throws SQLException {
     AmazonServiceException servEx = new AmazonServiceException("S3 operation failed");
     servEx.setServiceName("Amazon S3");
@@ -138,7 +137,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetMaxRetries() throws SQLException {
     Properties props = new Properties();
     props.put("putGetMaxRetries", 1);
@@ -170,7 +169,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
         spy.handleStorageException(
             new InterruptedException(), 0, "download", sfSession, command, null);
       } catch (Exception e) {
-        Assert.fail("Should not have exception here");
+        fail("Should not have exception here");
       }
       Mockito.verify(spy, Mockito.never()).renew(Mockito.anyMap());
       spy.handleStorageException(

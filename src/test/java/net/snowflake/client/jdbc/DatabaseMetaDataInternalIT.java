@@ -5,9 +5,9 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -15,24 +15,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;
   private DatabaseMetaData databaseMetaData;
   private ResultSet resultSet;
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection con = getConnection()) {
       initMetaData(con);
@@ -68,7 +67,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection con = getConnection()) {
       endMetaData(con);
@@ -83,7 +82,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetColumn() throws SQLException {
     String getAllColumnsCount = "select count(*) from db.information_schema.columns";
     connection = getConnection();
@@ -166,7 +166,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctions() throws SQLException {
     connection = getConnection();
     statement = connection.createStatement();
@@ -241,7 +241,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetSchema() throws SQLException {
     String getSchemaCount = "select count(*) from db.information_schema.schemata";
     connection = getConnection();
@@ -290,9 +291,9 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
    * getTables() function Author: Andong Zhan Created on 09/28/2018
    */
   @Test
-  @Ignore // SNOW-85084 detected this is a flaky test, so ignore it here.
+  @Disabled // SNOW-85084 detected this is a flaky test, so ignore it here.
   // We have other regression tests to cover it
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablesReusingCachedResults() throws SQLException {
     Connection snowflakeConnection = getSnowflakeAdminConnection();
     Statement snowflake = snowflakeConnection.createStatement();
@@ -449,7 +450,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetTables() throws SQLException {
     String getAllTable = "select count(*) from db.information_schema.tables";
     String getAllBaseTable =
@@ -579,7 +581,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

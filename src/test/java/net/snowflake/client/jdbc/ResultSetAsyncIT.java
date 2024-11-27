@@ -4,11 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -28,13 +28,13 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.common.core.SqlState;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
@@ -155,11 +155,11 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
             statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_rsmd");
 
         // test isFirst, isBeforeFirst
-        assertTrue("should be before the first", resultSet.isBeforeFirst());
-        assertFalse("should not be the first", resultSet.isFirst());
+        assertTrue(resultSet.isBeforeFirst(), "should be before the first");
+        assertFalse(resultSet.isFirst(), "should not be the first");
         resultSet.next();
-        assertFalse("should not be before the first", resultSet.isBeforeFirst());
-        assertTrue("should be the first", resultSet.isFirst());
+        assertFalse(resultSet.isBeforeFirst(), "should not be before the first");
+        assertTrue(resultSet.isFirst(), "should be the first");
 
         // test isClosed functions
         queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();

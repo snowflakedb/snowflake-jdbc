@@ -5,12 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.SQLException;
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Data source unit test */
 public class SnowflakeBasicDataSourceTest {

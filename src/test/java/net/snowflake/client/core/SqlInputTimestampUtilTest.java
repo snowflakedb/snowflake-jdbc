@@ -1,6 +1,6 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@Ignore
+@Disabled
 public class SqlInputTimestampUtilTest {
 
   private static final String TIMESTAMP_IN_FORMAT_1 = "2021-12-22 09:43:44.000 +0100";
@@ -24,7 +24,7 @@ public class SqlInputTimestampUtilTest {
 
   private static SFBaseSession mockSession;
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() {
     CONNECTION_PARAMS.put("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM");
     CONNECTION_PARAMS.put("TIMESTAMP_TZ_OUTPUT_FORMAT", "DY, DD MON YYYY HH24:MI:SS TZHTZM");

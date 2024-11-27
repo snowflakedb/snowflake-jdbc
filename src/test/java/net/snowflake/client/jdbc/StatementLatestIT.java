@@ -6,11 +6,11 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.net.URL;
@@ -22,17 +22,15 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -40,7 +38,7 @@ import org.junit.rules.TemporaryFolder;
  * if the tests still is not applicable. If it is applicable, move tests to StatementIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -52,7 +50,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testExecuteCreateAndDrop() throws SQLException {
@@ -83,9 +81,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testCopyAndUpload() throws Exception {
-    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    File tempFolder = new File(tmpFolder, "test_downloads_folder");
+    tempFolder.mkdirs();
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       String fileName = "test_copy.csv";
@@ -198,7 +197,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPreparedStatementLogging() throws SQLException {
     try (Connection con = getConnection();
         Statement stmt = con.createStatement()) {

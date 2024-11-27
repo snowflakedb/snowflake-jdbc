@@ -6,13 +6,13 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.sql.BatchUpdateException;
@@ -24,21 +24,19 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.awaitility.Awaitility;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Statement tests */
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -50,7 +48,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testFetchDirection() throws SQLException {
@@ -64,7 +62,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Ignore("Not working for setFetchSize")
+  @Disabled("Not working for setFetchSize")
   @Test
   public void testFetchSize() throws SQLException {
     try (Statement statement = connection.createStatement()) {
@@ -362,7 +360,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               "put file://"
                   + getFullPathFileInResource(TEST_DATA_FILE)
                   + " @%test_batch auto_compress=false");
-          File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+          File tempFolder = new File(tmpFolder, "test_downloads_folder");
+          tempFolder.mkdirs();
           statement.addBatch("get @%test_batch file://" + tempFolder.getCanonicalPath());
 
           rowCounts = statement.executeBatch();
@@ -423,7 +422,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
    * @throws SQLException if any error occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExecuteUpdateZeroCount() throws SQLException {
     try (Connection connection = getConnection()) {
       String[] testCommands = {
