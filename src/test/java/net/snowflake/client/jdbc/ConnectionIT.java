@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnGithubActions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -12,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
@@ -1041,7 +1040,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
-    assumeTrue(AssumptionUtils.isRunningOnGithubAction());
+    assumeRunningOnGithubActions();
 
     Map<String, String> kvParams = getConnectionParameters(null, "ORG");
     Properties connProps = kvMap2Properties(kvParams, false);

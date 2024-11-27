@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.isRunningOnGithubActions;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,7 +25,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
@@ -45,7 +45,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    */
   @BeforeAll
   public static void setUpClass() throws Exception {
-    if (!AssumptionUtils.isRunningOnGithubAction()) {
+    if (!isRunningOnGithubActions()) {
       try (Connection connection = getSnowflakeAdminConnection();
           Statement statement = connection.createStatement()) {
         statement.execute(
@@ -63,7 +63,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    */
   @AfterAll
   public static void tearDownClass() throws Exception {
-    if (!AssumptionUtils.isRunningOnGithubAction()) {
+    if (!isRunningOnGithubActions()) {
       try (Connection connection = getSnowflakeAdminConnection();
           Statement statement = connection.createStatement()) {
         statement.execute(

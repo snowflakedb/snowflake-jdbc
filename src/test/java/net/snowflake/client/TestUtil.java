@@ -5,9 +5,9 @@ package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
@@ -19,6 +19,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.hamcrest.MatcherAssert;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -90,8 +91,8 @@ public class TestUtil {
 
   public static void assertValidQueryId(String queryId) {
     assertNotNull(queryId);
-    assertTrue(
-        QUERY_ID_REGEX.matcher(queryId).matches(), "Expecting " + queryId + " is a valid UUID");
+    MatcherAssert.assertThat(
+        "Expecting " + queryId + " is a valid UUID", queryId, matchesPattern(QUERY_ID_REGEX));
   }
 
   /**

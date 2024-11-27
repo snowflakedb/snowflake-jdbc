@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,7 +21,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -552,7 +551,7 @@ public class RestRequestTest {
 
   @Test
   public void testLoginTimeout() throws IOException {
-    assumeFalse(AssumptionUtils.isNotRunningOnLinuxMac());
+    assumeRunningOnLinuxMac();
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);

@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.AbstractDriverIT.getConnectionParameters;
+import static net.snowflake.client.AssumptionUtils.assumeNotRunningOnGithubActionsMac;
+import static net.snowflake.client.AssumptionUtils.assumeNotRunningOnJava21;
+import static net.snowflake.client.AssumptionUtils.assumeNotRunningOnJava8;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,7 +16,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -43,11 +45,9 @@ abstract class BaseWiremockTest {
 
   @BeforeAll
   public static void setUpClass() {
-    Assumptions.assumeFalse(AssumptionUtils.isRunningOnJava8());
-    Assumptions.assumeFalse(AssumptionUtils.isRunningOnJava21());
-    Assumptions.assumeFalse(
-        AssumptionUtils
-            .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost
+    assumeNotRunningOnJava8();
+    assumeNotRunningOnJava21();
+    assumeNotRunningOnGithubActionsMac(); // disabled until issue with access to localhost
     // (https://github.com/snowflakedb/snowflake-jdbc/pull/1807#discussion_r1686229430) is fixed on
     // github actions mac image. Ticket to enable when fixed: SNOW-1555950
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
