@@ -1,7 +1,8 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.snowflake.client.category.TestCategoryArrow;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
@@ -39,15 +40,15 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.util.Text;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = 'arrow'");
@@ -57,7 +58,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDown() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session unset jdbc_query_result_format");
@@ -156,7 +157,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
         List<VectorSchemaRoot> roots = batch.fetch();
         for (VectorSchemaRoot root : roots) {
           totalRows += root.getRowCount();
-          assertTrue(root.getVector(0) instanceof SmallIntVector);
+          assertInstanceOf(SmallIntVector.class, root.getVector(0));
           SmallIntVector vector = (SmallIntVector) root.getVector(0);
           for (int i = 0; i < root.getRowCount(); i++) {
             values.add(vector.get(i));
