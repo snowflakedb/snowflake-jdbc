@@ -299,52 +299,40 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /**
-   * Run test manually to confirm setQueryTimeout is working for async query
+   * Test for setting query timeout on async queries. Applicable to versions after 3.20.0.
    *
    * @throws SQLException if there is an error when executing
    */
   @Test
-  @DontRunOnGithubActions
   public void testSetQueryTimeoutForAsnycQuery() throws SQLException {
-    Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement()) {
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 0);
+      statement.setQueryTimeout(3);
 
-    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 0);
-    statement.setQueryTimeout(3);
+      String sql = "SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER;";
 
-    String sql = "SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER;";
+      try (ResultSet resultSet =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
 
-    // Async
-    System.out.println("Async start time: " + java.time.LocalTime.now());
-    ResultSet resultSet = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql);
+        QueryStatus queryStatus = QueryStatus.RUNNING;
+        while (queryStatus == QueryStatus.RUNNING
+            || queryStatus == QueryStatus.RESUMING_WAREHOUSE) {
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            fail(e.getMessage());
+          }
+          queryStatus = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
+        }
 
-    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    System.out.println("Async query ID: " + queryID);
-
-    QueryStatus queryStatus = QueryStatus.RUNNING;
-    while (queryStatus == QueryStatus.RUNNING || queryStatus == QueryStatus.RESUMING_WAREHOUSE) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        fail(e.getMessage());
-      }
-      queryStatus = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      System.out.println("Current status: " + queryStatus);
-    }
-
-    if (queryStatus == QueryStatus.SUCCESS) {
-      while (resultSet.next()) {
-        System.out.println(resultSet.getString(1));
-        System.exit(0);
+        if (queryStatus == QueryStatus.FAILED_WITH_ERROR) {
+          assertTrue(
+              queryStatus
+                  .getErrorMessage()
+                  .contains(
+                      "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+        }
       }
     }
-
-    if (queryStatus == QueryStatus.FAILED_WITH_ERROR) {
-      while (resultSet.next()) {
-        System.out.println(queryStatus.getErrorMessage());
-        System.exit(0);
-      }
-    }
-
-    System.out.println("Async end time: " + java.time.LocalTime.now());
   }
 }
