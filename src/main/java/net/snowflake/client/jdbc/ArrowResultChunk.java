@@ -7,6 +7,7 @@ import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.initConve
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteOrder;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.EndiannessSwitchVisitor;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
 import net.snowflake.client.core.arrow.fullvectorconverters.ArrowErrorCode;
 import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverterUtil;
@@ -99,6 +101,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (FieldVector f : root.getFieldVectors()) {
           // transfer will not copy data but transfer ownership of memory
           // from streamReader to resultChunk
+          if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+            f.accept(new EndiannessSwitchVisitor(), null);
+          }
           TransferPair t = f.getTransferPair(rootAllocator);
           t.transfer();
           valueVectors.add(t.getTo());
