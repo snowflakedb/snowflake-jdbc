@@ -7,13 +7,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,14 +30,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetIT extends ResultSet0IT {
   private final String selectAllSQL = "select * from test_rs";
 
@@ -47,25 +48,19 @@ public class ResultSetIT extends ResultSet0IT {
     (byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01
   };
 
-  public ResultSetIT() {
-    this("json");
-  }
-
-  ResultSetIT(String queryResultFormat) {
-    super(queryResultFormat);
-  }
-
-  @Test
-  public void testFindColumn() throws SQLException {
-    try (Statement statement = connection.createStatement();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testFindColumn(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat);
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
       assertEquals(1, resultSet.findColumn("COLA"));
     }
   }
 
-  @Test
-  public void testGetColumnClassNameForBinary() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetColumnClassNameForBinary(String queryResultFormat) throws Throwable {
+    try (Statement statement = createStatement(queryResultFormat); ) {
       try {
         statement.execute("create or replace table bintable (b binary)");
         statement.execute("insert into bintable values ('00f1f2')");
@@ -88,8 +83,9 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetMethod() throws Throwable {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetMethod(String queryResultFormat) throws Throwable {
     String prepInsertString = "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?)";
     int bigInt = Integer.MAX_VALUE;
     long bigLong = Long.MAX_VALUE;
@@ -100,7 +96,7 @@ public class ResultSetIT extends ResultSet0IT {
 
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute(
             "create or replace table test_get(colA integer, colB number, colC number, "
@@ -153,8 +149,11 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetObjectOnDatabaseMetadataResultSet() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetObjectOnDatabaseMetadataResultSet(String queryResultFormat)
+      throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {}
     DatabaseMetaData databaseMetaData = connection.getMetaData();
     try (ResultSet resultSet = databaseMetaData.getTypeInfo()) {
       assertTrue(resultSet.next());
@@ -163,9 +162,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetShort() throws SQLException {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetShort(String queryResultFormat) throws SQLException {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -205,9 +205,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetInt() throws SQLException {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetInt(String queryResultFormat) throws SQLException {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -246,9 +247,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetLong() throws SQLException {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetLong(String queryResultFormat) throws SQLException {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -287,9 +289,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetFloat() throws SQLException {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetFloat(String queryResultFormat) throws SQLException {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -328,9 +331,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetDouble() throws SQLException {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetDouble(String queryResultFormat) throws SQLException {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -369,9 +373,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetBigDecimal() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBigDecimal(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table test_get(colA number(38,9))");
       try (PreparedStatement preparedStatement =
           connection.prepareStatement("insert into test_get values(?)")) {
@@ -393,7 +398,7 @@ public class ResultSetIT extends ResultSet0IT {
       statement.execute("drop table if exists test_get");
     }
 
-    try (ResultSet resultSet = numberCrossTesting()) {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       for (int i = 1; i < 13; i++) {
         assertNull(resultSet.getBigDecimal(i));
@@ -426,9 +431,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetBigDecimalNegative() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBigDecimalNegative(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute("create or replace table test_dec(colA time)");
         try (PreparedStatement preparedStatement =
@@ -454,9 +460,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testCursorPosition() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testCursorPosition(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute(selectAllSQL);
       try (ResultSet resultSet = statement.getResultSet()) {
         assertTrue(resultSet.next());
@@ -480,10 +487,11 @@ public class ResultSetIT extends ResultSet0IT {
    *
    * @throws SQLException arises if any exception occurs.
    */
-  @Test
-  public void testGetBytes() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBytes(String queryResultFormat) throws SQLException {
     Properties props = new Properties();
-    try (Connection connection = init(props);
+    try (Connection connection = init(props, queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         ingestBinaryTestData(connection);
@@ -530,11 +538,12 @@ public class ResultSetIT extends ResultSet0IT {
    *
    * @throws Exception arises if any error occurs
    */
-  @Test
-  public void testGetBytesInBase64() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBytesInBase64(String queryResultFormat) throws Exception {
     Properties props = new Properties();
     props.setProperty("binary_output_format", "BAse64");
-    try (Connection connection = init(props);
+    try (Connection connection = init(props, queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         ingestBinaryTestData(connection);
@@ -557,9 +566,10 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   // SNOW-31647
-  @Test
-  public void testColumnMetaWithZeroPrecision() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testColumnMetaWithZeroPrecision(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute(
             "create or replace table testColDecimal(cola number(38, 0), " + "colb number(17, 5))");
@@ -578,9 +588,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetObjectOnFixedView() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetObjectOnFixedView(String queryResultFormat) throws Exception {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute(
             "create or replace table testFixedView"
@@ -592,9 +603,9 @@ public class ResultSetIT extends ResultSet0IT {
 
         // put files
         assertTrue(
-            "Failed to put a file",
             statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"));
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"),
+            "Failed to put a file");
 
         try (ResultSet resultSet =
             statement.executeQuery(
@@ -613,11 +624,12 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetColumnDisplaySizeAndPrecision() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testGetColumnDisplaySizeAndPrecision(String queryResultFormat) throws SQLException {
     ResultSetMetaData resultSetMetaData = null;
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(queryResultFormat)) {
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as char)")) {
         resultSetMetaData = resultSet.getMetaData();
@@ -665,9 +677,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetBoolean() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBoolean(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table testBoolean(cola boolean)");
       statement.execute("insert into testBoolean values(false)");
       try (ResultSet resultSet = statement.executeQuery("select * from testBoolean")) {
@@ -733,9 +746,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetClob() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetClob(String queryResultFormat) throws Throwable {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table testClob(cola text)");
       statement.execute("insert into testClob values('hello world')");
       statement.execute("insert into testClob values('hello world1')");
@@ -772,9 +786,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testFetchOnClosedResultSet() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testFetchOnClosedResultSet(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       ResultSet resultSet = statement.executeQuery(selectAllSQL);
       assertFalse(resultSet.isClosed());
       resultSet.close();
@@ -783,11 +798,13 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testReleaseDownloaderCurrentMemoryUsage(String queryResultFormat)
+      throws SQLException {
     final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(queryResultFormat)) {
 
       statement.executeQuery(
           "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
@@ -802,21 +819,25 @@ public class ResultSetIT extends ResultSet0IT {
         equalTo(initialMemoryUsage));
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testResultColumnSearchCaseSensitiveOld() throws Exception {
-    subTestResultColumnSearchCaseSensitive("JDBC_RS_COLUMN_CASE_INSENSITIVE");
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testResultColumnSearchCaseSensitiveOld(String queryResultFormat) throws Exception {
+    subTestResultColumnSearchCaseSensitive("JDBC_RS_COLUMN_CASE_INSENSITIVE", queryResultFormat);
   }
 
-  @Test
-  public void testResultColumnSearchCaseSensitive() throws Exception {
-    subTestResultColumnSearchCaseSensitive("CLIENT_RESULT_COLUMN_CASE_INSENSITIVE");
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testResultColumnSearchCaseSensitive(String queryResultFormat) throws Exception {
+    subTestResultColumnSearchCaseSensitive(
+        "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE", queryResultFormat);
   }
 
-  private void subTestResultColumnSearchCaseSensitive(String parameterName) throws Exception {
+  private void subTestResultColumnSearchCaseSensitive(
+      String parameterName, String queryResultFormat) throws Exception {
     Properties prop = new Properties();
     prop.put("tracing", "FINEST");
-    try (Connection connection = init(prop);
+    try (Connection connection = init(prop, queryResultFormat);
         Statement statement = connection.createStatement()) {
 
       try (ResultSet resultSet = statement.executeQuery("select 1 AS TESTCOL")) {
@@ -847,9 +868,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testInvalidColumnIndex() throws SQLException {
-    try (Statement statement = connection.createStatement();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testInvalidColumnIndex(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat);
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
 
       assertTrue(resultSet.next());
@@ -869,11 +891,11 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   /** SNOW-28882: wasNull was not set properly */
-  @Test
-  public void testWasNull() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testWasNull(String queryResultFormat) throws Exception {
     try (ResultSet ret =
-        connection
-            .createStatement()
+        createStatement(queryResultFormat)
             .executeQuery(
                 "select cast(1/nullif(0,0) as double),"
                     + "cast(1/nullif(0,0) as int), 100, "
@@ -891,9 +913,10 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   /** SNOW-28390 */
-  @Test
-  public void testParseInfAndNaNNumber() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testParseInfAndNaNNumber(String queryResultFormat) throws Exception {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet ret = statement.executeQuery("select to_double('inf'), to_double('-inf')")) {
         assertTrue(ret.next());
         assertThat("Positive Infinite Number", ret.getDouble(1), equalTo(Double.POSITIVE_INFINITY));
@@ -910,10 +933,11 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   /** SNOW-33227 */
-  @Test
-  public void testTreatDecimalAsInt() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testTreatDecimalAsInt(String queryResultFormat) throws Exception {
     ResultSetMetaData metaData;
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet ret = statement.executeQuery("select 1")) {
 
         metaData = ret.getMetaData();
@@ -929,60 +953,62 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testIsLast() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testIsLast(String queryResultFormat) throws Exception {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
-        assertTrue("should be before the first", ret.isBeforeFirst());
-        assertFalse("should not be the first", ret.isFirst());
+        assertTrue(ret.isBeforeFirst(), "should be before the first");
+        assertFalse(ret.isFirst(), "should not be the first");
 
         assertTrue(ret.next());
 
-        assertFalse("should not be before the first", ret.isBeforeFirst());
-        assertTrue("should be the first", ret.isFirst());
+        assertFalse(ret.isBeforeFirst(), "should not be before the first");
+        assertTrue(ret.isFirst(), "should be the first");
 
         int cnt = 0;
         while (ret.next()) {
           cnt++;
           if (cnt == 72) {
-            assertTrue("should be the last", ret.isLast());
-            assertFalse("should not be after the last", ret.isAfterLast());
+            assertTrue(ret.isLast(), "should be the last");
+            assertFalse(ret.isAfterLast(), "should not be after the last");
           }
         }
         assertEquals(72, cnt);
 
         assertFalse(ret.next());
 
-        assertFalse("should not be the last", ret.isLast());
-        assertTrue("should be afterthe last", ret.isAfterLast());
+        assertFalse(ret.isLast(), "should not be the last");
+        assertTrue(ret.isAfterLast(), "should be afterthe last");
       }
       // PUT one file
       try (ResultSet ret =
           statement.executeQuery(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~")) {
 
-        assertTrue("should be before the first", ret.isBeforeFirst());
-        assertFalse("should not be the first", ret.isFirst());
+        assertTrue(ret.isBeforeFirst(), "should be before the first");
+        assertFalse(ret.isFirst(), "should not be the first");
 
         assertTrue(ret.next());
 
-        assertFalse("should not be before the first", ret.isBeforeFirst());
-        assertTrue("should be the first", ret.isFirst());
+        assertFalse(ret.isBeforeFirst(), "should not be before the first");
+        assertTrue(ret.isFirst(), "should be the first");
 
-        assertTrue("should be the last", ret.isLast());
-        assertFalse("should not be after the last", ret.isAfterLast());
+        assertTrue(ret.isLast(), "should be the last");
+        assertFalse(ret.isAfterLast(), "should not be after the last");
 
         assertFalse(ret.next());
 
-        assertFalse("should not be the last", ret.isLast());
-        assertTrue("should be after the last", ret.isAfterLast());
+        assertFalse(ret.isLast(), "should not be the last");
+        assertTrue(ret.isAfterLast(), "should be after the last");
       }
     }
   }
 
-  @Test
-  public void testUpdateCountOnCopyCmd() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testUpdateCountOnCopyCmd(String queryResultFormat) throws Exception {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute("create or replace table testcopy(cola string)");
 
@@ -1001,16 +1027,18 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetTimeNullTimestampAndTimestampNullTime(String queryResultFormat)
+      throws Throwable {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute("create or replace table testnullts(c1 timestamp, c2 time)");
         statement.execute("insert into testnullts(c1, c2) values(null, null)");
         try (ResultSet rs = statement.executeQuery("select * from testnullts")) {
-          assertTrue("should return result", rs.next());
-          assertNull("return value must be null", rs.getTime(1));
-          assertNull("return value must be null", rs.getTimestamp(2));
+          assertTrue(rs.next(), "should return result");
+          assertNull(rs.getTime(1), "return value must be null");
+          assertNull(rs.getTimestamp(2), "return value must be null");
         }
       } finally {
         statement.execute("drop table if exists testnullts");
@@ -1018,9 +1046,10 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testNextNegative() throws SQLException {
-    try (ResultSet rs = connection.createStatement().executeQuery("select 1")) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testNextNegative(String queryResultFormat) throws SQLException {
+    try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
       assertTrue(rs.next());
       System.setProperty("snowflake.enable_incident_test2", "true");
       try {
@@ -1034,9 +1063,11 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   /** SNOW-1416051; Added in > 3.16.0 */
-  @Test
-  public void shouldSerializeArrayAndObjectAsStringOnGetObject() throws SQLException {
-    try (Statement statement = connection.createStatement();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void shouldSerializeArrayAndObjectAsStringOnGetObject(String queryResultFormat)
+      throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat);
         ResultSet resultSet =
             statement.executeQuery(
                 "select ARRAY_CONSTRUCT(1,2,3), OBJECT_CONSTRUCT('a', 4, 'b', 'test')")) {

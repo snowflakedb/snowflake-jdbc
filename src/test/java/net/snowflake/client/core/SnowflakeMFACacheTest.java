@@ -4,8 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 
@@ -29,9 +30,8 @@ import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -216,7 +216,7 @@ public class SnowflakeMFACacheTest {
       // This connection would receive an exception and then should clean up the mfa cache
       try {
         Connection con3 = DriverManager.getConnection(url, prop);
-        Assert.fail();
+        fail();
       } catch (SnowflakeSQLException ex) {
         // An exception is forced to happen by mocking. Do nothing.
       }
@@ -336,7 +336,7 @@ public class SnowflakeMFACacheTest {
   // Run this test manually to test disabling the client request MFA token. Use an MFA
   // authentication enabled user. This is valid for versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testEnableClientRequestMfaToken() throws SQLException {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();

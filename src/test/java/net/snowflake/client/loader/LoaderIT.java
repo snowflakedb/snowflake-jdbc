@@ -9,8 +9,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,13 +22,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Loader IT */
-@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderIT extends LoaderBase {
   @Test
   public void testInjectBadStagedFileInsert() throws Exception {
@@ -93,7 +93,7 @@ public class LoaderIT extends LoaderBase {
    *
    * @throws Exception raises an exception if any error occurs.
    */
-  @Ignore("Performance test")
+  @Disabled("Performance test")
   @Test
   public void testLoaderLargeInsert() throws Exception {
     new TestDataConfigBuilder(testConnection, putConnection)

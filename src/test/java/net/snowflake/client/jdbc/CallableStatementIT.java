@@ -5,8 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -15,74 +15,26 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.HashMap;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
-@Category(TestCategoryStatement.class)
-public class CallableStatementIT extends BaseJDBCTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {{"JSON"}, {"arrow"}};
-  }
+@Tag(TestTags.STATEMENT)
+public class CallableStatementIT extends CallableStatementITBase {
 
-  private static String queryResultFormat;
-
-  public CallableStatementIT(String format) {
-    queryResultFormat = format;
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
-      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    }
-    return conn;
-  }
-
-  private final String createStoredProcedure =
-      "create or replace procedure square_it(num FLOAT) returns float not "
-          + "null language javascript as $$ return NUM * NUM; $$";
-  private final String createSecondStoredProcedure =
-      "create or replace procedure add_nums(x DOUBLE, y DOUBLE) "
-          + "returns double not null language javascript as $$ return X + Y; $$";
-  private final String deleteStoredProcedure = "drop procedure if exists square_it(FLOAT)";
-  private final String deleteSecondStoredProcedure = "drop procedure if exists add_nums(INT, INT)";
-
-  @Before
-  public void setUp() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      statement.execute(createStoredProcedure);
-      statement.execute(createSecondStoredProcedure);
-    }
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      statement.execute(deleteStoredProcedure);
-      statement.execute(deleteSecondStoredProcedure);
-    }
-  }
-
-  @Test
-  public void testPrepareCall() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareCall(String queryResultFormat) throws SQLException {
     // test CallableStatement with no binding parameters
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection(queryResultFormat)) {
       try (CallableStatement callableStatement = connection.prepareCall("call square_it(5)")) {
         assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
       }

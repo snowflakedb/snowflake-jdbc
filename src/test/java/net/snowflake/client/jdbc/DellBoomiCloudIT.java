@@ -7,15 +7,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** A simple run on fetch result under boomi cloud environment's policy file */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DellBoomiCloudIT extends AbstractDriverIT {
-  @Before
+  @BeforeEach
   public void setup() {
     File file = new File(DellBoomiCloudIT.class.getResource("boomi.policy").getFile());
 
@@ -25,6 +26,7 @@ public class DellBoomiCloudIT extends AbstractDriverIT {
   }
 
   @Test
+  @Disabled // TODO: SNOW-1805239
   public void testSelectLargeResultSet() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();

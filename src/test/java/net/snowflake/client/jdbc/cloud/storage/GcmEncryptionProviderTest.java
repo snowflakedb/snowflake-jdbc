@@ -1,8 +1,8 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -25,8 +25,8 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class GcmEncryptionProviderTest {
@@ -58,7 +58,7 @@ public class GcmEncryptionProviderTest {
   byte[] dataAad = "data aad".getBytes(StandardCharsets.UTF_8);
   byte[] keyAad = "key aad".getBytes(StandardCharsets.UTF_8);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     encMat.setQueryStageMasterKey(queryStageMasterKey);
     encMat.setSmkId(123);
@@ -138,21 +138,21 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+
+    byte[] encryptedKey = encKeyArgumentCaptor.getValue();
+    encryptedKey[0] = (byte) ((encryptedKey[0] + 1) % 255);
     assertThrows(
         AEADBadTagException.class,
-        () -> {
-          byte[] encryptedKey = encKeyArgumentCaptor.getValue();
-          encryptedKey[0] = (byte) ((encryptedKey[0] + 1) % 255);
-          IOUtils.toByteArray(
-              GcmEncryptionProvider.decryptStream(
-                  new ByteArrayInputStream(cipherText),
-                  Base64.getEncoder().encodeToString(encryptedKey),
-                  Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
-                  Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
-                  encMat,
-                  dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
-                  keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
-        });
+        () ->
+            IOUtils.toByteArray(
+                GcmEncryptionProvider.decryptStream(
+                    new ByteArrayInputStream(cipherText),
+                    Base64.getEncoder().encodeToString(encryptedKey),
+                    Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+                    Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
+                    encMat,
+                    dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
+                    keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad))));
   }
 
   @Test
@@ -160,12 +160,12 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    byte[] dataIvBase64 = dataIvDataArgumentCaptor.getValue();
+    dataIvBase64[0] = (byte) ((dataIvBase64[0] + 1) % 255);
     IOException ioException =
         assertThrows(
             IOException.class,
             () -> {
-              byte[] dataIvBase64 = dataIvDataArgumentCaptor.getValue();
-              dataIvBase64[0] = (byte) ((dataIvBase64[0] + 1) % 255);
               IOUtils.toByteArray(
                   GcmEncryptionProvider.decryptStream(
                       new ByteArrayInputStream(cipherText),
@@ -184,11 +184,11 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    byte[] keyIvBase64 = keyIvDataArgumentCaptor.getValue();
+    keyIvBase64[0] = (byte) ((keyIvBase64[0] + 1) % 255);
     assertThrows(
         AEADBadTagException.class,
         () -> {
-          byte[] keyIvBase64 = keyIvDataArgumentCaptor.getValue();
-          keyIvBase64[0] = (byte) ((keyIvBase64[0] + 1) % 255);
           IOUtils.toByteArray(
               GcmEncryptionProvider.decryptStream(
                   new ByteArrayInputStream(cipherText),

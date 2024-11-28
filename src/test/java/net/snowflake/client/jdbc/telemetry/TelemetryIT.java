@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -18,25 +18,23 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  @Before
+  @BeforeEach
   public void init() throws SQLException, IOException {
     this.connection = getConnection();
   }
@@ -47,23 +45,23 @@ public class TelemetryIT extends AbstractDriverIT {
     testTelemetryInternal(telemetry);
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createSessionlessTelemetry());
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testJWTSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createJWTSessionlessTelemetry());
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testOAuthSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createOAuthSessionlessTelemetry());
   }
@@ -143,13 +141,13 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDisableJWTSessionlessTelemetry() throws Exception, SFException {
     testDisableTelemetryInternal(createJWTSessionlessTelemetry());
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDisableOAuthSessionlessTelemetry() throws Exception, SFException {
     testDisableTelemetryInternal(createOAuthSessionlessTelemetry());
   }
@@ -181,7 +179,7 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testClosedJWTSessionlessTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createJWTSessionlessTelemetry();
     telemetry.close();
@@ -189,11 +187,11 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("type", "query");
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
-    Assert.assertFalse(telemetry.sendBatchAsync().get());
+    assertFalse(telemetry.sendBatchAsync().get());
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testClosedOAuthSessionlessTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createOAuthSessionlessTelemetry();
     telemetry.close();
@@ -201,7 +199,7 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("type", "query");
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
-    Assert.assertFalse(telemetry.sendBatchAsync().get());
+    assertFalse(telemetry.sendBatchAsync().get());
   }
 
   // Helper function to create a sessionless telemetry
