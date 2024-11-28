@@ -2,10 +2,10 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.ChunkFileMetadata;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,7 +16,7 @@ import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFStatementType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeSerializableTest {
 

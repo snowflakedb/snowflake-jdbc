@@ -3,21 +3,21 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";
 
-  @Before
+  @BeforeEach
   void setUp() {
     setLogLevel(LogLevel.TRACE);
   }
@@ -36,7 +36,7 @@ public abstract class AbstractLoggerIT {
         "Value: {}",
         (ArgSupplier)
             () -> {
-              Assert.fail("Lambda expression evaluated even though message " + "is not logged");
+              fail("Lambda expression evaluated even though message " + "is not logged");
               return 0;
             });
   }
@@ -103,19 +103,19 @@ public abstract class AbstractLoggerIT {
 
       String loggedMsg = getLoggedMessage();
       assertEquals(
+          expectedLogMsg,
+          loggedMsg,
           String.format(
               "Message logged did not match expected value. " + "expected=%s actual=%s",
-              expectedLogMsg, loggedMsg),
-          expectedLogMsg,
-          loggedMsg);
+              expectedLogMsg, loggedMsg));
 
       LogLevel loggedMsgLevel = getLoggedMessageLevel();
       assertEquals(
+          level,
+          loggedMsgLevel,
           String.format(
               "Message was not logged at expected log level. " + "expected=%s actual=%s",
-              level.toString(), loggedMsgLevel.toString()),
-          level,
-          loggedMsgLevel);
+              level.toString(), loggedMsgLevel.toString()));
     }
   }
 

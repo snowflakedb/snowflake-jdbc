@@ -5,10 +5,10 @@ package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,7 +19,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -53,7 +53,7 @@ public class TestUtil {
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
     try {
       testCode.run();
-      Assert.fail();
+      fail();
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(errorCode));
     }
@@ -91,8 +91,8 @@ public class TestUtil {
 
   public static void assertValidQueryId(String queryId) {
     assertNotNull(queryId);
-    assertTrue(
-        "Expecting " + queryId + " is a valid UUID", QUERY_ID_REGEX.matcher(queryId).matches());
+    MatcherAssert.assertThat(
+        "Expecting " + queryId + " is a valid UUID", queryId, matchesPattern(QUERY_ID_REGEX));
   }
 
   /**

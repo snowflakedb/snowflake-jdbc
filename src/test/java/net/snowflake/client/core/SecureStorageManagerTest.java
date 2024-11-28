@@ -16,11 +16,11 @@ import com.sun.jna.ptr.PointerByReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnLinux;
-import net.snowflake.client.RunningNotOnWinMac;
-import org.junit.Rule;
-import org.junit.Test;
+import net.snowflake.client.annotations.RunOnLinux;
+import net.snowflake.client.annotations.RunOnMac;
+import net.snowflake.client.annotations.RunOnWindows;
+import net.snowflake.client.annotations.RunOnWindowsOrMac;
+import org.junit.jupiter.api.Test;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
   @Override
@@ -213,8 +213,6 @@ class MockMacKeychainManager {
 }
 
 public class SecureStorageManagerTest {
-  // This is required to use ConditionalIgnore annotation
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";
@@ -227,7 +225,7 @@ public class SecureStorageManagerTest {
   private static final String MFA_TOKEN = "MFATOKEN";
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
+  @RunOnWindowsOrMac
   public void testLoadNativeLibrary() {
     // Only run on Mac or Windows. Make sure the loading of native platform library won't break.
     if (Constants.getOS() == Constants.OS.MAC) {
@@ -240,6 +238,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnWindows
   public void testWindowsManager() {
     SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockAdvapi32Lib());
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
@@ -249,6 +248,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnMac
   public void testMacManager() {
     SecureStorageAppleManager.SecurityLibManager.setInstance(new MockSecurityLib());
     SecureStorageManager manager = SecureStorageAppleManager.builder();
@@ -258,7 +258,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnLinux.class)
+  @RunOnLinux
   public void testLinuxManager() {
     SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
 

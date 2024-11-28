@@ -3,14 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,7 +21,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -32,7 +31,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -337,18 +336,16 @@ public class RestRequestTest {
     for (TestCase t : testCases) {
       if (t.result) {
         assertTrue(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       } else {
         assertFalse(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       }
     }
   }
@@ -459,8 +456,8 @@ public class RestRequestTest {
     execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testMaxRetriesExceeded() throws IOException, SnowflakeSQLException {
+  @Test
+  public void testMaxRetriesExceeded() throws IOException {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -482,8 +479,9 @@ public class RestRequestTest {
 
     try {
       TelemetryService.disable();
-      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
-      fail("testMaxRetries");
+      assertThrows(
+          SnowflakeSQLException.class,
+          () -> execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1));
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();
@@ -516,8 +514,8 @@ public class RestRequestTest {
     execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testLoginMaxRetries() throws IOException, SnowflakeSQLException {
+  @Test
+  public void testLoginMaxRetries() throws IOException {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -539,8 +537,9 @@ public class RestRequestTest {
 
     try {
       TelemetryService.disable();
-      execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1);
-      fail("testMaxRetries");
+      assertThrows(
+          SnowflakeSQLException.class,
+          () -> execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1));
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();
@@ -552,7 +551,7 @@ public class RestRequestTest {
 
   @Test
   public void testLoginTimeout() throws IOException {
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeRunningOnLinuxMac();
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -643,18 +642,18 @@ public class RestRequestTest {
               elapsedMilliForTransientIssues);
 
       assertTrue(
-          "Backoff should be lower or equal to max backoff limit",
-          backoffInMilli <= maxBackoffInMilli);
+          backoffInMilli <= maxBackoffInMilli,
+          "Backoff should be lower or equal to max backoff limit");
       if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
         assertEquals(
-            "Backoff should fill time till retry timeout",
             retryTimeoutInMilli - elapsedMilliForTransientIssues,
-            backoffInMilli);
+            backoffInMilli,
+            "Backoff should fill time till retry timeout");
         break;
       } else {
         assertTrue(
-            "Backoff should be higher or equal to min backoff limit",
-            backoffInMilli >= minBackoffInMilli);
+            backoffInMilli >= minBackoffInMilli,
+            "Backoff should be higher or equal to min backoff limit");
       }
       elapsedMilliForTransientIssues += backoffInMilli;
     }

@@ -3,8 +3,8 @@
  */
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,18 +14,17 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class EventHandlerTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
-    tmpFolder.newFolder("snowflake_dumps");
-    System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
+    new File(tmpFolder, "snowflake_dumps").mkdirs();
+    System.setProperty("snowflake.dump_path", tmpFolder.getCanonicalPath());
   }
 
   @Test

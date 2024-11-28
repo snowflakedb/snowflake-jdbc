@@ -1,9 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -12,18 +12,17 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.QueryStatus;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
  * driver versions do not contain the asynchronous querying API.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());
 
@@ -69,20 +68,20 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAsynchronousQuerySuccess() throws Exception {
     testSuccess();
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAsynchronousQueryFailure() throws Exception {
     testFailure();
   }
 
   /** Test that isValid() function returns false when session is expired */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIsValidWithInvalidSession() throws Exception {
     try (Connection connection = getConnection()) {
       // assert that connection starts out valid
