@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.QueryStatusV2;
@@ -49,7 +50,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
@@ -804,7 +804,7 @@ public class SFSession extends SFBaseSession {
             && privateKey == null
             && privateKeyFileLocation == null
             && privateKeyBase64 == null)
-        || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
+        || AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -815,7 +815,7 @@ public class SFSession extends SFBaseSession {
   boolean isExternalbrowserAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -837,9 +837,7 @@ public class SFSession extends SFBaseSession {
   boolean isUsernamePasswordMFAAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
-        .name()
-        .equalsIgnoreCase(authenticator);
+    return AuthenticatorType.USERNAME_PASSWORD_MFA.name().equalsIgnoreCase(authenticator);
   }
 
   /**
