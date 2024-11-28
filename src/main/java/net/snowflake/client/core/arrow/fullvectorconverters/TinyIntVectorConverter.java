@@ -8,6 +8,8 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class TinyIntVectorConverter extends SimpleArrowFullVectorConverter<TinyIntVector> {
@@ -21,6 +23,10 @@ public class TinyIntVectorConverter extends SimpleArrowFullVectorConverter<TinyI
     super(allocator, vector, context, session, idx);
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Int(8, true), null);
+  }
+
   @Override
   protected boolean matchingType() {
     return (vector instanceof TinyIntVector);
@@ -28,7 +34,9 @@ public class TinyIntVectorConverter extends SimpleArrowFullVectorConverter<TinyI
 
   @Override
   protected TinyIntVector initVector() {
-    TinyIntVector resultVector = new TinyIntVector(vector.getName(), allocator);
+    boolean nullable = vector.getField().isNullable();
+    TinyIntVector resultVector =
+        new TinyIntVector(vector.getName(), getFieldType(nullable), allocator);
     resultVector.allocateNew(vector.getValueCount());
     return resultVector;
   }

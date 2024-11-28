@@ -9,6 +9,9 @@ import org.apache.arrow.vector.BaseFixedWidthVector;
 import org.apache.arrow.vector.BaseIntVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.TimeUnit;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public abstract class TimeVectorConverter<T extends BaseFixedWidthVector>
@@ -20,6 +23,14 @@ public abstract class TimeVectorConverter<T extends BaseFixedWidthVector>
     this.allocator = allocator;
     this.vector = vector;
   }
+
+  protected FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Time(getTimeUnit(), getWidth()), null);
+  }
+
+  protected abstract TimeUnit getTimeUnit();
+
+  protected abstract int getWidth();
 
   protected abstract T initVector();
 

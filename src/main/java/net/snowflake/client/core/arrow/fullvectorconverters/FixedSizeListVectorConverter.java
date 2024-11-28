@@ -12,7 +12,9 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class FixedSizeListVectorConverter extends AbstractFullVectorConverter {
@@ -41,6 +43,10 @@ public class FixedSizeListVectorConverter extends AbstractFullVectorConverter {
     this.valueTargetType = valueTargetType;
   }
 
+  private static FieldType getFieldType(boolean nullable, int size) {
+    return new FieldType(nullable, new ArrowType.FixedSizeList(size), null);
+  }
+
   @Override
   protected FieldVector convertVector()
       throws SFException, SnowflakeSQLException, SFArrowException {
@@ -50,8 +56,12 @@ public class FixedSizeListVectorConverter extends AbstractFullVectorConverter {
       FieldVector convertedDataVector =
           ArrowFullVectorConverterUtil.convert(
               allocator, dataVector, context, session, timeZoneToUse, 0, valueTargetType);
+
+      boolean nullable = vector.getField().isNullable();
+      int listSize = listVector.getListSize();
       FixedSizeListVector convertedListVector =
-          FixedSizeListVector.empty(listVector.getName(), listVector.getListSize(), allocator);
+          new FixedSizeListVector(
+              listVector.getName(), allocator, getFieldType(nullable, listSize), null);
       ArrayList<Field> fields = new ArrayList<>();
       fields.add(convertedDataVector.getField());
       convertedListVector.initializeChildrenFromFields(fields);
