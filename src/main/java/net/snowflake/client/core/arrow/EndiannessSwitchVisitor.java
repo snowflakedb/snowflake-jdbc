@@ -49,7 +49,7 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
   @Override
   public Void visit(BaseVariableWidthVector baseVariableWidthVector, Void v) {
     int width = BaseVariableWidthVector.OFFSET_WIDTH;
-    ArrowBuf offsetBuffer = baseVariableWidthVector.getDataBuffer();
+    ArrowBuf offsetBuffer = baseVariableWidthVector.getOffsetBuffer();
     for (int i = 0; i <= baseVariableWidthVector.getValueCount(); i++) {
       flipBytes(offsetBuffer, i * width, width);
     }
@@ -91,7 +91,7 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
     listVector.getDataVector().accept(this, v);
 
     int offsetWidth = ListVector.OFFSET_WIDTH;
-    ArrowBuf offsetBuffer = listVector.getDataBuffer();
+    ArrowBuf offsetBuffer = listVector.getOffsetBuffer();
     for (int i = 0; i <= listVector.getValueCount(); i++) {
       flipBytes(offsetBuffer, i * offsetWidth, offsetWidth);
     }
@@ -109,7 +109,7 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
     largeListVector.getDataVector().accept(this, v);
 
     int offsetWidth = ListVector.OFFSET_WIDTH;
-    ArrowBuf offsetBuffer = largeListVector.getDataBuffer();
+    ArrowBuf offsetBuffer = largeListVector.getOffsetBuffer();
     for (int i = 0; i <= largeListVector.getValueCount(); i++) {
       flipBytes(offsetBuffer, i * offsetWidth, offsetWidth);
     }
