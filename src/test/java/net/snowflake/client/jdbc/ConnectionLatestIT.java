@@ -63,11 +63,12 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -570,7 +571,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
     // Adding authenticator type for code coverage purposes
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
+    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
     int count = TelemetryService.getInstance().getEventCount();
     try {
@@ -633,7 +634,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
     // Adding authenticator type for code coverage purposes
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
+    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
     try {
       connStart = System.currentTimeMillis();
       Map<String, String> params = getConnectionParameters();
@@ -1252,8 +1253,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     Map<String, Object> data =
         Collections.singletonMap(ClientAuthnParameter.ACCOUNT_NAME.name(), "snowhouse-local");
-    ClientAuthnDTO authnData = new ClientAuthnDTO();
-    authnData.setData(data);
+    ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
 
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     String json = mapper.writeValueAsString(authnData);
