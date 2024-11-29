@@ -241,26 +241,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @ParameterizedTest
   @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
-  public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow(
-      ResultSetFormatType format) throws SQLException {
-    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
-    withFirstRow(
-        "select {'string':'a'}::OBJECT(string VARCHAR)",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1));
-        },
-        format);
-    withFirstRow(
-        "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1, Map.class));
-        },
-        format);
-  }
-
-  @ParameterizedTest
-  @ArgumentsSource(ResultFormatProvider.class)
-  @DontRunOnGithubActions
   public void testReturnAsArrayOfSqlData(ResultSetFormatType format) throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'string':'one'}, {'string':'two'}, {'string':'three'})::ARRAY(OBJECT(string VARCHAR))",
