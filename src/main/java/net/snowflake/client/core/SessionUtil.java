@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
+import net.snowflake.client.core.auth.oauth.AuthorizationCodeFlowAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.OauthAccessTokenProvider;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -264,6 +266,13 @@ public class SessionUtil {
 
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
+
+    if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW)) {
+      OauthAccessTokenProvider accessTokenProvider = new AuthorizationCodeFlowAccessTokenProvider();
+      String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      loginInput.setToken(oauthAccessToken);
+    }
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
     if (!authenticator.equals(AuthenticatorType.OAUTH)) {

@@ -70,6 +70,7 @@
     <mockito.version>4.11.0</mockito.version>
     <netty.version>4.1.115.Final</netty.version>
     <nimbusds.version>9.37.3</nimbusds.version>
+    <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
     <plexus.utils.version>3.4.2</plexus.utils.version>
@@ -217,6 +218,11 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbusds.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nimbusds</groupId>
+        <artifactId>oauth2-oidc-sdk</artifactId>
+        <version>${nimbusds.oauth2.version}</version>
       </dependency>
       <dependency>
         <groupId>com.yammer.metrics</groupId>
@@ -644,6 +650,10 @@
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>oauth2-oidc-sdk</artifactId>
     </dependency>
     <dependency>
       <groupId>com.yammer.metrics</groupId>

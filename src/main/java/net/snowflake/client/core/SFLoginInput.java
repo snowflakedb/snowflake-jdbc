@@ -160,7 +160,7 @@ public class SFLoginInput {
     return this;
   }
 
-  int getLoginTimeout() {
+  public int getLoginTimeout() {
     return loginTimeout;
   }
 
@@ -184,7 +184,7 @@ public class SFLoginInput {
     return this;
   }
 
-  int getAuthTimeout() {
+  public int getAuthTimeout() {
     return authTimeout;
   }
 
@@ -238,7 +238,7 @@ public class SFLoginInput {
     return this;
   }
 
-  int getSocketTimeoutInMillis() {
+  public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
@@ -388,7 +388,7 @@ public class SFLoginInput {
     return this;
   }
 
-  HttpClientSettingsKey getHttpClientSettingsKey() {
+  public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 

@@ -41,5 +41,10 @@ public enum AuthenticatorType {
   /*
    * Authenticator to enable token for regular login with mfa
    */
-  USERNAME_PASSWORD_MFA
+  USERNAME_PASSWORD_MFA,
+
+  /*
+   * Authorization code flow with browser popup
+   */
+  OAUTH_AUTHORIZATION_CODE_FLOW
 }
