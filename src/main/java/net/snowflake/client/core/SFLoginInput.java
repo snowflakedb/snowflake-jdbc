@@ -426,13 +426,13 @@ public class SFLoginInput {
     this.httpClientKey = key;
     return this;
   }
-  // Opaque string sent for Snowsight account activation
 
+  // Opaque string sent for Snowsight account activation
   String getInFlightCtx() {
     return inFlightCtx;
   }
-  // Opaque string sent for Snowsight account activation
 
+  // Opaque string sent for Snowsight account activation
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
     return this;
