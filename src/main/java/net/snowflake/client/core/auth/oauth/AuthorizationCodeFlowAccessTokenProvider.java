@@ -47,7 +47,6 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     private AuthorizationCode requestAuthorizationCode(SFLoginInput loginInput) throws SFException {
         try {
             AuthorizationRequest request = buildAuthorizationRequest(loginInput);
-
             URI requestURI = request.toURI();
             HttpUtil.executeGeneralRequest(new HttpGet(requestURI),
                     loginInput.getLoginTimeout(),
@@ -55,9 +54,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
                     loginInput.getSocketTimeoutInMillis(),
                     0,
                     loginInput.getHttpClientSettingsKey());
-            CompletableFuture<String> f = getAuthorizationCodeFromRedirectURI();
-            f.join();
-            return new AuthorizationCode(f.get());
+            String code = getAuthorizationCodeFromRedirectURI().join();
+            return new AuthorizationCode(code);
         } catch (Exception e) {
             throw new SFException(e, ErrorCode.INTERNAL_ERROR);
         }
@@ -92,9 +90,9 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     private static AuthorizationRequest buildAuthorizationRequest(SFLoginInput loginInput) throws URISyntaxException {
         URI authorizeEndpoint = new URI(String.format("%s/oauth/authorize", loginInput.getServerUrl()));
         ClientID clientID = new ClientID("123");
-        Scope scope = new Scope("read", "write");
+        Scope scope = new Scope(String.format("session:role:%s", loginInput.getRole()));
         URI callback = buildRedirectURI();
-        State state = new State();
+        State state = new State(256);
         return new AuthorizationRequest.Builder(
                 new ResponseType(ResponseType.Value.CODE), clientID)
                 .scope(scope)
@@ -111,10 +109,9 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     private static TokenRequest buildTokenRequest(SFLoginInput loginInput, AuthorizationCode authorizationCode) throws URISyntaxException {
         URI callback = buildRedirectURI();
         AuthorizationGrant codeGrant = new AuthorizationCodeGrant(authorizationCode, callback);
-        ClientID clientID = new ClientID("123");
-        Secret clientSecret = new Secret("123");
-        ClientAuthentication clientAuthentication = new ClientSecretBasic(clientID, clientSecret);
-        URI tokenEndpoint = new URI(String.format("%s/oauth/token", loginInput.getServerUrl()));
-        return new TokenRequest(tokenEndpoint, clientAuthentication, codeGrant, new Scope());
+        ClientAuthentication clientAuthentication = new ClientSecretBasic(new ClientID("123"), new Secret("123"));
+        URI tokenEndpoint = new URI(String.format("%s/oauth/token-request", loginInput.getServerUrl()));
+        Scope scope = new Scope("session:role", loginInput.getRole());
+        return new TokenRequest(tokenEndpoint, clientAuthentication, codeGrant, scope);
     }
 }
