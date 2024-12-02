@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -69,24 +70,22 @@ public class SessionUtilExternalBrowser {
 
     @Override
     public void openBrowser(String ssoUrl) throws SFException {
+      if (!URLUtil.isValidURL(ssoUrl)) {
+        throw new SFException(ErrorCode.INVALID_CONNECTION_URL, "Invalid SSOUrl found - " + ssoUrl);
+      }
       try {
         // start web browser
-        if (!URLUtil.isValidURL(ssoUrl)) {
-          throw new SFException(
-              ErrorCode.INVALID_CONNECTION_URL, "Invalid SSOUrl found - " + ssoUrl);
-        }
-        if (java.awt.Desktop.isDesktopSupported()) {
-          URI uri = new URI(ssoUrl);
-          java.awt.Desktop.getDesktop().browse(uri);
+        Runtime runtime = Runtime.getRuntime();
+        Constants.OS os = Constants.getOS();
+        if (Desktop.isDesktopSupported()
+            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+          Desktop.getDesktop().browse(new URI(ssoUrl));
+        } else if (os == Constants.OS.MAC) {
+          runtime.exec("open " + ssoUrl);
+        } else if (os == Constants.OS.WINDOWS) {
+          runtime.exec(new String[] {"rundll32", "url.dll,FileProtocolHandler", ssoUrl});
         } else {
-          Runtime runtime = Runtime.getRuntime();
-          Constants.OS os = Constants.getOS();
-          if (os == Constants.OS.MAC) {
-            runtime.exec("open " + ssoUrl);
-          } else {
-            // linux?
-            runtime.exec("xdg-open " + ssoUrl);
-          }
+          runtime.exec("xdg-open " + ssoUrl);
         }
       } catch (URISyntaxException | IOException ex) {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
