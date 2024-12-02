@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLHandshakeException;
@@ -269,6 +270,7 @@ public class RestRequest {
 
         httpRequest.setURI(builder.build());
         execTimeData.setHttpClientStart();
+        logger.info("headers: " + Arrays.toString(httpRequest.getAllHeaders()));
         response = httpClient.execute(httpRequest);
         execTimeData.setHttpClientEnd();
       } catch (IllegalStateException ex) {
