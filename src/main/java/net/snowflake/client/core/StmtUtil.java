@@ -379,6 +379,9 @@ public class StmtUtil {
             BasicEvent.QueryState.SENDING_QUERY,
             String.format(QueryState.SENDING_QUERY.getArgString(), stmtInput.requestId));
 
+        HttpUtil.applyAdditionalHeadersForSnowsight(
+                httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
+
         resultAsString =
             HttpUtil.executeRequest(
                 httpRequest,
