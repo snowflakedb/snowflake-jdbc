@@ -54,7 +54,7 @@ public class SFLoginInput {
   private boolean enableClientStoreTemporaryCredential;
   private boolean enableClientRequestMfaToken;
 
-  //OAuth
+  // OAuth
   private int redirectUriPort = -1;
   private String clientId;
   private String clientSecret;
@@ -64,7 +64,7 @@ public class SFLoginInput {
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
-  SFLoginInput() {}
+  public SFLoginInput() {}
 
   Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
@@ -79,7 +79,7 @@ public class SFLoginInput {
     return serverUrl;
   }
 
-  SFLoginInput setServerUrl(String serverUrl) {
+  public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
   }
@@ -247,7 +247,7 @@ public class SFLoginInput {
     return (int) socketTimeout.toMillis();
   }
 
-  SFLoginInput setSocketTimeout(Duration socketTimeout) {
+  public SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
   }
@@ -397,7 +397,7 @@ public class SFLoginInput {
     return httpClientKey;
   }
 
-  SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
+  public SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
     return this;
   }

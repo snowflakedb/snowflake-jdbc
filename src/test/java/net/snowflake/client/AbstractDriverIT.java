@@ -6,8 +6,6 @@ package net.snowflake.client;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.base.Strings;
-import net.snowflake.client.core.auth.AuthenticatorType;
-
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -26,6 +24,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import net.snowflake.client.core.auth.AuthenticatorType;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
@@ -326,6 +325,8 @@ public class AbstractDriverIT {
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
     properties.put("authenticator", AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW.name());
+    properties.put("clientId", "IJF3fOhk3Ap614HGkKFt9+Ow1LA=");
+    properties.put("clientSecret", "kX0l9bGGLnuLkByufjUeSG0OLoi2Hz/Nw/31pKXqpE4=");
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));

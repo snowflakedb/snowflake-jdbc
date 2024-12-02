@@ -699,7 +699,8 @@ public class SFSession extends SFBaseSession {
         .setBrowserResponseTimeout(browserResponseTimeout);
 
     if (connectionPropertiesMap.containsKey(SFSessionProperty.OAUTH_REDIRECT_URI_PORT)) {
-        loginInput.setRedirectUriPort((Integer) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI_PORT));
+      loginInput.setRedirectUriPort(
+          (Integer) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI_PORT));
     }
 
     logger.info(
