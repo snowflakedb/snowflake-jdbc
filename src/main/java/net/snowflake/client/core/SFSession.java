@@ -671,6 +671,8 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setClientId((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID))
+        .setClientSecret((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -695,6 +697,10 @@ public class SFSession extends SFBaseSession {
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
         .setBrowserResponseTimeout(browserResponseTimeout);
+
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.OAUTH_REDIRECT_URI_PORT)) {
+        loginInput.setRedirectUriPort((Integer) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI_PORT));
+    }
 
     logger.info(
         "Connecting to {} Snowflake domain",

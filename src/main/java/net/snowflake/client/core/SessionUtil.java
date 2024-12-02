@@ -219,8 +219,11 @@ public class SessionUtil {
           .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
         return AuthenticatorType.EXTERNALBROWSER;
+      } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW.name())) {
+        // OAuth authorization code flow authentication
+        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
-        // OAuth Authentication
+        // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
       } else if (loginInput
           .getAuthenticator()
@@ -268,6 +271,8 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW)) {
+      AssertUtil.assertTrue(loginInput.getClientId() != null, "passing clientId is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
+      AssertUtil.assertTrue(loginInput.getClientSecret() != null, "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
       OauthAccessTokenProvider accessTokenProvider = new AuthorizationCodeFlowAccessTokenProvider();
       String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());

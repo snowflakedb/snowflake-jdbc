@@ -61,7 +61,7 @@ public class SessionUtilExternalBrowser {
     void output(String msg);
   }
 
-  static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
+  public static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
     @Override
     public HttpPost build(URI uri) {
       return new HttpPost(uri);
