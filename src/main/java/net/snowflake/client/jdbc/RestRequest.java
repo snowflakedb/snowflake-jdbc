@@ -269,7 +269,7 @@ public class RestRequest {
 
         httpRequest.setURI(builder.build());
         execTimeData.setHttpClientStart();
-        logger.info("headers: " + Arrays.toString(httpRequest.getAllHeaders()));
+        logger.debug("headers: " + Arrays.toString(httpRequest.getAllHeaders()));
         response = httpClient.execute(httpRequest);
         execTimeData.setHttpClientEnd();
       } catch (IllegalStateException ex) {
