@@ -675,7 +675,7 @@ public abstract class SFBaseSession {
 
   private void logHttpClientInitInfo(HttpClientSettingsKey key) {
     if (key.usesProxy()) {
-      logger.info(
+      logger.debug(
           "Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {},"
               + " proxy host: {}, proxy port: {}, non proxy hosts: {}, proxy user: {}, proxy password is {}",
           key.getOcspMode(),
@@ -687,7 +687,7 @@ public abstract class SFBaseSession {
           key.getProxyUser(),
           key.getProxyPassword().isEmpty() ? "not set" : "set");
     } else {
-      logger.info(
+      logger.debug(
           "Driver OCSP mode: {}, gzip disabled: {} and no proxy",
           key.getOcspMode(),
           key.getGzipDisabled());

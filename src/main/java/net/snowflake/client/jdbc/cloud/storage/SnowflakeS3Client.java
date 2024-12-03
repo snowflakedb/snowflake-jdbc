@@ -352,7 +352,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     TransferManager tx = null;
     int retryCount = 0;
@@ -407,7 +407,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
-            logger.info(
+            logger.debug(
                 "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
                 localFile.getAbsolutePath(),
@@ -420,7 +420,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw ex;
           }
         } else {
-          logger.info(
+          logger.debug(
               "S3 file {} downloaded to {}. It took {} ms with {} retries",
               stageFilePath,
               localFile.getAbsolutePath(),
@@ -473,7 +473,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     int retryCount = 0;
@@ -505,7 +505,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
-            logger.info(
+            logger.debug(
                 "S3 file {} downloaded to input stream. It took {} ms "
                     + "(download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
@@ -520,7 +520,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw ex;
           }
         } else {
-          logger.info(
+          logger.debug(
               "S3 file {} downloaded to input stream. Download took {} ms with {} retries",
               stageFilePath,
               downloadMillis,
@@ -574,7 +574,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info(
+    logger.debug(
         StorageHelper.getStartUploadLog(
             "S3", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
 
@@ -649,13 +649,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
 
         if (uploadFromStream) {
-          logger.info(
+          logger.debug(
               "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
               destFileName,
               uploadMillis,
               retryCount);
         } else {
-          logger.info(
+          logger.debug(
               "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
               srcFile.getAbsolutePath(),
               destFileName,

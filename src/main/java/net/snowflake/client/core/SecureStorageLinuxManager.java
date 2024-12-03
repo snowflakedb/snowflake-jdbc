@@ -41,7 +41,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
             .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
             .build();
-    logger.info(
+    logger.debug(
         "Using temporary file: {} as a token cache storage", fileCacheManager.getCacheFilePath());
   }
 
@@ -70,7 +70,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   public synchronized SecureStorageStatus setCredential(
       String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
-      logger.info("No token provided", false);
+      logger.debug("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
