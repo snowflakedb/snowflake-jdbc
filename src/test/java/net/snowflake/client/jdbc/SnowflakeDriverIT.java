@@ -54,7 +54,6 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -173,7 +172,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       }
     }
     Properties props = new Properties();
-    props.put("authenticator", ClientAuthnDTO.AuthenticatorType.OAUTH.name());
+    props.put("authenticator", "OAUTH");
     props.put("token", token);
     props.put("role", role);
     try (Connection con = getConnection("s3testaccount", props);

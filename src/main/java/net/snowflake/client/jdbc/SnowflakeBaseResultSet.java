@@ -45,6 +45,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1395,7 +1396,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> (SQLInput) sfBaseResultSet.getObject(columnIndex));
+                () -> {
+                  StructObjectWrapper structObjectWrapper =
+                      (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
+                  return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
+                });
         if (sqlInput == null) {
           return null;
         } else {
@@ -1631,13 +1636,16 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    Object object =
-        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
-    if (object == null) {
+    StructObjectWrapper structObjectWrapper =
+        (StructObjectWrapper)
+            SnowflakeUtil.mapSFExceptionToSQLException(
+                () -> sfBaseResultSet.getObject(columnIndex));
+    if (structObjectWrapper == null) {
       return null;
     }
     Map<String, Object> map =
-        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
+        mapSFExceptionToSQLException(
+            () -> prepareMapWithValues(structObjectWrapper.getObject(), type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1645,7 +1653,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                object.getClass(),
+                structObjectWrapper.getObject().getClass(),
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());
@@ -1822,6 +1830,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (Map<String, Object>) object;
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
+    }
+  }
+
+  private Object createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
+    try {
+      if (obj == null) {
+        return null;
+      }
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(obj.getJsonString());
+      return new JsonSqlInput(
+          obj.getJsonString(),
+          jsonNode,
+          session,
+          sfBaseResultSet.getConverters(),
+          sfBaseResultSet.getMetaData().getColumnFields(columnIndex),
+          sfBaseResultSet.getSessionTimeZone());
+    } catch (JsonProcessingException e) {
+      throw new SFException(sfBaseResultSet.getQueryId(), e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 }

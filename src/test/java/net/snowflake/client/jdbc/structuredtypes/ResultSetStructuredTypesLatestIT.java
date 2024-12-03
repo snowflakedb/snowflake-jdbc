@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.structuredtypes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -39,6 +38,7 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.StringClass;
 import net.snowflake.client.providers.ResultFormatProvider;
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -201,7 +201,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         String object = (String) resultSet.getObject(1);
-        String expected =
+        String expectedJson =
             "{\n"
                 + "  \"string\": \"a\",\n"
                 + "  \"b\": 1,\n"
@@ -223,29 +223,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 + "    \"intValue\": 2\n"
                 + "  }\n"
                 + "}";
-        assertEquals(expected, object);
+        String expectedJsonFromArrow =
+            "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,"
+                + "\"bool\": true,\"timestamp_ltz\": \"2021-12-22 09:43:44.000 +0100\",\"timestamp_ntz\": \"2021-12-23 09:44:44.000\","
+                + "\"timestamp_tz\": \"2021-12-24 09:45:45.000 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\","
+                + "\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
+        if (format == ResultSetFormatType.NATIVE_ARROW) {
+          Assert.assertEquals(expectedJsonFromArrow, object);
+        } else {
+          Assert.assertEquals(expectedJson, object);
+        }
       }
     }
-  }
-
-  @ParameterizedTest
-  @ArgumentsSource(ResultFormatProvider.class)
-  @DontRunOnGithubActions
-  public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow(
-      ResultSetFormatType format) throws SQLException {
-    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
-    withFirstRow(
-        "select {'string':'a'}::OBJECT(string VARCHAR)",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1));
-        },
-        format);
-    withFirstRow(
-        "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1, Map.class));
-        },
-        format);
   }
 
   @ParameterizedTest

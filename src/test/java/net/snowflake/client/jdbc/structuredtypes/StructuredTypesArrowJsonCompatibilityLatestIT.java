@@ -21,8 +21,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag(TestTags.RESULT_SET)
-public class StructuredTypesGetStringArrowJsonCompatibilityIT
-    extends StructuredTypesGetStringBaseIT {
+public class StructuredTypesArrowJsonCompatibilityLatestIT extends StructuredTypesGetStringBaseIT {
   private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();
 
   @BeforeAll
@@ -44,7 +43,7 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
   @ParameterizedTest
   @DontRunOnGithubActions
   @ArgumentsSource(DataProvider.class)
-  public void testRunAsGetString(
+  public void testArrowJsonCompatibility(
       ResultSetFormatType queryResultFormat,
       String selectSql,
       String expectedStructureTypeRepresentation)
@@ -52,7 +51,7 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
     withFirstRow(
         connections.get(queryResultFormat),
         selectSql,
-        (resultSet) -> assertGetStringIsCompatible(resultSet, expectedStructureTypeRepresentation));
+        (resultSet) -> assertResultSetIsCompatible(resultSet, expectedStructureTypeRepresentation));
   }
 
   public static class SampleProvider extends SnowflakeArgumentsProvider {
@@ -146,6 +145,7 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
               "{\"binary\":\"616263\"}"));
       samples.add(Arguments.of("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]"));
       samples.add(Arguments.of("select ['a','b','c']::ARRAY(varchar)", "[\"a\",\"b\",\"c\"]"));
+      samples.add(Arguments.of("select ['a','b','c']::ARRAY(variant)", "[\"a\",\"b\",\"c\"]"));
 
       return samples;
     }

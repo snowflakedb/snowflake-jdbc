@@ -28,7 +28,6 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.hamcrest.MatcherAssert;
@@ -239,8 +238,7 @@ public class SessionUtilExternalBrowserTest {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn("https://testaccount.snowflakecomputing.com/");
-    when(loginInput.getAuthenticator())
-        .thenReturn(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+    when(loginInput.getAuthenticator()).thenReturn("EXTERNALBROWSER");
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);

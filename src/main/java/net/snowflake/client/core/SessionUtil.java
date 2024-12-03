@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -38,8 +41,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -209,31 +210,29 @@ public class SessionUtil {
    * @param loginInput login information
    * @return Authenticator type
    */
-  private static ClientAuthnDTO.AuthenticatorType getAuthenticator(SFLoginInput loginInput) {
+  private static AuthenticatorType getAuthenticator(SFLoginInput loginInput) {
     if (loginInput.getAuthenticator() != null) {
       if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name())) {
+          .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
-        return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER;
-      } else if (loginInput
-          .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.OAUTH.name())) {
+        return AuthenticatorType.EXTERNALBROWSER;
+      } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
         // OAuth Authentication
-        return ClientAuthnDTO.AuthenticatorType.OAUTH;
+        return AuthenticatorType.OAUTH;
       } else if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name())) {
-        return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT;
+          .equalsIgnoreCase(AuthenticatorType.SNOWFLAKE_JWT.name())) {
+        return AuthenticatorType.SNOWFLAKE_JWT;
       } else if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
-        return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
+          .equalsIgnoreCase(AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
+        return AuthenticatorType.USERNAME_PASSWORD_MFA;
       } else if (!loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name())) {
+          .equalsIgnoreCase(AuthenticatorType.SNOWFLAKE.name())) {
         // OKTA authenticator v1.
-        return ClientAuthnDTO.AuthenticatorType.OKTA;
+        return AuthenticatorType.OKTA;
       }
     }
 
@@ -241,8 +240,8 @@ public class SessionUtil {
     // if privateKey is specified or not. If yes, authenticator type will be
     // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
     return loginInput.isPrivateKeyProvided()
-        ? ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
-        : ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
+        ? AuthenticatorType.SNOWFLAKE_JWT
+        : AuthenticatorType.SNOWFLAKE;
   }
 
   /**
@@ -266,8 +265,8 @@ public class SessionUtil {
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
-    final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(loginInput);
-    if (!authenticator.equals(ClientAuthnDTO.AuthenticatorType.OAUTH)) {
+    final AuthenticatorType authenticator = getAuthenticator(loginInput);
+    if (!authenticator.equals(AuthenticatorType.OAUTH)) {
       // OAuth does not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
@@ -277,7 +276,7 @@ public class SessionUtil {
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");
     }
-    if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)) {
+    if (authenticator.equals(AuthenticatorType.EXTERNALBROWSER)) {
       if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
           && loginInput.isEnableClientStoreTemporaryCredential()) {
         // force to set the flag for Mac/Windows users
@@ -299,7 +298,7 @@ public class SessionUtil {
       }
     }
 
-    if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
+    if (authenticator.equals(AuthenticatorType.USERNAME_PASSWORD_MFA)) {
       if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
           && loginInput.isEnableClientRequestMfaToken()) {
         loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
@@ -371,7 +370,7 @@ public class SessionUtil {
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
     int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
     int httpClientConnectionTimeout = loginInput.getConnectionTimeoutInMillis();
-    final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
+    final AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
 
     String oktaUsername = loginInput.getOKTAUserName();
@@ -406,7 +405,7 @@ public class SessionUtil {
         uriBuilder.addParameter(SF_QUERY_ROLE, loginInput.getRole());
       }
 
-      if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER) {
+      if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
         // try to reuse id_token if exists
         if (loginInput.getIdToken() == null) {
           // SAML 2.0 compliant service/application
@@ -416,10 +415,10 @@ public class SessionUtil {
           samlProofKey = s.getProofKey();
           consentCacheIdToken = s.isConsentCacheIdToken();
         }
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+      } else if (authenticatorType == AuthenticatorType.OKTA) {
         // okta authenticator v1
         tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+      } else if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
         SessionUtilKeyPair s =
             new SessionUtilKeyPair(
                 loginInput.getPrivateKey(),
@@ -453,9 +452,6 @@ public class SessionUtil {
     HttpPost postRequest = null;
 
     try {
-      ClientAuthnDTO authnData = new ClientAuthnDTO();
-      authnData.setInFlightCtx(loginInput.getInFlightCtx());
-
       Map<String, Object> data = new HashMap<>();
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
 
@@ -472,22 +468,21 @@ public class SessionUtil {
        * authenticate with the IDP provider only, and GS should not have any
        * trace for this information.
        */
-      if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE) {
+      if (authenticatorType == AuthenticatorType.SNOWFLAKE) {
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER) {
+      } else if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
         if (loginInput.getIdToken() != null) {
           data.put(ClientAuthnParameter.AUTHENTICATOR.name(), ID_TOKEN_AUTHENTICATOR);
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getIdToken());
         } else {
           data.put(
-              ClientAuthnParameter.AUTHENTICATOR.name(),
-              ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+              ClientAuthnParameter.AUTHENTICATOR.name(), AuthenticatorType.EXTERNALBROWSER.name());
           data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
           data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
         }
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+      } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
@@ -499,10 +494,10 @@ public class SessionUtil {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
         }
 
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+      } else if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
+      } else if (authenticatorType == AuthenticatorType.USERNAME_PASSWORD_MFA) {
         // No authenticator name should be added here, since this will be treated as snowflake
         // default authenticator by backend
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
@@ -621,8 +616,7 @@ public class SessionUtil {
       }
 
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
-
-      authnData.setData(data);
+      ClientAuthnDTO authnData = new ClientAuthnDTO(data, loginInput.getInFlightCtx());
       String json = mapper.writeValueAsString(authnData);
 
       postRequest = new HttpPost(loginURI);
@@ -672,10 +666,10 @@ public class SessionUtil {
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
-            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
-                || authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+            if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT
+                || authenticatorType == AuthenticatorType.OKTA) {
 
-              if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+              if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
                 SessionUtilKeyPair s =
                     new SessionUtilKeyPair(
                         loginInput.getPrivateKey(),
@@ -686,13 +680,14 @@ public class SessionUtil {
                         loginInput.getUserName());
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
-              } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+              } else if (authenticatorType == AuthenticatorType.OKTA) {
                 logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
                 data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-                authnData.setData(data);
-                String updatedJson = mapper.writeValueAsString(authnData);
+                ClientAuthnDTO updatedAuthnData =
+                    new ClientAuthnDTO(data, loginInput.getInFlightCtx());
+                String updatedJson = mapper.writeValueAsString(updatedAuthnData);
 
                 StringEntity updatedInput = new StringEntity(updatedJson, StandardCharsets.UTF_8);
                 updatedInput.setContentType("application/json");
@@ -785,7 +780,7 @@ public class SessionUtil {
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
         }
 
-        if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
+        if (authenticatorType == AuthenticatorType.USERNAME_PASSWORD_MFA) {
           deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
@@ -1378,8 +1373,7 @@ public class SessionUtil {
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
 
-      ClientAuthnDTO authnData = new ClientAuthnDTO();
-      authnData.setData(data);
+      ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request

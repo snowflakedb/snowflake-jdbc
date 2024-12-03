@@ -22,10 +22,10 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -85,8 +85,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
-    when(loginInput.getAuthenticator())
-        .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
+    when(loginInput.getAuthenticator()).thenReturn(AuthenticatorType.SNOWFLAKE_JWT.name());
     when(loginInput.getPrivateKeyFile())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
     when(loginInput.getPrivateKeyPwd()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD"));
