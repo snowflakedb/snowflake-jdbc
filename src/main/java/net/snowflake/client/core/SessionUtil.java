@@ -1135,6 +1135,8 @@ public class SessionUtil {
               + "\"");
 
       setServiceNameHeader(loginInput, postRequest);
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+              postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       String theString =
           HttpUtil.executeGeneralRequest(
