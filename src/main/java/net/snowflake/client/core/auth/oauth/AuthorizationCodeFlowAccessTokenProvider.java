@@ -1,6 +1,6 @@
 package net.snowflake.client.core.auth.oauth;
 
-import static net.snowflake.client.core.SessionUtilExternalBrowser.*;
+import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
 import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,13 +52,14 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
   private static final String REDIRECT_URI_ENDPOINT = "/snowflake/oauth-redirect";
   public static final String SESSION_ROLE_SCOPE = "session:role";
 
-  public static int AUTHORIZE_REDIRECT_TIMEOUT_MINUTES = 2;
-
   private final AuthExternalBrowserHandlers browserHandler;
   private final ObjectMapper objectMapper = new ObjectMapper();
+  private final int browserAuthorizationTimeoutSeconds;
 
-  public AuthorizationCodeFlowAccessTokenProvider(AuthExternalBrowserHandlers browserHandler) {
+  public AuthorizationCodeFlowAccessTokenProvider(
+      AuthExternalBrowserHandlers browserHandler, int browserAuthorizationTimeoutSeconds) {
     this.browserHandler = browserHandler;
+    this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
   }
 
   @Override
@@ -75,21 +76,25 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       URI authorizeRequestURI = request.toURI();
       CompletableFuture<String> codeFuture =
           setupRedirectURIServerForAuthorizationCode(loginInput.getRedirectUriPort());
+      logger.debug(
+          "Waiting for authorization code on "
+              + buildRedirectURI(loginInput.getRedirectUriPort())
+              + "...");
       letUserAuthorizeViaBrowser(authorizeRequestURI);
-      String code = codeFuture.get(AUTHORIZE_REDIRECT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+      String code = codeFuture.get(this.browserAuthorizationTimeoutSeconds, TimeUnit.SECONDS);
       return new AuthorizationCode(code);
     } catch (Exception e) {
       if (e instanceof TimeoutException) {
-        logger.error(
-            "Authorization request timed out. Did not receive authorization code back to the redirect URI");
+        throw new RuntimeException(
+            "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.",
+            e);
       }
       throw new RuntimeException(e);
     }
   }
 
   private String exchangeAuthorizationCodeForAccessToken(
-      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier)
-      throws SFException {
+      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier) {
     try {
       TokenRequest request = buildTokenRequest(loginInput, authorizationCode, pkceVerifier);
       String tokenResponse =
@@ -126,6 +131,7 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
           String authorizationCode =
               extractAuthorizationCodeFromQueryParameters(exchange.getRequestURI().getQuery());
           if (!StringUtils.isNullOrEmpty(authorizationCode)) {
+            logger.debug("Received authorization code on redirect URI");
             accessTokenFuture.complete(authorizationCode);
             httpServer.stop(0);
           }

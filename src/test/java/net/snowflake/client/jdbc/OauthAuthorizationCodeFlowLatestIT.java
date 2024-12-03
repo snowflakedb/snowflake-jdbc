@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtilExternalBrowser.*;
+import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
 import java.io.IOException;
 import java.net.URI;
@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 @Tag(TestTags.CORE)
 public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
-  public static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
+  private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
       "{\n"
           + "    \"mappings\": [\n"
           + "        {\n"
@@ -81,6 +81,81 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "    }\n"
           + "}";
 
+  public static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =
+      "{\n"
+          + "    \"mappings\": [\n"
+          + "        {\n"
+          + "            \"scenarioName\": \"Browser Authorization timeout\",\n"
+          + "            \"request\": {\n"
+          + "                \"urlPathPattern\": \"/oauth/authorize.*\",\n"
+          + "                \"method\": \"GET\"\n"
+          + "            },\n"
+          + "            \"response\": {\n"
+          + "                \"status\": 200,\n"
+          + "                \"fixedDelayMilliseconds\": 5000\n"
+          + "            }\n"
+          + "        }\n"
+          + "    ],\n"
+          + "    \"importOptions\": {\n"
+          + "        \"duplicatePolicy\": \"IGNORE\",\n"
+          + "        \"deleteAllNotInImport\": true\n"
+          + "    }\n"
+          + "}";
+
+  public static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
+      "{\n"
+          + "    \"mappings\": [\n"
+          + "        {\n"
+          + "            \"scenarioName\": \"OAuth token request error\",\n"
+          + "            \"requiredScenarioState\": \"Started\",\n"
+          + "            \"newScenarioState\": \"Authorized\",\n"
+          + "            \"request\": {\n"
+          + "                \"urlPathPattern\": \"/oauth/authorize.*\",\n"
+          + "                \"method\": \"GET\"\n"
+          + "            },\n"
+          + "            \"response\": {\n"
+          + "                \"status\": 200\n"
+          + "            },\n"
+          + "            \"serveEventListeners\": [\n"
+          + "                {\n"
+          + "                    \"name\": \"webhook\",\n"
+          + "                    \"parameters\": {\n"
+          + "                        \"method\": \"GET\",\n"
+          + "                        \"url\": \"http://localhost:8001/snowflake/oauth-redirect?code=123\"\n"
+          + "                    }\n"
+          + "                }\n"
+          + "            ]\n"
+          + "        },\n"
+          + "        {\n"
+          + "            \"scenarioName\": \"OAuth token request error\",\n"
+          + "            \"requiredScenarioState\": \"Authorized\",\n"
+          + "            \"newScenarioState\": \"Token request error\",\n"
+          + "            \"request\": {\n"
+          + "                \"urlPathPattern\": \"/oauth/token-request.*\",\n"
+          + "                \"method\": \"POST\",\n"
+          + "                \"headers\": {\n"
+          + "                    \"Authorization\": {\n"
+          + "                        \"contains\": \"Basic\"\n"
+          + "                    },\n"
+          + "                    \"Content-Type\": {\n"
+          + "                        \"contains\": \"application/x-www-form-urlencoded; charset=UTF-8\"\n"
+          + "                    }\n"
+          + "                },\n"
+          + "                \"bodyPatterns\": [{\n"
+          + "                    \"contains\": \"grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fsnowflake%2Foauth-redirect&code_verifier=\"\n"
+          + "                }]\n"
+          + "            },\n"
+          + "            \"response\": {\n"
+          + "                \"status\": 400\n"
+          + "            }\n"
+          + "        }\n"
+          + "    ],\n"
+          + "    \"importOptions\": {\n"
+          + "        \"duplicatePolicy\": \"IGNORE\",\n"
+          + "        \"deleteAllNotInImport\": true\n"
+          + "    }\n"
+          + "}";
+
   private static final Logger log =
       LoggerFactory.getLogger(OauthAuthorizationCodeFlowLatestIT.class);
 
@@ -93,11 +168,39 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput = createLoginInputStub();
 
     OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler);
+        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     String accessToken = provider.getAccessToken(loginInput);
 
     Assertions.assertTrue(StringUtils.isNotBlank(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
+  }
+
+  @Test
+  public void browserTimeoutFlowScenario() {
+    importMapping(BROWSER_TIMEOUT_SCENARIO_MAPPING);
+    SFLoginInput loginInput = createLoginInputStub();
+
+    OauthAccessTokenProvider provider =
+        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 1);
+    RuntimeException e =
+        Assertions.assertThrows(RuntimeException.class, () -> provider.getAccessToken(loginInput));
+    Assertions.assertEquals(
+        "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.",
+        e.getMessage());
+  }
+
+  @Test
+  public void tokenRequestErrorFlowScenario() {
+    importMapping(TOKEN_REQUEST_ERROR_SCENARIO_MAPPING);
+    SFLoginInput loginInput = createLoginInputStub();
+
+    OauthAccessTokenProvider provider =
+        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    RuntimeException e =
+        Assertions.assertThrows(RuntimeException.class, () -> provider.getAccessToken(loginInput));
+    Assertions.assertEquals(
+        "net.snowflake.client.jdbc.SnowflakeSQLException: JDBC driver encountered communication error. Message: HTTP status=400.",
+        e.getMessage());
   }
 
   private SFLoginInput createLoginInputStub() {
