@@ -72,6 +72,7 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       AuthorizationCode authorizationCode = requestAuthorizationCode(loginInput, pkceVerifier);
       return exchangeAuthorizationCodeForAccessToken(loginInput, authorizationCode, pkceVerifier);
     } catch (Exception e) {
+      logger.debug("Error during OAuth authorization code flow: " + e.getMessage());
       throw new RuntimeException(e);
     }
   }
@@ -80,9 +81,10 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
     AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier);
     URI authorizeRequestURI = request.toURI();
+    logger.debug("Executing authorization code request to: " + authorizeRequestURI.getAuthority() + authorizeRequestURI.getPath());
     HttpServer httpServer = createHttpServer(loginInput);
     CompletableFuture<String> codeFuture = setupRedirectURIServerForAuthorizationCode(httpServer);
-    logger.debug("Waiting for authorization code on " + buildRedirectUri(loginInput) + "...");
+    logger.debug("Waiting for authorization code redirection to " + buildRedirectUri(loginInput) + "...");
     return letUserAuthorize(authorizeRequestURI, codeFuture, httpServer);
   }
 
@@ -90,6 +92,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier) {
     try {
       TokenRequest request = buildTokenRequest(loginInput, authorizationCode, pkceVerifier);
+      URI requestUri = request.getEndpointURI();
+      logger.debug("Requesting access token from: " + requestUri.getAuthority() + requestUri.getPath());
       String tokenResponse =
           HttpUtil.executeGeneralRequest(
               convertToBaseRequest(request.toHTTPRequest()),
@@ -100,6 +104,7 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
               loginInput.getHttpClientSettingsKey());
       TokenResponseDTO tokenResponseDTO =
           objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
+      logger.debug("Received OAuth access token from: " + requestUri.getAuthority() + requestUri.getPath());
       return tokenResponseDTO.getAccessToken();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -130,8 +135,6 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     httpServer.createContext(
         REDIRECT_URI_ENDPOINT,
         exchange -> {
-          exchange.sendResponseHeaders(200, 0);
-          exchange.getResponseBody().close();
           Map<String, String> urlParams =
               URLEncodedUtils.parse(exchange.getRequestURI(), StandardCharsets.UTF_8).stream()
                   .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
