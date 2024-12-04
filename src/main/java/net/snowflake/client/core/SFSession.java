@@ -868,6 +868,7 @@ public class SFSession extends SFBaseSession {
         .setSessionToken(sessionToken)
         .setLoginTimeout(loginTimeout)
         .setRetryTimeout(retryTimeout)
+        .setAdditionalHttpHeadersForSnowsight(getHttpHeaders())
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 
