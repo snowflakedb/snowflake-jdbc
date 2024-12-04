@@ -55,9 +55,12 @@ public class SFLoginInput {
   private boolean enableClientRequestMfaToken;
 
   // OAuth
-  private int redirectUriPort = -1;
+  private String redirectUri;
   private String clientId;
   private String clientSecret;
+  private String externalAuthorizationUrl;
+  private String externalTokenRequestUrl;
+  private String scope;
 
   private Duration browserResponseTimeout;
 
@@ -422,12 +425,12 @@ public class SFLoginInput {
     return this;
   }
 
-  public int getRedirectUriPort() {
-    return redirectUriPort;
+  public String getRedirectUri() {
+    return redirectUri;
   }
 
-  public SFLoginInput setRedirectUriPort(int redirectUriPort) {
-    this.redirectUriPort = redirectUriPort;
+  public SFLoginInput setRedirectUri(String redirectUri) {
+    this.redirectUri = redirectUri;
     return this;
   }
 
@@ -446,6 +449,33 @@ public class SFLoginInput {
 
   public SFLoginInput setClientSecret(String clientSecret) {
     this.clientSecret = clientSecret;
+    return this;
+  }
+
+  public String getExternalAuthorizationUrl() {
+    return externalAuthorizationUrl;
+  }
+
+  public SFLoginInput setExternalAuthorizationUrl(String externalAuthorizationUrl) {
+    this.externalAuthorizationUrl = externalAuthorizationUrl;
+    return this;
+  }
+
+  public String getExternalTokenRequestUrl() {
+    return externalTokenRequestUrl;
+  }
+
+  public SFLoginInput setExternalTokenRequestUrl(String externalTokenRequestUrl) {
+    this.externalTokenRequestUrl = externalTokenRequestUrl;
+    return this;
+  }
+
+  public String getScope() {
+    return scope;
+  }
+
+  public SFLoginInput setScope(String scope) {
+    this.scope = scope;
     return this;
   }
 

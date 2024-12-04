@@ -223,9 +223,9 @@ public class SessionUtil {
         return AuthenticatorType.EXTERNALBROWSER;
       } else if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW.name())) {
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
         // OAuth authorization code flow authentication
-        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW;
+        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
         // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
@@ -274,7 +274,7 @@ public class SessionUtil {
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
-    if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE_FLOW)) {
+    if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
       AssertUtil.assertTrue(
           loginInput.getClientId() != null,
           "passing clientId is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");

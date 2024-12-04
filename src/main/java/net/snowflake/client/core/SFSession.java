@@ -673,6 +673,12 @@ public class SFSession extends SFBaseSession {
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
         .setClientId((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID))
         .setClientSecret((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET))
+        .setRedirectUri((String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI))
+        .setScope((String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE))
+        .setExternalAuthorizationUrl(
+            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL))
+        .setExternalTokenRequestUrl(
+            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -697,11 +703,6 @@ public class SFSession extends SFBaseSession {
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
         .setBrowserResponseTimeout(browserResponseTimeout);
-
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.OAUTH_REDIRECT_URI_PORT)) {
-      loginInput.setRedirectUriPort(
-          (Integer) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI_PORT));
-    }
 
     logger.info(
         "Connecting to {} Snowflake domain",
