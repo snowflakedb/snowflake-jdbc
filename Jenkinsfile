@@ -89,6 +89,16 @@ timestamps {
     }
 
     jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
+    jobDefinitions.put('Test Authentication', {
+      withCredentials([string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET')]) {
+        sh '''\
+      |#!/bin/bash
+      |set -e
+      |ci/test_authentication.sh
+    '''.stripMargin()
+      }
+    })
+
     stage('Test') {
       parallel (jobDefinitions)
     }
