@@ -81,10 +81,14 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
     AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier);
     URI authorizeRequestURI = request.toURI();
-    logger.debug("Executing authorization code request to: " + authorizeRequestURI.getAuthority() + authorizeRequestURI.getPath());
+    logger.debug(
+        "Executing authorization code request to: "
+            + authorizeRequestURI.getAuthority()
+            + authorizeRequestURI.getPath());
     HttpServer httpServer = createHttpServer(loginInput);
     CompletableFuture<String> codeFuture = setupRedirectURIServerForAuthorizationCode(httpServer);
-    logger.debug("Waiting for authorization code redirection to " + buildRedirectUri(loginInput) + "...");
+    logger.debug(
+        "Waiting for authorization code redirection to " + buildRedirectUri(loginInput) + "...");
     return letUserAuthorize(authorizeRequestURI, codeFuture, httpServer);
   }
 
@@ -93,7 +97,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     try {
       TokenRequest request = buildTokenRequest(loginInput, authorizationCode, pkceVerifier);
       URI requestUri = request.getEndpointURI();
-      logger.debug("Requesting access token from: " + requestUri.getAuthority() + requestUri.getPath());
+      logger.debug(
+          "Requesting access token from: " + requestUri.getAuthority() + requestUri.getPath());
       String tokenResponse =
           HttpUtil.executeGeneralRequest(
               convertToBaseRequest(request.toHTTPRequest()),
@@ -104,7 +109,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
               loginInput.getHttpClientSettingsKey());
       TokenResponseDTO tokenResponseDTO =
           objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
-      logger.debug("Received OAuth access token from: " + requestUri.getAuthority() + requestUri.getPath());
+      logger.debug(
+          "Received OAuth access token from: " + requestUri.getAuthority() + requestUri.getPath());
       return tokenResponseDTO.getAccessToken();
     } catch (Exception e) {
       throw new RuntimeException(e);
