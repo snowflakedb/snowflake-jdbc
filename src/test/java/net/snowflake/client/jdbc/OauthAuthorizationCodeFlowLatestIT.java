@@ -12,6 +12,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.auth.oauth.AuthorizationCodeFlowAccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OauthAccessTokenProvider;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -81,7 +82,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "    }\n"
           + "}";
 
-  public static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =
+  private static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =
       "{\n"
           + "    \"mappings\": [\n"
           + "        {\n"
@@ -102,7 +103,36 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "    }\n"
           + "}";
 
-  public static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
+  private static final String INVALID_SCOPE_SCENARIO_MAPPING =
+      "{\n"
+          + "    \"mappings\": [\n"
+          + "        {\n"
+          + "            \"scenarioName\": \"Invalid scope authorization error\",\n"
+          + "            \"request\": {\n"
+          + "                \"urlPathPattern\": \"/oauth/authorize.*\",\n"
+          + "                \"method\": \"GET\"\n"
+          + "            },\n"
+          + "            \"response\": {\n"
+          + "                \"status\": 200\n"
+          + "            },\n"
+          + "            \"serveEventListeners\": [\n"
+          + "                {\n"
+          + "                    \"name\": \"webhook\",\n"
+          + "                    \"parameters\": {\n"
+          + "                        \"method\": \"GET\",\n"
+          + "                        \"url\": \"http://localhost:8002/snowflake/oauth-redirect?error=invalid_scope&error_description=One+or+more+scopes+are+not+configured+for+the+authorization+server+resource.\"\n"
+          + "                    }\n"
+          + "                }\n"
+          + "            ]\n"
+          + "        }\n"
+          + "    ],\n"
+          + "    \"importOptions\": {\n"
+          + "        \"duplicatePolicy\": \"IGNORE\",\n"
+          + "        \"deleteAllNotInImport\": true\n"
+          + "    }\n"
+          + "}";
+
+  private static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
       "{\n"
           + "    \"mappings\": [\n"
           + "        {\n"
@@ -121,7 +151,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "                    \"name\": \"webhook\",\n"
           + "                    \"parameters\": {\n"
           + "                        \"method\": \"GET\",\n"
-          + "                        \"url\": \"http://localhost:8001/snowflake/oauth-redirect?code=123\"\n"
+          + "                        \"url\": \"http://localhost:8003/snowflake/oauth-redirect?code=123\"\n"
           + "                    }\n"
           + "                }\n"
           + "            ]\n"
@@ -142,7 +172,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "                    }\n"
           + "                },\n"
           + "                \"bodyPatterns\": [{\n"
-          + "                    \"contains\": \"grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fsnowflake%2Foauth-redirect&code_verifier=\"\n"
+          + "                    \"contains\": \"grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8003%2Fsnowflake%2Foauth-redirect&code_verifier=\"\n"
           + "                }]\n"
           + "            },\n"
           + "            \"response\": {\n"
@@ -156,7 +186,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
           + "    }\n"
           + "}";
 
-  private static final Logger log =
+  private static final Logger logger =
       LoggerFactory.getLogger(OauthAuthorizationCodeFlowLatestIT.class);
 
   AuthExternalBrowserHandlers wiremockProxyRequestBrowserHandler =
@@ -165,7 +195,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   @Test
   public void successfulFlowScenario() throws SFException {
     importMapping(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
-    SFLoginInput loginInput = createLoginInputStub();
+    SFLoginInput loginInput =
+        createLoginInputStub("http://localhost:8001/snowflake/oauth-redirect");
 
     OauthAccessTokenProvider provider =
         new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
@@ -178,37 +209,58 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   @Test
   public void browserTimeoutFlowScenario() {
     importMapping(BROWSER_TIMEOUT_SCENARIO_MAPPING);
-    SFLoginInput loginInput = createLoginInputStub();
+    SFLoginInput loginInput =
+        createLoginInputStub("http://localhost:8004/snowflake/oauth-redirect");
 
     OauthAccessTokenProvider provider =
         new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 1);
     RuntimeException e =
         Assertions.assertThrows(RuntimeException.class, () -> provider.getAccessToken(loginInput));
-    Assertions.assertEquals(
-        "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.",
-        e.getMessage());
+    Assertions.assertTrue(
+        e.getMessage()
+            .contains(
+                "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration."));
   }
 
   @Test
-  public void tokenRequestErrorFlowScenario() {
-    importMapping(TOKEN_REQUEST_ERROR_SCENARIO_MAPPING);
-    SFLoginInput loginInput = createLoginInputStub();
+  public void invalidScopeFlowScenario() {
+    importMapping(INVALID_SCOPE_SCENARIO_MAPPING);
+    SFLoginInput loginInput =
+        createLoginInputStub("http://localhost:8002/snowflake/oauth-redirect");
 
     OauthAccessTokenProvider provider =
         new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     RuntimeException e =
         Assertions.assertThrows(RuntimeException.class, () -> provider.getAccessToken(loginInput));
-    Assertions.assertEquals(
-        "net.snowflake.client.jdbc.SnowflakeSQLException: JDBC driver encountered communication error. Message: HTTP status=400.",
-        e.getMessage());
+    Assertions.assertTrue(
+        e.getMessage()
+            .contains(
+                "Error during authorization: invalid_scope, One or more scopes are not configured for the authorization server resource."));
   }
 
-  private SFLoginInput createLoginInputStub() {
+  @Test
+  public void tokenRequestErrorFlowScenario() {
+    importMapping(TOKEN_REQUEST_ERROR_SCENARIO_MAPPING);
+    SFLoginInput loginInput =
+        createLoginInputStub("http://localhost:8003/snowflake/oauth-redirect");
+
+    OauthAccessTokenProvider provider =
+        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    RuntimeException e =
+        Assertions.assertThrows(RuntimeException.class, () -> provider.getAccessToken(loginInput));
+    Assertions.assertTrue(
+        e.getMessage()
+            .contains(
+                "net.snowflake.client.jdbc.SnowflakeSQLException: JDBC driver encountered communication error. Message: HTTP status=400."));
+  }
+
+  private SFLoginInput createLoginInputStub(String redirectUri) {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     loginInputStub.setClientSecret("123");
     loginInputStub.setClientId("123");
     loginInputStub.setRole("ANALYST");
+    loginInputStub.setRedirectUri(redirectUri);
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 
@@ -225,7 +277,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     @Override
     public void openBrowser(String ssoUrl) {
       try (CloseableHttpClient client = HttpClients.createDefault()) {
-        client.execute(new HttpGet(ssoUrl));
+        HttpResponse response = client.execute(new HttpGet(ssoUrl));
+        logger.debug(response.toString());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
