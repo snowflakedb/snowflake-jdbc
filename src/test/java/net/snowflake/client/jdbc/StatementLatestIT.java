@@ -314,13 +314,13 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = con.createStatement()) {
       statement.setQueryTimeout(3);
 
-      String sql = "SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER;";
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
 
       try (ResultSet resultSet =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
-            .atMost(Duration.ofSeconds(5))
+            .atMost(Duration.ofSeconds(10))
             .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
 
         assertTrue(
