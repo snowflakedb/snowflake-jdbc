@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,9 +20,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
@@ -305,33 +308,26 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
    */
   @Test
   public void testSetQueryTimeoutForAsnycQuery() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
-      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 0);
+    Properties p = new Properties();
+    p.put("SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", true);
+    try (Connection con = getConnection(p);
+        Statement statement = con.createStatement()) {
       statement.setQueryTimeout(3);
 
       String sql = "SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER;";
 
       try (ResultSet resultSet =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
+        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        await()
+            .atMost(Duration.ofSeconds(5))
+            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
 
-        QueryStatus queryStatus = QueryStatus.RUNNING;
-        while (queryStatus == QueryStatus.RUNNING
-            || queryStatus == QueryStatus.RESUMING_WAREHOUSE) {
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            fail(e.getMessage());
-          }
-          queryStatus = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-        }
-
-        if (queryStatus == QueryStatus.FAILED_WITH_ERROR) {
-          assertTrue(
-              queryStatus
-                  .getErrorMessage()
-                  .contains(
-                      "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
-        }
+        assertTrue(
+            sfrs.getStatusV2()
+                .getErrorMessage()
+                .contains(
+                    "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
       }
     }
   }

@@ -112,7 +112,10 @@ public enum SFSessionProperty {
 
   HTTP_CLIENT_CONNECTION_TIMEOUT("HTTP_CLIENT_CONNECTION_TIMEOUT", false, Integer.class),
 
-  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class);
+  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class),
+
+  SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT(
+      "SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
