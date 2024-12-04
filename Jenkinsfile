@@ -90,7 +90,10 @@ timestamps {
 
     jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
     jobDefinitions.put('Test Authentication', {
-      withCredentials([string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET')]) {
+      withCredentials([
+        string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
+        string(credentialsId: 'a791118f-a1ea-46cd-b876-56da1b9bc71c', variable: 'NEXUS_PASSWORD')
+      ]) {
         sh '''\
       |#!/bin/bash
       |set -e
