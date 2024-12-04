@@ -407,7 +407,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
-            logger.debug(
+            logger.info(
                 "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
                 localFile.getAbsolutePath(),
@@ -420,7 +420,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw ex;
           }
         } else {
-          logger.debug(
+          logger.info(
               "S3 file {} downloaded to {}. It took {} ms with {} retries",
               stageFilePath,
               localFile.getAbsolutePath(),
@@ -505,7 +505,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
-            logger.debug(
+            logger.info(
                 "S3 file {} downloaded to input stream. It took {} ms "
                     + "(download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
@@ -520,7 +520,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw ex;
           }
         } else {
-          logger.debug(
+          logger.info(
               "S3 file {} downloaded to input stream. Download took {} ms with {} retries",
               stageFilePath,
               downloadMillis,
@@ -574,7 +574,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.debug(
+    logger.info(
         StorageHelper.getStartUploadLog(
             "S3", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
 
@@ -649,13 +649,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
 
         if (uploadFromStream) {
-          logger.debug(
+          logger.info(
               "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
               destFileName,
               uploadMillis,
               retryCount);
         } else {
-          logger.debug(
+          logger.info(
               "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
               srcFile.getAbsolutePath(),
               destFileName,

@@ -388,7 +388,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
-            logger.debug(
+            logger.info(
                 "GCS file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
                 localFile.getAbsolutePath(),
@@ -406,7 +406,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 "Cannot decrypt file");
           }
         } else {
-          logger.debug(
+          logger.info(
               "GCS file {} downloaded to {}. It took {} ms with {} retries",
               stageFilePath,
               localFile.getAbsolutePath(),
@@ -565,7 +565,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               inputStream = EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
               stopwatch.stop();
               long decryptMillis = stopwatch.elapsedMillis();
-              logger.debug(
+              logger.info(
                   "GCS file {} downloaded to stream. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                   stageFilePath,
                   downloadMillis + decryptMillis,
@@ -584,7 +584,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 "Cannot decrypt file");
           }
         } else {
-          logger.debug(
+          logger.info(
               "GCS file {} downloaded to stream. Download took {} ms with {} retries",
               stageFilePath,
               downloadMillis,
@@ -640,7 +640,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.debug(
+    logger.info(
         StorageHelper.getStartUploadLog(
             "GCS", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
     final List<FileInputStream> toClose = new ArrayList<>();
@@ -690,12 +690,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     stopwatch.stop();
 
     if (uploadFromStream) {
-      logger.debug(
+      logger.info(
           "Uploaded data from input stream to GCS location: {}. It took {} ms",
           remoteStorageLocation,
           stopwatch.elapsedMillis());
     } else {
-      logger.debug(
+      logger.info(
           "Uploaded file {} to GCS location: {}. It took {} ms",
           srcFile.getAbsolutePath(),
           remoteStorageLocation,
@@ -742,7 +742,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.debug(
+    logger.info(
         StorageHelper.getStartUploadLog(
             "GCS", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
     final List<FileInputStream> toClose = new ArrayList<>();
@@ -780,12 +780,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       stopwatch.stop();
       logger.debug("Upload successful", false);
       if (uploadFromStream) {
-        logger.debug(
+        logger.info(
             "Uploaded data from input stream to GCS location: {}. It took {} ms",
             remoteStorageLocation,
             stopwatch.elapsedMillis());
       } else {
-        logger.debug(
+        logger.info(
             "Uploaded file {} to GCS location: {}. It took {} ms",
             srcFile.getAbsolutePath(),
             remoteStorageLocation,
@@ -817,12 +817,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         stopwatch.stop();
         logger.debug("Upload successful", false);
         if (uploadFromStream) {
-          logger.debug(
+          logger.info(
               "Uploaded data from input stream to GCS location: {}. It took {} ms",
               remoteStorageLocation,
               stopwatch.elapsedMillis());
         } else {
-          logger.debug(
+          logger.info(
               "Uploaded file {} to GCS location: {}. It took {} ms",
               srcFile.getAbsolutePath(),
               remoteStorageLocation,

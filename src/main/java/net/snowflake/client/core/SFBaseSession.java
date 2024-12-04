@@ -675,7 +675,7 @@ public abstract class SFBaseSession {
 
   private void logHttpClientInitInfo(HttpClientSettingsKey key) {
     if (key.usesProxy()) {
-      logger.debug(
+      logger.info(
           "Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {},"
               + " proxy host: {}, proxy port: {}, non proxy hosts: {}, proxy user: {}, proxy password is {}",
           key.getOcspMode(),

@@ -21,7 +21,7 @@ public class FileUtil {
       Arrays.asList(PosixFilePermission.GROUP_READ, PosixFilePermission.OTHERS_READ);
 
   public static void logFileUsage(Path filePath, String context, boolean logReadAccess) {
-    logger.debug("{}Accessing file: {}", getContextStr(context), filePath);
+    logger.info("{}Accessing file: {}", getContextStr(context), filePath);
     logWarnWhenAccessibleByOthers(filePath, context, logReadAccess);
   }
 

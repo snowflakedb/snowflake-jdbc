@@ -37,31 +37,31 @@ public class SFClientConfigParser {
    */
   public static SFClientConfig loadSFClientConfig(String configFilePath) throws IOException {
     if (configFilePath != null) {
-      logger.debug("Attempting to enable easy logging with file path {}", configFilePath);
+      logger.info("Attempting to enable easy logging with file path {}", configFilePath);
     }
     String derivedConfigFilePath = null;
     if (configFilePath != null && !configFilePath.isEmpty()) {
       // 1. Try to read the file at  configFilePath.
-      logger.debug("Using config file specified from connection string: {}", configFilePath);
+      logger.info("Using config file specified from connection string: {}", configFilePath);
       derivedConfigFilePath = configFilePath;
     } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
       // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
       String filePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
-      logger.debug("Using config file specified from environment variable: {}", filePath);
+      logger.info("Using config file specified from environment variable: {}", filePath);
       derivedConfigFilePath = filePath;
     } else {
       // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
       String driverLocation =
           Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
       if (Files.exists(Paths.get(driverLocation))) {
-        logger.debug("Using config file specified from driver directory: {}", driverLocation);
+        logger.info("Using config file specified from driver directory: {}", driverLocation);
         derivedConfigFilePath = driverLocation;
       } else {
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
         String userHomeFilePath =
             Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
         if (Files.exists(Paths.get(userHomeFilePath))) {
-          logger.debug("Using config file specified from home directory: {}", userHomeFilePath);
+          logger.info("Using config file specified from home directory: {}", userHomeFilePath);
           derivedConfigFilePath = userHomeFilePath;
         }
       }
