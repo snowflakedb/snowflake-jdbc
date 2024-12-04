@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
+import com.amazonaws.util.StringUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -20,7 +21,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,7 +202,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
         new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     String accessToken = provider.getAccessToken(loginInput);
 
-    Assertions.assertTrue(StringUtils.isNotBlank(accessToken));
+    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
   }
 

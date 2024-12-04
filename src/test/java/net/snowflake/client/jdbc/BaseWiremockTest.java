@@ -25,7 +25,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -233,8 +232,7 @@ abstract class BaseWiremockTest {
     HttpPost postRequest = createWiremockPostRequest(mapping, "/__admin/mappings");
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(postRequest)) {
-      String responseBody = EntityUtils.toString(response.getEntity(), "UTF-8");
-      assertEquals(201, response.getStatusLine().getStatusCode(), responseBody);
+      assertEquals(201, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
