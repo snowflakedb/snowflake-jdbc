@@ -33,6 +33,8 @@ import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SfSqlArray;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -274,6 +276,10 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       return null;
     } else if (object instanceof JsonSqlInput) {
       return ((JsonSqlInput) object).getText();
+    } else if (object instanceof StructObjectWrapper) {
+      return ((StructObjectWrapper) object).getJsonString();
+    } else if (object instanceof SfSqlArray) {
+      return ((SfSqlArray) object).getText();
     } else if (object instanceof ArrowSqlInput) {
       throw new SQLException(
           "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");

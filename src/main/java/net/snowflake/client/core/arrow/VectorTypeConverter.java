@@ -24,7 +24,16 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return vector.getObject(index);
+    if (isNull(index)) {
+      return null;
+    }
+    Object object = vector.getObject(index);
+    return new StructObjectWrapper(object.toString(), object);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return isNull(index) ? null : toString(index).getBytes();
   }
 
   @Override
