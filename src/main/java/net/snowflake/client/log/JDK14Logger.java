@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.util.SecretDetector;
 
 /**
@@ -38,8 +40,30 @@ public class JDK14Logger implements SFLogger {
 
   public static String STDOUT = "STDOUT";
 
+  private static final StdOutConsoleHandler STD_OUT_CONSOLE_HANDLER = new StdOutConsoleHandler();
+
   public JDK14Logger(String name) {
     this.jdkLogger = Logger.getLogger(name);
+  }
+
+  static {
+    String javaLoggingConsoleStdOut =
+        System.getProperty(SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT.getPropertyKey());
+    if ("true".equalsIgnoreCase(javaLoggingConsoleStdOut)) {
+      useStdOutConsoleHandler();
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void useStdOutConsoleHandler() {
+    Logger rootLogger = Logger.getLogger("");
+    for (Handler handler : rootLogger.getHandlers()) {
+      if (handler instanceof ConsoleHandler) {
+        rootLogger.removeHandler(handler);
+        rootLogger.addHandler(STD_OUT_CONSOLE_HANDLER);
+        break;
+      }
+    }
   }
 
   public boolean isDebugEnabled() {
