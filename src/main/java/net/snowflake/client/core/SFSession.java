@@ -46,6 +46,7 @@ import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
@@ -433,6 +434,11 @@ public class SFSession extends SFBaseSession {
         case TRACING:
           if (propertyValue != null) {
             tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
+          }
+          break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT:
+          if (propertyValue != null && (Boolean) propertyValue) {
+            JDK14Logger.useStdOutConsoleHandler();
           }
           break;
 
