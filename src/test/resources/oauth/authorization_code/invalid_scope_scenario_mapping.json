@@ -7,17 +7,11 @@
         "method": "GET"
       },
       "response": {
-        "status": 200
-      },
-      "serveEventListeners": [
-        {
-          "name": "webhook",
-          "parameters": {
-            "method": "GET",
-            "url": "http://localhost:8002/snowflake/oauth-redirect?error=invalid_scope&error_description=One+or+more+scopes+are+not+configured+for+the+authorization+server+resource."
-          }
+        "status": 302,
+        "headers": {
+          "Location": "http://localhost:8002/snowflake/oauth-redirect?error=invalid_scope&error_description=One+or+more+scopes+are+not+configured+for+the+authorization+server+resource."
         }
-      ]
+      }
     }
   ]
 }

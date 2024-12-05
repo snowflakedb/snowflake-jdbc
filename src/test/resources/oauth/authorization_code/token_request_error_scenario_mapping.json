@@ -9,17 +9,11 @@
         "method": "GET"
       },
       "response": {
-        "status": 200
-      },
-      "serveEventListeners": [
-        {
-          "name": "webhook",
-          "parameters": {
-            "method": "GET",
-            "url": "http://localhost:8003/snowflake/oauth-redirect?code=123"
-          }
+        "status": 302,
+        "headers": {
+          "Location": "http://localhost:8003/snowflake/oauth-redirect?code=123"
         }
-      ]
+      }
     },
     {
       "scenarioName": "OAuth token request error",
