@@ -50,11 +50,11 @@ public class AuthTest {
   }
 
   public void verifyExceptionIsThrown(String message) {
-    assertThat(this.exception.getMessage(), is(message));
+    assertThat("Expected exception not thrown", this.exception.getMessage(), is(message));
   }
 
   public void verifyExceptionIsNotThrown() {
-    assertThat(this.exception, nullValue());
+    assertThat("Unexpected exception thrown", this.exception, nullValue());
   }
 
   public void connectAndProvideCredentials(Thread provideCredentialsThread, Thread connectThread)
