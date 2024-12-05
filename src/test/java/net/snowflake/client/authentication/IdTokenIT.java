@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +56,7 @@ class IdTokenIT {
 
   @Test
   @Order(2)
-  void shouldAuthenticateUsingTokenWithoutBrowser() throws SQLException {
+  void shouldAuthenticateUsingTokenWithoutBrowser() {
     verifyFirstTokenWasSaved();
     authTest.connectAndExecuteSimpleQuery(getStoreIDTokenConnectionParameters(), null);
     authTest.verifyExceptionIsNotThrown();

@@ -28,25 +28,11 @@ public class AuthTest {
   }
 
   public Thread getConnectAndExecuteSimpleQueryThread(Properties props, String sessionParameters) {
-    return new Thread(
-        () -> {
-          try {
-            connectAndExecuteSimpleQuery(props, sessionParameters);
-          } catch (Exception e) {
-            this.exception = e;
-          }
-        });
+    return new Thread(() -> connectAndExecuteSimpleQuery(props, sessionParameters));
   }
 
   public Thread getConnectAndExecuteSimpleQueryThread(Properties props) {
-    return new Thread(
-        () -> {
-          try {
-            connectAndExecuteSimpleQuery(props, null);
-          } catch (Exception e) {
-            this.exception = e;
-          }
-        });
+    return new Thread(() -> connectAndExecuteSimpleQuery(props, null));
   }
 
   public void verifyExceptionIsThrown(String message) {
@@ -100,8 +86,7 @@ public class AuthTest {
         AuthConnectionParameters.HOST, AuthConnectionParameters.SSO_USER);
   }
 
-  public void connectAndExecuteSimpleQuery(Properties props, String sessionParameters)
-      throws SQLException {
+  public void connectAndExecuteSimpleQuery(Properties props, String sessionParameters) {
     String url = String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port"));
     if (sessionParameters != null) {
       url += "?" + sessionParameters;
@@ -112,6 +97,8 @@ public class AuthTest {
       assertTrue(rs.next());
       assertEquals(1, rs.getInt(1));
       saveToken(con);
+    } catch (SQLException e) {
+      this.exception = e;
     }
   }
 
