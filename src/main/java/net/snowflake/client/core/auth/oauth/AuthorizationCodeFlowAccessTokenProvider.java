@@ -219,11 +219,11 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     return URI.create(redirectUri);
   }
 
-  private static HttpRequestBase convertToBaseRequest(HTTPRequest nimbusRequest) {
-    HttpPost request = new HttpPost(nimbusRequest.getURI());
-    request.setEntity(new StringEntity(nimbusRequest.getBody(), StandardCharsets.UTF_8));
-    nimbusRequest.getHeaderMap().forEach((key, values) -> request.addHeader(key, values.get(0)));
-    return request;
+  private static HttpRequestBase convertToBaseRequest(HTTPRequest request) {
+    HttpPost baseRequest = new HttpPost(request.getURI());
+    baseRequest.setEntity(new StringEntity(request.getBody(), StandardCharsets.UTF_8));
+    request.getHeaderMap().forEach((key, values) -> baseRequest.addHeader(key, values.get(0)));
+    return baseRequest;
   }
 
   private static URI getAuthorizationUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
