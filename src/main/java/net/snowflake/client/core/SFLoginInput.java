@@ -189,6 +189,7 @@ public class SFLoginInput {
     return this;
   }
 
+  @SnowflakeJdbcInternalApi
   public int getAuthTimeout() {
     return authTimeout;
   }
