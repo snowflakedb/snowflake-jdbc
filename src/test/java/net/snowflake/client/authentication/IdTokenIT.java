@@ -4,12 +4,11 @@ import static net.snowflake.client.authentication.AuthConnectionParameters.getSt
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.IOException;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -22,17 +21,12 @@ class IdTokenIT {
 
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
-  AuthTest authTest;
+  AuthTest authTest = new AuthTest();
   private static String firstToken;
 
   @BeforeAll
   public static void globalSetUp() {
     AuthTest.deleteIdToken();
-  }
-
-  @BeforeEach
-  public void setUp() throws IOException {
-    authTest = new AuthTest();
   }
 
   @AfterEach
@@ -51,7 +45,7 @@ class IdTokenIT {
     authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTest.verifyExceptionIsNotThrown();
     firstToken = authTest.getIdToken();
-    verifyFirstTokenWasSaved();
+    assertThat("Id token was not saved", firstToken, notNullValue());
   }
 
   @Test
@@ -80,6 +74,6 @@ class IdTokenIT {
   }
 
   private void verifyFirstTokenWasSaved() {
-    assertThat("Id token was not saved", firstToken, notNullValue());
+    assumeTrue(firstToken != null, "token was not saved, skipping test");
   }
 }
