@@ -122,7 +122,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
         return null;
       }
       if (dataLength[0] == 0 || data[0] == null) {
-        logger.debug("Found empty item or no item is found", false);
+        logger.warn("Found empty item or no item is found", false);
         return null;
       }
 

@@ -70,7 +70,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   public synchronized SecureStorageStatus setCredential(
       String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
-      logger.debug("No token provided", false);
+      logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
