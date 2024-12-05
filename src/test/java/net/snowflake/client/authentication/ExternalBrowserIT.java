@@ -15,11 +15,10 @@ class ExternalBrowserIT {
 
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
-  AuthTest authTest;
+  AuthTest authTest = new AuthTest();
 
   @BeforeEach
   public void setUp() throws IOException {
-    authTest = new AuthTest();
     AuthTest.deleteIdToken();
   }
 
