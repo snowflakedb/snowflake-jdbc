@@ -640,6 +640,14 @@ public class SFSession extends SFBaseSession {
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
+    SFOauthLoginInput oauthLoginInput = new SFOauthLoginInput(
+        (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID),
+        (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET),
+        (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
+        (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE),
+        (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL),
+        (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL)
+    );
 
     loginInput
         .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
@@ -677,14 +685,7 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
-        .setClientId((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID))
-        .setClientSecret((String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET))
-        .setRedirectUri((String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI))
-        .setScope((String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE))
-        .setExternalAuthorizationUrl(
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL))
-        .setExternalTokenRequestUrl(
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL))
+            .setOauthLoginInput(oauthLoginInput)
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(

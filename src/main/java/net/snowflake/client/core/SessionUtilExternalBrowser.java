@@ -61,6 +61,7 @@ public class SessionUtilExternalBrowser {
     void output(String msg);
   }
 
+  @SnowflakeJdbcInternalApi
   public static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
     @Override
     public HttpPost build(URI uri) {

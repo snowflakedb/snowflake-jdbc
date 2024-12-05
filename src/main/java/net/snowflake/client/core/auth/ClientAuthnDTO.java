@@ -24,12 +24,12 @@ public class ClientAuthnDTO {
     this.inFlightCtx = inFlightCtx;
   }
 
-  // Required by Jackson
+  /** Required by Jackson */
   public Map<String, Object> getData() {
     return data;
   }
 
-  // Required by Jackson
+  /** Required by Jackson */
   public String getInFlightCtx() {
     return inFlightCtx;
   }

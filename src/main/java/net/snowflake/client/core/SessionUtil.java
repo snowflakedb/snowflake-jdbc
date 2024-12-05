@@ -276,15 +276,15 @@ public class SessionUtil {
 
     if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
       AssertUtil.assertTrue(
-          loginInput.getClientId() != null,
+          loginInput.getOauthLoginInput().getClientId() != null,
           "passing clientId is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
       AssertUtil.assertTrue(
-          loginInput.getClientSecret() != null,
+          loginInput.getOauthLoginInput().getClientSecret() != null,
           "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
       OauthAccessTokenProvider accessTokenProvider =
           new AuthorizationCodeFlowAccessTokenProvider(
               new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
-              DEFAULT_BROWSER_AUTHORIZATION_TIMEOUT_SECONDS);
+                  (int) loginInput.getBrowserResponseTimeout().getSeconds());
       String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(oauthAccessToken);

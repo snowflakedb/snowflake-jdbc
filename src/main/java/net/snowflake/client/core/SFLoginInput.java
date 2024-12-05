@@ -49,24 +49,19 @@ public class SFLoginInput {
   private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
+  private SFOauthLoginInput oauthLoginInput;
+
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
   private boolean enableClientStoreTemporaryCredential;
   private boolean enableClientRequestMfaToken;
-
-  // OAuth
-  private String redirectUri;
-  private String clientId;
-  private String clientSecret;
-  private String externalAuthorizationUrl;
-  private String externalTokenRequestUrl;
-  private String scope;
 
   private Duration browserResponseTimeout;
 
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
+  @SnowflakeJdbcInternalApi
   public SFLoginInput() {}
 
   Duration getBrowserResponseTimeout() {
@@ -82,6 +77,7 @@ public class SFLoginInput {
     return serverUrl;
   }
 
+  @SnowflakeJdbcInternalApi
   public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
@@ -168,6 +164,7 @@ public class SFLoginInput {
     return this;
   }
 
+  @SnowflakeJdbcInternalApi
   public int getLoginTimeout() {
     return loginTimeout;
   }
@@ -246,10 +243,12 @@ public class SFLoginInput {
     return this;
   }
 
+  @SnowflakeJdbcInternalApi
   public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
+  @SnowflakeJdbcInternalApi
   public SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
@@ -396,10 +395,12 @@ public class SFLoginInput {
     return this;
   }
 
+  @SnowflakeJdbcInternalApi
   public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 
+  @SnowflakeJdbcInternalApi
   public SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
     return this;
@@ -422,60 +423,6 @@ public class SFLoginInput {
 
   SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
     this.disableSamlURLCheck = disableSamlURLCheck;
-    return this;
-  }
-
-  public String getRedirectUri() {
-    return redirectUri;
-  }
-
-  public SFLoginInput setRedirectUri(String redirectUri) {
-    this.redirectUri = redirectUri;
-    return this;
-  }
-
-  public String getClientId() {
-    return clientId;
-  }
-
-  public SFLoginInput setClientId(String clientId) {
-    this.clientId = clientId;
-    return this;
-  }
-
-  public String getClientSecret() {
-    return clientSecret;
-  }
-
-  public SFLoginInput setClientSecret(String clientSecret) {
-    this.clientSecret = clientSecret;
-    return this;
-  }
-
-  public String getExternalAuthorizationUrl() {
-    return externalAuthorizationUrl;
-  }
-
-  public SFLoginInput setExternalAuthorizationUrl(String externalAuthorizationUrl) {
-    this.externalAuthorizationUrl = externalAuthorizationUrl;
-    return this;
-  }
-
-  public String getExternalTokenRequestUrl() {
-    return externalTokenRequestUrl;
-  }
-
-  public SFLoginInput setExternalTokenRequestUrl(String externalTokenRequestUrl) {
-    this.externalTokenRequestUrl = externalTokenRequestUrl;
-    return this;
-  }
-
-  public String getScope() {
-    return scope;
-  }
-
-  public SFLoginInput setScope(String scope) {
-    this.scope = scope;
     return this;
   }
 
@@ -545,6 +492,15 @@ public class SFLoginInput {
 
   SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
     this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
+  }
+
+  public SFOauthLoginInput getOauthLoginInput() {
+    return oauthLoginInput;
+  }
+
+  public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
+    this.oauthLoginInput = oauthLoginInput;
     return this;
   }
 }
