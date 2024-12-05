@@ -84,9 +84,6 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
     AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier);
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     URI authorizeRequestURI = request.toURI();
-    logger.debug(
-        "Executing authorization code request to: {}",
-        authorizeRequestURI.getAuthority() + authorizeRequestURI.getPath());
     HttpServer httpServer = createHttpServer(oauthLoginInput);
     CompletableFuture<String> codeFuture = setupRedirectURIServerForAuthorizationCode(httpServer);
     logger.debug(
@@ -125,6 +122,9 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       URI authorizeRequestURI, CompletableFuture<String> codeFuture, HttpServer httpServer)
       throws SFException {
     try {
+      logger.debug(
+          "Opening browser for authorization code request to: {}",
+          authorizeRequestURI.getAuthority() + authorizeRequestURI.getPath());
       browserHandler.openBrowser(authorizeRequestURI.toString());
       String code = codeFuture.get(this.browserAuthorizationTimeoutSeconds, TimeUnit.SECONDS);
       return new AuthorizationCode(code);
@@ -137,7 +137,7 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       }
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     } finally {
-      logger.debug("Stopping OAuth redirect URI server");
+      logger.debug("Stopping OAuth redirect URI server @ {}", httpServer.getAddress());
       httpServer.stop(0);
     }
   }
@@ -165,6 +165,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
               accessTokenFuture.complete(authorizationCode);
             }
           }
+          exchange.sendResponseHeaders(200, -1);
+          exchange.getResponseBody().close();
         });
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();

@@ -9,17 +9,11 @@
         "method": "GET"
       },
       "response": {
-        "status": 200
-      },
-      "serveEventListeners": [
-        {
-          "name": "webhook",
-          "parameters": {
-            "method": "GET",
-            "url": "http://localhost:8007/snowflake/oauth-redirect?code=123"
-          }
+        "status": 302,
+        "headers": {
+          "Location": "http://localhost:8007/snowflake/oauth-redirect?code=123"
         }
-      ]
+      }
     },
     {
       "scenarioName": "Custom urls OAuth authorization code flow",

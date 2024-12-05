@@ -9,17 +9,11 @@
         "method": "GET"
       },
       "response": {
-        "status": 200
-      },
-      "serveEventListeners": [
-        {
-          "name": "webhook",
-          "parameters": {
-            "method": "GET",
-            "url": "http://localhost:8001/snowflake/oauth-redirect?code=123"
-          }
+        "status": 302,
+        "headers": {
+          "Location": "http://localhost:8009/snowflake/oauth-redirect?code=123"
         }
-      ]
+      }
     },
     {
       "scenarioName": "Successful OAuth authorization code flow",
@@ -38,7 +32,7 @@
         },
         "bodyPatterns": [
           {
-            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fsnowflake%2Foauth-redirect&code_verifier="
+            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8009%2Fsnowflake%2Foauth-redirect&code_verifier="
           }
         ]
       },

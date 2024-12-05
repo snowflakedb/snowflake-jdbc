@@ -49,7 +49,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   public void successfulFlowScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
     SFLoginInput loginInput =
-        createLoginInputStub("http://localhost:8001/snowflake/oauth-redirect", null, null);
+        createLoginInputStub("http://localhost:8009/snowflake/oauth-redirect", null, null);
 
     OauthAccessTokenProvider provider =
         new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
@@ -146,11 +146,12 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     @Override
     public void openBrowser(String ssoUrl) {
       try (CloseableHttpClient client = HttpClients.createDefault()) {
-        Thread.sleep(2000);
+        logger.debug("executing browser request to redirect uri: {}", ssoUrl);
         HttpResponse response = client.execute(new HttpGet(ssoUrl));
-        logger.debug(response.toString());
+        if (response.getStatusLine().getStatusCode() != 200) {
+          throw new RuntimeException("Invalid response from " + ssoUrl);
+        }
       } catch (Exception e) {
-        logger.error(e.getMessage());
         throw new RuntimeException(e);
       }
     }
