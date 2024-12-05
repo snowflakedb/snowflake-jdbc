@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
 import com.amazonaws.util.StringUtils;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
