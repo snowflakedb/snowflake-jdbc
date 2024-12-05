@@ -39,6 +39,9 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
   @Override
   public Void visit(BaseFixedWidthVector baseFixedWidthVector, Void v) {
     int width = baseFixedWidthVector.getTypeWidth();
+    if (width < 2) {
+      return v;
+    }
     ArrowBuf valueBuffer = baseFixedWidthVector.getDataBuffer();
     for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
       flipBytes(valueBuffer, i * width, width);
