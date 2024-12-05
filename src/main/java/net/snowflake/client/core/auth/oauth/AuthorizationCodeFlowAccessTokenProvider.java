@@ -34,6 +34,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.NameValuePair;
@@ -74,17 +75,18 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       return exchangeAuthorizationCodeForAccessToken(loginInput, authorizationCode, pkceVerifier);
     } catch (Exception e) {
       logger.error("Error during OAuth authorization code flow", e);
-      throw new RuntimeException(e);
+      throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     }
   }
 
   private AuthorizationCode requestAuthorizationCode(
-          SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
+      SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
     AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier);
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     URI authorizeRequestURI = request.toURI();
     logger.debug(
-        "Executing authorization code request to: {}", authorizeRequestURI.getAuthority() authorizeRequestURI.getPath());
+        "Executing authorization code request to: {}",
+        authorizeRequestURI.getAuthority() + authorizeRequestURI.getPath());
     HttpServer httpServer = createHttpServer(oauthLoginInput);
     CompletableFuture<String> codeFuture = setupRedirectURIServerForAuthorizationCode(httpServer);
     logger.debug(
@@ -93,7 +95,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
   }
 
   private String exchangeAuthorizationCodeForAccessToken(
-      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier) {
+      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier)
+      throws SFException {
     try {
       TokenRequest request = buildTokenRequest(loginInput, authorizationCode, pkceVerifier);
       URI requestUri = request.getEndpointURI();
@@ -110,11 +113,11 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       TokenResponseDTO tokenResponseDTO =
           objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
       logger.debug(
-          "Received OAuth access token from: {}",requestUri.getAuthority() + requestUri.getPath());
+          "Received OAuth access token from: {}", requestUri.getAuthority() + requestUri.getPath());
       return tokenResponseDTO.getAccessToken();
     } catch (Exception e) {
       logger.error("Error during making OAuth access token request", e);
-      throw new RuntimeException(e);
+      throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     }
   }
 
@@ -126,13 +129,16 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
       String code = codeFuture.get(this.browserAuthorizationTimeoutSeconds, TimeUnit.SECONDS);
       return new AuthorizationCode(code);
     } catch (Exception e) {
-      httpServer.stop(0);
       if (e instanceof TimeoutException) {
-        throw new RuntimeException(
-            "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.",
-            e);
+        throw new SFException(
+            e,
+            ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+            "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.");
       }
-      throw new RuntimeException(e);
+      throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
+    } finally {
+      logger.debug("Stopping OAuth redirect URI server");
+      httpServer.stop(0);
     }
   }
 
@@ -147,7 +153,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
                   .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
           if (urlParams.containsKey("error")) {
             accessTokenFuture.completeExceptionally(
-                new RuntimeException(
+                new SFException(
+                    ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
                     String.format(
                         "Error during authorization: %s, %s",
                         urlParams.get("error"), urlParams.get("error_description"))));
@@ -156,10 +163,10 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
             if (!StringUtils.isNullOrEmpty(authorizationCode)) {
               logger.debug("Received authorization code on redirect URI");
               accessTokenFuture.complete(authorizationCode);
-              httpServer.stop(0);
             }
           }
         });
+    logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();
     return accessTokenFuture;
   }
@@ -171,7 +178,7 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
   }
 
   private static AuthorizationRequest buildAuthorizationRequest(
-          SFLoginInput loginInput, CodeVerifier pkceVerifier) {
+      SFLoginInput loginInput, CodeVerifier pkceVerifier) {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
     URI callback = buildRedirectUri(oauthLoginInput);
@@ -182,7 +189,8 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
         .state(state)
         .redirectionURI(callback)
         .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
-        .endpointURI(getAuthorizationUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()))
+        .endpointURI(
+            getAuthorizationUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()))
         .build();
   }
 
@@ -193,9 +201,14 @@ public class AuthorizationCodeFlowAccessTokenProvider implements OauthAccessToke
         new AuthorizationCodeGrant(authorizationCode, redirectUri, pkceVerifier);
     ClientAuthentication clientAuthentication =
         new ClientSecretBasic(
-            new ClientID(loginInput.getOauthLoginInput().getClientId()), new Secret(loginInput.getOauthLoginInput().getClientSecret()));
+            new ClientID(loginInput.getOauthLoginInput().getClientId()),
+            new Secret(loginInput.getOauthLoginInput().getClientSecret()));
     Scope scope = new Scope(getScope(loginInput));
-    return new TokenRequest(getTokenRequestUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()), clientAuthentication, codeGrant, scope);
+    return new TokenRequest(
+        getTokenRequestUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
+        clientAuthentication,
+        codeGrant,
+        scope);
   }
 
   private static URI buildRedirectUri(SFOauthLoginInput oauthLoginInput) {

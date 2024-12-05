@@ -284,7 +284,7 @@ public class SessionUtil {
       OauthAccessTokenProvider accessTokenProvider =
           new AuthorizationCodeFlowAccessTokenProvider(
               new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
-                  (int) loginInput.getBrowserResponseTimeout().getSeconds());
+              (int) loginInput.getBrowserResponseTimeout().getSeconds());
       String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(oauthAccessToken);
