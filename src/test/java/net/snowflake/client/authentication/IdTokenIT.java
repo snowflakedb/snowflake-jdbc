@@ -24,10 +24,10 @@ class IdTokenIT {
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
   AuthTest authTest;
-  private String firstToken;
+  private static String firstToken;
 
   @BeforeAll
-  public static void globalSetUp() throws IOException {
+  public static void globalSetUp() {
     AuthTest.deleteIdToken();
   }
 
@@ -52,12 +52,13 @@ class IdTokenIT {
     authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTest.verifyExceptionIsNotThrown();
     firstToken = authTest.getIdToken();
-    assertThat(firstToken, notNullValue());
+    verifyFirstTokenWasSaved();
   }
 
   @Test
   @Order(2)
   void shouldAuthenticateUsingTokenWithoutBrowser() throws SQLException {
+    verifyFirstTokenWasSaved();
     authTest.connectAndExecuteSimpleQuery(getStoreIDTokenConnectionParameters(), null);
     authTest.verifyExceptionIsNotThrown();
   }
@@ -65,6 +66,7 @@ class IdTokenIT {
   @Test
   @Order(3)
   void shouldOpenBrowserAgainWhenTokenIsDeleted() throws InterruptedException {
+    verifyFirstTokenWasSaved();
     AuthTest.deleteIdToken();
     Thread provideCredentialsThread =
         new Thread(() -> authTest.provideCredentials("success", login, password));
@@ -74,7 +76,11 @@ class IdTokenIT {
     authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTest.verifyExceptionIsNotThrown();
     String secondToken = authTest.getIdToken();
-    assertThat(secondToken, notNullValue());
-    assertThat(secondToken, not(firstToken));
+    assertThat("Id token was not saved", secondToken, notNullValue());
+    assertThat("Id token was not updated", secondToken, not(firstToken));
+  }
+
+  private void verifyFirstTokenWasSaved() {
+    assertThat("Id token was not saved", firstToken, notNullValue());
   }
 }
