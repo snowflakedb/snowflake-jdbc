@@ -495,10 +495,12 @@ public class SFLoginInput {
     return this;
   }
 
+  @SnowflakeJdbcInternalApi
   public SFOauthLoginInput getOauthLoginInput() {
     return oauthLoginInput;
   }
 
+  @SnowflakeJdbcInternalApi
   public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
     this.oauthLoginInput = oauthLoginInput;
     return this;

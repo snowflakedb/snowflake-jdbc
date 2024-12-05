@@ -140,7 +140,6 @@ public class SessionUtil {
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
-  private static final int DEFAULT_BROWSER_AUTHORIZATION_TIMEOUT_SECONDS = 180;
 
   public static Map<String, String> JVM_PARAMS_TO_PARAMS =
       Stream.of(
