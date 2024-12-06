@@ -95,15 +95,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    */
   public void readArrowStream(InputStream is) throws IOException {
     ArrayList<ValueVector> valueVectors = new ArrayList<>();
-    Class<?> clazz = ArrowBuf.class;
-      try {
-          Field os = clazz.getDeclaredField("osName");
-          os.setAccessible(true);
-          os.set(null, "aix");
-      } catch (NoSuchFieldException | IllegalAccessException e) {
-          throw new RuntimeException(e);
-      }
-      try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
+    try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
       root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch()) {
         valueVectors = new ArrayList<>();
@@ -111,9 +103,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (FieldVector f : root.getFieldVectors()) {
           // transfer will not copy data but transfer ownership of memory
           // from streamReader to resultChunk
-          if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+          //if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
             f.accept(new EndiannessSwitchVisitor(), null);
-          }
+          //}
           TransferPair t = f.getTransferPair(rootAllocator);
           t.transfer();
           valueVectors.add(t.getTo());
