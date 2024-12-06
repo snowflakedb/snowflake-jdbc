@@ -1,6 +1,5 @@
 package net.snowflake.client.core.arrow;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.BaseFixedWidthVector;
@@ -19,9 +18,8 @@ import org.apache.arrow.vector.complex.NonNullableStructVector;
 import org.apache.arrow.vector.complex.UnionVector;
 
 public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
-  private static final byte[] bytes = new byte[64];
-
   private static void flipBytes(ArrowBuf buf, int offset, int length) {
+    byte[] bytes = new byte[length];
     buf.getBytes(offset, bytes, 0, length);
     int halfLength = length / 2;
     for (int i = 0; i < halfLength; i++) {
@@ -40,10 +38,32 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
       return v;
     }
     ArrowBuf valueBuffer = baseFixedWidthVector.getDataBuffer();
-    for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
-      flipBytes(valueBuffer, i * width, width);
+    switch (width) {
+      case 2: {
+        for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
+          valueBuffer.setShort(2L * i, Short.reverseBytes(valueBuffer.getShort(2L * i)));
+        }
+        return null;
+      }
+      case 4: {
+        for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
+          valueBuffer.setInt(4L * i, Integer.reverseBytes(valueBuffer.getInt(4L * i)));
+        }
+        return null;
+      }
+      case 8: {
+        for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
+          valueBuffer.setLong(8L * i, Long.reverseBytes(valueBuffer.getLong(8L * i)));
+        }
+        return null;
+      }
+      default: {
+        for (int i = 0; i < baseFixedWidthVector.getValueCount(); i++) {
+          flipBytes(valueBuffer, i * width, width);
+        }
+        return null;
+      }
     }
-    return v;
   }
 
   @Override
