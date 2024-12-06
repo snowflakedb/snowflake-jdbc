@@ -19,8 +19,9 @@ import org.apache.arrow.vector.complex.NonNullableStructVector;
 import org.apache.arrow.vector.complex.UnionVector;
 
 public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
+  private static final byte[] bytes = new byte[64];
+
   private static void flipBytes(ArrowBuf buf, int offset, int length) {
-    byte[] bytes = new byte[length];
     buf.getBytes(offset, bytes, 0, length);
     for (int i = 0; i < length / 2; i++) {
       byte tmp = bytes[i];

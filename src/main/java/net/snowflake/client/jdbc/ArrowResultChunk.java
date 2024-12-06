@@ -103,9 +103,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (FieldVector f : root.getFieldVectors()) {
           // transfer will not copy data but transfer ownership of memory
           // from streamReader to resultChunk
-          //if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+          if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
             f.accept(new EndiannessSwitchVisitor(), null);
-          //}
+          }
           TransferPair t = f.getTransferPair(rootAllocator);
           t.transfer();
           valueVectors.add(t.getTo());
