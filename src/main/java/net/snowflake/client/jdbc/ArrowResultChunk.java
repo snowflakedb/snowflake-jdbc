@@ -7,17 +7,26 @@ import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.initConve
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.ByteOrder;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.EndiannessSwitchVisitor;
+import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
+import net.snowflake.client.core.arrow.fullvectorconverters.ArrowErrorCode;
+import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverterUtil;
+import net.snowflake.client.core.arrow.fullvectorconverters.SFArrowException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
@@ -55,6 +64,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
   private SFBaseSession session;
+  private boolean batchesMode = false;
 
   public ArrowResultChunk(
       String url,
@@ -85,6 +95,14 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    */
   public void readArrowStream(InputStream is) throws IOException {
     ArrayList<ValueVector> valueVectors = new ArrayList<>();
+    /*Class<?> clazz = ArrowBuf.class;
+    try {
+      Field os = clazz.getDeclaredField("osName");
+      os.setAccessible(true);
+      os.set(null, "aix");
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }*/
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
       root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch()) {
@@ -93,6 +111,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (FieldVector f : root.getFieldVectors()) {
           // transfer will not copy data but transfer ownership of memory
           // from streamReader to resultChunk
+          //if(ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+            f.accept(new EndiannessSwitchVisitor(), null);
+          //}
           TransferPair t = f.getTransferPair(rootAllocator);
           t.transfer();
           valueVectors.add(t.getTo());
@@ -126,6 +147,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
   @Override
   public void freeData() {
+    if (batchesMode) {
+      return;
+    }
     batchOfVectors.forEach(list -> list.forEach(ValueVector::close));
     this.batchOfVectors.clear();
     if (firstResultChunkSortedIndices != null) {
@@ -505,6 +529,12 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
   }
 
+  public ArrowBatch getArrowBatch(
+      DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
+    batchesMode = true;
+    return new ArrowResultBatch(context, timeZoneToUse, batchIndex);
+  }
+
   private boolean sortFirstResultChunkEnabled() {
     return enableSortFirstResultChunk;
   }
@@ -526,6 +556,48 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     @Override
     public final void freeData() {
       // do nothing
+    }
+  }
+
+  public class ArrowResultBatch implements ArrowBatch {
+    private DataConversionContext context;
+    private TimeZone timeZoneToUse;
+    private long batchIndex;
+
+    ArrowResultBatch(DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
+      this.context = context;
+      this.timeZoneToUse = timeZoneToUse;
+      this.batchIndex = batchIndex;
+    }
+
+    public List<VectorSchemaRoot> fetch() throws SFArrowException {
+      try {
+        List<VectorSchemaRoot> result = new ArrayList<>();
+        for (List<ValueVector> record : batchOfVectors) {
+          List<FieldVector> convertedVectors = new ArrayList<>();
+          for (int i = 0; i < record.size(); i++) {
+            ValueVector vector = record.get(i);
+            convertedVectors.add(
+                ArrowFullVectorConverterUtil.convert(
+                    rootAllocator, vector, context, session, timeZoneToUse, i, null));
+          }
+          result.add(new VectorSchemaRoot(convertedVectors));
+        }
+        return result;
+      } catch (SFArrowException e) {
+        throw new SFArrowException(
+            ArrowErrorCode.CHUNK_FETCH_FAILED, "Failed to fetch batch number " + batchIndex, e);
+      }
+    }
+
+    @Override
+    public ArrowVectorConverter getTimestampConverter(FieldVector vector, int colIdx) {
+      return new ThreeFieldStructToTimestampTZConverter(vector, colIdx, context);
+    }
+
+    @Override
+    public long getRowCount() {
+      return rowCount;
     }
   }
 }

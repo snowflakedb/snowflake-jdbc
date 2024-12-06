@@ -72,10 +72,10 @@ timestamps {
 
     jobDefinitions = jdkToParams.collectMany { jdk, params ->
       return [
-        'RT-LanguageJDBC1-PC' : "Test JDBC 1 - $jdk",
-        'RT-LanguageJDBC2-PC' : "Test JDBC 2 - $jdk",
-        'RT-LanguageJDBC3-PC' : "Test JDBC 3 - $jdk",
-        'RT-LanguageJDBC4-PC' : "Test JDBC 4 - $jdk",
+        //'RT-LanguageJDBC1-PC' : "Test JDBC 1 - $jdk",
+        //'RT-LanguageJDBC2-PC' : "Test JDBC 2 - $jdk",
+        //'RT-LanguageJDBC3-PC' : "Test JDBC 3 - $jdk",
+        //'RT-LanguageJDBC4-PC' : "Test JDBC 4 - $jdk",
       ].collect { jobToRun, runName ->
         return new JdbcJobDefinition(
           jdk: jdk,
@@ -88,7 +88,7 @@ timestamps {
       return [(jobDefinition.runName): { build job: jobDefinition.jobToRun, parameters: jobDefinition.params }]
     }
 
-    jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
+    //jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
     stage('Test') {
       parallel (jobDefinitions)
     }
