@@ -19,7 +19,7 @@ import org.apache.arrow.vector.complex.NonNullableStructVector;
 import org.apache.arrow.vector.complex.UnionVector;
 
 public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
-  private static int flipBytes(ArrowBuf buf, int offset, int length) {
+  private static void flipBytes(ArrowBuf buf, int offset, int length) {
     byte[] bytes = new byte[length];
     buf.getBytes(offset, bytes, 0, length);
     for (int i = 0; i < length / 2; i++) {
@@ -28,12 +28,6 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
       bytes[length - i - 1] = tmp;
     }
     buf.setBytes(offset, bytes, 0, length);
-    int result = 0;
-    try {
-      result = ByteBuffer.wrap(bytes).getInt();
-    } catch (Exception ignored) {
-    }
-    return result;
   }
 
   @Override
@@ -79,7 +73,8 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
     int inlineWidth = BaseVariableWidthViewVector.INLINE_SIZE;
     ArrowBuf viewBuffer = baseVariableWidthViewVector.getDataBuffer();
     for (int i = 0; i < baseVariableWidthViewVector.getValueCount(); i++) {
-      int length = flipBytes(viewBuffer, i * elementWidth, lengthWidth);
+      flipBytes(viewBuffer, i * elementWidth, lengthWidth);
+      int length = viewBuffer.getInt((long) i * elementWidth);
       if (length > inlineWidth) {
         flipBytes(viewBuffer, i * elementWidth + lengthWidth + prefixWidth, bufIndexWidth);
         flipBytes(
