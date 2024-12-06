@@ -95,14 +95,14 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    */
   public void readArrowStream(InputStream is) throws IOException {
     ArrayList<ValueVector> valueVectors = new ArrayList<>();
-    Class<?> clazz = ArrowBuf.class;
+    /*Class<?> clazz = ArrowBuf.class;
     try {
       Field os = clazz.getDeclaredField("osName");
       os.setAccessible(true);
       os.set(null, "aix");
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new RuntimeException(e);
-    }
+    }*/
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
       root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch()) {
