@@ -51,6 +51,27 @@ public class JDK14LoggerConsoleHandlerOverrideLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.20.0 */
   @Test
+  public void shouldLogAllToStdErr() throws Exception {
+    Properties paramProperties = new Properties();
+
+    connectAndLog(paramProperties);
+
+    Handler[] handlers = Logger.getLogger("").getHandlers();
+    assertTrue(handlers.length > 0);
+    assertTrue(Arrays.stream(handlers).anyMatch(h -> h instanceof ConsoleHandler));
+
+    System.out.flush();
+    System.err.flush();
+    assertEquals("", outputStream.toString());
+    String errString = errStream.toString();
+    assertTrue(errString.contains(errorMessage), () -> "STDERR: " + errString);
+    assertTrue(errString.contains(warningMessage), () -> "STDERR: " + errString);
+    assertTrue(errString.contains(infoMessage), () -> "STDERR: " + errString);
+    assertFalse(errString.contains(debugMessage), () -> "STDERR: " + errString);
+  }
+
+  /** Added in > 3.20.0 */
+  @Test
   public void shouldOverrideConsoleLoggerToStdOut() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("JAVA_LOGGING_CONSOLE_STD_OUT", true);
@@ -110,10 +131,12 @@ public class JDK14LoggerConsoleHandlerOverrideLatestIT extends BaseJDBCTest {
   private static void connectAndLog(Properties paramProperties) throws SQLException {
     try (Connection con = getConnection(paramProperties)) {
       SFLogger logger = SFLoggerFactory.getLogger(JDK14LoggerConsoleHandlerOverrideLatestIT.class);
-      logger.error(errorMessage);
-      logger.warn(warningMessage);
-      logger.info(infoMessage);
-      logger.debug(debugMessage);
+      for (int i = 0; i < 10; i++) { // log multiple times to ensure log written via mocked streams
+        logger.error(errorMessage);
+        logger.warn(warningMessage);
+        logger.info(infoMessage);
+        logger.debug(debugMessage);
+      }
     }
   }
 
