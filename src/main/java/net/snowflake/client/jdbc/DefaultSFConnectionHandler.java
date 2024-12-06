@@ -337,6 +337,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       }
       sfSession.addSFSessionProperty(property.getKey(), property.getValue());
     }
+    sfSession.overrideConsoleHandlerWhenNecessary();
 
     // populate app id and version
     sfSession.addProperty(SFSessionProperty.APP_ID, appID);

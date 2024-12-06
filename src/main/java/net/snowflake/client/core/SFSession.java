@@ -153,6 +153,9 @@ public class SFSession extends SFBaseSession {
    */
   private Duration browserResponseTimeout = Duration.ofSeconds(120);
 
+  private boolean javaUtilLoggingConsoleOut = false;
+  private String javaUtilLoggingConsoleOutThreshold = null;
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -437,8 +440,13 @@ public class SFSession extends SFBaseSession {
           }
           break;
         case JAVA_LOGGING_CONSOLE_STD_OUT:
-          if (propertyValue != null && (Boolean) propertyValue) {
-            JDK14Logger.useStdOutConsoleHandler();
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOut = (Boolean) propertyValue;
+          }
+          break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD:
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOutThreshold = (String) propertyValue;
           }
           break;
 
@@ -559,6 +567,13 @@ public class SFSession extends SFBaseSession {
       if (sessionParametersMap.size() > MAX_SESSION_PARAMETERS) {
         throw new SFException(ErrorCode.TOO_MANY_SESSION_PARAMETERS, MAX_SESSION_PARAMETERS);
       }
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void overrideConsoleHandlerWhenNecessary() {
+    if (javaUtilLoggingConsoleOut) {
+      JDK14Logger.useStdOutConsoleHandler(javaUtilLoggingConsoleOutThreshold);
     }
   }
 
