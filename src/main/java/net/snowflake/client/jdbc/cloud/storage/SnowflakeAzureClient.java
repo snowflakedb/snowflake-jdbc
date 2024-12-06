@@ -94,7 +94,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   public static SnowflakeAzureClient createSnowflakeAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFBaseSession sfSession)
       throws SnowflakeSQLException {
-    logger.info(
+    logger.debug(
         "Initializing Snowflake Azure client with encryption: {}",
         encMat != null ? "true" : "false");
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
@@ -330,7 +330,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
     int retryCount = 0;
     do {
@@ -435,7 +435,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info(
+    logger.debug(
         "Staring download of file from Azure stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
