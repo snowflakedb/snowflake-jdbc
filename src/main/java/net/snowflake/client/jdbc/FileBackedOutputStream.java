@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import net.snowflake.client.core.FileUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * An {@link OutputStream} that starts buffering to a byte array, but switches to file buffering
@@ -41,6 +43,8 @@ import net.snowflake.client.core.FileUtil;
  */
 @Beta
 public final class FileBackedOutputStream extends OutputStream {
+
+  private static final SFLogger logger = SFLoggerFactory.getLogger(FileBackedOutputStream.class);
 
   private final int fileThreshold;
   private final boolean resetOnFinalize;
@@ -105,7 +109,7 @@ public final class FileBackedOutputStream extends OutputStream {
               try {
                 reset();
               } catch (Throwable t) {
-                t.printStackTrace(System.err);
+                logger.error("Exception occurred on finalize", t);
               }
             }
           };

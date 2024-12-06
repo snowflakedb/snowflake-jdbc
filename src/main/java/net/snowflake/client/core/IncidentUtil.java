@@ -206,7 +206,7 @@ public class IncidentUtil {
         // This function can throw an error with java 11.
         json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
       } catch (Exception e) {
-        logger.info("Error writing fd_usage", e);
+        logger.debug("Error writing fd_usage", e);
       }
 
       json.writeFieldName("thread-states");

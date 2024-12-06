@@ -687,7 +687,7 @@ public abstract class SFBaseSession {
           key.getProxyUser(),
           key.getProxyPassword().isEmpty() ? "not set" : "set");
     } else {
-      logger.info(
+      logger.debug(
           "Driver OCSP mode: {}, gzip disabled: {} and no proxy",
           key.getOcspMode(),
           key.getGzipDisabled());

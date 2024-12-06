@@ -803,7 +803,7 @@ public class SFSession extends SFBaseSession {
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     stopwatch.stop();
-    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+    logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -946,7 +946,7 @@ public class SFSession extends SFBaseSession {
     }
 
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Session {} has been successfully closed in {} ms",
         getSessionId(),
         stopwatch.elapsedMillis());
