@@ -5,7 +5,7 @@ import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
-public interface OauthAccessTokenProvider {
+public interface AccessTokenProvider {
 
   String getAccessToken(SFLoginInput loginInput) throws SFException;
 }

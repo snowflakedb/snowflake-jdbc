@@ -836,12 +836,19 @@ public class HttpUtil {
         stopwatch.stop();
       }
 
+      writer = new StringWriter();
+      try (InputStream ins = response.getEntity().getContent()) {
+        IOUtils.copy(ins, writer, "UTF-8");
+      }
+      theString = writer.toString();
+
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
 
         SnowflakeUtil.logResponseDetails(response, logger);
 
         if (response != null) {
+
           EntityUtils.consume(response.getEntity());
         }
 

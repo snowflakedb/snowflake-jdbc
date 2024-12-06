@@ -645,9 +645,9 @@ public class SFSession extends SFBaseSession {
             (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID),
             (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
-            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE),
             (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL),
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL));
+            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE));
 
     loginInput
         .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
