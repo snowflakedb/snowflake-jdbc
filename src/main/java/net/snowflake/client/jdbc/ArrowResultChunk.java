@@ -7,6 +7,7 @@ import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.initConve
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import net.snowflake.client.core.arrow.fullvectorconverters.SFArrowException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
@@ -93,7 +95,15 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    */
   public void readArrowStream(InputStream is) throws IOException {
     ArrayList<ValueVector> valueVectors = new ArrayList<>();
-    try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
+    Class<?> clazz = ArrowBuf.class;
+      try {
+          Field os = clazz.getDeclaredField("osName");
+          os.setAccessible(true);
+          os.set(null, "aix");
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+          throw new RuntimeException(e);
+      }
+      try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator)) {
       root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch()) {
         valueVectors = new ArrayList<>();
