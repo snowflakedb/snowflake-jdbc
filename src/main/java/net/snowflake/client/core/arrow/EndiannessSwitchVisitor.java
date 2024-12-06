@@ -23,10 +23,12 @@ public class EndiannessSwitchVisitor implements VectorVisitor<Void, Void> {
 
   private static void flipBytes(ArrowBuf buf, int offset, int length) {
     buf.getBytes(offset, bytes, 0, length);
-    for (int i = 0; i < length / 2; i++) {
+    int halfLength = length / 2;
+    for (int i = 0; i < halfLength; i++) {
       byte tmp = bytes[i];
-      bytes[i] = bytes[length - i - 1];
-      bytes[length - i - 1] = tmp;
+      int j = (length - 1) - i;
+      bytes[i] = bytes[j];
+      bytes[j] = tmp;
     }
     buf.setBytes(offset, bytes, 0, length);
   }
