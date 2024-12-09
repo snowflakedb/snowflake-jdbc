@@ -842,6 +842,7 @@ public class HttpUtil {
         SnowflakeUtil.logResponseDetails(response, logger);
 
         if (response != null) {
+
           EntityUtils.consume(response.getEntity());
         }
 

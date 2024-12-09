@@ -11,8 +11,8 @@ import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
-import net.snowflake.client.core.auth.oauth.AuthorizationCodeFlowAccessTokenProvider;
-import net.snowflake.client.core.auth.oauth.OauthAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Tag(TestTags.CORE)
-public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
+public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/oauth/authorization_code";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
@@ -40,7 +40,7 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
       SCENARIOS_BASE_DIR + "/custom_urls_scenario_mapping.json";
 
   private static final Logger logger =
-      LoggerFactory.getLogger(OauthAuthorizationCodeFlowLatestIT.class);
+      LoggerFactory.getLogger(OAuthAuthorizationCodeFlowLatestIT.class);
 
   private final AuthExternalBrowserHandlers wiremockProxyRequestBrowserHandler =
       new WiremockProxyRequestBrowserHandler();
@@ -51,8 +51,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8009/snowflake/oauth-redirect", null, null);
 
-    OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    AccessTokenProvider provider =
+        new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     String accessToken = provider.getAccessToken(loginInput);
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
@@ -68,8 +68,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
             String.format("http://%s:%d/authorization", WIREMOCK_HOST, wiremockHttpPort),
             String.format("http://%s:%d/tokenrequest", WIREMOCK_HOST, wiremockHttpPort));
 
-    OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    AccessTokenProvider provider =
+        new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     String accessToken = provider.getAccessToken(loginInput);
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
@@ -82,8 +82,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8004/snowflake/oauth-redirect", null, null);
 
-    OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 1);
+    AccessTokenProvider provider =
+        new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 1);
     SFException e =
         Assertions.assertThrows(SFException.class, () -> provider.getAccessToken(loginInput));
     Assertions.assertTrue(
@@ -97,8 +97,8 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     importMappingFromResources(INVALID_SCOPE_SCENARIO_MAPPING);
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8002/snowflake/oauth-redirect", null, null);
-    OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    AccessTokenProvider provider =
+        new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     SFException e =
         Assertions.assertThrows(SFException.class, () -> provider.getAccessToken(loginInput));
     Assertions.assertTrue(
@@ -113,14 +113,13 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8003/snowflake/oauth-redirect", null, null);
 
-    OauthAccessTokenProvider provider =
-        new AuthorizationCodeFlowAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
+    AccessTokenProvider provider =
+        new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
     SFException e =
         Assertions.assertThrows(SFException.class, () -> provider.getAccessToken(loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains(
-                "Error during OAuth authentication: JDBC driver encountered communication error. Message: HTTP status=400."));
+            .contains("JDBC driver encountered communication error. Message: HTTP status=400"));
   }
 
   private SFLoginInput createLoginInputStub(
@@ -129,7 +128,12 @@ public class OauthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     loginInputStub.setOauthLoginInput(
         new SFOauthLoginInput(
-            "123", "123", redirectUri, externalAuthorizationUrl, externalTokenUrl, "ANALYST"));
+            "123",
+            "123",
+            redirectUri,
+            externalAuthorizationUrl,
+            externalTokenUrl,
+            "session:role:ANALYST"));
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 
