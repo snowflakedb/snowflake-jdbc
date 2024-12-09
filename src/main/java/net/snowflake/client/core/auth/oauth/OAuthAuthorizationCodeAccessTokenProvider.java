@@ -202,7 +202,8 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope = new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
+    Scope scope =
+        new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
     return new TokenRequest(
         OAuthUtil.getTokenRequestUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
         clientAuthentication,

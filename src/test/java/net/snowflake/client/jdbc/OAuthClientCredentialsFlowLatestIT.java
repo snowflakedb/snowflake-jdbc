@@ -1,6 +1,10 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
+
 import com.amazonaws.util.StringUtils;
+import java.net.URI;
+import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
@@ -8,7 +12,6 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
-import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthClientCredentialsAccessTokenProvider;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -20,11 +23,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.time.Duration;
-
-import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
 @Tag(TestTags.CORE)
 public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
@@ -44,8 +42,7 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8009/snowflake/oauth-redirect");
 
-    AccessTokenProvider provider =
-        new OAuthClientCredentialsAccessTokenProvider();
+    AccessTokenProvider provider = new OAuthClientCredentialsAccessTokenProvider();
     String accessToken = provider.getAccessToken(loginInput);
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
@@ -58,23 +55,25 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8003/snowflake/oauth-redirect");
 
-    AccessTokenProvider provider =
-            new OAuthClientCredentialsAccessTokenProvider();
+    AccessTokenProvider provider = new OAuthClientCredentialsAccessTokenProvider();
     SFException e =
         Assertions.assertThrows(SFException.class, () -> provider.getAccessToken(loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains(
-                "JDBC driver encountered communication error. Message: HTTP status=400"));
+            .contains("JDBC driver encountered communication error. Message: HTTP status=400"));
   }
 
-  private SFLoginInput createLoginInputStub(
-      String redirectUri) {
+  private SFLoginInput createLoginInputStub(String redirectUri) {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     loginInputStub.setOauthLoginInput(
         new SFOauthLoginInput(
-            "123", "123", redirectUri, null, String.format("http://%s:%d/oauth/token-request", WIREMOCK_HOST, wiremockHttpPort), "session:role:ANALYST"));
+            "123",
+            "123",
+            redirectUri,
+            null,
+            String.format("http://%s:%d/oauth/token-request", WIREMOCK_HOST, wiremockHttpPort),
+            "session:role:ANALYST"));
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 

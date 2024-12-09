@@ -119,8 +119,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
         Assertions.assertThrows(SFException.class, () -> provider.getAccessToken(loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains(
-                "JDBC driver encountered communication error. Message: HTTP status=400"));
+            .contains("JDBC driver encountered communication error. Message: HTTP status=400"));
   }
 
   private SFLoginInput createLoginInputStub(
@@ -129,7 +128,12 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     loginInputStub.setOauthLoginInput(
         new SFOauthLoginInput(
-            "123", "123", redirectUri, externalAuthorizationUrl, externalTokenUrl, "session:role:ANALYST"));
+            "123",
+            "123",
+            redirectUri,
+            externalAuthorizationUrl,
+            externalTokenUrl,
+            "session:role:ANALYST"));
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 

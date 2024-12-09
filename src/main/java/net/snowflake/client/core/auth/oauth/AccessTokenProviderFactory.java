@@ -41,8 +41,9 @@ public class AccessTokenProviderFactory {
             browserHandler, browserAuthorizationTimeoutSeconds);
       case OAUTH_CLIENT_CREDENTIALS:
         assertContainsClientCredentials(loginInput, authenticatorType);
-        AssertUtil.assertTrue(loginInput.getOauthLoginInput().getExternalTokenRequestUrl() != null,
-                "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
+        AssertUtil.assertTrue(
+            loginInput.getOauthLoginInput().getExternalTokenRequestUrl() != null,
+            "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
         return new OAuthClientCredentialsAccessTokenProvider();
       default:
         logger.error("Unsupported authenticator type: " + authenticatorType);
@@ -58,12 +59,15 @@ public class AccessTokenProviderFactory {
     return getEligible().contains(authenticatorType);
   }
 
-  private void assertContainsClientCredentials(SFLoginInput loginInput, AuthenticatorType authenticatorType) throws SFException {
+  private void assertContainsClientCredentials(
+      SFLoginInput loginInput, AuthenticatorType authenticatorType) throws SFException {
     AssertUtil.assertTrue(
         loginInput.getOauthLoginInput().getClientId() != null,
-        String.format("passing clientId is required for %s authentication", authenticatorType.name()));
+        String.format(
+            "passing clientId is required for %s authentication", authenticatorType.name()));
     AssertUtil.assertTrue(
         loginInput.getOauthLoginInput().getClientSecret() != null,
-            String.format("passing clientSecret is required for %s authentication", authenticatorType.name()));
+        String.format(
+            "passing clientSecret is required for %s authentication", authenticatorType.name()));
   }
 }

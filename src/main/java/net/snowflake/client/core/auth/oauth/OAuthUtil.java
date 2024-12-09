@@ -4,7 +4,6 @@ import com.amazonaws.util.StringUtils;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.http.client.methods.HttpPost;

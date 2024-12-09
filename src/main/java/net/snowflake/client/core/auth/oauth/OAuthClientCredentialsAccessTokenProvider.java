@@ -33,7 +33,9 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
       TokenResponseDTO tokenResponse = requestForAccessToken(loginInput, tokenRequest);
       return tokenResponse.getAccessToken();
     } catch (Exception e) {
-      logger.error("Error during OAuth client credentials code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)", e);
+      logger.error(
+          "Error during OAuth client credentials code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)",
+          e);
       throw new SFException(e, ErrorCode.OAUTH_CLIENT_CREDENTIALS_FLOW_ERROR, e.getMessage());
     }
   }
@@ -65,7 +67,8 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope = new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
+    Scope scope =
+        new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
     return new TokenRequest(
         tokenRequestUrl, clientAuthentication, new ClientCredentialsGrant(), scope);
   }
