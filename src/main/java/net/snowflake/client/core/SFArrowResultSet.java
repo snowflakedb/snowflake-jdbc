@@ -580,13 +580,17 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (obj == null) {
       return null;
     }
-    if (isStructuredType) {
-        if (type == Types.STRUCT && converter instanceof VarCharConverter) {
+    if (type == Types.STRUCT && isStructuredType) {
+      if (converter instanceof VarCharConverter) {
         return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
+      } else if (converter instanceof StructConverter) {
+        return new StructObjectWrapper(
+            converter.toString(index),
+            createArrowSqlInput(columnIndex, (Map<String, Object>) obj),
+            obj);
       }
-      return new StructObjectWrapper(converter.toString(index), obj);
     }
-    return obj;
+    return new StructObjectWrapper(converter.toString(index), null, obj);
   }
 
   @Override
@@ -612,24 +616,25 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
     if (columnType == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
-        return createJsonSqlInput(columnIndex, obj);
+        return new StructObjectWrapper(null, createJsonSqlInput(columnIndex, obj));
       } else if (converter instanceof StructConverter) {
-        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
+        return new StructObjectWrapper(
+            null, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
       }
     }
-    return obj;
+    return new StructObjectWrapper(null, null, obj);
   }
 
-  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
-          throws SFException {
+  private SQLInput createArrowSqlInput(int columnIndex, Map<String, Object> input)
+      throws SFException {
     if (input == null) {
       return null;
     }
     return new ArrowSqlInput(
-            input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
+        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
-  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+  private SQLInput createJsonSqlInput(int columnIndex, Object obj) throws SFException {
     try {
       if (obj == null) {
         return null;
@@ -660,11 +665,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
-      StructObjectWrapper structObjectWrapper = new StructObjectWrapper(converter.toString(), obj);
-      return getArrowArray(
-          structObjectWrapper.getJsonString(),
-          (List<Object>) structObjectWrapper.getObject(),
-          columnIndex);
+      return getArrowArray(converter.toString(), (List<Object>) obj, columnIndex);
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }

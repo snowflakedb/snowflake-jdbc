@@ -1397,11 +1397,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> {
-                  Object obj = sfBaseResultSet.getObject(columnIndex, type);
-                  if (obj instanceof StructObjectWrapper) {
-                    return (SQLInput) createJsonSqlInput(columnIndex, (StructObjectWrapper) obj);
+                  StructObjectWrapper structObjectWrapper =
+                      (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
+                  if (structObjectWrapper == null) {
+                    return null;
                   }
-                  return (SQLInput) obj;
+                  return structObjectWrapper.getSqlInput();
                 });
         if (sqlInput == null) {
           return null;
@@ -1638,24 +1639,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    Object getObjectResult = SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> sfBaseResultSet.getObject(columnIndex, type));
-    if (getObjectResult == null) {
+    StructObjectWrapper structObjectWrapper =
+        SnowflakeUtil.mapSFExceptionToSQLException(
+            () -> (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex, type));
+    if (structObjectWrapper == null) {
       return null;
     }
-    Object object = getObjectResult instanceof StructObjectWrapper ? ((StructObjectWrapper) getObjectResult).getObject() : getObjectResult;
 
     Map<String, Object> map =
-        mapSFExceptionToSQLException(
-            () -> prepareMapWithValues(object, type));
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(structObjectWrapper, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        SQLInput parentSqlInput = structObjectWrapper.getSqlInput();
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                object.getClass(),
+                parentSqlInput == null
+                    ? structObjectWrapper.getObject().getClass()
+                    : parentSqlInput.getClass(),
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());
@@ -1814,11 +1817,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return iface.isInstance(this);
   }
 
-  private <T> Map<String, Object> prepareMapWithValues(Object object, Class<T> type)
-      throws SFException {
-    if (object instanceof JsonSqlInput) {
+  private <T> Map<String, Object> prepareMapWithValues(
+      StructObjectWrapper structObjectWrapper, Class<T> type) throws SFException {
+    SQLInput sqlInput = structObjectWrapper.getSqlInput();
+    if (sqlInput instanceof JsonSqlInput) {
       Map map = new HashMap<>();
-      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+      JsonNode jsonNode = ((JsonSqlInput) sqlInput).getInput();
       for (Iterator<String> it = jsonNode.fieldNames(); it.hasNext(); ) {
         String name = it.next();
         map.put(
@@ -1828,14 +1832,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 : SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name)));
       }
       return map;
-    } else if (object instanceof Map) {
-      return (Map<String, Object>) object;
+    } else if (structObjectWrapper.getObject() != null) {
+      return (Map<String, Object>) structObjectWrapper.getObject();
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
     }
   }
 
-  private Object createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
+  private SQLInput createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
     try {
       if (obj == null) {
         return null;

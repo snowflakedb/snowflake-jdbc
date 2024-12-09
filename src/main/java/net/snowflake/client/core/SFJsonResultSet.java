@@ -298,7 +298,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return converters;
   }
 
-  private Object getSqlInput(String input, int columnIndex) throws SFException {
+  private SQLInput getSqlInput(String input, int columnIndex) throws SFException {
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
       return new JsonSqlInput(
