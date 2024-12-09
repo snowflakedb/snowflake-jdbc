@@ -113,7 +113,13 @@ public abstract class SFBaseResultSet {
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
+  public abstract <T> Object getObject(int columnIndex, Class<T> object) throws SFException;
+
   public Array getArray(int columnIndex) throws SFException {
+    throw new UnsupportedOperationException();
+  }
+
+  public <T> Array getArray(int columnIndex, Class<T> type) throws SFException {
     throw new UnsupportedOperationException();
   }
 

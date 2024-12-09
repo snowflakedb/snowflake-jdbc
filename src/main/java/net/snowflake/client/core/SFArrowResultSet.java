@@ -574,19 +574,23 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
-    Object obj = converter.toObject(index);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
-    if (isVarcharConvertedStruct(type, isStructuredType, converter)) {
-      if (obj != null) {
+    Object obj = converter.toObject(index);
+    if (obj == null) {
+      return null;
+    }
+    if (isStructuredType) {
+        if (type == Types.STRUCT && converter instanceof VarCharConverter) {
         return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
       }
+      return new StructObjectWrapper(converter.toString(index), obj);
     }
     return obj;
   }
 
-  private boolean isVarcharConvertedStruct(
-      int type, boolean isStructuredType, ArrowVectorConverter converter) {
-    return type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter;
+  @Override
+  public <T> Object getObject(int columnIndex, Class<T> type) throws SFException {
+    return getObject(columnIndex);
   }
 
   private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
@@ -620,7 +624,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
-      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) obj;
+      StructObjectWrapper structObjectWrapper = new StructObjectWrapper(converter.toString(), obj);
       return getArrowArray(
           structObjectWrapper.getJsonString(),
           (List<Object>) structObjectWrapper.getObject(),
@@ -628,6 +632,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
+  }
+
+  public <T> Array getArray(int columnIndex, Class<T> type) throws SFException {
+    // TODO: don't calculate toString when not needed
+    return getArray(columnIndex);
   }
 
   private SfSqlArray getArrowArray(String text, List<Object> elements, int columnIndex)
