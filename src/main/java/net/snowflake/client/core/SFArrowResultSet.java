@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
@@ -590,7 +591,42 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public <T> Object getObject(int columnIndex, Class<T> type) throws SFException {
-    return getObject(columnIndex);
+    if (type == String.class) {
+      return getObject(columnIndex);
+    }
+
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+      return getString(columnIndex);
+    }
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    converter.setTreatNTZAsUTC(treatNTZAsUTC);
+    converter.setUseSessionTimezone(useSessionTimezone);
+    converter.setSessionTimeZone(sessionTimeZone);
+    Object obj = converter.toObject(index);
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    if (columnType == Types.STRUCT && isStructuredType) {
+      if (converter instanceof VarCharConverter) {
+        return createJsonSqlInput(columnIndex, obj);
+      } else if (converter instanceof StructConverter) {
+        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
+      }
+    }
+    return obj;
+  }
+
+  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
+          throws SFException {
+    if (input == null) {
+      return null;
+    }
+    return new ArrowSqlInput(
+            input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
   private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
@@ -632,11 +668,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
-  }
-
-  public <T> Array getArray(int columnIndex, Class<T> type) throws SFException {
-    // TODO: don't calculate toString when not needed
-    return getArray(columnIndex);
   }
 
   private SfSqlArray getArrowArray(String text, List<Object> elements, int columnIndex)

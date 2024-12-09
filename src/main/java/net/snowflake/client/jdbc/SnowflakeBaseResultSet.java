@@ -1397,9 +1397,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> {
-                  StructObjectWrapper structObjectWrapper =
-                      (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
-                  return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
+                  Object obj = sfBaseResultSet.getObject(columnIndex, type);
+                  if (obj instanceof StructObjectWrapper) {
+                    return (SQLInput) createJsonSqlInput(columnIndex, (StructObjectWrapper) obj);
+                  }
+                  return (SQLInput) obj;
                 });
         if (sqlInput == null) {
           return null;
@@ -1636,16 +1638,16 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    StructObjectWrapper structObjectWrapper =
-        (StructObjectWrapper)
-            SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> sfBaseResultSet.getObject(columnIndex));
-    if (structObjectWrapper == null) {
+    Object getObjectResult = SnowflakeUtil.mapSFExceptionToSQLException(
+                () -> sfBaseResultSet.getObject(columnIndex, type));
+    if (getObjectResult == null) {
       return null;
     }
+    Object object = getObjectResult instanceof StructObjectWrapper ? ((StructObjectWrapper) getObjectResult).getObject() : getObjectResult;
+
     Map<String, Object> map =
         mapSFExceptionToSQLException(
-            () -> prepareMapWithValues(structObjectWrapper.getObject(), type));
+            () -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1653,7 +1655,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                structObjectWrapper.getObject().getClass(),
+                object.getClass(),
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());

@@ -119,10 +119,6 @@ public abstract class SFBaseResultSet {
     throw new UnsupportedOperationException();
   }
 
-  public <T> Array getArray(int columnIndex, Class<T> type) throws SFException {
-    throw new UnsupportedOperationException();
-  }
-
   public abstract BigDecimal getBigDecimal(int columnIndex) throws SFException;
 
   public abstract BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException;
