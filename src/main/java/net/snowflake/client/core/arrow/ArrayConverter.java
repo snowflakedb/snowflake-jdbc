@@ -25,7 +25,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return isNull(index) ? null : new StructObjectWrapper(toString(index), vector.getObject(index));
+    return isNull(index) ? null : vector.getObject(index);
   }
 
   @Override

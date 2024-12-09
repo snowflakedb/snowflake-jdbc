@@ -103,6 +103,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
+  @Override
+  public <T> Object getObject(int columnIndex, Class<T> object) throws SFException {
+    return getObject(columnIndex);
+  }
+
   /**
    * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
    * instead.
@@ -292,7 +297,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return converters;
   }
 
-  private Object getSqlInput(String input, int columnIndex) throws SFException {
+  private SQLInput getSqlInput(String input, int columnIndex) throws SFException {
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
       return new JsonSqlInput(

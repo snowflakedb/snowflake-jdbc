@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
@@ -564,32 +565,81 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Object getObject(int columnIndex) throws SFException {
-    int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
       return getString(columnIndex);
     }
-    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+
+    ArrowVectorConverter converter = getConfiguredConverter(columnIndex);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    Object obj = converter.toObject(index);
+    if (obj == null) {
+      return null;
+    }
+    if (columnType == Types.STRUCT && isStructuredType) {
+      if (converter instanceof VarCharConverter) {
+        return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
+      } else if (converter instanceof StructConverter) {
+        return new StructObjectWrapper(
+            converter.toString(index),
+            createArrowSqlInput(columnIndex, (Map<String, Object>) obj),
+            obj);
+      }
+    }
+    return new StructObjectWrapper(converter.toString(index), null, obj);
+  }
+
+  @Override
+  public <T> Object getObject(int columnIndex, Class<T> type) throws SFException {
+    if (String.class.isAssignableFrom(type)) {
+      return getObject(columnIndex);
+    }
+
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+      return getString(columnIndex);
+    }
+    ArrowVectorConverter converter = getConfiguredConverter(columnIndex);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    Object obj = converter.toObject(index);
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    if (columnType == Types.STRUCT && isStructuredType) {
+      if (converter instanceof VarCharConverter) {
+        return new StructObjectWrapper(null, createJsonSqlInput(columnIndex, obj));
+      } else if (converter instanceof StructConverter) {
+        return new StructObjectWrapper(
+            null, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+      }
+    }
+    return new StructObjectWrapper(null, null, obj);
+  }
+
+  @SnowflakeJdbcInternalApi
+  private ArrowVectorConverter getConfiguredConverter(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
-    Object obj = converter.toObject(index);
-    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
-    if (isVarcharConvertedStruct(type, isStructuredType, converter)) {
-      if (obj != null) {
-        return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
-      }
+
+    return converter;
+  }
+
+  private SQLInput createArrowSqlInput(int columnIndex, Map<String, Object> input)
+      throws SFException {
+    if (input == null) {
+      return null;
     }
-    return obj;
+    return new ArrowSqlInput(
+        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
-  private boolean isVarcharConvertedStruct(
-      int type, boolean isStructuredType, ArrowVectorConverter converter) {
-    return type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter;
-  }
-
-  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+  private SQLInput createJsonSqlInput(int columnIndex, Object obj) throws SFException {
     try {
       if (obj == null) {
         return null;
@@ -620,11 +670,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
-      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) obj;
-      return getArrowArray(
-          structObjectWrapper.getJsonString(),
-          (List<Object>) structObjectWrapper.getObject(),
-          columnIndex);
+      return getArrowArray(converter.toString(), (List<Object>) obj, columnIndex);
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
