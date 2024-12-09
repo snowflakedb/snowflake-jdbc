@@ -389,30 +389,48 @@
           <source>8</source>
           <target>8</target>
           <testExcludes>
-            <!-- arrow tests -->
-            <exclude>**/net/snowflake/client/core/arrow/*.java</exclude>
-            <exclude>**/ResultSetArrow*.java</exclude>
-            <exclude>**/PreparedStatementArrow*IT.java</exclude>
-            <exclude>**/SFArrowResultSetIT.java</exclude>
-            <!-- structured types tests -->
-            <exclude>**/structuredtypes/sqldata/*.java</exclude>
-            <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
-            <exclude>**/*LatestIT.java</exclude>
             <!-- Unit Tests -->
             <exclude>**/*Test.java</exclude>
             <!-- Manual Tests -->
             <exclude>**/*Manual.java</exclude>
-            <!-- Telemetry API is new -->
-            <exclude>**/TelemetryServiceIT.java</exclude>
-            <exclude>**/TelemetryIT.java</exclude>
-            <!-- OCSP implementation is new -->
+            <!-- Strucutured types added in 3.17.0 -->
+            <exclude>**/structuredtypes/sqldata/*.java</exclude>
+            <!-- The tests below are not compiling -->
+            <exclude>**/BaseWiremockTest.java</exclude>
+            <exclude>**/BindingAndInsertingStructuredTypesLatestIT.java</exclude>
+            <exclude>**/ChunkDownloaderS3RetryUrlLatestIT.java</exclude>
+            <exclude>**/ConnectionLatestIT.java</exclude>
+            <exclude>**/CustomProxyLatestIT.java</exclude>
+            <exclude>**/DatabaseMetaDataLatestIT.java</exclude>
+            <exclude>**/DiagnosticContextLatestIT.java</exclude>
+            <exclude>**/FileConnectionConfigurationLatestIT.java</exclude>
+            <exclude>**/FileUploaderLatestIT.java</exclude>
+            <exclude>**/GitRepositoryDownloadLatestIT.java</exclude>
+            <exclude>**/HttpUtilLatestIT.java</exclude>
+            <exclude>**/LobSizeLatestIT.java</exclude>
+            <exclude>**/PreparedStatement2LatestIT.java</exclude>
+            <exclude>**/PreparedStatementArrow2LatestIT.java</exclude>
+            <exclude>**/PreparedStatementLargeUpdateLatestIT.java</exclude>
+            <exclude>**/ProxyLatestIT.java</exclude>
+            <exclude>**/RestRequestWiremockLatestIT.java</exclude>
+            <exclude>**/ResultSetArrowLatestIT.java</exclude>
+            <exclude>**/ResultSetLatestIT.java</exclude>
+            <exclude>**/ResultSetStructuredTypesLatestIT.java</exclude>
+            <exclude>**/ResultSetVectorLatestIT.java</exclude>
+            <exclude>**/SFArrowResultSetIT.java</exclude>
             <exclude>**/SFTrustManagerIT.java</exclude>
-            <!-- Logger improvement is new -->
-            <exclude>**/SLF4JLoggerIT.java</exclude>
-            <!-- Async support is new -->
-            <exclude>**/ResultSetAsyncIT.java</exclude>
-            <!-- ResultSet serialization is new -->
-            <exclude>**/SnowflakeResultSetSerializable*IT.java</exclude>
+            <exclude>**/SLF4JJJCLWrapperLatestIT.java</exclude>
+            <exclude>**/SLF4JLoggerLatestIT.java</exclude>
+            <exclude>**/SessionUtilLatestIT.java</exclude>
+            <exclude>**/SnowflakeAzureClientHandleExceptionLatestIT.java</exclude>
+            <exclude>**/SnowflakeAzureClientLatestIT.java</exclude>
+            <exclude>**/SnowflakeDriverLatestIT.java</exclude>
+            <exclude>**/SnowflakeGcsClientHandleExceptionLatestIT.java</exclude>
+            <exclude>**/SnowflakeS3ClientHandleExceptionLatestIT.java</exclude>
+            <exclude>**/SnowflakeS3ClientLatestIT.java</exclude>
+            <exclude>**/StatementLatestIT.java</exclude>
+            <exclude>**/TelemetryIT.java</exclude>
+            <exclude>**/TelemetryServiceIT.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
