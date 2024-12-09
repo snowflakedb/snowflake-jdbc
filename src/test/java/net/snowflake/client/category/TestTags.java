@@ -14,4 +14,5 @@ public class TestTags {
   public static final String OTHERS = "others";
   public static final String RESULT_SET = "resultSet";
   public static final String STATEMENT = "statement";
+  public static final String AUTHENTICATION = "authentication";
 }
