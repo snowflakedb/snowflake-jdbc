@@ -13,6 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -62,7 +64,7 @@ public class AuthTest {
       ProcessBuilder processBuilder =
           new ProcessBuilder("node", provideBrowserCredentialsPath, scenario, login, password);
       Process process = processBuilder.start();
-      process.waitFor();
+      process.waitFor(15, TimeUnit.SECONDS);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -74,7 +76,7 @@ public class AuthTest {
       ProcessBuilder processBuilder = new ProcessBuilder("node", cleanBrowserProcessesPath);
       try {
         Process process = processBuilder.start();
-        process.waitFor();
+        process.waitFor(15, TimeUnit.SECONDS);
       } catch (InterruptedException | IOException e) {
         throw new RuntimeException(e);
       }
