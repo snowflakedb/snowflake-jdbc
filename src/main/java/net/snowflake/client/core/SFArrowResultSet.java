@@ -592,21 +592,22 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     String jsonString = withString ? converter.toString(index) : null;
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (isVarcharConvertedStruct(type, isStructuredType, converter)) {
-        return new StructObjectWrapper(jsonString, createJsonSqlInput(columnIndex, obj));
+      return new StructObjectWrapper(jsonString, createJsonSqlInput(columnIndex, obj));
     } else if (converter instanceof StructConverter) {
-      return new StructObjectWrapper(jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+      return new StructObjectWrapper(
+          jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
     } else {
       return new StructObjectWrapper(jsonString, obj);
     }
   }
 
   private SQLInput createArrowSqlInput(int columnIndex, Map<String, Object> input)
-          throws SFException {
+      throws SFException {
     if (input == null) {
       return null;
     }
     return new ArrowSqlInput(
-            input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
+        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
   private boolean isVarcharConvertedStruct(

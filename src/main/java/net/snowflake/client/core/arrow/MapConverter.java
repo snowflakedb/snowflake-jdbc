@@ -2,7 +2,6 @@ package net.snowflake.client.core.arrow;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
@@ -34,10 +33,10 @@ public class MapConverter extends AbstractArrowVectorConverter {
       return null;
     }
     List<JsonStringHashMap<String, Object>> entriesList =
-            (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
+        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
     return entriesList.stream()
-            .collect(
-                    Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
+        .collect(
+            Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
   }
 
   @Override
