@@ -113,6 +113,9 @@ public abstract class SFBaseResultSet {
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
+  @SnowflakeJdbcInternalApi
+  public abstract Object getObject(int columnIndex, Class<?> type) throws SFException;
+
   public Array getArray(int columnIndex) throws SFException {
     throw new UnsupportedOperationException();
   }

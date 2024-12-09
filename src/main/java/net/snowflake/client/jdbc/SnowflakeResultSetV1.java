@@ -274,18 +274,27 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
         SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
     if (object == null) {
       return null;
-    } else if (object instanceof JsonSqlInput) {
-      return ((JsonSqlInput) object).getText();
-    } else if (object instanceof StructObjectWrapper) {
-      return ((StructObjectWrapper) object).getJsonString();
-    } else if (object instanceof SfSqlArray) {
-      return ((SfSqlArray) object).getText();
-    } else if (object instanceof ArrowSqlInput) {
-      throw new SQLException(
-          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
-    } else {
-      return object;
     }
+    if (object instanceof SfSqlArray) {
+      return ((SfSqlArray) object).getText();
+    }
+    if (object instanceof StructObjectWrapper) {
+      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
+      if (structObjectWrapper.getObject() instanceof JsonSqlInput) {
+        return ((JsonSqlInput) structObjectWrapper.getObject()).getText();
+      }
+      if (structObjectWrapper.getObject() instanceof ArrowSqlInput) {
+        throw new SQLException(
+            "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
+      }
+      if (structObjectWrapper.getObject() != null) {
+        return structObjectWrapper.getObject();
+      }
+      if (structObjectWrapper.getJsonString() != null) {
+        return structObjectWrapper.getJsonString();
+      }
+    }
+    return object;
   }
 
   public Array getArray(int columnIndex) throws SQLException {
