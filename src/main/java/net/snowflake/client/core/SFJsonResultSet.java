@@ -103,6 +103,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
+  @SnowflakeJdbcInternalApi
+  @Override
+  public Object getObject(int columnIndex, Class<?> type) throws SFException {
+    return getObject(columnIndex);
+  }
   /**
    * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
    * instead.

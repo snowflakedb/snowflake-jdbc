@@ -33,15 +33,11 @@ public class MapConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-
     List<JsonStringHashMap<String, Object>> entriesList =
-        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
-    Map<String, Object> map =
-        entriesList.stream()
+            (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
+    return entriesList.stream()
             .collect(
-                Collectors.toMap(
-                    entry -> entry.get("key").toString(), entry -> entry.get("value")));
-    return new StructObjectWrapper(toString(index), map);
+                    Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
   }
 
   @Override

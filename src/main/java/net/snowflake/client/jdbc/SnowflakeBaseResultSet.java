@@ -1399,7 +1399,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 () -> {
                   StructObjectWrapper structObjectWrapper =
                       (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
-                  return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
+                  if (structObjectWrapper == null) {
+                    return null;
+                  }
+                  return (SQLInput) structObjectWrapper.getObject();
                 });
         if (sqlInput == null) {
           return null;
@@ -1639,7 +1642,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     StructObjectWrapper structObjectWrapper =
         (StructObjectWrapper)
             SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> sfBaseResultSet.getObject(columnIndex));
+                () -> sfBaseResultSet.getObject(columnIndex, type));
     if (structObjectWrapper == null) {
       return null;
     }
