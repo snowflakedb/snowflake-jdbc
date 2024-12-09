@@ -38,9 +38,9 @@ public class OAuthUtil {
         : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
   }
 
-  public static String getScope(SFLoginInput loginInput) {
-    return (!StringUtils.isNullOrEmpty(loginInput.getOauthLoginInput().getScope()))
-        ? loginInput.getOauthLoginInput().getScope()
-        : DEFAULT_SESSION_ROLE_SCOPE_PREFIX + loginInput.getRole();
+  public static String getScope(SFOauthLoginInput oauthLoginInput, String role) {
+    return (!StringUtils.isNullOrEmpty(oauthLoginInput.getScope()))
+        ? oauthLoginInput.getScope()
+        : DEFAULT_SESSION_ROLE_SCOPE_PREFIX + role;
   }
 }

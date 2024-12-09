@@ -181,7 +181,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
     URI callback = buildRedirectUri(oauthLoginInput);
     State state = new State(256);
-    String scope = OAuthUtil.getScope(loginInput);
+    String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
     return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
         .scope(new Scope(scope))
         .state(state)
@@ -202,7 +202,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope = new Scope(OAuthUtil.getScope(loginInput));
+    Scope scope = new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
     return new TokenRequest(
         OAuthUtil.getTokenRequestUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
         clientAuthentication,

@@ -289,6 +289,7 @@ public class SessionUtil {
       String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(oauthAccessToken);
+      loginInput.setUserName("0oalpyiuy8rmozhjZ5d7");
     }
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
