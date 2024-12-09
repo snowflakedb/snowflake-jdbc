@@ -105,7 +105,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public <T> Object getObject(int columnIndex, Class<T> object) throws SFException {
-    // TODO: don't calculate string representation for structured types when not needed
     return getObject(columnIndex);
   }
 
