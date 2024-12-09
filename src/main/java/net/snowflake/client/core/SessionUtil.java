@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
+import net.snowflake.client.core.auth.oauth.AuthorizationCodeFlowAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.OauthAccessTokenProvider;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -138,6 +140,7 @@ public class SessionUtil {
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
+
   public static Map<String, String> JVM_PARAMS_TO_PARAMS =
       Stream.of(
               new String[][] {
@@ -217,8 +220,13 @@ public class SessionUtil {
           .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
         return AuthenticatorType.EXTERNALBROWSER;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
+        // OAuth authorization code flow authentication
+        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
-        // OAuth Authentication
+        // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
       } else if (loginInput
           .getAuthenticator()
@@ -264,6 +272,22 @@ public class SessionUtil {
 
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
+
+    if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
+      AssertUtil.assertTrue(
+          loginInput.getOauthLoginInput().getClientId() != null,
+          "passing clientId is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
+      AssertUtil.assertTrue(
+          loginInput.getOauthLoginInput().getClientSecret() != null,
+          "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
+      OauthAccessTokenProvider accessTokenProvider =
+          new AuthorizationCodeFlowAccessTokenProvider(
+              new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
+              (int) loginInput.getBrowserResponseTimeout().getSeconds());
+      String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      loginInput.setToken(oauthAccessToken);
+    }
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
     if (!authenticator.equals(AuthenticatorType.OAUTH)) {

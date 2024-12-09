@@ -49,6 +49,8 @@ public class SFLoginInput {
   private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
+  private SFOauthLoginInput oauthLoginInput;
+
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
   private boolean enableClientStoreTemporaryCredential;
@@ -59,7 +61,8 @@ public class SFLoginInput {
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
-  SFLoginInput() {}
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput() {}
 
   Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
@@ -74,7 +77,8 @@ public class SFLoginInput {
     return serverUrl;
   }
 
-  SFLoginInput setServerUrl(String serverUrl) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
   }
@@ -160,7 +164,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getLoginTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getLoginTimeout() {
     return loginTimeout;
   }
 
@@ -184,7 +189,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getAuthTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getAuthTimeout() {
     return authTimeout;
   }
 
@@ -238,11 +244,13 @@ public class SFLoginInput {
     return this;
   }
 
-  int getSocketTimeoutInMillis() {
+  @SnowflakeJdbcInternalApi
+  public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
-  SFLoginInput setSocketTimeout(Duration socketTimeout) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
   }
@@ -388,11 +396,13 @@ public class SFLoginInput {
     return this;
   }
 
-  HttpClientSettingsKey getHttpClientSettingsKey() {
+  @SnowflakeJdbcInternalApi
+  public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 
-  SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
     return this;
   }
@@ -483,6 +493,17 @@ public class SFLoginInput {
 
   SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
     this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFOauthLoginInput getOauthLoginInput() {
+    return oauthLoginInput;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
+    this.oauthLoginInput = oauthLoginInput;
     return this;
   }
 }
