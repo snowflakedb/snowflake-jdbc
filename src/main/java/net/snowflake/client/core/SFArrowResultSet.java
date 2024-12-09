@@ -595,7 +595,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public <T> Object getObject(int columnIndex, Class<T> type) throws SFException {
-    if (type == String.class) {
+    if (String.class.isAssignableFrom(type)) {
       return getObject(columnIndex);
     }
 
