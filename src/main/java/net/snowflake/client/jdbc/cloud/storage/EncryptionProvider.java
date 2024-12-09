@@ -41,7 +41,8 @@ public class EncryptionProvider {
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
   private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
-  private static SecureRandom secRnd;
+  private static ThreadLocal<SecureRandom> secRnd =
+      new ThreadLocal<>().withInitial(SecureRandom::new);
 
   /**
    * Decrypt a InputStream
@@ -165,11 +166,11 @@ public class EncryptionProvider {
 
       // Create IV
       ivData = new byte[blockSize];
-      getSecRnd().nextBytes(ivData);
+      secRnd.get().nextBytes(ivData);
       final IvParameterSpec iv = new IvParameterSpec(ivData);
 
       // Create file key
-      getSecRnd().nextBytes(fileKeyBytes);
+      secRnd.get().nextBytes(fileKeyBytes);
       SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, keySize, AES);
 
       // Init cipher
@@ -198,19 +199,5 @@ public class EncryptionProvider {
     }
 
     return cis;
-  }
-
-  /*
-   * getSecRnd
-   * Gets a random number for encryption purposes.
-   */
-  private static synchronized SecureRandom getSecRnd()
-      throws NoSuchAlgorithmException, NoSuchProviderException {
-    if (secRnd == null) {
-      secRnd = SecureRandom.getInstance("SHA1PRNG");
-      byte[] bytes = new byte[10];
-      secRnd.nextBytes(bytes);
-    }
-    return secRnd;
   }
 }

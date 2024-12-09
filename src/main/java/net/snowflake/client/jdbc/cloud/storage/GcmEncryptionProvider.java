@@ -36,20 +36,9 @@ class GcmEncryptionProvider {
   private static final String FILE_CIPHER = "AES/GCM/NoPadding";
   private static final String KEY_CIPHER = "AES/GCM/NoPadding";
   private static final int BUFFER_SIZE = 8 * 1024 * 1024; // 2 MB
-  private static final int blockSize;
-  private static final SecureRandom random;
+  private static final ThreadLocal<SecureRandom> random =
+      new ThreadLocal<>().withInitial(SecureRandom::new);
   private static final Base64.Decoder base64Decoder = Base64.getDecoder();
-
-  static {
-    try {
-      Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
-      blockSize = fileCipher.getBlockSize();
-
-      random = SecureRandom.getInstance("SHA1PRNG");
-    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
 
   static InputStream encrypt(
       StorageObjectMetadata meta,
@@ -86,9 +75,9 @@ class GcmEncryptionProvider {
 
   private static void initRandomIvsAndFileKey(
       byte[] dataIvData, byte[] fileKeyIvData, byte[] fileKeyBytes) {
-    random.nextBytes(dataIvData);
-    random.nextBytes(fileKeyIvData);
-    random.nextBytes(fileKeyBytes);
+    random.get().nextBytes(dataIvData);
+    random.get().nextBytes(fileKeyIvData);
+    random.get().nextBytes(fileKeyBytes);
   }
 
   private static byte[] encryptKey(byte[] kekBytes, byte[] keyBytes, byte[] keyIvData, byte[] aad)
