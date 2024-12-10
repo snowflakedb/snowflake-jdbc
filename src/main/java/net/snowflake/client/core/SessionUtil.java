@@ -231,7 +231,9 @@ public class SessionUtil {
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
         // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
-      } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name())) {
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name())) {
         return AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN;
       } else if (loginInput
           .getAuthenticator()
@@ -292,17 +294,18 @@ public class SessionUtil {
     }
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-      if (authenticator.equals(AuthenticatorType.OAUTH) || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)) {
-        // OAUTH and PAT needs either token or password
-        AssertUtil.assertTrue(
-            loginInput.getToken() != null || loginInput.getPassword() != null,
-            "missing token or password for opening session");
-      } else {
-        // OAuth does not require a username
-        AssertUtil.assertTrue(
-            loginInput.getUserName() != null, "missing user name for opening session");
-      }
-      if (authenticator.equals(AuthenticatorType.EXTERNALBROWSER)) {
+    if (authenticator.equals(AuthenticatorType.OAUTH)
+        || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)) {
+      // OAUTH and PAT needs either token or password
+      AssertUtil.assertTrue(
+          loginInput.getToken() != null || loginInput.getPassword() != null,
+          "missing token or password for opening session");
+    } else {
+      // OAuth does not require a username
+      AssertUtil.assertTrue(
+          loginInput.getUserName() != null, "missing user name for opening session");
+    }
+    if (authenticator.equals(AuthenticatorType.EXTERNALBROWSER)) {
       if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
           && loginInput.isEnableClientStoreTemporaryCredential()) {
         // force to set the flag for Mac/Windows users
@@ -508,7 +511,8 @@ public class SessionUtil {
         }
       } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == AuthenticatorType.OAUTH || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH
+          || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
