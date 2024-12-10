@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import net.snowflake.client.core.auth.AuthenticatorType;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
@@ -323,6 +324,8 @@ public class AbstractDriverIT {
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
+
+    properties.put("authenticator", AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));
