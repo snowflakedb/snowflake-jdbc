@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
+
 package net.snowflake.client.core.auth.oauth;
 
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
@@ -106,7 +110,9 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       TokenResponseDTO tokenResponseDTO =
           objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
       logger.debug(
-          "Received OAuth access token from: {}", requestUri.getAuthority() + requestUri.getPath());
+          "Received OAuth access token from: {}{}",
+          requestUri.getAuthority(),
+          requestUri.getPath());
       return tokenResponseDTO.getAccessToken();
     } catch (Exception e) {
       logger.error("Error during making OAuth access token request", e);
@@ -124,13 +130,12 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       browserHandler.openBrowser(authorizeRequestURI.toString());
       String code = codeFuture.get(this.browserAuthorizationTimeoutSeconds, TimeUnit.SECONDS);
       return new AuthorizationCode(code);
+    } catch (TimeoutException e) {
+      throw new SFException(
+          e,
+          ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+          "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.");
     } catch (Exception e) {
-      if (e instanceof TimeoutException) {
-        throw new SFException(
-            e,
-            ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-            "Authorization request timed out. Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.");
-      }
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     } finally {
       logger.debug("Stopping OAuth redirect URI server @ {}", httpServer.getAddress());
