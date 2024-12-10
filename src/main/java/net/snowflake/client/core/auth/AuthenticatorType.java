@@ -46,5 +46,10 @@ public enum AuthenticatorType {
   /*
    * Authorization code flow with browser popup
    */
-  OAUTH_AUTHORIZATION_CODE
+  OAUTH_AUTHORIZATION_CODE,
+
+  /*
+   * Client credentials flow with clientId and clientSecret as input
+   */
+  OAUTH_CLIENT_CREDENTIALS
 }

@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
-import net.snowflake.client.core.auth.oauth.AuthorizationCodeFlowAccessTokenProvider;
-import net.snowflake.client.core.auth.oauth.OauthAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.AccessTokenProviderFactory;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -223,8 +223,11 @@ public class SessionUtil {
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
-        // OAuth authorization code flow authentication
         return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name())) {
+        return AuthenticatorType.OAUTH_CLIENT_CREDENTIALS;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
         // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
@@ -273,17 +276,14 @@ public class SessionUtil {
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
-    if (getAuthenticator(loginInput).equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
-      AssertUtil.assertTrue(
-          loginInput.getOauthLoginInput().getClientId() != null,
-          "passing clientId is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
-      AssertUtil.assertTrue(
-          loginInput.getOauthLoginInput().getClientSecret() != null,
-          "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE_FLOW authentication");
-      OauthAccessTokenProvider accessTokenProvider =
-          new AuthorizationCodeFlowAccessTokenProvider(
+    if (AccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
+      AccessTokenProviderFactory accessTokenProviderFactory =
+          new AccessTokenProviderFactory(
               new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
               (int) loginInput.getBrowserResponseTimeout().getSeconds());
+      AccessTokenProvider accessTokenProvider =
+          accessTokenProviderFactory.createAccessTokenProvider(
+              getAuthenticator(loginInput), loginInput);
       String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(oauthAccessToken);
@@ -295,7 +295,7 @@ public class SessionUtil {
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
     } else {
-      // OAUTH needs either token or passord
+      // OAUTH needs either token or password
       AssertUtil.assertTrue(
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");

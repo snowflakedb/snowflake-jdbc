@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
+
+package net.snowflake.client.core.auth.oauth;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import net.snowflake.client.core.AssertUtil;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFLoginInput;
+import net.snowflake.client.core.SessionUtilExternalBrowser;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+@SnowflakeJdbcInternalApi
+public class AccessTokenProviderFactory {
+
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(AccessTokenProviderFactory.class);
+  private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES = new HashSet<>(Arrays.asList(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+
+  private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
+  private final int browserAuthorizationTimeoutSeconds;
+
+  public AccessTokenProviderFactory(
+      SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler,
+      int browserAuthorizationTimeoutSeconds) {
+    this.browserHandler = browserHandler;
+    this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
+  }
+
+  public AccessTokenProvider createAccessTokenProvider(
+      AuthenticatorType authenticatorType, SFLoginInput loginInput) throws SFException {
+    switch (authenticatorType) {
+      case OAUTH_AUTHORIZATION_CODE:
+        assertContainsClientCredentials(loginInput, authenticatorType);
+        return new OAuthAuthorizationCodeAccessTokenProvider(
+            browserHandler, browserAuthorizationTimeoutSeconds);
+      case OAUTH_CLIENT_CREDENTIALS:
+        assertContainsClientCredentials(loginInput, authenticatorType);
+        AssertUtil.assertTrue(
+            loginInput.getOauthLoginInput().getExternalTokenRequestUrl() != null,
+            "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
+        return new OAuthClientCredentialsAccessTokenProvider();
+      default:
+        logger.error("Unsupported authenticator type: " + authenticatorType);
+        throw new SFException(ErrorCode.INTERNAL_ERROR);
+    }
+  }
+
+  public static Set<AuthenticatorType> getEligible() {
+    return ELIGIBLE_AUTH_TYPES;
+  }
+
+  public static boolean isEligible(AuthenticatorType authenticatorType) {
+    return getEligible().contains(authenticatorType);
+  }
+
+  private void assertContainsClientCredentials(
+      SFLoginInput loginInput, AuthenticatorType authenticatorType) throws SFException {
+    AssertUtil.assertTrue(
+        loginInput.getOauthLoginInput().getClientId() != null,
+        String.format(
+            "passing clientId is required for %s authentication", authenticatorType.name()));
+    AssertUtil.assertTrue(
+        loginInput.getOauthLoginInput().getClientSecret() != null,
+        String.format(
+            "passing clientSecret is required for %s authentication", authenticatorType.name()));
+  }
+}
