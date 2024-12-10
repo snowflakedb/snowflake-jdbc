@@ -28,8 +28,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ArrowSqlInput;
-import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
