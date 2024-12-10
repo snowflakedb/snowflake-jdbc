@@ -5,6 +5,10 @@ import static net.snowflake.client.authentication.AuthConnectionParameters.getOa
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -13,13 +17,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpUtil;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -41,7 +38,7 @@ public class OauthLatestIT {
   }
 
   @Test
-  void shouldAuthenticateUsingOauth() throws IOException {
+  void shouldAuthenticateUsingOauth() throws IOException, InterruptedException {
     authTest.connectAndExecuteSimpleQuery(getOauthConnectionParameters(getToken()), null);
     authTest.verifyExceptionIsNotThrown();
   }
@@ -53,7 +50,7 @@ public class OauthLatestIT {
   }
 
   @Test
-  void shouldThrowErrorForMismatchedOauthUsername() throws IOException {
+  void shouldThrowErrorForMismatchedOauthUsername() throws IOException, InterruptedException {
     Properties properties = getOauthConnectionParameters(getToken());
     properties.put("user", "differentUsername");
     authTest.connectAndExecuteSimpleQuery(properties, null);
@@ -61,15 +58,13 @@ public class OauthLatestIT {
         "The user you were trying to authenticate as differs from the user tied to the access token.");
   }
 
-  private String getToken() throws IOException {
-    List<BasicNameValuePair> data =
+  private String getToken() throws IOException, InterruptedException {
+    List<String> data =
         Stream.of(
-                new BasicNameValuePair("username", System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_USER")),
-                new BasicNameValuePair("password", System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")),
-                new BasicNameValuePair("grant_type", "password"),
-                new BasicNameValuePair(
-                    "scope",
-                    "session:role:" + System.getenv("SNOWFLAKE_AUTH_TEST_ROLE").toLowerCase()))
+                "username=" + System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_USER"),
+                "password=" + System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS"),
+                "grant_type=password",
+                "scope=session:role:" + System.getenv("SNOWFLAKE_AUTH_TEST_ROLE").toLowerCase())
             .collect(Collectors.toList());
 
     String auth =
@@ -78,24 +73,23 @@ public class OauthLatestIT {
             + System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET");
     String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 
-    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-      HttpPost httpPost = new HttpPost(System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
-      httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-      httpPost.setHeader("Authorization", "Basic " + encodedAuth);
-      httpPost.setEntity(new UrlEncodedFormEntity(data, StandardCharsets.UTF_8));
+    HttpClient httpClient = HttpClient.newHttpClient();
+    HttpRequest request =
+        HttpRequest.newBuilder()
+            .uri(URI.create(System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_URL")))
+            .header("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+            .header("Authorization", "Basic " + encodedAuth)
+            .POST(HttpRequest.BodyPublishers.ofString(String.join("&", data)))
+            .build();
 
-      try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException(
-              "Failed to get access token, response code: "
-                  + response.getStatusLine().getStatusCode());
-        }
+    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        return jsonNode.get("access_token").asText();
-      }
+    if (response.statusCode() != 200) {
+      throw new IOException("Failed to get access token, response code: " + response.statusCode());
     }
+
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode jsonNode = mapper.readTree(response.body());
+    return jsonNode.get("access_token").asText();
   }
 }
