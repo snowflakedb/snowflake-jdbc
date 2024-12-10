@@ -278,14 +278,12 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     }
     if (object instanceof StructObjectWrapper) {
       StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
-      if (structObjectWrapper.getJsonString() != null) {
+      if (resultSetMetaData.isStructuredTypeColumn(columnIndex)
+          && structObjectWrapper.getJsonString() != null) {
         return structObjectWrapper.getJsonString();
       }
       if (structObjectWrapper.getObject() != null) {
         return structObjectWrapper.getObject();
-      }
-      if (structObjectWrapper.getJsonString() != null) {
-        return structObjectWrapper.getJsonString();
       }
     }
     return object;
