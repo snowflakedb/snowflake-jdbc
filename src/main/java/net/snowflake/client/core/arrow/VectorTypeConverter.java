@@ -28,7 +28,7 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
       return null;
     }
     Object object = vector.getObject(index);
-    return new StructObjectWrapper(object.toString(), object);
+    return object;
   }
 
   @Override
