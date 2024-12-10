@@ -263,9 +263,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
             + "'date', null, 'bd', null, 'bytes', null, 'longValue', null)"
             + "::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE, bytes BINARY, longValue INTEGER)",
         (resultSet) -> {
-          NullableFieldsSqlData result =
-              resultSet
-                  .getObject(1, NullableFieldsSqlData.class);
+          NullableFieldsSqlData result = resultSet.getObject(1, NullableFieldsSqlData.class);
           assertNull(result.getString());
           assertNull(result.getNullableIntValue());
           assertNull(result.getNullableLongValue());
