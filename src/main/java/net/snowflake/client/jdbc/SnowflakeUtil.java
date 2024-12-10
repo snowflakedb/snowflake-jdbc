@@ -700,7 +700,6 @@ public class SnowflakeUtil {
         writableEnvForGet.put(key, value);
       }
     } catch (Exception e) {
-      System.out.println("Failed to set value");
       logger.error(
           "Failed to set environment variable {}. Exception raised: {}", key, e.getMessage());
     }
@@ -720,7 +719,6 @@ public class SnowflakeUtil {
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.remove(key);
     } catch (Exception e) {
-      System.out.println("Failed to unset value");
       logger.error(
           "Failed to remove environment variable {}. Exception raised: {}", key, e.getMessage());
     }
