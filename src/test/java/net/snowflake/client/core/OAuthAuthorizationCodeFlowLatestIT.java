@@ -2,7 +2,7 @@
  * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
  */
 
-package net.snowflake.client.jdbc;
+package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
@@ -10,13 +10,9 @@ import com.amazonaws.util.StringUtils;
 import java.net.URI;
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFLoginInput;
-import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
+import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -31,7 +27,7 @@ import org.slf4j.LoggerFactory;
 @Tag(TestTags.CORE)
 public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
-  private static final String SCENARIOS_BASE_DIR = "/oauth/authorization_code";
+  private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/authorization_code";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/successful_scenario_mapping.json";
   private static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =

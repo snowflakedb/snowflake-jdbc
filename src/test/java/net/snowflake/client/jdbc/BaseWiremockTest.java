@@ -34,7 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
-abstract class BaseWiremockTest {
+public abstract class BaseWiremockTest {
 
   protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockTest.class);
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";
@@ -42,6 +42,7 @@ abstract class BaseWiremockTest {
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
   protected static final String WIREMOCK_HOST = "localhost";
   protected static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
+  protected static final String MAPPINGS_BASE_DIR = "/wiremock/mappings";
   protected static int wiremockHttpPort;
   protected static int wiremockHttpsPort;
   private static String originalTrustStorePath;
