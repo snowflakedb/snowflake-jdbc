@@ -223,12 +223,10 @@ public class SessionUtil {
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
-        // OAuth authorization code flow authentication
         return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name())) {
-        // OAuth authorization code flow authentication
         return AuthenticatorType.OAUTH_CLIENT_CREDENTIALS;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
         // OAuth access code Authentication
