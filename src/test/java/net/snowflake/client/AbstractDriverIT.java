@@ -325,7 +325,7 @@ public class AbstractDriverIT {
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
 
-    properties.put("authenticator", AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+    properties.put("authenticator", AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name());
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));
