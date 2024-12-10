@@ -120,7 +120,9 @@ public enum SFSessionProperty {
 
   HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class),
 
-  JAVA_LOGGING_CONSOLE_STD_OUT("JAVA_LOGGING_CONSOLE_STD_OUT", false, Boolean.class);
+  JAVA_LOGGING_CONSOLE_STD_OUT("JAVA_LOGGING_CONSOLE_STD_OUT", false, Boolean.class),
+  JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD(
+      "JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD", false, String.class);
 
   // property key in string
   private String propertyKey;
