@@ -301,7 +301,7 @@ public class SessionUtil {
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");
     } else {
-      // OAuth does not require a username
+      // OAuth and PAT do not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
     }
