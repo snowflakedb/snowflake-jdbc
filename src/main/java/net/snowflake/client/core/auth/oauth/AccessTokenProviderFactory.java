@@ -22,9 +22,7 @@ public class AccessTokenProviderFactory {
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AccessTokenProviderFactory.class);
-  private static final AuthenticatorType[] ELIGIBLE_AUTH_TYPES = {
-    AuthenticatorType.OAUTH_AUTHORIZATION_CODE, AuthenticatorType.OAUTH_CLIENT_CREDENTIALS
-  };
+  private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES = new HashSet<>(Arrays.asList(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
 
   private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
   private final int browserAuthorizationTimeoutSeconds;
@@ -56,7 +54,7 @@ public class AccessTokenProviderFactory {
   }
 
   public static Set<AuthenticatorType> getEligible() {
-    return new HashSet<>(Arrays.asList(ELIGIBLE_AUTH_TYPES));
+    return ELIGIBLE_AUTH_TYPES;
   }
 
   public static boolean isEligible(AuthenticatorType authenticatorType) {
