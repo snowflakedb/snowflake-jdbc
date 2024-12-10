@@ -620,7 +620,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return new StructObjectWrapper(null, null, obj);
   }
 
-  @SnowflakeJdbcInternalApi
   private ArrowVectorConverter getConfiguredConverter(int columnIndex) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
