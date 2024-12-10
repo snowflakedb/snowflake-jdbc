@@ -265,7 +265,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           NullableFieldsSqlData result =
               resultSet
-                  .unwrap(SnowflakeBaseResultSet.class)
                   .getObject(1, NullableFieldsSqlData.class);
           assertNull(result.getString());
           assertNull(result.getNullableIntValue());

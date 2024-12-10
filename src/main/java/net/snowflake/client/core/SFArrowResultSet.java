@@ -570,7 +570,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @SnowflakeJdbcInternalApi
   @Override
-  public Object getObject(int columnIndex, Class<?> type) throws SFException {
+  public Object getObjectWithoutString(int columnIndex) throws SFException {
     return getObjectRepresentation(columnIndex, false);
   }
 

@@ -105,7 +105,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   @Override
-  public Object getObject(int columnIndex, Class<?> type) throws SFException {
+  public Object getObjectWithoutString(int columnIndex) throws SFException {
     return getObject(columnIndex);
   }
   /**
