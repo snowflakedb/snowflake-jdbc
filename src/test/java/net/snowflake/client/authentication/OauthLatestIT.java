@@ -12,6 +12,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.HttpUtil;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -19,6 +20,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,11 @@ public class OauthLatestIT {
   @BeforeEach
   public void setUp() throws IOException {
     authTest = new AuthTest();
+  }
+
+  @AfterEach
+  public void tearDown() {
+    HttpUtil.httpClient.clear();
   }
 
   @Test
