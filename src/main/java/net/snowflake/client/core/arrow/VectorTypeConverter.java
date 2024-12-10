@@ -27,8 +27,7 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-    Object object = vector.getObject(index);
-    return object;
+    return vector.getObject(index);
   }
 
   @Override
