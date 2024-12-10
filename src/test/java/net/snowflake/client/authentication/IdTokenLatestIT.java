@@ -17,7 +17,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 @Tag(TestTags.AUTHENTICATION)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class IdTokenIT {
+class IdTokenLatestIT {
 
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;

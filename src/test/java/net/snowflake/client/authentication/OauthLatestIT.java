@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
-public class OauthIT {
+public class OauthLatestIT {
 
   AuthTest authTest;
 
