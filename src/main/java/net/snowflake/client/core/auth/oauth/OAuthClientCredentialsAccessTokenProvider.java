@@ -48,7 +48,9 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
       throws Exception {
     URI requestUri = tokenRequest.getEndpointURI();
     logger.debug(
-        "Requesting OAuth access token from: {}", requestUri.getAuthority() + requestUri.getPath());
+        "Requesting OAuth access token from: {}{}",
+        requestUri.getAuthority(),
+        requestUri.getPath());
     String tokenResponse =
         HttpUtil.executeGeneralRequest(
             OAuthUtil.convertToBaseRequest(tokenRequest.toHTTPRequest()),

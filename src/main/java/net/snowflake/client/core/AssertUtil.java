@@ -16,6 +16,7 @@ public class AssertUtil {
    * @param internalErrorMesg The error message to display if condition is false
    * @throws SFException Will be thrown if condition is false
    */
+  @SnowflakeJdbcInternalApi
   public static void assertTrue(boolean condition, String internalErrorMesg) throws SFException {
     if (!condition) {
       throw new SFException(ErrorCode.INTERNAL_ERROR, internalErrorMesg);
