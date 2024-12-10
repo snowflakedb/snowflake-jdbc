@@ -307,12 +307,10 @@ public class AbstractDriverIT {
           "set SNOWFLAKE_TEST_ADMIN_PASSWORD environment variable.",
           !Strings.isNullOrEmpty(params.get("adminPassword")));
 
-      properties.put("user", params.get("adminUser"));
       properties.put("password", params.get("adminPassword"));
       properties.put("role", "accountadmin");
       properties.put("account", "snowflake");
     } else {
-      properties.put("user", params.get("user"));
       properties.put("password", params.get("password"));
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
@@ -325,7 +323,8 @@ public class AbstractDriverIT {
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
 
-    properties.put("authenticator", AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+    properties.put("authenticator", AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name());
+    properties.put("token", "eyJraWQiOiIxMTcyNTM5MzgzODE0IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJzdWIiOiIxNzg5MjY1MyIsImFjY291bnRJZCI6MTY3Nzc0ODksIm5iZiI6MTczMzgzNTE4NSwicGF0SWQiOiI0NzExMTg3Zi1kYTYwLTQ0YjMtODQ2Zi00MGQ5ZWZkMTkzN2EiLCJzcmNEZXBsb3ltZW50SWQiOjM0LCJzcmNVc2VySWQiOjAsImlzcyI6Imh0dHBzOlwvXC9TTk9XRFJJVkVSU1dBUlNBVy5xYTYudXMtd2VzdC0yLmF3cy5zbm93Zmxha2Vjb21wdXRpbmcuY29tIiwiZXhwIjoxNzM1MTMxMTg1LCJ0eXBlIjoiUEFUIiwiaWF0IjoxNzMzODM1MTg1LCJ1c2VySWQiOjE3ODkyNjUzfQ.o1NpIB5fPXmRM25I5IMeDD_q406AfSm-KhtO9fErTGUxHOD0zz-10RYL7erP6zgTWiqhq7SH2Jsy14_NRAkCuA");
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));
