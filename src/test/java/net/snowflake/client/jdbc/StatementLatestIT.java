@@ -32,6 +32,7 @@ import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
+import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -302,7 +303,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /**
-   * Test for setting query timeout on async queries. Applicable to versions after 3.20.0.
+   * Test for setting query timeout on async queries. Applicable to versions after 3.21.0.
    *
    * @throws SQLException if there is an error when executing
    */
@@ -333,7 +334,33 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /**
-   * Test for setting query timeout on async queries. Applicable to versions after 3.20.0.
+   * Test for setting query timeout on regular queries with the SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT
+   * property set to true. Applicable to versions after 3.21.0.
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  public void testSetQueryTimeoutWhenAsyncConnectionPropertySet() throws SQLException {
+    Properties p = new Properties();
+    p.put("SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", true);
+    try (Connection con = getConnection(p);
+        Statement statement = con.createStatement()) {
+      statement.setQueryTimeout(3);
+
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+
+      try {
+        statement.executeQuery(sql);
+        fail("This query should fail.");
+      } catch (SQLException e) {
+        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+        assertEquals("SQL execution canceled", e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Test for setting query timeout on async queries. Applicable to versions after 3.21.0.
    *
    * @throws SQLException if there is an error when executing
    */
@@ -341,12 +368,12 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testSetQueryTimeoutForAsyncQuery() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
-      statement.unwrap(SnowflakeStatement.class).setAsyncQueryTimeout(3);
+      SnowflakeStatement sfStmt = statement.unwrap(SnowflakeStatement.class);
+      sfStmt.setAsyncQueryTimeout(3);
 
       String sql = "select seq4() from table(generator(rowcount => 1000000000))";
 
-      try (ResultSet resultSet =
-          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
+      try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))

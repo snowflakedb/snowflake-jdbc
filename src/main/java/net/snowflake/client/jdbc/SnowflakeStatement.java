@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** This interface defines Snowflake specific APIs for Statement */
 public interface SnowflakeStatement {
@@ -65,5 +66,6 @@ public interface SnowflakeStatement {
    * @param seconds The number of seconds until timeout.
    * @throws SQLException if an error is encountered
    */
+  @SnowflakeJdbcInternalApi
   void setAsyncQueryTimeout(int seconds) throws SQLException;
 }

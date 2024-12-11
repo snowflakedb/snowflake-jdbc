@@ -1321,6 +1321,7 @@ public abstract class SFBaseSession {
    * @return True if query timeout should be set on the server side for async queries. False by
    *     default.
    */
+  @SnowflakeJdbcInternalApi
   public boolean getSupportImplicitAsyncQueryTimeout() {
     return supportImplicitAsyncQueryTimeout;
   }
@@ -1329,6 +1330,7 @@ public abstract class SFBaseSession {
    * @param supportImplicitAsyncQueryTimeout Setting supportImplicitAsyncQueryTimeout to true allows
    *     for query timeout to be set on the server side.
    */
+  @SnowflakeJdbcInternalApi
   public void setSupportImplicitAsyncQueryTimeout(boolean supportImplicitAsyncQueryTimeout) {
     this.supportImplicitAsyncQueryTimeout = supportImplicitAsyncQueryTimeout;
   }

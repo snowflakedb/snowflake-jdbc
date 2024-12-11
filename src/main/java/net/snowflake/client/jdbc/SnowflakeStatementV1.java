@@ -888,12 +888,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     logger.trace("setAsyncQueryTimeout(int seconds)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
-    connection.getSFBaseSession().setSupportImplicitAsyncQueryTimeout(true);
-
-    this.queryTimeout = seconds;
     try {
       if (this.sfBaseStatement != null) {
-        this.sfBaseStatement.addProperty("query_timeout", seconds);
+        this.sfBaseStatement.addProperty("STATEMENT_TIMEOUT_IN_SECONDS", seconds);
       }
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
