@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
+import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.AccessTokenProviderFactory;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -138,6 +140,7 @@ public class SessionUtil {
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
+
   public static Map<String, String> JVM_PARAMS_TO_PARAMS =
       Stream.of(
               new String[][] {
@@ -217,8 +220,16 @@ public class SessionUtil {
           .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
         return AuthenticatorType.EXTERNALBROWSER;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
+        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name())) {
+        return AuthenticatorType.OAUTH_CLIENT_CREDENTIALS;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
-        // OAuth Authentication
+        // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
       } else if (loginInput
           .getAuthenticator()
@@ -265,13 +276,26 @@ public class SessionUtil {
     AssertUtil.assertTrue(
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
+    if (AccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
+      AccessTokenProviderFactory accessTokenProviderFactory =
+          new AccessTokenProviderFactory(
+              new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
+              (int) loginInput.getBrowserResponseTimeout().getSeconds());
+      AccessTokenProvider accessTokenProvider =
+          accessTokenProviderFactory.createAccessTokenProvider(
+              getAuthenticator(loginInput), loginInput);
+      String oauthAccessToken = accessTokenProvider.getAccessToken(loginInput);
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      loginInput.setToken(oauthAccessToken);
+    }
+
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
     if (!authenticator.equals(AuthenticatorType.OAUTH)) {
       // OAuth does not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
     } else {
-      // OAUTH needs either token or passord
+      // OAUTH needs either token or password
       AssertUtil.assertTrue(
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");

@@ -10,15 +10,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -234,6 +238,15 @@ abstract class BaseWiremockTest {
         CloseableHttpResponse response = client.execute(postRequest)) {
       assertEquals(201, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void importMappingFromResources(String relativePath) {
+    try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
+      String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8);
+      importMapping(scenario);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
