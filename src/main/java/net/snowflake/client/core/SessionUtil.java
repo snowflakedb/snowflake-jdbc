@@ -39,6 +39,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -69,6 +70,7 @@ public class SessionUtil {
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
   public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
   public static final String SF_PATH_CONSOLE_LOGIN_REQUEST = "/console/login";
+  public static final String OKTA_PATH_AUTH = "/api/v1/authn";
 
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 
@@ -1456,22 +1458,41 @@ public class SessionUtil {
    */
   private static String getSamlResponseUsingOkta(SFLoginInput loginInput)
       throws SnowflakeSQLException {
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(2000, 16000);
+    long i = 0;
+    int retryCount = 1;
+    long backoffMilliSeconds = 0;
+    String tokenUrl="";
+    String ssoUrl="";
     while (true) {
       try {
-        JsonNode dataNode = federatedFlowStep1(loginInput);
-        String tokenUrl = dataNode.path("tokenUrl").asText();
-        String ssoUrl = dataNode.path("ssoUrl").asText();
+        Thread.sleep(backoffMilliSeconds);
+        // We don't need to keep sending HTTP requests to the authenticator-request endpoint on every retry
+        // because it's unlikely that the token and SSO URLs are going to change.
+        if (retryCount == 1) {
+          JsonNode dataNode = federatedFlowStep1(loginInput);
+          tokenUrl = dataNode.path("tokenUrl").asText();
+          ssoUrl = dataNode.path("ssoUrl").asText();
+        }
         federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
         final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
         return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
       } catch (SnowflakeSQLException ex) {
+        i += 1000; // increment by 1000 ms
         // This error gets thrown if the okta request encountered a retry-able error that
         // requires getting a new one-time token.
         if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
           logger.debug("Failed to get Okta SAML response. Retrying without changing retry count.");
+          backoffMilliSeconds = backoff.nextSleepTime(i);
+          logger.debug(
+              "Going to backoff for " + backoffMilliSeconds + " ms. Retry Count: " + retryCount);
+          retryCount++;
         } else {
           throw ex;
         }
+      } catch (InterruptedException ex) {
+        throw new SnowflakeSQLException(
+            "Thread was interrupted before retrying Okta request for SAML response.", null);
       }
     }
   }
