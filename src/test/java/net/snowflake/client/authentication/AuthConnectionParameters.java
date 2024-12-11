@@ -34,4 +34,20 @@ public class AuthConnectionParameters {
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
     return properties;
   }
+
+  static Properties getOktaConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("user", SSO_USER);
+    properties.put("password", SSO_PASSWORD);
+    properties.put("authenticator", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    return properties;
+  }
+
+  static Properties getOauthConnectionParameters(String token) {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("user", SSO_USER);
+    properties.put("authenticator", "OAUTH");
+    properties.put("token", token);
+    return properties;
+  }
 }
