@@ -1,10 +1,16 @@
 package net.snowflake.client.authentication;
 
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOauthConnectionParameters;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -12,13 +18,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -55,14 +54,12 @@ public class OauthLatestIT {
   }
 
   private String getToken() throws IOException {
-    List<BasicNameValuePair> data =
+    List<String> data =
         Stream.of(
-                new BasicNameValuePair("username", System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_USER")),
-                new BasicNameValuePair("password", System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")),
-                new BasicNameValuePair("grant_type", "password"),
-                new BasicNameValuePair(
-                    "scope",
-                    "session:role:" + System.getenv("SNOWFLAKE_AUTH_TEST_ROLE").toLowerCase()))
+                "username=" + System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_USER"),
+                "password=" + System.getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS"),
+                "grant_type=password",
+                "scope=session:role:" + System.getenv("SNOWFLAKE_AUTH_TEST_ROLE").toLowerCase())
             .collect(Collectors.toList());
 
     String auth =
@@ -71,24 +68,27 @@ public class OauthLatestIT {
             + System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET");
     String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 
-    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-      HttpPost httpPost = new HttpPost(System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
-      httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-      httpPost.setHeader("Authorization", "Basic " + encodedAuth);
-      httpPost.setEntity(new UrlEncodedFormEntity(data, StandardCharsets.UTF_8));
+    URL url = new URL(System.getenv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty(
+        "Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+    connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+    connection.setDoOutput(true);
 
-      try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException(
-              "Failed to get access token, response code: "
-                  + response.getStatusLine().getStatusCode());
-        }
-
-        String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        return jsonNode.get("access_token").asText();
-      }
+    try (DataOutputStream out = new DataOutputStream(connection.getOutputStream())) {
+      out.writeBytes(String.join("&", data));
+      out.flush();
     }
+
+    int responseCode = connection.getResponseCode();
+    assertThat("Failed to get access token, response code: " + responseCode, responseCode, is(200));
+
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode jsonNode;
+    try (InputStream inputStream = connection.getInputStream()) {
+      jsonNode = mapper.readTree(inputStream);
+    }
+    return jsonNode.get("access_token").asText();
   }
 }
