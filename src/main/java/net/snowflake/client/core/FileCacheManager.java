@@ -165,7 +165,7 @@ class FileCacheManager {
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     } catch (IOException | SecurityException ex) {
-      logger.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
+      logger.debug("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }

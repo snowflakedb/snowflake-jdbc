@@ -26,7 +26,7 @@ class SystemUtil {
       try {
         returnVal = Integer.parseInt(systemPropertyValue);
       } catch (NumberFormatException ex) {
-        logger.info(
+        logger.warn(
             "Failed to parse the system parameter {} with value {}",
             systemProperty,
             systemPropertyValue);

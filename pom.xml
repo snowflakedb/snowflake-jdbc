@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.20.1-SNAPSHOT</version>
+    <version>3.21.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.20.1-SNAPSHOT</version>
+  <version>3.21.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -1162,6 +1162,7 @@
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
+              <skipTests>${skip.unitTests}</skipTests>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
             </configuration>
           </plugin>
@@ -1214,6 +1215,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <test>UnitTestSuite</test>
+              <skipTests>${skip.unitTests}</skipTests>
             </configuration>
             <dependencies>
               <dependency>

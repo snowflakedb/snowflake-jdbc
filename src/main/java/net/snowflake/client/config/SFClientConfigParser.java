@@ -73,7 +73,7 @@ public class SFClientConfigParser {
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
-        logger.info(
+        logger.debug(
             "Reading values logLevel {} and logPath {} from client configuration",
             clientConfig.getCommonProps().getLogLevel(),
             clientConfig.getCommonProps().getLogPath());

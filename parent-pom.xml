@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.20.1-SNAPSHOT</version>
+  <version>3.21.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -78,6 +78,7 @@
     <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <shadeNativeBase>net_snowflake_client_jdbc_internal</shadeNativeBase>
+    <skip.unitTests>false</skip.unitTests>
     <slf4j.version>2.0.13</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <integrationTestSuites>UnitTestSuite</integrationTestSuites>
