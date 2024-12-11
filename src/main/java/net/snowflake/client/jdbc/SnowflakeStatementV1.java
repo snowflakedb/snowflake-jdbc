@@ -884,6 +884,24 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   @Override
+  public void setAsyncQueryTimeout(int seconds) throws SQLException {
+    logger.trace("setAsyncQueryTimeout(int seconds)", false);
+    raiseSQLExceptionIfStatementIsClosed();
+
+    connection.getSFBaseSession().setSupportImplicitAsyncQueryTimeout(true);
+
+    this.queryTimeout = seconds;
+    try {
+      if (this.sfBaseStatement != null) {
+        this.sfBaseStatement.addProperty("query_timeout", seconds);
+      }
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
+  @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
     logger.trace("isWrapperFor(Class<?> iface)", false);
 
@@ -1259,6 +1277,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {}
+
+    @Override
+    public void setAsyncQueryTimeout(int seconds) throws SQLException {}
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {

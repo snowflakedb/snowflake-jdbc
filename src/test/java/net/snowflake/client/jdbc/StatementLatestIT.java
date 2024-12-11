@@ -307,12 +307,41 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
    * @throws SQLException if there is an error when executing
    */
   @Test
-  public void testSetQueryTimeoutForAsnycQuery() throws SQLException {
+  public void testSetQueryTimeoutForAsyncQueryUsingConnectionProperty() throws SQLException {
     Properties p = new Properties();
     p.put("SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", true);
     try (Connection con = getConnection(p);
         Statement statement = con.createStatement()) {
       statement.setQueryTimeout(3);
+
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+
+      try (ResultSet resultSet =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
+        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        await()
+            .atMost(Duration.ofSeconds(10))
+            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+
+        assertTrue(
+            sfrs.getStatusV2()
+                .getErrorMessage()
+                .contains(
+                    "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+      }
+    }
+  }
+
+  /**
+   * Test for setting query timeout on async queries. Applicable to versions after 3.20.0.
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  public void testSetQueryTimeoutForAsyncQuery() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.unwrap(SnowflakeStatement.class).setAsyncQueryTimeout(3);
 
       String sql = "select seq4() from table(generator(rowcount => 1000000000))";
 
