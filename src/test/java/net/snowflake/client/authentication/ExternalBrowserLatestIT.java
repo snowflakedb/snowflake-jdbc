@@ -15,28 +15,28 @@ class ExternalBrowserLatestIT {
 
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
-  AuthTest authTest = new AuthTest();
+  AuthTestHelper authTestHelper = new AuthTestHelper();
 
   @BeforeEach
   public void setUp() throws IOException {
-    AuthTest.deleteIdToken();
+    AuthTestHelper.deleteIdToken();
   }
 
   @AfterEach
   public void tearDown() {
-    authTest.cleanBrowserProcesses();
-    AuthTest.deleteIdToken();
+    authTestHelper.cleanBrowserProcesses();
+    AuthTestHelper.deleteIdToken();
   }
 
   @Test
   void shouldAuthenticateUsingExternalBrowser() throws InterruptedException {
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("success", login, password));
+        new Thread(() -> authTestHelper.provideCredentials("success", login, password));
     Thread connectThread =
-        authTest.getConnectAndExecuteSimpleQueryThread(getExternalBrowserConnectionParameters());
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(getExternalBrowserConnectionParameters());
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsNotThrown();
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
@@ -44,11 +44,11 @@ class ExternalBrowserLatestIT {
     Properties properties = getExternalBrowserConnectionParameters();
     properties.put("user", "differentUsername");
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("success", login, password));
-    Thread connectThread = authTest.getConnectAndExecuteSimpleQueryThread(properties);
+        new Thread(() -> authTestHelper.provideCredentials("success", login, password));
+    Thread connectThread = authTestHelper.getConnectAndExecuteSimpleQueryThread(properties);
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsThrown(
         "The user you were trying to authenticate as differs from the user currently logged in at the IDP.");
   }
 
@@ -57,26 +57,26 @@ class ExternalBrowserLatestIT {
     String login = "itsnotanaccount.com";
     String password = "fakepassword";
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("fail", login, password));
+        new Thread(() -> authTestHelper.provideCredentials("fail", login, password));
     Thread connectThread =
-        authTest.getConnectAndExecuteSimpleQueryThread(
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(
             getExternalBrowserConnectionParameters(), "BROWSER_RESPONSE_TIMEOUT=10");
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsThrown(
         "JDBC driver encountered communication error. Message: External browser authentication failed within timeout of 10000 milliseconds.");
   }
 
   @Test
   void shouldThrowErrorForBrowserTimeout() throws InterruptedException {
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("timeout", login, password));
+        new Thread(() -> authTestHelper.provideCredentials("timeout", login, password));
     Thread connectThread =
-        authTest.getConnectAndExecuteSimpleQueryThread(
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(
             getExternalBrowserConnectionParameters(), "BROWSER_RESPONSE_TIMEOUT=1");
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsThrown(
         "JDBC driver encountered communication error. Message: External browser authentication failed within timeout of 1000 milliseconds.");
   }
 }

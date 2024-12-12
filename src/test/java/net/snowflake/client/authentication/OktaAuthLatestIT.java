@@ -14,25 +14,25 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.AUTHENTICATION)
 class OktaAuthLatestIT {
 
-  AuthTest authTest;
+  AuthTestHelper authTestHelper;
 
   @BeforeEach
   public void setUp() throws IOException {
-    authTest = new AuthTest();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Test
   void shouldAuthenticateUsingOkta() {
-    authTest.connectAndExecuteSimpleQuery(getOktaConnectionParameters(), null);
-    authTest.verifyExceptionIsNotThrown();
+    authTestHelper.connectAndExecuteSimpleQuery(getOktaConnectionParameters(), null);
+    authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
   void shouldAuthenticateUsingOktaWithOktaUsernameParam() {
     Properties properties = getOktaConnectionParameters();
     properties.replace("user", "differentUsername");
-    authTest.connectAndExecuteSimpleQuery(properties, "oktausername=" + SSO_USER);
-    authTest.verifyExceptionIsNotThrown();
+    authTestHelper.connectAndExecuteSimpleQuery(properties, "oktausername=" + SSO_USER);
+    authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
@@ -40,8 +40,8 @@ class OktaAuthLatestIT {
     Properties properties = getOktaConnectionParameters();
     properties.put("user", "invalidUsername");
     properties.put("password", "fakepassword");
-    authTest.connectAndExecuteSimpleQuery(properties, null);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndExecuteSimpleQuery(properties, null);
+    authTestHelper.verifyExceptionIsThrown(
         "JDBC driver encountered communication error. Message: HTTP status=401.");
   }
 
@@ -49,8 +49,8 @@ class OktaAuthLatestIT {
   void shouldThrowErrorForWrongOktaCredentialsInOktaUsernameParam() {
     Properties properties = getOktaConnectionParameters();
     properties.replace("user", "differentUsername");
-    authTest.connectAndExecuteSimpleQuery(properties, "oktausername=invalidUser");
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndExecuteSimpleQuery(properties, "oktausername=invalidUser");
+    authTestHelper.verifyExceptionIsThrown(
         "JDBC driver encountered communication error. Message: HTTP status=401.");
   }
 
@@ -58,8 +58,8 @@ class OktaAuthLatestIT {
   void shouldThrowErrorForWrongOktaUrl() {
     Properties properties = getOktaConnectionParameters();
     properties.put("authenticator", "https://invalid.okta.com/");
-    authTest.connectAndExecuteSimpleQuery(properties, null);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndExecuteSimpleQuery(properties, null);
+    authTestHelper.verifyExceptionIsThrown(
         "The specified authenticator is not accepted by your Snowflake account configuration.  Please contact your local system administrator to get the correct URL to use.");
   }
 
@@ -68,7 +68,7 @@ class OktaAuthLatestIT {
   void shouldThrowErrorForWrongUrlWithoutOktaPath() {
     Properties properties = getOktaConnectionParameters();
     properties.put("authenticator", "https://invalid.abc.com/");
-    authTest.connectAndExecuteSimpleQuery(properties, null);
-    authTest.verifyExceptionIsThrown("todo");
+    authTestHelper.connectAndExecuteSimpleQuery(properties, null);
+    authTestHelper.verifyExceptionIsThrown("todo");
   }
 }

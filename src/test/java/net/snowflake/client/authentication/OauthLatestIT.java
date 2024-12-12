@@ -25,31 +25,31 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.AUTHENTICATION)
 public class OauthLatestIT {
 
-  AuthTest authTest;
+  AuthTestHelper authTestHelper;
 
   @BeforeEach
   public void setUp() throws IOException {
-    authTest = new AuthTest();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Test
   void shouldAuthenticateUsingOauth() throws IOException {
-    authTest.connectAndExecuteSimpleQuery(getOauthConnectionParameters(getToken()), null);
-    authTest.verifyExceptionIsNotThrown();
+    authTestHelper.connectAndExecuteSimpleQuery(getOauthConnectionParameters(getToken()), null);
+    authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
   void shouldThrowErrorForInvalidToken() {
-    authTest.connectAndExecuteSimpleQuery(getOauthConnectionParameters("invalidToken"), null);
-    authTest.verifyExceptionIsThrown("Invalid OAuth access token. ");
+    authTestHelper.connectAndExecuteSimpleQuery(getOauthConnectionParameters("invalidToken"), null);
+    authTestHelper.verifyExceptionIsThrown("Invalid OAuth access token. ");
   }
 
   @Test
   void shouldThrowErrorForMismatchedOauthUsername() throws IOException {
     Properties properties = getOauthConnectionParameters(getToken());
     properties.put("user", "differentUsername");
-    authTest.connectAndExecuteSimpleQuery(properties, null);
-    authTest.verifyExceptionIsThrown(
+    authTestHelper.connectAndExecuteSimpleQuery(properties, null);
+    authTestHelper.verifyExceptionIsThrown(
         "The user you were trying to authenticate as differs from the user tied to the access token.");
   }
 
