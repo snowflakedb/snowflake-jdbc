@@ -14,6 +14,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -22,6 +23,11 @@ import org.junit.jupiter.api.Timeout;
 public class HttpUtilLatestIT {
 
   private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
+
+  @BeforeEach
+  public void resetHttpClientsCache() {
+    HttpUtil.httpClient.clear();
+  }
 
   /** Added in > 3.14.5 */
   @Test
