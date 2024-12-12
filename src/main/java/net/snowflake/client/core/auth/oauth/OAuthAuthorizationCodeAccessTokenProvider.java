@@ -139,7 +139,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     } finally {
       logger.debug("Stopping OAuth redirect URI server @ {}", httpServer.getAddress());
-      httpServer.stop(0);
+      httpServer.stop(10);
     }
   }
 
@@ -166,7 +166,9 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
               accessTokenFuture.complete(authorizationCode);
             }
           }
-          exchange.sendResponseHeaders(200, -1);
+          String response = "Authorization completed successfully.";
+          exchange.sendResponseHeaders(200, response.length());
+          exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
           exchange.getResponseBody().close();
         });
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());

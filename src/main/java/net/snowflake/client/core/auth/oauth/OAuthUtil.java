@@ -24,15 +24,17 @@ class OAuthUtil {
   }
 
   static URI getAuthorizationUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
-    return !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalAuthorizationUrl())
-        ? URI.create(oauthLoginInput.getExternalAuthorizationUrl())
-        : URI.create(serverUrl + SNOWFLAKE_AUTHORIZE_ENDPOINT);
+    URI uri = !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalAuthorizationUrl())
+            ? URI.create(oauthLoginInput.getExternalAuthorizationUrl())
+            : URI.create(serverUrl + SNOWFLAKE_AUTHORIZE_ENDPOINT);
+    return uri.normalize();
   }
 
   static URI getTokenRequestUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
-    return !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalTokenRequestUrl())
-        ? URI.create(oauthLoginInput.getExternalTokenRequestUrl())
-        : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
+    URI uri = !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalTokenRequestUrl())
+            ? URI.create(oauthLoginInput.getExternalTokenRequestUrl())
+            : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
+    return uri.normalize();
   }
 
   static String getScope(SFOauthLoginInput oauthLoginInput, String role) {
