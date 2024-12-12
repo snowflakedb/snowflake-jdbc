@@ -33,7 +33,8 @@ class ExternalBrowserLatestIT {
     Thread provideCredentialsThread =
         new Thread(() -> authTestHelper.provideCredentials("success", login, password));
     Thread connectThread =
-        authTestHelper.getConnectAndExecuteSimpleQueryThread(getExternalBrowserConnectionParameters());
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(
+            getExternalBrowserConnectionParameters());
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsNotThrown();
