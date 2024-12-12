@@ -12,6 +12,7 @@ import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -53,7 +54,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
     AccessTokenProvider provider =
         new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
-    String accessToken = provider.getAccessToken(loginInput);
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
@@ -70,7 +72,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
     AccessTokenProvider provider =
         new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
-    String accessToken = provider.getAccessToken(loginInput);
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);

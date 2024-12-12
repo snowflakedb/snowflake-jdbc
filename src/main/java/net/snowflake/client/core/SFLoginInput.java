@@ -41,6 +41,8 @@ public class SFLoginInput {
   private String application;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String serviceName;
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
@@ -317,6 +319,24 @@ public class SFLoginInput {
     return this;
   }
 
+  String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  SFLoginInput setOauthAccessToken(String oauthAccessToken) {
+    this.oauthAccessToken = oauthAccessToken;
+    return this;
+  }
+
+  String getOauthRefreshToken() {
+    return oauthRefreshToken;
+  }
+
+  SFLoginInput setOauthRefreshToken(String oauthRefreshToken) {
+    this.oauthRefreshToken = oauthRefreshToken;
+    return this;
+  }
+
   Map<String, Object> getSessionParameters() {
     return sessionParameters;
   }
@@ -404,13 +424,13 @@ public class SFLoginInput {
     this.httpClientKey = key;
     return this;
   }
-
   // Opaque string sent for Snowsight account activation
+
   String getInFlightCtx() {
     return inFlightCtx;
   }
-
   // Opaque string sent for Snowsight account activation
+
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
     return this;
@@ -419,16 +439,15 @@ public class SFLoginInput {
   boolean getDisableSamlURLCheck() {
     return disableSamlURLCheck;
   }
-
   SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
     this.disableSamlURLCheck = disableSamlURLCheck;
     return this;
   }
 
+
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
   }
-
   /**
    * Set additional http headers to apply to the outgoing request. The additional headers cannot be
    * used to replace or overwrite a header in use by the driver. These will be applied to the
@@ -504,4 +523,5 @@ public class SFLoginInput {
     this.oauthLoginInput = oauthLoginInput;
     return this;
   }
+
 }

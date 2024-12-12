@@ -30,12 +30,11 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
-  public String getAccessToken(SFLoginInput loginInput) throws SFException {
+  public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {
     try {
       logger.debug("Starting OAuth authorization code authentication flow...");
       TokenRequest tokenRequest = buildTokenRequest(loginInput);
-      TokenResponseDTO tokenResponse = requestForAccessToken(loginInput, tokenRequest);
-      return tokenResponse.getAccessToken();
+      return requestForAccessToken(loginInput, tokenRequest);
     } catch (Exception e) {
       logger.error(
           "Error during OAuth client credentials code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)",

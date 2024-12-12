@@ -64,7 +64,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   }
 
   @Override
-  public String getAccessToken(SFLoginInput loginInput) throws SFException {
+  public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {
     try {
       logger.debug("Starting OAuth authorization code authentication flow...");
       CodeVerifier pkceVerifier = new CodeVerifier();
@@ -90,7 +90,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
     return letUserAuthorize(authorizeRequestURI, codeFuture, httpServer);
   }
 
-  private String exchangeAuthorizationCodeForAccessToken(
+  private TokenResponseDTO exchangeAuthorizationCodeForAccessToken(
       SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier)
       throws SFException {
     try {
@@ -113,7 +113,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
           "Received OAuth access token from: {}{}",
           requestUri.getAuthority(),
           requestUri.getPath());
-      return tokenResponseDTO.getAccessToken();
+      return tokenResponseDTO;
     } catch (Exception e) {
       logger.error("Error during making OAuth access token request", e);
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());

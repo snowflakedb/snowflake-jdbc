@@ -14,6 +14,8 @@ public class SFLoginOutput {
   private long masterTokenValidityInSeconds;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
@@ -35,6 +37,8 @@ public class SFLoginOutput {
       long masterTokenValidityInSeconds,
       String idToken,
       String mfaToken,
+      String oauthAccessToken,
+      String oauthRefreshToken,
       String databaseVersion,
       int databaseMajorVersion,
       int databaseMinorVersion,
@@ -50,6 +54,8 @@ public class SFLoginOutput {
     this.masterToken = masterToken;
     this.idToken = idToken;
     this.mfaToken = mfaToken;
+    this.oauthAccessToken = oauthAccessToken;
+    this.oauthRefreshToken = oauthRefreshToken;
     this.databaseVersion = databaseVersion;
     this.databaseMajorVersion = databaseMajorVersion;
     this.databaseMinorVersion = databaseMinorVersion;
@@ -96,6 +102,14 @@ public class SFLoginOutput {
 
   String getMfaToken() {
     return mfaToken;
+  }
+
+  public String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  public String getOauthRefreshToken() {
+    return oauthRefreshToken;
   }
 
   String getDatabaseVersion() {

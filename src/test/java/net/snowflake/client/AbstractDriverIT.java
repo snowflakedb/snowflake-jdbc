@@ -6,6 +6,8 @@ package net.snowflake.client;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.base.Strings;
+import net.snowflake.client.core.auth.AuthenticatorType;
+
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;

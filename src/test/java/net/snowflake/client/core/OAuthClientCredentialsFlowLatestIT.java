@@ -9,6 +9,7 @@ import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthClientCredentialsAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -30,7 +31,8 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
         createLoginInputStub("http://localhost:8009/snowflake/oauth-redirect");
 
     AccessTokenProvider provider = new OAuthClientCredentialsAccessTokenProvider();
-    String accessToken = provider.getAccessToken(loginInput);
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
