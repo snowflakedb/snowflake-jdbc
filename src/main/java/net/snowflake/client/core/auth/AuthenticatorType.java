@@ -51,5 +51,10 @@ public enum AuthenticatorType {
   /*
    * Client credentials flow with clientId and clientSecret as input
    */
-  OAUTH_CLIENT_CREDENTIALS
+  OAUTH_CLIENT_CREDENTIALS,
+
+  /*
+   * Authenticator to support PAT created in Snowflake
+   */
+  PROGRAMMATIC_ACCESS_TOKEN
 }
