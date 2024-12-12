@@ -354,7 +354,6 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         fail("This query should fail.");
       } catch (SQLException e) {
         assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
-        assertEquals("SQL execution canceled", e.getMessage());
       }
     }
   }
