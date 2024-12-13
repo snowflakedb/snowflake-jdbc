@@ -1398,8 +1398,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> {
                   StructObjectWrapper structObjectWrapper =
-                      (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
-                  return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
+                      (StructObjectWrapper) sfBaseResultSet.getObjectWithoutString(columnIndex);
+                  if (structObjectWrapper == null) {
+                    return null;
+                  }
+                  return (SQLInput) structObjectWrapper.getObject();
                 });
         if (sqlInput == null) {
           return null;
@@ -1639,7 +1642,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     StructObjectWrapper structObjectWrapper =
         (StructObjectWrapper)
             SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> sfBaseResultSet.getObject(columnIndex));
+                () -> sfBaseResultSet.getObjectWithoutString(columnIndex));
     if (structObjectWrapper == null) {
       return null;
     }
