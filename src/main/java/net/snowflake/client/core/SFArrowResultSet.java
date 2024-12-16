@@ -589,15 +589,28 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (obj == null) {
       return null;
     }
-    String jsonString = withString ? converter.toString(index) : null;
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
-    if (isVarcharConvertedStruct(type, isStructuredType, converter)) {
-      return new StructObjectWrapper(jsonString, createJsonSqlInput(columnIndex, obj));
-    } else if (converter instanceof StructConverter) {
-      return new StructObjectWrapper(
-          jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+    if (isStructuredType) {
+
+
+      if (converter instanceof VarCharConverter) {
+        if (type == Types.STRUCT) {
+          return new StructObjectWrapper(null, createJsonSqlInput(columnIndex, obj));
+        } else {
+          return getJsonArray((String) obj, columnIndex);
+        }
+      } else if (converter instanceof StructConverter) {
+        String jsonString = withString ? converter.toString(index) : null;
+        return new StructObjectWrapper(
+            jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+      } else if (converter instanceof ArrayConverter  || converter instanceof VectorTypeConverter) {
+          String jsonString = converter.toString(index);
+          return getArrowArray(jsonString, (List<Object>) obj, columnIndex);
+      } else {
+        throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
+      }
     } else {
-      return new StructObjectWrapper(jsonString, obj);
+      return new StructObjectWrapper(null, obj);
     }
   }
 
@@ -611,8 +624,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   private boolean isVarcharConvertedStruct(
-      int type, boolean isStructuredType, ArrowVectorConverter converter) {
-    return type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter;
+      int type, ArrowVectorConverter converter) {
+    return (type == Types.STRUCT || type == Types.ARRAY) && converter instanceof VarCharConverter;
   }
 
   private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
