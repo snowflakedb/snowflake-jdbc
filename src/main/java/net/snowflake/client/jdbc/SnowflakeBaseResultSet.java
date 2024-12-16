@@ -1643,7 +1643,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         (StructObjectWrapper)
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> sfBaseResultSet.getObjectWithoutString(columnIndex));
-    if (structObjectWrapper == null) {
+    if (structObjectWrapper == null || structObjectWrapper.getObject() == null) {
       return null;
     }
     Map<String, Object> map =
@@ -1836,21 +1836,4 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     }
   }
 
-  private Object createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
-    try {
-      if (obj == null) {
-        return null;
-      }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree(obj.getJsonString());
-      return new JsonSqlInput(
-          obj.getJsonString(),
-          jsonNode,
-          session,
-          sfBaseResultSet.getConverters(),
-          sfBaseResultSet.getMetaData().getColumnFields(columnIndex),
-          sfBaseResultSet.getSessionTimeZone());
-    } catch (JsonProcessingException e) {
-      throw new SFException(sfBaseResultSet.getQueryId(), e, ErrorCode.INVALID_STRUCT_DATA);
-    }
-  }
 }

@@ -20,6 +20,7 @@ public class SfSqlArray implements Array {
   private String text;
   private int baseType;
   private Object elements;
+//  TODO: to remove
   private String jsonStringFromElements;
 
   public SfSqlArray(String text, int baseType, Object elements) {

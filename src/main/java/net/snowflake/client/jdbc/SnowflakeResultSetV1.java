@@ -273,9 +273,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     if (object == null) {
       return null;
     }
-    if (object instanceof SfSqlArray) {
-      return ((SfSqlArray) object).getText();
-    }
+
     if (object instanceof StructObjectWrapper) {
       StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
       if (resultSetMetaData.isStructuredTypeColumn(columnIndex)

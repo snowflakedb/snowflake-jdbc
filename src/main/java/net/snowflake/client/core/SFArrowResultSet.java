@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.MapConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.arrow.VarCharConverter;
@@ -574,10 +575,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return getObjectRepresentation(columnIndex, false);
   }
 
-  private Object getObjectRepresentation(int columnIndex, boolean withString) throws SFException {
+  private StructObjectWrapper getObjectRepresentation(int columnIndex, boolean withString) throws SFException {
     int type = resultSetMetaData.getColumnType(columnIndex);
     if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-      return getString(columnIndex);
+      return new StructObjectWrapper(getString(columnIndex), null);
     }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
@@ -591,21 +592,28 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (isStructuredType) {
-
-
       if (converter instanceof VarCharConverter) {
         if (type == Types.STRUCT) {
-          return new StructObjectWrapper(null, createJsonSqlInput(columnIndex, obj));
+//          TODO: Remove text from JsonSqlInput
+          JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
+          return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
         } else {
-          return getJsonArray((String) obj, columnIndex);
+          SfSqlArray sfArray = getJsonArray((String) obj, columnIndex);
+          return new StructObjectWrapper(sfArray.getText(), sfArray);
         }
-      } else if (converter instanceof StructConverter) {
+      } else if (converter instanceof StructConverter ) {
         String jsonString = withString ? converter.toString(index) : null;
         return new StructObjectWrapper(
             jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+      }  else if (converter instanceof MapConverter) {
+        String jsonString = withString ? converter.toString(index) : null;
+        return new StructObjectWrapper(
+            jsonString, obj);
       } else if (converter instanceof ArrayConverter  || converter instanceof VectorTypeConverter) {
-          String jsonString = converter.toString(index);
-          return getArrowArray(jsonString, (List<Object>) obj, columnIndex);
+        String jsonString = converter.toString(index);
+//        TODO: Remove text from SfSqlArray
+//        SfSqlArray arrowArray = getArrowArray(jsonString, (List<Object>) obj, columnIndex);
+        return new StructObjectWrapper(jsonString, obj);
       } else {
         throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
       }
@@ -628,7 +636,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return (type == Types.STRUCT || type == Types.ARRAY) && converter instanceof VarCharConverter;
   }
 
-  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+  private JsonSqlInput createJsonSqlInput(int columnIndex, Object obj) throws SFException {
     try {
       if (obj == null) {
         return null;
