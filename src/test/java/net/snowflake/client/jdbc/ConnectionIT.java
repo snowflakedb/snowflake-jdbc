@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -835,43 +834,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     assertTrue(rs2.isClosed());
     assertTrue(rs3.isClosed());
     assertTrue(rs4.isClosed());
-  }
-
-  @Test
-  @RunOnTestaccountNotOnGithubActions
-  public void testOKTAConnection() throws Throwable {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    properties.put("user", params.get("ssoUser"));
-    properties.put("password", params.get("ssoPassword"));
-    properties.put("ssl", params.get("ssl"));
-    properties.put("authenticator", "https://snowflakecomputing.okta.com/");
-
-    DriverManager.getConnection(
-        String.format(
-            "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
-            params.get("account"), params.get("port")),
-        properties);
-  }
-
-  @Test
-  @RunOnTestaccountNotOnGithubActions
-  public void testOKTAConnectionWithOktauserParam() throws Throwable {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    properties.put("user", "test");
-    properties.put("password", params.get("ssoPassword"));
-    properties.put("ssl", params.get("ssl"));
-    properties.put(
-        "authenticator",
-        String.format(
-            "https://snowflakecomputing.okta.com;oktausername=%s;", params.get("ssoUser")));
-
-    DriverManager.getConnection(
-        String.format(
-            "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
-            params.get("account"), params.get("port")),
-        properties);
   }
 
   @Test

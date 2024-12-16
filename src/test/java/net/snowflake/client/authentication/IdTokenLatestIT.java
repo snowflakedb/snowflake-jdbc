@@ -17,34 +17,34 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 @Tag(TestTags.AUTHENTICATION)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class IdTokenIT {
+class IdTokenLatestIT {
 
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
-  AuthTest authTest = new AuthTest();
+  AuthTestHelper authTestHelper = new AuthTestHelper();
   private static String firstToken;
 
   @BeforeAll
   public static void globalSetUp() {
-    AuthTest.deleteIdToken();
+    AuthTestHelper.deleteIdToken();
   }
 
   @AfterEach
   public void tearDown() {
-    authTest.cleanBrowserProcesses();
+    authTestHelper.cleanBrowserProcesses();
   }
 
   @Test
   @Order(1)
   void shouldAuthenticateUsingExternalBrowserAndSaveToken() throws InterruptedException {
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("success", login, password));
+        new Thread(() -> authTestHelper.provideCredentials("success", login, password));
     Thread connectThread =
-        authTest.getConnectAndExecuteSimpleQueryThread(getStoreIDTokenConnectionParameters());
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(getStoreIDTokenConnectionParameters());
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsNotThrown();
-    firstToken = authTest.getIdToken();
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsNotThrown();
+    firstToken = authTestHelper.getIdToken();
     assertThat("Id token was not saved", firstToken, notNullValue());
   }
 
@@ -52,23 +52,23 @@ class IdTokenIT {
   @Order(2)
   void shouldAuthenticateUsingTokenWithoutBrowser() {
     verifyFirstTokenWasSaved();
-    authTest.connectAndExecuteSimpleQuery(getStoreIDTokenConnectionParameters(), null);
-    authTest.verifyExceptionIsNotThrown();
+    authTestHelper.connectAndExecuteSimpleQuery(getStoreIDTokenConnectionParameters(), null);
+    authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
   @Order(3)
   void shouldOpenBrowserAgainWhenTokenIsDeleted() throws InterruptedException {
     verifyFirstTokenWasSaved();
-    AuthTest.deleteIdToken();
+    AuthTestHelper.deleteIdToken();
     Thread provideCredentialsThread =
-        new Thread(() -> authTest.provideCredentials("success", login, password));
+        new Thread(() -> authTestHelper.provideCredentials("success", login, password));
     Thread connectThread =
-        authTest.getConnectAndExecuteSimpleQueryThread(getStoreIDTokenConnectionParameters());
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(getStoreIDTokenConnectionParameters());
 
-    authTest.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-    authTest.verifyExceptionIsNotThrown();
-    String secondToken = authTest.getIdToken();
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsNotThrown();
+    String secondToken = authTestHelper.getIdToken();
     assertThat("Id token was not saved", secondToken, notNullValue());
     assertThat("Id token was not updated", secondToken, not(firstToken));
   }

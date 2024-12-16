@@ -18,13 +18,13 @@ import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
-public class AuthTest {
+public class AuthTestHelper {
 
   private Exception exception;
   private String idToken;
   private final boolean runAuthTestsManually;
 
-  public AuthTest() {
+  public AuthTestHelper() {
     this.runAuthTestsManually = Boolean.parseBoolean(System.getenv("RUN_AUTH_TESTS_MANUALLY"));
   }
 
