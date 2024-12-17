@@ -1056,7 +1056,8 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testDisableOCSPChecksMode() throws SQLException {
 
-    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true";
+    String deploymentUrl =
+        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true";
     Properties properties = new Properties();
     properties = new Properties();
 
