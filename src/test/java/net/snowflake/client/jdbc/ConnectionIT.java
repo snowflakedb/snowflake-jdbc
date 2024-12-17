@@ -1052,6 +1052,41 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
+  /** Test production connectivity with disableOCSPChecksMode enabled. */
+  @Test
+  public void testDisableOCSPChecksMode() throws SQLException {
+    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+
+    Properties properties = new Properties();
+
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepwd");
+    properties.put("account", "fakeaccount");
+    properties.put("disableOCSPChecks", true);
+    try {
+      DriverManager.getConnection(deploymentUrl, properties);
+      fail();
+    } catch (SQLException e) {
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+    }
+
+    deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true";
+
+    properties = new Properties();
+
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepwd");
+    properties.put("account", "fakeaccount");
+    try {
+      DriverManager.getConnection(deploymentUrl, properties);
+      fail();
+    } catch (SQLException e) {
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+    }
+  }
+
   private class ConcurrentConnections implements Runnable {
 
     ConcurrentConnections() {}

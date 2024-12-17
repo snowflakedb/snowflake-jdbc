@@ -714,10 +714,12 @@ public abstract class SFBaseSession {
   public OCSPMode getOCSPMode() {
     OCSPMode ret;
 
+    Boolean disableOCSPMode =
+        (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
-    if (insecureMode != null && insecureMode) {
+    if ((disableOCSPMode != null && disableOCSPMode) || (insecureMode != null && insecureMode)) {
       // skip OCSP checks
-      ret = OCSPMode.INSECURE;
+      ret = OCSPMode.DISABLE_OCSP_CHECKS;
     } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
         || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
       // fail open (by default, not set)

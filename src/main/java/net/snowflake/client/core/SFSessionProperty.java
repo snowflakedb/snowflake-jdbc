@@ -37,7 +37,13 @@ public enum SFSessionProperty {
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
   OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
+  /**
+   * @deprecated Use {@link #DISABLE_OCSP_CHECKS} for clarity. This configuration option is used to
+   *     disable OCSP verification.
+   */
+  @Deprecated
   INSECURE_MODE("insecureMode", false, Boolean.class),
+  DISABLE_OCSP_CHECKS("disableOCSPChecks", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   STRINGS_QUOTED("stringsQuotedForColumnDef", false, Boolean.class),
   APPLICATION("application", false, String.class),

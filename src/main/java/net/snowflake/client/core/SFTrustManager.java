@@ -1161,7 +1161,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           new DecorrelatedJitterBackoff(sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
       boolean success = false;
 
-      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 3;
+      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 2;
       Exception savedEx = null;
       CloseableHttpClient httpClient =
           ocspCacheServerClient.computeIfAbsent(
