@@ -19,6 +19,7 @@ public class SFLoginInput {
   private String warehouse;
   private String role;
   private boolean validateDefaultParameters;
+  private String originAuthenticator;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -328,7 +329,8 @@ public class SFLoginInput {
     return this;
   }
 
-  String getOauthRefreshToken() {
+  @SnowflakeJdbcInternalApi
+  public String getOauthRefreshToken() {
     return oauthRefreshToken;
   }
 
@@ -439,11 +441,11 @@ public class SFLoginInput {
   boolean getDisableSamlURLCheck() {
     return disableSamlURLCheck;
   }
+
   SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
     this.disableSamlURLCheck = disableSamlURLCheck;
     return this;
   }
-
 
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
@@ -524,4 +526,12 @@ public class SFLoginInput {
     return this;
   }
 
+  String getOriginAuthenticator() {
+    return originAuthenticator;
+  }
+
+  SFLoginInput setOriginAuthenticator(String originAuthenticator) {
+    this.originAuthenticator = originAuthenticator;
+    return this;
+  }
 }

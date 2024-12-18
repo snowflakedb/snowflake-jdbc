@@ -20,9 +20,9 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/client_credentials";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/successful_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/successful_flow.json";
   private static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
-      SCENARIOS_BASE_DIR + "/token_request_error_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/token_request_error.json";
 
   @Test
   public void successfulFlowScenario() throws SFException {

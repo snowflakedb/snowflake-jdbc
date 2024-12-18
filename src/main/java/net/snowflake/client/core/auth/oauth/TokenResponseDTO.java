@@ -5,10 +5,12 @@
 package net.snowflake.client.core.auth.oauth;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TokenResponseDTO {
 
   private final String accessToken;
