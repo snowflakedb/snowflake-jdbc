@@ -50,4 +50,34 @@ public class AuthConnectionParameters {
     properties.put("token", token);
     return properties;
   }
+
+  static Properties getOAuthExternalAuthorizationCodeConnectionParameters( ) {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
+    //properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_REDIRECT_URI")); // ?????
+    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_AUTH_URL"));
+    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    return properties;
+  }
+
+  static Properties getOAuthSnowflakeAuthorizationCodeConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
+    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_REDIRECT_URI")); // ????? really
+    return properties;
+  }
+
+  static Properties getOAuthClientCredentialParameters(String token) {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
+    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_AUTH_URL"));
+    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    return properties;
+  }
 }
