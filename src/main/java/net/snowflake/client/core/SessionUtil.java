@@ -394,13 +394,13 @@ public class SessionUtil {
 
   private static void readCachedTokens(SFLoginInput loginInput) throws SFException {
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      CredentialManager.getInstance().fillCachedIdToken(loginInput);
-      CredentialManager.getInstance().fillCachedOAuthAccessToken(loginInput);
-      CredentialManager.getInstance().fillCachedOAuthRefreshToken(loginInput);
+      CredentialManager.fillCachedIdToken(loginInput);
+      CredentialManager.fillCachedOAuthAccessToken(loginInput);
+      CredentialManager.fillCachedOAuthRefreshToken(loginInput);
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().fillCachedMfaToken(loginInput);
+      CredentialManager.fillCachedMfaToken(loginInput);
     }
   }
 
@@ -1006,18 +1006,18 @@ public class SessionUtil {
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       if (consentCacheIdToken) {
-        CredentialManager.getInstance().writeIdToken(loginInput, ret);
+        CredentialManager.writeIdToken(loginInput, ret);
       }
       if (loginInput.getOauthAccessToken() != null) {
-        CredentialManager.getInstance().writeOAuthAccessToken(loginInput);
+        CredentialManager.writeOAuthAccessToken(loginInput);
       }
       if (loginInput.getOauthRefreshToken() != null) {
-        CredentialManager.getInstance().writeOAuthRefreshToken(loginInput);
+        CredentialManager.writeOAuthRefreshToken(loginInput);
       }
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().writeMfaToken(loginInput, ret);
+      CredentialManager.writeMfaToken(loginInput, ret);
     }
 
     stopwatch.stop();
@@ -1051,7 +1051,7 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteIdTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteIdTokenCache(host, user);
+    CredentialManager.deleteIdTokenCache(host, user);
   }
 
   /**
@@ -1061,15 +1061,15 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteMfaTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
+    CredentialManager.deleteMfaTokenCache(host, user);
   }
 
   private static void deleteOAuthAccessTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteOAuthAccessTokenCache(host, user);
+    CredentialManager.deleteOAuthAccessTokenCache(host, user);
   }
 
   private static void deleteOAuthRefreshTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteOAuthRefreshTokenCache(host, user);
+    CredentialManager.deleteOAuthRefreshTokenCache(host, user);
   }
 
   /**

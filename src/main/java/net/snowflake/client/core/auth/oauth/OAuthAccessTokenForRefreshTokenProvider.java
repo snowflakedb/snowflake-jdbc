@@ -62,8 +62,9 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
     TokenResponseDTO tokenResponseDTO =
         objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
     logger.debug(
-        "Received new OAuth access token from: {}",
-        requestUri.getAuthority() + requestUri.getPath());
+        "Received new OAuth access token from: {}{}",
+        requestUri.getAuthority(),
+        requestUri.getPath());
     return tokenResponseDTO;
   }
 

@@ -104,11 +104,11 @@ public class SFLoginOutput {
     return mfaToken;
   }
 
-  public String getOauthAccessToken() {
+  String getOauthAccessToken() {
     return oauthAccessToken;
   }
 
-  public String getOauthRefreshToken() {
+  String getOauthRefreshToken() {
     return oauthRefreshToken;
   }
 

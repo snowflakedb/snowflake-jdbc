@@ -62,12 +62,12 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach id token
    */
-  void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached id token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, CachedCredentialType.ID_TOKEN);
+    getInstance().fillCachedCredential(loginInput, CachedCredentialType.ID_TOKEN);
   }
 
   /**
@@ -75,12 +75,12 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach mfa token
    */
-  void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached mfa token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, CachedCredentialType.MFA_TOKEN);
+    getInstance().fillCachedCredential(loginInput, CachedCredentialType.MFA_TOKEN);
   }
 
   /**
@@ -88,12 +88,12 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach access token
    */
-  void fillCachedOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedOAuthAccessToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached OAuth access token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, CachedCredentialType.OAUTH_ACCESS_TOKEN);
+    getInstance().fillCachedCredential(loginInput, CachedCredentialType.OAUTH_ACCESS_TOKEN);
   }
 
   /**
@@ -101,12 +101,12 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach refresh token
    */
-  void fillCachedOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached OAuth refresh token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, CachedCredentialType.OAUTH_REFRESH_TOKEN);
+    getInstance().fillCachedCredential(loginInput, CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 
   /**
@@ -136,38 +136,23 @@ public class CredentialManager {
       logger.debug("Retrieved {} is null", credType);
     }
 
-    // cred can be null
+    logger.debug(
+        "Setting {}{} token for user: {}, host: {}",
+        cred == null ? "null " : "",
+        credType.getValue(),
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl());
     switch (credType) {
       case ID_TOKEN:
-        logger.debug(
-            "Setting {}id token for user: {}, host: {}",
-            cred == null ? "null " : "",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
         loginInput.setIdToken(cred);
         break;
       case MFA_TOKEN:
-        logger.debug(
-            "Setting {}mfa token for user: {}, host: {}",
-            cred == null ? "null " : "",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
         loginInput.setMfaToken(cred);
         break;
       case OAUTH_ACCESS_TOKEN:
-        logger.debug(
-            "Setting {}OAuth access token for user: {}, host: {}",
-            cred == null ? "null " : "",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
         loginInput.setOauthAccessToken(cred);
         break;
       case OAUTH_REFRESH_TOKEN:
-        logger.debug(
-            "Setting {}OAuth refresh token for user: {}, host: {}",
-            cred == null ? "null " : "",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
         loginInput.setOauthRefreshToken(cred);
         break;
       default:
@@ -182,12 +167,14 @@ public class CredentialManager {
    * @param loginInput loginInput to denote to the cache
    * @param loginOutput loginOutput to denote to the cache
    */
-  void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+  static void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
     logger.debug(
         "Caching id token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(loginInput, loginOutput.getIdToken(), CachedCredentialType.ID_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput, loginOutput.getIdToken(), CachedCredentialType.ID_TOKEN);
   }
 
   /**
@@ -196,12 +183,14 @@ public class CredentialManager {
    * @param loginInput loginInput to denote to the cache
    * @param loginOutput loginOutput to denote to the cache
    */
-  void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+  static void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
     logger.debug(
         "Caching mfa token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(loginInput, loginOutput.getMfaToken(), CachedCredentialType.MFA_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput, loginOutput.getMfaToken(), CachedCredentialType.MFA_TOKEN);
   }
 
   /**
@@ -209,13 +198,14 @@ public class CredentialManager {
    *
    * @param loginInput loginInput to denote to the cache
    */
-  void writeOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+  static void writeOAuthAccessToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Caching OAuth access token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(
-        loginInput, loginInput.getOauthAccessToken(), CachedCredentialType.OAUTH_ACCESS_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput, loginInput.getOauthAccessToken(), CachedCredentialType.OAUTH_ACCESS_TOKEN);
   }
 
   /**
@@ -223,13 +213,16 @@ public class CredentialManager {
    *
    * @param loginInput loginInput to denote to the cache
    */
-  void writeOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
+  static void writeOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Caching OAuth refresh token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(
-        loginInput, loginInput.getOauthRefreshToken(), CachedCredentialType.OAUTH_REFRESH_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput,
+            loginInput.getOauthRefreshToken(),
+            CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 
   /**
@@ -260,35 +253,35 @@ public class CredentialManager {
   }
 
   /** Delete the id token cache */
-  void deleteIdTokenCache(String host, String user) {
+  static void deleteIdTokenCache(String host, String user) {
     logger.debug(
         "Removing cached id token from a secure storage for user: {}, host: {}", user, host);
-    deleteTemporaryCredential(host, user, CachedCredentialType.ID_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.ID_TOKEN);
   }
 
   /** Delete the mfa token cache */
-  void deleteMfaTokenCache(String host, String user) {
+  static void deleteMfaTokenCache(String host, String user) {
     logger.debug(
         "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
-    deleteTemporaryCredential(host, user, CachedCredentialType.MFA_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.MFA_TOKEN);
   }
 
   /** Delete the OAuth access token cache */
-  void deleteOAuthAccessTokenCache(String host, String user) {
+  static void deleteOAuthAccessTokenCache(String host, String user) {
     logger.debug(
         "Removing cached OAuth access token from a secure storage for user: {}, host: {}",
         user,
         host);
-    deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_ACCESS_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_ACCESS_TOKEN);
   }
 
   /** Delete the OAuth refresh token cache */
-  void deleteOAuthRefreshTokenCache(String host, String user) {
+  static void deleteOAuthRefreshTokenCache(String host, String user) {
     logger.debug(
         "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
         user,
         host);
-    deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 
   /**
