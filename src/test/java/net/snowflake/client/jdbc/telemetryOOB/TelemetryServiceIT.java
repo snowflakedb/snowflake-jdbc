@@ -58,7 +58,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @SuppressWarnings("divzero")
-  @Disabled
   @Test
   public void testCreateException() {
     TelemetryService service = TelemetryService.getInstance();
@@ -102,7 +101,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     assertThat("WrongServerURL do not block.", service.getEventCount() > count);
   }
 
-  @Disabled
   @Test
   public void testCreateLog() {
     // this log will be delivered to snowflake
@@ -161,7 +159,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     sw.stop();
   }
 
-  @Disabled
   @Test
   public void testCreateLogInBlackList() {
     // this log will be delivered to snowflake

@@ -871,4 +871,32 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       FileUtils.deleteDirectory(subDir.toFile());
     }
   }
+
+  @DontRunOnGithubActions
+  @Test
+  public void testListObjectsException() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    SnowflakeGCSClient.setInjectedException(
+            new StorageProviderException(new Exception("could not list objects")));
+
+    try (Connection con = getConnection("gcpaccount", paramProperties);
+         Statement statement = con.createStatement()) {
+      try {
+        statement.execute("create or replace stage testStage");
+        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+        SnowflakeFileTransferAgent sfAgent =
+                new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+
+        sfAgent.execute();
+      } catch (SnowflakeSQLException err) {
+        assertEquals(200016, err.getErrorCode());
+        assertTrue(err.getMessage().contains("Failed to list objects"));
+      } finally {
+        statement.execute("DROP STAGE if exists testStage");
+      }
+    }
+    SnowflakeGCSClient.setInjectedException(null);
+  }
 }
