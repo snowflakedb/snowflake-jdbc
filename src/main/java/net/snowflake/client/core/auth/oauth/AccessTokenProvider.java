@@ -11,5 +11,5 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 @SnowflakeJdbcInternalApi
 public interface AccessTokenProvider {
 
-  String getAccessToken(SFLoginInput loginInput) throws SFException;
+  TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException;
 }

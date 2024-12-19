@@ -12,10 +12,10 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AccessTokenProviderFactoryTest {
+public class OAuthAccessTokenProviderFactoryTest {
 
-  private final AccessTokenProviderFactory providerFactory =
-      new AccessTokenProviderFactory(null, 30);
+  private final OAuthAccessTokenProviderFactory providerFactory =
+      new OAuthAccessTokenProviderFactory(null, 30);
 
   @Test
   public void shouldProperlyReturnIfAuthenticatorIsEligible() {
@@ -24,9 +24,9 @@ public class AccessTokenProviderFactoryTest {
             authenticatorType -> {
               if (authenticatorType == AuthenticatorType.OAUTH_CLIENT_CREDENTIALS
                   || authenticatorType.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
-                Assertions.assertTrue(AccessTokenProviderFactory.isEligible(authenticatorType));
+                Assertions.assertTrue(OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
               } else {
-                Assertions.assertFalse(AccessTokenProviderFactory.isEligible(authenticatorType));
+                Assertions.assertFalse(OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
               }
             });
   }

@@ -18,10 +18,10 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
-public class AccessTokenProviderFactory {
+public class OAuthAccessTokenProviderFactory {
 
   private static final SFLogger logger =
-      SFLoggerFactory.getLogger(AccessTokenProviderFactory.class);
+      SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
   private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES =
       new HashSet<>(
           Arrays.asList(
@@ -31,7 +31,7 @@ public class AccessTokenProviderFactory {
   private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
   private final int browserAuthorizationTimeoutSeconds;
 
-  public AccessTokenProviderFactory(
+  public OAuthAccessTokenProviderFactory(
       SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler,
       int browserAuthorizationTimeoutSeconds) {
     this.browserHandler = browserHandler;

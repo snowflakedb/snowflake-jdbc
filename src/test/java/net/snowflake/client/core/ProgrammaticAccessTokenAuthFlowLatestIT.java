@@ -18,9 +18,9 @@ public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/pat";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/successful_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/successful_flow.json";
   private static final String INVALID_TOKEN_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/invalid_token_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/invalid_pat_token.json";
 
   @Test
   public void successfulFlowScenarioPatAsToken() throws SFException, SnowflakeSQLException {
