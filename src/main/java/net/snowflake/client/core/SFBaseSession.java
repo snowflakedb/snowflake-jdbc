@@ -715,19 +715,21 @@ public abstract class SFBaseSession {
   public OCSPMode getOCSPMode() throws SnowflakeSQLException {
     OCSPMode ret;
 
-    Boolean disableOCSPMode =
+    Boolean disableOCSPChecks =
         (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
 
-    if ((disableOCSPMode != null && insecureMode != null) && (disableOCSPMode != insecureMode)) {
+    if ((disableOCSPChecks != null && insecureMode != null)
+        && (disableOCSPChecks != insecureMode)) {
       logger.error(
-          "The values for 'disableOCSPMode' and 'insecureMode' must be identical. "
+          "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
               + "Please ensure both properties are set to the same value.");
       throw new SnowflakeSQLException(
           ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
-          "The values for 'disableOCSPMode' and 'insecureMode' " + "must be identical.");
+          "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
     }
-    if ((disableOCSPMode != null && disableOCSPMode) || (insecureMode != null && insecureMode)) {
+    if ((disableOCSPChecks != null && disableOCSPChecks)
+        || (insecureMode != null && insecureMode)) {
       // skip OCSP checks
       ret = OCSPMode.DISABLE_OCSP_CHECKS;
     } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)

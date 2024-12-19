@@ -346,8 +346,8 @@ public class HttpUtil {
 
     TrustManager[] trustManagers = null;
     if (key != null && key.getOcspMode() != OCSPMode.DISABLE_OCSP_CHECKS) {
-      // A custom TrustManager is required only if disableOCSPMode is disabled,
-      // which is by default in the production. disableOCSPMode can be enabled
+      // A custom TrustManager is required only if disableOCSPChecks is disabled,
+      // which is by default in the production. disableOCSPChecks can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
