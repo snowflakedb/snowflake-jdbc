@@ -495,7 +495,6 @@ public class SFStatement extends SFBaseStatement {
       boolean sessionRenewed;
 
       do {
-        sessionRenewed = false;
         try {
           stmtOutput = StmtUtil.execute(stmtInput, execTimeData);
           break;
@@ -505,8 +504,8 @@ public class SFStatement extends SFBaseStatement {
               // renew the session
               session.renewSession(stmtInput.sessionToken);
             } catch (SnowflakeReauthenticationRequest ex0) {
-              if (session.isExternalbrowserAuthenticator()) {
-                reauthenticate();
+              if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
+                session.open();
               } else {
                 throw ex0;
               }
@@ -693,19 +692,6 @@ public class SFStatement extends SFBaseStatement {
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     return execute(sql, false, parametersBinding, caller, execTimeData);
-  }
-
-  private void reauthenticate() throws SFException, SnowflakeSQLException {
-    SFLoginInput input =
-        new SFLoginInput()
-            .setRole(session.getRole())
-            .setWarehouse(session.getWarehouse())
-            .setDatabaseName(session.getDatabase())
-            .setSchemaName(session.getSchema())
-            .setOCSPMode(session.getOCSPMode())
-            .setHttpClientSettingsKey(session.getHttpClientKey());
-
-    session.open();
   }
 
   /**

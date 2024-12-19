@@ -29,7 +29,7 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
-import net.snowflake.client.core.auth.oauth.AccessTokenProviderFactory;
+import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -330,7 +330,7 @@ public class SessionUtil {
 
     readCachedTokens(loginInput);
 
-    if (AccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
+    if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       getOAuthAccessToken(loginInput);
     }
 
@@ -338,18 +338,14 @@ public class SessionUtil {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     } catch (SnowflakeReauthenticationRequest ex) {
       if (ex.getErrorCode() == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
-        handleOAuthAccessTokenExpiration(loginInput);
+        if (loginInput.getOauthRefreshToken() != null) {
+          refreshOAuthAccessTokenAndUpdateInput(loginInput);
+        } else {
+          loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
+          obtainOAuthAccessTokenAndUpdateInput(loginInput);
+        }
       }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
-    }
-  }
-
-  private static void handleOAuthAccessTokenExpiration(SFLoginInput loginInput) throws SFException {
-    if (loginInput.getOauthRefreshToken() != null) {
-      refreshOAuthAccessTokenAndUpdateInput(loginInput);
-    } else {
-      loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
-      obtainOAuthAccessTokenAndUpdateInput(loginInput);
     }
   }
 
@@ -364,8 +360,8 @@ public class SessionUtil {
 
   private static void obtainOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
       throws SFException {
-    AccessTokenProviderFactory accessTokenProviderFactory =
-        new AccessTokenProviderFactory(
+    OAuthAccessTokenProviderFactory accessTokenProviderFactory =
+        new OAuthAccessTokenProviderFactory(
             new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
             (int) loginInput.getBrowserResponseTimeout().getSeconds());
     AccessTokenProvider accessTokenProvider =

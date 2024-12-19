@@ -261,7 +261,7 @@ public class SFSession extends SFBaseSession {
             // If we fail to renew the session based on a re-authentication error, try to
             // re-authenticate the session first
             if (ex instanceof SnowflakeReauthenticationRequest
-                && this.isExternalbrowserAuthenticator()) {
+                && this.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
               try {
                 this.open();
               } catch (SFException e) {
@@ -848,10 +848,12 @@ public class SFSession extends SFBaseSession {
    *
    * @return true if authenticator type is EXTERNALBROWSER
    */
-  boolean isExternalbrowserAuthenticator() {
+  boolean isExternalbrowserOrOAuthFullFlowAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator)
+            || AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name().equalsIgnoreCase(authenticator)
+            || AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name().equalsIgnoreCase(authenticator);
   }
 
   /**
