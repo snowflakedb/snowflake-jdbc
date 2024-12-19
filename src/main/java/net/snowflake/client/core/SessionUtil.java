@@ -331,26 +331,34 @@ public class SessionUtil {
     readCachedTokens(loginInput);
 
     if (AccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
-      if (loginInput.getOauthAccessToken() != null) { // Access Token cached
-        loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
-        loginInput.setToken(loginInput.getOauthAccessToken());
-      } else { // Access Token not cached
-        obtainOAuthAccessTokenAndUpdateInput(loginInput);
-      }
+      getOAuthAccessToken(loginInput);
     }
 
     try {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     } catch (SnowflakeReauthenticationRequest ex) {
       if (ex.getErrorCode() == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
-        if (loginInput.getOauthRefreshToken() != null) {
-          refreshOAuthAccessTokenAndUpdateInput(loginInput);
-        } else {
-          loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
-          obtainOAuthAccessTokenAndUpdateInput(loginInput);
-        }
+        handleOAuthAccessTokenExpiration(loginInput);
       }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
+    }
+  }
+
+  private static void handleOAuthAccessTokenExpiration(SFLoginInput loginInput) throws SFException {
+    if (loginInput.getOauthRefreshToken() != null) {
+      refreshOAuthAccessTokenAndUpdateInput(loginInput);
+    } else {
+      loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
+      obtainOAuthAccessTokenAndUpdateInput(loginInput);
+    }
+  }
+
+  private static void getOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+    if (loginInput.getOauthAccessToken() != null) { // Access Token cached
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      loginInput.setToken(loginInput.getOauthAccessToken());
+    } else { // Access Token not cached
+      obtainOAuthAccessTokenAndUpdateInput(loginInput);
     }
   }
 
