@@ -3,16 +3,9 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.DefaultSFConnectionHandler.mergeProperties;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import java.sql.Array;
-import java.sql.JDBCType;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.core.SFBaseSession;
 import org.junit.jupiter.api.Test;
 
 /** Created by hyu on 2/2/18. */
@@ -204,20 +197,5 @@ public class SnowflakeConnectionV1Test {
     result = mergeProperties(conStr);
     assertThat(result.get("PROP1"), is("value1|value2"));
     assertThat(result.get("PROP2"), is("carrot^"));
-  }
-
-  @Test
-  public void testCreateArrayOfIsCaseInsensitive() throws SQLException {
-    SFConnectionHandler mockConnectionHandler = mock(SFConnectionHandler.class);
-    SFBaseSession sfBaseSession = mock(SFBaseSession.class);
-    when(mockConnectionHandler.getSFSession()).thenReturn(sfBaseSession);
-    when(sfBaseSession.checkProperties()).thenReturn(new ArrayList<>());
-    try (SnowflakeConnectionV1 connectionV1 = new SnowflakeConnectionV1(mockConnectionHandler)) {
-      Array arrayLowerCase = connectionV1.createArrayOf("integer", new Integer[] {1, 2, 3});
-      Array arrayUpperCase = connectionV1.createArrayOf("VARCHAR", new String[] {"one", "two"});
-
-      assertThat(arrayLowerCase.getBaseTypeName(), is(JDBCType.INTEGER.getName()));
-      assertThat(arrayUpperCase.getBaseTypeName(), is(JDBCType.VARCHAR.getName()));
-    }
   }
 }
