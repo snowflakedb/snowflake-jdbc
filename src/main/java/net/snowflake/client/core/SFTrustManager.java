@@ -842,7 +842,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
   private String generateFailOpenLog(String logData) {
     return "OCSP responder didn't respond correctly. Assuming certificate is "
-        + "not revoked. Details: \n"
+        + "not revoked. Details: "
         + logData;
   }
 

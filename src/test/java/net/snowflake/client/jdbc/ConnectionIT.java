@@ -11,6 +11,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -44,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -1021,18 +1023,19 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     String deploymentUrl =
         "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true";
     Properties properties = new Properties();
-    properties = new Properties();
 
     properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
-    try {
-      DriverManager.getConnection(deploymentUrl, properties);
-      fail();
-    } catch (SQLException e) {
-      assertThat(
-          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-    }
+    SQLException thrown =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(deploymentUrl, properties);
+            });
+
+    assertThat(
+        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
   private class ConcurrentConnections implements Runnable {
