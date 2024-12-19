@@ -86,6 +86,8 @@ public class SFSession extends SFBaseSession {
   private long masterTokenValidityInSeconds;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String privateKeyFileLocation;
   private String privateKeyBase64;
   private String privateKeyPassword;
@@ -673,6 +675,8 @@ public class SFSession extends SFBaseSession {
         .setValidateDefaultParameters(
             connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
         .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+        .setOriginAuthenticator(
+            (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
         .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
@@ -750,6 +754,8 @@ public class SFSession extends SFBaseSession {
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
     mfaToken = loginOutput.getMfaToken();
+    oauthAccessToken = loginOutput.getOauthAccessToken();
+    oauthRefreshToken = loginOutput.getOauthRefreshToken();
     setDatabaseVersion(loginOutput.getDatabaseVersion());
     setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
     setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
@@ -895,6 +901,8 @@ public class SFSession extends SFBaseSession {
         .setMasterToken(masterToken)
         .setIdToken(idToken)
         .setMfaToken(mfaToken)
+        .setOauthAccessToken(oauthAccessToken)
+        .setOauthRefreshToken(oauthRefreshToken)
         .setLoginTimeout(loginTimeout)
         .setRetryTimeout(retryTimeout)
         .setDatabaseName(getDatabase())

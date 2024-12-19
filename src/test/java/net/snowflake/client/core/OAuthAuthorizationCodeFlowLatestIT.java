@@ -12,6 +12,7 @@ import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -29,15 +30,15 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/authorization_code";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/successful_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/successful_flow.json";
   private static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =
-      SCENARIOS_BASE_DIR + "/browser_timeout_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/browser_timeout_authorization_error.json";
   private static final String INVALID_SCOPE_SCENARIO_MAPPING =
-      SCENARIOS_BASE_DIR + "/invalid_scope_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/invalid_scope_error.json";
   private static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
-      SCENARIOS_BASE_DIR + "/token_request_error_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/token_request_error.json";
   private static final String CUSTOM_URLS_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/custom_urls_scenario_mapping.json";
+      SCENARIOS_BASE_DIR + "/external_idp_custom_urls.json";
 
   private static final Logger logger =
       LoggerFactory.getLogger(OAuthAuthorizationCodeFlowLatestIT.class);
@@ -53,7 +54,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
     AccessTokenProvider provider =
         new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
-    String accessToken = provider.getAccessToken(loginInput);
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
@@ -70,7 +72,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
 
     AccessTokenProvider provider =
         new OAuthAuthorizationCodeAccessTokenProvider(wiremockProxyRequestBrowserHandler, 30);
-    String accessToken = provider.getAccessToken(loginInput);
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
 
     Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
