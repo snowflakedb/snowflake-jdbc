@@ -1079,13 +1079,6 @@ public class SessionUtil {
   /**
    * Renew a session.
    *
-   * <p>Use cases: - Session and Master tokens are provided. No Id token: - succeed in getting a new
-   * Session token. - fail and raise SnowflakeReauthenticationRequest because Master token expires.
-   * Since no id token exists, the exception is thrown to the upstream. - Session and Id tokens are
-   * provided. No Master token: - fail and raise SnowflakeReauthenticationRequest and issue a new
-   * Session token - fail and raise SnowflakeReauthenticationRequest and fail to issue a new Session
-   * token as the
-   *
    * @param loginInput login information
    * @return login output
    * @throws SFException if unexpected uri information
@@ -1093,10 +1086,10 @@ public class SessionUtil {
    */
   static SFLoginOutput renewSession(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
-    return tokenRequest(loginInput, TokenRequestType.RENEW);
+    return tokenRequest(loginInput);
   }
 
-  private static SFLoginOutput tokenRequest(SFLoginInput loginInput, TokenRequestType requestType)
+  private static SFLoginOutput tokenRequest(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null, "missing server URL for tokenRequest");
 
@@ -1140,7 +1133,7 @@ public class SessionUtil {
       Map<String, String> payload = new HashMap<>();
       String headerToken = loginInput.getMasterToken();
       payload.put("oldSessionToken", loginInput.getSessionToken());
-      payload.put("requestType", requestType.value);
+      payload.put("requestType", TokenRequestType.RENEW.value);
       String json = mapper.writeValueAsString(payload);
 
       // attach the login info json body to the post request
@@ -1163,7 +1156,7 @@ public class SessionUtil {
 
       logger.debug(
           "Request type: {}, old session token: {}, " + "master token: {}",
-          requestType.value,
+          TokenRequestType.RENEW.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
