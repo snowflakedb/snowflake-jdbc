@@ -29,12 +29,14 @@ import java.sql.Types;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -80,10 +82,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private static final String ENABLE_PATTERN_SEARCH =
       SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey();
 
-  private static final String startingSchema;
-  private static final String startingDatabase;
+  private static String startingSchema;
+  private static String startingDatabase;
 
-  static {
+  @BeforeAll
+  public static void prepare() {
     try {
       startingSchema = connection.getSchema();
       startingDatabase = connection.getCatalog();
@@ -2336,6 +2339,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     DatabaseMetaData metaData = connection.getMetaData();
     assertEquals(43, metaData.getSQLKeywords().split(",").length);
   }
+
   /** Added in > 3.16.1 */
   @Test
   public void testVectorDimension() throws SQLException {
@@ -2368,6 +2372,65 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(256, unwrapResultSetMetadata.getDimension(2));
         assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
         assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+      }
+    }
+  }
+
+  /**
+   * Added in > 3.21.0 for SNOW-1619625 - we need to use exact schema when
+   * CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
+   */
+  @Test
+  public void testExactSchemaSearching() throws SQLException {
+    Random random = new Random();
+    int suffix = random.nextInt(Integer.MAX_VALUE);
+    String schemaName = "_ESCAPED_UNDERSCORE_" + suffix;
+    String alternativeSchemaName = schemaName.replaceAll("_", "x");
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("CREATE SCHEMA \"" + schemaName + "\"");
+      statement.execute("CREATE SCHEMA \"" + alternativeSchemaName + "\"");
+      statement.execute(
+          "CREATE TABLE \""
+              + connection.getCatalog()
+              + "\".\""
+              + schemaName
+              + "\".\"mytable\" (a text)");
+      statement.execute(
+          "CREATE TABLE \""
+              + connection.getCatalog()
+              + "\".\""
+              + alternativeSchemaName
+              + "\".\"mytable\" (a text)");
+      try {
+        Properties props = new Properties();
+        props.put("CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX", true);
+        props.put("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", true);
+        props.put("schema", schemaName); // we should not escape schema here
+        try (Connection connectionWithContext = getConnection(props);
+            ResultSet schemas = connectionWithContext.getMetaData().getSchemas();
+            ResultSet schemasWithPattern =
+                connectionWithContext.getMetaData().getSchemas(null, null);
+            ResultSet tables =
+                connectionWithContext.getMetaData().getTables(null, null, null, null)) {
+          assertEquals(schemaName, connectionWithContext.getSchema());
+          assertTrue(schemas.next());
+          String schemaNameColumnInMetadata = "TABLE_SCHEM"; // it's not typo
+          assertEquals(schemaName, schemas.getString(schemaNameColumnInMetadata));
+          assertFalse(schemas.next());
+
+          assertTrue(schemasWithPattern.next());
+          assertEquals(schemaName, schemasWithPattern.getString(schemaNameColumnInMetadata));
+          assertFalse(schemasWithPattern.next());
+
+          assertTrue(tables.next());
+          assertEquals("mytable", tables.getString("TABLE_NAME"));
+          assertEquals(schemaName, tables.getString(schemaNameColumnInMetadata));
+          assertFalse(tables.next());
+        }
+      } finally {
+        statement.execute("DROP SCHEMA \"" + schemaName + "\"");
+        statement.execute("DROP SCHEMA \"" + alternativeSchemaName + "\"");
       }
     }
   }
