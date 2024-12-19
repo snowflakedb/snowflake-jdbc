@@ -843,11 +843,6 @@ public class SFSession extends SFBaseSession {
         || AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
-  /**
-   * Returns true If authenticator is EXTERNALBROWSER.
-   *
-   * @return true if authenticator type is EXTERNALBROWSER
-   */
   boolean isExternalbrowserOrOAuthFullFlowAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
