@@ -37,7 +37,7 @@ class GcmEncryptionProvider {
   private static final String KEY_CIPHER = "AES/GCM/NoPadding";
   private static final int BUFFER_SIZE = 8 * 1024 * 1024; // 2 MB
   private static final ThreadLocal<SecureRandom> random =
-      new ThreadLocal<>().withInitial(SecureRandom::new);
+      ThreadLocal.withInitial(SecureRandom::new);
   private static final Base64.Decoder base64Decoder = Base64.getDecoder();
 
   static InputStream encrypt(
