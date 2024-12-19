@@ -202,10 +202,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       Page<Blob> blobs = this.gcsClient.list(remoteStorageLocation, BlobListOption.prefix(prefix));
       // Normal flow will never hit here. This is only for testing purposes
       if (isInjectedExceptionEnabled()
-              && SnowflakeGCSClient.injectedException
-              instanceof StorageProviderException) {
-        throw (StorageProviderException)
-                SnowflakeGCSClient.injectedException;
+          && SnowflakeGCSClient.injectedException instanceof StorageProviderException) {
+        throw (StorageProviderException) SnowflakeGCSClient.injectedException;
       }
       return new StorageObjectSummaryCollection(blobs);
     } catch (Exception e) {

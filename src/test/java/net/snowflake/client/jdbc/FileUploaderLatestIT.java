@@ -878,16 +878,16 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
     SnowflakeGCSClient.setInjectedException(
-            new StorageProviderException(new Exception("could not list objects")));
+        new StorageProviderException(new Exception("could not list objects")));
 
     try (Connection con = getConnection("gcpaccount", paramProperties);
-         Statement statement = con.createStatement()) {
+        Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
         SnowflakeFileTransferAgent sfAgent =
-                new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
         sfAgent.execute();
       } catch (SnowflakeSQLException err) {

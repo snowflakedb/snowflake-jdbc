@@ -1018,10 +1018,12 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   public void testDiagnosticCheckFailsWithNoAllowlistFileProvided() throws SQLException {
     Properties props = new Properties();
     props.put("ENABLE_DIAGNOSTICS", true);
-    try(Connection con = getConnection(props)) {
+    try (Connection con = getConnection(props)) {
       fail();
     } catch (SnowflakeSQLException e) {
-      assertTrue(e.getMessage().contains("Diagnostics was enabled but an allowlist file was not provided"));
+      assertTrue(
+          e.getMessage()
+              .contains("Diagnostics was enabled but an allowlist file was not provided"));
     }
   }
 
@@ -1030,10 +1032,13 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     Properties props = new Properties();
     props.put("ENABLE_DIAGNOSTICS", true);
     props.put("DIAGNOSTICS_ALLOWLIST_FILE", "/some/path/allowlist.json");
-    try(Connection con = getConnection(props)) {
+    try (Connection con = getConnection(props)) {
       fail();
     } catch (Exception e) {
-      assertTrue(e.getMessage().contains("A connection was not created because the driver is running in diagnostics mode."));
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "A connection was not created because the driver is running in diagnostics mode."));
     }
   }
 
