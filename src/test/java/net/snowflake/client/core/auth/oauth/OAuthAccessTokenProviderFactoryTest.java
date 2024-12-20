@@ -24,9 +24,11 @@ public class OAuthAccessTokenProviderFactoryTest {
             authenticatorType -> {
               if (authenticatorType == AuthenticatorType.OAUTH_CLIENT_CREDENTIALS
                   || authenticatorType.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
-                Assertions.assertTrue(OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
+                Assertions.assertTrue(
+                    OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
               } else {
-                Assertions.assertFalse(OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
+                Assertions.assertFalse(
+                    OAuthAccessTokenProviderFactory.isEligible(authenticatorType));
               }
             });
   }

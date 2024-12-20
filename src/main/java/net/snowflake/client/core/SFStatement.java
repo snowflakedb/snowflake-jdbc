@@ -495,6 +495,7 @@ public class SFStatement extends SFBaseStatement {
       boolean sessionRenewed;
 
       do {
+        sessionRenewed = false;
         try {
           stmtOutput = StmtUtil.execute(stmtInput, execTimeData);
           break;

@@ -29,8 +29,8 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
-import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
+import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -58,8 +58,6 @@ import org.apache.http.message.HeaderGroup;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Low level session util */
 public class SessionUtil {
@@ -140,7 +138,6 @@ public class SessionUtil {
 
   private static final String NO_QUERY_ID = "";
   private static final String SF_PATH_SESSION = "/session";
-  private static final Logger log = LoggerFactory.getLogger(SessionUtil.class);
   public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
@@ -331,7 +328,7 @@ public class SessionUtil {
     readCachedTokens(loginInput);
 
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
-      getOAuthAccessToken(loginInput);
+      updateInputWithOAuthAccessToken(loginInput);
     }
 
     try {
@@ -349,7 +346,7 @@ public class SessionUtil {
     }
   }
 
-  private static void getOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+  private static void updateInputWithOAuthAccessToken(SFLoginInput loginInput) throws SFException {
     if (loginInput.getOauthAccessToken() != null) { // Access Token cached
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(loginInput.getOauthAccessToken());
@@ -386,7 +383,7 @@ public class SessionUtil {
       if (tokenResponse.getRefreshToken() != null) {
         loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
       }
-    } catch (Throwable e) {
+    } catch (SFException | Exception e) {
       logger.debug(
           "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
           e);
@@ -1086,10 +1083,10 @@ public class SessionUtil {
    */
   static SFLoginOutput renewSession(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
-    return tokenRequest(loginInput);
+    return renewTokenRequest(loginInput);
   }
 
-  private static SFLoginOutput tokenRequest(SFLoginInput loginInput)
+  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null, "missing server URL for tokenRequest");
 
