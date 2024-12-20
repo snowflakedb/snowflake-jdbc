@@ -88,7 +88,7 @@ public class AuthTestHelper {
   }
 
   public void connectAndExecuteSimpleQuery(Properties props, String sessionParameters) {
-    String url = String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port"));
+    String url = String.format("jdbc:snowflake://%s", props.get("host"));
     if (sessionParameters != null) {
       url += "?" + sessionParameters;
     }
@@ -96,7 +96,9 @@ public class AuthTestHelper {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
+      int value = rs.getInt(1);
+      assertEquals(1, value);
+      System.out.println(value);
       saveToken(con);
     } catch (SQLException e) {
       this.exception = e;

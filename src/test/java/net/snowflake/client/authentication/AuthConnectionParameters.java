@@ -54,11 +54,13 @@ public class AuthConnectionParameters {
   static Properties getOAuthExternalAuthorizationCodeConnectionParameters( ) {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
-    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
-    //properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_REDIRECT_URI")); // ?????
-    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_AUTH_URL"));
-    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_REDIRECT_URI"));
+    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_AUTH_URL"));
+    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put("user", SSO_USER);
+
     return properties;
   }
 
