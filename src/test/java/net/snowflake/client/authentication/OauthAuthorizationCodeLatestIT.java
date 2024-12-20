@@ -1,7 +1,6 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthExternalAuthorizationCodeConnectionParameters;
-import static net.snowflake.client.authentication.AuthConnectionParameters.getOauthConnectionParameters;
+import static net.snowflake.client.authentication.AuthConnectionParameters.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -19,29 +18,38 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.AUTHENTICATION)
+@Tag(TestTags.TESTING)
 public class OauthAuthorizationCodeLatestIT {
-    AuthTestHelper authTestHelper;
+    String login = AuthConnectionParameters.SSO_USER;
+    String password = AuthConnectionParameters.SSO_PASSWORD;
+    AuthTestHelper authTestHelper = new AuthTestHelper();
+
     private String idToken;
 
 
     @BeforeEach
     public void setUp() throws IOException {
-        authTestHelper = new AuthTestHelper();
+        AuthTestHelper.deleteIdToken();
     }
 
     @Test
-    void shouldAuthenticateUsingOauthAuthorizationCode() throws IOException {
+    void shouldAuthenticateUsingOauthOktaAuthorizationCode() throws InterruptedException {
         Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
-        authTestHelper.connectAndExecuteSimpleQuery(getOAuthExternalAuthorizationCodeConnectionParameters(), null);
 
-        authTestHelper.connectAndExecuteSimpleQuery(properties,null);
+        Thread provideCredentialsThread =
+                new Thread(() -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
+        Thread connectThread =
+                new Thread(() -> authTestHelper.connectAndExecuteSimpleQuery(properties, null));
+
+        authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+        authTestHelper.verifyExceptionIsNotThrown();
     }
-
+}
 
 //        Thread provideCredentialsThread =
 //                new Thread(() -> authTestHelper.provideCredentials("success", login, password));
@@ -55,7 +63,7 @@ public class OauthAuthorizationCodeLatestIT {
 //        authTestHelper.connectAndExecuteSimpleQuery(getOauthConnectionParameters(accessToken), null);
 //        authTestHelper.verifyExceptionIsNotThrown();
 
-    }
+
 
 //    @Test
 //    public void BrowserTimeout() throws SFException {
