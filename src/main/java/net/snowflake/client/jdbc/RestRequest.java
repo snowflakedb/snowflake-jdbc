@@ -466,7 +466,9 @@ public class RestRequest {
 
         // If this was a request for an Okta one-time token that failed with a retry-able error,
         // throw exception to renew the token before trying again.
-        if (String.valueOf(httpRequest.getURI()).contains("okta.com/api/v1/authn")) {
+        // TODO: The URI won't necessrily contain okta.com with customers using vanity URLs, i.e
+        // somecompany.com/api/v1/authn
+        if (String.valueOf(httpRequest.getURI()).contains("/api/v1/authn")) {
           throw new SnowflakeSQLException(
               ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
               retryCount,
