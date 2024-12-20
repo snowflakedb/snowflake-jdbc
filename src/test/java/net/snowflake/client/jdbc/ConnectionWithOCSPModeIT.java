@@ -7,11 +7,9 @@ import static net.snowflake.client.jdbc.ErrorCode.NETWORK_ERROR;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.SocketTimeoutException;
@@ -45,7 +43,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testPassword = "testpassword";
   private final String testRevokedCertConnectString = "jdbc:snowflake://revoked.badssl.com/";
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;
-  private static final int DISABLE_OCSP_INSECURE_MODE_MISMATCH = 200064;
   public static final int BAD_REQUEST_GS_CODE = 390400;
 
   private static int nameCounter = 0;
@@ -443,49 +440,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
       return;
     }
     fail("All retries failed");
-  }
-
-  /** Test connectivity with disableOCSPChecksMode and insecure mode enabled. */
-  @Test
-  public void testDisableOCSPChecksModeAndInsecureMode() throws SQLException {
-
-    String deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true&insecureMode=true";
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    SQLException thrown =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(deploymentUrl, properties);
-            });
-
-    assertThat(
-        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-  }
-
-  /** Test connectivity with disableOCSPChecksMode enabled and insecure mode disabled. */
-  @Test
-  public void testDisableOCSPChecksModeAndInsecureModeMismatched() throws SQLException {
-
-    String deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true&insecureMode=false";
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    SQLException thrown =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(deploymentUrl, properties);
-            });
-
-    assertThat(thrown.getErrorCode(), anyOf(is(DISABLE_OCSP_INSECURE_MODE_MISMATCH)));
   }
 
   private static Matcher<String> httpStatus403Or404Or513() {

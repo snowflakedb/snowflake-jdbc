@@ -723,7 +723,7 @@ public abstract class SFBaseSession {
         && (disableOCSPChecks != insecureMode)) {
       logger.error(
           "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
-              + "Please ensure both properties are set to the same value.");
+              + "Please ensure both properties are set to the same value or unset insecureMode.");
       throw new SnowflakeSQLException(
           ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
           "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
