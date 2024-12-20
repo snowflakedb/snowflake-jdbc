@@ -6,30 +6,31 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import javax.crypto.Mac;
 
-class FloeKdf {
+class KeyDerivator {
   private final FloeParameterSpec parameterSpec;
 
-  FloeKdf(FloeParameterSpec parameterSpec) {
+  KeyDerivator(FloeParameterSpec parameterSpec) {
     this.parameterSpec = parameterSpec;
   }
 
   byte[] hkdfExpand(
       FloeKey floeKey, FloeIv floeIv, FloeAad floeAad, FloePurpose purpose, int length) {
     byte[] encodedParams = parameterSpec.paramEncode();
+    byte[] purposeBytes = purpose.generate();
     ByteBuffer info =
         ByteBuffer.allocate(
             encodedParams.length
                 + floeIv.getBytes().length
-                + purpose.getBytes().length
+                + purposeBytes.length
                 + floeAad.getBytes().length);
     info.put(encodedParams);
     info.put(floeIv.getBytes());
-    info.put(purpose.getBytes());
+    info.put(purposeBytes);
     info.put(floeAad.getBytes());
-    return jceHkdfExpand(parameterSpec.getHash(), floeKey, info.array(), length);
+    return hkdfExpandInternal(parameterSpec.getHash(), floeKey, info.array(), length);
   }
 
-  private byte[] jceHkdfExpand(Hash hash, FloeKey prk, byte[] info, int len) {
+  private byte[] hkdfExpandInternal(Hash hash, FloeKey prk, byte[] info, int len) {
     try {
       Mac mac = Mac.getInstance(hash.getJceName());
       mac.init(prk.getKey());

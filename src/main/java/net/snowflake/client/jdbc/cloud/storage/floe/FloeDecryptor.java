@@ -1,3 +1,3 @@
 package net.snowflake.client.jdbc.cloud.storage.floe;
 
-public interface FloeDecryptor {}
+public interface FloeDecryptor extends SegmentProcessor {}

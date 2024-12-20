@@ -324,6 +324,10 @@ public class AbstractDriverIT {
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
 
+    properties.put("useProxy", "true");
+    properties.put("proxyHost", "localhost");
+    properties.put("proxyPort", "8080");
+
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));
     }
