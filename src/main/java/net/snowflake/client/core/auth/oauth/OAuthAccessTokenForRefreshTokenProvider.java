@@ -28,7 +28,7 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(OAuthClientCredentialsAccessTokenProvider.class);
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
   public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {

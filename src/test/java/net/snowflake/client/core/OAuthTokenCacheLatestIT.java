@@ -9,14 +9,17 @@ import static org.mockito.Mockito.times;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
 
+@Tag(TestTags.CORE)
 public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/token_caching";
@@ -73,15 +76,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthAccessTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthRefreshTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          never());
+          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), never());
 
       assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
@@ -105,10 +102,7 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthAccessTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
       assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic, "new-refreshed-access-token-123", "new-refresh-token-123");
@@ -127,15 +121,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthAccessTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthRefreshTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          times(1));
+          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), times(1));
       assertEquals("newly-obtained-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic,
@@ -156,15 +144,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthAccessTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () ->
-              CredentialManager.deleteOAuthRefreshTokenCache(
-                  loginInput.getHostFromServerUrl(), loginInput.getUserName()),
-          never());
+          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), never());
       assertEquals("newly-obtained-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic, "newly-obtained-access-token-123", null);

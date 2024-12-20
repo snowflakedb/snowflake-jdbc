@@ -34,7 +34,7 @@
       "response": {
         "status": 302,
         "headers": {
-          "Location": "http://localhost:8007/snowflake/oauth-redirect?code=123"
+          "Location": "http://localhost:8007/snowflake/oauth-redirect?code=123&state=abc123"
         }
       }
     },

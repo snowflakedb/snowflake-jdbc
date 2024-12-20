@@ -44,7 +44,7 @@ public class OAuthAccessTokenProviderFactory {
       case OAUTH_AUTHORIZATION_CODE:
         assertContainsClientCredentials(loginInput, authenticatorType);
         return new OAuthAuthorizationCodeAccessTokenProvider(
-            browserHandler, browserAuthorizationTimeoutSeconds);
+            browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
       case OAUTH_CLIENT_CREDENTIALS:
         assertContainsClientCredentials(loginInput, authenticatorType);
         AssertUtil.assertTrue(

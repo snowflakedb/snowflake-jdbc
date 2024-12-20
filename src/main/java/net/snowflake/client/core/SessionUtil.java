@@ -328,7 +328,7 @@ public class SessionUtil {
     readCachedTokens(loginInput);
 
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
-      updateInputWithOAuthAccessToken(loginInput);
+      obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
 
     try {
@@ -339,23 +339,24 @@ public class SessionUtil {
           refreshOAuthAccessTokenAndUpdateInput(loginInput);
         } else {
           loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
-          obtainOAuthAccessTokenAndUpdateInput(loginInput);
+          fetchOAuthAccessTokenAndUpdateInput(loginInput);
         }
       }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
   }
 
-  private static void updateInputWithOAuthAccessToken(SFLoginInput loginInput) throws SFException {
-    if (loginInput.getOauthAccessToken() != null) { // Access Token cached
+  private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
+      throws SFException {
+    if (loginInput.getOauthAccessToken() != null) { // Access Token was cached
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
       loginInput.setToken(loginInput.getOauthAccessToken());
     } else { // Access Token not cached
-      obtainOAuthAccessTokenAndUpdateInput(loginInput);
+      fetchOAuthAccessTokenAndUpdateInput(loginInput);
     }
   }
 
-  private static void obtainOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
+  private static void fetchOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
       throws SFException {
     OAuthAccessTokenProviderFactory accessTokenProviderFactory =
         new OAuthAccessTokenProviderFactory(
@@ -387,9 +388,9 @@ public class SessionUtil {
       logger.debug(
           "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
           e);
-      deleteOAuthRefreshTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+      CredentialManager.deleteOAuthRefreshTokenCache(loginInput);
       loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
-      obtainOAuthAccessTokenAndUpdateInput(loginInput);
+      fetchOAuthAccessTokenAndUpdateInput(loginInput);
     }
   }
 
@@ -860,9 +861,15 @@ public class SessionUtil {
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
         }
 
+        if (errorCode == Constants.OAUTH_ACCESS_TOKEN_INVALID_GS_CODE) {
+          logger.debug("OAuth Access Token Invalid: {}", errorCode);
+          loginInput.setOauthAccessToken(null);
+          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+        }
+
         if (errorCode == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
           loginInput.setOauthAccessToken(null);
-          deleteOAuthAccessTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
 
           logger.debug("OAuth Access Token Expired: {}", errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
@@ -1007,7 +1014,7 @@ public class SessionUtil {
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       if (consentCacheIdToken) {
-        CredentialManager.writeIdToken(loginInput, ret);
+        CredentialManager.writeIdToken(loginInput, ret.getIdToken());
       }
       if (loginInput.getOauthAccessToken() != null) {
         CredentialManager.writeOAuthAccessToken(loginInput);
@@ -1018,7 +1025,7 @@ public class SessionUtil {
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.writeMfaToken(loginInput, ret);
+      CredentialManager.writeMfaToken(loginInput, ret.getMfaToken());
     }
 
     stopwatch.stop();
@@ -1063,14 +1070,6 @@ public class SessionUtil {
    */
   public static void deleteMfaTokenCache(String host, String user) {
     CredentialManager.deleteMfaTokenCache(host, user);
-  }
-
-  private static void deleteOAuthAccessTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthAccessTokenCache(host, user);
-  }
-
-  private static void deleteOAuthRefreshTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthRefreshTokenCache(host, user);
   }
 
   /**
