@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,10 +34,14 @@ class CredentialManagerTest {
       mock(SecureStorageManager.class);
 
   @BeforeAll
-  public static void init() {
+  public static void setUp() {
     CredentialManager.injectSecureStorageManager(mockSecureStorageManager);
   }
 
+  @AfterAll
+  public static void tearDown() {
+    CredentialManager.resetSecureStorageManager();
+  }
   @Test
   public void shouldCreateHostBasedOnExternalIdpUrl() throws SFException {
     SFLoginInput loginInput = createLoginInputWithExternalOAuth();
