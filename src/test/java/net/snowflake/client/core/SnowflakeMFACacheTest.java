@@ -317,7 +317,7 @@ public class SnowflakeMFACacheTest {
     try {
       SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockUnavailableAdvapi32Lib());
       SecureStorageWindowsManager manager = SecureStorageWindowsManager.builder();
-      CredentialManager.getInstance().injectSecureStorageManager(manager);
+      CredentialManager.injectSecureStorageManager(manager);
       unavailableLSSWindowsTestBody();
     } finally {
       SecureStorageWindowsManager.Advapi32LibManager.resetInstance();
@@ -329,7 +329,7 @@ public class SnowflakeMFACacheTest {
     try {
       testUnavailableLSSWindowsHelper();
     } finally {
-      CredentialManager.getInstance().resetSecureStorageManager();
+      CredentialManager.resetSecureStorageManager();
     }
   }
 
