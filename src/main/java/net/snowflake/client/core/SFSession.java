@@ -18,10 +18,10 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -815,14 +815,16 @@ public class SFSession extends SFBaseSession {
   }
 
   public Map<String, String> getHttpHeaders() {
-    if (getConnectionPropertiesMap() != null && getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders) != null) {
-      return getHttpHeaders((String) getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders));
+    if (getConnectionPropertiesMap() != null
+        && getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders) != null) {
+      return getHttpHeaders(
+          (String) getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders));
     }
     return Collections.emptyMap();
   }
 
   public Map<String, String> getHttpHeaders(String headers) {
-    if(headers!=null && !headers.isEmpty()) {
+    if (headers != null && !headers.isEmpty()) {
       Map<String, String> headersMap = new HashMap<>();
       for (String headerKeyPair : headers.split(";")) {
         String[] split = headerKeyPair.split(":");
