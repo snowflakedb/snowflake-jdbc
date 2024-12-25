@@ -189,7 +189,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
       if (logLevel != null && logPattern != null) {
         try {
-          logger.info("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
+          logger.debug("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
           JDK14Logger.instantiateLogger(logLevel, logPattern);
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
@@ -325,7 +325,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             properties.replace(property.getKey(), "900");
           }
         } catch (NumberFormatException ex) {
-          logger.info(
+          logger.warn(
               "Invalid data type for CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY: {}",
               property.getValue());
           continue;
@@ -337,6 +337,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       }
       sfSession.addSFSessionProperty(property.getKey(), property.getValue());
     }
+    sfSession.overrideConsoleHandlerWhenNecessary();
 
     // populate app id and version
     sfSession.addProperty(SFSessionProperty.APP_ID, appID);

@@ -5,16 +5,16 @@ package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderMultipleBatchIT extends LoaderBase {
   @Test
   public void testLoaderMultipleBatch() throws Exception {

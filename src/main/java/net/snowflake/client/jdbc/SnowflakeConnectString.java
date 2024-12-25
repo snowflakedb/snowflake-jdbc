@@ -106,7 +106,7 @@ public class SnowflakeConnectString implements Serializable {
             }
             parameters.put(k.toUpperCase(Locale.US), v);
           } catch (UnsupportedEncodingException ex0) {
-            logger.info("Failed to decode a parameter {}. Ignored.", p);
+            logger.warn("Failed to decode a parameter {}. Ignored.", p);
           }
         }
       }
@@ -216,7 +216,7 @@ public class SnowflakeConnectString implements Serializable {
           urlStr.append(v);
         }
       } catch (UnsupportedEncodingException ex) {
-        logger.info("Failed to encode a parameter {}. Ignored.", entry.getKey());
+        logger.warn("Failed to encode a parameter {}. Ignored.", entry.getKey());
       }
       ++cnt;
     }

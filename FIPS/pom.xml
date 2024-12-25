@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.20.1-SNAPSHOT</version>
+    <version>3.21.1-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.20.1-SNAPSHOT</version>
+  <version>3.21.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -511,6 +511,22 @@
                        <shadedPattern>${shadeBase}.grpc</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>META-INF.native.io_grpc_netty_shaded_netty_tcnative</pattern>
+                       <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>META-INF.native.libio_grpc_netty_shaded_netty_tcnative</pattern>
+                       <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>META-INF.native.io_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                       <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>META-INF.native.libio_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                       <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>org.checkerframework</pattern>
                        <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
                      </relocation>
@@ -525,6 +541,18 @@
                      <relocation>
                        <pattern>org.conscrypt</pattern>
                        <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>conscrypt_openjdk_jni</pattern>
+                       <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
+                       <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
+                       <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
                      </relocation>
                      <relocation>
                        <pattern>opencensus</pattern>
@@ -697,6 +725,13 @@
         <plugins>
           <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <version>${version.plugin.failsafe}</version>
             <configuration>
               <argLine>
@@ -741,6 +776,13 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <version>${version.plugin.failsafe}</version>
             <executions>
               <execution>

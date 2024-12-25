@@ -842,7 +842,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             chunks.stream().reduce(0L, (acc, chunk) -> acc + chunk.getRowCount(), Long::sum);
         long chunksSize = chunks.size();
 
-        logger.info(
+        logger.debug(
             "Completed processing {} {} chunks for query {} in {} ms. Download took {} ms (average: {} ms),"
                 + " parsing took {} ms (average: {} ms). Chunks uncompressed size: {} MB (average: {} MB),"
                 + " rows in chunks: {} (total: {}, average in chunk: {}), total memory used: {} MB",
@@ -1034,7 +1034,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               "Thread {} finish downloading chunk#{}", Thread.currentThread().getId(), chunkIndex);
           downloader.downloaderFutures.remove(chunkIndex);
           if (chunkIndex % 5 == 0) {
-            logger.info(
+            logger.debug(
                 "Processed {} chunk#{} in {} ms ({} out of {}) for query {}. Download took {} ms, "
                     + "parsing took {} ms. Chunk uncompressed size: {} kB, cols: {}, rows: {}, scrubbed URL: {}",
                 downloader.queryResultFormat == QueryResultFormat.ARROW ? "ARROW" : "JSON",
@@ -1050,7 +1050,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                 resultChunk.rowCount,
                 resultChunk.getScrubbedUrl());
           } else {
-            logger.debug(
+            logger.trace(
                 "Processed {} chunk#{} in {} ms ({} out of {}) for query {}. Download took {} ms, "
                     + "parsing took {} ms. Chunk uncompressed size: {} kB, cols: {}, rows: {}, scrubbed URL: {}",
                 downloader.queryResultFormat == QueryResultFormat.ARROW ? "ARROW" : "JSON",

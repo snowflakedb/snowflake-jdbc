@@ -6,14 +6,16 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Prepared statement integration tests */
 abstract class PreparedStatement0IT extends BaseJDBCTest {
-  private final String queryResultFormat;
-
   Connection init() throws SQLException {
+    return BaseJDBCTest.getConnection();
+  }
+
+  protected Connection getConn(String queryResultFormat) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -34,21 +36,17 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
   final String enableCacheReuse = "alter session set USE_CACHED_RESULT=true";
   final String tableFuncSQL = "select 1 from table(generator(rowCount => ?))";
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection con = init()) {
       con.createStatement().execute(createTableSQL);
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection con = init()) {
       con.createStatement().execute(deleteTableSQL);
     }
-  }
-
-  PreparedStatement0IT(String queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
   }
 }

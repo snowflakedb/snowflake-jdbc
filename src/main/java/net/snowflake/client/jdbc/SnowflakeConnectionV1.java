@@ -145,14 +145,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    logger.info("Initializing new connection");
+    logger.debug("Initializing new connection");
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Connection initialized successfully in {} ms. Session id: {}",
         stopwatch.elapsedMillis(),
         sfSession.getSessionId());
@@ -240,7 +240,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (sfSession != null) {
       sessionId = sfSession.getSessionId();
-      logger.info("Closing connection with session id: {}", sessionId);
+      logger.debug("Closing connection with session id: {}", sessionId);
     } else {
       logger.debug("Closing connection without associated session");
     }
@@ -280,7 +280,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Connection with session id: {} closed successfully in {} ms",
         sessionId,
         stopwatch.elapsedMillis());
@@ -726,7 +726,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-    return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
+    return new SfSqlArray(JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements);
   }
 
   @Override

@@ -7,10 +7,10 @@ import static net.snowflake.client.config.SFClientConfigParser.getConfigFilePath
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
@@ -18,8 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 public class SFClientConfigParserTest {
@@ -30,7 +30,7 @@ public class SFClientConfigParserTest {
 
   private Path configFilePath;
 
-  @After
+  @AfterEach
   public void cleanup() throws IOException {
     if (configFilePath != null) {
       Files.deleteIfExists(configFilePath);

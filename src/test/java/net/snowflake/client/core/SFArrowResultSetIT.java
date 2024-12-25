@@ -6,8 +6,8 @@ package net.snowflake.client.core;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,9 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.SkipOnThinJar;
-import net.snowflake.client.category.TestCategoryArrow;
+import net.snowflake.client.annotations.DontRunOnThinJar;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.BaseJDBCWithSharedConnectionIT;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -63,17 +62,12 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
-
-  /** Necessary to conditional ignore tests */
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
-
   private Random random = new Random();
 
   /**
@@ -83,11 +77,11 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   protected BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   /** temporary folder to store result files */
-  @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
+  @TempDir private File tempDir;
 
   /** Test the case that all results are returned in first chunk */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
+  @DontRunOnThinJar
   public void testNoOfflineData() throws Throwable {
     List<Field> fieldList = new ArrayList<>();
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -103,8 +97,9 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     int dataSize = (int) file.length();
     byte[] dataBytes = new byte[dataSize];
 
-    InputStream is = new FileInputStream(file);
-    is.read(dataBytes, 0, dataSize);
+    try (InputStream is = new FileInputStream(file)) {
+      is.read(dataBytes, 0, dataSize);
+    }
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
@@ -149,7 +144,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Testing the case that all data comes from chunk downloader */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
+  @DontRunOnThinJar
   public void testOnlyOfflineData() throws Throwable {
     final int colCount = 2;
     final int chunkCount = 10;
@@ -199,7 +194,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Testing the case that all data comes from chunk downloader */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
+  @DontRunOnThinJar
   public void testFirstResponseAndOfflineData() throws Throwable {
     final int colCount = 2;
     final int chunkCount = 10;
@@ -229,8 +224,9 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     int dataSize = (int) arrowFile.length();
     byte[] dataBytes = new byte[dataSize];
 
-    InputStream is = new FileInputStream(arrowFile);
-    is.read(dataBytes, 0, dataSize);
+    try (InputStream is = new FileInputStream(arrowFile)) {
+      is.read(dataBytes, 0, dataSize);
+    }
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
@@ -280,8 +276,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     public SnowflakeResultChunk getNextChunkToConsume() throws SnowflakeSQLException {
       if (currentFileIndex < resultFileNames.size()) {
         ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, null);
-        try {
-          InputStream is = new FileInputStream(resultFileNames.get(currentFileIndex));
+        try (InputStream is = new FileInputStream(resultFileNames.get(currentFileIndex))) {
           resultChunk.readArrowStream(is);
 
           currentFileIndex++;
@@ -380,12 +375,13 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   File createArrowFile(String fileName, Schema schema, Object[][] data, int rowsPerRecordBatch)
       throws IOException {
-    File file = resultFolder.newFile(fileName);
+    File file = new File(tempDir, fileName);
+    file.createNewFile();
     VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
 
-    try (ArrowWriter writer =
-        new ArrowStreamWriter(
-            root, new DictionaryProvider.MapDictionaryProvider(), new FileOutputStream(file))) {
+    try (FileOutputStream fos = new FileOutputStream(file);
+        ArrowWriter writer =
+            new ArrowStreamWriter(root, new DictionaryProvider.MapDictionaryProvider(), fos)) {
       writer.start();
 
       for (int i = 0; i < data[0].length; ) {
@@ -592,7 +588,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Test that first chunk containing struct vectors (used for timestamps) can be sorted */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
+  @DontRunOnThinJar
   public void testSortedResultChunkWithStructVectors() throws Throwable {
     try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table teststructtimestamp (t1 timestamp_ltz)");
@@ -638,8 +634,9 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
         int dataSize = (int) file.length();
         byte[] dataBytes = new byte[dataSize];
 
-        InputStream is = new FileInputStream(file);
-        is.read(dataBytes, 0, dataSize);
+        try (InputStream is = new FileInputStream(file)) {
+          is.read(dataBytes, 0, dataSize);
+        }
 
         resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
         resultSetSerializable.setFirstChunkStringData(
@@ -663,7 +660,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Test that the first chunk can be sorted */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
+  @DontRunOnThinJar
   public void testSortedResultChunk() throws Throwable {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
@@ -725,8 +722,9 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
         int dataSize = (int) file.length();
         byte[] dataBytes = new byte[dataSize];
 
-        InputStream is = new FileInputStream(file);
-        is.read(dataBytes, 0, dataSize);
+        try (InputStream is = new FileInputStream(file)) {
+          is.read(dataBytes, 0, dataSize);
+        }
 
         resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
         resultSetSerializable.setFirstChunkStringData(

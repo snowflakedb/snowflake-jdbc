@@ -2,9 +2,10 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,9 +14,8 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
@@ -23,19 +23,19 @@ import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Standalone test cases for the out of band telemetry service */
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class TelemetryServiceIT extends BaseJDBCTest {
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
   private boolean defaultState;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
     Map<String, String> connectionParams = getConnectionParameters();
@@ -45,7 +45,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     service.enable();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws InterruptedException {
     // wait 5 seconds while the service is flushing
     TimeUnit.SECONDS.sleep(5);
@@ -58,7 +58,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @SuppressWarnings("divzero")
-  @Ignore
+  @Disabled
   @Test
   public void testCreateException() {
     TelemetryService service = TelemetryService.getInstance();
@@ -82,7 +82,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   /** test wrong server url. */
-  @Ignore
+  @Disabled
   @Test
   public void testWrongServerURL() throws InterruptedException {
     TelemetryService service = TelemetryService.getInstance();
@@ -102,7 +102,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     assertThat("WrongServerURL do not block.", service.getEventCount() > count);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testCreateLog() {
     // this log will be delivered to snowflake
@@ -114,7 +114,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     service.report(log);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testCreateLogWithAWSSecret() {
     // this log will be delivered to snowflake
@@ -135,7 +135,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     service.report(log);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void stressTestCreateLog() {
     // this log will be delivered to snowflake
@@ -161,7 +161,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     sw.stop();
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testCreateLogInBlackList() {
     // this log will be delivered to snowflake
@@ -172,7 +172,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     service.report(log);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testCreateUrgentEvent() {
     // this log will be delivered to snowflake
@@ -184,7 +184,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     service.report(log);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void stressTestCreateUrgentEvent() {
     // this log will be delivered to snowflake
@@ -229,7 +229,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccountNotOnGithubActions
   public void testSnowflakeSQLLoggedExceptionOOBTelemetry()
       throws SQLException, InterruptedException {
     // make a connection to initialize telemetry instance
@@ -264,7 +264,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccountNotOnGithubActions
   public void testSQLFeatureNotSupportedOOBTelemetry() throws InterruptedException {
     // with null session, OOB telemetry will be thrown
     try {
@@ -290,7 +290,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    *
    * @throws SQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testHTAPTelemetry() throws SQLException {
     Properties properties = new Properties();
@@ -317,7 +317,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is true at
    * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOOBTelemetryEnabled() throws SQLException {
     Properties properties = new Properties();
@@ -334,7 +334,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is false at
    * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOOBTelemetryDisabled() throws SQLException {
     Properties properties = new Properties();
@@ -352,7 +352,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false but
    * CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is enabled on account level
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOOBTelemetryEnabledOnServerDisabledOnClient() throws SQLException {
     Properties properties = new Properties();
@@ -392,16 +392,15 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * telemetry should be used.
    *
    * <p>After running test, check for telemetry message in client_telemetry_v table.
-   *
-   * @throws SQLException
    */
-  @Test(expected = SQLFeatureNotSupportedException.class)
+  @Test
   public void testSqlFeatureNotSupportedExceptionIBTelemetry() throws SQLException {
     // make a connection to initialize telemetry instance
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
       // try to execute a statement that throws a SQLFeatureNotSupportedException
-      statement.execute("select 1", new int[] {});
+      assertThrows(
+          SQLFeatureNotSupportedException.class, () -> statement.execute("select 1", new int[] {}));
     }
   }
 }

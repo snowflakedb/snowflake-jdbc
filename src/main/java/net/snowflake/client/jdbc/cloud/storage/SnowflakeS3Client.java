@@ -352,7 +352,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     TransferManager tx = null;
     int retryCount = 0;
@@ -473,7 +473,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     int retryCount = 0;

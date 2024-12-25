@@ -4,17 +4,17 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementNoOpLatestIT {
   @Test
   public void testSnowflakeNoOpStatement() throws SQLException {

@@ -3,22 +3,22 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SLF4JJJCLWrapperLatestIT {
 
   /** Message last logged using SLF4JLogger. */
@@ -55,7 +55,7 @@ public class SLF4JJJCLWrapperLatestIT {
   Logger logger = (Logger) wrapper.getLogger();
   private final Appender<ILoggingEvent> testAppender = new TestAppender();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     levelToRestore = logger.getLevel();
     if (!testAppender.isStarted()) {
@@ -66,7 +66,7 @@ public class SLF4JJJCLWrapperLatestIT {
     logger.addAppender(testAppender);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     logger.setLevel(levelToRestore);
     logger.detachAppender(testAppender);

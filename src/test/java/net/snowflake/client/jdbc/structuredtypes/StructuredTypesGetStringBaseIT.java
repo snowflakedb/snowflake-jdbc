@@ -1,7 +1,8 @@
 package net.snowflake.client.jdbc.structuredtypes;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,15 +13,10 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 
 abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
+  public StructuredTypesGetStringBaseIT() {}
 
-  protected final ResultSetFormatType queryResultFormat;
-
-  public StructuredTypesGetStringBaseIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
-  }
-
-  protected Connection init() throws SQLException {
-    return initConnection(this.queryResultFormat);
+  protected Connection init(ResultSetFormatType queryResultFormat) throws SQLException {
+    return initConnection(queryResultFormat);
   }
 
   protected static Connection initConnection(ResultSetFormatType queryResultFormat)
@@ -50,10 +46,21 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
     return conn;
   }
 
-  protected void assertGetStringIsCompatible(ResultSet resultSet, String expected)
+  protected void assertResultSetIsCompatible(ResultSet resultSet, String expected)
       throws SQLException {
+    // Test getString
     String result = resultSet.getString(1);
     TestUtil.assertEqualsIgnoringWhitespace(expected, result);
+
+    // Test getObject
+    result = resultSet.getObject(1, String.class);
+    String resultCasted = (String) resultSet.getObject(1);
+    TestUtil.assertEqualsIgnoringWhitespace(expected, result);
+    TestUtil.assertEqualsIgnoringWhitespace(expected, resultCasted);
+
+    // Test getBytes
+    TestUtil.assertEqualsIgnoringWhitespace(
+        expected, new String(resultSet.getBytes(1), StandardCharsets.UTF_8));
   }
 
   protected void withFirstRow(

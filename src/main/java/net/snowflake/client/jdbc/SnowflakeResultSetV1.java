@@ -28,11 +28,11 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ArrowSqlInput;
-import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SfSqlArray;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -272,14 +272,21 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
         SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
     if (object == null) {
       return null;
-    } else if (object instanceof JsonSqlInput) {
-      return ((JsonSqlInput) object).getText();
-    } else if (object instanceof ArrowSqlInput) {
-      throw new SQLException(
-          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
-    } else {
-      return object;
     }
+    if (object instanceof SfSqlArray) {
+      return ((SfSqlArray) object).getText();
+    }
+    if (object instanceof StructObjectWrapper) {
+      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
+      if (resultSetMetaData.isStructuredTypeColumn(columnIndex)
+          && structObjectWrapper.getJsonString() != null) {
+        return structObjectWrapper.getJsonString();
+      }
+      if (structObjectWrapper.getObject() != null) {
+        return structObjectWrapper.getObject();
+      }
+    }
+    return object;
   }
 
   public Array getArray(int columnIndex) throws SQLException {
