@@ -63,6 +63,7 @@ public enum SFSessionProperty {
   @Deprecated
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class),
   PRIVATE_KEY_PWD("private_key_pwd", false, String.class),
+  AdditionalHttpHeaders("additional_http_headers", false, String.class),
   CLIENT_INFO("snowflakeClientInfo", false, String.class),
   ALLOW_UNDERSCORES_IN_HOST("allowUnderscoresInHost", false, Boolean.class),
 

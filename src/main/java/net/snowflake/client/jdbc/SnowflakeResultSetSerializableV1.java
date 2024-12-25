@@ -865,6 +865,19 @@ public class SnowflakeResultSetSerializableV1
           }
         }
 
+        if (sfStatement.getSFBaseSession() instanceof SFSession) {
+          Map<String, String> httpHeaders = ((SFSession) sfStatement.getSFBaseSession()).getHttpHeaders();
+          if (httpHeaders != null) {
+            for (Map.Entry<String, String> httpHeader : httpHeaders.entrySet()) {
+              logger.debug(
+                      "Add header key: {}, value: {}",
+                      httpHeader.getKey(),
+                      httpHeader.getValue());
+              this.chunkHeadersMap.put(httpHeader.getKey(), httpHeader.getValue());
+            }
+          }
+        }
+
         // parse chunk files metadata e.g. url and row count
         for (int idx = 0; idx < this.chunkFileCount; idx++) {
           JsonNode chunkNode = chunksNode.get(idx);
