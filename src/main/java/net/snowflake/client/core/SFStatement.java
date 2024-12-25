@@ -424,7 +424,6 @@ public class SFStatement extends SFBaseStatement {
           .setOCSPMode(session.getOCSPMode())
           .setHttpClientSettingsKey(session.getHttpClientKey())
           .setMaxRetries(session.getMaxHttpRetries())
-          .setAdditionalHttpHeadersForSnowsight(session.getHttpHeaders())
           .setQueryContextDTO(session.isAsyncSession() ? null : session.getQueryContextDTO());
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);

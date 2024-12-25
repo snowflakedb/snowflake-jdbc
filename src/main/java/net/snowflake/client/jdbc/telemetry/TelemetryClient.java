@@ -11,11 +11,12 @@ import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Future;
-
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
@@ -358,12 +359,6 @@ public class TelemetryClient implements Telemetry {
             HttpHeaders.AUTHORIZATION,
             "Snowflake Token=\"" + this.session.getSessionToken() + "\"");
       }
-
-      Map<String, String> httpHeaders = this.session.getHttpHeaders();
-      if (httpHeaders != null) {
-        httpHeaders.forEach(post::addHeader);
-      }
-
 
       String response = null;
 

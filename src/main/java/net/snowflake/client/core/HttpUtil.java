@@ -12,31 +12,24 @@ import com.amazonaws.ClientConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
-
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.time.Duration;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -50,9 +43,6 @@ import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
-import nl.altindag.ssl.SSLFactory;
-import nl.altindag.ssl.pem.util.PemUtils;
-import nl.altindag.ssl.util.CertificateUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -62,9 +52,10 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
@@ -382,22 +373,22 @@ public class HttpUtil {
       logger.debug("Omitting trust manager instantiation as configuration is not provided");
     }
     try {
-//      logger.debug(
-//          "Registering https connection socket factory with socks proxy disabled: {} and http "
-//              + "connection socket factory",
-//          socksProxyDisabled);
-//
-//      Registry<ConnectionSocketFactory> registry =
-//          RegistryBuilder.<ConnectionSocketFactory>create()
-//              .register(
-//                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
-//              .register("http", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
-//              .build();
+      logger.debug(
+          "Registering https connection socket factory with socks proxy disabled: {} and http "
+              + "connection socket factory",
+          socksProxyDisabled);
 
-////       Build a connection manager with enough connections
-//      connectionManager =
-//          new PoolingHttpClientConnectionManager(
-//              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
+      Registry<ConnectionSocketFactory> registry =
+          RegistryBuilder.<ConnectionSocketFactory>create()
+              .register(
+                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
+              .register("http", new SFConnectionSocketFactory())
+              .build();
+
+      // Build a connection manager with enough connections
+      connectionManager =
+          new PoolingHttpClientConnectionManager(
+              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
       int maxConnections =
           SystemUtil.convertSystemPropertyToIntValue(
               JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
@@ -408,14 +399,14 @@ public class HttpUtil {
           "Max connections total in connection pooling manager: {}; max connections per route: {}",
           maxConnections,
           maxConnectionsPerRoute);
-//      connectionManager.setMaxTotal(maxConnections);
-//      connectionManager.setDefaultMaxPerRoute(maxConnections);
+      connectionManager.setMaxTotal(maxConnections);
+      connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
       logger.debug("Disabling cookie management for http client");
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
-//              .setConnectionManager(connectionManager)
+              .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
@@ -451,45 +442,17 @@ public class HttpUtil {
           credentialsProvider.setCredentials(authScope, credentials);
           httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
-        if (key.getProxyCrtFile() != null && !key.getProxyCrtFile().isEmpty()) {
-          httpClientBuilder.setSSLContext(buildSslContext(key.getProxyCrtFile()));
-        }
       }
-      httpClientBuilder.setConnectionTimeToLive(timeToLive,TimeUnit.SECONDS);
-      httpClientBuilder.setMaxConnPerRoute(maxConnectionsPerRoute);
-      httpClientBuilder.setMaxConnTotal(maxConnections);
       httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
       if (downloadUnCompressed) {
         logger.debug("Disabling content compression for http client");
         httpClientBuilder = httpClientBuilder.disableContentCompression();
       }
-
       return httpClientBuilder.build();
-    } catch (Exception ex) {
+    } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
     }
   }
-
-  private static SSLContext buildSslContext(String crtFile) {
-    InputStream targetStream;
-    try {
-      File initialFile = new File(crtFile);
-      targetStream = new FileInputStream(initialFile);
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException("crt file not found", e);
-    }
-    List<Certificate> certificates = CertificateUtils.loadCertificate(targetStream);
-
-    SSLFactory sslFactory = SSLFactory.builder()
-            .withTrustMaterial(certificates)
-            .build();
-
-
-    return sslFactory.getSslContext();
-  }
-
-
-
 
   public static void updateRoutePlanner(HttpClientSettingsKey key) {
     if (httpClientRoutePlanner.containsKey(key)

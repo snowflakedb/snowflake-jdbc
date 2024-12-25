@@ -533,7 +533,6 @@ public abstract class SFBaseSession {
       String proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
       String proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
       String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
-      String proxyCrtFile = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_CRT_FILE);
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
       String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
@@ -547,7 +546,6 @@ public abstract class SFBaseSession {
               proxyPassword,
               proxyProtocol,
               userAgentSuffix,
-              proxyCrtFile,
               gzipDisabled);
 
       logHttpClientInitInfo(ocspAndProxyAndGzipKey);
@@ -565,7 +563,6 @@ public abstract class SFBaseSession {
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
       String httpsProxyUser = systemGetProperty("https.proxyUser");
-      String proxyCrtFile = systemGetProperty("https.proxyCrtFile");
       String httpsProxyPassword = systemGetProperty("https.proxyPassword");
       String httpProxyProtocol = systemGetProperty("http.proxyProtocol");
       String noProxy = systemGetEnv("NO_PROXY");
@@ -630,7 +627,6 @@ public abstract class SFBaseSession {
                   httpsProxyPassword,
                   "https",
                   userAgentSuffix,
-                  proxyCrtFile,
                   gzipDisabled);
           logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
@@ -654,7 +650,6 @@ public abstract class SFBaseSession {
                   httpProxyPassword,
                   "http",
                   userAgentSuffix,
-                  proxyCrtFile,
                   gzipDisabled);
           logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else {
