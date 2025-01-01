@@ -62,6 +62,8 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -372,22 +374,22 @@ public class HttpUtil {
       logger.debug("Omitting trust manager instantiation as configuration is not provided");
     }
     try {
-//      logger.debug(
-//          "Registering https connection socket factory with socks proxy disabled: {} and http "
-//              + "connection socket factory",
-//          socksProxyDisabled);
-//
-//      Registry<ConnectionSocketFactory> registry =
-//          RegistryBuilder.<ConnectionSocketFactory>create()
-//              .register(
-//                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
-//              .register("http", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
-//              .build();
+      logger.debug(
+          "Registering https connection socket factory with socks proxy disabled: {} and http "
+              + "connection socket factory",
+          socksProxyDisabled);
 
-////       Build a connection manager with enough connections
-//      connectionManager =
-//          new PoolingHttpClientConnectionManager(
-//              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
+      Registry<ConnectionSocketFactory> registry =
+          RegistryBuilder.<ConnectionSocketFactory>create()
+              .register(
+                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
+                  .register("http", new SFConnectionSocketFactory())
+              .build();
+
+//       Build a connection manager with enough connections
+      connectionManager =
+          new PoolingHttpClientConnectionManager(
+              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
       int maxConnections =
           SystemUtil.convertSystemPropertyToIntValue(
               JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
@@ -398,14 +400,14 @@ public class HttpUtil {
           "Max connections total in connection pooling manager: {}; max connections per route: {}",
           maxConnections,
           maxConnectionsPerRoute);
-//      connectionManager.setMaxTotal(maxConnections);
-//      connectionManager.setDefaultMaxPerRoute(maxConnections);
+      connectionManager.setMaxTotal(maxConnections);
+      connectionManager.setDefaultMaxPerRoute(maxConnections);
 
       logger.debug("Disabling cookie management for http client");
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
-//              .setConnectionManager(connectionManager)
+              .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
@@ -441,9 +443,9 @@ public class HttpUtil {
           credentialsProvider.setCredentials(authScope, credentials);
           httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
-        if (key.getProxyCrtFile() != null && !key.getProxyCrtFile().isEmpty()) {
-          httpClientBuilder.setSSLContext(buildSslContext(key.getProxyCrtFile()));
-        }
+//        if (key.getProxyCrtFile() != null && !key.getProxyCrtFile().isEmpty()) {
+//          httpClientBuilder.setSSLContext(buildSslContext(key.getProxyCrtFile()));
+//        }
       }
       httpClientBuilder.setConnectionTimeToLive(timeToLive,TimeUnit.SECONDS);
       httpClientBuilder.setMaxConnPerRoute(maxConnectionsPerRoute);

@@ -5,7 +5,7 @@
   <groupId>net.snowflake</groupId>
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.17.7</version>
+  <version>3.17.7-test-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
