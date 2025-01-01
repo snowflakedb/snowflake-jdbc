@@ -74,7 +74,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-            "",
             false);
     HttpClientSettingsKey testKey2 =
         new HttpClientSettingsKey(
@@ -86,7 +85,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-            "",
             false);
     // Create an HTTPClientKey with all default settings
     HttpClientSettingsKey testKey3 = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED, "jdbc", false);
@@ -110,7 +108,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-            "",
             false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     S3HttpUtil.setProxyForS3(testKey, clientConfig);
@@ -162,7 +159,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-            "",
             false);
     HttpUtil.setProxyForAzure(testKey, op);
     Proxy proxy = op.getProxy();
@@ -206,14 +202,13 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-                "",
             false);
     // Assert there is 1 entry in the hashmap now
     HttpUtil.getHttpClient(key1);
     assertEquals(1, HttpUtil.httpClient.size());
     HttpClientSettingsKey key2 =
         new HttpClientSettingsKey(
-            null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https", "jdbc", "",false);
+            null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https", "jdbc", false);
     HttpUtil.getHttpClient(key2);
     // Assert there is still 1 entry because key is re-used when only proxy difference is
     // nonProxyHosts
@@ -230,7 +225,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-                "",
             false);
     // Assert proxy with different host generates new entry in httpClient map
     HttpUtil.getHttpClient(key3);
@@ -251,7 +245,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-                "",
             false);
     // Assert there is 1 entry in the hashmap now
     HttpUtil.getHttpClient(key1);
@@ -266,7 +259,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "jdbc",
-                "",
             true);
     HttpUtil.getHttpClient(key2);
     // Assert there are 2 entries because gzip has changed
@@ -281,7 +273,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "https",
             "odbc",
-                "",
             true);
     HttpUtil.getHttpClient(key3);
     // Assert there are 3 entries because userAgentSuffix has changed
@@ -326,7 +317,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "http",
             "jdbc",
-                "",
             Boolean.valueOf(false));
     assertTrue(expectedWithProxy.equals(settingsKey));
 
@@ -343,7 +333,6 @@ public class CoreUtilsMiscellaneousTest {
             "pw",
             "http",
             "jdbc",
-                "",
             Boolean.valueOf(true));
     assertTrue(expectedWithProxy.equals(settingsKey));
 
@@ -359,7 +348,7 @@ public class CoreUtilsMiscellaneousTest {
   @Test
   public void testNullAndEmptyProxySettingsForS3() {
     HttpClientSettingsKey testKey =
-        new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "","", false);
+        new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     S3HttpUtil.setProxyForS3(testKey, clientConfig);
     assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());

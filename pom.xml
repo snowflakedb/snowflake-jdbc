@@ -99,7 +99,7 @@
     <version.plugin.gpg>3.0.1</version.plugin.gpg>
     <version.plugin.install>3.1.1</version.plugin.install>
     <version.plugin.jacoco>0.8.8</version.plugin.jacoco>
-    <version.plugin.japicmp>0.17.2</version.plugin.japicmp>
+<!--    <version.plugin.japicmp>0.17.2</version.plugin.japicmp>-->
     <version.plugin.jar>3.3.0</version.plugin.jar>
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
     <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
@@ -795,11 +795,11 @@
 <!--          <artifactId>sortpom-maven-plugin</artifactId>-->
 <!--          <version>${version.plugin.sortpom}</version>-->
 <!--        </plugin>-->
-        <plugin>
-          <groupId>com.github.siom79.japicmp</groupId>
-          <artifactId>japicmp-maven-plugin</artifactId>
-          <version>${version.plugin.japicmp}</version>
-        </plugin>
+<!--        <plugin>-->
+<!--          <groupId>com.github.siom79.japicmp</groupId>-->
+<!--          <artifactId>japicmp-maven-plugin</artifactId>-->
+<!--          <version>${version.plugin.japicmp}</version>-->
+<!--        </plugin>-->
         <plugin>
           <groupId>com.spotify.fmt</groupId>
           <artifactId>fmt-maven-plugin</artifactId>
@@ -927,34 +927,34 @@
 <!--          </execution>-->
 <!--        </executions>-->
 <!--      </plugin>-->
-      <plugin>
-        <groupId>com.github.siom79.japicmp</groupId>
-        <artifactId>japicmp-maven-plugin</artifactId>
-        <configuration>
-          <parameter>
-            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
-            <ignoreMissingClasses>false</ignoreMissingClasses>
-            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
-            <includes>
-              <include>com.snowflake</include>
-              <include>net.snowflake</include>
-            </includes>
-            <excludes>
-              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>
-              <exclude>${shadeBase}</exclude>
-            </excludes>
-          </parameter>
-        </configuration>
-        <executions>
-          <execution>
-            <id>japicmp</id>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>com.github.siom79.japicmp</groupId>-->
+<!--        <artifactId>japicmp-maven-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <parameter>-->
+<!--            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>-->
+<!--            <ignoreMissingClasses>false</ignoreMissingClasses>-->
+<!--            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>-->
+<!--            <includes>-->
+<!--              <include>com.snowflake</include>-->
+<!--              <include>net.snowflake</include>-->
+<!--            </includes>-->
+<!--            <excludes>-->
+<!--              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>-->
+<!--              <exclude>${shadeBase}</exclude>-->
+<!--            </excludes>-->
+<!--          </parameter>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>japicmp</id>-->
+<!--            <goals>-->
+<!--              <goal>cmp</goal>-->
+<!--            </goals>-->
+<!--            <phase>verify</phase>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
@@ -1857,19 +1857,19 @@
               2. maven-dependency-lugin analyst
             in jenkins node would cause http connection failure. Temporarily disable them.
           -->
-          <plugin>
-            <groupId>com.github.siom79.japicmp</groupId>
-            <artifactId>japicmp-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>japicmp</id>
-                <goals>
-                  <goal>cmp</goal>
-                </goals>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
+<!--          <plugin>-->
+<!--            <groupId>com.github.siom79.japicmp</groupId>-->
+<!--            <artifactId>japicmp-maven-plugin</artifactId>-->
+<!--            <executions>-->
+<!--              <execution>-->
+<!--                <id>japicmp</id>-->
+<!--                <goals>-->
+<!--                  <goal>cmp</goal>-->
+<!--                </goals>-->
+<!--                <phase>none</phase>-->
+<!--              </execution>-->
+<!--            </executions>-->
+<!--          </plugin>-->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>

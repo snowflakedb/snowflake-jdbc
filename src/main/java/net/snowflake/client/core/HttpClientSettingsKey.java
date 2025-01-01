@@ -24,7 +24,6 @@ public class HttpClientSettingsKey implements Serializable {
   // Adds a suffix to the user agent header in the http requests made by the jdbc driver.
   // More details in SNOW-717606
   private String userAgentSuffix = "";
-  private String proxyCrtFile = "";
 
   private Boolean gzipDisabled = false;
 
@@ -51,29 +50,6 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
 
-  public HttpClientSettingsKey(
-          OCSPMode mode,
-          String host,
-          int port,
-          String nonProxyHosts,
-          String user,
-          String password,
-          String scheme,
-          String userAgentSuffix,
-          String proxyCrtFile,
-          Boolean gzipDisabled) {
-    this.useProxy = true;
-    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
-    this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
-    this.proxyPort = port;
-    this.proxyCrtFile = proxyCrtFile;
-    this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
-    this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
-    this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
-    this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
-    this.gzipDisabled = gzipDisabled;
-    this.userAgentSuffix = !Strings.isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
-  }
 
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -178,9 +154,6 @@ public class HttpClientSettingsKey implements Serializable {
     return gzipDisabled;
   }
 
-  public String getProxyCrtFile() {
-    return proxyCrtFile;
-  }
 
   @Override
   public String toString() {

@@ -48,7 +48,6 @@ public enum SFSessionProperty {
   PROXY_HOST("proxyHost", false, String.class),
   PROXY_PORT("proxyPort", false, String.class),
   PROXY_USER("proxyUser", false, String.class),
-  PROXY_CRT_FILE("proxyCrtFile", false, String.class),
   PROXY_PASSWORD("proxyPassword", false, String.class),
   NON_PROXY_HOSTS("nonProxyHosts", false, String.class),
   PROXY_PROTOCOL("proxyProtocol", false, String.class),
