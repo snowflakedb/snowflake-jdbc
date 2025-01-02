@@ -1,12 +1,12 @@
 
 # point_of_contact: the owner of this repository, can be a GitHub user or GitHub team
-point_of_contact: @snowflakedb/client 
+point_of_contact: @snowflakedb/snow-drivers-warsaw
 
 # production: whether this repository meets the criteria for being "production", see https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/2239988967/Production+Repository+Criteria for criteria
-production: true
+production: false
 
 # distributed: whether any source code in this repository is distributed directly to customers (e.g. driver and frontend software)
-distributed: true
+distributed: false
 
 # modified: whether any open source dependencies in this repository have been modified 
 modified: true
