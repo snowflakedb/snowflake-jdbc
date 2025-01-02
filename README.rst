@@ -195,17 +195,20 @@ Run the maven ``verify`` goal.
 
 where ``category`` is the class name under the package ``net.snowflake.client.category``.
 
-Set new version
+Prepare new version
 ---------------
 
-1. Run maven command with passing specific version:
+Run script passing desired version:
 
 .. code-block:: bash
 
-   mvn -f parent-pom.xml versions:set -DnewVersion=... -DgenerateBackupPoms=false
+   ./prepareNewVersion.sh 3.100.42
 
-2. Set manually the same version in field ``implementVersion`` in ``src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java`` when it's version for release or without ``-SNAPSHOT`` suffix between releases
-3. Add entry in ``CHANGELOG.rst`` for release versions
+Add SNAPSHOT suffix when necessary:
+
+.. code-block:: bash
+
+   ./prepareNewVersion.sh 3.100.42-SNAPSHOT
 
 Test Class Naming Convention
 ----------------------------
