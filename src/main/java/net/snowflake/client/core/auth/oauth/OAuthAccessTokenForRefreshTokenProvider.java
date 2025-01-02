@@ -38,7 +38,7 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
       return requestForAccessToken(loginInput, tokenRequest);
     } catch (Exception e) {
       logger.error(
-          "Error during OAuth client credentials code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)",
+          "Error during OAuth refresh token flow.",
           e);
       throw new SFException(e, ErrorCode.OAUTH_REFRESH_TOKEN_FLOW_ERROR, e.getMessage());
     }
