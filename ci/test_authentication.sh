@@ -25,5 +25,5 @@ docker run \
   -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
   -v $WORKSPACE:/mnt/workspace \
   --rm \
-  jdbc_testing \
+  jdbc_testing_complete \
   "/mnt/host/ci/container/test_authentication.sh"
