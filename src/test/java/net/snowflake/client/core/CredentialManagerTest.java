@@ -42,6 +42,7 @@ class CredentialManagerTest {
   public static void tearDown() {
     CredentialManager.resetSecureStorageManager();
   }
+
   @Test
   public void shouldCreateHostBasedOnExternalIdpUrl() throws SFException {
     SFLoginInput loginInput = createLoginInputWithExternalOAuth();

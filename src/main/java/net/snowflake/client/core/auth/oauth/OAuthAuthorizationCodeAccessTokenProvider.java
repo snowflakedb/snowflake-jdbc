@@ -26,12 +26,9 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
@@ -40,8 +37,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 
 @SnowflakeJdbcInternalApi
 public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenProvider {
@@ -151,55 +146,13 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
 
   private static CompletableFuture<String> setupRedirectURIServerForAuthorizationCode(
       HttpServer httpServer, State expectedState) {
-    CompletableFuture<String> accessTokenFuture = new CompletableFuture<>();
+    CompletableFuture<String> authorizationCodeFuture = new CompletableFuture<>();
     httpServer.createContext(
         REDIRECT_URI_ENDPOINT,
-        exchange -> {
-          Map<String, String> urlParams =
-              URLEncodedUtils.parse(exchange.getRequestURI(), StandardCharsets.UTF_8).stream()
-                  .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-          String response = handleRedirectRequest(urlParams, accessTokenFuture, expectedState);
-          exchange.sendResponseHeaders(200, response.length());
-          exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
-          exchange.getResponseBody().close();
-        });
+        new AuthorizationCodeRedirectRequestHandler(authorizationCodeFuture, expectedState));
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();
-    return accessTokenFuture;
-  }
-
-  private static String handleRedirectRequest(
-      Map<String, String> urlParams,
-      CompletableFuture<String> accessTokenFuture,
-      State expectedState) {
-    String response;
-    if (urlParams.containsKey("error")) {
-      response = "Authorization error: " + urlParams.get("error");
-      accessTokenFuture.completeExceptionally(
-          new SFException(
-              ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-              String.format(
-                  "Error during authorization: %s, %s",
-                  urlParams.get("error"), urlParams.get("error_description"))));
-    } else if (!expectedState.getValue().equals(urlParams.get("state"))) {
-      accessTokenFuture.completeExceptionally(
-          new SFException(
-              ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-              String.format(
-                  "Invalid authorization request redirection state: %s, expected: %s",
-                  urlParams.get("state"), expectedState.getValue())));
-      response = "Authorization error: invalid authorization request redirection state";
-    } else {
-      String authorizationCode = urlParams.get("code");
-      if (!StringUtils.isNullOrEmpty(authorizationCode)) {
-        logger.debug("Received authorization code on redirect URI");
-        response = "Authorization completed successfully.";
-        accessTokenFuture.complete(authorizationCode);
-      } else {
-        response = "Authorization error: authorization code has not been returned to the driver.";
-      }
-    }
-    return response;
+    return authorizationCodeFuture;
   }
 
   private static HttpServer createHttpServer(SFOauthLoginInput loginInput) throws IOException {
