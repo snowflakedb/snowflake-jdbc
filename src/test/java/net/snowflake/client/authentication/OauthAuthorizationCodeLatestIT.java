@@ -1,24 +1,8 @@
 package net.snowflake.client.authentication;
-
 import static net.snowflake.client.authentication.AuthConnectionParameters.*;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -37,12 +21,28 @@ public class OauthAuthorizationCodeLatestIT {
         AuthTestHelper.deleteIdToken();
     }
 
+    //AUTHORIZATION CODE - OAUTH BY OKTA
+
     @Test
-    void shouldAuthenticateUsingOauthOktaAuthorizationCode() throws InterruptedException {
+    void shouldAuthenticateUsingExternalOauthOktaAuthorizationCode() throws InterruptedException {
         Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
 
         Thread provideCredentialsThread =
                 new Thread(() -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
+        Thread connectThread =
+                new Thread(() -> authTestHelper.connectAndExecuteSimpleQuery(properties, null));
+
+        authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+        authTestHelper.verifyExceptionIsNotThrown();
+    }
+
+
+    //AUTHORIZATION CODE - OAUTH BY SNOWFLAKE
+    @Test
+    void shouldAuthenticateUsingSnowflakeOauthOktaAuthorizationCode() throws InterruptedException {
+        Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
+        Thread provideCredentialsThread =
+                new Thread(() -> authTestHelper.provideCredentials("internalOauthSnowflakeSuccess", login, password));
         Thread connectThread =
                 new Thread(() -> authTestHelper.connectAndExecuteSimpleQuery(properties, null));
 

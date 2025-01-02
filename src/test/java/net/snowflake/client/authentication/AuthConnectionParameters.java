@@ -67,9 +67,12 @@ public class AuthConnectionParameters {
   static Properties getOAuthSnowflakeAuthorizationCodeConnectionParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
-    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
-    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_REDIRECT_URI")); // ????? really
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET"));
+    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI"));
+    properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
+
+
     return properties;
   }
 
