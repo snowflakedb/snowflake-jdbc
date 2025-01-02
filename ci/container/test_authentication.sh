@@ -15,7 +15,7 @@ $MVNW_EXE -DjenkinsIT \
     -Djava.io.tmpdir=$WORKSPACE \
     -Djacoco.skip.instrument=true \
     -Dskip.unitTests=true \
-    -DintegrationTestSuites=AuthenticationTestSuite \
+    -DintegrationTestSuites=OnlyTestingTestSuite \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     -Dnot-self-contained-jar \
     verify \
