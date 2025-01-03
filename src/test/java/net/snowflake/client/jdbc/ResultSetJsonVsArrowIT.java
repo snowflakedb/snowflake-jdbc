@@ -70,7 +70,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       assertNotNull(rs.getTimestamp(8));
       assertNotNull(rs.getTimestamp(9));
 
-      assertNotNull(rs.getObject(1));
+      assertNotNull(rs.getDate(10));
       assertNotNull(rs.getTime(11));
       assertNotNull(rs.getTime(12));
       assertNotNull(rs.getTime(13));
