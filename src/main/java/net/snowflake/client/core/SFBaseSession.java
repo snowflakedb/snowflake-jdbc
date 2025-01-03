@@ -718,12 +718,16 @@ public abstract class SFBaseSession {
     Boolean disableOCSPChecks =
         (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
+    if (insecureMode != null && insecureMode) {
+      logger.warn(
+          "The 'insecureMode' connection property is deprecated. Please use 'disableOCSPChecks' instead.");
+    }
 
     if ((disableOCSPChecks != null && insecureMode != null)
         && (disableOCSPChecks != insecureMode)) {
       logger.error(
           "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
-              + "Please ensure both properties are set to the same value or unset insecureMode.");
+              + "Please unset insecureMode.");
       throw new SnowflakeSQLException(
           ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
           "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
