@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
+import java.net.URI;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -12,9 +13,6 @@ public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
 
   private SecureStorageManager secureStorageManager;
-
-  private static final String ID_TOKEN = "ID_TOKEN";
-  private static final String MFA_TOKEN = "MFATOKEN";
 
   private CredentialManager() {
     initSecureStorageManager();
@@ -37,9 +35,9 @@ public class CredentialManager {
   }
 
   /** Helper function for tests to go back to normal settings. */
-  void resetSecureStorageManager() {
+  static void resetSecureStorageManager() {
     logger.debug("Resetting the secure storage manager");
-    initSecureStorageManager();
+    getInstance().initSecureStorageManager();
   }
 
   /**
@@ -47,9 +45,9 @@ public class CredentialManager {
    *
    * @param manager SecureStorageManager
    */
-  void injectSecureStorageManager(SecureStorageManager manager) {
+  static void injectSecureStorageManager(SecureStorageManager manager) {
     logger.debug("Injecting secure storage manager");
-    secureStorageManager = manager;
+    getInstance().secureStorageManager = manager;
   }
 
   private static class CredentialManagerHolder {
@@ -65,12 +63,17 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach id token
    */
-  void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached id token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, ID_TOKEN);
+    getInstance()
+        .fillCachedCredential(
+            loginInput,
+            loginInput.getHostFromServerUrl(),
+            loginInput.getUserName(),
+            CachedCredentialType.ID_TOKEN);
   }
 
   /**
@@ -78,32 +81,62 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach mfa token
    */
-  void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
+  static void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
     logger.debug(
         "Looking for cached mfa token for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    fillCachedCredential(loginInput, MFA_TOKEN);
+    getInstance()
+        .fillCachedCredential(
+            loginInput,
+            loginInput.getHostFromServerUrl(),
+            loginInput.getUserName(),
+            CachedCredentialType.MFA_TOKEN);
   }
 
   /**
-   * Reuse the cached token stored locally
+   * Reuse the cached OAuth access token stored locally
    *
-   * @param loginInput login input to attach token
-   * @param credType credential type to retrieve
+   * @param loginInput login input to attach access token
    */
-  synchronized void fillCachedCredential(SFLoginInput loginInput, String credType)
-      throws SFException {
+  static void fillCachedOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Looking for cached OAuth access token for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .fillCachedCredential(
+            loginInput, host, loginInput.getUserName(), CachedCredentialType.OAUTH_ACCESS_TOKEN);
+  }
+
+  /**
+   * Reuse the cached OAuth refresh token stored locally
+   *
+   * @param loginInput login input to attach refresh token
+   */
+  static void fillCachedOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Looking for cached OAuth refresh token for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .fillCachedCredential(
+            loginInput, host, loginInput.getUserName(), CachedCredentialType.OAUTH_REFRESH_TOKEN);
+  }
+
+  /** Reuse the cached token stored locally */
+  synchronized void fillCachedCredential(
+      SFLoginInput loginInput, String host, String username, CachedCredentialType credType) {
     if (secureStorageManager == null) {
       logMissingJnaJarForSecureLocalStorage();
       return;
     }
 
-    String cred = null;
+    String cred;
     try {
-      cred =
-          secureStorageManager.getCredential(
-              loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
+      cred = secureStorageManager.getCredential(host, username, credType.getValue());
     } catch (NoClassDefFoundError error) {
       logMissingJnaJarForSecureLocalStorage();
       return;
@@ -113,64 +146,98 @@ public class CredentialManager {
       logger.debug("Retrieved {} is null", credType);
     }
 
-    // cred can be null
-    if (credType == ID_TOKEN) {
-      logger.debug(
-          "Setting {}id token for user: {}, host: {}",
-          cred == null ? "null " : "",
-          loginInput.getUserName(),
-          loginInput.getHostFromServerUrl());
-      loginInput.setIdToken(cred);
-    } else if (credType == MFA_TOKEN) {
-      logger.debug(
-          "Setting {}mfa token for user: {}, host: {}",
-          cred == null ? "null " : "",
-          loginInput.getUserName(),
-          loginInput.getHostFromServerUrl());
-      loginInput.setMfaToken(cred);
-    } else {
-      logger.debug("Unrecognized type {} for local cached credential", credType);
+    logger.debug(
+        "Setting {}{} token for user: {}, host: {}",
+        cred == null ? "null " : "",
+        credType.getValue(),
+        username,
+        host);
+    switch (credType) {
+      case ID_TOKEN:
+        loginInput.setIdToken(cred);
+        break;
+      case MFA_TOKEN:
+        loginInput.setMfaToken(cred);
+        break;
+      case OAUTH_ACCESS_TOKEN:
+        loginInput.setOauthAccessToken(cred);
+        break;
+      case OAUTH_REFRESH_TOKEN:
+        loginInput.setOauthRefreshToken(cred);
+        break;
+      default:
+        logger.debug("Unrecognized type {} for local cached credential", credType);
+        break;
     }
-    return;
   }
 
-  /**
-   * Store ID Token
-   *
-   * @param loginInput loginInput to denote to the cache
-   * @param loginOutput loginOutput to denote to the cache
-   */
-  void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+  static void writeIdToken(SFLoginInput loginInput, String idToken) throws SFException {
     logger.debug(
         "Caching id token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(loginInput, loginOutput.getIdToken(), ID_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput.getHostFromServerUrl(),
+            loginInput.getUserName(),
+            idToken,
+            CachedCredentialType.ID_TOKEN);
   }
 
-  /**
-   * Store MFA Token
-   *
-   * @param loginInput loginInput to denote to the cache
-   * @param loginOutput loginOutput to denote to the cache
-   */
-  void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+  static void writeMfaToken(SFLoginInput loginInput, String mfaToken) throws SFException {
     logger.debug(
         "Caching mfa token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl());
-    writeTemporaryCredential(loginInput, loginOutput.getMfaToken(), MFA_TOKEN);
+    getInstance()
+        .writeTemporaryCredential(
+            loginInput.getHostFromServerUrl(),
+            loginInput.getUserName(),
+            mfaToken,
+            CachedCredentialType.MFA_TOKEN);
   }
 
   /**
-   * Store the temporary credential
+   * Store OAuth Access Token
    *
    * @param loginInput loginInput to denote to the cache
-   * @param cred the credential
-   * @param credType type of the credential
    */
-  synchronized void writeTemporaryCredential(SFLoginInput loginInput, String cred, String credType)
-      throws SFException {
+  static void writeOAuthAccessToken(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Caching OAuth access token in a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .writeTemporaryCredential(
+            host,
+            loginInput.getUserName(),
+            loginInput.getOauthAccessToken(),
+            CachedCredentialType.OAUTH_ACCESS_TOKEN);
+  }
+
+  /**
+   * Store OAuth Refresh Token
+   *
+   * @param loginInput loginInput to denote to the cache
+   */
+  static void writeOAuthRefreshToken(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Caching OAuth refresh token in a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .writeTemporaryCredential(
+            host,
+            loginInput.getUserName(),
+            loginInput.getOauthRefreshToken(),
+            CachedCredentialType.OAUTH_REFRESH_TOKEN);
+  }
+
+  /** Store the temporary credential */
+  synchronized void writeTemporaryCredential(
+      String host, String user, String cred, CachedCredentialType credType) {
     if (Strings.isNullOrEmpty(cred)) {
       logger.debug("No {} is given.", credType);
       return; // no credential
@@ -182,25 +249,62 @@ public class CredentialManager {
     }
 
     try {
-      secureStorageManager.setCredential(
-          loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
+      secureStorageManager.setCredential(host, user, credType.getValue(), cred);
     } catch (NoClassDefFoundError error) {
       logMissingJnaJarForSecureLocalStorage();
     }
   }
 
   /** Delete the id token cache */
-  void deleteIdTokenCache(String host, String user) {
+  static void deleteIdTokenCache(String host, String user) {
     logger.debug(
         "Removing cached id token from a secure storage for user: {}, host: {}", user, host);
-    deleteTemporaryCredential(host, user, ID_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.ID_TOKEN);
   }
 
   /** Delete the mfa token cache */
-  void deleteMfaTokenCache(String host, String user) {
+  static void deleteMfaTokenCache(String host, String user) {
     logger.debug(
         "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
-    deleteTemporaryCredential(host, user, MFA_TOKEN);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.MFA_TOKEN);
+  }
+
+  /** Delete the OAuth access token cache */
+  static void deleteOAuthAccessTokenCache(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Removing cached OAuth access token from a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .deleteTemporaryCredential(
+            host, loginInput.getUserName(), CachedCredentialType.OAUTH_ACCESS_TOKEN);
+  }
+
+  /** Delete the OAuth refresh token cache */
+  static void deleteOAuthRefreshTokenCache(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .deleteTemporaryCredential(
+            host, loginInput.getUserName(), CachedCredentialType.OAUTH_REFRESH_TOKEN);
+  }
+
+  /**
+   * Method required for OAuth token caching, since actual token is not Snowflake account-specific,
+   * but rather IdP-specific
+   */
+  static String getHostForOAuthCacheKey(SFLoginInput loginInput) throws SFException {
+    String externalTokenRequestUrl = loginInput.getOauthLoginInput().getExternalTokenRequestUrl();
+    if (externalTokenRequestUrl != null) {
+      URI parsedUrl = URI.create(externalTokenRequestUrl);
+      return parsedUrl.getHost();
+    } else {
+      return loginInput.getHostFromServerUrl();
+    }
   }
 
   /**
@@ -210,14 +314,15 @@ public class CredentialManager {
    * @param user user name
    * @param credType type of the credential
    */
-  synchronized void deleteTemporaryCredential(String host, String user, String credType) {
+  synchronized void deleteTemporaryCredential(
+      String host, String user, CachedCredentialType credType) {
     if (secureStorageManager == null) {
       logMissingJnaJarForSecureLocalStorage();
       return;
     }
 
     try {
-      secureStorageManager.deleteCredential(host, user, credType);
+      secureStorageManager.deleteCredential(host, user, credType.getValue());
     } catch (NoClassDefFoundError error) {
       logMissingJnaJarForSecureLocalStorage();
     }

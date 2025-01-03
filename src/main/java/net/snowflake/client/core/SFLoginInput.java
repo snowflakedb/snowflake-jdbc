@@ -19,6 +19,7 @@ public class SFLoginInput {
   private String warehouse;
   private String role;
   private boolean validateDefaultParameters;
+  private String originAuthenticator;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -41,6 +42,8 @@ public class SFLoginInput {
   private String application;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String serviceName;
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
@@ -317,6 +320,25 @@ public class SFLoginInput {
     return this;
   }
 
+  String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  SFLoginInput setOauthAccessToken(String oauthAccessToken) {
+    this.oauthAccessToken = oauthAccessToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getOauthRefreshToken() {
+    return oauthRefreshToken;
+  }
+
+  SFLoginInput setOauthRefreshToken(String oauthRefreshToken) {
+    this.oauthRefreshToken = oauthRefreshToken;
+    return this;
+  }
+
   Map<String, Object> getSessionParameters() {
     return sessionParameters;
   }
@@ -404,13 +426,13 @@ public class SFLoginInput {
     this.httpClientKey = key;
     return this;
   }
-
   // Opaque string sent for Snowsight account activation
+
   String getInFlightCtx() {
     return inFlightCtx;
   }
-
   // Opaque string sent for Snowsight account activation
+
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
     return this;
@@ -428,7 +450,6 @@ public class SFLoginInput {
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
   }
-
   /**
    * Set additional http headers to apply to the outgoing request. The additional headers cannot be
    * used to replace or overwrite a header in use by the driver. These will be applied to the
@@ -502,6 +523,15 @@ public class SFLoginInput {
   @SnowflakeJdbcInternalApi
   public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
     this.oauthLoginInput = oauthLoginInput;
+    return this;
+  }
+
+  String getOriginAuthenticator() {
+    return originAuthenticator;
+  }
+
+  SFLoginInput setOriginAuthenticator(String originAuthenticator) {
+    this.originAuthenticator = originAuthenticator;
     return this;
   }
 }

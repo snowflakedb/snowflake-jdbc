@@ -26,12 +26,9 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
@@ -40,8 +37,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 
 @SnowflakeJdbcInternalApi
 public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenProvider {
@@ -52,19 +47,23 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   private static final String DEFAULT_REDIRECT_HOST = "http://localhost:8001";
   private static final String REDIRECT_URI_ENDPOINT = "/snowflake/oauth-redirect";
   private static final String DEFAULT_REDIRECT_URI = DEFAULT_REDIRECT_HOST + REDIRECT_URI_ENDPOINT;
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private final AuthExternalBrowserHandlers browserHandler;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final StateProvider stateProvider;
   private final int browserAuthorizationTimeoutSeconds;
 
   public OAuthAuthorizationCodeAccessTokenProvider(
-      AuthExternalBrowserHandlers browserHandler, int browserAuthorizationTimeoutSeconds) {
+      AuthExternalBrowserHandlers browserHandler,
+      StateProvider stateProvider,
+      int browserAuthorizationTimeoutSeconds) {
     this.browserHandler = browserHandler;
+    this.stateProvider = stateProvider;
     this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
   }
 
   @Override
-  public String getAccessToken(SFLoginInput loginInput) throws SFException {
+  public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {
     try {
       logger.debug("Starting OAuth authorization code authentication flow...");
       CodeVerifier pkceVerifier = new CodeVerifier();
@@ -80,17 +79,19 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
 
   private AuthorizationCode requestAuthorizationCode(
       SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
-    AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier);
+    State state = new State(stateProvider.getState());
+    AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier, state);
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     URI authorizeRequestURI = request.toURI();
     HttpServer httpServer = createHttpServer(oauthLoginInput);
-    CompletableFuture<String> codeFuture = setupRedirectURIServerForAuthorizationCode(httpServer);
+    CompletableFuture<String> codeFuture =
+        setupRedirectURIServerForAuthorizationCode(httpServer, state);
     logger.debug(
         "Waiting for authorization code redirection to {}...", buildRedirectUri(oauthLoginInput));
     return letUserAuthorize(authorizeRequestURI, codeFuture, httpServer);
   }
 
-  private String exchangeAuthorizationCodeForAccessToken(
+  private TokenResponseDTO exchangeAuthorizationCodeForAccessToken(
       SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier)
       throws SFException {
     try {
@@ -113,7 +114,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
           "Received OAuth access token from: {}{}",
           requestUri.getAuthority(),
           requestUri.getPath());
-      return tokenResponseDTO.getAccessToken();
+      return tokenResponseDTO;
     } catch (Exception e) {
       logger.error("Error during making OAuth access token request", e);
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
@@ -144,36 +145,14 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   }
 
   private static CompletableFuture<String> setupRedirectURIServerForAuthorizationCode(
-      HttpServer httpServer) {
-    CompletableFuture<String> accessTokenFuture = new CompletableFuture<>();
+      HttpServer httpServer, State expectedState) {
+    CompletableFuture<String> authorizationCodeFuture = new CompletableFuture<>();
     httpServer.createContext(
         REDIRECT_URI_ENDPOINT,
-        exchange -> {
-          Map<String, String> urlParams =
-              URLEncodedUtils.parse(exchange.getRequestURI(), StandardCharsets.UTF_8).stream()
-                  .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-          if (urlParams.containsKey("error")) {
-            accessTokenFuture.completeExceptionally(
-                new SFException(
-                    ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-                    String.format(
-                        "Error during authorization: %s, %s",
-                        urlParams.get("error"), urlParams.get("error_description"))));
-          } else {
-            String authorizationCode = urlParams.get("code");
-            if (!StringUtils.isNullOrEmpty(authorizationCode)) {
-              logger.debug("Received authorization code on redirect URI");
-              accessTokenFuture.complete(authorizationCode);
-            }
-          }
-          String response = "Authorization completed successfully.";
-          exchange.sendResponseHeaders(200, response.length());
-          exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
-          exchange.getResponseBody().close();
-        });
+        new AuthorizationCodeRedirectRequestHandler(authorizationCodeFuture, expectedState));
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();
-    return accessTokenFuture;
+    return authorizationCodeFuture;
   }
 
   private static HttpServer createHttpServer(SFOauthLoginInput loginInput) throws IOException {
@@ -183,11 +162,10 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   }
 
   private static AuthorizationRequest buildAuthorizationRequest(
-      SFLoginInput loginInput, CodeVerifier pkceVerifier) {
+      SFLoginInput loginInput, CodeVerifier pkceVerifier, State state) {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
     URI callback = buildRedirectUri(oauthLoginInput);
-    State state = new State(256);
     String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
     return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
         .scope(new Scope(scope))

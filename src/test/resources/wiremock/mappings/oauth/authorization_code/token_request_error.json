@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Successful OAuth authorization code flow",
+      "scenarioName": "OAuth token request error",
       "requiredScenarioState": "Started",
       "newScenarioState": "Authorized",
       "request": {
@@ -11,14 +11,14 @@
       "response": {
         "status": 302,
         "headers": {
-          "Location": "http://localhost:8009/snowflake/oauth-redirect?code=123"
+          "Location": "http://localhost:8003/snowflake/oauth-redirect?code=123&state=abc123"
         }
       }
     },
     {
-      "scenarioName": "Successful OAuth authorization code flow",
+      "scenarioName": "OAuth token request error",
       "requiredScenarioState": "Authorized",
-      "newScenarioState": "Acquired access token",
+      "newScenarioState": "Token request error",
       "request": {
         "urlPathPattern": "/oauth/token-request.*",
         "method": "POST",
@@ -32,13 +32,12 @@
         },
         "bodyPatterns": [
           {
-            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8009%2Fsnowflake%2Foauth-redirect&code_verifier="
+            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A8003%2Fsnowflake%2Foauth-redirect&code_verifier="
           }
         ]
       },
       "response": {
-        "status": 200,
-        "body": "{ \"access_token\" : \"access-token-123\", \"refresh_token\" : \"123\", \"token_type\" : \"Bearer\", \"username\" : \"user\", \"scope\" : \"refresh_token session:role:ANALYST\", \"expires_in\" : 600, \"refresh_token_expires_in\" : 86399, \"idpInitiated\" : false }"
+        "status": 400
       }
     }
   ]
