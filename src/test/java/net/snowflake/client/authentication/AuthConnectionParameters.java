@@ -76,13 +76,13 @@ public class AuthConnectionParameters {
     return properties;
   }
 
-  static Properties getOAuthClientCredentialParameters(String token) {
+  static Properties getOAuthSnowflakeClientCredentialParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
-    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_CLIENT_SECRET"));
-    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_AUTH_URL"));
-    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_OAUTH_URL"));
+    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
   }
 }

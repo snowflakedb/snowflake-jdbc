@@ -8,20 +8,17 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.TESTING)
-public class OauthAuthorizationCodeLatestIT {
+public class OauthOktaAuthorizationCodeLatestIT {
     String login = AuthConnectionParameters.SSO_USER;
     String password = AuthConnectionParameters.SSO_PASSWORD;
     AuthTestHelper authTestHelper = new AuthTestHelper();
 
     private String idToken;
 
-
     @BeforeEach
     public void setUp() throws IOException {
         AuthTestHelper.deleteIdToken();
     }
-
-    //AUTHORIZATION CODE - OAUTH BY OKTA
 
     @Test
     void shouldAuthenticateUsingExternalOauthOktaAuthorizationCode() throws InterruptedException {
@@ -29,20 +26,6 @@ public class OauthAuthorizationCodeLatestIT {
 
         Thread provideCredentialsThread =
                 new Thread(() -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
-        Thread connectThread =
-                new Thread(() -> authTestHelper.connectAndExecuteSimpleQuery(properties, null));
-
-        authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-        authTestHelper.verifyExceptionIsNotThrown();
-    }
-
-
-    //AUTHORIZATION CODE - OAUTH BY SNOWFLAKE
-    @Test
-    void shouldAuthenticateUsingSnowflakeOauthOktaAuthorizationCode() throws InterruptedException {
-        Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
-        Thread provideCredentialsThread =
-                new Thread(() -> authTestHelper.provideCredentials("internalOauthSnowflakeSuccess", login, password));
         Thread connectThread =
                 new Thread(() -> authTestHelper.connectAndExecuteSimpleQuery(properties, null));
 
