@@ -269,6 +269,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     raiseSQLExceptionIfResultSetIsClosed();
     Object object =
         SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+
     if (object == null) {
       return null;
     }
@@ -279,10 +280,10 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
           && structObjectWrapper.getJsonString() != null) {
         return structObjectWrapper.getJsonString();
       }
-      if (structObjectWrapper.getObject() != null) {
-        return structObjectWrapper.getObject();
-      }
+
+      return structObjectWrapper.getObject();
     }
+
     return object;
   }
 
