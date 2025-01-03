@@ -575,7 +575,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return getObjectRepresentation(columnIndex, false);
   }
 
-  private StructObjectWrapper getObjectRepresentation(int columnIndex, boolean withString) throws SFException {
+  private StructObjectWrapper getObjectRepresentation(int columnIndex, boolean withString)
+      throws SFException {
     int type = resultSetMetaData.getColumnType(columnIndex);
     if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
       return new StructObjectWrapper(getString(columnIndex), null);
@@ -594,25 +595,25 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (isStructuredType) {
       if (converter instanceof VarCharConverter) {
         if (type == Types.STRUCT) {
-//          TODO: Remove text from JsonSqlInput
+          //          TODO: Remove text from JsonSqlInput
           JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
           return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
         } else {
           SfSqlArray sfArray = getJsonArray((String) obj, columnIndex);
           return new StructObjectWrapper(sfArray.getText(), sfArray);
         }
-      } else if (converter instanceof StructConverter ) {
+      } else if (converter instanceof StructConverter) {
         String jsonString = withString ? converter.toString(index) : null;
         return new StructObjectWrapper(
             jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
-      }  else if (converter instanceof MapConverter) {
+      } else if (converter instanceof MapConverter) {
         String jsonString = withString ? converter.toString(index) : null;
-        return new StructObjectWrapper(
-            jsonString, obj);
-      } else if (converter instanceof ArrayConverter  || converter instanceof VectorTypeConverter) {
+        return new StructObjectWrapper(jsonString, obj);
+      } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
         String jsonString = converter.toString(index);
-//        TODO: Remove text from SfSqlArray
-//        SfSqlArray arrowArray = getArrowArray(jsonString, (List<Object>) obj, columnIndex);
+        //        TODO: Remove text from SfSqlArray
+        //        SfSqlArray arrowArray = getArrowArray(jsonString, (List<Object>) obj,
+        // columnIndex);
         return new StructObjectWrapper(jsonString, obj);
       } else {
         throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
@@ -631,8 +632,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
-  private boolean isVarcharConvertedStruct(
-      int type, ArrowVectorConverter converter) {
+  private boolean isVarcharConvertedStruct(int type, ArrowVectorConverter converter) {
     return (type == Types.STRUCT || type == Types.ARRAY) && converter instanceof VarCharConverter;
   }
 

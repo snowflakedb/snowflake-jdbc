@@ -1835,5 +1835,4 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
     }
   }
-
 }

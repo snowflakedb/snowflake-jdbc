@@ -635,19 +635,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         format);
   }
 
-
-    @ParameterizedTest
-    @ArgumentsSource(ResultFormatProvider.class)
-    @DontRunOnGithubActions
-    public void testMapIntegerArrayGetObject(ResultSetFormatType format) throws SQLException {
-        withFirstRow(
-                "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
-                (resultSet) -> {
-                    Object resultArray =  resultSet.getObject(1);
-                    TestUtil.assertEqualsIgnoringWhitespace("[10,20,30]", (String) resultArray);
-                },
-                format);
-    }
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapIntegerArrayGetObject(ResultSetFormatType format) throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
+        (resultSet) -> {
+          Object resultArray = resultSet.getObject(1);
+          TestUtil.assertEqualsIgnoringWhitespace("[10,20,30]", (String) resultArray);
+        },
+        format);
+  }
 
   @ParameterizedTest
   @ArgumentsSource(ResultFormatProvider.class)
