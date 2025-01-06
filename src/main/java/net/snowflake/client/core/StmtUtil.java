@@ -677,6 +677,7 @@ public class StmtUtil {
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
             .setHttpClientSettingsKey(session.getHttpClientKey())
+             .setAdditionalHttpHeadersForSnowsight(session.getHttpHeaders())
             .setMaxRetries(session.getMaxHttpRetries());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
