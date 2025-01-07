@@ -816,9 +816,9 @@ public class SFSession extends SFBaseSession {
 
   public Map<String, String> getHttpHeaders() {
     if (getConnectionPropertiesMap() != null
-        && getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders) != null) {
+        && getConnectionPropertiesMap().get(SFSessionProperty.ADDITIONAL_HTTP_HEADERS) != null) {
       return getHttpHeaders(
-          (String) getConnectionPropertiesMap().get(SFSessionProperty.AdditionalHttpHeaders));
+          (String) getConnectionPropertiesMap().get(SFSessionProperty.ADDITIONAL_HTTP_HEADERS));
     }
     return Collections.emptyMap();
   }
