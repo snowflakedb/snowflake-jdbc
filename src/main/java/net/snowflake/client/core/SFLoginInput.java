@@ -19,7 +19,7 @@ public class SFLoginInput {
   private String warehouse;
   private String role;
   private boolean validateDefaultParameters;
-  private String originAuthenticator;
+  private String originalAuthenticator;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -526,12 +526,12 @@ public class SFLoginInput {
     return this;
   }
 
-  String getOriginAuthenticator() {
-    return originAuthenticator;
+  void restoreOriginalAuthenticator() {
+    this.authenticator = this.originalAuthenticator;
   }
 
-  SFLoginInput setOriginAuthenticator(String originAuthenticator) {
-    this.originAuthenticator = originAuthenticator;
+  SFLoginInput setOriginalAuthenticator(String originalAuthenticator) {
+    this.originalAuthenticator = originalAuthenticator;
     return this;
   }
 }

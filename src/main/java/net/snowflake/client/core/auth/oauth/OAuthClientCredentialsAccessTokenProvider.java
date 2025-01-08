@@ -52,7 +52,7 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
         requestUri.getPath());
     String tokenResponse =
         HttpUtil.executeGeneralRequest(
-            OAuthUtil.convertToBaseRequest(tokenRequest.toHTTPRequest()),
+            OAuthUtil.convertToBaseAuthorizationRequest(tokenRequest.toHTTPRequest()),
             loginInput.getLoginTimeout(),
             loginInput.getAuthTimeout(),
             loginInput.getSocketTimeoutInMillis(),

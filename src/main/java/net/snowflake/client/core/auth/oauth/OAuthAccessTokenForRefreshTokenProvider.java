@@ -37,9 +37,7 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
       TokenRequest tokenRequest = buildTokenRequest(loginInput);
       return requestForAccessToken(loginInput, tokenRequest);
     } catch (Exception e) {
-      logger.error(
-          "Error during OAuth refresh token flow.",
-          e);
+      logger.error("Error during OAuth refresh token flow.", e);
       throw new SFException(e, ErrorCode.OAUTH_REFRESH_TOKEN_FLOW_ERROR, e.getMessage());
     }
   }
@@ -53,7 +51,7 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
         requestUri.getPath());
     String tokenResponse =
         HttpUtil.executeGeneralRequest(
-            OAuthUtil.convertToBaseRequest(tokenRequest.toHTTPRequest()),
+            OAuthUtil.convertToBaseAuthorizationRequest(tokenRequest.toHTTPRequest()),
             loginInput.getLoginTimeout(),
             loginInput.getAuthTimeout(),
             loginInput.getSocketTimeoutInMillis(),

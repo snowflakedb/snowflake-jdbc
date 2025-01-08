@@ -338,7 +338,7 @@ public class SessionUtil {
         if (loginInput.getOauthRefreshToken() != null) {
           refreshOAuthAccessTokenAndUpdateInput(loginInput);
         } else {
-          loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
+          loginInput.restoreOriginalAuthenticator();
           fetchOAuthAccessTokenAndUpdateInput(loginInput);
         }
       }
@@ -389,7 +389,7 @@ public class SessionUtil {
           "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
           e);
       CredentialManager.deleteOAuthRefreshTokenCache(loginInput);
-      loginInput.setAuthenticator(loginInput.getOriginAuthenticator());
+      loginInput.restoreOriginalAuthenticator();
       fetchOAuthAccessTokenAndUpdateInput(loginInput);
     }
   }

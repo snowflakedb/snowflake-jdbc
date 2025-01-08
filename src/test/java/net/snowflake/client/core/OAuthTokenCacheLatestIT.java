@@ -156,7 +156,7 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
   private SFLoginInput createLoginInputStub() {
     SFLoginInput input = new SFLoginInput();
     input.setAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
-    input.setOriginAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+    input.setOriginalAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
     input.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     input.setUserName("MOCK_USERNAME");
     input.setAccountName("MOCK_ACCOUNT_NAME");
