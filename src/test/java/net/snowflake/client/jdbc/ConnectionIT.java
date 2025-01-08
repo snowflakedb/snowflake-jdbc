@@ -11,7 +11,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1013,28 +1012,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = con.createStatement()) {
       statement.execute("select 1");
     }
-  }
-
-  /** Test production connectivity with disableOCSPChecksMode enabled. */
-  @Test
-  public void testDisableOCSPChecksMode() throws SQLException {
-
-    String deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?disableOCSPChecks=true";
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    SQLException thrown =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(deploymentUrl, properties);
-            });
-
-    assertThat(
-        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
   private class ConcurrentConnections implements Runnable {

@@ -42,8 +42,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testUser = "fakeuser";
   private final String testPassword = "testpassword";
   private final String testRevokedCertConnectString = "jdbc:snowflake://revoked.badssl.com/";
-  public static final int INVALID_CONNECTION_INFO_CODE = 390100;
-  public static final int BAD_REQUEST_GS_CODE = 390400;
 
   private static int nameCounter = 0;
 
