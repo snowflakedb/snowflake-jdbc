@@ -24,7 +24,6 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import net.snowflake.client.core.auth.AuthenticatorType;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
