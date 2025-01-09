@@ -1118,21 +1118,30 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getProcedures(
-      final String catalog, final String schemaPattern, final String procedureNamePattern)
+      final String originalCatalog,
+      final String originalSchemaPattern,
+      final String procedureNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     logger.trace(
-        "public ResultSet getProcedures(String catalog, "
-            + "String schemaPattern,String procedureNamePattern)",
+        "public ResultSet getProcedures(String originalCatalog, "
+            + "String originalSchemaPattern,String procedureNamePattern)",
         false);
 
     String showProcedureCommand =
-        getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
+        getFirstResultSetCommand(
+            originalCatalog, originalSchemaPattern, procedureNamePattern, "procedures");
 
     if (showProcedureCommand.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURES, statement);
     }
+
+    SFTriple<String, String, Boolean> result =
+        applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.first();
+    String schemaPattern = result.second();
+    boolean isExactSchema = result.third();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledProcedurePattern = Wildcard.toRegexPattern(procedureNamePattern, true);
@@ -1159,7 +1168,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if ((compiledProcedurePattern == null
                   || compiledProcedurePattern.matcher(procedureName).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())) {
+                  || compiledSchemaPattern.matcher(schemaName).matches()
+                  || isExactSchema)) {
             logger.trace("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -3368,22 +3378,31 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getFunctions(
-      final String catalog, final String schemaPattern, final String functionNamePattern)
+      final String originalCatalog,
+      final String originalSchemaPattern,
+      final String functionNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     logger.trace(
         "public ResultSet getFunctions(String catalog={}, String schemaPattern={}, "
             + "String functionNamePattern={}",
-        catalog,
-        schemaPattern,
+        originalCatalog,
+        originalSchemaPattern,
         functionNamePattern);
 
     String showFunctionCommand =
-        getFirstResultSetCommand(catalog, schemaPattern, functionNamePattern, "functions");
+        getFirstResultSetCommand(
+            originalCatalog, originalSchemaPattern, functionNamePattern, "functions");
     if (showFunctionCommand.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTIONS, statement);
     }
+    SFTriple<String, String, Boolean> result =
+        applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.first();
+    String schemaPattern = result.second();
+    boolean isExactSchema = result.third();
+
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
 
@@ -3412,7 +3431,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if ((compiledFunctionPattern == null
                   || compiledFunctionPattern.matcher(functionName).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())) {
+                  || compiledSchemaPattern.matcher(schemaName).matches()
+                  || isExactSchema)) {
             logger.debug("Found a matched function:" + schemaName + "." + functionName);
 
             nextRow[0] = catalogName;
