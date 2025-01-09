@@ -595,7 +595,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (isStructuredType) {
       if (converter instanceof VarCharConverter) {
         if (type == Types.STRUCT) {
-          //          TODO: Remove text from JsonSqlInput
           JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
           return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
         } else {
@@ -611,9 +610,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         return new StructObjectWrapper(jsonString, obj);
       } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
         String jsonString = converter.toString(index);
-        //        TODO: Remove text from SfSqlArray
-        //        SfSqlArray arrowArray = getArrowArray(jsonString, (List<Object>) obj,
-        // columnIndex);
         return new StructObjectWrapper(jsonString, obj);
       } else {
         throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
