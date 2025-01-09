@@ -45,7 +45,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public boolean isNull(int index) {
-    return epochs.isNull(index);
+    return structVector.isNull(index);
   }
 
   @Override
@@ -54,7 +54,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp TZ formatter");
     }
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+      Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
       return ts == null
           ? null
           : context.getTimestampTZFormatter().format(ts, timeZone, context.getScale(columnIndex));
@@ -65,7 +65,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     throw new SFException(
@@ -79,7 +79,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz, false);
+    return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
   private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
@@ -98,7 +98,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
@@ -116,7 +116,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public boolean toBoolean(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return false;
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());
@@ -127,7 +127,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public short toShort(int rowIndex) throws SFException {
-    if (epochs.isNull(rowIndex)) {
+    if (isNull(rowIndex)) {
       return 0;
     }
     throw new SFException(
