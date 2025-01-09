@@ -597,9 +597,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         if (type == Types.STRUCT) {
           JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
           return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
-        } else {
+        } else if (type == Types.ARRAY) {
           SfSqlArray sfArray = getJsonArray((String) obj, columnIndex);
           return new StructObjectWrapper(sfArray.getText(), sfArray);
+        } else {
+          throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
         }
       } else if (converter instanceof StructConverter) {
         String jsonString = withString ? converter.toString(index) : null;
