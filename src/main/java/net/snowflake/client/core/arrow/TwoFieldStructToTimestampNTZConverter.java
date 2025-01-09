@@ -42,7 +42,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public boolean isNull(int index) {
-    return structVector.isNull(index);
+    return structVector.isNull(index) || epochs.isNull(index) || fractions.isNull(index);
   }
 
   @Override
