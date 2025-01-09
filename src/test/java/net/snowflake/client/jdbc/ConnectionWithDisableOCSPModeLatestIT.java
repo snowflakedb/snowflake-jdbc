@@ -84,7 +84,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
    */
   public int returnErrorCodeFromConnection(Boolean disableOSCPChecks, Boolean isInsecureMode)
       throws SQLException {
-    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
+    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
     Properties properties = new Properties();
 
     properties.put("user", "fakeuser");
