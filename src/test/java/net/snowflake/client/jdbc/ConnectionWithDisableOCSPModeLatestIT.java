@@ -35,7 +35,10 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
     SFTrustManager.cleanTestSystemParameters();
   }
 
-  /** Test connectivity with disableOCSPChecksMode and insecure mode enabled. */
+  /**
+   * Test connectivity with disableOCSPChecksMode and insecure mode enabled. This test applies to
+   * driver versions after 3.21.0
+   */
   @Test
   public void testDisableOCSPChecksModeAndInsecureModeSet() throws SQLException {
 
@@ -46,7 +49,10 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
         anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
-  /** Test production connectivity with only disableOCSPChecksMode enabled. */
+  /**
+   * Test production connectivity with only disableOCSPChecksMode enabled. This test applies to
+   * driver versions after 3.21.0
+   */
   @Test
   public void testDisableOCSPChecksModeSet() throws SQLException {
     boolean disableOCSPChecks = true;
@@ -55,7 +61,10 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
         anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
-  /** Test production connectivity with only insecureMode enabled. */
+  /**
+   * Test production connectivity with only insecureMode enabled. This test applies to driver
+   * versions after 3.21.0
+   */
   @Test
   public void testInsecureModeSet() throws SQLException {
     boolean insecureMode = true;
@@ -64,7 +73,10 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
         anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
-  /** Test production connectivity with disableOCSPChecksMode enabled AND insecureMode disabled. */
+  /**
+   * Test production connectivity with disableOCSPChecksMode enabled AND insecureMode disabled. This
+   * test applies to driver versions after 3.21.0
+   */
   @Test
   public void testDisableOCSPChecksModeAndInsecureModeMismatched() throws SQLException {
     boolean disableOCSPChecks = true;

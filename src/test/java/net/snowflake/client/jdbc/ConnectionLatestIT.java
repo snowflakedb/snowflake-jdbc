@@ -1638,7 +1638,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  /** Test production connectivity with disableOCSPChecksMode enabled. */
+  /**
+   * Test production connectivity with disableOCSPChecksMode enabled. This test applies to driver
+   * versions after 3.21.0
+   */
   @Test
   public void testDisableOCSPChecksMode() throws SQLException {
 
