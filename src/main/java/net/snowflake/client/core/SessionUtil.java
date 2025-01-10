@@ -283,6 +283,8 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
+    checkIfSoteriaAuthnEnabled(authenticator);
+
     if (authenticator.equals(AuthenticatorType.OAUTH)
         || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)) {
       // OAUTH and PAT needs either token or password
@@ -346,6 +348,18 @@ public class SessionUtil {
     }
   }
 
+  static void checkIfSoteriaAuthnEnabled(AuthenticatorType authenticator) throws SFException {
+    if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
+        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
+        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
+      boolean soteriaAuthenticationMethodsEnabled =
+          Boolean.parseBoolean(systemGetProperty("snowflake.jdbc.enableSoteria"));
+      AssertUtil.assertTrue(
+          soteriaAuthenticationMethodsEnabled,
+          "Following authentication method not yet supported: " + authenticator);
+    }
+  }
+
   private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
       throws SFException {
     if (loginInput.getOauthAccessToken() != null) { // Access Token was cached
@@ -361,7 +375,7 @@ public class SessionUtil {
     OAuthAccessTokenProviderFactory accessTokenProviderFactory =
         new OAuthAccessTokenProviderFactory(
             new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
-            (int) loginInput.getBrowserResponseTimeout().getSeconds());
+            loginInput.getBrowserResponseTimeout().getSeconds());
     AccessTokenProvider accessTokenProvider =
         accessTokenProviderFactory.createAccessTokenProvider(
             getAuthenticator(loginInput), loginInput);

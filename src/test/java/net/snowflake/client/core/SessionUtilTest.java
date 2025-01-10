@@ -8,7 +8,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.io.IOException;
 import java.net.URI;
@@ -17,12 +19,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.MockConnectionTest;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 public class SessionUtilTest {
   private static String originalUrlValue;
@@ -178,6 +184,97 @@ public class SessionUtilTest {
     assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+  }
+
+  @Test
+  public void testGetCommonParams() throws Exception {
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+
+    // Test unknown param name
+    Map<String, Object> result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"testParam\", \"value\": true}]"));
+    assertTrue((boolean) result.get("testParam"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"testParam\", \"value\": false}]"));
+    assertFalse((boolean) result.get("testParam"));
+
+    result =
+        SessionUtil.getCommonParams(mapper.readTree("[{\"name\": \"testParam\", \"value\": 0}]"));
+    assertEquals(0, (int) result.get("testParam"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"testParam\", \"value\": 1000}]"));
+    assertEquals(1000, (int) result.get("testParam"));
+
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"testParam\", \"value\": \"\"}]"));
+    assertEquals("", result.get("testParam"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"testParam\", \"value\": \"value\"}]"));
+    assertEquals("value", result.get("testParam"));
+
+    // Test known param name
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"CLIENT_DISABLE_INCIDENTS\", \"value\": true}]"));
+    assertTrue((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"CLIENT_DISABLE_INCIDENTS\", \"value\": false}]"));
+    assertFalse((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
+
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree(
+                "[{\"name\": \"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\", \"value\": 0}]"));
+    assertEquals(0, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree(
+                "[{\"name\": \"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\", \"value\": 1000}]"));
+    assertEquals(1000, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
+
+    result =
+        SessionUtil.getCommonParams(mapper.readTree("[{\"name\": \"TIMEZONE\", \"value\": \"\"}]"));
+    assertEquals("", result.get("TIMEZONE"));
+    result =
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"TIMEZONE\", \"value\": \"value\"}]"));
+    assertEquals("value", result.get("TIMEZONE"));
+  }
+
+  @Test
+  public void shouldProperlyCheckIfSoteriaEnabled() {
+    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic = mockStatic(SnowflakeUtil.class)) {
+      snowflakeUtilMockedStatic
+          .when(() -> SnowflakeUtil.systemGetProperty("snowflake.jdbc.enableSoteria"))
+          .thenReturn(null);
+      Assertions.assertThrows(
+          SFException.class,
+          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
+      Assertions.assertThrows(
+          SFException.class,
+          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+      Assertions.assertThrows(
+          SFException.class,
+          () ->
+              SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+
+      snowflakeUtilMockedStatic
+          .when(() -> SnowflakeUtil.systemGetProperty("snowflake.jdbc.enableSoteria"))
+          .thenReturn("true");
+      Assertions.assertDoesNotThrow(
+          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
+      Assertions.assertDoesNotThrow(
+          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+      Assertions.assertDoesNotThrow(
+          () ->
+              SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+    }
   }
 
   private void resetOcspConfiguration() {

@@ -35,7 +35,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldProperlyCreateClientCredentialsAccessTokenProvider() throws SFException {
-    SFLoginInput loginInput = createLoginInputStub("123", "123", "some/url");
+    SFLoginInput loginInput = createLoginInputStub("123", "123", "some/url", null);
     AccessTokenProvider provider =
         providerFactory.createAccessTokenProvider(
             AuthenticatorType.OAUTH_CLIENT_CREDENTIALS, loginInput);
@@ -45,7 +45,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldFailToCreateClientCredentialsAccessTokenProviderWithoutClientId() {
-    SFLoginInput loginInput = createLoginInputStub(null, "123", "some/url");
+    SFLoginInput loginInput = createLoginInputStub(null, "123", "some/url", null);
     SFException e =
         Assertions.assertThrows(
             SFException.class,
@@ -59,7 +59,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldFailToCreateClientCredentialsAccessTokenProviderWithoutClientSecret() {
-    SFLoginInput loginInput = createLoginInputStub("123", null, "some/url");
+    SFLoginInput loginInput = createLoginInputStub("123", null, "some/url", null);
     SFException e =
         Assertions.assertThrows(
             SFException.class,
@@ -74,7 +74,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldFailToCreateClientCredentialsAccessTokenProviderWithoutClientAuthzUrl() {
-    SFLoginInput loginInput = createLoginInputStub("123", "123", null);
+    SFLoginInput loginInput = createLoginInputStub("123", "123", null, null);
     SFException e =
         Assertions.assertThrows(
             SFException.class,
@@ -89,7 +89,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldProperlyCreateAuthorizationCodeAccessTokenProvider() throws SFException {
-    SFLoginInput loginInput = createLoginInputStub("123", "123", "");
+    SFLoginInput loginInput = createLoginInputStub("123", "123", "", null);
     AccessTokenProvider provider =
         providerFactory.createAccessTokenProvider(
             AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
@@ -99,7 +99,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldFailToCreateAuthzCodeAccessTokenProviderWithoutClientId() {
-    SFLoginInput loginInput = createLoginInputStub(null, "123", "some/url");
+    SFLoginInput loginInput = createLoginInputStub(null, "123", "some/url", null);
     SFException e =
         Assertions.assertThrows(
             SFException.class,
@@ -113,7 +113,7 @@ public class OAuthAccessTokenProviderFactoryTest {
 
   @Test
   public void shouldFailToCreateAuthzCodeAccessTokenProviderWithoutClientSecret() {
-    SFLoginInput loginInput = createLoginInputStub("123", null, null);
+    SFLoginInput loginInput = createLoginInputStub("123", null, null, null);
     SFException e =
         Assertions.assertThrows(
             SFException.class,
@@ -126,11 +126,24 @@ public class OAuthAccessTokenProviderFactoryTest {
                 "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE authentication."));
   }
 
+  @Test
+  public void shouldFailToCreateAuthzCodeAccessTokenProviderWithHttpsRedirectUri() {
+    SFLoginInput loginInput = createLoginInputStub("123", "123", null, "https://localhost:1234/");
+    SFException e =
+        Assertions.assertThrows(
+            SFException.class,
+            () ->
+                providerFactory.createAccessTokenProvider(
+                    AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput));
+    Assertions.assertTrue(
+        e.getMessage().contains("provided redirect URI should start with \"http\", not \"https\""));
+  }
+
   private SFLoginInput createLoginInputStub(
-      String clientId, String clientSecret, String externalTokenUrl) {
+      String clientId, String clientSecret, String externalTokenUrl, String redirectUri) {
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setOauthLoginInput(
-        new SFOauthLoginInput(clientId, clientSecret, null, null, externalTokenUrl, null));
+        new SFOauthLoginInput(clientId, clientSecret, redirectUri, null, externalTokenUrl, null));
     return loginInput;
   }
 }

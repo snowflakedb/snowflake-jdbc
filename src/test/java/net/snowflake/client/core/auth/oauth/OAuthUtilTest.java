@@ -24,7 +24,7 @@ public class OAuthUtilTest {
 
   @Test
   public void shouldCreateDefaultAuthorizationUrl() {
-    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null);
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
     URI authorizationUrl =
         OAuthUtil.getAuthorizationUrl(loginInput, BASE_SERVER_URL_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(authorizationUrl);
@@ -35,7 +35,7 @@ public class OAuthUtilTest {
   @Test
   public void shouldCreateUserSuppliedAuthorizationUrl() {
     SFOauthLoginInput loginInput =
-        createLoginInputStub("http://some.external.authorization.url.com/authz", null, null);
+        createLoginInputStub("http://some.external.authorization.url.com/authz", null, null, null);
     URI tokenRequestUrl =
         OAuthUtil.getAuthorizationUrl(loginInput, BASE_SERVER_URL_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(tokenRequestUrl);
@@ -45,7 +45,7 @@ public class OAuthUtilTest {
 
   @Test
   public void shouldCreateDefaultTokenRequestUrl() {
-    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null);
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
     URI tokenRequestUrl =
         OAuthUtil.getTokenRequestUrl(loginInput, BASE_SERVER_URL_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(tokenRequestUrl);
@@ -57,7 +57,7 @@ public class OAuthUtilTest {
   public void shouldCreateUserSuppliedTokenRequestUrl() {
     SFOauthLoginInput loginInput =
         createLoginInputStub(
-            null, "http://some.external.authorization.url.com/token-request", null);
+            null, "http://some.external.authorization.url.com/token-request", null, null);
     URI tokenRequestUrl =
         OAuthUtil.getTokenRequestUrl(loginInput, BASE_SERVER_URL_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(tokenRequestUrl);
@@ -67,7 +67,7 @@ public class OAuthUtilTest {
 
   @Test
   public void shouldCreateDefaultScope() {
-    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null);
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
     String scope = OAuthUtil.getScope(loginInput, ROLE_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(scope);
     Assertions.assertEquals("session:role:ANALYST", scope);
@@ -75,10 +75,29 @@ public class OAuthUtilTest {
 
   @Test
   public void shouldCreateUserSuppliedScope() {
-    SFOauthLoginInput loginInput = createLoginInputStub(null, null, "some:custom:SCOPE");
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, "some:custom:SCOPE", null);
     String scope = OAuthUtil.getScope(loginInput, ROLE_FROM_LOGIN_INPUT);
     Assertions.assertNotNull(scope);
     Assertions.assertEquals("some:custom:SCOPE", scope);
+  }
+
+  @Test
+  public void shouldCreateDefaultRedirectUri() throws IOException {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
+    URI redirectUri = OAuthUtil.buildRedirectUri(loginInput);
+    Assertions.assertNotNull(redirectUri);
+    Assertions.assertTrue(
+        redirectUri.toString().matches("^http://127.0.0.1:([0-9]*)/"),
+        "Invalid redirect URI: " + redirectUri);
+  }
+
+  @Test
+  public void shouldCreateCustomRedirectUri() throws IOException {
+    SFOauthLoginInput loginInput =
+        createLoginInputStub(null, null, null, "http://localhost:8989/some-endpoint");
+    URI redirectUri = OAuthUtil.buildRedirectUri(loginInput);
+    Assertions.assertNotNull(redirectUri);
+    Assertions.assertEquals("http://localhost:8989/some-endpoint", redirectUri.toString());
   }
 
   @Test
@@ -112,8 +131,11 @@ public class OAuthUtilTest {
   }
 
   private SFOauthLoginInput createLoginInputStub(
-      String externalAuthorizationUrl, String externalTokenRequestUrl, String scope) {
+      String externalAuthorizationUrl,
+      String externalTokenRequestUrl,
+      String scope,
+      String redirectUri) {
     return new SFOauthLoginInput(
-        null, null, null, externalAuthorizationUrl, externalTokenRequestUrl, scope);
+        null, null, redirectUri, externalAuthorizationUrl, externalTokenRequestUrl, scope);
   }
 }
