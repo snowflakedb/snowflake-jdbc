@@ -1091,6 +1091,26 @@ public class SessionUtil {
   }
 
   /**
+   * Delete the Oauth access token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
+  public static void deleteOAuthAccessTokenCache(String host, String user) {
+    CredentialManager.deleteOAuthAccessTokenCache(host, user);
+  }
+
+  /**
+   * Delete the Oauth refresh token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
+  public static void deleteOAuthRefreshTokenCache(String host, String user) {
+    CredentialManager.deleteOAuthRefreshTokenCache(host, user);
+  }
+
+  /**
    * Delete the mfa token cache
    *
    * @param host The host string
