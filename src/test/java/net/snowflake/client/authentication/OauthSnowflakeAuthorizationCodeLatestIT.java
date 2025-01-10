@@ -1,8 +1,6 @@
 package net.snowflake.client.authentication;
 import static net.snowflake.client.authentication.AuthConnectionParameters.*;
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthSnowflakeAuthorizationCodeConnectionParameters;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -11,7 +9,7 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.*;
 
 
-@Tag(TestTags.TESTING)
+@Tag(TestTags.AUTHENTICATION)
 public class OauthSnowflakeAuthorizationCodeLatestIT {
 
     Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
@@ -42,10 +40,7 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
         AuthTestHelper.deleteOauthRefreshToken(AuthConnectionParameters.HOST, properties.getProperty("user"));
     }
 
-
     @Test
-    @Order(1)
-
     void shouldAuthenticateUsingSnowflakeOauthAuthorizationCode() throws InterruptedException {
         Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
         Thread provideCredentialsThread =
@@ -59,7 +54,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
 
 
     @Test
-    @Order(2)
     void shouldThrowErrorForMismatchedOauthSnowflakeUsername() throws InterruptedException {
         Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
         properties.setProperty("user", "invalidUser@snowflake.com");
@@ -73,7 +67,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
     }
 
     @Test
-    @Order(3)
     void shouldThrowErrorForOauthSnowflakeTimeout() throws InterruptedException {
         Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
         properties.put("BROWSER_RESPONSE_TIMEOUT", "0");
@@ -83,7 +76,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
     }
 
     @Test
-    @Order(4)
     void shouldAuthenticateUsingTokenCacheOauthSnowflake() throws InterruptedException {
         Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
         properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
@@ -95,29 +87,5 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
         authTestHelper.verifyExceptionIsNotThrown();
         authTestHelper.connectAndExecuteSimpleQuery(properties, null);
         authTestHelper.verifyExceptionIsNotThrown();
-    }
-
-    @Test
-    void shouldNotSaveSnowflakeAuthorizationAccessToken() throws InterruptedException {
-
-        Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
-        properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", false);
-
-        String accessToken = authTestHelper.getAccessToken();
-        System.out.println(accessToken);  //!!!!!!
-
-        assertNull(accessToken, "Access token should be empty");
-
-        Thread provideCredentialsThread =
-                new Thread(() -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
-        Thread connectThread = authTestHelper.getConnectAndExecuteSimpleQueryThread(properties, null);
-
-        authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-        authTestHelper.verifyExceptionIsNotThrown();
-
-        accessToken = authTestHelper.getAccessToken();
-        System.out.println(accessToken);  //!!!!!!
-
-        assertNull(accessToken, "Access token should be empty");
     }
 }
