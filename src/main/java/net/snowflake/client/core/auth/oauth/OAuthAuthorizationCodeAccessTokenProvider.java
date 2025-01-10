@@ -6,7 +6,6 @@ package net.snowflake.client.core.auth.oauth;
 
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
-import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
@@ -44,9 +43,8 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(OAuthAuthorizationCodeAccessTokenProvider.class);
 
-  private static final String DEFAULT_REDIRECT_HOST = "http://localhost:8001";
-  private static final String REDIRECT_URI_ENDPOINT = "/snowflake/oauth-redirect";
-  private static final String DEFAULT_REDIRECT_URI = DEFAULT_REDIRECT_HOST + REDIRECT_URI_ENDPOINT;
+  static final String DEFAULT_REDIRECT_HOST = "http://127.0.0.1";
+  static final String DEFAULT_REDIRECT_URI_ENDPOINT = "/";
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private final AuthExternalBrowserHandlers browserHandler;
@@ -67,8 +65,11 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
     try {
       logger.debug("Starting OAuth authorization code authentication flow...");
       CodeVerifier pkceVerifier = new CodeVerifier();
-      AuthorizationCode authorizationCode = requestAuthorizationCode(loginInput, pkceVerifier);
-      return exchangeAuthorizationCodeForAccessToken(loginInput, authorizationCode, pkceVerifier);
+      URI redirectUri = OAuthUtil.buildRedirectUri(loginInput.getOauthLoginInput());
+      AuthorizationCode authorizationCode =
+          requestAuthorizationCode(loginInput, pkceVerifier, redirectUri);
+      return exchangeAuthorizationCodeForAccessToken(
+          loginInput, authorizationCode, pkceVerifier, redirectUri);
     } catch (Exception e) {
       logger.error(
           "Error during OAuth authorization code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)",
@@ -78,24 +79,28 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   }
 
   private AuthorizationCode requestAuthorizationCode(
-      SFLoginInput loginInput, CodeVerifier pkceVerifier) throws SFException, IOException {
+      SFLoginInput loginInput, CodeVerifier pkceVerifier, URI redirectUri)
+      throws SFException, IOException {
     State state = new State(stateProvider.getState());
-    AuthorizationRequest request = buildAuthorizationRequest(loginInput, pkceVerifier, state);
-    SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
+    AuthorizationRequest request =
+        buildAuthorizationRequest(loginInput, pkceVerifier, state, redirectUri);
     URI authorizeRequestURI = request.toURI();
-    HttpServer httpServer = createHttpServer(oauthLoginInput);
+    HttpServer httpServer = createHttpServer(redirectUri);
     CompletableFuture<String> codeFuture =
         setupRedirectURIServerForAuthorizationCode(httpServer, state);
-    logger.debug(
-        "Waiting for authorization code redirection to {}...", buildRedirectUri(oauthLoginInput));
+    logger.debug("Waiting for authorization code redirection to {}...", redirectUri);
     return letUserAuthorize(authorizeRequestURI, codeFuture, httpServer);
   }
 
   private TokenResponseDTO exchangeAuthorizationCodeForAccessToken(
-      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier)
+      SFLoginInput loginInput,
+      AuthorizationCode authorizationCode,
+      CodeVerifier pkceVerifier,
+      URI redirectUri)
       throws SFException {
     try {
-      TokenRequest request = buildTokenRequest(loginInput, authorizationCode, pkceVerifier);
+      TokenRequest request =
+          buildTokenRequest(loginInput, authorizationCode, pkceVerifier, redirectUri);
       URI requestUri = request.getEndpointURI();
       logger.debug(
           "Requesting OAuth access token from: {}",
@@ -148,24 +153,22 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       HttpServer httpServer, State expectedState) {
     CompletableFuture<String> authorizationCodeFuture = new CompletableFuture<>();
     httpServer.createContext(
-        REDIRECT_URI_ENDPOINT,
+        DEFAULT_REDIRECT_URI_ENDPOINT,
         new AuthorizationCodeRedirectRequestHandler(authorizationCodeFuture, expectedState));
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();
     return authorizationCodeFuture;
   }
 
-  private static HttpServer createHttpServer(SFOauthLoginInput loginInput) throws IOException {
-    URI redirectUri = buildRedirectUri(loginInput);
+  private static HttpServer createHttpServer(URI redirectUri) throws IOException {
     return HttpServer.create(
         new InetSocketAddress(redirectUri.getHost(), redirectUri.getPort()), 0);
   }
 
   private static AuthorizationRequest buildAuthorizationRequest(
-      SFLoginInput loginInput, CodeVerifier pkceVerifier, State state) {
+      SFLoginInput loginInput, CodeVerifier pkceVerifier, State state, URI redirectUri) {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
-    URI redirectUri = buildRedirectUri(oauthLoginInput);
     String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
     return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
         .scope(new Scope(scope))
@@ -179,8 +182,10 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   }
 
   private static TokenRequest buildTokenRequest(
-      SFLoginInput loginInput, AuthorizationCode authorizationCode, CodeVerifier pkceVerifier) {
-    URI redirectUri = buildRedirectUri(loginInput.getOauthLoginInput());
+      SFLoginInput loginInput,
+      AuthorizationCode authorizationCode,
+      CodeVerifier pkceVerifier,
+      URI redirectUri) {
     AuthorizationGrant codeGrant =
         new AuthorizationCodeGrant(authorizationCode, redirectUri, pkceVerifier);
     ClientAuthentication clientAuthentication =
@@ -194,13 +199,5 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         clientAuthentication,
         codeGrant,
         scope);
-  }
-
-  private static URI buildRedirectUri(SFOauthLoginInput oauthLoginInput) {
-    String redirectUri =
-        !StringUtils.isNullOrEmpty(oauthLoginInput.getRedirectUri())
-            ? oauthLoginInput.getRedirectUri()
-            : DEFAULT_REDIRECT_URI;
-    return URI.create(redirectUri);
   }
 }

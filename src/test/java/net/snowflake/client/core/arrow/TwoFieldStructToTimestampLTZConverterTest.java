@@ -152,9 +152,11 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
       } else {
         epochs.setSafe(j, testSecondsInt64[i]);
         fractions.setSafe(j, testNanoSecs[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampLTZConverter(structVector, 0, this);

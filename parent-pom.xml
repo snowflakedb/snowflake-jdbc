@@ -486,6 +486,17 @@
         <artifactId>arrow-memory-netty-buffer-patch</artifactId>
         <version>${arrow.version}</version>
         <scope>runtime</scope>
+        <exclusions>
+          <!-- We explicitly add netty dependencies in higher version, here only excluding for removing snyk issue since snyk does not understand our dependency tree -->
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.arrow</groupId>

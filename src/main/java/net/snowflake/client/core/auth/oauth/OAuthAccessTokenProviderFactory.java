@@ -43,6 +43,7 @@ public class OAuthAccessTokenProviderFactory {
     switch (authenticatorType) {
       case OAUTH_AUTHORIZATION_CODE:
         assertContainsClientCredentials(loginInput, authenticatorType);
+        validateHttpRedirectUriIfSpecified(loginInput);
         return new OAuthAuthorizationCodeAccessTokenProvider(
             browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
       case OAUTH_CLIENT_CREDENTIALS:
@@ -54,6 +55,15 @@ public class OAuthAccessTokenProviderFactory {
       default:
         logger.error("Unsupported authenticator type: " + authenticatorType);
         throw new SFException(ErrorCode.INTERNAL_ERROR);
+    }
+  }
+
+  private void validateHttpRedirectUriIfSpecified(SFLoginInput loginInput) throws SFException {
+    String redirectUri = loginInput.getOauthLoginInput().getRedirectUri();
+    if (redirectUri != null) {
+      AssertUtil.assertTrue(
+          !redirectUri.startsWith("https"),
+          "provided redirect URI should start with \"http\", not \"https\"");
     }
   }
 

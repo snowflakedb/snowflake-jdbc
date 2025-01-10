@@ -1,7 +1,12 @@
 package net.snowflake.client.core.auth.oauth;
 
+import static net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider.DEFAULT_REDIRECT_HOST;
+import static net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider.DEFAULT_REDIRECT_URI_ENDPOINT;
+
 import com.amazonaws.util.StringUtils;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.SFOauthLoginInput;
@@ -45,5 +50,20 @@ class OAuthUtil {
     return (!StringUtils.isNullOrEmpty(oauthLoginInput.getScope()))
         ? oauthLoginInput.getScope()
         : DEFAULT_SESSION_ROLE_SCOPE_PREFIX + role;
+  }
+
+  static URI buildRedirectUri(SFOauthLoginInput oauthLoginInput) throws IOException {
+    String redirectUri =
+        !StringUtils.isNullOrEmpty(oauthLoginInput.getRedirectUri())
+            ? oauthLoginInput.getRedirectUri()
+            : createDefaultRedirectUri();
+    return URI.create(redirectUri);
+  }
+
+  private static String createDefaultRedirectUri() throws IOException {
+    try (ServerSocket socket = new ServerSocket(0)) {
+      return String.format(
+          "%s:%s%s", DEFAULT_REDIRECT_HOST, socket.getLocalPort(), DEFAULT_REDIRECT_URI_ENDPOINT);
+    }
   }
 }

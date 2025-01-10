@@ -169,9 +169,11 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
         seconds.setSafe(j, testSecondsInt64[i]);
         nanos.setSafe(j, testNanos[i]);
         timeZoneIdx.setSafe(j, testTimeZoneIndices[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new ThreeFieldStructToTimestampTZConverter(structVector, 0, this);

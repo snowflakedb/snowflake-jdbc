@@ -175,9 +175,11 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
       } else {
         epochs.setSafe(j, testSecondsInt64[i]);
         fractions.setSafe(j, testNanoSecs[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampNTZConverter(structVector, 0, this);

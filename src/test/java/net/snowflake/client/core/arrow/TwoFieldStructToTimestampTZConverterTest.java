@@ -114,9 +114,11 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
       } else {
         epoch.setSafe(j, testEpochesInt64[i]);
         timeZoneIdx.setSafe(j, testTimeZoneIndices[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampTZConverter(structVector, 0, this);
