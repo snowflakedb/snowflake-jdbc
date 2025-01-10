@@ -3,23 +3,30 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.randomIntList;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
+import net.snowflake.client.util.ThrowingCallable;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -404,6 +411,123 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
               .toString()
               .matches(
                   "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testClearingBatchAfterStatementExecution(String queryResultFormat)
+      throws SQLException {
+    String tableName = TestUtil.randomTableName("SNOW-1853752");
+    int itemsInBatch = 3;
+    try (Connection connection = getConn(queryResultFormat);
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          String.format("CREATE OR REPLACE TABLE %s(id int, s varchar(2))", tableName));
+      List<ThrowingCallable<Integer, SQLException>> executeMethods =
+          Arrays.asList(
+              () -> statement.executeBatch().length, () -> statement.executeLargeBatch().length);
+      for (ThrowingCallable<Integer, SQLException> executeMethod : executeMethods) {
+        for (int i : randomIntList(itemsInBatch, 10)) {
+          statement.addBatch(
+              String.format("INSERT INTO %s(id, s) VALUES (%d, 's%d')", tableName, i, i));
+        }
+        assertEquals(itemsInBatch, executeMethod.call());
+        assertEquals(0, executeMethod.call());
+        for (int i : randomIntList(itemsInBatch, 10)) {
+          statement.addBatch(
+              String.format(
+                  "INSERT INTO %s(id, s) VALUES (%d, 'longer string %d')", tableName, i, i));
+        }
+        assertThrows(BatchUpdateException.class, executeMethod::call);
+        // second call should also fail since batch should not be cleared
+        assertThrows(BatchUpdateException.class, executeMethod::call);
+        // clear batch for next execution in loop
+        statement.clearBatch();
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testClearingBatchAfterPreparedStatementExecutionWithArrayBinding(
+      String queryResultFormat) throws SQLException {
+    String tableName = TestUtil.randomTableName("SNOW-1853752");
+    int itemsInBatch = 3;
+    try (Connection connection = getConn(queryResultFormat);
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          String.format("CREATE OR REPLACE TABLE %s(id int, s varchar(2))", tableName));
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement(
+              String.format("INSERT INTO %s(id, s) VALUES (?, ?)", tableName))) {
+        List<ThrowingCallable<Integer, SQLException>> executeMethods =
+            Arrays.asList(
+                () -> preparedStatement.executeBatch().length,
+                () -> preparedStatement.executeLargeBatch().length);
+        for (ThrowingCallable<Integer, SQLException> executeMethod : executeMethods) {
+          for (int i : randomIntList(itemsInBatch, 10)) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setString(2, "s" + i);
+            preparedStatement.addBatch();
+          }
+          assertEquals(itemsInBatch, executeMethod.call());
+          assertEquals(0, executeMethod.call());
+          for (int i : randomIntList(itemsInBatch, 10)) {
+            preparedStatement.setInt(1, i * 10);
+            preparedStatement.setString(2, "longer string " + i);
+            preparedStatement.addBatch();
+          }
+          // TODO SNOW-1853752 with array binding there is SnowflakeSQLException thrown but
+          //  BatchUpdateException is more expected - should we change?
+          assertThrows(SnowflakeSQLException.class, executeMethod::call);
+          // second call should also fail since batch should not be cleared
+          assertThrows(SnowflakeSQLException.class, executeMethod::call);
+          // clear batch for next execution in loop
+          preparedStatement.clearBatch();
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testClearingBatchAfterPreparedStatementExecutionWithoutArrayBinding(
+      String queryResultFormat) throws SQLException {
+    String tableName = TestUtil.randomTableName("SNOW-1853752");
+    int itemsInBatch = 3;
+    try (Connection connection = getConn(queryResultFormat);
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          String.format("CREATE OR REPLACE TABLE %s(id int, s varchar(2))", tableName));
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement(
+              // NULLIF prohibit array binding and forces calling sqls one by one
+              String.format("INSERT INTO %s(id, s) VALUES (?, NULLIF(?, ''))", tableName))) {
+        List<ThrowingCallable<Integer, SQLException>> executeMethods =
+            Arrays.asList(
+                () -> preparedStatement.executeBatch().length,
+                () -> preparedStatement.executeLargeBatch().length);
+        for (ThrowingCallable<Integer, SQLException> executeMethod : executeMethods) {
+          for (int i : randomIntList(itemsInBatch, 10)) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setString(2, "s" + i);
+            preparedStatement.addBatch();
+          }
+          assertEquals(itemsInBatch, executeMethod.call());
+          assertEquals(0, executeMethod.call());
+          for (int i : randomIntList(itemsInBatch, 10)) {
+            preparedStatement.setInt(1, i * 10);
+            preparedStatement.setString(2, "longer string " + i);
+            preparedStatement.addBatch();
+          }
+          assertThrows(BatchUpdateException.class, executeMethod::call);
+          // second call should also fail since batch should not be cleared
+          assertThrows(BatchUpdateException.class, executeMethod::call);
+          // clear batch for next execution in loop
+          preparedStatement.clearBatch();
+        }
+      }
     }
   }
 }

@@ -14,7 +14,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
@@ -153,5 +156,18 @@ public class TestUtil {
    */
   public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
     assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
+  }
+
+  public static String randomTableName(String jiraId) {
+    return ("TEST_" + (jiraId != null ? jiraId : "") + "_" + UUID.randomUUID())
+        .replaceAll("-", "_");
+  }
+
+  public static List<Integer> randomIntList(int length, int modulo) {
+    return new Random()
+        .ints()
+        .limit(length)
+        .mapToObj(i -> Math.abs(i) % modulo)
+        .collect(Collectors.toList());
   }
 }

@@ -556,7 +556,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           updateCounts.intArr,
           exceptionReturned);
     }
-
+    // TODO SNOW-1853752 should we guard new behaviour with property?
+    batch.clear();
     return updateCounts;
   }
 
