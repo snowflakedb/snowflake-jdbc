@@ -675,7 +675,7 @@ public class SFSession extends SFBaseSession {
         .setValidateDefaultParameters(
             connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
         .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
-        .setOriginAuthenticator(
+        .setOriginalAuthenticator(
             (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
         .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))

@@ -29,11 +29,11 @@ public class OAuthAccessTokenProviderFactory {
               AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
 
   private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
-  private final int browserAuthorizationTimeoutSeconds;
+  private final long browserAuthorizationTimeoutSeconds;
 
   public OAuthAccessTokenProviderFactory(
       SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler,
-      int browserAuthorizationTimeoutSeconds) {
+      long browserAuthorizationTimeoutSeconds) {
     this.browserHandler = browserHandler;
     this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
   }
@@ -57,12 +57,12 @@ public class OAuthAccessTokenProviderFactory {
     }
   }
 
-  public static Set<AuthenticatorType> getEligible() {
-    return ELIGIBLE_AUTH_TYPES;
-  }
-
   public static boolean isEligible(AuthenticatorType authenticatorType) {
     return getEligible().contains(authenticatorType);
+  }
+
+  private static Set<AuthenticatorType> getEligible() {
+    return ELIGIBLE_AUTH_TYPES;
   }
 
   private void assertContainsClientCredentials(

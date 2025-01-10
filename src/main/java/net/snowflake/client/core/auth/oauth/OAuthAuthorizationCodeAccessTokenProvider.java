@@ -50,13 +50,13 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private final AuthExternalBrowserHandlers browserHandler;
-  private final StateProvider stateProvider;
-  private final int browserAuthorizationTimeoutSeconds;
+  private final StateProvider<String> stateProvider;
+  private final long browserAuthorizationTimeoutSeconds;
 
   public OAuthAuthorizationCodeAccessTokenProvider(
       AuthExternalBrowserHandlers browserHandler,
-      StateProvider stateProvider,
-      int browserAuthorizationTimeoutSeconds) {
+      StateProvider<String> stateProvider,
+      long browserAuthorizationTimeoutSeconds) {
     this.browserHandler = browserHandler;
     this.stateProvider = stateProvider;
     this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
@@ -102,7 +102,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
           requestUri.getAuthority() + requestUri.getPath());
       String tokenResponse =
           HttpUtil.executeGeneralRequest(
-              OAuthUtil.convertToBaseRequest(request.toHTTPRequest()),
+              OAuthUtil.convertToBaseAuthorizationRequest(request.toHTTPRequest()),
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
@@ -165,12 +165,12 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       SFLoginInput loginInput, CodeVerifier pkceVerifier, State state) {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
-    URI callback = buildRedirectUri(oauthLoginInput);
+    URI redirectUri = buildRedirectUri(oauthLoginInput);
     String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
     return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
         .scope(new Scope(scope))
         .state(state)
-        .redirectionURI(callback)
+        .redirectionURI(redirectUri)
         .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
         .endpointURI(
             OAuthUtil.getAuthorizationUrl(

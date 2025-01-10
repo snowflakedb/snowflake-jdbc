@@ -15,6 +15,8 @@ import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenPro
 import net.snowflake.client.core.auth.oauth.StateProvider;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -23,8 +25,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Tag(TestTags.CORE)
 public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
@@ -43,8 +43,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   private static final String CUSTOM_URLS_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/external_idp_custom_urls.json";
 
-  private static final Logger logger =
-      LoggerFactory.getLogger(OAuthAuthorizationCodeFlowLatestIT.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(OAuthAuthorizationCodeFlowLatestIT.class);
 
   private final AuthExternalBrowserHandlers wiremockProxyRequestBrowserHandler =
       new WiremockProxyRequestBrowserHandler();
@@ -182,7 +182,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     }
   }
 
-  static class MockStateProvider implements StateProvider {
+  static class MockStateProvider implements StateProvider<String> {
 
     @Override
     public String getState() {

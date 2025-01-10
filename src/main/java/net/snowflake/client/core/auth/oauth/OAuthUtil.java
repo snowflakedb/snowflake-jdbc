@@ -16,10 +16,12 @@ class OAuthUtil {
 
   private static final String DEFAULT_SESSION_ROLE_SCOPE_PREFIX = "session:role:";
 
-  static HttpRequestBase convertToBaseRequest(HTTPRequest request) {
+  static HttpRequestBase convertToBaseAuthorizationRequest(HTTPRequest request) {
     HttpPost baseRequest = new HttpPost(request.getURI());
     baseRequest.setEntity(new StringEntity(request.getBody(), StandardCharsets.UTF_8));
-    request.getHeaderMap().forEach((key, values) -> baseRequest.addHeader(key, values.get(0)));
+    request
+        .getHeaderMap()
+        .forEach((key, values) -> values.forEach(value -> baseRequest.addHeader(key, value)));
     return baseRequest;
   }
 

@@ -8,7 +8,7 @@ import com.nimbusds.oauth2.sdk.id.State;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
-public class RandomStateProvider implements StateProvider {
+public class RandomStateProvider implements StateProvider<String> {
   @Override
   public String getState() {
     return new State(256).getValue();
