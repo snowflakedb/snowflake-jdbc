@@ -20,5 +20,6 @@ $MVNW_EXE -DjenkinsIT \
     -DintegrationTestSuites=AuthenticationTestSuite \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     -Dnot-self-contained-jar \
+    -Dsnowflake.jdbc.enableSoteria=true \
     verify \
     --batch-mode --show-version
