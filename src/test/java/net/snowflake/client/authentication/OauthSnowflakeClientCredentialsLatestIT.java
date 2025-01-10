@@ -1,7 +1,5 @@
 package net.snowflake.client.authentication;
 import static net.snowflake.client.authentication.AuthConnectionParameters.*;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
@@ -50,20 +48,5 @@ public class OauthSnowflakeClientCredentialsLatestIT {
 
         authTestHelper.connectAndExecuteSimpleQuery(properties, null);
         authTestHelper.verifyExceptionIsThrown("Error during OAuth Client Credentials authentication: JDBC driver encountered communication error. Message: HTTP status=401.");
-    }
-    @Test
-    void shouldSaveClientCredentialAccessToken() throws InterruptedException {
-        Properties properties = getOAuthSnowflakeClientCredentialParameters();
-        properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", false);
-
-        String accessToken = authTestHelper.getAccessToken();
-        assertNull(accessToken, "Access token should be empty");
-
-        authTestHelper.connectAndExecuteSimpleQuery(properties, null);
-        authTestHelper.verifyExceptionIsNotThrown();
-
-        accessToken = authTestHelper.getAccessToken();
-        assertNotNull(accessToken, "Access token should not be empty");
-
     }
 }

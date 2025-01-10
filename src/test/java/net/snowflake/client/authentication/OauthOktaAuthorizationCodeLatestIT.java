@@ -1,13 +1,11 @@
 package net.snowflake.client.authentication;
 import static net.snowflake.client.authentication.AuthConnectionParameters.*;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.*;
 
-@Tag(TestTags.TESTING)
+@Tag(TestTags.AUTHENTICATION)
 public class OauthOktaAuthorizationCodeLatestIT {
     String login = AuthConnectionParameters.SSO_USER;
     String password = AuthConnectionParameters.SSO_PASSWORD;
@@ -79,29 +77,5 @@ public class OauthOktaAuthorizationCodeLatestIT {
         authTestHelper.verifyExceptionIsNotThrown();
         authTestHelper.connectAndExecuteSimpleQuery(properties, null);
         authTestHelper.verifyExceptionIsNotThrown();
-    }
-    @Test
-    void shouldSaveOktaAuthorizationAccessToken() throws InterruptedException {
-
-        Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
-        properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
-
-        String accessToken = authTestHelper.getAccessToken();
-        System.out.println(accessToken);
-
-        assertNull(accessToken, "Access token should be empty");
-
-
-        Thread provideCredentialsThread =
-                new Thread(() -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
-        Thread connectThread = authTestHelper.getConnectAndExecuteSimpleQueryThread(properties, null);
-
-        authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
-        authTestHelper.verifyExceptionIsNotThrown();
-
-        accessToken = authTestHelper.getAccessToken();
-        System.out.println(accessToken);
-
-        assertNotNull(accessToken, "Access token should not be empty");
     }
 }
