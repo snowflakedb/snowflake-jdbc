@@ -9,6 +9,8 @@ public class AuthConnectionParameters {
   static final String SSO_USER = systemGetEnv("SNOWFLAKE_AUTH_TEST_BROWSER_USER");
   static final String HOST = systemGetEnv("SNOWFLAKE_AUTH_TEST_HOST");
   static final String SSO_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_PASS");
+  static final String OKTA = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_NAME");
+  static final String OAUTH_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
 
   static Properties getBaseConnectionParameters() {
     Properties properties = new Properties();
@@ -19,6 +21,7 @@ public class AuthConnectionParameters {
     properties.put("db", systemGetEnv("SNOWFLAKE_AUTH_TEST_DATABASE"));
     properties.put("schema", systemGetEnv("SNOWFLAKE_AUTH_TEST_SCHEMA"));
     properties.put("warehouse", systemGetEnv("SNOWFLAKE_AUTH_TEST_WAREHOUSE"));
+    properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", false);
     return properties;
   }
 
@@ -71,8 +74,7 @@ public class AuthConnectionParameters {
     properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET"));
     properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI"));
     properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
-
-
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
   }
 

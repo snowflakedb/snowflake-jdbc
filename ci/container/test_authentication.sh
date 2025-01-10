@@ -10,6 +10,8 @@ AUTH_PARAMETER_FILE=./.github/workflows/parameters_aws_auth_tests.json
 eval $(jq -r '.authtestparams | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $AUTH_PARAMETER_FILE)
 
 $MVNW_EXE -DjenkinsIT \
+    -Dnet.snowflake.jdbc.temporaryCredentialCacheDir=/mnt/workspace/abc \
+    -Dnet.snowflake.jdbc.ocspResponseCacheDir=/mnt/workspace/abc \
     -Djava.io.tmpdir=$WORKSPACE \
     -Djacoco.skip.instrument=true \
     -Dskip.unitTests=true \

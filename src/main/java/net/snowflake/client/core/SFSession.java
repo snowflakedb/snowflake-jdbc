@@ -1239,6 +1239,10 @@ public class SFSession extends SFBaseSession {
     return idToken;
   }
 
+  public String getAccessToken() {
+    return oauthAccessToken;
+  }
+
   public String getMfaToken() {
     return mfaToken;
   }
