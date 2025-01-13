@@ -93,7 +93,8 @@ public class AuthTestHelper {
   }
 
   public static void deleteOauthToken() {
-    SessionUtil.deleteOAuthAccessTokenCache(AuthConnectionParameters.OKTA, AuthConnectionParameters.SSO_USER);
+    SessionUtil.deleteOAuthAccessTokenCache(
+        AuthConnectionParameters.OKTA, AuthConnectionParameters.SSO_USER);
   }
 
   public static void deleteOauthToken(String host, String user) {
