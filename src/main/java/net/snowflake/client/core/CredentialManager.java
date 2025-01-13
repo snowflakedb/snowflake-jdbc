@@ -283,7 +283,7 @@ public class CredentialManager {
   /** Delete the Oauth access token cache */
   static void deleteOAuthAccessTokenCache(String host, String user) {
     logger.debug(
-            "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
+        "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
     getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_ACCESS_TOKEN);
   }
 
@@ -314,7 +314,9 @@ public class CredentialManager {
   /** Delete the Oauth refresh token cache */
   static void deleteOAuthRefreshTokenCache(String host, String user) {
     logger.debug(
-            "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",user, host);
+        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
+        user,
+        host);
     getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 

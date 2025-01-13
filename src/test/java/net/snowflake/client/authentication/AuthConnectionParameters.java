@@ -10,7 +10,8 @@ public class AuthConnectionParameters {
   static final String HOST = systemGetEnv("SNOWFLAKE_AUTH_TEST_HOST");
   static final String SSO_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_PASS");
   static final String OKTA = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_NAME");
-  static final String OAUTH_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
+  static final String OAUTH_PASSWORD =
+      systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
 
   static Properties getBaseConnectionParameters() {
     Properties properties = new Properties();
@@ -54,14 +55,19 @@ public class AuthConnectionParameters {
     return properties;
   }
 
-  static Properties getOAuthExternalAuthorizationCodeConnectionParameters( ) {
+  static Properties getOAuthExternalAuthorizationCodeConnectionParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
     properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
-    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_REDIRECT_URI"));
-    properties.put("externalAuthorizationURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_AUTH_URL"));
-    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put(
+        "clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put(
+        "redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_REDIRECT_URI"));
+    properties.put(
+        "externalAuthorizationURL",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_AUTH_URL"));
+    properties.put(
+        "externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
     properties.put("user", SSO_USER);
 
     return properties;
@@ -70,9 +76,12 @@ public class AuthConnectionParameters {
   static Properties getOAuthSnowflakeAuthorizationCodeConnectionParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
-    properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET"));
-    properties.put("redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI"));
+    properties.put(
+        "clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_ID"));
+    properties.put(
+        "clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET"));
+    properties.put(
+        "redirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI"));
     properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
     properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
@@ -82,8 +91,10 @@ public class AuthConnectionParameters {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
     properties.put("clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
-    properties.put("clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
-    properties.put("externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put(
+        "clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put(
+        "externalTokenRequestURL", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
     properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
   }
