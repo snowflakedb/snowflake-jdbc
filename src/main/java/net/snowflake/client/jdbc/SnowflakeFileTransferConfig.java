@@ -8,10 +8,12 @@ import java.io.InputStream;
 import java.util.Properties;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 
 /**
  * This class manages the parameters to call SnowflakeFileTransferAgent.uploadWithoutConnection()
  */
+@SnowflakeOrgInternalApi
 public class SnowflakeFileTransferConfig {
   private SnowflakeFileTransferMetadata metadata;
   private InputStream uploadStream;
