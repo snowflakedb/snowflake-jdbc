@@ -712,14 +712,32 @@ public abstract class SFBaseSession {
    * Get OCSP mode
    *
    * @return {@link OCSPMode}
+   * @throws SnowflakeSQLException
    */
-  public OCSPMode getOCSPMode() {
+  public OCSPMode getOCSPMode() throws SnowflakeSQLException {
     OCSPMode ret;
 
+    Boolean disableOCSPChecks =
+        (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
     if (insecureMode != null && insecureMode) {
+      logger.warn(
+          "The 'insecureMode' connection property is deprecated. Please use 'disableOCSPChecks' instead.");
+    }
+
+    if ((disableOCSPChecks != null && insecureMode != null)
+        && (disableOCSPChecks != insecureMode)) {
+      logger.error(
+          "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
+              + "Please unset insecureMode.");
+      throw new SnowflakeSQLException(
+          ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
+          "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
+    }
+    if ((disableOCSPChecks != null && disableOCSPChecks)
+        || (insecureMode != null && insecureMode)) {
       // skip OCSP checks
-      ret = OCSPMode.INSECURE;
+      ret = OCSPMode.DISABLE_OCSP_CHECKS;
     } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
         || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
       // fail open (by default, not set)
