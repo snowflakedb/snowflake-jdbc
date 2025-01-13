@@ -2490,12 +2490,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             assertFalse(tables.next());
           }
 
-          try (ResultSet tablePriviliges =
+          try (ResultSet tablePrivileges =
               connectionWithContext.getMetaData().getTablePrivileges(null, null, "mytable1")) {
-            assertTrue(tablePriviliges.next());
-            assertEquals("mytable1", tablePriviliges.getString("TABLE_NAME"));
-            assertEquals(schemaName, tablePriviliges.getString(schemaNameColumnInMetadata));
-            assertFalse(tablePriviliges.next());
+            assertTrue(tablePrivileges.next());
+            assertEquals("mytable1", tablePrivileges.getString("TABLE_NAME"));
+            assertEquals(schemaName, tablePrivileges.getString(schemaNameColumnInMetadata));
+            assertFalse(tablePrivileges.next());
           }
 
           try (ResultSet columns =
