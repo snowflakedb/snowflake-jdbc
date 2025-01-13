@@ -1,12 +1,16 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.authentication.AuthConnectionParameters.*;
+import static net.snowflake.client.authentication.AuthConnectionParameters.OAUTH_PASSWORD;
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthSnowflakeAuthorizationCodeConnectionParameters;
 
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
 public class OauthSnowflakeAuthorizationCodeLatestIT {

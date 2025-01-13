@@ -1,11 +1,15 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.authentication.AuthConnectionParameters.*;
+import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthExternalAuthorizationCodeConnectionParameters;
 
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
 public class OauthOktaAuthorizationCodeLatestIT {
@@ -13,8 +17,8 @@ public class OauthOktaAuthorizationCodeLatestIT {
   String password = AuthConnectionParameters.SSO_PASSWORD;
   AuthTestHelper authTestHelper = new AuthTestHelper();
 
-  @BeforeAll
-  public static void setUp() throws IOException {
+  @BeforeEach
+  public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken();
     AuthTestHelper.deleteOauthToken();
   }

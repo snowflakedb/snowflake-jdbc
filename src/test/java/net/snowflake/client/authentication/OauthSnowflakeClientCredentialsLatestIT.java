@@ -1,16 +1,20 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.authentication.AuthConnectionParameters.*;
+import static net.snowflake.client.authentication.AuthConnectionParameters.OKTA;
+import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthSnowflakeClientCredentialParameters;
 
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
 public class OauthSnowflakeClientCredentialsLatestIT {
-  Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
+  Properties properties = getOAuthSnowflakeClientCredentialParameters();
   String login = properties.getProperty("user");
   AuthTestHelper authTestHelper = new AuthTestHelper();
 
@@ -22,7 +26,7 @@ public class OauthSnowflakeClientCredentialsLatestIT {
 
   @AfterAll
   public static void tearDown() {
-    Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
+    Properties properties = getOAuthSnowflakeClientCredentialParameters();
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, properties.getProperty("user"));
     AuthTestHelper.deleteOauthToken(OKTA, properties.getProperty("user"));
   }
