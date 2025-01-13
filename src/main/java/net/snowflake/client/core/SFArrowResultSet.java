@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.MapConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.arrow.VarCharConverter;
@@ -574,10 +575,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return getObjectRepresentation(columnIndex, false);
   }
 
-  private Object getObjectRepresentation(int columnIndex, boolean withString) throws SFException {
+  private StructObjectWrapper getObjectRepresentation(int columnIndex, boolean withString)
+      throws SFException {
     int type = resultSetMetaData.getColumnType(columnIndex);
     if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-      return getString(columnIndex);
+      return new StructObjectWrapper(getString(columnIndex), null);
     }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
@@ -589,15 +591,33 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (obj == null) {
       return null;
     }
-    String jsonString = withString ? converter.toString(index) : null;
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
-    if (isVarcharConvertedStruct(type, isStructuredType, converter)) {
-      return new StructObjectWrapper(jsonString, createJsonSqlInput(columnIndex, obj));
-    } else if (converter instanceof StructConverter) {
-      return new StructObjectWrapper(
-          jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+    if (isStructuredType) {
+      if (converter instanceof VarCharConverter) {
+        if (type == Types.STRUCT) {
+          JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
+          return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
+        } else if (type == Types.ARRAY) {
+          SfSqlArray sfArray = getJsonArray((String) obj, columnIndex);
+          return new StructObjectWrapper(sfArray.getText(), sfArray);
+        } else {
+          throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
+        }
+      } else if (converter instanceof StructConverter) {
+        String jsonString = withString ? converter.toString(index) : null;
+        return new StructObjectWrapper(
+            jsonString, createArrowSqlInput(columnIndex, (Map<String, Object>) obj));
+      } else if (converter instanceof MapConverter) {
+        String jsonString = withString ? converter.toString(index) : null;
+        return new StructObjectWrapper(jsonString, obj);
+      } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
+        String jsonString = converter.toString(index);
+        return new StructObjectWrapper(jsonString, obj);
+      } else {
+        throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
+      }
     } else {
-      return new StructObjectWrapper(jsonString, obj);
+      return new StructObjectWrapper(null, obj);
     }
   }
 
@@ -610,12 +630,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
-  private boolean isVarcharConvertedStruct(
-      int type, boolean isStructuredType, ArrowVectorConverter converter) {
-    return type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter;
+  private boolean isVarcharConvertedStruct(int type, ArrowVectorConverter converter) {
+    return (type == Types.STRUCT || type == Types.ARRAY) && converter instanceof VarCharConverter;
   }
 
-  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+  private JsonSqlInput createJsonSqlInput(int columnIndex, Object obj) throws SFException {
     try {
       if (obj == null) {
         return null;
