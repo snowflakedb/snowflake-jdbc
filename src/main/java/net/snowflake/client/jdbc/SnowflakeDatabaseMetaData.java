@@ -47,7 +47,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFTriple;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
 
@@ -1137,8 +1136,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURES, statement);
     }
 
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -1169,7 +1167,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                   || compiledProcedurePattern.matcher(procedureName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches()
-                  || isExactSchema)) {
+                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
             logger.trace("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -1402,8 +1400,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   // apply session context when catalog is unspecified
-  private SFTriple<String, String, Boolean> applySessionContext(
-      String catalog, String schemaPattern) {
+  private ContextAwareMetadataSearch applySessionContext(String catalog, String schemaPattern) {
     if (metadataRequestUseConnectionCtx) {
       // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
       if (catalog == null) {
@@ -1420,7 +1417,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         }
       }
     }
-    return new SFTriple<>(catalog, schemaPattern, exactSchemaSearchEnabled && useSessionSchema);
+    return new ContextAwareMetadataSearch(
+        catalog, schemaPattern, exactSchemaSearchEnabled && useSessionSchema);
   }
 
   /* helper function for getProcedures, getFunctionColumns, etc. Returns sql command to show some type of result such
@@ -1428,7 +1426,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   private String getFirstResultSetCommand(
       String catalog, String schemaPattern, String name, String type) {
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result = applySessionContext(catalog, schemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(catalog, schemaPattern);
     catalog = result.first();
     schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -1524,8 +1522,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -1715,8 +1712,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -1986,8 +1982,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLE_PRIVILEGES, statement);
     }
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -2108,7 +2103,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result = applySessionContext(originalCatalog, originalSchema);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchema);
     String catalog = result.first();
     String schema = result.second();
     boolean isExactSchema = result.third();
@@ -2272,7 +2267,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     StringBuilder commandBuilder = new StringBuilder();
 
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result =
+    ContextAwareMetadataSearch result =
         applySessionContext(originalParentCatalog, originalParentSchema);
     String parentCatalog = result.first();
     String parentSchema = result.second();
@@ -2885,8 +2880,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -3290,7 +3284,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    SFTriple<String, String, Boolean> result = applySessionContext(originalCatalog, originalSchema);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchema);
     final String catalog = result.first();
     final String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -3343,7 +3337,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           if (compiledSchemaPattern == null
               || compiledSchemaPattern.matcher(schemaName).matches()
-              || isExactSchema) {
+              || isExactSchema && schemaPattern.equals(schemaPattern)) {
             nextRow[0] = schemaName;
             nextRow[1] = dbName;
             return true;
@@ -3397,8 +3391,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     if (showFunctionCommand.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTIONS, statement);
     }
-    SFTriple<String, String, Boolean> result =
-        applySessionContext(originalCatalog, originalSchemaPattern);
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
     String catalog = result.first();
     String schemaPattern = result.second();
     boolean isExactSchema = result.third();
@@ -3432,7 +3425,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                   || compiledFunctionPattern.matcher(functionName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches()
-                  || isExactSchema)) {
+                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
             logger.debug("Found a matched function:" + schemaName + "." + functionName);
 
             nextRow[0] = catalogName;
@@ -3713,5 +3706,29 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
     return resultSet;
+  }
+
+  private static class ContextAwareMetadataSearch {
+    private final String database;
+    private final String schema;
+    private final boolean isExactSchema;
+
+    public ContextAwareMetadataSearch(String database, String schema, boolean isExactSchema) {
+      this.database = database;
+      this.schema = schema;
+      this.isExactSchema = isExactSchema;
+    }
+
+    public String first() {
+      return database;
+    }
+
+    public String second() {
+      return schema;
+    }
+
+    public boolean third() {
+      return isExactSchema;
+    }
   }
 }
