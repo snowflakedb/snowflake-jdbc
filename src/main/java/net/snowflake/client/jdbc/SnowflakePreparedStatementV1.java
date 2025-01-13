@@ -1013,8 +1013,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           updateCounts.intArr = executeBatchInternal(false).intArr;
         }
       }
+      // TODO SNOW-1853752 should we guard new behaviour with property?
+      clearBatch();
     } finally {
-      this.clearBatch();
+      // TODO SNOW-1853752 should we keep old behaviour? available here since 2017
+      // this.clearBatch();
     }
 
     return updateCounts;
