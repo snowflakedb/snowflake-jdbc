@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core.auth.oauth;
@@ -53,8 +53,9 @@ public class OAuthAccessTokenProviderFactory {
             "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
         return new OAuthClientCredentialsAccessTokenProvider();
       default:
-        logger.error("Unsupported authenticator type: " + authenticatorType);
-        throw new SFException(ErrorCode.INTERNAL_ERROR);
+        String message = "Unsupported authenticator type: " + authenticatorType;
+        logger.error(message);
+        throw new SFException(ErrorCode.INTERNAL_ERROR, message);
     }
   }
 

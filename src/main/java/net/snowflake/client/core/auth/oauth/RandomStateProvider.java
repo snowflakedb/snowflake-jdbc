@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core.auth.oauth;
@@ -9,8 +9,11 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
 public class RandomStateProvider implements StateProvider<String> {
+
+  private static final int STATE_BYTE_SIZE = 256;
+
   @Override
   public String getState() {
-    return new State(256).getValue();
+    return new State(STATE_BYTE_SIZE).getValue();
   }
 }

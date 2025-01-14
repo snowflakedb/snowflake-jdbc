@@ -1,49 +1,22 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core.auth.oauth;
 
 import com.amazonaws.util.StringUtils;
 import com.nimbusds.oauth2.sdk.id.State;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 
-class AuthorizationCodeRedirectRequestHandler implements HttpHandler {
+class AuthorizationCodeRedirectRequestHandler {
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AuthorizationCodeRedirectRequestHandler.class);
-
-  private final CompletableFuture<String> authorizationCodeFuture;
-  private final State expectedState;
-
-  AuthorizationCodeRedirectRequestHandler(
-      CompletableFuture<String> authorizationCodeFuture, State expectedState) {
-    this.authorizationCodeFuture = authorizationCodeFuture;
-    this.expectedState = expectedState;
-  }
-
-  @Override
-  public void handle(HttpExchange exchange) throws IOException {
-    Map<String, String> urlParams =
-        URLEncodedUtils.parse(exchange.getRequestURI(), StandardCharsets.UTF_8).stream()
-            .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-    String response = handleRedirectRequest(urlParams, authorizationCodeFuture, expectedState);
-    exchange.sendResponseHeaders(200, response.length());
-    exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
-    exchange.getResponseBody().close();
-  }
 
   static String handleRedirectRequest(
       Map<String, String> urlParams,

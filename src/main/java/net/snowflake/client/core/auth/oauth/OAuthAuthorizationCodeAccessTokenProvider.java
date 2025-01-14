@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core.auth.oauth;
@@ -25,9 +25,12 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
@@ -36,6 +39,8 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 
 @SnowflakeJdbcInternalApi
 public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenProvider {
@@ -154,7 +159,17 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
     CompletableFuture<String> authorizationCodeFuture = new CompletableFuture<>();
     httpServer.createContext(
         DEFAULT_REDIRECT_URI_ENDPOINT,
-        new AuthorizationCodeRedirectRequestHandler(authorizationCodeFuture, expectedState));
+        exchange -> {
+          Map<String, String> urlParams =
+              URLEncodedUtils.parse(exchange.getRequestURI(), StandardCharsets.UTF_8).stream()
+                  .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
+          String response =
+              AuthorizationCodeRedirectRequestHandler.handleRedirectRequest(
+                  urlParams, authorizationCodeFuture, expectedState);
+          exchange.sendResponseHeaders(200, response.length());
+          exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
+          exchange.getResponseBody().close();
+        });
     logger.debug("Starting OAuth redirect URI server @ {}", httpServer.getAddress());
     httpServer.start();
     return authorizationCodeFuture;

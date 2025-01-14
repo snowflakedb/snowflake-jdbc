@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.core.auth;
 
