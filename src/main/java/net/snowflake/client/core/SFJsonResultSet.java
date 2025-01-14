@@ -94,7 +94,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         }
       case Types.ARRAY:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
-          return getArray(columnIndex);
+          return new StructObjectWrapper((String) obj, getArray(columnIndex));
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
