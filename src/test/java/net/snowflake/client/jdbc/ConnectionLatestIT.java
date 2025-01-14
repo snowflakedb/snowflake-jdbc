@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1635,5 +1636,30 @@ public class ConnectionLatestIT extends BaseJDBCTest {
               .contains(
                   "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
     }
+  }
+
+  /**
+   * Test production connectivity with disableOCSPChecksMode enabled. This test applies to driver
+   * versions after 3.21.0
+   */
+  @Test
+  public void testDisableOCSPChecksMode() throws SQLException {
+
+    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+    Properties properties = new Properties();
+
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepwd");
+    properties.put("account", "fakeaccount");
+    properties.put("disableOCSPChecks", true);
+    SQLException thrown =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(deploymentUrl, properties);
+            });
+
+    assertThat(
+        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 }

@@ -57,6 +57,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
@@ -2199,6 +2200,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param config Configuration to upload a file to cloud storage
    * @throws Exception if error occurs while data upload.
    */
+  @SnowflakeOrgInternalApi
   public static void uploadWithoutConnection(SnowflakeFileTransferConfig config) throws Exception {
     logger.trace("Entering uploadWithoutConnection...");
 
@@ -2338,7 +2340,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           break;
       }
     } catch (Exception ex) {
-      logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      if (!config.isSilentException()) {
+        logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      }
       throw ex;
     } finally {
       if (fileBackedOutputStream != null) {
