@@ -210,6 +210,9 @@
           <parameter>
             <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
             <ignoreMissingClasses>false</ignoreMissingClasses>
+            <ignoreMissingClassesByRegularExpressions>
+              <ignoreMissingClassesByRegularExpression>${shadeBase}.*</ignoreMissingClassesByRegularExpression>
+            </ignoreMissingClassesByRegularExpressions>
             <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
             <includes>
               <include>com.snowflake</include>
@@ -817,7 +820,7 @@
                       <pattern>org.apache</pattern>
                       <shadedPattern>${shadeBase}.apache</shadedPattern>
                       <excludes>
-                        <exclude>org.apache.log4j.*</exclude>
+                        <exclude>org.apache.commons.logging.**</exclude>
                       </excludes>
                     </relocation>
                     <relocation>
@@ -1057,12 +1060,6 @@
                         <include>com/google/common/math/**</include>
                         <include>com/google/common/util/concurrent/**</include>
                       </includes>
-                    </filter>
-                    <filter>
-                      <artifact>commons-logging:commons-logging</artifact>
-                      <excludes>
-                        <exclude>org/apache/commons/logging/impl/AvalonLogger.class</exclude>
-                      </excludes>
                     </filter>
                   </filters>
                   <transformers>
