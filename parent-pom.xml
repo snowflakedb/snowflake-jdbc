@@ -36,7 +36,7 @@
     <commons.codec.version>1.17.1</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
     <commons.io.version>2.17.0</commons.io.version>
-    <commons.logging.version>1.2</commons.logging.version>
+    <commons.logging.version>1.3.4</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
     <google.api.grpc.version>2.48.0</google.api.grpc.version>
