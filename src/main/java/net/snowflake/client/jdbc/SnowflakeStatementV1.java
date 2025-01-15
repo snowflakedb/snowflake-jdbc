@@ -556,8 +556,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           updateCounts.intArr,
           exceptionReturned);
     }
-    // TODO SNOW-1853752 should we guard new behaviour with property?
-    batch.clear();
+    if (this.getSFBaseStatement().getSFBaseSession().getClearBatchOnlyAfterSuccessfulExecution()) {
+      clearBatch();
+    }
     return updateCounts;
   }
 
