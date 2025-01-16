@@ -72,15 +72,13 @@ public class SessionUtilTest {
     assertEquals("value", result.get("TIMEZONE"));
 
     result =
-            SessionUtil.getCommonParams(
-                    mapper.readTree(
-                            "[{\"name\": \"TELEMETRY_SERVICE_AVAILABLE\", \"value\": true}]"));
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"TELEMETRY_SERVICE_AVAILABLE\", \"value\": true}]"));
     assertTrue((boolean) result.get("TELEMETRY_SERVICE_AVAILABLE"));
 
     result =
-            SessionUtil.getCommonParams(
-                    mapper.readTree(
-                            "[{\"name\": \"TELEMETRY_SERVICE_AVAILABLE\", \"value\": false}]"));
+        SessionUtil.getCommonParams(
+            mapper.readTree("[{\"name\": \"TELEMETRY_SERVICE_AVAILABLE\", \"value\": false}]"));
     assertFalse((boolean) result.get("TELEMETRY_SERVICE_AVAILABLE"));
   }
 }
