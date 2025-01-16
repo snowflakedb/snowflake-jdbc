@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core.auth.oauth;
 
+import com.amazonaws.util.StringUtils;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +46,7 @@ public class OAuthAccessTokenProviderFactory {
       case OAUTH_AUTHORIZATION_CODE:
         assertContainsClientCredentials(loginInput, authenticatorType);
         validateHttpRedirectUriIfSpecified(loginInput);
+        validateAuthorizationAndTokenEndpointsIfSpecified(loginInput);
         return new OAuthAuthorizationCodeAccessTokenProvider(
             browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
       case OAUTH_CLIENT_CREDENTIALS:
@@ -56,6 +59,35 @@ public class OAuthAccessTokenProviderFactory {
         String message = "Unsupported authenticator type: " + authenticatorType;
         logger.error(message);
         throw new SFException(ErrorCode.INTERNAL_ERROR, message);
+    }
+  }
+
+  private void validateAuthorizationAndTokenEndpointsIfSpecified(SFLoginInput loginInput)
+      throws SFException {
+    String authorizationEndpoint = loginInput.getOauthLoginInput().getExternalAuthorizationUrl();
+    String tokenEndpoint = loginInput.getOauthLoginInput().getExternalTokenRequestUrl();
+    if ((!StringUtils.isNullOrEmpty(authorizationEndpoint)
+            && StringUtils.isNullOrEmpty(tokenEndpoint))
+        || (StringUtils.isNullOrEmpty(authorizationEndpoint)
+            && !StringUtils.isNullOrEmpty(tokenEndpoint))) {
+      throw new SFException(
+          ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+          "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified");
+    } else if (!StringUtils.isNullOrEmpty(authorizationEndpoint)
+        && !StringUtils.isNullOrEmpty(tokenEndpoint)) {
+      try {
+        URI authorizationUrl = URI.create(authorizationEndpoint);
+        URI tokenUrl = URI.create(tokenEndpoint);
+        AssertUtil.assertTrue(
+            (authorizationUrl.getAuthority().equals(tokenUrl.getAuthority())),
+            String.format(
+                "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                authorizationUrl, tokenUrl));
+      } catch (Exception e) {
+        throw new SFException(
+            ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+            "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host");
+      }
     }
   }
 
