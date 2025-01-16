@@ -9,11 +9,11 @@ class AeadIv {
     this.bytes = bytes;
   }
 
-  public static AeadIv generateRandom(FloeRandom floeRandom, int ivLength) {
+  static AeadIv generateRandom(FloeRandom floeRandom, int ivLength) {
     return new AeadIv(floeRandom.ofLength(ivLength));
   }
 
-  public static AeadIv from(ByteBuffer buffer, int ivLength) {
+  static AeadIv from(ByteBuffer buffer, int ivLength) {
     byte[] bytes = new byte[ivLength];
     buffer.get(bytes);
     return new AeadIv(bytes);

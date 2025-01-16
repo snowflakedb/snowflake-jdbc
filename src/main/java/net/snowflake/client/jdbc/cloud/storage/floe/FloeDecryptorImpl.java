@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecryptor {
   private final FloeIv floeIv;
-  private long segmentCounter;
+  private final AeadProvider aeadProvider;
 
   FloeDecryptorImpl(
       FloeParameterSpec parameterSpec, FloeKey floeKey, FloeAad floeAad, byte[] floeHeaderAsBytes) {
@@ -29,6 +29,7 @@ public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecry
     byte[] floeIvBytes = new byte[this.parameterSpec.getFloeIvLength().getLength()];
     floeHeader.get(floeIvBytes, 0, floeIvBytes.length);
     this.floeIv = new FloeIv(floeIvBytes);
+    this.aeadProvider = parameterSpec.getAead().getAeadProvider();
 
     byte[] headerTagFromHeader = new byte[headerTagLength];
     floeHeader.get(headerTagFromHeader, 0, headerTagFromHeader.length);
@@ -41,6 +42,8 @@ public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecry
     }
   }
 
+  private long segmentCounter;
+
   @Override
   public byte[] processSegment(byte[] input) {
     try {
@@ -49,12 +52,14 @@ public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecry
       verifySegmentSizeMarker(inputBuf);
       AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
       AeadIv aeadIv = AeadIv.from(inputBuf, parameterSpec.getAead().getIvLength());
-      AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter++);
+      AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter);
       AeadProvider aeadProvider = parameterSpec.getAead().getAeadProvider();
       byte[] ciphertext = new byte[inputBuf.remaining()];
       inputBuf.get(ciphertext);
-      return aeadProvider.decrypt(
-          aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), ciphertext);
+      byte[] decrypted =
+          aeadProvider.decrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), ciphertext);
+      segmentCounter++;
+      return decrypted;
     } catch (GeneralSecurityException e) {
       throw new RuntimeException(e);
     }

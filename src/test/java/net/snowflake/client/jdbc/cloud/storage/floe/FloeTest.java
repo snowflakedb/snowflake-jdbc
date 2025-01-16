@@ -80,7 +80,7 @@ class FloeTest {
             Hash.SHA384,
             40,
             new FloeIvLength(32),
-            new IncrementingFloeRandom(),
+            new IncrementingFloeRandom(678765),
             4);
     Floe floe = Floe.getInstance(parameterSpec);
     FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
@@ -100,7 +100,7 @@ class FloeTest {
             Hash.SHA384,
             40,
             new FloeIvLength(32),
-            new IncrementingFloeRandom(),
+            new IncrementingFloeRandom(37665),
             4);
     Floe floe = Floe.getInstance(parameterSpec);
     FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
@@ -121,7 +121,7 @@ class FloeTest {
             Hash.SHA384,
             40,
             new FloeIvLength(32),
-            new IncrementingFloeRandom(),
+            new IncrementingFloeRandom(6546),
             4);
     Floe floe = Floe.getInstance(parameterSpec);
     FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);

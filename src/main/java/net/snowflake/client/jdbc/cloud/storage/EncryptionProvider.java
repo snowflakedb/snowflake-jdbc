@@ -41,7 +41,8 @@ public class EncryptionProvider {
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
   private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
-  private static ThreadLocal<SecureRandom> secRnd = ThreadLocal.withInitial(SecureRandom::new);
+  private static final ThreadLocal<SecureRandom> SEC_RND =
+      ThreadLocal.withInitial(SecureRandom::new);
 
   /**
    * Decrypt a InputStream
@@ -69,7 +70,7 @@ public class EncryptionProvider {
     byte[] kekBytes = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
     byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
     byte[] ivBytes = Base64.getDecoder().decode(ivBase64);
-    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+    SecretKey kek = new SecretKeySpec(kekBytes, AES);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.DECRYPT_MODE, kek);
     byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
@@ -97,7 +98,7 @@ public class EncryptionProvider {
     // Decrypt file key
     {
       final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
-      SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+      SecretKey kek = new SecretKeySpec(kekBytes, AES);
       keyCipher.init(Cipher.DECRYPT_MODE, kek);
       byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
 
@@ -165,11 +166,11 @@ public class EncryptionProvider {
 
       // Create IV
       ivData = new byte[blockSize];
-      secRnd.get().nextBytes(ivData);
+      SEC_RND.get().nextBytes(ivData);
       final IvParameterSpec iv = new IvParameterSpec(ivData);
 
       // Create file key
-      secRnd.get().nextBytes(fileKeyBytes);
+      SEC_RND.get().nextBytes(fileKeyBytes);
       SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, keySize, AES);
 
       // Init cipher

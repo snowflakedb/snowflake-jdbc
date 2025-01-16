@@ -6,6 +6,7 @@ import java.security.GeneralSecurityException;
 class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
 
   private final FloeIv floeIv;
+  private final AeadProvider aeadProvider;
   private AeadKey currentAeadKey;
 
   private long segmentCounter;
@@ -16,6 +17,7 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
     super(parameterSpec, floeKey, floeAad);
     this.floeIv =
         FloeIv.generateRandom(parameterSpec.getFloeRandom(), parameterSpec.getFloeIvLength());
+    this.aeadProvider = parameterSpec.getAead().getAeadProvider();
     this.header = buildHeader();
   }
 
@@ -51,12 +53,13 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
       AeadIv aeadIv =
           AeadIv.generateRandom(
               parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
-      AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter++);
-      AeadProvider aeadProvider = parameterSpec.getAead().getAeadProvider();
+      AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter);
       // it works as long as AEAD returns auth tag as a part of the ciphertext
       byte[] ciphertextWithAuthTag =
           aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
-      return segmentToBytes(aeadIv, ciphertextWithAuthTag);
+      byte[] encoded = segmentToBytes(aeadIv, ciphertextWithAuthTag);
+      segmentCounter++;
+      return encoded;
     } catch (GeneralSecurityException e) {
       throw new RuntimeException(e);
     }

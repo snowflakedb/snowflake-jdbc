@@ -26,18 +26,18 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
-@SnowflakeJdbcInternalApi
-public class GcmEncryptionProvider {
+class GcmEncryptionProvider {
   private static final int TAG_LENGTH_IN_BITS = 128;
   private static final int IV_LENGTH_IN_BYTES = 12;
   private static final String AES = "AES";
+  private static final String FILE_CIPHER = "AES/GCM/NoPadding";
+  private static final String KEY_CIPHER = "AES/GCM/NoPadding";
   private static final int BUFFER_SIZE = 8 * 1024 * 1024; // 2 MB
   private static final ThreadLocal<SecureRandom> random =
-      ThreadLocal.withInitial(SecureRandom::new);
+      new ThreadLocal<>().withInitial(SecureRandom::new);
   private static final Base64.Decoder base64Decoder = Base64.getDecoder();
 
   static InputStream encrypt(
@@ -83,9 +83,9 @@ public class GcmEncryptionProvider {
   private static byte[] encryptKey(byte[] kekBytes, byte[] keyBytes, byte[] keyIvData, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
-    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+    SecretKey kek = new SecretKeySpec(kekBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, keyIvData);
-    Cipher keyCipher = Cipher.getInstance(JCE_CIPHER_NAME);
+    Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.ENCRYPT_MODE, kek, gcmParameterSpec);
     if (aad != null) {
       keyCipher.updateAAD(aad);
@@ -97,9 +97,9 @@ public class GcmEncryptionProvider {
       InputStream src, byte[] keyBytes, byte[] dataIvBytes, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException,
           NoSuchAlgorithmException {
-    SecretKey fileKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, AES);
+    SecretKey fileKey = new SecretKeySpec(keyBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, dataIvBytes);
-    Cipher fileCipher = Cipher.getInstance(JCE_CIPHER_NAME);
+    Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.ENCRYPT_MODE, fileKey, gcmParameterSpec);
     if (aad != null) {
       fileCipher.updateAAD(aad);
@@ -172,7 +172,7 @@ public class GcmEncryptionProvider {
           NoSuchAlgorithmException {
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, ivBytes);
     SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
-    Cipher fileCipher = Cipher.getInstance(JCE_CIPHER_NAME);
+    Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.DECRYPT_MODE, fileKey, gcmParameterSpec);
     if (aad != null) {
       fileCipher.updateAAD(aad);
@@ -187,7 +187,7 @@ public class GcmEncryptionProvider {
     SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, cekIvBytes);
     byte[] buffer = new byte[BUFFER_SIZE];
-    Cipher fileCipher = Cipher.getInstance(JCE_CIPHER_NAME);
+    Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.DECRYPT_MODE, fileKey, gcmParameterSpec);
     if (aad != null) {
       fileCipher.updateAAD(aad);
@@ -213,9 +213,9 @@ public class GcmEncryptionProvider {
   private static byte[] decryptKey(byte[] kekBytes, byte[] ivBytes, byte[] keyBytes, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
-    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+    SecretKey kek = new SecretKeySpec(kekBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, ivBytes);
-    Cipher keyCipher = Cipher.getInstance(JCE_CIPHER_NAME);
+    Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.DECRYPT_MODE, kek, gcmParameterSpec);
     if (aad != null) {
       keyCipher.updateAAD(aad);

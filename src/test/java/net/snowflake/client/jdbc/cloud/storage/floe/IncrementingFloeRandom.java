@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 public class IncrementingFloeRandom implements FloeRandom {
   private int seed;
 
+  public IncrementingFloeRandom(int seed) {
+    this.seed = seed;
+  }
+
   @Override
   public byte[] ofLength(int length) {
     ByteBuffer buffer = ByteBuffer.allocate(length);

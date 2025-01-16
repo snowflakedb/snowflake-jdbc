@@ -21,7 +21,7 @@ class FloeEncryptorImplTest {
             Hash.SHA384,
             12345678,
             new FloeIvLength(4),
-            new IncrementingFloeRandom(),
+            new IncrementingFloeRandom(17),
             4);
     parameterSpec.getFloeRandom().ofLength(4); // just to trigger incrementation
     FloeKey floeKey = new FloeKey(new SecretKeySpec(new byte[32], "FLOE"));
@@ -48,7 +48,7 @@ class FloeEncryptorImplTest {
     assertEquals(0, header[10]);
     assertEquals(0, header[11]);
     assertEquals(0, header[12]);
-    assertEquals(1, header[13]);
+    assertEquals(18, header[13]);
   }
 
   @Test
@@ -72,7 +72,7 @@ class FloeEncryptorImplTest {
             Hash.SHA384,
             40,
             new FloeIvLength(32),
-            new IncrementingFloeRandom(),
+            new IncrementingFloeRandom(0),
             4);
     Floe floe = Floe.getInstance(parameterSpec);
     FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);

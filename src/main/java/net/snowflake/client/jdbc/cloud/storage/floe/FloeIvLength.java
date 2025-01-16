@@ -1,13 +1,13 @@
 package net.snowflake.client.jdbc.cloud.storage.floe;
 
-public class FloeIvLength {
+class FloeIvLength {
   private final int length;
 
-  public FloeIvLength(int length) {
+  FloeIvLength(int length) {
     this.length = length;
   }
 
-  public int getLength() {
+  int getLength() {
     return length;
   }
 }
