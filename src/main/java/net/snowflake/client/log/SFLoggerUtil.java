@@ -20,9 +20,18 @@ public class SFLoggerUtil {
       loggerImplementation = SFLoggerFactory.LoggerImpl.JDK14LOGGER;
     }
 
+    CommonsLoggingWrapperMode commonsLoggingWrapperMode = CommonsLoggingWrapperMode.detect();
+    if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.OFF) {
+      return;
+    }
+
     System.setProperty(
         "org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
     LogFactory logFactory = LogFactory.getFactory();
+    if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.ALL) {
+      logFactory.setAttribute("org.apache.commons.logging.Log", JCLWrapper.class.getName());
+      return;
+    }
     switch (loggerImplementation) {
       case SLF4JLOGGER:
         logFactory.setAttribute(
