@@ -3,13 +3,12 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.SFSession.TELEMETRY_SERVICE_AVAILABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class SFLoginInputTest {
 

@@ -738,7 +738,9 @@ public class SFSession extends SFBaseSession {
     HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
     HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
 
-    String telemetryValue = loginInput.getSessionParameters()
+    String telemetryValue =
+        loginInput
+            .getSessionParameters()
             .getOrDefault(TELEMETRY_SERVICE_AVAILABLE, Boolean.TRUE)
             .toString();
 
