@@ -4,9 +4,9 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -250,6 +250,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(null, sfSession, new SFStatement(sfSession));
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
         assertTrue(
@@ -291,6 +292,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
                 .setSFSession(sfSession)
                 .setCommand(PUT_COMMAND)
                 .build());
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
         assertTrue(
@@ -335,6 +337,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
                 .setSFSession(sfSession)
                 .setCommand(PUT_COMMAND)
                 .build());
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
         assertTrue(
@@ -379,6 +382,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
                 .setSFSession(sfSession)
                 .setCommand(PUT_COMMAND)
                 .build());
+        fail();
       } catch (Exception err) {
         assertTrue(
             err.getMessage()
@@ -402,6 +406,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
         sfAgent.execute();
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals(200008, err.getErrorCode());
       } finally {
@@ -423,6 +428,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent.execute();
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals(200009, err.getErrorCode());
       } finally {
@@ -446,9 +452,10 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
         sfAgent.execute();
+        fail();
       } catch (SnowflakeSQLException err) {
-        assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        assertTrue(err.getMessage().contains("Error reading:"));
+        assertEquals((long) ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode(), err.getErrorCode());
+        assertInstanceOf(NoSuchAlgorithmException.class, err.getCause().getCause());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -468,7 +475,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
-
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
         assertTrue(err.getMessage().contains("Failed to parse the locations"));
@@ -531,6 +538,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
         sfAgent.execute();
+        fail();
       } catch (SnowflakeSQLException err) {
         assertEquals(200016, err.getErrorCode());
         assertTrue(err.getMessage().contains("Encountered exception during listObjects"));
@@ -633,8 +641,9 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent.execute();
+        fail();
       } catch (Exception err) {
-        assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
+        assertInstanceOf(FileNotFoundException.class, err.getCause());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }

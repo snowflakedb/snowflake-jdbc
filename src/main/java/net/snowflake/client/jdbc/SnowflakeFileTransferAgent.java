@@ -1668,7 +1668,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             queryID,
             ex.getCause(),
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode());
+            ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     } finally {
@@ -1796,7 +1796,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             queryID,
             ex.getCause(),
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode());
+            ErrorCode.FILE_OPERATION_DOWNLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with downloading");
     } finally {
@@ -1906,7 +1906,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             queryID,
             ex.getCause(),
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode());
+            ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading");
 
