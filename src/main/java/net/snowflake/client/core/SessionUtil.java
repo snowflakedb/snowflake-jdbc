@@ -83,7 +83,6 @@ public class SessionUtil {
   private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
-  private static final String TELEMETRY_SERVICE_AVAILABLE = "TELEMETRY_SERVICE_AVAILABLE";
   private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED =
       "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED";
   private static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE =
@@ -185,7 +184,6 @@ public class SessionUtil {
               "CLIENT_SESSION_KEEP_ALIVE",
               CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS,
               CLIENT_IN_BAND_TELEMETRY_ENABLED,
-              TELEMETRY_SERVICE_AVAILABLE,
               CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
               CLIENT_STORE_TEMPORARY_CREDENTIAL,
               CLIENT_REQUEST_MFA_TOKEN,
@@ -1638,10 +1636,6 @@ public class SessionUtil {
       } else if (CLIENT_IN_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setClientTelemetryEnabled((boolean) entry.getValue());
-        }
-      } else if (TELEMETRY_SERVICE_AVAILABLE.equalsIgnoreCase(entry.getKey())) {
-        if (session != null) {
-          session.setTelemetryServiceAvailable((boolean) entry.getValue());
         }
       } else if ("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
