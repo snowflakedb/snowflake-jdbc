@@ -79,7 +79,7 @@ public class OAuthAccessTokenProviderFactory {
         URI authorizationUrl = URI.create(authorizationEndpoint);
         URI tokenUrl = URI.create(tokenEndpoint);
         AssertUtil.assertTrue(
-            (authorizationUrl.getAuthority().equals(tokenUrl.getAuthority())),
+            (authorizationUrl.getHost().equals(tokenUrl.getHost())),
             String.format(
                 "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
                 authorizationUrl, tokenUrl));
