@@ -559,6 +559,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION:
+          if (propertyValue != null) {
+            setClearBatchOnlyAfterSuccessfulExecution(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
