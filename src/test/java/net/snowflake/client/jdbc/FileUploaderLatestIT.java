@@ -454,7 +454,8 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         sfAgent.execute();
         fail();
       } catch (SnowflakeSQLException err) {
-        assertEquals((long) ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode(), err.getErrorCode());
+        assertEquals(
+            (long) ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode(), err.getErrorCode());
         assertInstanceOf(NoSuchAlgorithmException.class, err.getCause().getCause());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
