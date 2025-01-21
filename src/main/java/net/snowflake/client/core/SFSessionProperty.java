@@ -132,7 +132,10 @@ public enum SFSessionProperty {
       "JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD", false, String.class),
 
   SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT(
-      "SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", false, Boolean.class);
+      "SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", false, Boolean.class),
+
+  CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
