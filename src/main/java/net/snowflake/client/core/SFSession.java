@@ -553,9 +553,9 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
-        case SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT:
+        case IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT:
           if (propertyValue != null) {
-            setSupportImplicitAsyncQueryTimeout(getBooleanValue(propertyValue));
+            setImplicitServerSideQueryTimeout(getBooleanValue(propertyValue));
           }
           break;
 
