@@ -29,7 +29,8 @@ public class SFLoggerUtil {
         "org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
     LogFactory logFactory = LogFactory.getFactory();
     if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.ALL) {
-      logFactory.setAttribute("org.apache.commons.logging.Log", JCLWrapper.class.getName());
+      logFactory.setAttribute(
+          "org.apache.commons.logging.Log", CommonsLoggingWrapper.class.getName());
       return;
     }
     switch (loggerImplementation) {

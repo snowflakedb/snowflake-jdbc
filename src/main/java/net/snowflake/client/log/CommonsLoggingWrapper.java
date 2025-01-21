@@ -12,10 +12,10 @@ import org.apache.commons.logging.Log;
  * messages.
  */
 @SnowflakeJdbcInternalApi
-public class JCLWrapper implements Log {
+public class CommonsLoggingWrapper implements Log {
   private final SFLogger logger;
 
-  public JCLWrapper(String className) {
+  public CommonsLoggingWrapper(String className) {
     this.logger = SFLoggerFactory.getLogger(className);
   }
 

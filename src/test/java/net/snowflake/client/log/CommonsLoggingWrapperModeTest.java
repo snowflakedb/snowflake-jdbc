@@ -45,11 +45,11 @@ public class CommonsLoggingWrapperModeTest {
 
   @Test
   public void shouldThrowOnUnknownMode() {
-    System.setProperty(CommonsLoggingWrapperMode.JAVA_PROPERTY, "bla");
+    System.setProperty(CommonsLoggingWrapperMode.JAVA_PROPERTY, "invalid");
     IllegalArgumentException illegalArgumentException =
         assertThrows(IllegalArgumentException.class, CommonsLoggingWrapperMode::detect);
     assertEquals(
-        "Unknown commons logging wrapper value 'bla', expected one of: ALL, DEFAULT, OFF",
+        "Unknown commons logging wrapper value 'invalid', expected one of: ALL, DEFAULT, OFF",
         illegalArgumentException.getMessage());
   }
 }
