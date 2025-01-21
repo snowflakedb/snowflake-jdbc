@@ -9,8 +9,12 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class OAuthAccessTokenProviderFactoryTest {
 
@@ -218,7 +222,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Error during OAuth Authorization Code authentication: Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host"));
+                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=invalid/url/format externalTokenRequestUrl=https://some.ext.idp.com/token"));
   }
 
   @Test
@@ -239,11 +243,12 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=https://some.ext.idp.com/authz externalTokenRequestUrl=invalid-token-format"));
+                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=https://some.ext.idp.com/authz externalTokenRequestUrl=invalid-token-format"));
   }
 
   @Test
-  public void shouldFailToCreateAuthzCodeAccessTokenProviderWithDifferentUrlDomains() {
+  public void shouldFailToCreateAuthzCodeAccessTokenProviderWithDifferentUrlDomains()
+      throws SFException {
     SFLoginInput loginInput =
         createLoginInputStub(
             "123",
@@ -251,16 +256,18 @@ public class OAuthAccessTokenProviderFactoryTest {
             "https://malicious.ext.idp.com/authz-url",
             "https://some.ext.idp.com/token-url",
             "http://localhost:1234/");
-    SFException e =
-        Assertions.assertThrows(
-            SFException.class,
-            () ->
-                providerFactory.createAccessTokenProvider(
-                    AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput));
-    Assertions.assertTrue(
-        e.getMessage()
-            .contains(
-                "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=https://malicious.ext.idp.com/authz-url externalTokenRequestUrl=https://some.ext.idp.com/token-url"));
+    SFLogger loggerMock = Mockito.mock(SFLogger.class);
+    try (MockedStatic<SFLoggerFactory> loggerFactoryMockedStatic =
+        Mockito.mockStatic(SFLoggerFactory.class)) {
+      loggerFactoryMockedStatic
+          .when(() -> SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class))
+          .thenReturn(loggerMock);
+      new OAuthAccessTokenProviderFactory(null, 30)
+          .createAccessTokenProvider(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
+      Mockito.verify(loggerMock)
+          .warn(
+              "Both externalAuthorizationUrl and externalTokenRequestUrl should belong to the same host; externalAuthorizationUrl=https://malicious.ext.idp.com/authz-url externalTokenRequestUrl=https://some.ext.idp.com/token-url");
+    }
   }
 
   private SFLoginInput createLoginInputStub(

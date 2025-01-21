@@ -22,8 +22,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class OAuthAccessTokenProviderFactory {
 
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
+  private final SFLogger logger = SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
   private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES =
       new HashSet<>(
           Arrays.asList(
@@ -75,18 +74,21 @@ public class OAuthAccessTokenProviderFactory {
           "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified");
     } else if (!StringUtils.isNullOrEmpty(authorizationEndpoint)
         && !StringUtils.isNullOrEmpty(tokenEndpoint)) {
-      try {
-        URI authorizationUrl = URI.create(authorizationEndpoint);
-        URI tokenUrl = URI.create(tokenEndpoint);
-        AssertUtil.assertTrue(
-            (authorizationUrl.getHost().equals(tokenUrl.getHost())),
-            String.format(
-                "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
-                authorizationUrl, tokenUrl));
-      } catch (Exception e) {
+      URI authorizationUrl = URI.create(authorizationEndpoint);
+      URI tokenUrl = URI.create(tokenEndpoint);
+      if (StringUtils.isNullOrEmpty(authorizationUrl.getHost())
+          || StringUtils.isNullOrEmpty(tokenUrl.getHost())) {
         throw new SFException(
             ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-            "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host");
+            String.format(
+                "OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                authorizationUrl, tokenUrl));
+      }
+      if (!authorizationUrl.getHost().equals(tokenUrl.getHost())) {
+        logger.warn(
+            String.format(
+                "Both externalAuthorizationUrl and externalTokenRequestUrl should belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                authorizationUrl, tokenUrl));
       }
     }
   }
