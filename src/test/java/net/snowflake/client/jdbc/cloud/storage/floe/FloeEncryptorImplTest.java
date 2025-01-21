@@ -1,13 +1,17 @@
 package net.snowflake.client.jdbc.cloud.storage.floe;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FloeEncryptorImplTest {
   byte[] aad = "This is AAD".getBytes(StandardCharsets.UTF_8);
@@ -22,7 +26,7 @@ class FloeEncryptorImplTest {
             12345678,
             new FloeIvLength(4),
             new IncrementingFloeRandom(17),
-            4);
+            4, 1L << 40);
     parameterSpec.getFloeRandom().ofLength(4); // just to trigger incrementation
     FloeKey floeKey = new FloeKey(new SecretKeySpec(new byte[32], "FLOE"));
     FloeAad floeAad = new FloeAad("test aad".getBytes(StandardCharsets.UTF_8));
@@ -73,19 +77,72 @@ class FloeEncryptorImplTest {
             40,
             new FloeIvLength(32),
             new IncrementingFloeRandom(0),
-            4);
+            4, 1L << 40);
     Floe floe = Floe.getInstance(parameterSpec);
     FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
     byte[] header = encryptor.getHeader();
+    FloeDecryptor decryptor = floe.createDecryptor(secretKey, aad, header);
     byte[] testData = new byte[8];
-    for (int i = 0; i < referenceCiphertextSegments.size(); i++) {
+    for (String referenceCiphertextSegment : referenceCiphertextSegments) {
       byte[] ciphertextBytes = encryptor.processSegment(testData);
       String ciphertextHex = toHex(ciphertextBytes);
-      assertEquals(referenceCiphertextSegments.get(i), ciphertextHex);
+      assertEquals(referenceCiphertextSegment, ciphertextHex);
+      byte[] plaintextBytes = decryptor.processSegment(ciphertextBytes);
+      assertArrayEquals(testData, plaintextBytes);
     }
   }
 
-  private String toHex(byte[] input) {
+  @Test
+  void shouldThrowExceptionOnMaxSegmentReached() {
+    FloeParameterSpec parameterSpec = new FloeParameterSpec(Aead.AES_GCM_256, Hash.SHA384, 40, new FloeIvLength(32), new SecureFloeRandom(), 20, 3);
+    Floe floe = Floe.getInstance(parameterSpec);
+    FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
+    byte[] plaintext = new byte[8];
+    encryptor.processSegment(plaintext);
+    encryptor.processSegment(plaintext);
+    assertThrows(IllegalStateException.class, () -> encryptor.processSegment(plaintext));
+    assertDoesNotThrow(() -> encryptor.processLastSegment(plaintext));
+  }
+
+  @Test
+  void shouldThrowExceptionIfPlaintextIsTooShort() {
+    FloeParameterSpec parameterSpec = new FloeParameterSpec(Aead.AES_GCM_256, Hash.SHA384, 40, 32);
+    Floe floe = Floe.getInstance(parameterSpec);
+    FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
+
+    IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> encryptor.processSegment(new byte[0]));
+    assertEquals(e.getMessage(), "segment length mismatch, expected 8, got 0");
+    e = assertThrows(IllegalArgumentException.class, () -> encryptor.processSegment(new byte[7]));
+    assertEquals(e.getMessage(), "segment length mismatch, expected 8, got 7");
+  }
+
+  @Test
+  void shouldThrowEncryptionIfPlaintextIsTooLong() {
+    FloeParameterSpec parameterSpec = new FloeParameterSpec(Aead.AES_GCM_256, Hash.SHA384, 40, 32);
+    Floe floe = Floe.getInstance(parameterSpec);
+    FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
+
+    IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> encryptor.processSegment(new byte[9]));
+    assertEquals(e.getMessage(), "segment length mismatch, expected 8, got 9");
+    e = assertThrows(IllegalArgumentException.class, () -> encryptor.processSegment(new byte[1024]));
+    assertEquals(e.getMessage(), "segment length mismatch, expected 8, got 1024");
+
+    e = assertThrows(IllegalArgumentException.class, () -> encryptor.processLastSegment(new byte[9]));
+    assertEquals(e.getMessage(), "last segment is too long, got 9, max is 8");
+  }
+
+  @Test
+  void shouldAcceptSegmentWithCorrectSize() {
+    FloeParameterSpec parameterSpec = new FloeParameterSpec(Aead.AES_GCM_256, Hash.SHA384, 40, 32);
+    Floe floe = Floe.getInstance(parameterSpec);
+    FloeEncryptor encryptor = floe.createEncryptor(secretKey, aad);
+
+    assertDoesNotThrow(() -> encryptor.processSegment(new byte[8]));
+    assertDoesNotThrow(() -> encryptor.processLastSegment(new byte[8]));
+    assertDoesNotThrow(() -> encryptor.processLastSegment(new byte[0]));
+  }
+
+  String toHex(byte[] input) {
     StringBuilder result = new StringBuilder();
     for (byte b : input) {
       result.append(String.format("%02x", b));

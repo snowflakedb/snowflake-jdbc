@@ -10,6 +10,7 @@ public class FloeParameterSpec {
   private final FloeIvLength floeIvLength;
   private final FloeRandom floeRandom;
   private final int keyRotationModulo;
+  private final long maxSegmentNumber;
 
   public FloeParameterSpec(Aead aead, Hash hash, int encryptedSegmentLength, int floeIvLength) {
     this(
@@ -18,7 +19,8 @@ public class FloeParameterSpec {
         encryptedSegmentLength,
         new FloeIvLength(floeIvLength),
         new SecureFloeRandom(),
-        1 << 20);
+        1 << 20,
+        1L << 40);
   }
 
   FloeParameterSpec(
@@ -27,13 +29,21 @@ public class FloeParameterSpec {
       int encryptedSegmentLength,
       FloeIvLength floeIvLength,
       FloeRandom floeRandom,
-      int keyRotationModulo) {
+      int keyRotationModulo,
+      long maxSegmentNumber) {
     this.aead = aead;
     this.hash = hash;
     this.encryptedSegmentLength = encryptedSegmentLength;
     this.floeIvLength = floeIvLength;
     this.floeRandom = floeRandom;
     this.keyRotationModulo = keyRotationModulo;
+    this.maxSegmentNumber = maxSegmentNumber;
+    if (encryptedSegmentLength <= 0) {
+      throw new IllegalArgumentException("encryptedSegmentLength must be > 0");
+    }
+    if (floeIvLength.getLength() <= 0) {
+      throw new IllegalArgumentException("floeIvLength must be > 0");
+    }
   }
 
   byte[] paramEncode() {
@@ -72,5 +82,9 @@ public class FloeParameterSpec {
 
   int getKeyRotationModulo() {
     return keyRotationModulo;
+  }
+
+  long getMaxSegmentNumber() {
+    return maxSegmentNumber;
   }
 }

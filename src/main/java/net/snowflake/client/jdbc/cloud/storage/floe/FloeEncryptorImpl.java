@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
-
   private final FloeIv floeIv;
   private final AeadProvider aeadProvider;
   private AeadKey currentAeadKey;
@@ -48,6 +47,7 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
   public byte[] processSegment(byte[] input) {
     verifySegmentLength(input);
     // TODO assert State.Counter != 2^40-1 # Prevent overflow
+    verifyMaxSegmentNumberNotReached();
     try {
       AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
       AeadIv aeadIv =
@@ -65,6 +65,21 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
     }
   }
 
+  private void verifySegmentLength(byte[] input) {
+    if (input.length != parameterSpec.getPlainTextSegmentLength()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "segment length mismatch, expected %d, got %d",
+              parameterSpec.getPlainTextSegmentLength(), input.length));
+    }
+  }
+
+  private void verifyMaxSegmentNumberNotReached() {
+    if (segmentCounter >= parameterSpec.getMaxSegmentNumber() - 1) {
+      throw new IllegalStateException("maximum segment number reached");
+    }
+  }
+
   private byte[] segmentToBytes(AeadIv aeadIv, byte[] ciphertextWithAuthTag) {
     ByteBuffer output = ByteBuffer.allocate(parameterSpec.getEncryptedSegmentLength());
     output.putInt(NON_TERMINAL_SEGMENT_SIZE_MARKER);
@@ -73,12 +88,39 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
     return output.array();
   }
 
-  private void verifySegmentLength(byte[] input) {
-    if (input.length != parameterSpec.getPlainTextSegmentLength()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "segment length mismatch, expected %d, got %d",
-              parameterSpec.getPlainTextSegmentLength(), input.length));
+  @Override
+  public byte[] processLastSegment(byte[] input) {
+    verifyLastSegmentNotEmpty(input);
+    try {
+      AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
+      AeadIv aeadIv =
+          AeadIv.generateRandom(
+              parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
+      AeadAad aeadAad = AeadAad.terminal(segmentCounter);
+      byte[] ciphertextWithAuthTag =
+          aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
+      return lastSegmentToBytes(aeadIv, ciphertextWithAuthTag);
+    } catch (GeneralSecurityException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private byte[] lastSegmentToBytes(AeadIv aeadIv, byte[] ciphertextWithAuthTag) {
+    int lastSegmentLength = 4 + aeadIv.getBytes().length + ciphertextWithAuthTag.length;
+    ByteBuffer output = ByteBuffer.allocate(lastSegmentLength);
+    output.putInt(lastSegmentLength);
+    output.put(aeadIv.getBytes());
+    output.put(ciphertextWithAuthTag);
+    return output.array();
+  }
+
+  private void verifyLastSegmentNotEmpty(byte[] input) {
+    // TODO
+//    if (input.length == 0) {
+//      throw new IllegalArgumentException("last segment is empty");
+//    }
+    if (input.length > parameterSpec.getPlainTextSegmentLength()) {
+      throw new IllegalArgumentException(String.format("last segment is too long, got %d, max is %d", input.length, parameterSpec.getPlainTextSegmentLength()));
     }
   }
 }

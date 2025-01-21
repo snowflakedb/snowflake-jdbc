@@ -24,6 +24,7 @@ abstract class BaseSegmentProcessor {
 
   protected AeadKey getKey(FloeKey floeKey, FloeIv floeIv, FloeAad floeAad, long segmentCounter) {
     if (currentAeadKey == null || segmentCounter % parameterSpec.getKeyRotationModulo() == 0) {
+      // TODO should we mask segments here?
       currentAeadKey = deriveKey(floeKey, floeIv, floeAad, segmentCounter);
     }
     return currentAeadKey;

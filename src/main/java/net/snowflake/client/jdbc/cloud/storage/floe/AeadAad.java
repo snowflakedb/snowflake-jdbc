@@ -16,6 +16,10 @@ class AeadAad {
     return new AeadAad(segmentCounter, (byte) 0);
   }
 
+  static AeadAad terminal(long segmentCounter) {
+    return new AeadAad(segmentCounter, (byte) 1);
+  }
+
   byte[] getBytes() {
     return bytes;
   }

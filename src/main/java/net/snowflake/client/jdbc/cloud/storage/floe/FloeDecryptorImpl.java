@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 
-public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecryptor {
+class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecryptor {
   private final FloeIv floeIv;
   private final AeadProvider aeadProvider;
 
@@ -53,7 +53,6 @@ public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecry
       AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
       AeadIv aeadIv = AeadIv.from(inputBuf, parameterSpec.getAead().getIvLength());
       AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter);
-      AeadProvider aeadProvider = parameterSpec.getAead().getAeadProvider();
       byte[] ciphertext = new byte[inputBuf.remaining()];
       inputBuf.get(ciphertext);
       byte[] decrypted =
@@ -77,10 +76,46 @@ public class FloeDecryptorImpl extends BaseSegmentProcessor implements FloeDecry
   private void verifySegmentSizeMarker(ByteBuffer inputBuf) {
     int segmentSizeMarker = inputBuf.getInt();
     if (segmentSizeMarker != NON_TERMINAL_SEGMENT_SIZE_MARKER) {
-      throw new IllegalStateException(
+      throw new IllegalArgumentException(
           String.format(
-              "segment length marker mismatch, expected: %d, got :%d",
+              "segment length marker mismatch, expected: %d, got: %d",
               NON_TERMINAL_SEGMENT_SIZE_MARKER, segmentSizeMarker));
+    }
+  }
+
+  @Override
+  public byte[] processLastSegment(byte[] input) {
+    verifyLastSegmentLength(input);
+    ByteBuffer inputBuf = ByteBuffer.wrap(input);
+    verifyLastSegmentSizeMarker(inputBuf);
+    try {
+      AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
+      AeadIv aeadIv = AeadIv.from(inputBuf, parameterSpec.getAead().getIvLength());
+      AeadAad aeadAad = AeadAad.terminal(segmentCounter);
+      byte[] ciphertext = new byte[inputBuf.remaining()];
+      inputBuf.get(ciphertext);
+      byte[] decrypted =
+          aeadProvider.decrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), ciphertext);
+      return decrypted;
+    } catch (GeneralSecurityException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void verifyLastSegmentLength(byte[] input) {
+    // TODO <= ?
+    if (input.length < 4 + parameterSpec.getAead().getIvLength() + parameterSpec.getAead().getAuthTagLength()) {
+      throw new IllegalArgumentException("last segment is too short");
+    }
+    if (input.length > parameterSpec.getEncryptedSegmentLength()) {
+      throw new IllegalArgumentException("last segment is too long");
+    }
+  }
+
+  private void verifyLastSegmentSizeMarker(ByteBuffer inputBuf) {
+    int segmentLengthFromSegment = inputBuf.getInt();
+    if (segmentLengthFromSegment != inputBuf.capacity()) {
+      throw new IllegalArgumentException(String.format("last segment length marker mismatch, expected: %d, got: %d", inputBuf.capacity(), segmentLengthFromSegment));
     }
   }
 }

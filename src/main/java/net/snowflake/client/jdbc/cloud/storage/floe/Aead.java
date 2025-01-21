@@ -1,12 +1,11 @@
 package net.snowflake.client.jdbc.cloud.storage.floe;
 
-import java.util.function.Supplier;
 import net.snowflake.client.jdbc.cloud.storage.floe.aead.Gcm;
 
+import java.util.function.Supplier;
+
 public enum Aead {
-  // TODO confirm id
-  AES_GCM_256((byte) 0, "AES/GCM/NoPadding", 32, 12, 16, () -> new Gcm(16)),
-  AES_GCM_128((byte) 1, "AES/GCM/NoPadding", 16, 12, 16, () -> new Gcm(16));
+  AES_GCM_256((byte) 0, "AES/GCM/NoPadding", 32, 12, 16, () -> new Gcm(16));
 
   private byte id;
   private String jceName;
