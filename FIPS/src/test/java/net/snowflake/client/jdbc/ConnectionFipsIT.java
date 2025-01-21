@@ -108,6 +108,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @BeforeAll
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
+    // Setting up the named group to avoid test failure on GCP environment.
+    System.setProperty("jdk.tls.namedGroups", "secp256r1, secp384r1, ffdhe2048, ffdhe3072");
     // get keystore types for BouncyCastle libraries
     JAVA_SYSTEM_PROPERTY_SSL_KEYSTORE_TYPE_ORIGINAL_VALUE =
         System.getProperty(JAVA_SYSTEM_PROPERTY_SSL_KEYSTORE_TYPE);
@@ -291,10 +293,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
   /**
    * Test case for connecting with FIPS and executing a query.
-   * Currently ignored execution on GCP due to exception thrown "SSlException Could not generate XDH keypair"
    */
   @Test
-  @DontRunOnGCP
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
