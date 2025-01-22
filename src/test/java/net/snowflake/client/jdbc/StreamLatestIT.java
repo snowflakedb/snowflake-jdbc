@@ -7,11 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -19,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
@@ -236,5 +240,74 @@ public class StreamLatestIT extends BaseJDBCTest {
         statement.execute("DROP STAGE IF EXISTS downloadStream_stage");
       }
     }
+  }
+
+  /** Added > 3.21.0. Fixed regression introduced in 3.19.1 */
+  @Test
+  public void shouldDownloadStreamInDeterministicWay() throws Exception {
+    try (Connection conn = getConnection();
+        Statement stat = conn.createStatement()) {
+      String randomStage = "test" + UUID.randomUUID().toString().replaceAll("-", "");
+      try {
+        stat.execute("CREATE OR REPLACE STAGE " + randomStage);
+        String randomDir = UUID.randomUUID().toString();
+        String sourceFilePathWithoutExtension = getFullPathFileInResource("test_file");
+        String sourceFilePathWithExtension = getFullPathFileInResource("test_file.csv");
+        String stageDest = String.format("@%s/%s", randomStage, randomDir);
+        putFile(stat, sourceFilePathWithExtension, stageDest, false);
+        putFile(stat, sourceFilePathWithoutExtension, stageDest, false);
+        putFile(stat, sourceFilePathWithExtension, stageDest, true);
+        putFile(stat, sourceFilePathWithoutExtension, stageDest, true);
+        expectsFilesOnStage(stat, stageDest, 4);
+        String stageName = "@" + randomStage;
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.gz", true, "I am a file without extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.csv.gz", true, "I am a file with extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file", false, "I am a file without extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.csv", false, "I am a file with extension");
+      } finally {
+        stat.execute("DROP STAGE IF EXISTS " + randomStage);
+      }
+    }
+  }
+
+  private static void downloadStreamExpectingContent(
+      Connection conn,
+      String stageName,
+      String fileName,
+      boolean decompress,
+      String expectedFileContent)
+      throws IOException, SQLException {
+    try (InputStream inputStream =
+            conn.unwrap(SnowflakeConnectionV1.class)
+                .downloadStream(stageName, fileName, decompress);
+        InputStreamReader isr = new InputStreamReader(inputStream);
+        BufferedReader br = new BufferedReader(isr)) {
+      String content = br.lines().collect(Collectors.joining("\n"));
+      assertEquals(expectedFileContent, content);
+    }
+  }
+
+  private static void expectsFilesOnStage(Statement stmt, String stageDest, int expectCount)
+      throws SQLException {
+    int filesInStageDir = 0;
+    try (ResultSet rs = stmt.executeQuery("LIST " + stageDest)) {
+      while (rs.next()) {
+        ++filesInStageDir;
+      }
+    }
+    assertEquals(expectCount, filesInStageDir);
+  }
+
+  private static boolean putFile(
+      Statement stmt, String localFileName, String stageDest, boolean autoCompress)
+      throws SQLException {
+    return stmt.execute(
+        String.format(
+            "PUT file://%s %s AUTO_COMPRESS=%s",
+            localFileName, stageDest, String.valueOf(autoCompress).toUpperCase()));
   }
 }
