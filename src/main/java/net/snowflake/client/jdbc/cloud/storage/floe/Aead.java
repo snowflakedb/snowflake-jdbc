@@ -1,14 +1,15 @@
 package net.snowflake.client.jdbc.cloud.storage.floe;
 
+import java.util.function.Supplier;
+import net.snowflake.client.jdbc.cloud.storage.floe.aead.AeadProvider;
 import net.snowflake.client.jdbc.cloud.storage.floe.aead.Gcm;
 
-import java.util.function.Supplier;
-
 public enum Aead {
-  AES_GCM_256((byte) 0, "AES/GCM/NoPadding", 32, 12, 16, () -> new Gcm(16));
+  AES_GCM_256((byte) 0, "AES", "AES/GCM/NoPadding", 32, 12, 16, () -> new Gcm(16));
 
   private byte id;
-  private String jceName;
+  private String jceKeyTypeName;
+  private String jceFullName;
   private int keyLength;
   private int ivLength;
   private int authTagLength;
@@ -16,12 +17,14 @@ public enum Aead {
 
   Aead(
       byte id,
-      String jceName,
+      String jceKeyTypeName,
+      String jceFullName,
       int keyLength,
       int ivLength,
       int authTagLength,
       Supplier<AeadProvider> aeadProvider) {
-    this.jceName = jceName;
+    this.jceKeyTypeName = jceKeyTypeName;
+    this.jceFullName = jceFullName;
     this.keyLength = keyLength;
     this.id = id;
     this.ivLength = ivLength;
@@ -33,8 +36,12 @@ public enum Aead {
     return id;
   }
 
-  String getJceName() {
-    return jceName;
+  public String getJceKeyTypeName() {
+    return jceKeyTypeName;
+  }
+
+  String getJceFullName() {
+    return jceFullName;
   }
 
   int getKeyLength() {

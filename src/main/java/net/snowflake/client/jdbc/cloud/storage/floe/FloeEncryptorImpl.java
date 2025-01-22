@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.cloud.storage.floe;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import net.snowflake.client.jdbc.cloud.storage.floe.aead.AeadProvider;
 
 class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
   private final FloeIv floeIv;
@@ -45,23 +46,28 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
 
   @Override
   public byte[] processSegment(byte[] input) {
-    verifySegmentLength(input);
-    // TODO assert State.Counter != 2^40-1 # Prevent overflow
-    verifyMaxSegmentNumberNotReached();
+    assertNotClosed();
     try {
-      AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
-      AeadIv aeadIv =
-          AeadIv.generateRandom(
-              parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
-      AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter);
-      // it works as long as AEAD returns auth tag as a part of the ciphertext
-      byte[] ciphertextWithAuthTag =
-          aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
-      byte[] encoded = segmentToBytes(aeadIv, ciphertextWithAuthTag);
-      segmentCounter++;
-      return encoded;
-    } catch (GeneralSecurityException e) {
-      throw new RuntimeException(e);
+      verifySegmentLength(input);
+      verifyMaxSegmentNumberNotReached();
+      try {
+        AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
+        AeadIv aeadIv =
+            AeadIv.generateRandom(
+                parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
+        AeadAad aeadAad = AeadAad.nonTerminal(segmentCounter);
+        // it works as long as AEAD returns auth tag as a part of the ciphertext
+        byte[] ciphertextWithAuthTag =
+            aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
+        byte[] encoded = segmentToBytes(aeadIv, ciphertextWithAuthTag);
+        segmentCounter++;
+        return encoded;
+      } catch (GeneralSecurityException e) {
+        throw new RuntimeException(e);
+      }
+    } catch (Exception e) {
+      markAsCompletedExceptionally();
+      throw e;
     }
   }
 
@@ -90,18 +96,26 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
 
   @Override
   public byte[] processLastSegment(byte[] input) {
-    verifyLastSegmentNotEmpty(input);
+    assertNotClosed();
     try {
-      AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
-      AeadIv aeadIv =
-          AeadIv.generateRandom(
-              parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
-      AeadAad aeadAad = AeadAad.terminal(segmentCounter);
-      byte[] ciphertextWithAuthTag =
-          aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
-      return lastSegmentToBytes(aeadIv, ciphertextWithAuthTag);
-    } catch (GeneralSecurityException e) {
-      throw new RuntimeException(e);
+      verifyLastSegmentNotEmpty(input);
+      try {
+        AeadKey aeadKey = getKey(floeKey, floeIv, floeAad, segmentCounter);
+        AeadIv aeadIv =
+            AeadIv.generateRandom(
+                parameterSpec.getFloeRandom(), parameterSpec.getAead().getIvLength());
+        AeadAad aeadAad = AeadAad.terminal(segmentCounter);
+        byte[] ciphertextWithAuthTag =
+            aeadProvider.encrypt(aeadKey.getKey(), aeadIv.getBytes(), aeadAad.getBytes(), input);
+        byte[] lastSegmentBytes = lastSegmentToBytes(aeadIv, ciphertextWithAuthTag);
+        closeInternal();
+        return lastSegmentBytes;
+      } catch (GeneralSecurityException e) {
+        throw new RuntimeException(e);
+      }
+    } catch (Exception e) {
+      markAsCompletedExceptionally();
+      throw e;
     }
   }
 
@@ -115,12 +129,16 @@ class FloeEncryptorImpl extends BaseSegmentProcessor implements FloeEncryptor {
   }
 
   private void verifyLastSegmentNotEmpty(byte[] input) {
-    // TODO
-//    if (input.length == 0) {
-//      throw new IllegalArgumentException("last segment is empty");
-//    }
     if (input.length > parameterSpec.getPlainTextSegmentLength()) {
-      throw new IllegalArgumentException(String.format("last segment is too long, got %d, max is %d", input.length, parameterSpec.getPlainTextSegmentLength()));
+      throw new IllegalArgumentException(
+          String.format(
+              "last segment is too long, got %d, max is %d",
+              input.length, parameterSpec.getPlainTextSegmentLength()));
     }
+  }
+
+  @Override
+  public boolean isClosed() {
+    return super.isClosed();
   }
 }

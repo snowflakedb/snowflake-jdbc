@@ -1,20 +1,19 @@
 package net.snowflake.client.jdbc.cloud.storage.floe.aead;
 
-import net.snowflake.client.jdbc.cloud.storage.floe.AeadProvider;
-
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 // This class is not thread safe!
-// But as long as it is used only for FLOE, it is fine, as FLOE instance keeps its own instance of GCM.
+// But as long as it is used only for FLOE, it is fine, as FLOE instance keeps its own instance of
+// GCM.
 public class Gcm implements AeadProvider {
   private final Cipher keyCipher;
   private final int tagLengthInBits;
