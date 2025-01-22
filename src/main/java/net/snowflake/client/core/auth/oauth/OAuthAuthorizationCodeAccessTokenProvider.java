@@ -150,7 +150,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     } finally {
       logger.debug("Stopping OAuth redirect URI server @ {}", httpServer.getAddress());
-      httpServer.stop(0);
+      httpServer.stop(1);
     }
   }
 
