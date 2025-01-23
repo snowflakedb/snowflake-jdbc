@@ -1664,6 +1664,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
+        logger.error("Exception encountered within threadExecutor flow in uploadStream");
         throw new SnowflakeSQLException(
             queryID,
             ex.getCause(),
@@ -1792,6 +1793,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
+        logger.error("Exception encountered within threadExecutor flow in downloadFiles");
         throw new SnowflakeSQLException(
             queryID,
             ex.getCause(),
@@ -1902,6 +1904,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
+        logger.error("Exception encountered within threadExecutor flow in uploadFiles");
         throw new SnowflakeSQLException(
             queryID,
             ex.getCause(),
