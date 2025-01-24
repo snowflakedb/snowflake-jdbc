@@ -543,7 +543,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param bytes a byte array
    * @return a string in hexadecimal code
    */
-  private static String byteToHexString(byte[] bytes) {
+  static String byteToHexString(byte[] bytes) {
     final char[] hexArray = "0123456789ABCDEF".toCharArray();
     char[] hexChars = new char[bytes.length * 2];
     for (int j = 0; j < bytes.length; j++) {
