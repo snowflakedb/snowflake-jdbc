@@ -10,16 +10,27 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.SFOauthLoginInput;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 
-class OAuthUtil {
+@SnowflakeJdbcInternalApi
+public class OAuthUtil {
 
   private static final String SNOWFLAKE_AUTHORIZE_ENDPOINT = "/oauth/authorize";
   private static final String SNOWFLAKE_TOKEN_REQUEST_ENDPOINT = "/oauth/token-request";
 
   private static final String DEFAULT_SESSION_ROLE_SCOPE_PREFIX = "session:role:";
+
+  @SnowflakeJdbcInternalApi
+  public static URI getTokenRequestUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
+    URI uri =
+            !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalTokenRequestUrl())
+                    ? URI.create(oauthLoginInput.getExternalTokenRequestUrl())
+                    : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
+    return uri.normalize();
+  }
 
   static HttpRequestBase convertToBaseAuthorizationRequest(HTTPRequest request) {
     HttpPost baseRequest = new HttpPost(request.getURI());
@@ -35,14 +46,6 @@ class OAuthUtil {
         !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalAuthorizationUrl())
             ? URI.create(oauthLoginInput.getExternalAuthorizationUrl())
             : URI.create(serverUrl + SNOWFLAKE_AUTHORIZE_ENDPOINT);
-    return uri.normalize();
-  }
-
-  static URI getTokenRequestUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
-    URI uri =
-        !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalTokenRequestUrl())
-            ? URI.create(oauthLoginInput.getExternalTokenRequestUrl())
-            : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
     return uri.normalize();
   }
 
