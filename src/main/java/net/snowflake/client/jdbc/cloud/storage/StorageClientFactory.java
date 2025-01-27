@@ -47,6 +47,7 @@ public class StorageClientFactory {
    * @param stage the stage properties
    * @param parallel the degree of parallelism to be used by the client
    * @param encMat encryption material for the client
+   * @param session SFSession
    * @return a SnowflakeStorageClient interface to the instance created
    * @throws SnowflakeSQLException if any error occurs
    */
@@ -58,8 +59,9 @@ public class StorageClientFactory {
     switch (stage.getStageType()) {
       case S3:
         boolean useS3RegionalUrl =
-            (stage.getUseS3RegionalUrl()
-                || (session != null && session.getUseRegionalS3EndpointsForPresignedURL()));
+            stage.getUseS3RegionalUrl()
+                || stage.getUseRegionalUrl()
+                || session != null && session.getUseRegionalS3EndpointsForPresignedURL();
         return createS3Client(
             stage.getCredentials(),
             parallel,

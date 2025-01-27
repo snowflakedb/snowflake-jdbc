@@ -352,7 +352,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     TransferManager tx = null;
     int retryCount = 0;
@@ -473,7 +473,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     int retryCount = 0;
@@ -944,7 +944,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
   }
 
-  /** Checks the status code of the exception to see if it's a 400 or 404 */
+  /**
+   * Checks the status code of the exception to see if it's a 400 or 404
+   *
+   * @param ex exception
+   * @return true if it's a 400 or 404 status code
+   */
   public boolean isClientException400Or404(Exception ex) {
     if (ex instanceof AmazonServiceException) {
       AmazonServiceException asEx = (AmazonServiceException) (ex);
@@ -954,13 +959,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     return false;
   }
 
-  /** Returns the material descriptor key */
+  /* Returns the material descriptor key */
   @Override
   public String getMatdescKey() {
     return "x-amz-matdesc";
   }
 
-  /** Adds encryption metadata to the StorageObjectMetadata object */
+  /* Adds encryption metadata to the StorageObjectMetadata object */
   @Override
   public void addEncryptionMetadata(
       StorageObjectMetadata meta,
@@ -974,13 +979,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.setContentLength(contentLength);
   }
 
-  /** Adds digest metadata to the StorageObjectMetadata object */
+  /* Adds digest metadata to the StorageObjectMetadata object */
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
     meta.addUserMetadata("sfc-digest", digest);
   }
 
-  /** Gets digest metadata to the StorageObjectMetadata object */
+  /* Gets digest metadata to the StorageObjectMetadata object */
   @Override
   public String getDigestMetadata(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get("sfc-digest");
@@ -1005,7 +1010,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     return s3ConnectionSocketFactory;
   }
 
-  /**
+  /*
    * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
    * per client billing calculation
    */
@@ -1016,13 +1021,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_KEY);

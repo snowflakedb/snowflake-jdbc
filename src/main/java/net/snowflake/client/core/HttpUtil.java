@@ -65,6 +65,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
+/** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
@@ -168,7 +169,7 @@ public class HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when exception encountered
    * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties, ClientConfiguration)}
    *     instead
    */
@@ -184,7 +185,7 @@ public class HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param opContext the configuration needed by Azure to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when invalid proxy properties encountered
    */
   public static void setSessionlessProxyForAzure(
       Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
@@ -344,9 +345,9 @@ public class HttpUtil {
     }
 
     TrustManager[] trustManagers = null;
-    if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
-      // A custom TrustManager is required only if insecureMode is disabled,
-      // which is by default in the production. insecureMode can be enabled
+    if (key != null && key.getOcspMode() != OCSPMode.DISABLE_OCSP_CHECKS) {
+      // A custom TrustManager is required only if disableOCSPChecks is disabled,
+      // which is by default in the production. disableOCSPChecks can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
@@ -723,6 +724,7 @@ public class HttpUtil {
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param execTimeData query execution time telemetry data object
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -740,7 +742,7 @@ public class HttpUtil {
       HttpClientSettingsKey ocspAndProxyKey,
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
-    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.INSECURE));
+    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.DISABLE_OCSP_CHECKS));
     logger.debug("Executing request with OCSP enabled: {}", ocspEnabled);
     execTimeData.setOCSPStatus(ocspEnabled);
     return executeRequestInternal(

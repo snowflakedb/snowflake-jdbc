@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
@@ -15,17 +15,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionPoolingIT {
   private BasicDataSource bds = null;
   private ComboPooledDataSource cpds = null;
@@ -48,7 +48,7 @@ public class ConnectionPoolingIT {
     ssl = params.get("ssl");
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection connection = BaseJDBCTest.getConnection();
         Statement statement = connection.createStatement()) {
@@ -57,7 +57,7 @@ public class ConnectionPoolingIT {
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection connection = BaseJDBCTest.getConnection();
         Statement statement = connection.createStatement(); ) {

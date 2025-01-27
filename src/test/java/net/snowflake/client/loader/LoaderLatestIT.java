@@ -4,8 +4,8 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,9 +13,9 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Loader API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -23,7 +23,7 @@ import org.junit.experimental.categories.Category;
  * is not applicable. If it is applicable, move tests to LoaderIT so that both the latest and oldest
  * supported driver run the tests.
  */
-@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderLatestIT extends LoaderBase {
   @Test
   public void testLoaderUpsert() throws Exception {

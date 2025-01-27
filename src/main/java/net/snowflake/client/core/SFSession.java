@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.QueryStatusV2;
@@ -45,11 +46,11 @@ import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
@@ -151,6 +152,9 @@ public class SFSession extends SFBaseSession {
    * <p>Default: 120
    */
   private Duration browserResponseTimeout = Duration.ofSeconds(120);
+
+  private boolean javaUtilLoggingConsoleOut = false;
+  private String javaUtilLoggingConsoleOutThreshold = null;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -290,7 +294,7 @@ public class SFSession extends SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return enum of type QueryStatus indicating the query's status
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    * @deprecated the returned enum is error-prone, use {@link #getQueryStatusV2} instead
    */
   @Deprecated
@@ -337,7 +341,7 @@ public class SFSession extends SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return a QueryStatusV2 instance indicating the query's status
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    */
   public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
     JsonNode queryNode = getQueryMetadata(queryID);
@@ -433,6 +437,16 @@ public class SFSession extends SFBaseSession {
         case TRACING:
           if (propertyValue != null) {
             tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
+          }
+          break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT:
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOut = (Boolean) propertyValue;
+          }
+          break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD:
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOutThreshold = (String) propertyValue;
           }
           break;
 
@@ -537,6 +551,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT:
+          if (propertyValue != null) {
+            setImplicitServerSideQueryTimeout(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION:
+          if (propertyValue != null) {
+            setClearBatchOnlyAfterSuccessfulExecution(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -553,6 +579,13 @@ public class SFSession extends SFBaseSession {
       if (sessionParametersMap.size() > MAX_SESSION_PARAMETERS) {
         throw new SFException(ErrorCode.TOO_MANY_SESSION_PARAMETERS, MAX_SESSION_PARAMETERS);
       }
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void overrideConsoleHandlerWhenNecessary() {
+    if (javaUtilLoggingConsoleOut) {
+      JDK14Logger.useStdOutConsoleHandler(javaUtilLoggingConsoleOutThreshold);
     }
   }
 
@@ -788,7 +821,7 @@ public class SFSession extends SFBaseSession {
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     stopwatch.stop();
-    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+    logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -804,7 +837,7 @@ public class SFSession extends SFBaseSession {
             && privateKey == null
             && privateKeyFileLocation == null
             && privateKeyBase64 == null)
-        || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
+        || AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -815,7 +848,7 @@ public class SFSession extends SFBaseSession {
   boolean isExternalbrowserAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -837,9 +870,7 @@ public class SFSession extends SFBaseSession {
   boolean isUsernamePasswordMFAAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
-        .name()
-        .equalsIgnoreCase(authenticator);
+    return AuthenticatorType.USERNAME_PASSWORD_MFA.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -933,7 +964,7 @@ public class SFSession extends SFBaseSession {
     }
 
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Session {} has been successfully closed in {} ms",
         getSessionId(),
         stopwatch.elapsedMillis());

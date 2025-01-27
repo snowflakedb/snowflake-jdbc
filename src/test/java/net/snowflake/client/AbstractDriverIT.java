@@ -24,12 +24,9 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
-  // This is required to use ConditionalIgnore annotation.
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";

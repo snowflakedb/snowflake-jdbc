@@ -1,0 +1,51 @@
+{
+  "data": {
+    "uploadInfo": {
+      "locationType": "AZURE",
+      "location": "EXAMPLE_LOCATION/",
+      "path": "EXAMPLE_PATH/",
+      "region": "westus",
+      "storageAccount": "sfcdev2stage",
+      "isClientSideEncrypted": true,
+      "creds": {
+        "AZURE_SAS_TOKEN": "EXAMPLE_AZURE_SAS_TOKEN"
+      },
+      "presignedUrl": null,
+      "endPoint": "blob.core.windows.net"
+    },
+    "src_locations": [
+      "/foo/orders_100.csv"
+    ],
+    "parallel": 4,
+    "threshold": 209715200,
+    "autoCompress": true,
+    "overwrite": false,
+    "sourceCompression": "auto_detect",
+    "clientShowEncryptionParameter": false,
+    "queryId": "EXAMPLE_QUERY_ID",
+    "encryptionMaterial": {
+      "queryStageMasterKey": "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+      "queryId": "EXAMPLE_QUERY_ID",
+      "smkId": 123
+    },
+    "stageInfo": {
+      "locationType": "AZURE",
+      "location": "EXAMPLE_LOCATION/",
+      "path": "EXAMPLE_PATH/",
+      "region": "westus",
+      "storageAccount": "EXAMPLE_STORAGE_ACCOUNT",
+      "isClientSideEncrypted": true,
+      "creds": {
+        "AZURE_SAS_TOKEN": "EXAMPLE_AZURE_SAS_TOKEN"
+      },
+      "presignedUrl": null,
+      "endPoint": "blob.core.windows.net"
+    },
+    "command": "UPLOAD",
+    "kind": null,
+    "operation": "Node"
+  },
+  "code": null,
+  "message": null,
+  "success": true
+}

@@ -30,8 +30,8 @@ else
     exit 2
 fi
 
-if [[ -z "$JDBC_TEST_CATEGORY" ]]; then
-    echo "[ERROR] Set JDBC_TEST_CATEGORY to the JDBC test category."
+if [[ -z "$JDBC_TEST_SUITES" ]]; then
+    echo "[ERROR] Set JDBC_TEST_SUITES to the JDBC test category."
     find $THIS_DIR/../src/test/java -type f -exec grep -E "^import net.snowflake.client.category" {} \; | sort | uniq | awk -F. '{print $NF}' | awk -F\; '{print $1}'
     exit 2
 fi
@@ -56,7 +56,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e RUNNER_TRACKING_ID \
         -e JOB_NAME \
         -e BUILD_NUMBER \
-        -e JDBC_TEST_CATEGORY \
+        -e JDBC_TEST_SUITES \
         -e ADDITIONAL_MAVEN_PROFILE \
         -e CLOUD_PROVIDER \
         -e is_old_driver \

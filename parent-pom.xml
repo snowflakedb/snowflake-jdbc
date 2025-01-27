@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.20.1-SNAPSHOT</version>
+  <version>3.21.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -31,41 +31,44 @@
     <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
-    <checkerframework.version>3.33.0</checkerframework.version>
+    <checkerframework.version>3.48.2</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
-    <commons.codec.version>1.17.0</commons.codec.version>
+    <commons.codec.version>1.17.1</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
-    <google.api.grpc.version>2.22.0</google.api.grpc.version>
-    <google.auth.library.oauth2.http.version>1.19.0</google.auth.library.oauth2.http.version>
-    <google.cloud.core.version>2.21.0</google.cloud.core.version>
-    <google.cloud.storage.version>2.22.6</google.cloud.storage.version>
-    <google.code.gson.version>2.10.1</google.code.gson.version>
-    <google.errorprone.version>2.18.0</google.errorprone.version>
+    <google.api.grpc.version>2.48.0</google.api.grpc.version>
+    <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
+    <google.cloud.core.version>2.47.0</google.cloud.core.version>
+    <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
+    <google.code.gson.version>2.11.0</google.code.gson.version>
+    <google.errorprone.version>2.35.1</google.errorprone.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
-    <google.gax.version>2.31.0</google.gax.version>
-    <google.guava.version>32.1.1-jre</google.guava.version>
-    <google.http.client.version>1.43.3</google.http.client.version>
+    <google.gax.version>2.57.0</google.gax.version>
+    <google.guava.version>33.3.1-jre</google.guava.version>
+    <google.http.client.version>1.45.0</google.http.client.version>
+    <google.j2objc-annotations.version>3.0.0</google.j2objc-annotations.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>3.25.5</google.protobuf.java.version>
-    <grpc.version>1.60.0</grpc.version>
+    <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
+    <grpc.version>1.68.1</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.17.2</jackson.version>
+    <jackson.version>2.18.1</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <joda.time.version>2.8.1</joda.time.version>
     <json.smart.version>2.4.9</json.smart.version>
-    <junit.version>4.13.2</junit.version>
+    <junit4.version>4.13.2</junit4.version>
+    <junit.version>5.11.1</junit.version>
+    <junit.platform.version>1.11.1</junit.platform.version>
     <jsoup.version>1.15.3</jsoup.version>
     <logback.version>1.3.6</logback.version>
     <metrics.version>2.2.0</metrics.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.111.Final</netty.version>
+    <netty.version>4.1.115.Final</netty.version>
     <nimbusds.version>9.37.3</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
@@ -74,10 +77,11 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
+    <shadeNativeBase>net_snowflake_client_jdbc_internal</shadeNativeBase>
+    <skip.unitTests>false</skip.unitTests>
     <slf4j.version>2.0.13</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
-    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
-    <threeten.version>1.6.9</threeten.version>
+    <integrationTestSuites>UnitTestSuite</integrationTestSuites>
     <tika.version>2.4.1</tika.version>
     <tukaani.version>1.9</tukaani.version>
     <version.maven>3.6.3</version.maven>
@@ -90,7 +94,7 @@
     <version.plugin.deploy>3.1.1</version.plugin.deploy>
     <version.plugin.enforcer>3.0.0-M3</version.plugin.enforcer>
     <version.plugin.exec>3.1.0</version.plugin.exec>
-    <version.plugin.failsafe>3.0.0</version.plugin.failsafe>
+    <version.plugin.failsafe>3.5.1</version.plugin.failsafe>
     <version.plugin.fmt>2.19</version.plugin.fmt>
     <version.plugin.gpg>3.0.1</version.plugin.gpg>
     <version.plugin.install>3.1.1</version.plugin.install>
@@ -102,7 +106,7 @@
     <version.plugin.shade>3.6.0</version.plugin.shade>
     <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
-    <version.plugin.surefire>3.0.0</version.plugin.surefire>
+    <version.plugin.surefire>3.5.1</version.plugin.surefire>
     <version.plugin.wiremock>3.8.0</version.plugin.wiremock>
   </properties>
 
@@ -201,6 +205,11 @@
         <version>${google.guava.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.google.j2objc</groupId>
+        <artifactId>j2objc-annotations</artifactId>
+        <version>${google.j2objc-annotations.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.microsoft.azure</groupId>
         <artifactId>azure-storage</artifactId>
         <version>${azure.storage.version}</version>
@@ -261,7 +270,67 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
+        <version>${junit4.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
         <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-engine</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-runner</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite-api</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite-engine</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit.platform.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -411,6 +480,17 @@
         <artifactId>arrow-memory-netty-buffer-patch</artifactId>
         <version>${arrow.version}</version>
         <scope>runtime</scope>
+        <exclusions>
+          <!-- We explicitly add netty dependencies in higher version, here only excluding for removing snyk issue since snyk does not understand our dependency tree -->
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.arrow</groupId>
@@ -475,11 +555,6 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.threeten</groupId>
-        <artifactId>threetenbp</artifactId>
-        <version>${threeten.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.tukaani</groupId>
         <artifactId>xz</artifactId>
         <version>${tukaani.version}</version>
@@ -506,18 +581,6 @@
         <groupId>org.awaitility</groupId>
         <artifactId>awaitility</artifactId>
         <version>${awaitility.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.surefire</groupId>
-        <artifactId>surefire-junit4</artifactId>
-        <version>${version.plugin.surefire}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.surefire</groupId>
-        <artifactId>common-junit48</artifactId>
-        <version>${version.plugin.surefire}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -740,6 +803,46 @@
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-runner</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
     </dependency>
@@ -770,15 +873,6 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
-    </dependency>
-    <!-- surefire dependencies are autodetected by the test plugins - we want to have them installed explicitly -->
-    <dependency>
-      <groupId>org.apache.maven.surefire</groupId>
-      <artifactId>surefire-junit4</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.surefire</groupId>
-      <artifactId>common-junit48</artifactId>
     </dependency>
     <dependency>
       <groupId>org.wiremock</groupId>

@@ -57,6 +57,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
@@ -791,6 +792,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param encMat remote store encryption material
    * @param parallel number of parallel threads for downloading
    * @param presignedUrl Presigned URL for file download
+   * @param queryId the query ID
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(
@@ -1110,8 +1112,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // specifically
     // for FIPS or VPCE S3 endpoint. SNOW-652696
     String endPoint = null;
-    if ("AZURE".equalsIgnoreCase(stageLocationType) || "S3".equalsIgnoreCase(stageLocationType)) {
+    if ("AZURE".equalsIgnoreCase(stageLocationType)
+        || "S3".equalsIgnoreCase(stageLocationType)
+        || "GCS".equalsIgnoreCase(stageLocationType)) {
       endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+      if ("GCS".equalsIgnoreCase(stageLocationType)
+          && endPoint != null
+          && (endPoint.trim().isEmpty() || "null".equals(endPoint))) {
+        // setting to null to preserve previous behaviour for GCS
+        endPoint = null;
+      }
     }
 
     String stgAcct = null;
@@ -1178,6 +1188,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
+    setupUseRegionalUrl(jsonNode, stageInfo);
+
     if (stageInfo.getStageType() == StageInfo.StageType.S3) {
       if (session == null) {
         // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
@@ -1197,6 +1209,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     return stageInfo;
+  }
+
+  private static void setupUseRegionalUrl(JsonNode jsonNode, StageInfo stageInfo) {
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS
+        && stageInfo.getStageType() != StageInfo.StageType.S3) {
+      return;
+    }
+    JsonNode useRegionalURLNode = jsonNode.path("data").path("stageInfo").path("useRegionalUrl");
+    if (!useRegionalURLNode.isMissingNode()) {
+      boolean useRegionalURL = useRegionalURLNode.asBoolean(false);
+      stageInfo.setUseRegionalUrl(useRegionalURL);
+    }
   }
 
   /**
@@ -1672,6 +1696,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     remoteLocation remoteLocation = extractLocationAndPath(stageInfo.getLocation());
 
     // when downloading files as stream there should be only one file in source files
+    // let's fail fast when more than one file matches instead of fetching random one
+    if (sourceFiles.size() > 1) {
+      throw new SnowflakeSQLException(
+          queryID,
+          SqlState.NO_DATA,
+          ErrorCode.TOO_MANY_FILES_TO_DOWNLOAD_AS_STREAM.getMessageCode(),
+          session,
+          "There are more than one file matching "
+              + fileName
+              + ": "
+              + String.join(",", sourceFiles));
+    }
     String sourceLocation =
         sourceFiles.stream()
             .findFirst()
@@ -2176,6 +2212,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param config Configuration to upload a file to cloud storage
    * @throws Exception if error occurs while data upload.
    */
+  @SnowflakeOrgInternalApi
   public static void uploadWithoutConnection(SnowflakeFileTransferConfig config) throws Exception {
     logger.trace("Entering uploadWithoutConnection...");
 
@@ -2315,7 +2352,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           break;
       }
     } catch (Exception ex) {
-      logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      if (!config.isSilentException()) {
+        logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      }
       throw ex;
     } finally {
       if (fileBackedOutputStream != null) {
@@ -3373,7 +3412,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   @Deprecated
   public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
@@ -3388,7 +3427,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @param queryId the query ID
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   public static void throwNoSpaceLeftError(
       SFSession session, String operation, Exception ex, String queryId)

@@ -841,10 +841,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   }
 
   private String generateFailOpenLog(String logData) {
-    return "WARNING!!! Using fail-open to connect. Driver is connecting to an "
-        + "HTTPS endpoint without OCSP based Certificate Revocation checking "
-        + "as it could not obtain a valid OCSP Response to use from the CA OCSP "
-        + "responder. Details: \n"
+    return "OCSP responder didn't respond correctly. Assuming certificate is "
+        + "not revoked. Details: "
         + logData;
   }
 
@@ -981,7 +979,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_VALIDATION_ERROR, error);
       if (isOCSPFailOpen()) {
         // Log includes fail-open warning.
-        logger.error(generateFailOpenLog(ocspLog), false);
+        logger.debug(generateFailOpenLog(ocspLog), false);
       } else {
         // still not success, raise an error.
         logger.debug(ocspLog, false);
@@ -1163,7 +1161,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           new DecorrelatedJitterBackoff(sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
       boolean success = false;
 
-      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 3;
+      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 2;
       Exception savedEx = null;
       CloseableHttpClient httpClient =
           ocspCacheServerClient.computeIfAbsent(

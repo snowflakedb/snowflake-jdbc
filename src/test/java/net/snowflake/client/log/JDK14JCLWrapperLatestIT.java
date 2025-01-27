@@ -3,21 +3,21 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class JDK14JCLWrapperLatestIT {
   JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperLatestIT.class.getName());
   JDK14Logger logger = (JDK14Logger) wrapper.getLogger();
@@ -66,7 +66,7 @@ public class JDK14JCLWrapperLatestIT {
 
   private TestJDK14LogHandler handler = new TestJDK14LogHandler(new SFFormatter());
 
-  @Before
+  @BeforeEach
   public void setUp() {
     logLevelToRestore = logger.getLevel();
     // Set debug level to lowest so that all possible messages can be sent.
@@ -75,7 +75,7 @@ public class JDK14JCLWrapperLatestIT {
     logger.setUseParentHandlers(false);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     logger.setUseParentHandlers(true);
     logger.setLevel(logLevelToRestore);

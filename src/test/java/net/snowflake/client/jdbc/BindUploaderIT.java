@@ -4,9 +4,9 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,18 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;
@@ -86,21 +86,21 @@ public class BindUploaderIT extends BaseJDBCTest {
           + STAGE_DIR
           + "' ORDER BY $1 ASC";
 
-  @BeforeClass
+  @BeforeAll
   public static void classSetUp() throws Exception {
     Connection connection = getConnection();
     connection.createStatement().execute(createTableSQL);
     connection.close();
   }
 
-  @AfterClass
+  @AfterAll
   public static void classTearDown() throws Exception {
     Connection connection = getConnection();
     connection.createStatement().execute(deleteTableSQL);
     connection.close();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     conn = getConnection();
     session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -109,7 +109,7 @@ public class BindUploaderIT extends BaseJDBCTest {
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     conn.close();
     bindUploader.close();

@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -61,12 +62,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   /** Refer to all created and open statements from this connection */
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
+
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
   private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   private boolean isClosed;
   private SQLWarning sqlWarnings = null;
   private List<DriverPropertyInfo> missingProperties = null;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -76,12 +79,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * <p>Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
+
   /* this should be set to Connection.TRANSACTION_READ_COMMITTED
    * There may not be many implications here since the call to
    * setTransactionIsolation doesn't do anything.
    */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
   private SFBaseSession sfSession;
+
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
   private SFConnectionHandler sfConnectionHandler;
 
@@ -91,6 +96,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
+   * @throws SQLException if failed to instantiate a SnowflakeConnectionV1.
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler) throws SQLException {
     initConnectionWithImpl(sfConnectionHandler, null, null);
@@ -100,6 +106,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
+   * @param url The URL string.
+   * @param info Connection properties.
+   * @throws SQLException if failed to instantiate connection.
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler, String url, Properties info)
       throws SQLException {
@@ -141,14 +150,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    logger.info("Initializing new connection");
+    logger.debug("Initializing new connection");
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Connection initialized successfully in {} ms. Session id: {}",
         stopwatch.elapsedMillis(),
         sfSession.getSessionId());
@@ -195,9 +204,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   /**
    * Get an instance of a ResultSet object
    *
-   * @param queryID
-   * @return
-   * @throws SQLException
+   * @param queryID the query ID
+   * @return ResultSet
+   * @throws SQLException if connection is closed
    */
   public ResultSet createResultSet(String queryID) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
@@ -236,7 +245,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (sfSession != null) {
       sessionId = sfSession.getSessionId();
-      logger.info("Closing connection with session id: {}", sessionId);
+      logger.debug("Closing connection with session id: {}", sessionId);
     } else {
       logger.debug("Closing connection without associated session");
     }
@@ -276,7 +285,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Connection with session id: {} closed successfully in {} ms",
         sessionId,
         stopwatch.elapsedMillis());
@@ -722,7 +731,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-    return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
+    return new SfSqlArray(JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements);
   }
 
   @Override
@@ -1032,6 +1041,12 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
+
+    // We cannot match whole sourceFileName since it may be different e.g. for git repositories so
+    // we match only raw filename
+    String[] split = sourceFileName.split("/");
+    String fileName = Pattern.quote(split[split.length - 1]);
+    getCommand.append(" PATTERN=\".*").append(fileName).append("$\"");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getSFBaseStatement());

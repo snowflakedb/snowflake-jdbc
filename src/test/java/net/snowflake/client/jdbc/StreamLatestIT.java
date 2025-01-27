@@ -3,15 +3,17 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -19,15 +21,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Stream API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -35,10 +37,10 @@ import org.junit.rules.TemporaryFolder;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class StreamLatestIT extends BaseJDBCTest {
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /**
    * Test Upload Stream with atypical stage names
@@ -72,7 +74,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
         statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
 
@@ -92,7 +94,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
@@ -101,7 +103,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();
@@ -118,8 +120,8 @@ public class StreamLatestIT extends BaseJDBCTest {
       } catch (Exception ex) {
         assertTrue(ex instanceof SQLException);
         assertTrue(
-            "Wrong exception message: " + ex.getMessage(),
-            ex.getMessage().contains("File not found"));
+            ex.getMessage().contains("File not found"),
+            "Wrong exception message: " + ex.getMessage());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -127,7 +129,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
     final String DEST_PREFIX = "testUploadStream";
 
@@ -141,7 +143,7 @@ public class StreamLatestIT extends BaseJDBCTest {
                   + " @testgcpstage/"
                   + DEST_PREFIX)) {
         assertTrue(rset.next());
-        assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
+        assertEquals("UPLOADED", rset.getString(7), "Error message:" + rset.getString(8));
 
         InputStream out =
             connection
@@ -162,7 +164,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamGCS() throws SQLException, IOException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();
@@ -202,7 +204,8 @@ public class StreamLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       try {
         // Create a temporary file with special characters in the name and write to it
-        File specialCharFile = tmpFolder.newFile("(special char@).txt");
+        File specialCharFile = new File(tmpFolder, "(special char@).txt");
+        specialCharFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(specialCharFile))) {
           bw.write("Creating test file for downloadStream test");
         }
@@ -237,5 +240,74 @@ public class StreamLatestIT extends BaseJDBCTest {
         statement.execute("DROP STAGE IF EXISTS downloadStream_stage");
       }
     }
+  }
+
+  /** Added > 3.21.0. Fixed regression introduced in 3.19.1 */
+  @Test
+  public void shouldDownloadStreamInDeterministicWay() throws Exception {
+    try (Connection conn = getConnection();
+        Statement stat = conn.createStatement()) {
+      String randomStage = "test" + UUID.randomUUID().toString().replaceAll("-", "");
+      try {
+        stat.execute("CREATE OR REPLACE STAGE " + randomStage);
+        String randomDir = UUID.randomUUID().toString();
+        String sourceFilePathWithoutExtension = getFullPathFileInResource("test_file");
+        String sourceFilePathWithExtension = getFullPathFileInResource("test_file.csv");
+        String stageDest = String.format("@%s/%s", randomStage, randomDir);
+        putFile(stat, sourceFilePathWithExtension, stageDest, false);
+        putFile(stat, sourceFilePathWithoutExtension, stageDest, false);
+        putFile(stat, sourceFilePathWithExtension, stageDest, true);
+        putFile(stat, sourceFilePathWithoutExtension, stageDest, true);
+        expectsFilesOnStage(stat, stageDest, 4);
+        String stageName = "@" + randomStage;
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.gz", true, "I am a file without extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.csv.gz", true, "I am a file with extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file", false, "I am a file without extension");
+        downloadStreamExpectingContent(
+            conn, stageName, randomDir + "/test_file.csv", false, "I am a file with extension");
+      } finally {
+        stat.execute("DROP STAGE IF EXISTS " + randomStage);
+      }
+    }
+  }
+
+  private static void downloadStreamExpectingContent(
+      Connection conn,
+      String stageName,
+      String fileName,
+      boolean decompress,
+      String expectedFileContent)
+      throws IOException, SQLException {
+    try (InputStream inputStream =
+            conn.unwrap(SnowflakeConnectionV1.class)
+                .downloadStream(stageName, fileName, decompress);
+        InputStreamReader isr = new InputStreamReader(inputStream);
+        BufferedReader br = new BufferedReader(isr)) {
+      String content = br.lines().collect(Collectors.joining("\n"));
+      assertEquals(expectedFileContent, content);
+    }
+  }
+
+  private static void expectsFilesOnStage(Statement stmt, String stageDest, int expectCount)
+      throws SQLException {
+    int filesInStageDir = 0;
+    try (ResultSet rs = stmt.executeQuery("LIST " + stageDest)) {
+      while (rs.next()) {
+        ++filesInStageDir;
+      }
+    }
+    assertEquals(expectCount, filesInStageDir);
+  }
+
+  private static boolean putFile(
+      Statement stmt, String localFileName, String stageDest, boolean autoCompress)
+      throws SQLException {
+    return stmt.execute(
+        String.format(
+            "PUT file://%s %s AUTO_COMPRESS=%s",
+            localFileName, stageDest, String.valueOf(autoCompress).toUpperCase()));
   }
 }

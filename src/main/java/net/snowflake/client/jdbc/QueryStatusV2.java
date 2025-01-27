@@ -127,7 +127,11 @@ public final class QueryStatusV2 {
     return warehouseServerType;
   }
 
-  /** To preserve compatibility with {@link QueryStatus} */
+  /**
+   * To preserve compatibility with {@link QueryStatus}
+   *
+   * @return name
+   */
   public String getDescription() {
     return name;
   }

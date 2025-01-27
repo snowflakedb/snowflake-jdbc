@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
@@ -35,10 +35,9 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.core.SessionUtilExternalBrowser;
-import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -259,7 +258,7 @@ public class SSOConnectionTest {
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),
-                      equalTo(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name()));
+                      equalTo("EXTERNALBROWSER"));
                   resp = retInitialAuthentication;
                 } else if (callCount == 2) {
                   jsonNode = parseRequest((HttpPost) args[0]);
@@ -298,8 +297,7 @@ public class SSOConnectionTest {
   private SFLoginInput initMockLoginInput() {
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn("https://testaccount.snowflakecomputing.com/");
-    when(loginInput.getAuthenticator())
-        .thenReturn(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+    when(loginInput.getAuthenticator()).thenReturn("EXTERNALBROWSER");
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);

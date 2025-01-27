@@ -58,14 +58,19 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakePreparedStatementV1.class);
+
   /** Error code returned when describing a statement that is binding table name */
   private static final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
+
   /** Error code when preparing statement with binding object names */
   private static final Integer ERROR_CODE_OBJECT_BIND_NOT_SET = 2129;
+
   /** Error code returned when describing a ddl command */
   private static final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
+
   /** snow-44393 Workaround for compiler cannot prepare to_timestamp(?, 3) */
   private static final Integer ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING = 1026;
+
   /** A hash set that contains the error code that will not lead to exception in describe mode */
   private static final Set<Integer> errorCodesIgnoredInDescribeMode =
       new HashSet<>(
@@ -88,10 +93,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * <p>Currently, bind name is just value index
    */
   private Map<String, ParameterBindingDTO> parameterBindings = new HashMap<>();
+
   /** map of bind values for batch query executions */
   private Map<String, ParameterBindingDTO> batchParameterBindings = new HashMap<>();
 
   private Map<String, Boolean> wasPrevValueNull = new HashMap<>();
+
   /** Counter for batch size if we are executing a statement with array bind supported */
   private int batchSize = 0;
 
@@ -133,6 +140,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     if (!alreadyDescribed) {
       try {
         this.preparedStatementMetaData = sfBaseStatement.describe(sql);
+        if (preparedStatementMetaData != null
+            && !preparedStatementMetaData.isArrayBindSupported()) {
+          logger.debug(
+              "Array bind is not supported - each batch entry will be executed as a single request for query: {}",
+              sql);
+        }
       } catch (SFException e) {
         throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(), e);
       } catch (SnowflakeSQLException e) {
@@ -1000,8 +1013,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           updateCounts.intArr = executeBatchInternal(false).intArr;
         }
       }
+      if (this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     } finally {
-      this.clearBatch();
+      if (!this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     }
 
     return updateCounts;

@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
@@ -175,7 +175,6 @@ public class SessionUtilExternalBrowser {
 
       HttpPost postRequest = this.handlers.build(fedUrlUri);
 
-      ClientAuthnDTO authnData = new ClientAuthnDTO();
       Map<String, Object> data = new HashMap<>();
 
       data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator);
@@ -185,7 +184,7 @@ public class SessionUtilExternalBrowser {
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
 
-      authnData.setData(data);
+      ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request

@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import java.math.BigDecimal;
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class NumberConverterTest {
   private final NumberConverter numberConverter = new NumberConverter();

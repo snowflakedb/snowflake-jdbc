@@ -6,22 +6,23 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -29,19 +30,13 @@ import org.junit.experimental.categories.Category;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement2IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
-  public PreparedStatement2LatestIT() {
-    super("json");
-  }
 
-  PreparedStatement2LatestIT(String queryFormat) {
-    super(queryFormat);
-  }
-
-  @Test
-  public void testPrepareUDTF() throws Exception {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testPrepareUDTF(String queryResultFormat) throws Exception {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table employee(id number, address text)");
@@ -77,10 +72,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           // second argument is invalid
           prepStatement.setInt(1, 1);
           prepStatement.execute();
-          Assert.fail();
+          fail();
         } catch (SQLException e) {
           // failed because argument type did not match
-          Assert.assertThat(e.getErrorCode(), is(1044));
+          assertThat(e.getErrorCode(), is(1044));
         }
 
         // create a udf with same name but different arguments and return type
@@ -110,9 +105,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    * SNOW-88426: skip bind parameter index check if prepare fails and defer the error checks to
    * execute
    */
-  @Test
-  public void testSelectWithBinding() throws Throwable {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSelectWithBinding(String queryResultFormat) throws Throwable {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table TESTNULL(created_time timestamp_ntz, mid int)");
@@ -144,9 +140,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testLimitBind() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testLimitBind(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       String stmtStr = "select seq4() from table(generator(rowcount=>100)) limit ?";
       try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
         prepStatement.setInt(1, 10);
@@ -156,9 +153,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   /** SNOW-31746 */
-  @Test
-  public void testConstOptLimitBind() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testConstOptLimitBind(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       String stmtStr = "select 1 limit ? offset ?";
       try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
         prepStatement.setInt(1, 10);
@@ -172,10 +170,11 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testTableFuncBindInput() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testTableFuncBindInput(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {
         prepStatement.setInt(1, 2);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
@@ -185,9 +184,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testExecuteLargeBatch() throws SQLException {
-    try (Connection con = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testExecuteLargeBatch(String queryResultFormat) throws SQLException {
+    try (Connection con = getConn(queryResultFormat);
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace table mytab(id int)");
@@ -212,11 +212,12 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testRemoveExtraDescribeCalls() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testRemoveExtraDescribeCalls(String queryResultFormat) throws SQLException {
     String queryId1 = null;
     String queryId2 = null;
-    try (Connection connection = init();
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_uuid_with_bind(c1 number)");
@@ -264,10 +265,12 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testRemoveExtraDescribeCallsSanityCheck() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testRemoveExtraDescribeCallsSanityCheck(String queryResultFormat)
+      throws SQLException {
     String queryId1;
-    try (Connection connection = init()) {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement preparedStatement =
           connection.prepareStatement(
               "create or replace table test_uuid_with_bind(c1 number, c2 string)")) {
@@ -307,9 +310,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testAlreadyDescribedMultipleResults() throws SQLException {
-    try (Connection connection = init()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testAlreadyDescribedMultipleResults(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         prepStatement.execute();
@@ -342,9 +346,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    *
    * @throws Exception
    */
-  @Test
-  public void testConsecutiveBatchInsertError() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testConsecutiveBatchInsertError(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table testStageArrayBind(c1 integer, c2 string)");
@@ -381,9 +386,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testToString() throws SQLException {
-    try (Connection connection = init();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testToString(String queryResultFormat) throws SQLException {
+    try (Connection connection = getConn(queryResultFormat);
         PreparedStatement prepStatement =
             connection.prepareStatement("select current_version() --testing toString()")) {
 

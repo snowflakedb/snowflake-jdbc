@@ -41,7 +41,7 @@ public class ArrowResultChunkIndexSorter {
    * This method is only used when sf-property sort is on
    *
    * @return sorted indices
-   * @throws SFException
+   * @throws SFException when exception encountered
    */
   public IntVector sort() throws SFException {
     quickSort(0, resultChunk.get(0).getValueCount() - 1);

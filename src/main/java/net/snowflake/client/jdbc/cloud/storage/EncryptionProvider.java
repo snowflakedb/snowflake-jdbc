@@ -41,9 +41,25 @@ public class EncryptionProvider {
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
   private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
-  private static SecureRandom secRnd;
+  private static ThreadLocal<SecureRandom> secRnd =
+      new ThreadLocal<>().withInitial(SecureRandom::new);
 
-  /** Decrypt a InputStream */
+  /**
+   * Decrypt a InputStream
+   *
+   * @param inputStream input stream
+   * @param keyBase64 keyBase64
+   * @param ivBase64 ivBase64
+   * @param encMat RemoteStoreFileEncryptionMaterial
+   * @return InputStream
+   * @throws NoSuchPaddingException when padding mechanism is not available for this environment
+   * @throws NoSuchAlgorithmException when the requested algorithm is not available for this
+   *     environment
+   * @throws InvalidKeyException when there is an issue with the key value
+   * @throws BadPaddingException when the data is not padded as expected
+   * @throws IllegalBlockSizeException when the length of data is incorrect
+   * @throws InvalidAlgorithmParameterException when the provided KeyStore has no trustAnchors
+   */
   public static InputStream decryptStream(
       InputStream inputStream,
       String keyBase64,
@@ -150,11 +166,11 @@ public class EncryptionProvider {
 
       // Create IV
       ivData = new byte[blockSize];
-      getSecRnd().nextBytes(ivData);
+      secRnd.get().nextBytes(ivData);
       final IvParameterSpec iv = new IvParameterSpec(ivData);
 
       // Create file key
-      getSecRnd().nextBytes(fileKeyBytes);
+      secRnd.get().nextBytes(fileKeyBytes);
       SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, keySize, AES);
 
       // Init cipher
@@ -183,19 +199,5 @@ public class EncryptionProvider {
     }
 
     return cis;
-  }
-
-  /*
-   * getSecRnd
-   * Gets a random number for encryption purposes.
-   */
-  private static synchronized SecureRandom getSecRnd()
-      throws NoSuchAlgorithmException, NoSuchProviderException {
-    if (secRnd == null) {
-      secRnd = SecureRandom.getInstance("SHA1PRNG");
-      byte[] bytes = new byte[10];
-      secRnd.nextBytes(bytes);
-    }
-    return secRnd;
   }
 }

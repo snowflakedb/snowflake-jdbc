@@ -9,11 +9,21 @@ Snowflake JDBC Driver
 
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
-    
-.. image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc/badge.svg?style=plastic
-    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/
-    
+
 Snowflake provides a JDBC type 4 driver that supports core functionality, allowing Java program to connect to Snowflake.
+
+.. |maven-snowflake-jdbc| image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc/badge.svg?style=plastic
+    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/
+
+.. |maven-snowflake-jdbc-fips| image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc-fips/badge.svg?style=plastic
+    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc-fips/
+
+.. |maven-snowflake-jdbc-thin| image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc-thin/badge.svg?style=plastic
+    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc-thin/
+
+- snowflake-jdbc (fat-jar): |maven-snowflake-jdbc|
+- snowflake-jdbc-fips (FIPS compliant fat-jar): |maven-snowflake-jdbc-fips|
+- snowflake-jdbc-thin (thin-jar): |maven-snowflake-jdbc-thin|
 
 Prerequisites
 =============
@@ -45,7 +55,7 @@ or for FIPS compliant fat-jar
       <version>{version}</version>
     </dependency>
 
-or for experimental thin-jar
+or for thin-jar
 
 .. code-block:: xml
 
@@ -79,7 +89,7 @@ Build from Source Code
     ../mvnw org.apache.maven.plugins:maven-install-plugin:3.1.1:install-file -Dfile=target/snowflake-jdbc-fips.jar -DpomFile=./public_pom.xml
     cd -
 
-4. Build the experimental thin-jar and install it in local maven repository by running:
+4. Build the thin-jar and install it in local maven repository by running:
 
 .. code-block:: bash
 
@@ -185,17 +195,20 @@ Run the maven ``verify`` goal.
 
 where ``category`` is the class name under the package ``net.snowflake.client.category``.
 
-Set new version
+Prepare new version
 ---------------
 
-1. Run maven command with passing specific version:
+Run script passing desired version:
 
 .. code-block:: bash
 
-   mvn -f parent-pom.xml versions:set -DnewVersion=... -DgenerateBackupPoms=false
+   ./prepareNewVersion.sh 3.100.42
 
-2. Set manually the same version in field ``implementVersion`` in ``src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java`` when it's version for release or without ``-SNAPSHOT`` suffix between releases
-3. Add entry in ``CHANGELOG.rst`` for release versions
+Add SNAPSHOT suffix when necessary:
+
+.. code-block:: bash
+
+   ./prepareNewVersion.sh 3.100.42-SNAPSHOT
 
 Test Class Naming Convention
 ----------------------------
@@ -218,4 +231,4 @@ https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowfl
 Note
 ----------
 
-This driver currently does not support GCP regional endpoints. Please ensure that any workloads using through this driver do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
+This driver support GCP regional endpoints starting from version 3.21.0. Please ensure that any workloads using through this driver below the version 3.21.0 do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.

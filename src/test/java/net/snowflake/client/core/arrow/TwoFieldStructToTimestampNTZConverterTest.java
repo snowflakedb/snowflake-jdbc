@@ -4,15 +4,17 @@
 
 package net.snowflake.client.core.arrow;
 
+import static java.util.stream.Stream.concat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -33,27 +36,22 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+
+  private static void setTimezone(String tz) {
+    System.setProperty("user.timezone", tz);
   }
 
-  public TwoFieldStructToTimestampNTZConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
+  @AfterAll
+  public static void clearTimezone() {
+    System.clearProperty("user.timezone");
   }
 
   /** allocator for arrow */
@@ -63,56 +61,80 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
 
   private int oldScale = 9;
 
-  @Test
-  public void timestampOverflowTest() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {154639183700000l};
+  static class DataProvider implements ArgumentsProvider {
 
-    int[] testNanoSecs = {0};
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      List<String> timezones =
+          new ArrayList<String>() {
+            {
+              add("America/Los_Angeles");
+              add("America/New_York");
+              add("Pacific/Honolulu");
+              add("Asia/Singapore");
+              add("MESZ");
+              add("MEZ");
+              add("UTC");
+            }
+          };
 
-    String[] testTimesJson = {"154639183700000.000000000"};
-    this.setHonorClientTZForTimestampNTZ(false);
-    testTimestampNTZ(testSecondsInt64, testNanoSecs, testTimesJson);
+      Stream<Arguments> args = Stream.empty();
+
+      for (String timezone : timezones) {
+        args =
+            concat(
+                args,
+                Stream.of(
+                    Arguments.argumentSet(
+                        timezone + " Overflow",
+                        timezone,
+                        false,
+                        new long[] {154639183700000L},
+                        new int[] {0},
+                        new String[] {"154639183700000.000000000"}),
+                    Arguments.argumentSet(
+                        timezone + " HonorClientTZForTimestampNTZ Disabled",
+                        timezone,
+                        false,
+                        new long[] {1546391837, 0, -1546391838, -1546391838, -1546391838},
+                        new int[] {0, 1, 999999990, 876543211, 1},
+                        new String[] {
+                          "1546391837.000000000",
+                          "0.000000001",
+                          "-1546391837.000000010",
+                          "-1546391837.123456789",
+                          "-1546391837.999999999"
+                        }),
+                    Arguments.argumentSet(
+                        timezone + " HonorClientTZForTimestampNTZ Enabled",
+                        timezone,
+                        true,
+                        new long[] {1546391837, 1546391837, 1546391837, 1546391837, 1546391837},
+                        new int[] {0, 1, 10, 100, 999999999},
+                        new String[] {
+                          "1546391837.000000000",
+                          "1546391837.000000001",
+                          "1546391837.000000010",
+                          "1546391837.000000100",
+                          "1546391837.999999999"
+                        })));
+      }
+
+      return args;
+    }
   }
 
-  @Test
-  public void testHonorClientTZForTimestampNTZDisabled() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {1546391837, 0, -1546391838, -1546391838, -1546391838};
-
-    int[] testNanoSecs = {0, 1, 999999990, 876543211, 1};
-
-    String[] testTimesJson = {
-      "1546391837.000000000",
-      "0.000000001",
-      "-1546391837.000000010",
-      "-1546391837.123456789",
-      "-1546391837.999999999"
-    };
-    this.setHonorClientTZForTimestampNTZ(false);
-    testTimestampNTZ(testSecondsInt64, testNanoSecs, testTimesJson);
-  }
-
-  @Test
-  public void testHonorClientTZForTimestampNTZEnabled() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {1546391837, 1546391837, 1546391837, 1546391837, 1546391837};
-
-    int[] testNanoSecs = {0, 1, 10, 100, 999999999};
-
-    String[] testTimesJson = {
-      "1546391837.000000000",
-      "1546391837.000000001",
-      "1546391837.000000010",
-      "1546391837.000000100",
-      "1546391837.999999999"
-    };
-    this.setHonorClientTZForTimestampNTZ(true);
-    testTimestampNTZ(testSecondsInt64, testNanoSecs, testTimesJson);
-  }
-
-  public void testTimestampNTZ(long[] testSecondsInt64, int[] testNanoSecs, String[] testTimesJson)
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampNTZ(
+      String timezone,
+      boolean honorClientTZForTimestampNTZ,
+      long[] testSecondsInt64,
+      int[] testNanoSecs,
+      String[] testTimesJson)
       throws SFException {
+    this.setHonorClientTZForTimestampNTZ(honorClientTZForTimestampNTZ);
+    setTimezone(timezone);
 
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "TIMESTAMP");
@@ -153,9 +175,11 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
       } else {
         epochs.setSafe(j, testSecondsInt64[i]);
         fractions.setSafe(j, testNanoSecs[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampNTZConverter(structVector, 0, this);

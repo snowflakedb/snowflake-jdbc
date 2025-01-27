@@ -14,32 +14,32 @@ import java.io.IOException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SFTrustManagerMockitoMockLatestIT {
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /*
    * Test SF_OCSP_RESPONSE_CACHE_DIR environment variable changes the
    * location of the OCSP cache directory.
    */
   @Test
-  @Ignore("static initialization block of SFTrustManager class doesn't run sometimes")
+  @Disabled("static initialization block of SFTrustManager class doesn't run sometimes")
   public void testUnitOCSPWithCustomCacheDirectory() throws IOException {
     try (MockedStatic<TrustManagerFactory> mockedTrustManagerFactory =
             mockStatic(TrustManagerFactory.class);
         MockedStatic<SnowflakeUtil> mockedSnowflakeUtil = mockStatic(SnowflakeUtil.class)) {
 
-      File cacheFolder = tmpFolder.newFolder();
+      File cacheFolder = new File(tmpFolder, "cache");
+      cacheFolder.mkdirs();
       mockedSnowflakeUtil
           .when(() -> TestUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"))
           .thenReturn(cacheFolder.getCanonicalPath());

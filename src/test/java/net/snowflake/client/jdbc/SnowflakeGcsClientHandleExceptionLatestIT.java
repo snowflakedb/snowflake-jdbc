@@ -1,5 +1,9 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.google.cloud.storage.StorageException;
 import java.io.File;
 import java.io.IOException;
@@ -10,26 +14,23 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private Connection connection;
   private SFStatement sfStatement;
   private SFSession sfSession;
@@ -38,7 +39,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   private int overMaxRetry;
   private int maxRetry;
 
-  @Before
+  @BeforeEach
   public void setup() throws SQLException {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -59,7 +60,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void error401RenewExpired() throws SQLException, InterruptedException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
@@ -94,94 +95,117 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
     thread.start();
     thread.interrupt();
     thread.join();
-    Assert.assertNull("Exception must not have been thrown in here", exceptionContainer[0]);
+    assertNull(exceptionContainer[0], "Exception must not have been thrown in here");
     Mockito.verify(spyingClient, Mockito.times(2)).renew(Mockito.anyMap());
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void error401OverMaxRetryThrow() throws SQLException {
-    spyingClient.handleStorageException(
-        new StorageException(401, "Unauthenticated"),
-        overMaxRetry,
-        "upload",
-        sfSession,
-        command,
-        null);
+  @Test
+  @DontRunOnGithubActions
+  public void error401OverMaxRetryThrow() {
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new StorageException(401, "Unauthenticated"),
+                overMaxRetry,
+                "upload",
+                sfSession,
+                command,
+                null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorInvalidKey() throws SQLException {
+  @Test
+  @DontRunOnGithubActions
+  public void errorInvalidKey() {
     // Unauthenticated, renew is called.
-    spyingClient.handleStorageException(
-        new Exception(new InvalidKeyException()), 0, "upload", sfSession, command, null);
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new Exception(new InvalidKeyException()), 0, "upload", sfSession, command, null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Test
+  @DontRunOnGithubActions
   public void errorInterruptedException() throws SQLException {
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
           new InterruptedException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
-      Assert.fail("Should not have exception here");
+      fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
-    spyingClient.handleStorageException(
-        new InterruptedException(), 26, "upload", sfSession, command, null);
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new InterruptedException(), 26, "upload", sfSession, command, null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorSocketTimeoutException() throws SQLException {
+  @Test
+  @DontRunOnGithubActions
+  public void errorSocketTimeoutException() throws SnowflakeSQLException {
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
           new SocketTimeoutException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
-      Assert.fail("Should not have exception here");
+      fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
-    spyingClient.handleStorageException(
-        new SocketTimeoutException(), 26, "upload", sfSession, command, null);
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new SocketTimeoutException(), 26, "upload", sfSession, command, null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorUnknownException() throws SQLException {
+  @Test
+  @DontRunOnGithubActions
+  public void errorUnknownException() {
     // Unauthenticated, renew is called.
-    spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command, null);
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new Exception(), 0, "upload", sfSession, command, null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorWithNullSession() throws SQLException {
-    spyingClient.handleStorageException(
-        new StorageException(401, "Unauthenticated"), 0, "upload", null, command, null);
+  @Test
+  @DontRunOnGithubActions
+  public void errorWithNullSession() {
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new StorageException(401, "Unauthenticated"), 0, "upload", null, command, null));
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorNoSpaceLeftOnDevice() throws SQLException, IOException {
-    File destFolder = tmpFolder.newFolder();
+  @Test
+  @DontRunOnGithubActions
+  public void errorNoSpaceLeftOnDevice() throws IOException {
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String getCommand =
         "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file://" + destFolderCanonicalPath + "'";
-    spyingClient.handleStorageException(
-        new StorageException(
-            maxRetry,
-            Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-            new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-        0,
-        "download",
-        null,
-        getCommand,
-        null);
+    assertThrows(
+        SQLException.class,
+        () ->
+            spyingClient.handleStorageException(
+                new StorageException(
+                    maxRetry,
+                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                0,
+                "download",
+                null,
+                getCommand,
+                null));
   }
 
-  @After
+  @AfterEach
   public void cleanUp() throws SQLException {
     sfStatement.close();
     connection.close();

@@ -11,12 +11,12 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.PooledConnection;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
 
   @Test

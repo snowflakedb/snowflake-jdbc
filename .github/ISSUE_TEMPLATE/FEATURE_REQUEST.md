@@ -17,6 +17,4 @@ otherwise continue here.
 ## How would this improve `snowflake-jdbc`?
 
 ## References, Other Background
-
-## What is your Snowflake account identifier, if any?
  
