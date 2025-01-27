@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.20.1-SNAPSHOT</version>
+    <version>3.21.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.20.1-SNAPSHOT</version>
+  <version>3.21.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -106,6 +106,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${version.plugin.failsafe}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit-platform</artifactId>
+              <version>${version.plugin.surefire}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -146,6 +153,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.plugin.surefire}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit-platform</artifactId>
+              <version>${version.plugin.surefire}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -724,6 +738,9 @@
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/io.netty.versions.properties</resource>
+                    </transformer>
                   </transformers>
                 </configuration>
               </execution>
@@ -823,13 +840,58 @@
                       <pattern>com.google</pattern>
                       <shadedPattern>${shadeBase}.google</shadedPattern>
                     </relocation>
+                    <!-- google packages should be relocated explicitly to avoid problems with properties files renaming -->
+                    <relocation>
+                      <pattern>google.api</pattern>
+                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.apps</pattern>
+                      <shadedPattern>${shadeBase}.google.apps</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.cloud</pattern>
+                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                    </relocation>
                     <relocation>
                       <pattern>google.geo</pattern>
                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>google.iam</pattern>
+                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.logging</pattern>
+                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.longrunning</pattern>
+                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.monitoring</pattern>
+                      <shadedPattern>${shadeBase}.google.monitoring</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.protobuf</pattern>
+                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.rpc</pattern>
+                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.shopping</pattern>
+                      <shadedPattern>${shadeBase}.google.shopping</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>google.storage</pattern>
                       <shadedPattern>${shadeBase}.google.storage</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.type</pattern>
+                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.joda</pattern>
@@ -880,48 +942,36 @@
                       <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.type</pattern>
-                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.rpc</pattern>
-                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.iam</pattern>
-                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>io.opencensus</pattern>
                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.opentelemetry</pattern>
+                      <shadedPattern>${shadeBase}.opentelemetry</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.threeten</pattern>
                       <shadedPattern>${shadeBase}.threeten</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.protobuf</pattern>
-                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>google.api</pattern>
-                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>io.grpc</pattern>
                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.longrunning</pattern>
-                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                      <pattern>META-INF.native.io_grpc_netty_shaded_netty_tcnative</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.cloud</pattern>
-                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                      <pattern>META-INF.native.libio_grpc_netty_shaded_netty_tcnative</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>google.logging</pattern>
-                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                      <pattern>META-INF.native.io_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libio_grpc_netty_shaded_netty_transport_native_epoll</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.checkerframework</pattern>
@@ -938,6 +988,18 @@
                     <relocation>
                       <pattern>org.conscrypt</pattern>
                       <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>conscrypt_openjdk_jni</pattern>
+                      <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
+                      <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>opencensus</pattern>
@@ -1006,6 +1068,9 @@
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/io.netty.versions.properties</resource>
+                    </transformer>
                   </transformers>
                 </configuration>
               </execution>
@@ -1031,6 +1096,7 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1040,12 +1106,16 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/22/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
+                    <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>
@@ -1092,6 +1162,7 @@
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
+              <skipTests>${skip.unitTests}</skipTests>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
             </configuration>
           </plugin>
@@ -1141,10 +1212,29 @@
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
+            <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <groups>${testCategory}</groups>
+              <test>UnitTestSuite</test>
+              <skipTests>${skip.unitTests}</skipTests>
             </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
                 <goals>
@@ -1157,13 +1247,11 @@
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <excludes>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                  </excludes>
                   <systemPropertyVariables>
                     <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
                     <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
+                  <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>
             </executions>
@@ -1282,26 +1370,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
-                  </includes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1320,20 +1405,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>DellBoomiIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <test>DellBoomiCloudIT.java</test>
-                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1352,26 +1440,23 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
-                  </includes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
               </execution>
             </executions>
           </plugin>

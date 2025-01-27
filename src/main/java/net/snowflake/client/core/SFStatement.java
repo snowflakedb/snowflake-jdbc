@@ -318,6 +318,8 @@ public class SFStatement extends SFBaseStatement {
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
    * @param internal run internal query not showing up in history
+   * @param asyncExec is async execute
+   * @param execTimeData ExecTimeTelemetryData
    * @return raw json response
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
@@ -433,11 +435,11 @@ public class SFStatement extends SFBaseStatement {
       }
       if (numBinds > 0 && session.getPreparedStatementLogging()) {
         if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING) {
-          logger.info(
+          logger.debug(
               "Number of binds exceeds logging limit. Printing off {} binding parameters.",
               MAX_BINDING_PARAMS_FOR_LOGGING);
         } else {
-          logger.info("Printing off {} binding parameters.", numBinds);
+          logger.debug("Printing off {} binding parameters.", numBinds);
         }
         int counter = 0;
         // if it's an array bind, print off the first few rows from each column.
@@ -456,7 +458,7 @@ public class SFStatement extends SFBaseStatement {
               rows += bindRows.get(i) + ", ";
             }
             rows += "]";
-            logger.info("Column {}: {}", entry.getKey(), rows);
+            logger.debug("Column {}: {}", entry.getKey(), rows);
             counter += numRowsPrinted;
             if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) {
               break;
@@ -470,7 +472,7 @@ public class SFStatement extends SFBaseStatement {
               break;
             }
             counter++;
-            logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
+            logger.debug("Column {}: {}", entry.getKey(), entry.getValue().getValue());
           }
         }
       }
@@ -752,8 +754,10 @@ public class SFStatement extends SFBaseStatement {
    * Execute sql
    *
    * @param sql sql statement.
+   * @param asyncExec is async exec
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components

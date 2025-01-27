@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.util.SecretDetector;
 
 /**
@@ -38,8 +40,59 @@ public class JDK14Logger implements SFLogger {
 
   public static String STDOUT = "STDOUT";
 
+  private static final StdOutConsoleHandler STD_OUT_CONSOLE_HANDLER = new StdOutConsoleHandler();
+
   public JDK14Logger(String name) {
     this.jdkLogger = Logger.getLogger(name);
+  }
+
+  static {
+    String javaLoggingConsoleStdOut =
+        System.getProperty(SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT.getPropertyKey());
+    if ("true".equalsIgnoreCase(javaLoggingConsoleStdOut)) {
+      String javaLoggingConsoleStdOutThreshold =
+          System.getProperty(
+              SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD.getPropertyKey());
+      useStdOutConsoleHandler(javaLoggingConsoleStdOutThreshold);
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void useStdOutConsoleHandler(String threshold) {
+    Level thresholdLevel = threshold != null ? tryParse(threshold) : null;
+    Logger rootLogger = Logger.getLogger("");
+    for (Handler handler : rootLogger.getHandlers()) {
+      if (handler instanceof ConsoleHandler) {
+        rootLogger.removeHandler(handler);
+        if (thresholdLevel != null) {
+          rootLogger.addHandler(new StdErrOutThresholdAwareConsoleHandler(thresholdLevel));
+        } else {
+          rootLogger.addHandler(new StdOutConsoleHandler());
+        }
+        break;
+      }
+    }
+  }
+
+  private static Level tryParse(String threshold) {
+    try {
+      return Level.parse(threshold);
+    } catch (Exception e) {
+      throw new UnknownJavaUtilLoggingLevelException(threshold);
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  static void resetToDefaultConsoleHandler() {
+    Logger rootLogger = Logger.getLogger("");
+    for (Handler handler : rootLogger.getHandlers()) {
+      if (handler instanceof StdErrOutThresholdAwareConsoleHandler
+          || handler instanceof StdOutConsoleHandler) {
+        rootLogger.removeHandler(handler);
+        rootLogger.addHandler(new ConsoleHandler());
+        break;
+      }
+    }
   }
 
   public boolean isDebugEnabled() {
@@ -185,7 +238,9 @@ public class JDK14Logger implements SFLogger {
   /**
    * This is way to enable logging in JDBC through TRACING parameter or sf client config file.
    *
-   * @param level
+   * @param level log level
+   * @param logPath log path
+   * @throws IOException if there is an error writing to the log
    */
   public static synchronized void instantiateLogger(Level level, String logPath)
       throws IOException {
@@ -212,6 +267,9 @@ public class JDK14Logger implements SFLogger {
    * places.
    *
    * <p>This method will convert string in ex.1 to ex.2
+   *
+   * @param original original string
+   * @return refactored string
    */
   private String refactorString(String original) {
     StringBuilder sb = new StringBuilder();

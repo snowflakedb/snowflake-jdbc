@@ -8,10 +8,12 @@ import java.io.InputStream;
 import java.util.Properties;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 
 /**
  * This class manages the parameters to call SnowflakeFileTransferAgent.uploadWithoutConnection()
  */
+@SnowflakeOrgInternalApi
 public class SnowflakeFileTransferConfig {
   private SnowflakeFileTransferMetadata metadata;
   private InputStream uploadStream;
@@ -26,6 +28,7 @@ public class SnowflakeFileTransferConfig {
   private boolean useS3RegionalUrl; // only for S3 us-east-1 private link deployments
   private String streamingIngestClientName;
   private String streamingIngestClientKey;
+  private boolean silentException;
 
   public SnowflakeFileTransferConfig(Builder builder) {
     this.metadata = builder.metadata;
@@ -41,6 +44,7 @@ public class SnowflakeFileTransferConfig {
     this.useS3RegionalUrl = builder.useS3RegionalUrl;
     this.streamingIngestClientKey = builder.streamingIngestClientKey;
     this.streamingIngestClientName = builder.streamingIngestClientName;
+    this.silentException = builder.silentException;
   }
 
   public SnowflakeFileTransferMetadata getSnowflakeFileTransferMetadata() {
@@ -95,6 +99,10 @@ public class SnowflakeFileTransferConfig {
     return this.streamingIngestClientKey;
   }
 
+  public boolean isSilentException() {
+    return silentException;
+  }
+
   // Builder class
   public static class Builder {
     private SnowflakeFileTransferMetadata metadata = null;
@@ -110,6 +118,7 @@ public class SnowflakeFileTransferConfig {
     private boolean useS3RegionalUrl = false; // only for S3 us-east-1 private link deployments
     private String streamingIngestClientName;
     private String streamingIngestClientKey;
+    private boolean silentException = false;
 
     public static Builder newInstance() {
       return new Builder();
@@ -190,7 +199,12 @@ public class SnowflakeFileTransferConfig {
       return this;
     }
 
-    /** Streaming ingest client name, used to calculate streaming ingest billing per client */
+    /**
+     * Streaming ingest client name, used to calculate streaming ingest billing per client
+     *
+     * @param streamingIngestClientName streaming ingest client name
+     * @return Builder
+     */
     public Builder setStreamingIngestClientName(String streamingIngestClientName) {
       this.streamingIngestClientName = streamingIngestClientName;
       return this;
@@ -199,9 +213,23 @@ public class SnowflakeFileTransferConfig {
     /**
      * Streaming ingest client key provided by Snowflake, used to calculate streaming ingest billing
      * per client
+     *
+     * @param streamingIngestClientKey streaming ingest client key
+     * @return Builder
      */
     public Builder setStreamingIngestClientKey(String streamingIngestClientKey) {
       this.streamingIngestClientKey = streamingIngestClientKey;
+      return this;
+    }
+
+    /**
+     * Do not log exception when occurred, default: false
+     *
+     * @param silentException should not log exception when occurred
+     * @return Builder
+     */
+    public Builder setSilentException(boolean silentException) {
+      this.silentException = silentException;
       return this;
     }
   }

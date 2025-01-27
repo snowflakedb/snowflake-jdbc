@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,20 +11,20 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
   private static String originalProxyHost;
   private static String originalProxyPort;
   private static String originalNonProxyHosts;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() throws Exception {
     originalProxyHost = System.getProperty("https.proxyHost");
     originalProxyPort = System.getProperty("https.proxyPort");
@@ -39,7 +39,7 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDown() throws Exception {
     restoreProperty("https.proxyHost", originalProxyHost);
     restoreProperty("https.proxyPort", originalProxyPort);

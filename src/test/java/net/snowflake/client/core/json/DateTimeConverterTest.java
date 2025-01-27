@@ -1,7 +1,7 @@
 package net.snowflake.client.core.json;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -15,7 +15,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DateTimeConverterTest {
   private final TimeZone honoluluTimeZone =

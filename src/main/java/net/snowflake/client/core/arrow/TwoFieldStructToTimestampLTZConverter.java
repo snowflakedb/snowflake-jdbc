@@ -26,6 +26,11 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   private BigIntVector epochs;
   private IntVector fractions;
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public TwoFieldStructToTimestampLTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);
@@ -36,7 +41,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
 
   @Override
   public boolean isNull(int index) {
-    return epochs.isNull(index);
+    return structVector.isNull(index) || epochs.isNull(index) || fractions.isNull(index);
   }
 
   @Override
@@ -46,7 +51,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     }
 
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+      Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 
       return ts == null
           ? null
@@ -77,7 +82,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     throw new SFException(
@@ -106,7 +111,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
 
   @Override
   public boolean toBoolean(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return false;
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());

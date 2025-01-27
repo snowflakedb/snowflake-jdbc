@@ -7,9 +7,9 @@ import static net.snowflake.client.jdbc.OpenGroupCLIFuncIT.testFunction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Open Group CLI function integration tests for the latest JDBC driver. This doesn't work for the
@@ -17,7 +17,7 @@ import org.junit.experimental.categories.Category;
  * examine if the tests still are not applicable. If it is applicable, move tests to
  * OpenGroupCLIFuncIT so that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class OpenGroupCLIFuncLatestIT extends BaseJDBCTest {
   /**
    * Numeric function tests

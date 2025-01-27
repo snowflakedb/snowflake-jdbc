@@ -45,6 +45,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -93,6 +94,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
    *
    * @param resultSetSerializable The result set serializable object which includes all metadata to
    *     create the result set
+   * @throws SQLException if an error occurs
    */
   public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
@@ -108,7 +110,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   /**
    * This should never be used. Simply needed this for SFAsynchronousResult subclass
    *
-   * @throws SQLException
+   * @throws SQLException if an error occurs
    */
   protected SnowflakeBaseResultSet() throws SQLException {
     this.resultSetType = 0;
@@ -139,6 +141,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public abstract byte[] getBytes(int columnIndex) throws SQLException;
 
+  /**
+   * Get Date value
+   *
+   * @param columnIndex column index
+   * @param tz timezone
+   * @return Date value at column index
+   * @throws SQLException if data at column index is incompatible with Date type
+   */
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SQLException;
 
   private boolean getGetDateUseNullTimezone() {
@@ -168,6 +178,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return getTimestamp(columnIndex, (TimeZone) null);
   }
 
+  /**
+   * Get timestamp value
+   *
+   * @param columnIndex column index
+   * @param tz timezone
+   * @return timestamp value at column index
+   * @throws SQLException if data at column index is incompatible with timestamp
+   */
   public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException;
 
   @Override
@@ -1378,7 +1396,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
-                () -> (SQLInput) sfBaseResultSet.getObject(columnIndex));
+                () -> {
+                  StructObjectWrapper structObjectWrapper =
+                      (StructObjectWrapper) sfBaseResultSet.getObjectWithoutString(columnIndex);
+                  if (structObjectWrapper == null) {
+                    return null;
+                  }
+                  return (SQLInput) structObjectWrapper.getObject();
+                });
         if (sqlInput == null) {
           return null;
         } else {
@@ -1614,13 +1639,16 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    Object object =
-        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
-    if (object == null) {
+    StructObjectWrapper structObjectWrapper =
+        (StructObjectWrapper)
+            SnowflakeUtil.mapSFExceptionToSQLException(
+                () -> sfBaseResultSet.getObjectWithoutString(columnIndex));
+    if (structObjectWrapper == null || structObjectWrapper.getObject() == null) {
       return null;
     }
     Map<String, Object> map =
-        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
+        mapSFExceptionToSQLException(
+            () -> prepareMapWithValues(structObjectWrapper.getObject(), type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1628,7 +1656,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                object.getClass(),
+                structObjectWrapper.getObject().getClass(),
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());

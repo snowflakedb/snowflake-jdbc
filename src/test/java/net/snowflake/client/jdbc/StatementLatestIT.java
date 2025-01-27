@@ -4,13 +4,14 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.net.URL;
@@ -19,20 +20,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import java.util.Properties;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import net.snowflake.common.core.SqlState;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -40,7 +43,7 @@ import org.junit.rules.TemporaryFolder;
  * if the tests still is not applicable. If it is applicable, move tests to StatementIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -52,7 +55,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testExecuteCreateAndDrop() throws SQLException {
@@ -83,9 +86,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testCopyAndUpload() throws Exception {
-    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    File tempFolder = new File(tmpFolder, "test_downloads_folder");
+    tempFolder.mkdirs();
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       String fileName = "test_copy.csv";
@@ -198,7 +202,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPreparedStatementLogging() throws SQLException {
     try (Connection con = getConnection();
         Statement stmt = con.createStatement()) {
@@ -294,6 +298,91 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
         TestUtil.assertValidQueryId(queryID);
         assertEquals(queryID, e.getQueryId());
+      }
+    }
+  }
+
+  /**
+   * Test for setting query timeout on async queries. Applicable to versions after 3.21.0.
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  public void testSetQueryTimeoutForAsyncQueryUsingConnectionProperty() throws SQLException {
+    Properties p = new Properties();
+    p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
+    try (Connection con = getConnection(p);
+        Statement statement = con.createStatement()) {
+      statement.setQueryTimeout(3);
+
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+
+      try (ResultSet resultSet =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
+        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        await()
+            .atMost(Duration.ofSeconds(10))
+            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+
+        assertTrue(
+            sfrs.getStatusV2()
+                .getErrorMessage()
+                .contains(
+                    "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+      }
+    }
+  }
+
+  /**
+   * Test for setting query timeout on regular queries with the IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT
+   * property set to true. Applicable to versions after 3.21.0.
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  public void testSetQueryTimeoutWhenAsyncConnectionPropertySet() throws SQLException {
+    Properties p = new Properties();
+    p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
+    try (Connection con = getConnection(p);
+        Statement statement = con.createStatement()) {
+      statement.setQueryTimeout(3);
+
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+
+      try {
+        statement.executeQuery(sql);
+        fail("This query should fail.");
+      } catch (SQLException e) {
+        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+      }
+    }
+  }
+
+  /**
+   * Test for setting query timeout on async queries. Applicable to versions after 3.21.0.
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  public void testSetQueryTimeoutForAsyncQuery() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      SnowflakeStatement sfStmt = statement.unwrap(SnowflakeStatement.class);
+      sfStmt.setAsyncQueryTimeout(3);
+
+      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+
+      try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
+        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        await()
+            .atMost(Duration.ofSeconds(10))
+            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+
+        assertTrue(
+            sfrs.getStatusV2()
+                .getErrorMessage()
+                .contains(
+                    "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
       }
     }
   }

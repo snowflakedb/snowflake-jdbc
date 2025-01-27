@@ -1,0 +1,60 @@
+{
+  "data": {
+    "uploadInfo": {
+      "locationType": "S3",
+      "location": "example/location",
+      "path": "tables/19805757505/",
+      "region": "us-west-2",
+      "storageAccount": null,
+      "isClientSideEncrypted": true,
+      "creds": {
+        "AWS_KEY_ID": "EXAMPLE_AWS_KEY_ID",
+        "AWS_SECRET_KEY": "EXAMPLE_AWS_SECRET_KEY",
+        "AWS_TOKEN": "EXAMPLE_AWS_TOKEN",
+        "AWS_ID": "EXAMPLE_AWS_ID",
+        "AWS_KEY": "EXAMPLE_AWS_KEY"
+      },
+      "presignedUrl": null,
+      "endPoint": null
+    },
+    "src_locations": [
+      "/tmp/files/orders_100.csv"
+    ],
+    "parallel": 4,
+    "threshold": 209715200,
+    "autoCompress": true,
+    "overwrite": false,
+    "sourceCompression": "auto_detect",
+    "clientShowEncryptionParameter": true,
+    "queryId": "EXAMPLE_QUERY_ID",
+    "encryptionMaterial": {
+      "queryStageMasterKey": "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+      "queryId": "EXAMPLE_QUERY_ID",
+      "smkId": 123
+    },
+    "stageInfo": {
+      "locationType": "S3",
+      "location": "stage/location/foo/",
+      "path": "tables/19805757505/",
+      "region": "us-west-2",
+      "storageAccount": null,
+      "isClientSideEncrypted": true,
+      "useS3RegionalUrl": true,
+      "creds": {
+        "AWS_KEY_ID": "EXAMPLE_AWS_KEY_ID",
+        "AWS_SECRET_KEY": "EXAMPLE_AWS_SECRET_KEY",
+        "AWS_TOKEN": "EXAMPLE_AWS_TOKEN",
+        "AWS_ID": "EXAMPLE_AWS_ID",
+        "AWS_KEY": "EXAMPLE_AWS_KEY"
+      },
+      "presignedUrl": null,
+      "endPoint": null
+    },
+    "command": "UPLOAD",
+    "kind": null,
+    "operation": "Node"
+  },
+  "code": null,
+  "message": null,
+  "success": true
+}

@@ -6,10 +6,10 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static net.snowflake.client.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,14 +21,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();

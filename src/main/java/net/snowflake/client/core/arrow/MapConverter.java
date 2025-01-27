@@ -1,5 +1,6 @@
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
@@ -11,10 +12,16 @@ import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
+/** Arrow MapVector converter. */
 public class MapConverter extends AbstractArrowVectorConverter {
 
   private final MapVector vector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public MapConverter(MapVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.MAP.name(), valueVector, columnIndex, context);
     this.vector = valueVector;
@@ -22,11 +29,19 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
     List<JsonStringHashMap<String, Object>> entriesList =
         (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
     return entriesList.stream()
         .collect(
             Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return isNull(index) ? null : toString(index).getBytes(StandardCharsets.UTF_8);
   }
 
   @Override

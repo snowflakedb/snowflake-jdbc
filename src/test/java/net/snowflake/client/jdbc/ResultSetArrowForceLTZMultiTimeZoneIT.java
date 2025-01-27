@@ -3,45 +3,31 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryArrow;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Compare json and arrow resultSet behaviors 1/2 */
-@RunWith(Parameterized.class)
-@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
-  @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Collection<Object[]> data() {
-    return ResultSetArrowForce0MultiTimeZone.testData();
-  }
 
-  public ResultSetArrowForceLTZMultiTimeZoneIT(String queryResultFormat, String timeZone) {
-    super(queryResultFormat, timeZone);
-  }
-
-  @Test
-  public void testTimestampLTZ() throws SQLException {
-    for (int scale = 0; scale <= 9; scale++) {
-      testTimestampLTZWithScale(scale);
-    }
-  }
-
-  private void testTimestampLTZWithScale(int scale) throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataWithScaleProvider.class)
+  public void testTimestampLTZWithScale(String queryResultFormat, String tz, int scale)
+      throws SQLException {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01 12:00:00 Z",
       "2014-01-02 16:00:00 Z",
@@ -72,7 +58,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
+    Connection con = init(table, column, values, queryResultFormat);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
     while (i < cases.length) {
@@ -85,8 +71,11 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     finish(table, con);
   }
 
-  @Test
-  public void testTimestampLTZOutputFormat() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampLTZOutputFormat(String queryResultFormat, String tz)
+      throws SQLException {
+    setTimezone(tz);
     String[] cases = {"2017-01-01 12:00:00 Z", "2014-01-02 16:00:00 Z", "2014-01-02 12:34:56 Z"};
 
     long[] times = {1483272000000L, 1388678400000L, 1388666096000L};
@@ -99,7 +88,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "')";
-    try (Connection con = init(table, column, values);
+    try (Connection con = init(table, column, values, queryResultFormat);
         Statement statement = con.createStatement()) {
       try {
         // use initialized ltz output format
@@ -146,13 +135,14 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         }
       } finally {
         statement.execute("drop table " + table);
-        System.clearProperty("user.timezone");
       }
     }
   }
 
-  @Test
-  public void testTimestampLTZWithNulls() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampLTZWithNulls(String queryResultFormat, String tz) throws SQLException {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01 12:00:00 Z",
       "2014-01-02 16:00:00 Z",
@@ -183,7 +173,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, "'), (null),('") + "')";
-    try (Connection con = init(table, column, values);
+    try (Connection con = init(table, column, values, queryResultFormat);
         Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       try {
@@ -200,13 +190,14 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         }
       } finally {
         statement.execute("drop table " + table);
-        System.clearProperty("user.timezone");
       }
     }
   }
 
-  @Test
-  public void testTimestampLTZWithNanos() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampLTZWithNanos(String queryResultFormat, String tz) throws SQLException {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01 12:00:00.123456789",
       "2014-01-02 16:00:00.000000001",
@@ -229,7 +220,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
-    try (Connection con = init(table, column, values);
+    try (Connection con = init(table, column, values, queryResultFormat);
         Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       try {
@@ -243,7 +234,6 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
-        System.clearProperty("user.timezone");
       }
     }
   }

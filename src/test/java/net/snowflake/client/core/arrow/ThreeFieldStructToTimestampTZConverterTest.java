@@ -4,15 +4,17 @@
 
 package net.snowflake.client.core.arrow;
 
+import static java.util.stream.Stream.concat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -33,27 +36,71 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+  private static class TimezoneProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      List<String> timezones =
+          new ArrayList<String>() {
+            {
+              add("America/Los_Angeles");
+              add("America/New_York");
+              add("Pacific/Honolulu");
+              add("Asia/Singapore");
+              add("MESZ");
+              add("MEZ");
+              add("UTC");
+            }
+          };
+
+      Stream<Arguments> args = Stream.empty();
+
+      for (String timezone : timezones) {
+        args =
+            concat(
+                args,
+                Stream.of(
+                    Arguments.argumentSet(
+                        timezone,
+                        timezone,
+                        new long[] {1546391837, 1546391837, 0, 123, -12346, -12345},
+                        new int[] {0, 10, 100, 456, 876543211, 0},
+                        new int[] {960, 1440, 960, 960, 1440, 1440},
+                        new String[] {
+                          "1546391837.000000000 960",
+                          "1546391837.000000010 1440",
+                          "0.000000100 960",
+                          "123.000000456 960",
+                          "-12345.123456789 1440",
+                          "-12345.000000000 1440"
+                        }),
+                    Arguments.argumentSet(
+                        timezone + " Overflow",
+                        timezone,
+                        new long[] {1546391837},
+                        new int[] {0},
+                        new int[] {960},
+                        new String[] {"1546391837.000000000 960"})));
+      }
+
+      return args;
+    }
   }
 
-  public ThreeFieldStructToTimestampTZConverterTest(String tz) {
+  private static void setTimezone(String tz) {
     System.setProperty("user.timezone", tz);
+  }
+
+  @AfterAll
+  public static void clearTimezone() {
+    System.clearProperty("user.timezone");
   }
 
   /** allocator for arrow */
@@ -63,42 +110,16 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
 
   private int oldScale = 9;
 
-  @Test
-  public void simpleTest() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {1546391837, 1546391837, 0, 123, -12346, -12345};
-
-    int[] testNanos = {0, 10, 100, 456, 876543211, 0};
-
-    int[] testTimeZoneIndices = {960, 1440, 960, 960, 1440, 1440};
-
-    String[] testTimesJson = {
-      "1546391837.000000000 960",
-      "1546391837.000000010 1440",
-      "0.000000100 960",
-      "123.000000456 960",
-      "-12345.123456789 1440",
-      "-12345.000000000 1440"
-    };
-    testTimestampTZ(testSecondsInt64, testNanos, testTimeZoneIndices, testTimesJson);
-  }
-
-  @Test
-  public void timestampOverflowTest() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {1546391837};
-
-    int[] testNanos = {0};
-
-    int[] testTimeZoneIndices = {960};
-
-    String[] testTimesJson = {"1546391837.000000000 960"};
-    testTimestampTZ(testSecondsInt64, testNanos, testTimeZoneIndices, testTimesJson);
-  }
-
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
   public void testTimestampTZ(
-      long[] testSecondsInt64, int[] testNanos, int[] testTimeZoneIndices, String[] testTimesJson)
+      String tz,
+      long[] testSecondsInt64,
+      int[] testNanos,
+      int[] testTimeZoneIndices,
+      String[] testTimesJson)
       throws SFException {
+    setTimezone(tz);
 
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "TIMESTAMP");
@@ -148,9 +169,11 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
         seconds.setSafe(j, testSecondsInt64[i]);
         nanos.setSafe(j, testNanos[i]);
         timeZoneIdx.setSafe(j, testTimeZoneIndices[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new ThreeFieldStructToTimestampTZConverter(structVector, 0, this);

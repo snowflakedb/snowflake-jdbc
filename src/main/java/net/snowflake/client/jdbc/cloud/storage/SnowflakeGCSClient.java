@@ -18,9 +18,11 @@ import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpStorageOptions;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
@@ -186,8 +188,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *
    * @param remoteStorageLocation bucket name
    * @param prefix Path
-   * @return
-   * @throws StorageProviderException
+   * @return a collection of storage summary objects
+   * @throws StorageProviderException cloud storage provider error
    */
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
@@ -257,7 +259,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String queryId)
       throws SnowflakeSQLException {
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from GCS stage path: {} to {}", stageFilePath, localFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
@@ -451,7 +453,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
@@ -1312,6 +1314,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (accessToken != null) {
         // We are authenticated with an oauth access token.
         StorageOptions.Builder builder = StorageOptions.newBuilder();
+        overrideHost(stage, builder);
+
         if (areDisabledGcsDefaultCredentials(session)) {
           logger.debug(
               "Adding explicit credentials to avoid default credential lookup by the GCS client");
@@ -1329,7 +1333,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 .getService();
       } else {
         // Use anonymous authentication.
-        this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
+        HttpStorageOptions.Builder builder =
+            HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
+        overrideHost(stage, builder);
+        this.gcsClient = builder.build().getService();
       }
 
       if (encMat != null) {
@@ -1348,6 +1355,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (Exception ex) {
       throw new IllegalArgumentException("invalid_gcs_credentials");
     }
+  }
+
+  private static void overrideHost(StageInfo stage, StorageOptions.Builder builder) {
+    stage
+        .gcsCustomEndpoint()
+        .ifPresent(
+            host -> {
+              if (host.startsWith("https://")) {
+                builder.setHost(host);
+              } else {
+                builder.setHost("https://" + host);
+              }
+            });
   }
 
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
@@ -1371,13 +1391,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);

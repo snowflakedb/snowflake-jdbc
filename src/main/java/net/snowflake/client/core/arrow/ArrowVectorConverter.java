@@ -16,7 +16,7 @@ public interface ArrowVectorConverter {
   /**
    * Set to true when time value should be displayed in wallclock time (no timezone offset)
    *
-   * @param useSessionTimezone
+   * @param useSessionTimezone boolean value indicating if there is a timezone offset.
    */
   void setUseSessionTimezone(boolean useSessionTimezone);
 
@@ -160,6 +160,8 @@ public interface ArrowVectorConverter {
   Object toObject(int index) throws SFException;
 
   /**
+   * Set to true if NTZ timestamp should be set to UTC
+   *
    * @param isUTC true or false value of whether NTZ timestamp should be set to UTC
    */
   void setTreatNTZAsUTC(boolean isUTC);
