@@ -18,6 +18,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -687,6 +688,7 @@ public class SFSession extends SFBaseSession {
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
+        .setAdditionalHttpHeadersForSnowsight(getHttpHeaders())
         .setConnectionTimeout(
             connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT) != null
                 ? Duration.ofMillis(
@@ -824,6 +826,29 @@ public class SFSession extends SFBaseSession {
     logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
+  public Map<String, String> getHttpHeaders() {
+    if (getConnectionPropertiesMap() != null
+        && getConnectionPropertiesMap().get(SFSessionProperty.ADDITIONAL_HTTP_HEADERS) != null) {
+      return getHttpHeaders(
+          (String) getConnectionPropertiesMap().get(SFSessionProperty.ADDITIONAL_HTTP_HEADERS));
+    }
+    return Collections.emptyMap();
+  }
+
+  public Map<String, String> getHttpHeaders(String headers) {
+    if (headers != null && !headers.isEmpty()) {
+      Map<String, String> headersMap = new HashMap<>();
+      for (String headerKeyPair : headers.split(";")) {
+        String[] split = headerKeyPair.split(":");
+        if (split.length >= 2) {
+          headersMap.put(split[0], split[1]);
+        }
+      }
+      return headersMap;
+    }
+    return null;
+  }
+
   /**
    * If authenticator is null and private key is specified, jdbc will assume key pair authentication
    *
@@ -951,6 +976,7 @@ public class SFSession extends SFBaseSession {
         .setSessionToken(sessionToken)
         .setLoginTimeout(loginTimeout)
         .setRetryTimeout(retryTimeout)
+        .setAdditionalHttpHeadersForSnowsight(getHttpHeaders())
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 
@@ -1095,6 +1121,11 @@ public class SFSession extends SFBaseSession {
                 + "\"");
 
         logger.debug("Executing heartbeat request: {}", postRequest.toString());
+
+        Map<String, String> httpHeaders = getHttpHeaders();
+        if (httpHeaders != null) {
+          httpHeaders.forEach(postRequest::addHeader);
+        }
 
         // the following will retry transient network issues
         // increase heartbeat timeout from 60 sec to 300 sec
