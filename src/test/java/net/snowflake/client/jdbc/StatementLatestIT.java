@@ -310,7 +310,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testSetQueryTimeoutForAsyncQueryUsingConnectionProperty() throws SQLException {
     Properties p = new Properties();
-    p.put("SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", true);
+    p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
     try (Connection con = getConnection(p);
         Statement statement = con.createStatement()) {
       statement.setQueryTimeout(3);
@@ -334,7 +334,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /**
-   * Test for setting query timeout on regular queries with the SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT
+   * Test for setting query timeout on regular queries with the IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT
    * property set to true. Applicable to versions after 3.21.0.
    *
    * @throws SQLException if there is an error when executing
@@ -342,7 +342,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testSetQueryTimeoutWhenAsyncConnectionPropertySet() throws SQLException {
     Properties p = new Properties();
-    p.put("SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", true);
+    p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
     try (Connection con = getConnection(p);
         Statement statement = con.createStatement()) {
       statement.setQueryTimeout(3);

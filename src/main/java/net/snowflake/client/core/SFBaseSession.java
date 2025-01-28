@@ -146,7 +146,7 @@ public abstract class SFBaseSession {
 
   private boolean isJdbcArrowTreatDecimalAsInt = true;
 
-  private boolean supportImplicitAsyncQueryTimeout = false;
+  private boolean implicitServerSideQueryTimeout = false;
 
   private boolean clearBatchOnlyAfterSuccessfulExecution = false;
 
@@ -1337,12 +1337,12 @@ public abstract class SFBaseSession {
     return enableReturnTimestampWithTimeZone;
   }
 
-  boolean getSupportImplicitAsyncQueryTimeout() {
-    return supportImplicitAsyncQueryTimeout;
+  boolean getImplicitServerSideQueryTimeout() {
+    return implicitServerSideQueryTimeout;
   }
 
-  void setSupportImplicitAsyncQueryTimeout(boolean supportImplicitAsyncQueryTimeout) {
-    this.supportImplicitAsyncQueryTimeout = supportImplicitAsyncQueryTimeout;
+  void setImplicitServerSideQueryTimeout(boolean value) {
+    this.implicitServerSideQueryTimeout = value;
   }
 
   void setClearBatchOnlyAfterSuccessfulExecution(boolean value) {

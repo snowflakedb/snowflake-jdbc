@@ -1698,6 +1698,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     remoteLocation remoteLocation = extractLocationAndPath(stageInfo.getLocation());
 
     // when downloading files as stream there should be only one file in source files
+    // let's fail fast when more than one file matches instead of fetching random one
+    if (sourceFiles.size() > 1) {
+      throw new SnowflakeSQLException(
+          queryID,
+          SqlState.NO_DATA,
+          ErrorCode.TOO_MANY_FILES_TO_DOWNLOAD_AS_STREAM.getMessageCode(),
+          session,
+          "There are more than one file matching "
+              + fileName
+              + ": "
+              + String.join(",", sourceFiles));
+    }
     String sourceLocation =
         sourceFiles.stream()
             .findFirst()
