@@ -57,6 +57,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
@@ -1695,6 +1696,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     remoteLocation remoteLocation = extractLocationAndPath(stageInfo.getLocation());
 
     // when downloading files as stream there should be only one file in source files
+    // let's fail fast when more than one file matches instead of fetching random one
+    if (sourceFiles.size() > 1) {
+      throw new SnowflakeSQLException(
+          queryID,
+          SqlState.NO_DATA,
+          ErrorCode.TOO_MANY_FILES_TO_DOWNLOAD_AS_STREAM.getMessageCode(),
+          session,
+          "There are more than one file matching "
+              + fileName
+              + ": "
+              + String.join(",", sourceFiles));
+    }
     String sourceLocation =
         sourceFiles.stream()
             .findFirst()
@@ -2199,6 +2212,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param config Configuration to upload a file to cloud storage
    * @throws Exception if error occurs while data upload.
    */
+  @SnowflakeOrgInternalApi
   public static void uploadWithoutConnection(SnowflakeFileTransferConfig config) throws Exception {
     logger.trace("Entering uploadWithoutConnection...");
 

@@ -146,7 +146,9 @@ public abstract class SFBaseSession {
 
   private boolean isJdbcArrowTreatDecimalAsInt = true;
 
-  private boolean supportImplicitAsyncQueryTimeout = false;
+  private boolean implicitServerSideQueryTimeout = false;
+
+  private boolean clearBatchOnlyAfterSuccessfulExecution = false;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -1335,21 +1337,20 @@ public abstract class SFBaseSession {
     return enableReturnTimestampWithTimeZone;
   }
 
-  /**
-   * @return True if query timeout should be set on the server side for async queries. False by
-   *     default.
-   */
-  @SnowflakeJdbcInternalApi
-  public boolean getSupportImplicitAsyncQueryTimeout() {
-    return supportImplicitAsyncQueryTimeout;
+  boolean getImplicitServerSideQueryTimeout() {
+    return implicitServerSideQueryTimeout;
   }
 
-  /**
-   * @param supportImplicitAsyncQueryTimeout Setting supportImplicitAsyncQueryTimeout to true allows
-   *     for query timeout to be set on the server side.
-   */
+  void setImplicitServerSideQueryTimeout(boolean value) {
+    this.implicitServerSideQueryTimeout = value;
+  }
+
+  void setClearBatchOnlyAfterSuccessfulExecution(boolean value) {
+    this.clearBatchOnlyAfterSuccessfulExecution = value;
+  }
+
   @SnowflakeJdbcInternalApi
-  public void setSupportImplicitAsyncQueryTimeout(boolean supportImplicitAsyncQueryTimeout) {
-    this.supportImplicitAsyncQueryTimeout = supportImplicitAsyncQueryTimeout;
+  public boolean getClearBatchOnlyAfterSuccessfulExecution() {
+    return this.clearBatchOnlyAfterSuccessfulExecution;
   }
 }

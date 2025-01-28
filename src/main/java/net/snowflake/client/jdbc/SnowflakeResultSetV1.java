@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -270,22 +269,21 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     raiseSQLExceptionIfResultSetIsClosed();
     Object object =
         SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+
     if (object == null) {
       return null;
     }
-    if (object instanceof SfSqlArray) {
-      return ((SfSqlArray) object).getText();
-    }
+
     if (object instanceof StructObjectWrapper) {
       StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
       if (resultSetMetaData.isStructuredTypeColumn(columnIndex)
           && structObjectWrapper.getJsonString() != null) {
         return structObjectWrapper.getJsonString();
       }
-      if (structObjectWrapper.getObject() != null) {
-        return structObjectWrapper.getObject();
-      }
+
+      return structObjectWrapper.getObject();
     }
+
     return object;
   }
 
