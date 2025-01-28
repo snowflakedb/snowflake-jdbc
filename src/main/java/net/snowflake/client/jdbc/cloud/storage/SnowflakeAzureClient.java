@@ -352,13 +352,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
+        if (this.isEncrypting()
+            && this.getEncryptionKeySize() <= 256
+            && userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
+          AbstractMap.SimpleEntry<String, String> encryptionData =
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          String key = encryptionData.getKey();
+          String iv = encryptionData.getValue();
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
@@ -452,12 +454,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+        if (this.isEncrypting()
+            && this.getEncryptionKeySize() <= 256
+            && userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
+          AbstractMap.SimpleEntry<String, String> encryptionData =
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
+          String key = encryptionData.getKey();
+          String iv = encryptionData.getValue();
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
