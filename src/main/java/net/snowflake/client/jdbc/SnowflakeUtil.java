@@ -901,4 +901,14 @@ public class SnowflakeUtil {
       return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
   }
+
+  /**
+   * Check whether the OS is Windows
+   *
+   * @return boolean
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean isWindows() {
+    return Constants.getOS() == Constants.OS.WINDOWS;
+  }
 }
