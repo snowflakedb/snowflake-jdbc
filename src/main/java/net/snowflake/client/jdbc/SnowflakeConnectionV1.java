@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -61,12 +62,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   /** Refer to all created and open statements from this connection */
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
+
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
   private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   private boolean isClosed;
   private SQLWarning sqlWarnings = null;
   private List<DriverPropertyInfo> missingProperties = null;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -76,12 +79,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * <p>Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
+
   /* this should be set to Connection.TRANSACTION_READ_COMMITTED
    * There may not be many implications here since the call to
    * setTransactionIsolation doesn't do anything.
    */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
   private SFBaseSession sfSession;
+
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
   private SFConnectionHandler sfConnectionHandler;
 
@@ -1036,6 +1041,12 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
+
+    // We cannot match whole sourceFileName since it may be different e.g. for git repositories so
+    // we match only raw filename
+    String[] split = sourceFileName.split("/");
+    String fileName = Pattern.quote(split[split.length - 1]);
+    getCommand.append(" PATTERN=\".*").append(fileName).append("$\"");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getSFBaseStatement());
