@@ -227,6 +227,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             .setBaseCacheFileName(CACHE_FILE_NAME)
             .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+            .setOnlyOwnerPermissions(false)
             .build();
   }
 
