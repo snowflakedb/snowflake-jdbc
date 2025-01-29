@@ -22,11 +22,7 @@ interface SecureStorageManager {
 
   static String convertTarget(String host, String user, String type) {
     StringBuilder target =
-        new StringBuilder(
-            host.length()
-                + user.length()
-                + type.length()
-                + 3 * COLON_CHAR_LENGTH);
+        new StringBuilder(host.length() + user.length() + type.length() + 3 * COLON_CHAR_LENGTH);
 
     target.append(host.toUpperCase());
     target.append(":");

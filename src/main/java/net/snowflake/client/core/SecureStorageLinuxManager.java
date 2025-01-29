@@ -26,6 +26,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final String CACHE_FILE_NAME = "temporary_credential.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
+  private static final String CACHE_FILE_TOKENS_OBJECT_NAME = "tokens";
   private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
   private FileCacheManager fileCacheManager;
@@ -43,6 +44,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
             .build();
     logger.debug(
         "Using temporary file: {} as a token cache storage", fileCacheManager.getCacheFilePath());
+    populateLocalCredCache();
   }
 
   private static class SecureStorageLinuxManagerHolder {
@@ -51,6 +53,41 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
 
   public static SecureStorageLinuxManager getInstance() {
     return SecureStorageLinuxManagerHolder.INSTANCE;
+  }
+
+  public synchronized SecureStorageStatus setCredential(
+      String host, String user, String type, String token) {
+    if (Strings.isNullOrEmpty(token)) {
+      logger.warn("No token provided", false);
+      return SecureStorageStatus.SUCCESS;
+    }
+    localCredCache.computeIfAbsent(CACHE_FILE_TOKENS_OBJECT_NAME, tokensMap -> new HashMap<>());
+    Map<String, String> tokensMap = localCredCache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    tokensMap.put(SecureStorageManager.convertTarget(host, user, type), token);
+    fileCacheManager.writeCacheFile(localCacheToJson());
+    return SecureStorageStatus.SUCCESS;
+  }
+
+  public synchronized String getCredential(String host, String user, String type) {
+    populateLocalCredCache();
+    Map<String, String> tokensMap = localCredCache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    if (tokensMap == null) {
+      return null;
+    }
+    return tokensMap.get(SecureStorageManager.convertTarget(host, user, type));
+  }
+
+  /** May delete credentials which doesn't belong to this process */
+  public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
+    Map<String, String> tokensMap = localCredCache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    if (tokensMap != null) {
+      tokensMap.remove(SecureStorageManager.convertTarget(host, user, type));
+      if (tokensMap.isEmpty()) {
+        localCredCache.remove(CACHE_FILE_TOKENS_OBJECT_NAME);
+      }
+    }
+    fileCacheManager.writeCacheFile(localCacheToJson());
+    return SecureStorageStatus.SUCCESS;
   }
 
   private ObjectNode localCacheToJson() {
@@ -67,46 +104,9 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     return res;
   }
 
-  public synchronized SecureStorageStatus setCredential(
-      String host, String user, String type, String token) {
-    if (Strings.isNullOrEmpty(token)) {
-      logger.warn("No token provided", false);
-      return SecureStorageStatus.SUCCESS;
-    }
-
-    localCredCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
-
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    hostMap.put(SecureStorageManager.convertTarget(host, user, type), token);
-
-    fileCacheManager.writeCacheFile(localCacheToJson());
-    return SecureStorageStatus.SUCCESS;
-  }
-
-  public synchronized String getCredential(String host, String user, String type) {
+  private void populateLocalCredCache() {
     JsonNode res = fileCacheManager.readCacheFile();
     readJsonStoreCache(res);
-
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-
-    if (hostMap == null) {
-      return null;
-    }
-
-    return hostMap.get(SecureStorageManager.convertTarget(host, user, type));
-  }
-
-  /** May delete credentials which doesn't belong to this process */
-  public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    if (hostMap != null) {
-      hostMap.remove(SecureStorageManager.convertTarget(host, user, type));
-      if (hostMap.isEmpty()) {
-        localCredCache.remove(host.toUpperCase());
-      }
-    }
-    fileCacheManager.writeCacheFile(localCacheToJson());
-    return SecureStorageStatus.SUCCESS;
   }
 
   private void readJsonStoreCache(JsonNode m) {
