@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -23,7 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Date;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -45,6 +50,8 @@ class FileCacheManager {
   private File cacheLockFile;
 
   private File cacheDir;
+
+  private boolean onlyOwnerPermissions = true;
 
   private FileCacheManager() {}
 
@@ -78,16 +85,29 @@ class FileCacheManager {
     return this;
   }
 
+  FileCacheManager setOnlyOwnerPermissions(boolean onlyOwnerPermissions) {
+    this.onlyOwnerPermissions = onlyOwnerPermissions;
+    return this;
+  }
+
   /**
    * Override the cache file.
    *
    * @param newCacheFile a file object to override the default one.
    */
   void overrideCacheFile(File newCacheFile) {
+    if (!newCacheFile.exists()) {
+      logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
+    }
+    if (onlyOwnerPermissions) {
+      FileUtil.throwWhenPermiossionDifferentThanReadWriteForOwner(
+          newCacheFile, "Override cache file");
+    } else {
+      FileUtil.logFileUsage(cacheFile, "Override cache file", false);
+    }
     this.cacheFile = newCacheFile;
     this.cacheDir = newCacheFile.getParentFile();
     this.baseCacheFileName = newCacheFile.getName();
-    FileUtil.logFileUsage(cacheFile, "Override cache file", true);
   }
 
   FileCacheManager build() {
@@ -116,15 +136,12 @@ class FileCacheManager {
     } else {
       // use user home directory to store the cache file
       String homeDir = systemGetProperty("user.home");
-      if (homeDir == null) {
-        // use tmp dir if not exists.
-        homeDir = systemGetProperty("java.io.tmpdir");
-      } else {
+      if (homeDir != null) {
         // Checking if home directory is writable.
         File homeFile = new File(homeDir);
         if (!homeFile.canWrite()) {
-          logger.debug("Home directory not writeable, using tmpdir", false);
-          homeDir = systemGetProperty("java.io.tmpdir");
+          logger.debug("Home directory not writeable, skip using cache", false);
+          homeDir = null;
         }
       }
       if (homeDir == null) {
@@ -155,7 +172,16 @@ class FileCacheManager {
       // If exists. the method returns false.
       // In this particular case, it doesn't matter as long as the file is
       // writable.
-      if (cacheFileTmp.createNewFile()) {
+      if (!cacheFileTmp.exists()) {
+        if (!isWindows() && onlyOwnerPermissions) {
+          Files.createFile(
+              cacheFileTmp.toPath(),
+              PosixFilePermissions.asFileAttribute(
+                  Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+                      .collect(Collectors.toSet())));
+        } else {
+          Files.createFile(cacheFileTmp.toPath());
+        }
         logger.debug("Successfully created a cache file {}", cacheFileTmp);
       } else {
         logger.debug("Cache file already exists {}", cacheFileTmp);
@@ -165,7 +191,10 @@ class FileCacheManager {
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     } catch (IOException | SecurityException ex) {
-      logger.debug("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
+      logger.info(
+          "Failed to touch the cache file: {}. Ignored. {}",
+          ex.getMessage(),
+          cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }
@@ -184,7 +213,13 @@ class FileCacheManager {
 
       try (Reader reader =
           new InputStreamReader(new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
-        FileUtil.logFileUsage(cacheFile, "Read cache", false);
+
+        if (onlyOwnerPermissions) {
+          FileUtil.throwWhenPermiossionDifferentThanReadWriteForOwner(cacheFile, "Read cache");
+          FileUtil.throwWhenOwnerDifferentThanCurrentUser(cacheFile, "Read cache");
+        } else {
+          FileUtil.logFileUsage(cacheFile, "Read cache", false);
+        }
         return OBJECT_MAPPER.readTree(reader);
       }
     } catch (IOException ex) {
@@ -208,7 +243,11 @@ class FileCacheManager {
       }
       try (Writer writer =
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
-        FileUtil.logFileUsage(cacheFile, "Write to cache", false);
+        if (onlyOwnerPermissions) {
+          FileUtil.throwWhenPermiossionDifferentThanReadWriteForOwner(cacheFile, "Write to cache");
+        } else {
+          FileUtil.logFileUsage(cacheFile, "Write to cache", false);
+        }
         writer.write(input.toString());
       }
     } catch (IOException ex) {

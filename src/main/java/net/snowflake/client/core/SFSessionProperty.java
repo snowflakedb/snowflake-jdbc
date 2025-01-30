@@ -43,7 +43,13 @@ public enum SFSessionProperty {
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
   OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
+  /**
+   * @deprecated Use {@link #DISABLE_OCSP_CHECKS} for clarity. This configuration option is used to
+   *     disable OCSP verification.
+   */
+  @Deprecated
   INSECURE_MODE("insecureMode", false, Boolean.class),
+  DISABLE_OCSP_CHECKS("disableOCSPChecks", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   STRINGS_QUOTED("stringsQuotedForColumnDef", false, Boolean.class),
   APPLICATION("application", false, String.class),
@@ -125,8 +131,10 @@ public enum SFSessionProperty {
   JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD(
       "JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD", false, String.class),
 
-  SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT(
-      "SUPPORT_IMPLICIT_ASYNC_QUERY_TIMEOUT", false, Boolean.class);
+  IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", false, Boolean.class),
+
+  CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

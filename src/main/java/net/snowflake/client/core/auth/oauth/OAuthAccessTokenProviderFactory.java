@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core.auth.oauth;
 
+import com.amazonaws.util.StringUtils;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,8 +22,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class OAuthAccessTokenProviderFactory {
 
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
+  private final SFLogger logger = SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
   private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES =
       new HashSet<>(
           Arrays.asList(
@@ -44,6 +45,7 @@ public class OAuthAccessTokenProviderFactory {
       case OAUTH_AUTHORIZATION_CODE:
         assertContainsClientCredentials(loginInput, authenticatorType);
         validateHttpRedirectUriIfSpecified(loginInput);
+        validateAuthorizationAndTokenEndpointsIfSpecified(loginInput);
         return new OAuthAuthorizationCodeAccessTokenProvider(
             browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
       case OAUTH_CLIENT_CREDENTIALS:
@@ -53,8 +55,41 @@ public class OAuthAccessTokenProviderFactory {
             "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
         return new OAuthClientCredentialsAccessTokenProvider();
       default:
-        logger.error("Unsupported authenticator type: " + authenticatorType);
-        throw new SFException(ErrorCode.INTERNAL_ERROR);
+        String message = "Unsupported authenticator type: " + authenticatorType;
+        logger.error(message);
+        throw new SFException(ErrorCode.INTERNAL_ERROR, message);
+    }
+  }
+
+  private void validateAuthorizationAndTokenEndpointsIfSpecified(SFLoginInput loginInput)
+      throws SFException {
+    String authorizationEndpoint = loginInput.getOauthLoginInput().getExternalAuthorizationUrl();
+    String tokenEndpoint = loginInput.getOauthLoginInput().getExternalTokenRequestUrl();
+    if ((!StringUtils.isNullOrEmpty(authorizationEndpoint)
+            && StringUtils.isNullOrEmpty(tokenEndpoint))
+        || (StringUtils.isNullOrEmpty(authorizationEndpoint)
+            && !StringUtils.isNullOrEmpty(tokenEndpoint))) {
+      throw new SFException(
+          ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+          "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified");
+    } else if (!StringUtils.isNullOrEmpty(authorizationEndpoint)
+        && !StringUtils.isNullOrEmpty(tokenEndpoint)) {
+      URI authorizationUrl = URI.create(authorizationEndpoint);
+      URI tokenUrl = URI.create(tokenEndpoint);
+      if (StringUtils.isNullOrEmpty(authorizationUrl.getHost())
+          || StringUtils.isNullOrEmpty(tokenUrl.getHost())) {
+        throw new SFException(
+            ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
+            String.format(
+                "OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                authorizationUrl, tokenUrl));
+      }
+      if (!authorizationUrl.getHost().equals(tokenUrl.getHost())) {
+        logger.warn(
+            String.format(
+                "Both externalAuthorizationUrl and externalTokenRequestUrl should belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                authorizationUrl, tokenUrl));
+      }
     }
   }
 

@@ -71,3 +71,6 @@ wss*.config
 wss-unified-agent.jar
 whitesource/
 *.swp
+
+#created in some tests
+placeholder

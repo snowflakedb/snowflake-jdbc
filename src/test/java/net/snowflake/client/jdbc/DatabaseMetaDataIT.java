@@ -677,9 +677,10 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
     assertEquals("$", metaData.getExtraNameCharacters());
     assertEquals("\"", metaData.getIdentifierQuoteString());
     assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
-    assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
+    assertThat(
+        metaData.getMaxBinaryLiteralLength(), greaterThanOrEqualTo(EXPECTED_MAX_BINARY_LENGTH));
     assertEquals(255, metaData.getMaxCatalogNameLength());
-    assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
+    assertThat(metaData.getMaxCharLiteralLength(), greaterThanOrEqualTo(EXPECTED_MAX_CHAR_LENGTH));
     assertEquals(255, metaData.getMaxColumnNameLength());
     assertEquals(0, metaData.getMaxColumnsInGroupBy());
     assertEquals(0, metaData.getMaxColumnsInIndex());

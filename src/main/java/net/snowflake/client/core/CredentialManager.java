@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import java.net.URI;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -128,7 +129,8 @@ public class CredentialManager {
 
   /** Reuse the cached token stored locally */
   synchronized void fillCachedCredential(
-      SFLoginInput loginInput, String host, String username, CachedCredentialType credType) {
+      SFLoginInput loginInput, String host, String username, CachedCredentialType credType)
+      throws SFException {
     if (secureStorageManager == null) {
       logMissingJnaJarForSecureLocalStorage();
       return;
@@ -166,8 +168,8 @@ public class CredentialManager {
         loginInput.setOauthRefreshToken(cred);
         break;
       default:
-        logger.debug("Unrecognized type {} for local cached credential", credType);
-        break;
+        throw new SFException(
+            ErrorCode.INTERNAL_ERROR, "Unrecognized type {} for local cached credential", credType);
     }
   }
 

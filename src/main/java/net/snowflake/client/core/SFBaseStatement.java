@@ -42,7 +42,7 @@ public abstract class SFBaseStatement {
     if ("query_timeout".equalsIgnoreCase(propertyName)) {
       // Client side implementation
       queryTimeout = (Integer) propertyValue;
-      if (this.getSFBaseSession().getSupportImplicitAsyncQueryTimeout()) {
+      if (this.getSFBaseSession().getImplicitServerSideQueryTimeout()) {
         // Set server parameter for supporting query timeout on async queries
         statementParametersMap.put("STATEMENT_TIMEOUT_IN_SECONDS", (Integer) propertyValue);
       }

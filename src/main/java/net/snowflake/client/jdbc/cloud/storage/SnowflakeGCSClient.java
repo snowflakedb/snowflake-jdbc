@@ -1314,7 +1314,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (accessToken != null) {
         // We are authenticated with an oauth access token.
         StorageOptions.Builder builder = StorageOptions.newBuilder();
-        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+        overrideHost(stage, builder);
 
         if (areDisabledGcsDefaultCredentials(session)) {
           logger.debug(
@@ -1335,7 +1335,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         // Use anonymous authentication.
         HttpStorageOptions.Builder builder =
             HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
-        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+        overrideHost(stage, builder);
         this.gcsClient = builder.build().getService();
       }
 
@@ -1355,6 +1355,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (Exception ex) {
       throw new IllegalArgumentException("invalid_gcs_credentials");
     }
+  }
+
+  private static void overrideHost(StageInfo stage, StorageOptions.Builder builder) {
+    stage
+        .gcsCustomEndpoint()
+        .ifPresent(
+            host -> {
+              if (host.startsWith("https://")) {
+                builder.setHost(host);
+              } else {
+                builder.setHost("https://" + host);
+              }
+            });
   }
 
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {

@@ -1042,8 +1042,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
         assertEquals(colLength, rs.getString(1).length());
         assertFalse(rs.next());
       }
-    } catch (Exception e) {
-      fail("executeQuery should not fail");
     } finally {
       if (originalMaxJsonStringLength != null) {
         System.setProperty(

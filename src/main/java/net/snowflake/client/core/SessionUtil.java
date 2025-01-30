@@ -31,6 +31,7 @@ import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
+import net.snowflake.client.core.auth.oauth.OAuthUtil;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -599,6 +600,16 @@ public class SessionUtil {
         if (loginInput.getMfaToken() != null) {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getMfaToken());
         }
+      }
+
+      // OAuth metrics data
+      if (authenticatorType == AuthenticatorType.OAUTH
+          && loginInput.getOriginalAuthenticator() != null) {
+        data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+        URI idpUri =
+            OAuthUtil.getTokenRequestUrl(
+                loginInput.getOauthLoginInput(), loginInput.getServerUrl());
+        data.put(ClientAuthnParameter.IDP_HOST.name(), idpUri.getHost());
       }
 
       // map of client environment parameters, including connection parameters

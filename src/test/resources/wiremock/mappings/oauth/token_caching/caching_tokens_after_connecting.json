@@ -68,7 +68,9 @@
                 "CLIENT_APP_VERSION": "MOCK_APP_VERSION",
                 "TOKEN": "access-token-123",
                 "LOGIN_NAME": "MOCK_USERNAME",
-                "AUTHENTICATOR": "OAUTH"
+                "AUTHENTICATOR": "OAUTH",
+                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS",
+                "IDP_HOST": "localhost"
               }
             },
             "ignoreExtraElements" : true

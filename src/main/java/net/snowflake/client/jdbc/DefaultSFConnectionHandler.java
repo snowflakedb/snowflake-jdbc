@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.IOException;
@@ -278,7 +279,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
   }
 
   private void checkLogFolderPermissions(Path path) throws SnowflakeSQLLoggedException {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
+    if (!isWindows()) {
       try {
         Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
         if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)

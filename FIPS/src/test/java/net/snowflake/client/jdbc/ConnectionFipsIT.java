@@ -94,6 +94,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
       "javax.net.ssl.trustStoreType";
   private static final String JAVA_SYSTEM_PROPERTY_SSL_PROTOCOLS = "jdk.tls.client.protocols";
   private static final String JAVA_SYSTEM_PROPERTY_SSL_CIPHERSUITES = "jdk.tls.client.cipherSuites";
+  private static final String JAVA_SYSTEM_PROPERTY_SSL_NAMEDGROUPS = "jdk.tls.namedGroups";
 
   private static String JAVA_SYSTEM_PROPERTY_SSL_KEYSTORE_TYPE_ORIGINAL_VALUE;
   private static String JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE_ORIGINAL_VALUE;
@@ -108,6 +109,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @BeforeAll
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
+    // Setting up the named group to avoid test failure on GCP environment.
+    System.setProperty(JAVA_SYSTEM_PROPERTY_SSL_NAMEDGROUPS, "secp256r1, secp384r1, ffdhe2048, ffdhe3072");
     // get keystore types for BouncyCastle libraries
     JAVA_SYSTEM_PROPERTY_SSL_KEYSTORE_TYPE_ORIGINAL_VALUE =
         System.getProperty(JAVA_SYSTEM_PROPERTY_SSL_KEYSTORE_TYPE);
@@ -207,7 +210,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE_ORIGINAL_VALUE);
     }
     System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
-
+    // clear the named group.
+    System.clearProperty(JAVA_SYSTEM_PROPERTY_SSL_NAMEDGROUPS);
     // attempts an SSL connection to Google
     // connectToGoogle();
   }
@@ -291,10 +295,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
   /**
    * Test case for connecting with FIPS and executing a query.
-   * Currently ignored execution on GCP due to exception thrown "SSlException Could not generate XDH keypair"
    */
   @Test
-  @DontRunOnGCP
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();

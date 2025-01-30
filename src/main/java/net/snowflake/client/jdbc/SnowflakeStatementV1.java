@@ -556,7 +556,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           updateCounts.intArr,
           exceptionReturned);
     }
-
+    if (this.getSFBaseStatement().getSFBaseSession().getClearBatchOnlyAfterSuccessfulExecution()) {
+      clearBatch();
+    }
     return updateCounts;
   }
 

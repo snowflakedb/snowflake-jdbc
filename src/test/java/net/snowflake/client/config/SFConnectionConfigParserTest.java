@@ -4,6 +4,7 @@ import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
 import static net.snowflake.client.config.SFConnectionConfigParser.SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -25,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -237,7 +237,7 @@ public class SFConnectionConfigParserTest {
 
   private Path createFilePathWithPermission(Path path, boolean onlyUserPermission)
       throws IOException {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
+    if (!isWindows()) {
       FileAttribute<Set<PosixFilePermission>> fileAttribute =
           onlyUserPermission
               ? PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))

@@ -530,6 +530,10 @@ public class SFLoginInput {
     this.authenticator = this.originalAuthenticator;
   }
 
+  String getOriginalAuthenticator() {
+    return this.originalAuthenticator;
+  }
+
   SFLoginInput setOriginalAuthenticator(String originalAuthenticator) {
     this.originalAuthenticator = originalAuthenticator;
     return this;

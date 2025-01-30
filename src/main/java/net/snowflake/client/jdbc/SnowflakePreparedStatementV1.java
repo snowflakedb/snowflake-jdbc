@@ -1013,8 +1013,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           updateCounts.intArr = executeBatchInternal(false).intArr;
         }
       }
+      if (this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     } finally {
-      this.clearBatch();
+      if (!this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     }
 
     return updateCounts;
