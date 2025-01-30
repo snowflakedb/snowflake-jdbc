@@ -91,9 +91,11 @@ public class AuthConnectionParameters {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
     properties.put(
-            "clientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_ID"));
+        "clientId",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_ID"));
     properties.put(
-            "clientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_SECRET"));
+        "clientSecret",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_SECRET"));
     properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
     properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
