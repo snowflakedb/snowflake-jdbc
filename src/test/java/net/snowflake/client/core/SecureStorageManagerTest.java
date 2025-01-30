@@ -241,12 +241,14 @@ public class SecureStorageManagerTest {
         "DB37028833FA02B125FBD6DE8CE679C7E62E7D38FAC585E98060E00987F96772", hashedKey);
 
     hashedKey =
-        SecureStorageManager.buildCredentialsKey(host, user, CachedCredentialType.ID_TOKEN.getValue());
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.ID_TOKEN.getValue());
     Assertions.assertEquals(
         "6AA3F783E07D1D2182DAB59442806E2433C55C2BD4D9240790FD5B4B91FD4FDB", hashedKey);
 
     hashedKey =
-        SecureStorageManager.buildCredentialsKey(host, user, CachedCredentialType.MFA_TOKEN.getValue());
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.MFA_TOKEN.getValue());
     Assertions.assertEquals(
         "9D10D4EFE45605D85993C6AC95334F1B63D36611B83615656EC7F277A947BF4B", hashedKey);
   }

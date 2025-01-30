@@ -41,11 +41,11 @@ public class FileUtil {
     logFileUsage(path, context, logReadAccess);
   }
 
-  public static void throwWhenPermiossionDifferentThanReadWriteForOwner(File file, String context) {
-    throwWhenPermiossionDifferentThanReadWriteForOwner(file.toPath(), context);
+  public static void throwWhenPermissionsDifferentThanReadWriteForOwner(File file, String context) {
+    throwWhenPermissionsDifferentThanReadWriteForOwner(file.toPath(), context);
   }
 
-  public static void throwWhenPermiossionDifferentThanReadWriteForOwner(
+  public static void throwWhenPermissionsDifferentThanReadWriteForOwner(
       Path filePath, String context) {
     // we do not check the permissions for Windows
     if (isWindows()) {
@@ -62,7 +62,9 @@ public class FileUtil {
         logger.debug(
             "{}File {} access rights: {}", getContextStr(context), filePath, filePermissions);
         throw new SecurityException(
-            String.format("Access to file %s is wider than allowed only to the owner", filePath));
+            String.format(
+                "Access to file %s is wider than allowed only to the owner. Remove cached files and re-run the driver.",
+                filePath));
       }
     } catch (IOException e) {
       throw new SecurityException(
