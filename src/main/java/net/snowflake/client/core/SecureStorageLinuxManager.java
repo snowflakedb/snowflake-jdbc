@@ -63,7 +63,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     }
     localCredCache.computeIfAbsent(CACHE_FILE_TOKENS_OBJECT_NAME, tokensMap -> new HashMap<>());
     Map<String, String> tokensMap = localCredCache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
-    tokensMap.put(SecureStorageManager.convertTarget(host, user, type), token);
+    tokensMap.put(SecureStorageManager.buildCredentialsKey(host, user, type), token);
     fileCacheManager.writeCacheFile(localCacheToJson());
     return SecureStorageStatus.SUCCESS;
   }
@@ -74,14 +74,14 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     if (tokensMap == null) {
       return null;
     }
-    return tokensMap.get(SecureStorageManager.convertTarget(host, user, type));
+    return tokensMap.get(SecureStorageManager.buildCredentialsKey(host, user, type));
   }
 
   /** May delete credentials which doesn't belong to this process */
   public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
     Map<String, String> tokensMap = localCredCache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
     if (tokensMap != null) {
-      tokensMap.remove(SecureStorageManager.convertTarget(host, user, type));
+      tokensMap.remove(SecureStorageManager.buildCredentialsKey(host, user, type));
       if (tokensMap.isEmpty()) {
         localCredCache.remove(CACHE_FILE_TOKENS_OBJECT_NAME);
       }

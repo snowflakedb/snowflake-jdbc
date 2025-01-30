@@ -20,7 +20,7 @@ interface SecureStorageManager {
 
   SecureStorageStatus deleteCredential(String host, String user, String type);
 
-  static String convertTarget(String host, String user, String type) {
+  static String buildCredentialsKey(String host, String user, String type) {
     StringBuilder target =
         new StringBuilder(host.length() + user.length() + type.length() + 3 * COLON_CHAR_LENGTH);
 
