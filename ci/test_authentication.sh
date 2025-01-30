@@ -18,7 +18,7 @@ if [[ -n "$JENKINS_HOME" ]]; then
   IP_ADDR=$(/sbin/ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1)
 
 fi
-#source $THIS_DIR/scripts/login_internal_docker.sh
+
 gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json "$THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json.gpg"
 
 docker run \
