@@ -887,7 +887,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
         String getCommand = "GET @testStage file:///tmp";
         SnowflakeFileTransferAgent sfAgent1 =
-                new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent1.execute());
         assertEquals(1, sfAgent1.statusRows.size());
       } finally {
