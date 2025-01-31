@@ -48,6 +48,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Tag(TestTags.OTHERS)
@@ -873,27 +874,28 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   }
 
   @Test
-  public void testUploadWithTripleSlashFilePrefix() throws SQLException {
+  public void testUploadWithTripleSlashFilePrefix(@TempDir Path tempDir) throws SQLException {
+    String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
+        statement.execute("CREATE OR REPLACE STAGE " + stageName);
         SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        String command = "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+        String command =
+            "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + stageName;
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
-        String getCommand = "GET @testStage file:///tmp";
+        String getCommand = "GET @" + stageName + " file://" + tempDir;
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent1.execute());
         assertEquals(1, sfAgent1.statusRows.size());
       } finally {
-        statement.execute("DROP STAGE if exists testStage");
+        statement.execute("DROP STAGE if exists " + stageName);
       }
     }
-    SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 }
