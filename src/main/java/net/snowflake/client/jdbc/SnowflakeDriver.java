@@ -37,7 +37,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.21.1";
+  public static String implementVersion = "3.22.1";
 
   static int majorVersion = 0;
   static int minorVersion = 0;
