@@ -1865,7 +1865,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         threadExecutor.submit(
             getUploadFileCallable(
                 stageInfo,
-                srcFileObj.getPath(),
+                //                srcFileObj.getPath(),
+                srcFile,
                 fileMetadata,
                 (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
                     ? null

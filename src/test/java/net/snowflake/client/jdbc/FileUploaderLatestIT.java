@@ -871,4 +871,23 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       FileUtils.deleteDirectory(subDir.toFile());
     }
   }
+
+  @Test
+  public void testUploadWithTripleSlashFilePrefix() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("CREATE OR REPLACE STAGE testStage");
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+        String command = "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent.execute());
+      } finally {
+        statement.execute("DROP STAGE if exists testStage");
+      }
+    }
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
+  }
 }
