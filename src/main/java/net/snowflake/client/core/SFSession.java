@@ -241,7 +241,8 @@ public class SFSession extends SFBaseSession {
             queryID,
             this,
             e.getMessage(),
-            "No response or invalid response from GET request. Error: {}");
+            "No response or invalid response from GET request. Error: " + e.getMessage(),
+            e);
       }
 
       // Get response as JSON and parse it to get the query status
