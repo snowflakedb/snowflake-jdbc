@@ -884,6 +884,12 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
+
+        String getCommand = "GET @testStage file:///tmp";
+        SnowflakeFileTransferAgent sfAgent1 =
+                new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent1.execute());
+        assertEquals(1, sfAgent1.statusRows.size());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
