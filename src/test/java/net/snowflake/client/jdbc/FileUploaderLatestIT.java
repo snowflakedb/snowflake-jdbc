@@ -888,7 +888,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   }
 
   @Test
-  public void testUploadWithTripleSlashFilePrefix(@TempDir Path tempDir) throws SQLException {
+  public void testUploadWithTripleSlashFilePrefix(@TempDir File tempDir) throws SQLException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -902,7 +902,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
-        String getCommand = "GET @" + stageName + " file://" + tempDir;
+        String getCommand = "GET @" + stageName + " file:///" + tempDir;
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent1.execute());
