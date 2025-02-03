@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.GENERATED_SCHEMA_PREFIX;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
@@ -238,7 +239,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       // quote
       String schemaName =
           "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + GENERATED_SCHEMA_PREFIX
               + "TEST_SCHEMA_\"\"WITH_QUOTES"
               + schemaRandomPart
               + "\"\"\"";
@@ -475,7 +476,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       String database = startingDatabase;
       String schemaPrefix =
-          TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
+          GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
       String schema1 = schemaPrefix + "SCH1";
       String schema2 = schemaPrefix + "SCH2";
       TestUtil.withSchema(
@@ -1034,11 +1035,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       // test getColumns with escaped special characters in schema and table name
       String specialSchemaSuffix = SnowflakeUtil.randomAlphaNumeric(5);
       String specialSchema =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "SPECIAL%_\\SCHEMA"
-              + specialSchemaSuffix
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "SPECIAL%_\\SCHEMA" + specialSchemaSuffix + "\"";
       TestUtil.withSchema(
           statement,
           specialSchema,
@@ -1871,11 +1868,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = connection.createStatement()) {
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
       String schemaName =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "TEST_PATTERNS_SCHEMA_"
-              + schemaRandomPart
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "TEST_PATTERNS_SCHEMA_" + schemaRandomPart + "\"";
 
       TestUtil.withSchema(
           statement,
@@ -2110,11 +2103,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
       String schemaName =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "TEST_PATTERNS_SCHEMA_"
-              + schemaRandomPart
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "TEST_PATTERNS_SCHEMA_" + schemaRandomPart + "\"";
 
       TestUtil.withSchema(
           statement,
@@ -2385,8 +2374,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testExactSchemaSearching() throws SQLException {
     Random random = new Random();
     int suffix = random.nextInt(Integer.MAX_VALUE);
-    String schemaName = "_ESCAPED_UNDERSCORE%" + suffix;
-    String alternativeSchemaName = schemaName.replaceAll("_", "x").replaceAll("%", "y");
+    // schemas created in tests must start with GENERATED_SCHEMA_PREFIX value
+    String coreSchemaName = "ESCAPED_UNDERSCORE%" + suffix;
+    String schemaName = GENERATED_SCHEMA_PREFIX + coreSchemaName;
+    String alternativeSchemaName =
+        GENERATED_SCHEMA_PREFIX + coreSchemaName.replaceAll("_", "x").replaceAll("%", "y");
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       for (String scm : Arrays.asList(schemaName, alternativeSchemaName)) {
