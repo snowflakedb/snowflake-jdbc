@@ -95,7 +95,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(
         authenticator)) { // For OAuth, no username is required
       if (username == null) {
-        throw new SQLException(
+        throw new SnowflakeSQLException(
             "Cannot create connection because username is missing in DataSource properties.");
       }
       properties.put(SFSessionProperty.USER.getPropertyKey(), username);
@@ -105,7 +105,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
         && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
       if (password == null) {
-        throw new SQLException(
+        throw new SnowflakeSQLException(
             "Cannot create connection because password is missing in DataSource properties.");
       }
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
