@@ -51,8 +51,8 @@ public class OAuthAccessTokenProviderFactory {
       case OAUTH_CLIENT_CREDENTIALS:
         assertContainsClientCredentials(loginInput, authenticatorType);
         AssertUtil.assertTrue(
-            loginInput.getOauthLoginInput().getExternalTokenRequestUrl() != null,
-            "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
+            loginInput.getOauthLoginInput().getTokenRequestUrl() != null,
+            "passing oauthTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication");
         return new OAuthClientCredentialsAccessTokenProvider();
       default:
         String message = "Unsupported authenticator type: " + authenticatorType;
@@ -63,15 +63,15 @@ public class OAuthAccessTokenProviderFactory {
 
   private void validateAuthorizationAndTokenEndpointsIfSpecified(SFLoginInput loginInput)
       throws SFException {
-    String authorizationEndpoint = loginInput.getOauthLoginInput().getExternalAuthorizationUrl();
-    String tokenEndpoint = loginInput.getOauthLoginInput().getExternalTokenRequestUrl();
+    String authorizationEndpoint = loginInput.getOauthLoginInput().getAuthorizationUrl();
+    String tokenEndpoint = loginInput.getOauthLoginInput().getTokenRequestUrl();
     if ((!StringUtils.isNullOrEmpty(authorizationEndpoint)
             && StringUtils.isNullOrEmpty(tokenEndpoint))
         || (StringUtils.isNullOrEmpty(authorizationEndpoint)
             && !StringUtils.isNullOrEmpty(tokenEndpoint))) {
       throw new SFException(
           ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
-          "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified");
+          "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both oauthAuthorizationUrl and oauthTokenRequestUrl must be specified");
     } else if (!StringUtils.isNullOrEmpty(authorizationEndpoint)
         && !StringUtils.isNullOrEmpty(tokenEndpoint)) {
       URI authorizationUrl = URI.create(authorizationEndpoint);
@@ -81,13 +81,13 @@ public class OAuthAccessTokenProviderFactory {
         throw new SFException(
             ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
             String.format(
-                "OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                "OAuth authorization URL and token URL must be specified in proper format; oauthAuthorizationUrl=%s oauthTokenRequestUrl=%s",
                 authorizationUrl, tokenUrl));
       }
       if (!authorizationUrl.getHost().equals(tokenUrl.getHost())) {
         logger.warn(
             String.format(
-                "Both externalAuthorizationUrl and externalTokenRequestUrl should belong to the same host; externalAuthorizationUrl=%s externalTokenRequestUrl=%s",
+                "Both oauthAuthorizationUrl and oauthTokenRequestUrl should belong to the same host; oauthAuthorizationUrl=%s oauthTokenRequestUrl=%s",
                 authorizationUrl, tokenUrl));
       }
     }

@@ -248,32 +248,48 @@ public class SessionUtilTest {
   }
 
   @Test
-  public void shouldProperlyCheckIfSoteriaEnabled() {
+  public void shouldProperlyCheckIfExperimentalAuthEnabled() {
     try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic = mockStatic(SnowflakeUtil.class)) {
       snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetProperty("snowflake.jdbc.enableSoteria"))
+          .when(
+              () ->
+                  SnowflakeUtil.systemGetProperty(
+                      "snowflake.jdbc.enableExperimentalAuthentication"))
           .thenReturn(null);
       Assertions.assertThrows(
           SFException.class,
-          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      Assertions.assertThrows(
-          SFException.class,
-          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+          () ->
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
       Assertions.assertThrows(
           SFException.class,
           () ->
-              SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+      Assertions.assertThrows(
+          SFException.class,
+          () ->
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
 
       snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetProperty("snowflake.jdbc.enableSoteria"))
+          .when(
+              () ->
+                  SnowflakeUtil.systemGetProperty(
+                      "snowflake.jdbc.enableExperimentalAuthentication"))
           .thenReturn("true");
       Assertions.assertDoesNotThrow(
-          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      Assertions.assertDoesNotThrow(
-          () -> SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+          () ->
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
       Assertions.assertDoesNotThrow(
           () ->
-              SessionUtil.checkIfSoteriaAuthnEnabled(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
+      Assertions.assertDoesNotThrow(
+          () ->
+              SessionUtil.checkIfExperimentalAuthnEnabled(
+                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
     }
   }
 

@@ -131,11 +131,8 @@ public class OAuthUtilTest {
   }
 
   private SFOauthLoginInput createLoginInputStub(
-      String externalAuthorizationUrl,
-      String externalTokenRequestUrl,
-      String scope,
-      String redirectUri) {
+      String oauthAuthorizationUrl, String oauthTokenRequestUrl, String scope, String redirectUri) {
     return new SFOauthLoginInput(
-        null, null, redirectUri, externalAuthorizationUrl, externalTokenRequestUrl, scope);
+        null, null, redirectUri, oauthAuthorizationUrl, oauthTokenRequestUrl, scope);
   }
 }

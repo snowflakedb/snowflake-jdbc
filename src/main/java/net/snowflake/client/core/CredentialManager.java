@@ -300,9 +300,9 @@ public class CredentialManager {
    * but rather IdP-specific
    */
   static String getHostForOAuthCacheKey(SFLoginInput loginInput) throws SFException {
-    String externalTokenRequestUrl = loginInput.getOauthLoginInput().getExternalTokenRequestUrl();
-    if (externalTokenRequestUrl != null) {
-      URI parsedUrl = URI.create(externalTokenRequestUrl);
+    String oauthTokenRequestUrl = loginInput.getOauthLoginInput().getTokenRequestUrl();
+    if (oauthTokenRequestUrl != null) {
+      URI parsedUrl = URI.create(oauthTokenRequestUrl);
       return parsedUrl.getHost();
     } else {
       return loginInput.getHostFromServerUrl();
