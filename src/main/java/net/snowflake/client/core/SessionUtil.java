@@ -284,7 +284,7 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-    checkIfSoteriaAuthnEnabled(authenticator);
+    checkIfExperimentalAuthnEnabled(authenticator);
 
     if (authenticator.equals(AuthenticatorType.OAUTH)
         || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)) {
@@ -349,14 +349,15 @@ public class SessionUtil {
     }
   }
 
-  static void checkIfSoteriaAuthnEnabled(AuthenticatorType authenticator) throws SFException {
+  static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
     if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
-      boolean soteriaAuthenticationMethodsEnabled =
-          Boolean.parseBoolean(systemGetProperty("snowflake.jdbc.enableSoteria"));
+      boolean experimentalAuthenticationMethodsEnabled =
+          Boolean.parseBoolean(
+              systemGetProperty("snowflake.jdbc.enableExperimentalAuthentication"));
       AssertUtil.assertTrue(
-          soteriaAuthenticationMethodsEnabled,
+          experimentalAuthenticationMethodsEnabled,
           "Following authentication method not yet supported: " + authenticator);
     }
   }

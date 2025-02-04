@@ -26,8 +26,8 @@ public class OAuthUtil {
   @SnowflakeJdbcInternalApi
   public static URI getTokenRequestUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
     URI uri =
-        !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalTokenRequestUrl())
-            ? URI.create(oauthLoginInput.getExternalTokenRequestUrl())
+        !StringUtils.isNullOrEmpty(oauthLoginInput.getTokenRequestUrl())
+            ? URI.create(oauthLoginInput.getTokenRequestUrl())
             : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
     return uri.normalize();
   }
@@ -43,8 +43,8 @@ public class OAuthUtil {
 
   static URI getAuthorizationUrl(SFOauthLoginInput oauthLoginInput, String serverUrl) {
     URI uri =
-        !StringUtils.isNullOrEmpty(oauthLoginInput.getExternalAuthorizationUrl())
-            ? URI.create(oauthLoginInput.getExternalAuthorizationUrl())
+        !StringUtils.isNullOrEmpty(oauthLoginInput.getAuthorizationUrl())
+            ? URI.create(oauthLoginInput.getAuthorizationUrl())
             : URI.create(serverUrl + SNOWFLAKE_AUTHORIZE_ENDPOINT);
     return uri.normalize();
   }

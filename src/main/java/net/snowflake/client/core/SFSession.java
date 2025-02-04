@@ -671,11 +671,11 @@ public class SFSession extends SFBaseSession {
     SFLoginInput loginInput = new SFLoginInput();
     SFOauthLoginInput oauthLoginInput =
         new SFOauthLoginInput(
-            (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID),
-            (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_ID),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_SECRET),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL),
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_AUTHORIZATION_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_TOKEN_REQUEST_URL),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE));
 
     loginInput
