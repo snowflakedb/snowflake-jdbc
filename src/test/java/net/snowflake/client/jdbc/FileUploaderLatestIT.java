@@ -891,8 +891,10 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   }
 
   @Test
-  public void testUploadWithTripleSlashFilePrefix(@TempDir(factory = GetTempDirFactory.class) File tempDir) throws SQLException {
+  public void testUploadWithTripleSlashFilePrefix(
+      @TempDir(factory = GetTempDirFactory.class) File tempDir) throws SQLException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
+    System.out.println(tempDir);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -919,7 +921,9 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
   static class GetTempDirFactory implements TempDirFactory {
     @Override
-    public Path createTempDirectory(AnnotatedElementContext elementContext, ExtensionContext extensionContext) throws Exception {
+    public Path createTempDirectory(
+        AnnotatedElementContext elementContext, ExtensionContext extensionContext)
+        throws Exception {
       return Files.createTempDirectory(extensionContext.getRequiredTestMethod().getName());
     }
   }
