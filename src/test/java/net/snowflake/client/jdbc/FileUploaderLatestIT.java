@@ -902,7 +902,11 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
-        String tempDirPath = tempDir.getPath().replace("\\", "/");
+        String tempDirPath =
+            tempDir
+                .getPath()
+                .replace("\\", "/")
+                .replaceFirst("^~", System.getProperty("user.home"));
         String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
