@@ -49,7 +49,10 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.AnnotatedElementContext;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.io.TempDirFactory;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Tag(TestTags.OTHERS)
@@ -888,7 +891,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   }
 
   @Test
-  public void testUploadWithTripleSlashFilePrefix(@TempDir File tempDir) throws SQLException {
+  public void testUploadWithTripleSlashFilePrefix(@TempDir(factory = GetTempDirFactory.class) File tempDir) throws SQLException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -902,11 +905,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
-        String tempDirPath =
-            tempDir
-                .getPath()
-                .replace("\\", "/")
-                .replaceFirst("^~", System.getProperty("user.home"));
+        String tempDirPath = tempDir.getPath().replace("\\", "/");
         String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
@@ -915,6 +914,13 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       } finally {
         statement.execute("DROP STAGE if exists " + stageName);
       }
+    }
+  }
+
+  static class GetTempDirFactory implements TempDirFactory {
+    @Override
+    public Path createTempDirectory(AnnotatedElementContext elementContext, ExtensionContext extensionContext) throws Exception {
+      return Files.createTempDirectory(extensionContext.getRequiredTestMethod().getName());
     }
   }
 }
