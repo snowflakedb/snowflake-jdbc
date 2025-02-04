@@ -891,7 +891,8 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   }
 
   @Test
-  public void testUploadWithTripleSlashFilePrefix(@TempDir(factory = GetTempDirFactory.class) File tempDir) throws SQLException {
+  public void testUploadWithTripleSlashFilePrefix(
+      @TempDir(factory = GetTempDirFactory.class) File tempDir) throws SQLException, IOException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -905,7 +906,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
-        String tempDirPath = tempDir.getPath().replace("\\", "/");
+        String tempDirPath = tempDir.getCanonicalPath().replace("\\", "/");
         String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
@@ -919,7 +920,9 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
   static class GetTempDirFactory implements TempDirFactory {
     @Override
-    public Path createTempDirectory(AnnotatedElementContext elementContext, ExtensionContext extensionContext) throws Exception {
+    public Path createTempDirectory(
+        AnnotatedElementContext elementContext, ExtensionContext extensionContext)
+        throws Exception {
       return Files.createTempDirectory(extensionContext.getRequiredTestMethod().getName());
     }
   }
