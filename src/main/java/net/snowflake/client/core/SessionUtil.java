@@ -67,6 +67,7 @@ public class SessionUtil {
   // Request path
   private static final String SF_PATH_LOGIN_REQUEST = "/session/v1/login-request";
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
+  private static final String SF_PATH_OKTA_REQUEST_SUFFIX = "/api/v1/authn";
   public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
   public static final String SF_PATH_CONSOLE_LOGIN_REQUEST = "/console/login";
 
@@ -271,7 +272,7 @@ public class SessionUtil {
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
     } else {
-      // OAUTH needs either token or passord
+      // OAUTH needs either token or password
       AssertUtil.assertTrue(
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");
@@ -710,7 +711,7 @@ public class SessionUtil {
               // and we need to update time remained in socket timeout here to control the
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeoutInMillis() > 0) {
-                if (ex.issocketTimeoutNoBackoff()) {
+                if (ex.isSocketTimeoutNoBackoff()) {
                   if (leftsocketTimeout > elapsedSeconds) {
                     leftsocketTimeout -= elapsedSeconds;
                   } else {
@@ -1208,6 +1209,9 @@ public class SessionUtil {
           new URIBuilder()
               .setScheme(url.getProtocol())
               .setHost(url.getHost())
+              // Todo: his may be a BCR - previously port was set to -1 => the default port for the schema
+              //  was assigned automatically later (80 for http, 443 for http)
+              .setPort(url.getPort())
               .setPath(url.getPath())
               .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
               .setParameter("onetimetoken", oneTimeToken)
@@ -1364,6 +1368,7 @@ public class SessionUtil {
     JsonNode dataNode = null;
     try {
       URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
+      // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and overwritten here - changing it would be a BCR tho
       fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
       URI fedUrlUri = fedUriBuilder.build();
 
@@ -1790,11 +1795,10 @@ public class SessionUtil {
     URI requestURI = request.getURI();
     String requestPath = requestURI.getPath();
     if (requestPath != null) {
-      if (requestPath.equals(SF_PATH_LOGIN_REQUEST)
-          || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
-          || requestPath.equals(SF_PATH_TOKEN_REQUEST)) {
-        return true;
-      }
+        return requestPath.equals(SF_PATH_LOGIN_REQUEST)
+                || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
+                || requestPath.equals(SF_PATH_TOKEN_REQUEST)
+                || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
     }
     return false;
   }
