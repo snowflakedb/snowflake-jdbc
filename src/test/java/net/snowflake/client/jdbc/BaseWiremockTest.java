@@ -30,7 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
-abstract class BaseWiremockTest {
+abstract public class BaseWiremockTest {
 
   protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockTest.class);
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";

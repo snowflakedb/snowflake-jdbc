@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 @Tag(TestTags.OTHERS)
-public class OktaWiremockIT extends BaseWiremockTest {
+public class SessionUtilWiremockIT extends BaseWiremockTest {
   private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 //  TODO: move to testutil
@@ -62,62 +62,8 @@ public class OktaWiremockIT extends BaseWiremockTest {
     connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
     return connectionPropertiesMap;
   }
-  String connectionResetByPeerScenario =
-      "{\n"
-          + "    \"mappings\": [\n"
-          + "        {\n"
-          + "            \"scenarioName\": \"Too many okta connections\",\n"
-          + "            \"request\": {\n"
-          + "                \"method\": \"GET\",\n"
-          + "                \"url\": \"/ocsp_response_cache.json\"\n"
-          + "            },\n"
-          + "            \"response\": {\n"
-          + "                \"status\": 429\n"
-          + "            }\n"
-          + "        },\n"
-          + "        {\n"
-          + "            \"scenarioName\": \"Too many okta connections\",\n"
-          + "            \"requiredScenarioState\": \"Started\",\n"
-          + "            \"newScenarioState\": \"Too many okta connections - 1\",\n"
-          + "            \"request\": {\n"
-          + "                \"method\": \"POST\",\n"
-          + "                \"url\": \"/api/v1/authn/\"\n"
-          + "            },\n"
-          + "            \"response\": {\n"
-          + "                \"status\": 429\n"
-          + "            }\n"
-          + "        },\n"
-          + "        {\n"
-          + "            \"scenarioName\": \"Too many okta connections\",\n"
-          + "            \"requiredScenarioState\": \"Too many okta connections - 1\",\n"
-          + "            \"newScenarioState\": \"Too many okta connections - 2\",\n"
-          + "            \"request\": {\n"
-          + "                \"method\": \"POST\",\n"
-          + "                \"url\": \"/api/v1/authn/\"\n"
-          + "            },\n"
-          + "            \"response\": {\n"
-          + "                \"status\": 429\n"
-          + "            }\n"
-          + "        },\n"
-          + "        {\n"
-          + "            \"scenarioName\": \"Too many okta connections\",\n"
-          + "            \"requiredScenarioState\": \"Too many okta connections - 2\",\n"
-          + "            \"newScenarioState\": \"Connection is stable\",\n"
-          + "            \"request\": {\n"
-          + "                \"method\": \"POST\",\n"
-          + "                \"url\": \"/api/v1/authn/\"\n"
-          + "            },\n"
-          + "            \"response\": {\n"
-          + "                \"status\": 200\n"
-          + "            }\n"
-          + "        }\n"
-          + "    ],\n"
-          + "    \"importOptions\": {\n"
-          + "        \"duplicatePolicy\": \"IGNORE\",\n"
-          + "        \"deleteAllNotInImport\": true\n"
-          + "    }"
-          + "}";
 
+//  TODO: move to json file
   String wireMockMapping =
           "{\n"
                   + "    \"mappings\": [\n"
