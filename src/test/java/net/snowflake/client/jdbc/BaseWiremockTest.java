@@ -10,12 +10,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
+
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -236,5 +242,58 @@ abstract public class BaseWiremockTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Reads JSON content from a file in the classpath.
+   *
+   * @param filePath The path to the JSON file in the classpath (e.g., "/wiremockMapping.json").
+   * @return JSON content as a String.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  /**
+   * Reads JSON content from a file, supporting both absolute paths and classpath resources.
+   *
+   * @param filePath The file path (absolute or from the resources directory).
+   * @return JSON content as a String.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  private String readJSONFromFile(String filePath) throws IOException {
+    // Check if the file exists as an absolute file path
+    Path sourceFilePath = Paths.get(filePath);
+    if (Files.exists(sourceFilePath)) {
+      return new String(Files.readAllBytes(sourceFilePath), StandardCharsets.UTF_8);
+    }
+
+    // If not found, attempt to read from the classpath (resources directory).
+    // Has to start from '/' followed by a subdirectory of the resources directory.
+    try (InputStream in = getClass().getResourceAsStream(filePath)) {
+      if (in == null) {
+        throw new IllegalStateException("Could not find file under the specified path: " + filePath);
+      }
+      try (Scanner scanner = new Scanner(in, StandardCharsets.UTF_8.name())) {
+        scanner.useDelimiter("\\A"); // Read the entire file content
+        return scanner.hasNext() ? scanner.next() : "";
+      }
+    }
+  }
+
+
+  /**
+   * Reads JSON content from a file and replaces placeholders dynamically.
+   *
+   * @param mappingPath The path to the JSON file in the classpath.
+   * @param placeholdersMappings A map of placeholders to be replaced in the JSON content.
+   * @return The JSON content as a String with placeholders replaced.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  protected String getWireMockMappingFromFile(String mappingPath, Map<String, Object> placeholdersMappings) throws IOException {
+    String jsonContent = readJSONFromFile(mappingPath);
+
+    // Replace placeholders with actual values
+    for (Map.Entry<String, Object> entry : placeholdersMappings.entrySet()) {
+      jsonContent = jsonContent.replace(entry.getKey(), String.valueOf(entry.getValue()));
+    }
+    return jsonContent;
   }
 }

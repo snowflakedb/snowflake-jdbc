@@ -14,11 +14,10 @@ import java.util.Properties;
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
-//  TODO: move to testutil
+
+  //  TODO: move to testutil
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
-//    TODO: change here to wiremock url
-    input.setServerUrl("https://testauth.okta.com");
     input.setServerUrl(WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
     input.setUserName("MOCK_USERNAME");
     input.setPassword("MOCK_PASSWORD");
@@ -63,149 +62,25 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
-//  TODO: move to json file
-  String wireMockMapping =
-          "{\n"
-                  + "    \"mappings\": [\n"
-                  + "        {\n"
-                  + "            \"scenarioName\": \"Mock Okta Authenticator Request\",\n"
-                  + "            \"requiredScenarioState\": \"Started\",\n"
-                  + "            \"newScenarioState\": \"Authenticator Requested\",\n"
-                  + "            \"request\": {\n"
-                  + "                \"method\": \"POST\",\n"
-                  + "                \"urlPath\": \"/session/authenticator-request\",\n"
-                  + "                \"queryParameters\": {\n"
-                  + "                    \"request_guid\": {\n"
-                  + "                        \"matches\": \".*\"\n"
-                  + "                    }\n"
-                  + "                }\n"
-                  + "            },\n"
-                  + "            \"response\": {\n"
-                  + "                \"status\": 200,\n"
-                  + "                \"headers\": {\n"
-                  + "                    \"Content-Type\": \"application/json\"\n"
-                  + "                },\n"
-                  + "                \"jsonBody\": {\n"
-                  + "                    \"data\": {\n"
-                  + "                        \"tokenUrl\": \"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/api/v1/authn\",\n"
-                  // pragma: allowlist nextline secret
-                  + "                        \"ssoUrl\": \"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
-                  + "                        \"proofKey\": null\n"
-                  + "                    },\n"
-                  + "                    \"code\": null,\n"
-                  + "                    \"message\": null,\n"
-                  + "                    \"success\": true\n"
-                  + "                }\n"
-                  + "            }\n"
-                  + "        },\n"
-                  + "        {\n"
-                  + "            \"scenarioName\": \"Mock Okta Authn Response\",\n"
-                  + "            \"request\": {\n"
-                  + "                \"method\": \"POST\",\n"
-                  + "                \"urlPath\": \"/okta-stub/vanity-url/api/v1/authn\"\n"
-                  + "            },\n"
-                  + "            \"response\": {\n"
-                  + "                \"status\": 200,\n"
-                  + "                \"headers\": {\n"
-                  + "                    \"Content-Type\": \"application/json\"\n"
-                  + "                },\n"
-                  + "                \"jsonBody\": {\n"
-                  + "                    \"expiresAt\": \"2023-10-13T19:18:09.000Z\",\n"
-                  + "                    \"status\": \"SUCCESS\",\n"
-                  + "                    \"sessionToken\": \"testsessiontoken\"\n"
-                  + "                }\n"
-                  + "            }\n"
-                  + "        },\n"
-                  + "        {\n"
-                  + "            \"scenarioName\": \"Mock Okta SAML Response\",\n"
-                  + "            \"request\": {\n"
-                  + "                \"method\": \"GET\",\n"
-                  // pragma: allowlist nextline secret
-                  + "                \"urlPath\": \"/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
-                  + "                \"queryParameters\": {\n"
-                  + "                    \"RelayState\": { \"matches\": \".*\" },\n"
-                  + "                    \"onetimetoken\": { \"matches\": \".*\" },\n"
-                  + "                    \"request_guid\": { \"matches\": \".*\" }\n"
-                  + "                }\n"
-                  + "            },\n"
-                  + "            \"response\": {\n"
-                  + "                \"status\": 200,\n"
-                  + "                \"headers\": {\n"
-                  + "                    \"Content-Type\": \"text/html\"\n"
-                  + "                },\n"
-                  + "                \"body\": \"<body><form action=\\\"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/\\\"></form></body>\"\n"
-                  + "            }\n"
-                  + "        },\n"
-                  + "        {\n"
-                  + "            \"scenarioName\": \"Mock Okta Login Request\",\n"
-                  + "            \"request\": {\n"
-                  + "                \"method\": \"POST\",\n"
-                  + "                \"urlPath\": \"/session/v1/login-request\",\n"
-                  + "                \"queryParameters\": {\n"
-                  + "                    \"requestId\": { \"matches\": \".*\" },\n"
-                  + "                    \"request_guid\": { \"matches\": \".*\" }\n"
-                  + "                }\n"
-                  + "            },\n"
-                  + "            \"response\": {\n"
-                  + "                \"status\": 200,\n"
-                  + "                \"headers\": {\n"
-                  + "                    \"Content-Type\": \"application/json\"\n"
-                  + "                },\n"
-                  + "                \"jsonBody\": {\n"
-                  + "                    \"data\": {\n"
-                  + "                        \"tokenUrl\": \"https://testauth.okta.com/api/v1/authn\",\n"
-                  + "                        \"ssoUrl\": \"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
-                  + "                        \"proofKey\": null\n"
-                  + "                    },\n"
-                  + "                    \"code\": null,\n"
-                  + "                    \"message\": null,\n"
-                  + "                    \"success\": true\n"
-                  + "                }\n"
-                  + "            }\n"
-                  + "        }\n"
-                  + "    ],\n"
-                  + "    \"importOptions\": {\n"
-                  + "        \"duplicatePolicy\": \"IGNORE\",\n"
-                  + "        \"deleteAllNotInImport\": true\n"
-                  + "    }\n"
-                  + "}";
 
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
+    // GIVEN
+    String wireMockMappingPathFromResources = "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
+    Map<String, Object> placeholders = new HashMap<>();
+    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+    String wireMockMapping = getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
     importMapping(wireMockMapping);
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     setJvmProperties(props);
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+    // WHEN
     SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-
-//    TODO: WIREMOCK_HOST, wiremockHttpPort
-
-//    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create().disableAutomaticRetries();
-//    try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-//      HttpPost request =
-//          new HttpPost(String.format("http://%s:%d/api/v1/authn/", WIREMOCK_HOST, wiremockHttpPort));
-//      RestRequest.execute(
-//          httpClient,
-//          request,
-//          0,
-//          0,
-//          0,
-//          0,
-//          0,
-//          new AtomicBoolean(false),
-//          false,
-//          false,
-//          false,
-//          false,
-//          new ExecTimeTelemetryData());
-
-//      CloseableHttpResponse response = httpClient.execute(request);
-//      assert (response.getStatusLine().getStatusCode() == 200);
-    }
   }
-//}
+}
 
 //
 //@Test
