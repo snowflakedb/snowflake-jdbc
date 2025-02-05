@@ -22,7 +22,9 @@ public class OktaWiremockIT extends BaseWiremockTest {
 //  TODO: move to testutil
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
+//    TODO: change here to wiremock url
     input.setServerUrl("https://testauth.okta.com");
+    input.setServerUrl("https" + "://" + WIREMOCK_HOST + ":" + wiremockHttpsPort);
     input.setUserName("MOCK_USERNAME");
     input.setPassword("MOCK_PASSWORD");
     input.setAccountName("MOCK_ACCOUNT_NAME");
@@ -65,9 +67,22 @@ public class OktaWiremockIT extends BaseWiremockTest {
     connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
     return connectionPropertiesMap;
   }
+//  SF_PATH_AUTHENTICATOR_REQUEST = "okta-stub/session/authenticator-request"
   String connectionResetByPeerScenario =
       "{\n"
           + "    \"mappings\": [\n"
+          + "        {\n"
+          + "            \"scenarioName\": \"Too many okta connections\",\n"
+          + "            \"requiredScenarioState\": \"Started\",\n"
+          + "            \"newScenarioState\": \"Too many okta connections - 1\",\n"
+          + "            \"request\": {\n"
+          + "                \"method\": \"GET\",\n"
+          + "                \"url\": \"/ocsp_response_cache.json\"\n"
+          + "            },\n"
+          + "            \"response\": {\n"
+          + "                \"status\": 429\n"
+          + "            }\n"
+          + "        },\n"
           + "        {\n"
           + "            \"scenarioName\": \"Too many okta connections\",\n"
           + "            \"requiredScenarioState\": \"Started\",\n"
@@ -84,7 +99,6 @@ public class OktaWiremockIT extends BaseWiremockTest {
           + "            \"scenarioName\": \"Too many okta connections\",\n"
           + "            \"requiredScenarioState\": \"Too many okta connections - 1\",\n"
           + "            \"newScenarioState\": \"Too many okta connections - 2\",\n"
-          + "            \"newScenarioState\": \"Connection is stable\",\n"
           + "            \"request\": {\n"
           + "                \"method\": \"POST\",\n"
           + "                \"url\": \"/api/v1/authn/\"\n"
@@ -112,10 +126,52 @@ public class OktaWiremockIT extends BaseWiremockTest {
           + "    }"
           + "}";
 
+  String wireMockMapping =
+          "{\n"
+                  + "    \"mappings\": [\n"
+                  + "        {\n"
+                  + "            \"scenarioName\": \"Mock Okta Authenticator Request\",\n"
+                  + "            \"requiredScenarioState\": \"Started\",\n"
+                  + "            \"newScenarioState\": \"Authenticator Requested\",\n"
+                  + "            \"request\": {\n"
+                  + "                \"method\": \"POST\",\n"
+                  + "                \"urlPath\": \"/session/authenticator-request\",\n"
+                  + "                \"queryParameters\": {\n"
+                  + "                   \"request_guid\": {\n"
+                  + "                       \"matches\": \".*\"\n"
+                  + "                   }\n"
+                  + "                }\n"
+                  + "            },\n"
+                  + "            \"response\": {\n"
+                  + "                \"status\": 200,\n"
+                  + "                \"headers\": {\n"
+                  + "                    \"Content-Type\": \"application/json\"\n"
+                  + "                },\n"
+                  + "                \"jsonBody\": {\n"
+                  + "                    \"data\": {\n"
+                  + "                        \"tokenUrl\": \"okta-stub/vanity-url/api/v1/authn\",\n"
+                  // pragma: allowlist nextline secret
+                  + "                        \"ssoUrl\": \"okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
+                  + "                        \"proofKey\": null\n"
+                  + "                    },\n"
+                  + "                    \"code\": null,\n"
+                  + "                    \"message\": null,\n"
+                  + "                    \"success\": true\n"
+                  + "                }\n"
+                  + "            }\n"
+                  + "        }\n"
+                  + "    ],\n"
+                  + "    \"importOptions\": {\n"
+                  + "        \"duplicatePolicy\": \"IGNORE\",\n"
+                  + "        \"deleteAllNotInImport\": true\n"
+                  + "    }\n"
+                  + "}";
+
+
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
-    importMapping(connectionResetByPeerScenario);
-//    setCustomTrustStorePropertyPath();
+    importMapping(wireMockMapping);
+    setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     setJvmProperties(props);
     SFLoginInput loginInput = createOktaLoginInput();
