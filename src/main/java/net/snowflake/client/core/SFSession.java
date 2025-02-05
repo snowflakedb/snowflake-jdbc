@@ -512,6 +512,13 @@ public class SFSession extends SFBaseSession {
             setEnablePatternSearch(getBooleanValue(propertyValue));
           }
           break;
+
+        case ENABLE_EXACT_SCHEMA_SEARCH_ENABLED:
+          if (propertyValue != null) {
+            setEnableExactSchemaSearch(getBooleanValue(propertyValue));
+          }
+          break;
+
         case DISABLE_GCS_DEFAULT_CREDENTIALS:
           if (propertyValue != null) {
             setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));

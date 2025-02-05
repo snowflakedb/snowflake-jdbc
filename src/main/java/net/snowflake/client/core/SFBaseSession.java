@@ -140,6 +140,11 @@ public abstract class SFBaseSession {
   // we need to allow for it to maintain backwards compatibility.
   private boolean enablePatternSearch = true;
 
+  // Enables the use of exact schema searches for certain DatabaseMetaData methods
+  // that should use schema from context (CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true)
+  // value is false for backwards compatibility.
+  private boolean enableExactSchemaSearch = false;
+
   /** Disable lookup for default credentials by GCS library */
   private boolean disableGcsDefaultCredentials = false;
 
@@ -1098,6 +1103,14 @@ public abstract class SFBaseSession {
 
   public void setEnablePatternSearch(boolean enablePatternSearch) {
     this.enablePatternSearch = enablePatternSearch;
+  }
+
+  public boolean getEnableExactSchemaSearch() {
+    return enableExactSchemaSearch;
+  }
+
+  void setEnableExactSchemaSearch(boolean enableExactSchemaSearch) {
+    this.enableExactSchemaSearch = enableExactSchemaSearch;
   }
 
   public boolean getDisableGcsDefaultCredentials() {
