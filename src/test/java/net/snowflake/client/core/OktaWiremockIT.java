@@ -189,6 +189,33 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "                },\n"
                   + "                \"body\": \"<body><form action=\\\"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/\\\"></form></body>\"\n"
                   + "            }\n"
+                  + "        },\n"
+                  + "        {\n"
+                  + "            \"scenarioName\": \"Mock Okta Login Request\",\n"
+                  + "            \"request\": {\n"
+                  + "                \"method\": \"POST\",\n"
+                  + "                \"urlPath\": \"/session/v1/login-request\",\n"
+                  + "                \"queryParameters\": {\n"
+                  + "                    \"requestId\": { \"matches\": \".*\" },\n"
+                  + "                    \"request_guid\": { \"matches\": \".*\" }\n"
+                  + "                }\n"
+                  + "            },\n"
+                  + "            \"response\": {\n"
+                  + "                \"status\": 200,\n"
+                  + "                \"headers\": {\n"
+                  + "                    \"Content-Type\": \"application/json\"\n"
+                  + "                },\n"
+                  + "                \"jsonBody\": {\n"
+                  + "                    \"data\": {\n"
+                  + "                        \"tokenUrl\": \"https://testauth.okta.com/api/v1/authn\",\n"
+                  + "                        \"ssoUrl\": \"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
+                  + "                        \"proofKey\": null\n"
+                  + "                    },\n"
+                  + "                    \"code\": null,\n"
+                  + "                    \"message\": null,\n"
+                  + "                    \"success\": true\n"
+                  + "                }\n"
+                  + "            }\n"
                   + "        }\n"
                   + "    ],\n"
                   + "    \"importOptions\": {\n"
@@ -196,16 +223,6 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "        \"deleteAllNotInImport\": true\n"
                   + "    }\n"
                   + "}";
-
-//  GET
-//  https://localhost/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml
-//  ?
-//  RelayState=%2Fsome%2Fdeep%2Flink
-//  &
-//  onetimetoken=testsessiontoken
-//  &
-//  request_guid=51a133ba-6902-406b-b444-2bcc21c31f2d
-//
 
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
