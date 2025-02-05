@@ -18,13 +18,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Tag(TestTags.OTHERS)
 public class OktaWiremockIT extends BaseWiremockTest {
-
+  private String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
+  private String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 //  TODO: move to testutil
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
 //    TODO: change here to wiremock url
     input.setServerUrl("https://testauth.okta.com");
-    input.setServerUrl("https" + "://" + WIREMOCK_HOST + ":" + wiremockHttpsPort);
+    input.setServerUrl(WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
     input.setUserName("MOCK_USERNAME");
     input.setPassword("MOCK_PASSWORD");
     input.setAccountName("MOCK_ACCOUNT_NAME");
@@ -33,7 +34,7 @@ public class OktaWiremockIT extends BaseWiremockTest {
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
     input.setLoginTimeout(1000);
     input.setSessionParameters(new HashMap<>());
-    input.setAuthenticator("https://testauth.okta.com");
+    input.setAuthenticator(WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/");
     return input;
   }
 
@@ -137,9 +138,9 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "                \"method\": \"POST\",\n"
                   + "                \"urlPath\": \"/session/authenticator-request\",\n"
                   + "                \"queryParameters\": {\n"
-                  + "                   \"request_guid\": {\n"
-                  + "                       \"matches\": \".*\"\n"
-                  + "                   }\n"
+                  + "                    \"request_guid\": {\n"
+                  + "                        \"matches\": \".*\"\n"
+                  + "                    }\n"
                   + "                }\n"
                   + "            },\n"
                   + "            \"response\": {\n"
@@ -149,14 +150,32 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "                },\n"
                   + "                \"jsonBody\": {\n"
                   + "                    \"data\": {\n"
-                  + "                        \"tokenUrl\": \"okta-stub/vanity-url/api/v1/authn\",\n"
+                  + "                        \"tokenUrl\": \"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/api/v1/authn\",\n"
                   // pragma: allowlist nextline secret
-                  + "                        \"ssoUrl\": \"okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
+                  + "                        \"ssoUrl\": \"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
                   + "                        \"proofKey\": null\n"
                   + "                    },\n"
                   + "                    \"code\": null,\n"
                   + "                    \"message\": null,\n"
                   + "                    \"success\": true\n"
+                  + "                }\n"
+                  + "            }\n"
+                  + "        },\n"
+                  + "        {\n"
+                  + "            \"scenarioName\": \"Mock Okta Authn Response\",\n"
+                  + "            \"request\": {\n"
+                  + "                \"method\": \"POST\",\n"
+                  + "                \"urlPath\": \"/okta-stub/vanity-url/api/v1/authn\"\n"
+                  + "            },\n"
+                  + "            \"response\": {\n"
+                  + "                \"status\": 200,\n"
+                  + "                \"headers\": {\n"
+                  + "                    \"Content-Type\": \"application/json\"\n"
+                  + "                },\n"
+                  + "                \"jsonBody\": {\n"
+                  + "                    \"expiresAt\": \"2023-10-13T19:18:09.000Z\",\n"
+                  + "                    \"status\": \"SUCCESS\",\n"
+                  + "                    \"sessionToken\": \"testsessiontoken\"\n"
                   + "                }\n"
                   + "            }\n"
                   + "        }\n"
@@ -167,6 +186,15 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "    }\n"
                   + "}";
 
+//  GET
+//  https://localhost/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml
+//  ?
+//  RelayState=%2Fsome%2Fdeep%2Flink
+//  &
+//  onetimetoken=testsessiontoken
+//  &
+//  request_guid=51a133ba-6902-406b-b444-2bcc21c31f2d
+//
 
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
