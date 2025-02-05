@@ -1209,6 +1209,9 @@ public class SessionUtil {
           new URIBuilder()
               .setScheme(url.getProtocol())
               .setHost(url.getHost())
+              // Todo: his may be a BCR - previously port was set to -1 => the default port for the schema
+              //  was assigned automatically later (80 for http, 443 for http)
+              .setPort(url.getPort())
               .setPath(url.getPath())
               .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
               .setParameter("onetimetoken", oneTimeToken)
@@ -1365,6 +1368,7 @@ public class SessionUtil {
     JsonNode dataNode = null;
     try {
       URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
+      // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and overwritten here - changing it would be a BCR tho
       fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
       URI fedUrlUri = fedUriBuilder.build();
 

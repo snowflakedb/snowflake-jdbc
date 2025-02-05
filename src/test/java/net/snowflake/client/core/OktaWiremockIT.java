@@ -2,11 +2,6 @@ package net.snowflake.client.core;
 
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
-import net.snowflake.client.jdbc.RestRequest;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -14,12 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Tag(TestTags.OTHERS)
 public class OktaWiremockIT extends BaseWiremockTest {
-  private String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
-  private String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
+  private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
+  private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 //  TODO: move to testutil
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
@@ -68,14 +62,11 @@ public class OktaWiremockIT extends BaseWiremockTest {
     connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
     return connectionPropertiesMap;
   }
-//  SF_PATH_AUTHENTICATOR_REQUEST = "okta-stub/session/authenticator-request"
   String connectionResetByPeerScenario =
       "{\n"
           + "    \"mappings\": [\n"
           + "        {\n"
           + "            \"scenarioName\": \"Too many okta connections\",\n"
-          + "            \"requiredScenarioState\": \"Started\",\n"
-          + "            \"newScenarioState\": \"Too many okta connections - 1\",\n"
           + "            \"request\": {\n"
           + "                \"method\": \"GET\",\n"
           + "                \"url\": \"/ocsp_response_cache.json\"\n"
@@ -177,6 +168,26 @@ public class OktaWiremockIT extends BaseWiremockTest {
                   + "                    \"status\": \"SUCCESS\",\n"
                   + "                    \"sessionToken\": \"testsessiontoken\"\n"
                   + "                }\n"
+                  + "            }\n"
+                  + "        },\n"
+                  + "        {\n"
+                  + "            \"scenarioName\": \"Mock Okta SAML Response\",\n"
+                  + "            \"request\": {\n"
+                  + "                \"method\": \"GET\",\n"
+                  // pragma: allowlist nextline secret
+                  + "                \"urlPath\": \"/okta-stub/vanity-url/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\",\n"
+                  + "                \"queryParameters\": {\n"
+                  + "                    \"RelayState\": { \"matches\": \".*\" },\n"
+                  + "                    \"onetimetoken\": { \"matches\": \".*\" },\n"
+                  + "                    \"request_guid\": { \"matches\": \".*\" }\n"
+                  + "                }\n"
+                  + "            },\n"
+                  + "            \"response\": {\n"
+                  + "                \"status\": 200,\n"
+                  + "                \"headers\": {\n"
+                  + "                    \"Content-Type\": \"text/html\"\n"
+                  + "                },\n"
+                  + "                \"body\": \"<body><form action=\\\"" + WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/\\\"></form></body>\"\n"
                   + "            }\n"
                   + "        }\n"
                   + "    ],\n"
