@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.FileUtil.isWritable;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -98,8 +99,9 @@ class FileCacheManager {
       logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
     }
     if (onlyOwnerPermissions) {
-      FileUtil.throwWhenPermissionsDifferentThanReadWriteForOwner(
+      FileUtil.throwWhenFilePermissionsWiderThanUserOnly(
           newCacheFile, "Override cache file");
+      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Override cache file");
     } else {
       FileUtil.logFileUsage(cacheFile, "Override cache file", false);
     }
@@ -132,34 +134,27 @@ class FileCacheManager {
     if (cacheDirPath != null) {
       this.cacheDir = new File(cacheDirPath);
     } else {
-      // use user home directory to store the cache file
-      String homeDir = systemGetProperty("user.home");
-      if (homeDir != null) {
-        // Checking if home directory is writable.
-        File homeFile = new File(homeDir);
-        if (!homeFile.canWrite()) {
-          logger.debug("Home directory not writeable, skip using cache", false);
-          homeDir = null;
-        }
-      }
-      if (homeDir == null) {
-        // if still home directory is null, no cache dir is set.
-        return this;
-      }
-      if (Constants.getOS() == Constants.OS.WINDOWS) {
-        this.cacheDir =
-            new File(
-                new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
-      } else if (Constants.getOS() == Constants.OS.MAC) {
-        this.cacheDir = new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
-      } else {
-        this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
-      }
+      this.cacheDir = getDefaultCacheDir();
     }
-
-    if (!this.cacheDir.mkdirs() && !this.cacheDir.exists()) {
-      logger.debug(
-          "Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
+    if (cacheDir == null) {
+      return this;
+    }
+    if (!cacheDir.exists()) {
+        try {
+            Files.createDirectories(cacheDir.toPath(),
+                    PosixFilePermissions.asFileAttribute(
+                            Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
+                                    .collect(Collectors.toSet())));
+        } catch (IOException e) {
+          logger.info(
+                  "Failed to create the cache directory: {}. Ignored. {}",
+                  e.getMessage(),
+                  cacheDir.getAbsoluteFile());
+          return this;
+        }
+    }
+    if (!this.cacheDir.exists()) {
+      logger.debug("Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
       return this;
     }
     logger.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
@@ -195,6 +190,45 @@ class FileCacheManager {
           cacheFileTmp.getAbsoluteFile());
     }
     return this;
+  }
+
+  static File getDefaultCacheDir() {
+    if (Constants.getOS() == Constants.OS.LINUX) {
+      String xdgCacheHome = getXdgCacheHome();
+      if (xdgCacheHome != null) {
+        return new File(xdgCacheHome, "snowflake");
+      }
+    }
+
+    String homeDir = getHomeDirProperty();
+    if (homeDir == null) {
+      // if still home directory is null, no cache dir is set.
+      return null;
+    }
+    if (Constants.getOS() == Constants.OS.WINDOWS) {
+      return new File(
+              new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
+    } else if (Constants.getOS() == Constants.OS.MAC) {
+      return new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
+    } else {
+      return new File(new File(homeDir, ".cache"), "snowflake");
+    }
+  }
+
+  private static String getXdgCacheHome() {
+    String xdgCacheHome = systemGetEnv("XDG_CACHE_HOME");
+    if (xdgCacheHome != null && isWritable(xdgCacheHome)) {
+      return xdgCacheHome;
+    }
+    return null;
+  }
+
+  private static String getHomeDirProperty() {
+    String homeDir = systemGetProperty("user.home");
+      if (homeDir != null && isWritable(homeDir)) {
+          return homeDir;
+      }
+    return null;
   }
 
   <T> T withLock(Supplier<T> supplier) {
@@ -234,7 +268,8 @@ class FileCacheManager {
           new InputStreamReader(new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
 
         if (onlyOwnerPermissions) {
-          FileUtil.throwWhenPermissionsDifferentThanReadWriteForOwner(cacheFile, "Read cache");
+          FileUtil.throwWhenFilePermissionsWiderThanUserOnly(cacheFile, "Read cache");
+          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Read cache");
           FileUtil.throwWhenOwnerDifferentThanCurrentUser(cacheFile, "Read cache");
         } else {
           FileUtil.logFileUsage(cacheFile, "Read cache", false);
@@ -256,7 +291,8 @@ class FileCacheManager {
       try (Writer writer =
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
         if (onlyOwnerPermissions) {
-          FileUtil.throwWhenPermissionsDifferentThanReadWriteForOwner(cacheFile, "Write to cache");
+          FileUtil.throwWhenFilePermissionsWiderThanUserOnly(cacheFile, "Write to cache");
+          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Write to cache");
         } else {
           FileUtil.logFileUsage(cacheFile, "Write to cache", false);
         }
@@ -288,7 +324,7 @@ class FileCacheManager {
   private boolean tryToLockCacheFile() {
     int cnt = 0;
     boolean locked = false;
-    while (cnt < 10 && !(locked = lockCacheFile())) {
+    while (cnt < 5 && !(locked = lockCacheFile())) {
       try {
         Thread.sleep(100);
       } catch (InterruptedException ex) {

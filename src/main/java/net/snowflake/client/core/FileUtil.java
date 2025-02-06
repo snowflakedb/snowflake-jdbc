@@ -41,12 +41,29 @@ public class FileUtil {
     logFileUsage(path, context, logReadAccess);
   }
 
-  public static void throwWhenPermissionsDifferentThanReadWriteForOwner(File file, String context) {
-    throwWhenPermissionsDifferentThanReadWriteForOwner(file.toPath(), context);
+  public static boolean isWritable(String path) {
+    File file = new File(path);
+    if (!file.canWrite()) {
+      logger.debug("File/directory not writeable: {}", path);
+      return false;
+    }
+    return true;
   }
 
-  public static void throwWhenPermissionsDifferentThanReadWriteForOwner(
-      Path filePath, String context) {
+  public static void throwWhenParentDirectoryPermissionsWiderThanUserOnly(File file, String context) {
+    throwWhenDirectoryPermissionsWiderThanUserOnly(file.getParentFile(), context);
+  }
+
+  public static void throwWhenFilePermissionsWiderThanUserOnly(File file, String context) {
+    throwWhenPermissionsWiderThanUserOnly(file.toPath(), context, false);
+  }
+
+  public static void throwWhenDirectoryPermissionsWiderThanUserOnly(File file, String context) {
+    throwWhenPermissionsWiderThanUserOnly(file.toPath(), context, true);
+  }
+
+  public static void throwWhenPermissionsWiderThanUserOnly(
+      Path filePath, String context, boolean isDirectory) {
     // we do not check the permissions for Windows
     if (isWindows()) {
       return;
@@ -58,18 +75,24 @@ public class FileUtil {
       boolean isReadableByOthers = isPermPresent(filePermissions, READ_BY_OTHERS);
       boolean isExecutable = isPermPresent(filePermissions, EXECUTABLE);
 
-      if (isWritableByOthers || isReadableByOthers || isExecutable) {
+      boolean permissionsTooOpen;
+      if (isDirectory) {
+        permissionsTooOpen =  isWritableByOthers || isReadableByOthers;
+      } else {
+        permissionsTooOpen = isWritableByOthers || isReadableByOthers || isExecutable;
+      }
+      if (permissionsTooOpen) {
         logger.debug(
-            "{}File {} access rights: {}", getContextStr(context), filePath, filePermissions);
+            "{}File/directory {} access rights: {}", getContextStr(context), filePath, filePermissions);
         throw new SecurityException(
             String.format(
-                "Access to file %s is wider than allowed only to the owner. Remove cached files and re-run the driver.",
+                "Access to file or directory %s is wider than allowed only to the owner. Remove cached file/directory and re-run the driver.",
                 filePath));
       }
     } catch (IOException e) {
       throw new SecurityException(
           String.format(
-              "%s Unable to access the file to check the permissions. Error: %s", filePath, e));
+              "%s Unable to access the file/directory to check the permissions. Error: %s", filePath, e));
     }
   }
 

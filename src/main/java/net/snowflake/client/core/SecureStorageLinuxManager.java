@@ -23,7 +23,7 @@ import net.snowflake.client.log.SFLoggerFactory;
  */
 public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SecureStorageLinuxManager.class);
-  private static final String CACHE_FILE_NAME = "temporary_credential.json";
+  private static final String CACHE_FILE_NAME = "credential_cache_v1.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
   private static final String CACHE_FILE_TOKENS_OBJECT_NAME = "tokens";

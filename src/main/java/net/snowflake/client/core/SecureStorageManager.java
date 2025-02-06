@@ -33,7 +33,7 @@ interface SecureStorageManager {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       byte[] hash = md.digest(target.toString().getBytes());
-      return SFTrustManager.byteToHexString(hash);
+      return HexUtil.byteToHexString(hash);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
