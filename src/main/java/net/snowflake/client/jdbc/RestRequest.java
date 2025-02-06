@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLHandshakeException;
@@ -25,6 +26,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
+import net.snowflake.client.util.RetryContextManager;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -86,7 +88,41 @@ public class RestRequest {
         includeRequestGuid,
         retryHTTP403,
         false, // noRetry
-        execTimeTelemetryData);
+        execTimeTelemetryData,
+        null);
+  }
+
+  public static CloseableHttpResponse execute(
+          CloseableHttpClient httpClient,
+          HttpRequestBase httpRequest,
+          long retryTimeout,
+          long authTimeout,
+          int socketTimeout,
+          int maxRetries,
+          int injectSocketTimeout,
+          AtomicBoolean canceling,
+          boolean withoutCookies,
+          boolean includeRetryParameters,
+          boolean includeRequestGuid,
+          boolean retryHTTP403,
+          boolean noRetry,
+          ExecTimeTelemetryData execTimeData) throws SnowflakeSQLException {
+    return execute(
+            httpClient,
+            httpRequest,
+            retryTimeout,
+            authTimeout,
+            socketTimeout,
+            maxRetries,
+            injectSocketTimeout,
+            canceling,
+            withoutCookies,
+            includeRetryParameters,
+            includeRequestGuid,
+            retryHTTP403,
+            false, // noRetry
+            execTimeData,
+            null);
   }
 
   /**
@@ -107,6 +143,7 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
+   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -125,7 +162,8 @@ public class RestRequest {
       boolean includeRequestGuid,
       boolean retryHTTP403,
       boolean noRetry,
-      ExecTimeTelemetryData execTimeData)
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryManager)
       throws SnowflakeSQLException {
     Stopwatch stopwatch = null;
 
@@ -197,6 +235,8 @@ public class RestRequest {
 
     int retryCount = 0;
 
+    setRequestConfig(httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug(
@@ -211,63 +251,8 @@ public class RestRequest {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
-        if (withoutCookies) {
-          httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
-        }
+        setRequestURI(httpRequest, requestIdStr, includeRetryParameters, includeRequestGuid, retryCount, lastStatusCodeForRetry, startTime, requestInfoScrubbed);
 
-        // for first call, simulate a socket timeout by setting socket timeout
-        // to the injected socket timeout value
-        if (injectSocketTimeout != 0 && retryCount == 0) {
-          // test code path
-          logger.debug(
-              "{}Injecting socket timeout by setting socket timeout to {} ms",
-              requestIdStr,
-              injectSocketTimeout);
-          httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                  injectSocketTimeout, withoutCookies));
-        }
-
-        /*
-         * Add retryCount if the first request failed
-         * GS can uses the parameter for optimization. Specifically GS
-         * will only check metadata database to see if a query has been running
-         * for a retry request. This way for the majority of query requests
-         * which are not part of retry we don't have to pay the performance
-         * overhead of looking up in metadata database.
-         */
-        URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        // If HTAP
-        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
-            && builder.getPathSegments().contains("query-request")) {
-          logger.debug("{}Setting htap simulation", requestIdStr);
-          builder.setParameter("target", "htap_simulation");
-        }
-        if (includeRetryParameters && retryCount > 0) {
-          builder.setParameter("retryCount", String.valueOf(retryCount));
-          builder.setParameter("retryReason", lastStatusCodeForRetry);
-          builder.setParameter("clientStartTime", String.valueOf(startTime));
-        }
-
-        // When the auth timeout is set, set the socket timeout as the authTimeout
-        // so that it can be renewed in time and pass it to the http request configuration.
-        if (authTimeout > 0) {
-          int requestSocketAndConnectTimeout = (int) authTimeout * 1000;
-          logger.debug(
-              "{}Setting auth timeout as the socket timeout: {} s", requestIdStr, authTimeout);
-          httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
-                  requestSocketAndConnectTimeout, withoutCookies));
-        }
-
-        if (includeRequestGuid) {
-          UUID guid = UUIDUtils.getUUID();
-          logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
-          // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, guid.toString());
-        }
-
-        httpRequest.setURI(builder.build());
         execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
         execTimeData.setHttpClientEnd();
@@ -432,7 +417,7 @@ public class RestRequest {
           breakRetryEventName = "HttpRequestRetryLimitExceeded";
         }
 
-        if (breakRetryEventName != "" && !breakRetryEventName.isEmpty()) {
+        if (!breakRetryEventName.isEmpty()) {
           // If either of network timeout is exhausted or max retries have been reached, stop
           // retrying!
           TelemetryService.getInstance()
@@ -466,7 +451,7 @@ public class RestRequest {
 
         // If this was a request for an Okta one-time token that failed with a retry-able error,
         // throw exception to renew the token before trying again.
-        if (String.valueOf(httpRequest.getURI()).contains("okta.com/api/v1/authn")) {
+        if (String.valueOf(httpRequest.getURI()).contains("/api/v1/authn")) {
           throw new SnowflakeSQLException(
               ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
               retryCount,
@@ -475,7 +460,7 @@ public class RestRequest {
         }
 
         // Make sure that any authenticator specific info that needs to be
-        // updated get's updated before the next retry. Ex - JWT token
+        // updated gets updated before the next retry. Ex - JWT token
         // Check to see if customer set socket/connect timeout has been reached,
         // if not we don't increase the retry count since JWT renew doesn't count as a retry
         // attempt.
@@ -700,4 +685,67 @@ public class RestRequest {
     }
     return ex0;
   }
+
+  private static void setRequestConfig(HttpRequestBase httpRequest, boolean withoutCookies, int injectSocketTimeout, String requestIdStr, long authTimeoutInMilli) {
+    if (withoutCookies) {
+      httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
+    }
+
+    // For first call, simulate a socket timeout by setting socket timeout
+    // to the injected socket timeout value
+    if (injectSocketTimeout != 0) {
+      // test code path
+      logger.debug(
+              "{}Injecting socket timeout by setting socket timeout to {} ms",
+              requestIdStr,
+              injectSocketTimeout);
+      httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
+                      injectSocketTimeout, withoutCookies));
+    }
+
+    // When the auth timeout is set, set the socket timeout as the authTimeout
+    // so that it can be renewed in time and pass it to the http request configuration.
+    if (authTimeoutInMilli > 0) {
+      int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
+      logger.debug(
+              "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
+      httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+                      requestSocketAndConnectTimeout, withoutCookies));
+    }
+  }
+
+  private static void setRequestURI(HttpRequestBase httpRequest, String requestIdStr, boolean includeRetryParameters, boolean includeRequestGuid, int retryCount, String lastStatusCodeForRetry, long startTime, String requestInfoScrubbed) throws URISyntaxException {
+    /*
+     * Add retryCount if the first request failed
+     * GS can use the parameter for optimization. Specifically GS
+     * will only check metadata database to see if a query has been running
+     * for a retry request. This way for the majority of query requests
+     * which are not part of retry we don't have to pay the performance
+     * overhead of looking up in metadata database.
+     */
+    URIBuilder builder = new URIBuilder(httpRequest.getURI());
+    // If HTAP
+    if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+            && builder.getPathSegments().contains("query-request")) {
+      logger.debug("{}Setting htap simulation", requestIdStr);
+      builder.setParameter("target", "htap_simulation");
+    }
+    if (includeRetryParameters && retryCount > 0) {
+      builder.setParameter("retryCount", String.valueOf(retryCount));
+      builder.setParameter("retryReason", lastStatusCodeForRetry);
+      builder.setParameter("clientStartTime", String.valueOf(startTime));
+    }
+
+    if (includeRequestGuid) {
+      UUID guid = UUIDUtils.getUUID();
+      logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
+      // Add request_guid for better tracing
+      builder.setParameter(SF_REQUEST_GUID, guid.toString());
+    }
+
+    httpRequest.setURI(builder.build());
+  }
+
 }
