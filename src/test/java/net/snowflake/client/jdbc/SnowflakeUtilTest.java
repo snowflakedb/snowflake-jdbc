@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createOwnerOnlyPermissionDir;
 import static net.snowflake.client.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,12 +16,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+
+import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.http.Header;
@@ -115,6 +128,53 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     assertEquals("value2", map.get("key2"));
     assertEquals("value1", map.get("Key1"));
     assertEquals("value2", map.get("Key2"));
+  }
+
+  @Test
+  @DontRunOnWindows
+  public void testCreateOwnerOnlyPermissionDir() throws IOException, UnsupportedOperationException {
+    String folderPath = "folder-permission-testing";
+    boolean isDirCreated = createOwnerOnlyPermissionDir(folderPath);
+    assertTrue(isDirCreated);
+
+    Path tmp = Paths.get(folderPath);
+    try {
+      PosixFileAttributes attributes = Files.readAttributes(tmp, PosixFileAttributes.class);
+      Set<PosixFilePermission> permissions = attributes.permissions();
+      assertEquals(PosixFilePermissions.toString(permissions), "rw-------");
+    } finally {
+      File folder = new File(folderPath);
+      assertTrue(folder.exists());
+      assertTrue(folder.isDirectory());
+      assertTrue(folder.delete());
+    }
+  }
+
+  @Test
+  @DontRunOnWindows
+  public void testValidateFilePermission() throws IOException, UnsupportedOperationException {
+    String folderPath = "file-permission-testing";
+    String fileName = "fileTesting.txt";
+
+    File folder = new File(folderPath);
+    File file = new File(folderPath + "/" + fileName);
+    try {
+      boolean isFolderCreated = folder.mkdir();
+      boolean isFileCreated = file.createNewFile();
+      assertTrue(isFileCreated);
+      assertTrue(isFolderCreated);
+      SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(file);
+
+      Path tmp = Paths.get(folderPath + "/" + fileName);
+      PosixFileAttributes attributes = Files.readAttributes(tmp,
+              PosixFileAttributes.class);
+      Set<PosixFilePermission> permissions = attributes.permissions();
+      assertEquals(PosixFilePermissions.toString(permissions), "rw-------");
+
+    } finally {
+      assertTrue(file.delete());
+      assertTrue(folder.delete());
+    }
   }
 
   private static SnowflakeColumnMetadata createExpectedMetadata(
