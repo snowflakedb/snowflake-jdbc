@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.amazonaws.util.StringUtils;
 import com.google.common.base.Strings;
 import java.net.URI;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -131,6 +132,10 @@ public class CredentialManager {
   synchronized void fillCachedCredential(
       SFLoginInput loginInput, String host, String username, CachedCredentialType credType)
       throws SFException {
+    if (StringUtils.isNullOrEmpty(username)) {
+      logger.debug("Missing username; Cannot read from credential cache");
+      return;
+    }
     if (secureStorageManager == null) {
       logMissingJnaJarForSecureLocalStorage();
       return;
@@ -240,6 +245,10 @@ public class CredentialManager {
   /** Store the temporary credential */
   synchronized void writeTemporaryCredential(
       String host, String user, String cred, CachedCredentialType credType) {
+    if (StringUtils.isNullOrEmpty(user)) {
+      logger.debug("Missing username; Cannot write to credential cache");
+      return;
+    }
     if (Strings.isNullOrEmpty(cred)) {
       logger.debug("No {} is given.", credType);
       return; // no credential
@@ -320,6 +329,10 @@ public class CredentialManager {
       String host, String user, CachedCredentialType credType) {
     if (secureStorageManager == null) {
       logMissingJnaJarForSecureLocalStorage();
+      return;
+    }
+    if (StringUtils.isNullOrEmpty(user)) {
+      logger.debug("Missing username; Cannot delete from credential cache");
       return;
     }
 
