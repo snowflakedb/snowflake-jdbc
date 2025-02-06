@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -166,8 +164,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
       SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(file);
 
       Path tmp = Paths.get(folderPath + "/" + fileName);
-      PosixFileAttributes attributes = Files.readAttributes(tmp,
-              PosixFileAttributes.class);
+      PosixFileAttributes attributes = Files.readAttributes(tmp, PosixFileAttributes.class);
       Set<PosixFilePermission> permissions = attributes.permissions();
       assertEquals(PosixFilePermissions.toString(permissions), "rw-------");
 

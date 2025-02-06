@@ -73,7 +73,8 @@ public class SnowflakeUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  public static final Set<PosixFilePermission> ownerOnlyPermission = PosixFilePermissions.fromString("rw-------");
+  public static final Set<PosixFilePermission> ownerOnlyPermission =
+      PosixFilePermissions.fromString("rw-------");
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -919,7 +920,9 @@ public class SnowflakeUtil {
     try {
       Files.createDirectory(dir, PosixFilePermissions.asFileAttribute(ownerOnlyPermission));
     } catch (IOException e) {
-      logger.error("Failed to set OwnerOnly permission for {}. This may cause the file download to fail ", location);
+      logger.error(
+          "Failed to set OwnerOnly permission for {}. This may cause the file download to fail ",
+          location);
       isDirCreated = false;
     }
     return isDirCreated;
@@ -930,15 +933,22 @@ public class SnowflakeUtil {
     if (isWindows()) {
       return;
     }
-    boolean disableUserPermissions = file.setReadable(false, false) && file.setWritable(false, false) && file.setExecutable(false, false);
+    boolean disableUserPermissions =
+        file.setReadable(false, false)
+            && file.setWritable(false, false)
+            && file.setExecutable(false, false);
     boolean setOwnerPermissionsOnly = file.setReadable(true, true) && file.setWritable(true, true);
 
     if (disableUserPermissions && setOwnerPermissionsOnly) {
       logger.info("Successfuly set OwnerOnly permission for {}. ", file.getAbsolutePath());
     } else {
       file.delete();
-      logger.error("Failed to set OwnerOnly permission for {}. Failed to download", file.getAbsolutePath());
-      throw new IOException(String.format("Failed to set OwnerOnly permission for %s. Failed to download", file.getAbsolutePath()));
+      logger.error(
+          "Failed to set OwnerOnly permission for {}. Failed to download", file.getAbsolutePath());
+      throw new IOException(
+          String.format(
+              "Failed to set OwnerOnly permission for %s. Failed to download",
+              file.getAbsolutePath()));
     }
   }
 
