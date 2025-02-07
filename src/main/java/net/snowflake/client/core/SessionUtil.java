@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -39,6 +40,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.RetryContextManager;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -1367,31 +1369,13 @@ public class SessionUtil {
   private static JsonNode federatedFlowStep1(SFLoginInput loginInput) throws SnowflakeSQLException {
     JsonNode dataNode = null;
     try {
-      URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
-      // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and overwritten here - changing it would be a BCR tho
-      fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
-      URI fedUrlUri = fedUriBuilder.build();
-
-      Map<String, Object> data = new HashMap<>();
-      data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
-      data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
-      data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
-      data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
-
-      ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
-      String json = mapper.writeValueAsString(authnData);
-
-      // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
-      input.setContentType("application/json");
-      HttpPost postRequest = new HttpPost(fedUrlUri);
-      postRequest.setEntity(input);
-      postRequest.addHeader("accept", "application/json");
-
-      // Add headers for driver name and version
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
-
+      StringEntity requestInput = createFederatedFlowStep1RequestInput(loginInput);
+      HttpRequestBase postRequest = createFederatedFlowStep1PostRequest(loginInput, requestInput);
+      RetryContextManager retryContextManager = new RetryContextManager(() -> {
+          StringEntity requestInputRetry = createFederatedFlowStep1RequestInput(loginInput);
+          HttpRequestBase postRequestRetry = createFederatedFlowStep1PostRequest(loginInput, requestInputRetry);
+          return new RetryContextManager.RetryContext(postRequestRetry);
+      });
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
               postRequest,
@@ -1399,7 +1383,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              retryContextManager);
       logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
@@ -1801,5 +1786,39 @@ public class SessionUtil {
                 || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
     }
     return false;
+  }
+
+
+  public static HttpRequestBase createFederatedFlowStep1PostRequest (SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+    URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
+    // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and overwritten here - changing it would be a BCR tho
+    fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
+    URI fedUrlUri = fedUriBuilder.build();
+
+    HttpPost postRequest = new HttpPost(fedUrlUri);
+    postRequest.setEntity(inputData);
+    postRequest.addHeader("accept", "application/json");
+
+    // Add headers for driver name and version
+    postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
+    postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
+
+    return postRequest;
+    }
+
+  public static StringEntity createFederatedFlowStep1RequestInput (SFLoginInput loginInput) throws JsonProcessingException {
+  Map<String, Object> data = new HashMap<>();
+  data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
+  data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
+  data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
+  data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
+
+  ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
+  String json = mapper.writeValueAsString(authnData);
+
+  // attach the login info json body to the post request
+  StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
+  input.setContentType("application/json");
+  return input;
   }
 }
