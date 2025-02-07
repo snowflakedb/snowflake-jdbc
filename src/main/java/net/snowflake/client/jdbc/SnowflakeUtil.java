@@ -915,6 +915,10 @@ public class SnowflakeUtil {
   /** create a directory with Owner only permission (0600) */
   @SnowflakeJdbcInternalApi
   public static boolean createOwnerOnlyPermissionDir(String location) {
+    if (isWindows()) {
+      return false;
+    }
+
     boolean isDirCreated = true;
     Path dir = Paths.get(location);
     try {

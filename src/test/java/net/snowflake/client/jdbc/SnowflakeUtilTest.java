@@ -38,6 +38,7 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
@@ -130,8 +131,9 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   @Test
   @DontRunOnWindows
-  public void testCreateOwnerOnlyPermissionDir() throws IOException, UnsupportedOperationException {
-    String folderPath = "folder-permission-testing";
+  public void testCreateOwnerOnlyPermissionDir(@TempDir Path tempDir)
+      throws IOException, UnsupportedOperationException {
+    String folderPath = tempDir.toAbsolutePath() + "\\folder-permission-testing";
     boolean isDirCreated = createOwnerOnlyPermissionDir(folderPath);
     assertTrue(isDirCreated);
 
