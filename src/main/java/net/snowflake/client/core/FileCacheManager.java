@@ -231,7 +231,7 @@ class FileCacheManager {
     return null;
   }
 
-  <T> T withLock(Supplier<T> supplier) {
+  synchronized <T> T withLock(Supplier<T> supplier) {
     if (cacheFile == null) {
       logger.error("No cache file assigned", false);
       return null;
@@ -346,13 +346,17 @@ class FileCacheManager {
     long lockFileTs = fileCreationTime(cacheLockFile);
     if (lockFileTs < 0) {
       logger.debug("Failed to get the timestamp of lock directory");
-    }
-    if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds) {
+    } else if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds) {
       // old lock file
-      if (!cacheLockFile.delete()) {
-        logger.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
+      try {
+        if (!cacheLockFile.delete()) {
+          logger.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
+        } else {
+          logger.debug("Deleted expired cache lock directory.", false);
+        }
+      } catch (Exception e) {
+        logger.debug("Failed to delete the directory. Dir: {}, Error: {}", cacheLockFile, e.getMessage());
       }
-      logger.debug("Deleted expired cache lock directory.", false);
     }
   }
 
