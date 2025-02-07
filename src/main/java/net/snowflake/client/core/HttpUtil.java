@@ -129,11 +129,13 @@ public class HttpUtil {
   @SnowflakeJdbcInternalApi
   public static void setConnectionTimeout(int timeout) {
     connectionTimeout = Duration.ofMillis(timeout);
+    initDefaultRequestConfig(connectionTimeout.toMillis(), getSocketTimeout().toMillis());
   }
 
   @SnowflakeJdbcInternalApi
   public static void setSocketTimeout(int timeout) {
     socketTimeout = Duration.ofMillis(timeout);
+    initDefaultRequestConfig(getConnectionTimeout().toMillis(), socketTimeout.toMillis());
   }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
@@ -299,49 +301,11 @@ public class HttpUtil {
         socketTimeout,
         timeToLive);
 
-    // Set proxy settings for DefaultRequestConfig. If current proxy settings are the same as for
-    // the last request, keep the current DefaultRequestConfig. If not, build a new
-    // DefaultRequestConfig and set the new proxy settings for it
-    HttpHost proxy =
-        (key != null && key.usesProxy())
-            ? new HttpHost(
-                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme())
-            : null;
-    // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
-    // settings, re-build it (current or old proxy settings could be null, so null check is
-    // included)
-    boolean noDefaultRequestConfig =
-        DefaultRequestConfig == null || DefaultRequestConfig.getProxy() == null;
-    if (noDefaultRequestConfig || !DefaultRequestConfig.getProxy().equals(proxy)) {
-      RequestConfig.Builder builder =
-          RequestConfig.custom()
-              .setConnectTimeout((int) connectTimeout)
-              .setConnectionRequestTimeout((int) connectTimeout)
-              .setSocketTimeout((int) socketTimeout);
-      // only set the proxy settings if they are not null
-      // but no value has been specified for nonProxyHosts
-      // the route planner will determine whether to use a proxy based on nonProxyHosts value.
-      String logMessage =
-          "Rebuilding request config. Connect timeout: "
-              + connectTimeout
-              + " ms, connection request "
-              + "timeout: "
-              + connectTimeout
-              + " ms, socket timeout: "
-              + socketTimeout
-              + " ms";
-      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
-        builder.setProxy(proxy);
-        logMessage +=
-            ", host: "
-                + key.getProxyHost()
-                + ", port: "
-                + key.getProxyPort()
-                + ", scheme: "
-                + key.getProxyHttpProtocol().getScheme();
-      }
-      logger.debug(logMessage);
-      DefaultRequestConfig = builder.build();
+    // Create default request config without proxy since different connections could use different
+    // proxies in multi tenant environments
+    // Proxy is set later with route planner
+    if (DefaultRequestConfig == null) {
+      initDefaultRequestConfig(connectTimeout, socketTimeout);
     }
 
     TrustManager[] trustManagers = null;
@@ -411,11 +375,18 @@ public class HttpUtil {
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent(buildUserAgent(userAgentSuffix)) // needed for Okta
-              .disableCookieManagement(); // SNOW-39748
-
+              .disableCookieManagement() // SNOW-39748
+              .setDefaultRequestConfig(DefaultRequestConfig);
       if (key != null && key.usesProxy()) {
+        HttpHost proxy =
+            new HttpHost(
+                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme());
         logger.debug(
-            "Instantiating proxy route planner with non-proxy hosts: {}", key.getNonProxyHosts());
+            "Configuring proxy and route planner - host: {}, port: {}, scheme: {}, nonProxyHosts: {}",
+            key.getProxyHost(),
+            key.getProxyPort(),
+            key.getProxyHttpProtocol().getScheme(),
+            key.getNonProxyHosts());
         // use the custom proxy properties
         SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
             httpClientRoutePlanner.computeIfAbsent(
@@ -426,7 +397,7 @@ public class HttpUtil {
                         key.getProxyPort(),
                         key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
-        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+        httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())
             && !Strings.isNullOrEmpty(key.getProxyPassword())) {
           Credentials credentials =
@@ -440,18 +411,31 @@ public class HttpUtil {
               key.getProxyHost(),
               key.getProxyPort());
           credentialsProvider.setCredentials(authScope, credentials);
-          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+          httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
       }
-      httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
       if (downloadUnCompressed) {
         logger.debug("Disabling content compression for http client");
-        httpClientBuilder = httpClientBuilder.disableContentCompression();
+        httpClientBuilder.disableContentCompression();
       }
       return httpClientBuilder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
     }
+  }
+
+  private static void initDefaultRequestConfig(long connectTimeout, long socketTimeout) {
+    RequestConfig.Builder builder =
+        RequestConfig.custom()
+            .setConnectTimeout((int) connectTimeout)
+            .setConnectionRequestTimeout((int) connectTimeout)
+            .setSocketTimeout((int) socketTimeout);
+    logger.debug(
+        "Rebuilding request config. Connect timeout: {} ms, connection request timeout: {} ms, socket timeout: {} ms",
+        connectTimeout,
+        connectTimeout,
+        socketTimeout);
+    DefaultRequestConfig = builder.build();
   }
 
   public static void updateRoutePlanner(HttpClientSettingsKey key) {
