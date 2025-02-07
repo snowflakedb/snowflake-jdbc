@@ -120,15 +120,15 @@ public class SnowflakeBasicDataSourceTest {
 
     ds.setAccount("testaccount");
     ds.setAuthenticator("snowflake");
-    assertThrows(
-        SnowflakeSQLException.class,
-        ds::getConnection,
-        "Cannot create connection because username is missing in DataSource properties.");
+    Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertEquals(
+        "Cannot create connection because username is missing in DataSource properties.",
+        e.getMessage());
 
     ds.setUser("testuser");
-    assertThrows(
-        SnowflakeSQLException.class,
-        ds::getConnection,
-        "Cannot create connection because password is missing in DataSource properties.");
+    e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertEquals(
+        "Cannot create connection because password is missing in DataSource properties.",
+        e.getMessage());
   }
 }
