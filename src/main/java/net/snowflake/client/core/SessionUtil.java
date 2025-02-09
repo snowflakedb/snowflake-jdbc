@@ -715,7 +715,7 @@ public class SessionUtil {
               // and we need to update time remained in socket timeout here to control
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeoutInMillis() > 0) {
-                if (ex.isSocketTimeoutNoBackoff()) {
+                if (ex.issocketTimeoutNoBackoff()) {
                   if (leftsocketTimeout > elapsedSeconds) {
                     leftsocketTimeout -= elapsedSeconds;
                   } else {
