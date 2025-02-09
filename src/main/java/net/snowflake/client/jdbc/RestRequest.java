@@ -26,7 +26,6 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
-import net.snowflake.client.util.RetryContextManager;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -88,45 +87,12 @@ public class RestRequest {
         includeRequestGuid,
         retryHTTP403,
         false, // noRetry
-        execTimeTelemetryData,
-        null);
+        execTimeTelemetryData);
   }
 
-  public static CloseableHttpResponse execute(
-          CloseableHttpClient httpClient,
-          HttpRequestBase httpRequest,
-          long retryTimeout,
-          long authTimeout,
-          int socketTimeout,
-          int maxRetries,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean withoutCookies,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          boolean retryHTTP403,
-          boolean noRetry,
-          ExecTimeTelemetryData execTimeData) throws SnowflakeSQLException {
-    return execute(
-            httpClient,
-            httpRequest,
-            retryTimeout,
-            authTimeout,
-            socketTimeout,
-            maxRetries,
-            injectSocketTimeout,
-            canceling,
-            withoutCookies,
-            includeRetryParameters,
-            includeRequestGuid,
-            retryHTTP403,
-            false, // noRetry
-            execTimeData,
-            null);
-  }
 
   /**
-   * Execute an http request with retry logic.
+   * Execute an HTTP request with retry logic.
    *
    * @param httpClient client object used to communicate with other machine
    * @param httpRequest request object contains all the request information
@@ -143,7 +109,6 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
-   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -162,8 +127,7 @@ public class RestRequest {
       boolean includeRequestGuid,
       boolean retryHTTP403,
       boolean noRetry,
-      ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryManager)
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     Stopwatch stopwatch = null;
 
@@ -281,7 +245,7 @@ public class RestRequest {
       } catch (Exception ex) {
 
         savedEx = ex;
-        // if the request took more than socket timeout log an error
+        // if the request took more than socket timeout log a warning
         long currentMillis = System.currentTimeMillis();
         if ((currentMillis - startTimePerRequest) > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
@@ -353,6 +317,7 @@ public class RestRequest {
         retryCount = 0;
         break;
       } else {
+//        Potentially retryable error
         if (response != null) {
           logger.debug(
               "{}HTTP response not ok: status code: {}, request: {}",
@@ -488,6 +453,8 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
+//            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall ?
+//            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
