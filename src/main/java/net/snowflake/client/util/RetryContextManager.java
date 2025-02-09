@@ -69,7 +69,7 @@ public class RetryContextManager {
     /**
      * Registers a retry callback that will be executed on each retry.
      *
-     * @param callback A RetryCallback<HttpRequestBase> encapsulating the logic to be replayed on retry.
+     * @param callback A RetryCallback<{@code HttpRequestBase}> encapsulating the logic to be replayed on retry.
      * @return the current instance for fluent chaining.
      */
     public RetryContextManager registerRetryCallback(RetryCallback<HttpRequestBase> callback) {
