@@ -120,9 +120,42 @@ public class RestRequest {
             includeRetryParameters,
             includeRequestGuid,
             retryHTTP403,
-            false, // noRetry
+            noRetry,
             execTimeData,
             null);
+  }
+
+  public static CloseableHttpResponse execute(
+          CloseableHttpClient httpClient,
+          HttpRequestBase httpRequest,
+          long retryTimeout,
+          long authTimeout,
+          int socketTimeout,
+          int maxRetries,
+          int injectSocketTimeout,
+          AtomicBoolean canceling,
+          boolean withoutCookies,
+          boolean includeRetryParameters,
+          boolean includeRequestGuid,
+          boolean retryHTTP403,
+          ExecTimeTelemetryData execTimeData,
+          RetryContextManager retryContextManager) throws SnowflakeSQLException {
+    return execute(
+            httpClient,
+            httpRequest,
+            retryTimeout,
+            authTimeout,
+            socketTimeout,
+            maxRetries,
+            injectSocketTimeout,
+            canceling,
+            withoutCookies,
+            includeRetryParameters,
+            includeRequestGuid,
+            retryHTTP403,
+            false, // noRetry
+            execTimeData,
+            retryContextManager);
   }
 
   /**
@@ -281,7 +314,7 @@ public class RestRequest {
       } catch (Exception ex) {
 
         savedEx = ex;
-        // if the request took more than socket timeout log an error
+        // if the request took more than socket timeout log a warning
         long currentMillis = System.currentTimeMillis();
         if ((currentMillis - startTimePerRequest) > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
@@ -353,6 +386,7 @@ public class RestRequest {
         retryCount = 0;
         break;
       } else {
+//        Potentially retryable error
         if (response != null) {
           logger.debug(
               "{}HTTP response not ok: status code: {}, request: {}",
@@ -451,13 +485,6 @@ public class RestRequest {
 
         // If this was a request for an Okta one-time token that failed with a retry-able error,
         // throw exception to renew the token before trying again.
-        if (String.valueOf(httpRequest.getURI()).contains("/api/v1/authn")) {
-          throw new SnowflakeSQLException(
-              ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
-              retryCount,
-              true,
-              elapsedMilliForTransientIssues / 1000);
-        }
 
         // Make sure that any authenticator specific info that needs to be
         // updated gets updated before the next retry. Ex - JWT token
@@ -488,6 +515,8 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
+//            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall ?
+//            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
@@ -508,8 +537,23 @@ public class RestRequest {
             response == null ? "0" : String.valueOf(response.getStatusLine().getStatusCode());
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
+
+        RetryContextManager.RetryHook retryManagerHook = null;
+        if (retryManager != null) {
+          retryManagerHook = retryManager.getRetryHook();
+        }
+
+        if (retryManagerHook == RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY) {
+          retryManager.executeRetryCallbacks(httpRequest);
+        }
+
         if (authTimeout > 0) {
           if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
+//            if (retryManagerHook == RetryContextManager.RetryHook.ONLY_ON_AUTH_TIMEOUT) {
+//              retryManager.executeRetryCallbacks(httpRequest);
+//
+////          TODO: set from request config
+//            }
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
