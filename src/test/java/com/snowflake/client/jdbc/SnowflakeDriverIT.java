@@ -20,4 +20,3 @@ public class SnowflakeDriverIT extends AbstractDriverIT {
     con.close(); // ensure no exception
   }
 }
-

@@ -1,19 +1,19 @@
 package net.snowflake.client.core;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-
 @Tag(TestTags.OTHERS)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
-  private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
+  private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT =
+      WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
@@ -61,14 +61,15 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
-
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
     // GIVEN
-    String wireMockMappingPathFromResources = "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
+    String wireMockMappingPathFromResources =
+        "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
     Map<String, Object> placeholders = new HashMap<>();
     placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-    String wireMockMapping = getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
+    String wireMockMapping =
+        getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
     importMapping(wireMockMapping);
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
@@ -82,15 +83,15 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 }
 
 //
-//@Test
-//public void testOktaRetryWaitsUsingRetryAfterResponseHeader() throws Exception {
-//}
+// @Test
+// public void testOktaRetryWaitsUsingRetryAfterResponseHeader() throws Exception {
+// }
 
 //
-//@Test
-//public void testOktaRetryUsesNewOneTimeTokenForBasicOktaURL() throws Exception {
-//}
+// @Test
+// public void testOktaRetryUsesNewOneTimeTokenForBasicOktaURL() throws Exception {
+// }
 
-//@Test
-//public void testOktaRetryUsesNewOneTimeTokenForVanityOktaURL() throws Exception {
-//}
+// @Test
+// public void testOktaRetryUsesNewOneTimeTokenForVanityOktaURL() throws Exception {
+// }

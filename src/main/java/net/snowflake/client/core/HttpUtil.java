@@ -623,14 +623,21 @@ public class HttpUtil {
   }
 
   public static String executeGeneralRequest(
-          HttpRequestBase httpRequest,
-          int retryTimeout,
-          int authTimeout,
-          int socketTimeout,
-          int retryCount,
-          HttpClientSettingsKey ocspAndProxyAndGzipKey)
-          throws SnowflakeSQLException, IOException {
-    return executeGeneralRequest(httpRequest, retryTimeout, authTimeout, socketTimeout, retryCount, ocspAndProxyAndGzipKey, null);
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      throws SnowflakeSQLException, IOException {
+    return executeGeneralRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        ocspAndProxyAndGzipKey,
+        null);
   }
 
   /**
@@ -648,13 +655,13 @@ public class HttpUtil {
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-          HttpRequestBase httpRequest,
-          int retryTimeout,
-          int authTimeout,
-          int socketTimeout,
-          int retryCount,
-          HttpClientSettingsKey ocspAndProxyAndGzipKey,
-          RetryContextManager retryContextManager)
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
     logger.debug("Executing general request");
     return executeRequest(
@@ -711,21 +718,31 @@ public class HttpUtil {
   }
 
   public static String executeRequest(
-          HttpRequestBase httpRequest,
-          int retryTimeout,
-          int authTimeout,
-          int socketTimeout,
-          int maxRetries,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean includeRetryParameters,
-          boolean retryOnHTTP403,
-          HttpClientSettingsKey ocspAndProxyKey,
-          ExecTimeTelemetryData execTimeData)
-          throws SnowflakeSQLException, IOException {
-    return executeRequest(httpRequest, retryTimeout, authTimeout, socketTimeout, maxRetries,
-            injectSocketTimeout, canceling, includeRetryParameters, retryOnHTTP403, ocspAndProxyKey, execTimeData, null);
-
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean includeRetryParameters,
+      boolean retryOnHTTP403,
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException, IOException {
+    return executeRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        includeRetryParameters,
+        retryOnHTTP403,
+        ocspAndProxyKey,
+        execTimeData,
+        null);
   }
 
   /**
@@ -778,28 +795,40 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey),
         execTimeData,
-            retryContextManager);
-  }
-  private static String executeRequestInternal(
-          HttpRequestBase httpRequest,
-          int retryTimeout,
-          int authTimeout,
-          int socketTimeout,
-          int maxRetries,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean withoutCookies,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          boolean retryOnHTTP403,
-          CloseableHttpClient httpClient,
-          ExecTimeTelemetryData execTimeData)
-          throws SnowflakeSQLException, IOException {
-    return executeRequestInternal(httpRequest, retryTimeout, authTimeout, socketTimeout, maxRetries,
-            injectSocketTimeout, canceling, withoutCookies, includeRetryParameters,
-            includeRequestGuid, retryOnHTTP403, httpClient, execTimeData, null);
+        retryContextManager);
   }
 
+  private static String executeRequestInternal(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryOnHTTP403,
+      CloseableHttpClient httpClient,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException, IOException {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryOnHTTP403,
+        httpClient,
+        execTimeData,
+        null);
+  }
 
   /**
    * Helper to execute a request with retry and check and throw exception if response is not

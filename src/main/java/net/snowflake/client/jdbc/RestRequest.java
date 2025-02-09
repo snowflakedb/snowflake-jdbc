@@ -93,69 +93,71 @@ public class RestRequest {
   }
 
   public static CloseableHttpResponse execute(
-          CloseableHttpClient httpClient,
-          HttpRequestBase httpRequest,
-          long retryTimeout,
-          long authTimeout,
-          int socketTimeout,
-          int maxRetries,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean withoutCookies,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          boolean retryHTTP403,
-          boolean noRetry,
-          ExecTimeTelemetryData execTimeData) throws SnowflakeSQLException {
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException {
     return execute(
-            httpClient,
-            httpRequest,
-            retryTimeout,
-            authTimeout,
-            socketTimeout,
-            maxRetries,
-            injectSocketTimeout,
-            canceling,
-            withoutCookies,
-            includeRetryParameters,
-            includeRequestGuid,
-            retryHTTP403,
-            noRetry,
-            execTimeData,
-            null);
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        noRetry,
+        execTimeData,
+        null);
   }
 
   public static CloseableHttpResponse execute(
-          CloseableHttpClient httpClient,
-          HttpRequestBase httpRequest,
-          long retryTimeout,
-          long authTimeout,
-          int socketTimeout,
-          int maxRetries,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean withoutCookies,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          boolean retryHTTP403,
-          ExecTimeTelemetryData execTimeData,
-          RetryContextManager retryContextManager) throws SnowflakeSQLException {
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager)
+      throws SnowflakeSQLException {
     return execute(
-            httpClient,
-            httpRequest,
-            retryTimeout,
-            authTimeout,
-            socketTimeout,
-            maxRetries,
-            injectSocketTimeout,
-            canceling,
-            withoutCookies,
-            includeRetryParameters,
-            includeRequestGuid,
-            retryHTTP403,
-            false, // noRetry
-            execTimeData,
-            retryContextManager);
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        false, // noRetry
+        execTimeData,
+        retryContextManager);
   }
 
   /**
@@ -176,7 +178,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
-   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that should be executed before and/or after the retry
+   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
+   *     should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -268,7 +271,8 @@ public class RestRequest {
 
     int retryCount = 0;
 
-    setRequestConfig(httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
+    setRequestConfig(
+        httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
 
     // try request till we get a good response or retry timeout
     while (true) {
@@ -284,7 +288,15 @@ public class RestRequest {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
-        setRequestURI(httpRequest, requestIdStr, includeRetryParameters, includeRequestGuid, retryCount, lastStatusCodeForRetry, startTime, requestInfoScrubbed);
+        setRequestURI(
+            httpRequest,
+            requestIdStr,
+            includeRetryParameters,
+            includeRequestGuid,
+            retryCount,
+            lastStatusCodeForRetry,
+            startTime,
+            requestInfoScrubbed);
 
         execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
@@ -386,7 +398,7 @@ public class RestRequest {
         retryCount = 0;
         break;
       } else {
-//        Potentially retryable error
+        //        Potentially retryable error
         if (response != null) {
           logger.debug(
               "{}HTTP response not ok: status code: {}, request: {}",
@@ -515,8 +527,9 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
-//            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall ?
-//            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
+            //            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall
+            // ?
+            //            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
@@ -549,11 +562,12 @@ public class RestRequest {
 
         if (authTimeout > 0) {
           if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
-//            if (retryManagerHook == RetryContextManager.RetryHook.ONLY_ON_AUTH_TIMEOUT) {
-//              retryManager.executeRetryCallbacks(httpRequest);
-//
-////          TODO: set from request config
-//            }
+            //            if (retryManagerHook ==
+            // RetryContextManager.RetryHook.ONLY_ON_AUTH_TIMEOUT) {
+            //              retryManager.executeRetryCallbacks(httpRequest);
+            //
+            ////          TODO: set from request config
+            //            }
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
@@ -730,7 +744,12 @@ public class RestRequest {
     return ex0;
   }
 
-  private static void setRequestConfig(HttpRequestBase httpRequest, boolean withoutCookies, int injectSocketTimeout, String requestIdStr, long authTimeoutInMilli) {
+  private static void setRequestConfig(
+      HttpRequestBase httpRequest,
+      boolean withoutCookies,
+      int injectSocketTimeout,
+      String requestIdStr,
+      long authTimeoutInMilli) {
     if (withoutCookies) {
       httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
     }
@@ -740,12 +759,11 @@ public class RestRequest {
     if (injectSocketTimeout != 0) {
       // test code path
       logger.debug(
-              "{}Injecting socket timeout by setting socket timeout to {} ms",
-              requestIdStr,
-              injectSocketTimeout);
+          "{}Injecting socket timeout by setting socket timeout to {} ms",
+          requestIdStr,
+          injectSocketTimeout);
       httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                      injectSocketTimeout, withoutCookies));
+          HttpUtil.getDefaultRequestConfigWithSocketTimeout(injectSocketTimeout, withoutCookies));
     }
 
     // When the auth timeout is set, set the socket timeout as the authTimeout
@@ -753,14 +771,23 @@ public class RestRequest {
     if (authTimeoutInMilli > 0) {
       int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
       logger.debug(
-              "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
+          "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
       httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
-                      requestSocketAndConnectTimeout, withoutCookies));
+          HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+              requestSocketAndConnectTimeout, withoutCookies));
     }
   }
 
-  private static void setRequestURI(HttpRequestBase httpRequest, String requestIdStr, boolean includeRetryParameters, boolean includeRequestGuid, int retryCount, String lastStatusCodeForRetry, long startTime, String requestInfoScrubbed) throws URISyntaxException {
+  private static void setRequestURI(
+      HttpRequestBase httpRequest,
+      String requestIdStr,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      int retryCount,
+      String lastStatusCodeForRetry,
+      long startTime,
+      String requestInfoScrubbed)
+      throws URISyntaxException {
     /*
      * Add retryCount if the first request failed
      * GS can use the parameter for optimization. Specifically GS
@@ -772,7 +799,7 @@ public class RestRequest {
     URIBuilder builder = new URIBuilder(httpRequest.getURI());
     // If HTAP
     if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
-            && builder.getPathSegments().contains("query-request")) {
+        && builder.getPathSegments().contains("query-request")) {
       logger.debug("{}Setting htap simulation", requestIdStr);
       builder.setParameter("target", "htap_simulation");
     }
@@ -791,5 +818,4 @@ public class RestRequest {
 
     httpRequest.setURI(builder.build());
   }
-
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.snowflake.client.CallableThrowingSnowflakeSqlException;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
@@ -1182,20 +1181,25 @@ public class SessionUtil {
    *     not match
    */
   private static String federatedFlowStep4(
-      SFLoginInput loginInput, String ssoUrl, CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier) throws SnowflakeSQLException {
+      SFLoginInput loginInput,
+      String ssoUrl,
+      CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier)
+      throws SnowflakeSQLException {
     String oneTimeToken = oneTimeTokenSupplier.call();
     String responseHtml = "";
 
     try {
-      RetryContextManager retryWithNewOTTManager = new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
-      retryWithNewOTTManager.registerRetryCallback((HttpRequestBase retrieveSamlRequest) -> {
-          try {
+      RetryContextManager retryWithNewOTTManager =
+          new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
+      retryWithNewOTTManager.registerRetryCallback(
+          (HttpRequestBase retrieveSamlRequest) -> {
+            try {
               String newOneTimeToken = oneTimeTokenSupplier.call();
               prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
-          } catch (Exception e) {
+            } catch (Exception e) {
               throw new RuntimeException(e);
-          }
-      });
+            }
+          });
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1214,7 +1218,7 @@ public class SessionUtil {
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
-      return responseHtml;
+    return responseHtml;
   }
 
   private static void validateSAML(String responseHtml, SFLoginInput loginInput)
@@ -1405,7 +1409,8 @@ public class SessionUtil {
         String tokenUrl = dataNode.path("tokenUrl").asText();
         String ssoUrl = dataNode.path("ssoUrl").asText();
         federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-        CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier = () -> federatedFlowStep3(loginInput, tokenUrl);
+        CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier =
+            () -> federatedFlowStep3(loginInput, tokenUrl);
 
         return federatedFlowStep4(loginInput, ssoUrl, oneTimeTokenSupplier);
       } catch (SnowflakeSQLException ex) {
@@ -1734,18 +1739,19 @@ public class SessionUtil {
     URI requestURI = request.getURI();
     String requestPath = requestURI.getPath();
     if (requestPath != null) {
-        return requestPath.equals(SF_PATH_LOGIN_REQUEST)
-                || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
-                || requestPath.equals(SF_PATH_TOKEN_REQUEST)
-                || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
+      return requestPath.equals(SF_PATH_LOGIN_REQUEST)
+          || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
+          || requestPath.equals(SF_PATH_TOKEN_REQUEST)
+          || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
     }
     return false;
   }
 
-
-  public static HttpRequestBase prepareFederatedFlowStep1PostRequest (SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+  public static HttpRequestBase prepareFederatedFlowStep1PostRequest(
+      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
-    // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and overwritten here
+    // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
+    // overwritten here
     fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
     URI fedUrlUri = fedUriBuilder.build();
 
@@ -1758,9 +1764,10 @@ public class SessionUtil {
     postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
     return postRequest;
-    }
+  }
 
-  public static StringEntity prepareFederatedFlowStep1RequestInput (SFLoginInput loginInput) throws JsonProcessingException {
+  public static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
+      throws JsonProcessingException {
     Map<String, Object> data = new HashMap<>();
     data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
     data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
@@ -1776,7 +1783,8 @@ public class SessionUtil {
     return input;
   }
 
-  public static void setFederatedFlowStep3PostRequestAuthData (HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
+  public static void setFederatedFlowStep3PostRequestAuthData(
+      HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
     String userName;
     if (Strings.isNullOrEmpty(loginInput.getOKTAUserName())) {
       userName = loginInput.getUserName();
@@ -1785,12 +1793,12 @@ public class SessionUtil {
     }
     try {
       StringEntity params =
-              new StringEntity(
-                      "{\"username\":\""
-                              + userName
-                              + "\",\"password\":\""
-                              + loginInput.getPassword()
-                              + "\"}");
+          new StringEntity(
+              "{\"username\":\""
+                  + userName
+                  + "\",\"password\":\""
+                  + loginInput.getPassword()
+                  + "\"}");
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();
@@ -1804,18 +1812,20 @@ public class SessionUtil {
   }
 
   /**
-   * Helper method that creates (or updates) an HttpRequestBase (an HttpGet in this case) with the given
-   * one-time token in the query parameters and the common headers.
+   * Helper method that creates (or updates) an HttpRequestBase (an HttpGet in this case) with the
+   * given one-time token in the query parameters and the common headers.
    *
-   * @param ssoUrl       the base SSO URL
+   * @param ssoUrl the base SSO URL
    * @param oneTimeToken the one-time token to be included as a parameter
    * @throws MalformedURLException if the URL is malformed
-   * @throws URISyntaxException    if the URI cannot be built
+   * @throws URISyntaxException if the URI cannot be built
    */
-  private static void prepareFederatedFlowStep4Request(HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken)
-          throws MalformedURLException, URISyntaxException {
+  private static void prepareFederatedFlowStep4Request(
+      HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken)
+      throws MalformedURLException, URISyntaxException {
     final URL url = new URL(ssoUrl);
-    URI oktaGetUri = new URIBuilder()
+    URI oktaGetUri =
+        new URIBuilder()
             .setScheme(url.getProtocol())
             .setHost(url.getHost())
             .setPort(url.getPort())
@@ -1829,30 +1839,31 @@ public class SessionUtil {
     retrieveSamlRequest.setHeaders(headers.getAllHeaders());
   }
 
-  private static void handleEmptyAuthResponse(String theString, SFLoginInput loginInput, Exception lastRestException) throws Exception, SFException {
+  private static void handleEmptyAuthResponse(
+      String theString, SFLoginInput loginInput, Exception lastRestException)
+      throws Exception, SFException {
     if (theString == null) {
       if (lastRestException != null) {
         logger.error(
-                "Failed to open new session for user: {}, host: {}. Error: {}",
-                loginInput.getUserName(),
-                loginInput.getHostFromServerUrl(),
-                lastRestException);
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            lastRestException);
         throw lastRestException;
       } else {
         SnowflakeSQLException exception =
-                new SnowflakeSQLException(
-                        NO_QUERY_ID,
-                        "empty authentication response",
-                        SqlState.CONNECTION_EXCEPTION,
-                        ErrorCode.CONNECTION_ERROR.getMessageCode());
+            new SnowflakeSQLException(
+                NO_QUERY_ID,
+                "empty authentication response",
+                SqlState.CONNECTION_EXCEPTION,
+                ErrorCode.CONNECTION_ERROR.getMessageCode());
         logger.error(
-                "Failed to open new session for user: {}, host: {}. Error: {}",
-                loginInput.getUserName(),
-                loginInput.getHostFromServerUrl(),
-                exception);
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            exception);
         throw exception;
       }
     }
   }
-
 }

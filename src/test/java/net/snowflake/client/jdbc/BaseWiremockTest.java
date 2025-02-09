@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
-
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -36,7 +35,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
-abstract public class BaseWiremockTest {
+public abstract class BaseWiremockTest {
 
   protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockTest.class);
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";
@@ -269,7 +268,8 @@ abstract public class BaseWiremockTest {
     // Has to start from '/' followed by a subdirectory of the resources directory.
     try (InputStream in = getClass().getResourceAsStream(filePath)) {
       if (in == null) {
-        throw new IllegalStateException("Could not find file under the specified path: " + filePath);
+        throw new IllegalStateException(
+            "Could not find file under the specified path: " + filePath);
       }
       try (Scanner scanner = new Scanner(in, StandardCharsets.UTF_8.name())) {
         scanner.useDelimiter("\\A"); // Read the entire file content
@@ -277,7 +277,6 @@ abstract public class BaseWiremockTest {
       }
     }
   }
-
 
   /**
    * Reads JSON content from a file and replaces placeholders dynamically.
@@ -287,7 +286,8 @@ abstract public class BaseWiremockTest {
    * @return The JSON content as a String with placeholders replaced.
    * @throws IOException If an error occurs while reading the file.
    */
-  protected String getWireMockMappingFromFile(String mappingPath, Map<String, Object> placeholdersMappings) throws IOException {
+  protected String getWireMockMappingFromFile(
+      String mappingPath, Map<String, Object> placeholdersMappings) throws IOException {
     String jsonContent = readJSONFromFile(mappingPath);
 
     // Replace placeholders with actual values
