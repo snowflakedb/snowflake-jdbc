@@ -37,7 +37,7 @@
         "urlPath": "/okta-stub/vanity-url/api/v1/authn"
       },
       "response": {
-        "status": 200,
+        "status": 429,
         "headers": {
           "Content-Type": "application/json"
         },

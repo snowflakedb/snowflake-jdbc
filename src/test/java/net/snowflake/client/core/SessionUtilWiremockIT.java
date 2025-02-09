@@ -1,9 +1,17 @@
 package net.snowflake.client.core;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.getAllServeEvents;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
@@ -11,9 +19,10 @@ import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.OTHERS)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
-  private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
+
+  private final String WIREMOCK_HOST_WITH_HTTPS = "https://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT =
-      WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
+          WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
@@ -65,33 +74,56 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
     // GIVEN
     String wireMockMappingPathFromResources =
-        "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
+            "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
     Map<String, Object> placeholders = new HashMap<>();
     placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+
+    // Import the WireMock stub that always returns 429 to force multiple retries:
     String wireMockMapping =
-        getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
+            getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
     importMapping(wireMockMapping);
+
+    // Basic setup for trust store, proxy, etc.
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     setJvmProperties(props);
+
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
 
-    // WHEN
-    SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+    // WHEN - Attempt to open session (which will trigger the retries).
+    //       If your code throws an exception eventually, either catch or assertThrows:
+    try {
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+    } catch (Exception ex) {
+      // If it always fails due to repeated 429, that's expected.
+      // You can decide whether to fail or not. We'll just log:
+      System.out.println("SessionUtil.openSession failed as expected: " + ex);
+    }
+
+    // THEN - Check the timestamps of calls to the vanity URL.
+    List<ServeEvent> allEvents = getAllServeEvents();
+
+    // Filter only events that hit "/okta-stub/vanity-url/".
+    List<ServeEvent> vanityUrlCalls =
+            allEvents.stream()
+                    .filter(e -> e.getRequest().getUrl().contains("/okta-stub/vanity-url/"))
+                    .collect(Collectors.toList());
+
+    if (vanityUrlCalls.size() < 2) {
+      fail("Expected multiple calls to /okta-stub/vanity-url/, but got " + vanityUrlCalls.size());
+    }
+
+    // Ensure each consecutive pair of calls has at least 1-second gap (1000 ms).
+    for (int i = 1; i < vanityUrlCalls.size(); i++) {
+      long t1 = vanityUrlCalls.get(i - 1).getRequest().getLoggedDate().getTime();
+      long t2 = vanityUrlCalls.get(i).getRequest().getLoggedDate().getTime();
+      long deltaMillis = t2 - t1;
+      assertTrue(
+              deltaMillis >= 1000,
+              String.format(
+                      "Consecutive calls to /okta-stub/vanity-url/ were only %d ms apart (index %d -> %d).",
+                      deltaMillis, i - 1, i));
+    }
   }
 }
-
-//
-// @Test
-// public void testOktaRetryWaitsUsingRetryAfterResponseHeader() throws Exception {
-// }
-
-//
-// @Test
-// public void testOktaRetryUsesNewOneTimeTokenForBasicOktaURL() throws Exception {
-// }
-
-// @Test
-// public void testOktaRetryUsesNewOneTimeTokenForVanityOktaURL() throws Exception {
-// }
