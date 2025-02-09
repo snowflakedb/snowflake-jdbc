@@ -15,7 +15,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   private final String WIREMOCK_HOST_WITH_HTTPS = "https" + "://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT = WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 
-  //  TODO: move to testutil
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
     input.setServerUrl(WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
