@@ -244,7 +244,6 @@ public abstract class BaseWiremockTest {
     }
   }
 
-
   /**
    * Reads JSON content from a file, supporting both absolute paths and classpath resources.
    *
