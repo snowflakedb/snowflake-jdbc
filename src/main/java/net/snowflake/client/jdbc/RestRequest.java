@@ -527,9 +527,6 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
-            //            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall
-            // ?
-            //            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
@@ -562,12 +559,6 @@ public class RestRequest {
 
         if (authTimeout > 0) {
           if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
-            //            if (retryManagerHook ==
-            // RetryContextManager.RetryHook.ONLY_ON_AUTH_TIMEOUT) {
-            //              retryManager.executeRetryCallbacks(httpRequest);
-            //
-            ////          TODO: set from request config
-            //            }
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
