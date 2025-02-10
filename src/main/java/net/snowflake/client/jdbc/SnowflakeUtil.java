@@ -73,7 +73,7 @@ public class SnowflakeUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  public static final Set<PosixFilePermission> ownerOnlyPermission =
+  private static final Set<PosixFilePermission> ownerOnlyPermission =
       PosixFilePermissions.fromString("rw-------");
 
   /** Additional data types not covered by standard JDBC */
