@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -17,13 +16,17 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
   private static final String OKTA_AUTH_API_ENDPOINT = OKTA_VANITY_PATH + "/api/v1";
   private static final String ALWAYS_429_MAPPING =
-          "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
+      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
 
-  /** Minimum spacing we expect between consecutive requests, in milliseconds - associated with RestRequest minBackoff. */
+  /**
+   * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
+   * RestRequest minBackoff.
+   */
   private static final long EXPECTED_MIN_RETRY_DELAY_MS = 1000;
+
   private final String WIREMOCK_HOST_WITH_HTTPS = "https://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT =
-          WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
+      WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
 
   private SFLoginInput createOktaLoginInput() {
     SFLoginInput input = new SFLoginInput();
@@ -67,7 +70,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
-
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
     // GIVEN
@@ -97,13 +99,17 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     // Filter only events that hit "/okta-stub/vanity-url/".
     List<MinimalServeEvent> vanityUrlCalls =
-            allEvents.stream()
-                    .filter(e -> e.getRequest().getUrl().contains(OKTA_AUTH_API_ENDPOINT))
-                    .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
-                    .collect(Collectors.toList());
+        allEvents.stream()
+            .filter(e -> e.getRequest().getUrl().contains(OKTA_AUTH_API_ENDPOINT))
+            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
+            .collect(Collectors.toList());
 
     if (vanityUrlCalls.size() < 2) {
-      fail("Expected multiple calls to " + OKTA_AUTH_API_ENDPOINT + ", got " + vanityUrlCalls.size());
+      fail(
+          "Expected multiple calls to "
+              + OKTA_AUTH_API_ENDPOINT
+              + ", got "
+              + vanityUrlCalls.size());
     }
 
     // Ensure each consecutive pair of calls has at least 1-second gap (1000 ms).
@@ -112,10 +118,10 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       long t2 = vanityUrlCalls.get(i).getRequest().getLoggedDate().getTime();
       long deltaMillis = t2 - t1;
       assertTrue(
-              deltaMillis >= EXPECTED_MIN_RETRY_DELAY_MS,
-              String.format(
-                      "Consecutive calls to %s were only %d ms apart (index %d -> %d).",
-                      OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i));
+          deltaMillis >= EXPECTED_MIN_RETRY_DELAY_MS,
+          String.format(
+              "Consecutive calls to %s were only %d ms apart (index %d -> %d).",
+              OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i));
     }
   }
 }
