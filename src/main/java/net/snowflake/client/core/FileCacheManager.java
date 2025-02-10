@@ -85,7 +85,7 @@ class FileCacheManager {
     return this;
   }
 
-  String getCacheFilePath() {
+  synchronized String getCacheFilePath() {
     return cacheFile.getAbsolutePath();
   }
 
@@ -94,7 +94,7 @@ class FileCacheManager {
    *
    * @param newCacheFile a file object to override the default one.
    */
-  void overrideCacheFile(File newCacheFile) {
+  synchronized void overrideCacheFile(File newCacheFile) {
     if (!newCacheFile.exists()) {
       logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
     }
@@ -110,7 +110,7 @@ class FileCacheManager {
     this.baseCacheFileName = newCacheFile.getName();
   }
 
-  FileCacheManager build() {
+  synchronized FileCacheManager build() {
     // try to get cacheDir from system property or environment variable
     String cacheDirPath =
         this.cacheDirectorySystemProperty != null
@@ -257,7 +257,7 @@ class FileCacheManager {
   }
 
   /** Reads the cache file. */
-  JsonNode readCacheFile() {
+  synchronized JsonNode readCacheFile() {
     try {
       if (!cacheFile.exists()) {
         logger.debug("Cache file doesn't exists. File: {}", cacheFile);
@@ -282,7 +282,7 @@ class FileCacheManager {
     return null;
   }
 
-  void writeCacheFile(JsonNode input) {
+  synchronized void writeCacheFile(JsonNode input) {
     logger.debug("Writing cache file. File: {}", cacheFile);
     try {
       if (input == null) {
@@ -303,7 +303,7 @@ class FileCacheManager {
     }
   }
 
-  void deleteCacheFile() {
+  synchronized void deleteCacheFile() {
     logger.debug("Deleting cache file. File: {}, lock file: {}", cacheFile, cacheLockFile);
 
     if (cacheFile == null) {
@@ -321,12 +321,12 @@ class FileCacheManager {
    *
    * @return true if success or false
    */
-  private boolean tryToLockCacheFile() {
+  private synchronized boolean tryToLockCacheFile() {
     int cnt = 0;
     boolean locked = false;
     while (cnt < 5 && !(locked = lockCacheFile())) {
       try {
-        Thread.sleep(100);
+        Thread.sleep(10);
       } catch (InterruptedException ex) {
         // doesn't matter
       }
@@ -341,7 +341,7 @@ class FileCacheManager {
     return locked;
   }
 
-  private void deleteCacheLockIfExpired() {
+  private synchronized void deleteCacheLockIfExpired() {
     long currentTime = new Date().getTime();
     long lockFileTs = fileCreationTime(cacheLockFile);
     if (lockFileTs < 0) {
@@ -365,7 +365,7 @@ class FileCacheManager {
    *
    * @return epoch time in ms
    */
-  private static long fileCreationTime(File targetFile) {
+  private synchronized static long fileCreationTime(File targetFile) {
     if (!targetFile.exists()) {
       logger.debug("File not exists. File: {}", targetFile);
       return -1;
@@ -385,7 +385,7 @@ class FileCacheManager {
    *
    * @return true if success or false
    */
-  private boolean lockCacheFile() {
+  private synchronized boolean lockCacheFile() {
     return cacheLockFile.mkdirs();
   }
 
@@ -394,7 +394,7 @@ class FileCacheManager {
    *
    * @return true if success or false
    */
-  private boolean unlockCacheFile() {
+  private synchronized boolean unlockCacheFile() {
     return cacheLockFile.delete();
   }
 }
