@@ -1,25 +1,26 @@
 package net.snowflake.client.core;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.getAllServeEvents;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.OTHERS)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
+  private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
+  private static final String OKTA_AUTH_API_ENDPOINT = OKTA_VANITY_PATH + "/api/v1";
+  private static final String ALWAYS_429_MAPPING =
+          "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
 
+  /** Minimum spacing we expect between consecutive requests, in milliseconds - associated with RestRequest minBackoff. */
+  private static final long EXPECTED_MIN_RETRY_DELAY_MS = 1000;
   private final String WIREMOCK_HOST_WITH_HTTPS = "https://" + WIREMOCK_HOST;
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT =
           WIREMOCK_HOST_WITH_HTTPS + ":" + wiremockHttpsPort;
@@ -35,7 +36,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
     input.setLoginTimeout(1000);
     input.setSessionParameters(new HashMap<>());
-    input.setAuthenticator(WIREMOCK_HOST_WITH_HTTPS_AND_PORT + "/okta-stub/vanity-url/");
+    input.setAuthenticator(WIREMOCK_HOST_WITH_HTTPS_AND_PORT + OKTA_VANITY_PATH);
     return input;
   }
 
@@ -44,11 +45,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   }
 
   private int getProxyPort(String proxyProtocol) {
-    if (Objects.equals(proxyProtocol, "http")) {
-      return wiremockHttpPort;
-    } else {
-      return wiremockHttpsPort;
-    }
+    return Objects.equals(proxyProtocol, "http") ? wiremockHttpPort : wiremockHttpsPort;
   }
 
   private void setJvmProperties(Properties props) {
@@ -70,17 +67,14 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
+
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategy() throws Throwable {
     // GIVEN
-    String wireMockMappingPathFromResources =
-            "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-response.json";
     Map<String, Object> placeholders = new HashMap<>();
     placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
 
-    // Import the WireMock stub that always returns 429 to force multiple retries:
-    String wireMockMapping =
-            getWireMockMappingFromFile(wireMockMappingPathFromResources, placeholders);
+    String wireMockMapping = getWireMockMappingFromFile(ALWAYS_429_MAPPING, placeholders);
     importMapping(wireMockMapping);
 
     // Basic setup for trust store, proxy, etc.
@@ -91,27 +85,25 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
 
-    // WHEN - Attempt to open session (which will trigger the retries).
-    //       If your code throws an exception eventually, either catch or assertThrows:
+    // WHEN
     try {
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (Exception ex) {
-      // If it always fails due to repeated 429, that's expected.
-      // You can decide whether to fail or not. We'll just log:
-      System.out.println("SessionUtil.openSession failed as expected: " + ex);
+    } catch (SnowflakeSQLException ex) {
+      assertTrue(ex.getMessage().contains("429"));
     }
 
-    // THEN - Check the timestamps of calls to the vanity URL.
-    List<ServeEvent> allEvents = getAllServeEvents();
+    // THEN
+    List<MinimalServeEvent> allEvents = getAllServeEvents();
 
     // Filter only events that hit "/okta-stub/vanity-url/".
-    List<ServeEvent> vanityUrlCalls =
+    List<MinimalServeEvent> vanityUrlCalls =
             allEvents.stream()
-                    .filter(e -> e.getRequest().getUrl().contains("/okta-stub/vanity-url/"))
+                    .filter(e -> e.getRequest().getUrl().contains(OKTA_AUTH_API_ENDPOINT))
+                    .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
                     .collect(Collectors.toList());
 
     if (vanityUrlCalls.size() < 2) {
-      fail("Expected multiple calls to /okta-stub/vanity-url/, but got " + vanityUrlCalls.size());
+      fail("Expected multiple calls to " + OKTA_AUTH_API_ENDPOINT + ", got " + vanityUrlCalls.size());
     }
 
     // Ensure each consecutive pair of calls has at least 1-second gap (1000 ms).
@@ -120,10 +112,10 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       long t2 = vanityUrlCalls.get(i).getRequest().getLoggedDate().getTime();
       long deltaMillis = t2 - t1;
       assertTrue(
-              deltaMillis >= 1000,
+              deltaMillis >= EXPECTED_MIN_RETRY_DELAY_MS,
               String.format(
-                      "Consecutive calls to /okta-stub/vanity-url/ were only %d ms apart (index %d -> %d).",
-                      deltaMillis, i - 1, i));
+                      "Consecutive calls to %s were only %d ms apart (index %d -> %d).",
+                      OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i));
     }
   }
 }

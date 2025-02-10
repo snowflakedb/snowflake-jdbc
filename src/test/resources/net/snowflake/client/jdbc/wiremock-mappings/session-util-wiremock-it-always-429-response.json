@@ -32,12 +32,86 @@
     },
     {
       "scenarioName": "Mock Okta Authn Response",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "FirstFailed",
       "request": {
         "method": "POST",
         "urlPath": "/okta-stub/vanity-url/api/v1/authn"
       },
       "response": {
         "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Mock Okta Authn Response",
+      "requiredScenarioState": "FirstFailed",
+      "newScenarioState": "SecondFailed",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Mock Okta Authn Response",
+      "requiredScenarioState": "SecondFailed",
+      "newScenarioState": "ThirdFailed",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Mock Okta Authn Response",
+      "requiredScenarioState": "ThirdFailed",
+      "newScenarioState": "FourthFailed",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Mock Okta Authn Response",
+      "requiredScenarioState": "FourthFailed",
+      "newScenarioState": "Successful",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
         "headers": {
           "Content-Type": "application/json"
         },

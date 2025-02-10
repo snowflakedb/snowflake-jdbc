@@ -18,9 +18,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Scanner;
+import java.util.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -30,6 +33,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -296,4 +300,78 @@ public abstract class BaseWiremockTest {
     }
     return jsonContent;
   }
+
+
+  /**
+   * A minimal POJO representing a serve event from WireMock.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class MinimalServeEvent {
+    private MinimalRequest request;
+
+    public MinimalRequest getRequest() {
+      return request;
+    }
+    public void setRequest(MinimalRequest request) {
+      this.request = request;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class MinimalRequest {
+      private String url;
+      private Date loggedDate;
+
+      public String getUrl() {
+        return url;
+      }
+      public void setUrl(String url) {
+        this.url = url;
+      }
+
+      public Date getLoggedDate() {
+        return loggedDate;
+      }
+      public void setLoggedDate(Date loggedDate) {
+        this.loggedDate = loggedDate;
+      }
+    }
+  }
+
+  /**
+   * A wrapper for the serve events JSON structure returned by WireMock.
+   * The JSON has a top-level "requests" field which is an array of serve events.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class ServeEventsWrapper {
+    private List<MinimalServeEvent> requests = new ArrayList<>();
+
+    public List<MinimalServeEvent> getRequests() {
+      return requests;
+    }
+    public void setRequests(List<MinimalServeEvent> requests) {
+      this.requests = requests;
+    }
+  }
+
+  /**
+   * Retrieves all serve events recorded by WireMock by querying the admin endpoint.
+   * This implementation uses our minimal POJOs to avoid deserialization issues.
+   *
+   * @return A list of MinimalServeEvent objects representing the requests WireMock has recorded.
+   */
+  protected List<MinimalServeEvent> getAllServeEvents() {
+    String url = "http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/requests";
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
+      HttpGet request = new HttpGet(url);
+      try (CloseableHttpResponse response = client.execute(request)) {
+        String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        ServeEventsWrapper wrapper = mapper.readValue(json, ServeEventsWrapper.class);
+        return wrapper.getRequests();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to get serve events from WireMock", e);
+    }
+  }
+
 }
