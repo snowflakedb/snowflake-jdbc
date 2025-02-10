@@ -3,12 +3,11 @@ package net.snowflake.client.core;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import net.snowflake.client.category.TestTags;
