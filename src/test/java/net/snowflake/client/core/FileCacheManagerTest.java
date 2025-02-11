@@ -222,7 +222,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   private File createCacheFile() {
     Path cacheFile =
-        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake2", CACHE_FILE_NAME);
+        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake3", CACHE_FILE_NAME);
     try {
       if (Files.exists(cacheFile)) {
         Files.delete(cacheFile);
