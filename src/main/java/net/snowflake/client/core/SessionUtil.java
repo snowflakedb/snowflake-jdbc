@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.snowflake.client.CallableThrowingSnowflakeSqlException;
+
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
@@ -44,6 +44,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.RetryContextManager;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -1183,7 +1184,7 @@ public class SessionUtil {
   private static String federatedFlowStep4(
       SFLoginInput loginInput,
       String ssoUrl,
-      CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier)
+      ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier)
       throws SnowflakeSQLException {
     String oneTimeToken = oneTimeTokenSupplier.call();
     String responseHtml = "";
@@ -1409,7 +1410,7 @@ public class SessionUtil {
         String tokenUrl = dataNode.path("tokenUrl").asText();
         String ssoUrl = dataNode.path("ssoUrl").asText();
         federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-        CallableThrowingSnowflakeSqlException<String> oneTimeTokenSupplier =
+        ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier =
             () -> federatedFlowStep3(loginInput, tokenUrl);
 
         return federatedFlowStep4(loginInput, ssoUrl, oneTimeTokenSupplier);
