@@ -397,7 +397,8 @@
             <!-- structured types tests -->
             <exclude>**/structuredtypes/sqldata/*.java</exclude>
             <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
-            <exclude>**/*LatestIT.java</exclude>
+            <exclude>**/*LatestIT.java</exclude>            <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
+            <exclude>**/*WiremockIT.java</exclude>
             <!-- Unit Tests -->
             <exclude>**/*Test.java</exclude>
             <!-- Manual Tests -->
