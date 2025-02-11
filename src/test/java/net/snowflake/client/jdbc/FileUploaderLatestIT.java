@@ -49,6 +49,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Tag(TestTags.OTHERS)
@@ -883,6 +884,34 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       }
     } finally {
       FileUtils.deleteDirectory(subDir.toFile());
+    }
+  }
+
+  @Test
+  public void testUploadWithTripleSlashFilePrefix(@TempDir File tempDir)
+      throws SQLException, IOException {
+    String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("CREATE OR REPLACE STAGE " + stageName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+        String command =
+            "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + stageName;
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent.execute());
+
+        String tempDirPath = tempDir.getCanonicalPath().replace("\\", "/");
+        String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
+        SnowflakeFileTransferAgent sfAgent1 =
+            new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent1.execute());
+        assertEquals(1, sfAgent1.statusRows.size());
+      } finally {
+        statement.execute("DROP STAGE if exists " + stageName);
+      }
     }
   }
 }
