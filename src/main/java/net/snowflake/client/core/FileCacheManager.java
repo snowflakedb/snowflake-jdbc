@@ -101,7 +101,7 @@ class FileCacheManager {
     if (onlyOwnerPermissions) {
       FileUtil.throwWhenFilePermissionsWiderThanUserOnly(
           newCacheFile, "Override cache file");
-      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Override cache file");
+      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
     } else {
       FileUtil.logFileUsage(cacheFile, "Override cache file", false);
     }
