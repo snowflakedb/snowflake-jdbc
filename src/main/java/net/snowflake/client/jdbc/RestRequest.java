@@ -59,6 +59,27 @@ public class RestRequest {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   *     should be executed before and/or after the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -92,6 +113,27 @@ public class RestRequest {
         null);
   }
 
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   *     should be executed before and/or after the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -126,6 +168,28 @@ public class RestRequest {
         null);
   }
 
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param execTimeData ExecTimeTelemetryData
+   *     should be executed before and/or after the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -161,7 +225,7 @@ public class RestRequest {
   }
 
   /**
-   * Execute an http request with retry logic.
+   * Execute an HTTP request with retry logic.
    *
    * @param httpClient client object used to communicate with other machine
    * @param httpRequest request object contains all the request information
