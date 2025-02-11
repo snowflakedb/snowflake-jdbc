@@ -199,7 +199,8 @@ public class RestRequest {
 
     int retryCount = 0;
 
-    setRequestConfig(httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
+    setRequestConfig(
+        httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
 
     // try request till we get a good response or retry timeout
     while (true) {
@@ -215,7 +216,15 @@ public class RestRequest {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
-        setRequestURI(httpRequest, requestIdStr, includeRetryParameters, includeRequestGuid, retryCount, lastStatusCodeForRetry, startTime, requestInfoScrubbed);
+        setRequestURI(
+            httpRequest,
+            requestIdStr,
+            includeRetryParameters,
+            includeRequestGuid,
+            retryCount,
+            lastStatusCodeForRetry,
+            startTime,
+            requestInfoScrubbed);
 
         execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
@@ -317,7 +326,7 @@ public class RestRequest {
         retryCount = 0;
         break;
       } else {
-//        Potentially retryable error
+        //        Potentially retryable error
         if (response != null) {
           logger.debug(
               "{}HTTP response not ok: status code: {}, request: {}",
@@ -653,7 +662,12 @@ public class RestRequest {
     return ex0;
   }
 
-  private static void setRequestConfig(HttpRequestBase httpRequest, boolean withoutCookies, int injectSocketTimeout, String requestIdStr, long authTimeoutInMilli) {
+  private static void setRequestConfig(
+      HttpRequestBase httpRequest,
+      boolean withoutCookies,
+      int injectSocketTimeout,
+      String requestIdStr,
+      long authTimeoutInMilli) {
     if (withoutCookies) {
       httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
     }
@@ -663,12 +677,11 @@ public class RestRequest {
     if (injectSocketTimeout != 0) {
       // test code path
       logger.debug(
-              "{}Injecting socket timeout by setting socket timeout to {} ms",
-              requestIdStr,
-              injectSocketTimeout);
+          "{}Injecting socket timeout by setting socket timeout to {} ms",
+          requestIdStr,
+          injectSocketTimeout);
       httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                      injectSocketTimeout, withoutCookies));
+          HttpUtil.getDefaultRequestConfigWithSocketTimeout(injectSocketTimeout, withoutCookies));
     }
 
     // When the auth timeout is set, set the socket timeout as the authTimeout
@@ -676,14 +689,23 @@ public class RestRequest {
     if (authTimeoutInMilli > 0) {
       int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
       logger.debug(
-              "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
+          "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
       httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
-                      requestSocketAndConnectTimeout, withoutCookies));
+          HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+              requestSocketAndConnectTimeout, withoutCookies));
     }
   }
 
-  private static void setRequestURI(HttpRequestBase httpRequest, String requestIdStr, boolean includeRetryParameters, boolean includeRequestGuid, int retryCount, String lastStatusCodeForRetry, long startTime, String requestInfoScrubbed) throws URISyntaxException {
+  private static void setRequestURI(
+      HttpRequestBase httpRequest,
+      String requestIdStr,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      int retryCount,
+      String lastStatusCodeForRetry,
+      long startTime,
+      String requestInfoScrubbed)
+      throws URISyntaxException {
     /*
      * Add retryCount if the first request failed
      * GS can use the parameter for optimization. Specifically GS
@@ -695,7 +717,7 @@ public class RestRequest {
     URIBuilder builder = new URIBuilder(httpRequest.getURI());
     // If HTAP
     if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
-            && builder.getPathSegments().contains("query-request")) {
+        && builder.getPathSegments().contains("query-request")) {
       logger.debug("{}Setting htap simulation", requestIdStr);
       builder.setParameter("target", "htap_simulation");
     }
@@ -714,5 +736,4 @@ public class RestRequest {
 
     httpRequest.setURI(builder.build());
   }
-
 }

@@ -1731,7 +1731,7 @@ public class SessionUtil {
       SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
-    // overwritten here
+    // overwritten here - to be fixed in SNOW-1922872
     fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
     URI fedUrlUri = fedUriBuilder.build();
 
@@ -1765,12 +1765,7 @@ public class SessionUtil {
 
   private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
-    String userName;
-    if (Strings.isNullOrEmpty(loginInput.getOKTAUserName())) {
-      userName = loginInput.getUserName();
-    } else {
-      userName = loginInput.getOKTAUserName();
-    }
+    String userName = Strings.isNullOrEmpty(loginInput.getOKTAUserName()) ? loginInput.getUserName() : loginInput.getOKTAUserName();
     try {
       StringEntity params =
           new StringEntity(
