@@ -1748,7 +1748,7 @@ public class SessionUtil {
     return false;
   }
 
-  public static HttpRequestBase prepareFederatedFlowStep1PostRequest(
+  private static HttpRequestBase prepareFederatedFlowStep1PostRequest(
       SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
@@ -1767,7 +1767,7 @@ public class SessionUtil {
     return postRequest;
   }
 
-  public static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
+  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
       throws JsonProcessingException {
     Map<String, Object> data = new HashMap<>();
     data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
@@ -1784,7 +1784,7 @@ public class SessionUtil {
     return input;
   }
 
-  public static void setFederatedFlowStep3PostRequestAuthData(
+  private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
     String userName;
     if (Strings.isNullOrEmpty(loginInput.getOKTAUserName())) {
