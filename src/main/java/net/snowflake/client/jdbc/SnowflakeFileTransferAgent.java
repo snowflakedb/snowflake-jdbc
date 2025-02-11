@@ -34,7 +34,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1753,7 +1752,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     try {
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-file-download-worker-", 1);
 
-      List<Future<Void>> downloadFileFutures = new LinkedList<>();
+      List<Future<Void>> downloadFileFutures = new ArrayList<>();
       for (String srcFile : sourceFiles) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
 
@@ -1849,7 +1848,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor =
           SnowflakeUtil.createDefaultExecutorService("sf-file-upload-worker-", parallel);
 
-      List<Future<Void>> uploadFileFutures = new LinkedList<>();
+      List<Future<Void>> uploadFileFutures = new ArrayList<>();
       for (String srcFile : fileList) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
 
