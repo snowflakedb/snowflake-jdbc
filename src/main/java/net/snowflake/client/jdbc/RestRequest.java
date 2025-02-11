@@ -15,6 +15,7 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -720,6 +721,14 @@ public class RestRequest {
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis(),
         retryCount);
     return response;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void updateRetryParameters(
+      URIBuilder builder, int retryCount, String lastStatusCodeForRetry, long startTime) {
+    builder.setParameter("retryCount", String.valueOf(retryCount));
+    builder.setParameter("retryReason", lastStatusCodeForRetry);
+    builder.setParameter("clientStartTime", String.valueOf(startTime));
   }
 
   static long getNewBackoffInMilli(
