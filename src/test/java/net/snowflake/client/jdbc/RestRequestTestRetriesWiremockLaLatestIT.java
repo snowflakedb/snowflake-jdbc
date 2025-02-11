@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
+public class RestRequestTestRetriesWiremockLaLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
 
@@ -80,6 +80,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static void executeServerRequest() throws SQLException {
     Properties properties = new Properties();
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
     Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();
