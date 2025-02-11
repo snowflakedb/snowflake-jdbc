@@ -84,7 +84,8 @@ public class OAuthAccessTokenProviderFactoryTest {
                     AuthenticatorType.OAUTH_CLIENT_CREDENTIALS, loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains("passing oauthClientId is required for OAUTH_CLIENT_CREDENTIALS authentication."));
+            .contains(
+                "passing oauthClientId is required for OAUTH_CLIENT_CREDENTIALS authentication."));
   }
 
   @Test
@@ -138,7 +139,8 @@ public class OAuthAccessTokenProviderFactoryTest {
                     AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains("passing oauthClientId is required for OAUTH_AUTHORIZATION_CODE authentication."));
+            .contains(
+                "passing oauthClientId is required for OAUTH_AUTHORIZATION_CODE authentication."));
   }
 
   @Test

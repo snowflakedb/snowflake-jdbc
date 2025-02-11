@@ -129,10 +129,10 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     JsonNode credentialsNode = node.get(CACHE_FILE_TOKENS_OBJECT_NAME);
     Map<String, String> credentialsCache = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
     if (credentialsNode != null && node.getNodeType().equals(JsonNodeType.OBJECT)) {
-        for (Iterator<Map.Entry<String, JsonNode>> itr = credentialsNode.fields(); itr.hasNext(); ) {
-            Map.Entry<String, JsonNode> credential = itr.next();
-            credentialsCache.put(credential.getKey(), credential.getValue().asText());
-        }
+      for (Iterator<Map.Entry<String, JsonNode>> itr = credentialsNode.fields(); itr.hasNext(); ) {
+        Map.Entry<String, JsonNode> credential = itr.next();
+        credentialsCache.put(credential.getKey(), credential.getValue().asText());
+      }
     }
     return cache;
   }

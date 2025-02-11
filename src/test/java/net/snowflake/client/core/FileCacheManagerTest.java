@@ -40,7 +40,7 @@ import org.mockito.Mockito;
 @Tag(TestTags.CORE)
 class FileCacheManagerTest extends BaseJDBCTest {
 
-  private static final String CACHE_FILE_NAME = "temporary_credential.json";
+  private static final String CACHE_FILE_NAME = "credential_cache_v1.json.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
@@ -97,7 +97,9 @@ class FileCacheManagerTest extends BaseJDBCTest {
       String permission, String parentDirectoryPermissions, boolean isSucceed) throws IOException {
     fileCacheManager.overrideCacheFile(cacheFile);
     Files.setPosixFilePermissions(cacheFile.toPath(), PosixFilePermissions.fromString(permission));
-    Files.setPosixFilePermissions(cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString(parentDirectoryPermissions));
+    Files.setPosixFilePermissions(
+        cacheFile.getParentFile().toPath(),
+        PosixFilePermissions.fromString(parentDirectoryPermissions));
     if (isSucceed) {
       assertDoesNotThrow(() -> fileCacheManager.readCacheFile());
     } else {
@@ -146,8 +148,11 @@ class FileCacheManagerTest extends BaseJDBCTest {
   public void shouldCreateCacheDirForLinuxXDG() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
-      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic  = Mockito.mockStatic(SnowflakeUtil.class)) {
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME")).thenReturn("/XDG/Cache/");
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME"))
+            .thenReturn("/XDG/Cache/");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/XDG/Cache/")).thenReturn(true);
           File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
@@ -162,9 +167,14 @@ class FileCacheManagerTest extends BaseJDBCTest {
   public void shouldCreateCacheDirForLinuxWithoutXDG() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
-      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic  = Mockito.mockStatic(SnowflakeUtil.class)) {
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME")).thenReturn(null);
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetProperty("user.home")).thenReturn("/User/Home");
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME"))
+            .thenReturn(null);
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetProperty("user.home"))
+            .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
           File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
@@ -179,13 +189,17 @@ class FileCacheManagerTest extends BaseJDBCTest {
   public void shouldCreateCacheDirForWindows() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.WINDOWS);
-      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic  = Mockito.mockStatic(SnowflakeUtil.class)) {
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetProperty("user.home")).thenReturn("/User/Home");
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetProperty("user.home"))
+            .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
           File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
-          Assertions.assertEquals("/User/Home/AppData/Local/Snowflake/Caches", defaultCacheDir.getAbsolutePath());
+          Assertions.assertEquals(
+              "/User/Home/AppData/Local/Snowflake/Caches", defaultCacheDir.getAbsolutePath());
         }
       }
     }
@@ -195,13 +209,17 @@ class FileCacheManagerTest extends BaseJDBCTest {
   public void shouldCreateCacheDirForMacOS() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.MAC);
-      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic  = Mockito.mockStatic(SnowflakeUtil.class)) {
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetProperty("user.home")).thenReturn("/User/Home");
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetProperty("user.home"))
+            .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
           File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
-          Assertions.assertEquals("/User/Home/Library/Caches/Snowflake", defaultCacheDir.getAbsolutePath());
+          Assertions.assertEquals(
+              "/User/Home/Library/Caches/Snowflake", defaultCacheDir.getAbsolutePath());
         }
       }
     }
@@ -211,9 +229,14 @@ class FileCacheManagerTest extends BaseJDBCTest {
   public void shouldReturnNullWhenNoHomeDirSet() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
-      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic  = Mockito.mockStatic(SnowflakeUtil.class)) {
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME")).thenReturn(null);
-        snowflakeUtilMockedStatic.when(() -> SnowflakeUtil.systemGetProperty("user.home")).thenReturn(null);
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetEnv("XDG_CACHE_HOME"))
+            .thenReturn(null);
+        snowflakeUtilMockedStatic
+            .when(() -> SnowflakeUtil.systemGetProperty("user.home"))
+            .thenReturn(null);
         File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
         Assertions.assertNull(defaultCacheDir);
       }
@@ -222,7 +245,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   private File createCacheFile() {
     Path cacheFile =
-        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake3", CACHE_FILE_NAME);
+        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_cache", CACHE_FILE_NAME);
     try {
       if (Files.exists(cacheFile)) {
         Files.delete(cacheFile);
@@ -230,10 +253,14 @@ class FileCacheManagerTest extends BaseJDBCTest {
       if (Files.exists(cacheFile.getParent())) {
         Files.delete(cacheFile.getParent());
       }
-      Files.createDirectories(cacheFile.getParent(),
-              PosixFilePermissions.asFileAttribute(
-                      Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
-                              .collect(Collectors.toSet())));
+      Files.createDirectories(
+          cacheFile.getParent(),
+          PosixFilePermissions.asFileAttribute(
+              Stream.of(
+                      PosixFilePermission.OWNER_READ,
+                      PosixFilePermission.OWNER_WRITE,
+                      PosixFilePermission.OWNER_EXECUTE)
+                  .collect(Collectors.toSet())));
       Files.createFile(
           cacheFile,
           PosixFilePermissions.asFileAttribute(

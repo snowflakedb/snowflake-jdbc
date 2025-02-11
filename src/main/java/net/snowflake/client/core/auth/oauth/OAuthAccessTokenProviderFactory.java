@@ -119,6 +119,7 @@ public class OAuthAccessTokenProviderFactory {
     AssertUtil.assertTrue(
         loginInput.getOauthLoginInput().getClientSecret() != null,
         String.format(
-            "passing oauthClientSecret is required for %s authentication", authenticatorType.name()));
+            "passing oauthClientSecret is required for %s authentication",
+            authenticatorType.name()));
   }
 }

@@ -50,7 +50,8 @@ public class FileUtil {
     return true;
   }
 
-  public static void throwWhenParentDirectoryPermissionsWiderThanUserOnly(File file, String context) {
+  public static void throwWhenParentDirectoryPermissionsWiderThanUserOnly(
+      File file, String context) {
     throwWhenDirectoryPermissionsWiderThanUserOnly(file.getParentFile(), context);
   }
 
@@ -77,13 +78,16 @@ public class FileUtil {
 
       boolean permissionsTooOpen;
       if (isDirectory) {
-        permissionsTooOpen =  isWritableByOthers || isReadableByOthers;
+        permissionsTooOpen = isWritableByOthers || isReadableByOthers;
       } else {
         permissionsTooOpen = isWritableByOthers || isReadableByOthers || isExecutable;
       }
       if (permissionsTooOpen) {
         logger.debug(
-            "{}File/directory {} access rights: {}", getContextStr(context), filePath, filePermissions);
+            "{}File/directory {} access rights: {}",
+            getContextStr(context),
+            filePath,
+            filePermissions);
         throw new SecurityException(
             String.format(
                 "Access to file or directory %s is wider than allowed only to the owner. Remove cached file/directory and re-run the driver.",
@@ -92,7 +96,8 @@ public class FileUtil {
     } catch (IOException e) {
       throw new SecurityException(
           String.format(
-              "%s Unable to access the file/directory to check the permissions. Error: %s", filePath, e));
+              "%s Unable to access the file/directory to check the permissions. Error: %s",
+              filePath, e));
     }
   }
 

@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -13,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,8 +22,11 @@ import net.snowflake.client.annotations.RunOnLinux;
 import net.snowflake.client.annotations.RunOnMac;
 import net.snowflake.client.annotations.RunOnWindows;
 import net.snowflake.client.annotations.RunOnWindowsOrMac;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
   @Override
@@ -289,10 +294,22 @@ public class SecureStorageManagerTest {
   @Test
   @RunOnLinux
   public void testLinuxManager() {
-    SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
+    String cacheDirectory =
+        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
+            .toAbsolutePath()
+            .toString();
+    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+        Mockito.mockStatic(SnowflakeUtil.class)) {
+      snowflakeUtilMockedStatic
+          .when(
+              () ->
+                  SnowflakeUtil.systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))
+          .thenReturn(cacheDirectory);
+      SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
 
-    testBody(manager);
-    testDeleteLinux(manager);
+      testBody(manager);
+      testDeleteLinux(manager);
+    }
   }
 
   private void testBody(SecureStorageManager manager) {

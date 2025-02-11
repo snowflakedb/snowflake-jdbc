@@ -99,9 +99,9 @@ class FileCacheManager {
       logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
     }
     if (onlyOwnerPermissions) {
-      FileUtil.throwWhenFilePermissionsWiderThanUserOnly(
+      FileUtil.throwWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
+      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(
           newCacheFile, "Override cache file");
-      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
     } else {
       FileUtil.logFileUsage(cacheFile, "Override cache file", false);
     }
@@ -140,21 +140,26 @@ class FileCacheManager {
       return this;
     }
     if (!cacheDir.exists()) {
-        try {
-            Files.createDirectories(cacheDir.toPath(),
-                    PosixFilePermissions.asFileAttribute(
-                            Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
-                                    .collect(Collectors.toSet())));
-        } catch (IOException e) {
-          logger.info(
-                  "Failed to create the cache directory: {}. Ignored. {}",
-                  e.getMessage(),
-                  cacheDir.getAbsoluteFile());
-          return this;
-        }
+      try {
+        Files.createDirectories(
+            cacheDir.toPath(),
+            PosixFilePermissions.asFileAttribute(
+                Stream.of(
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE)
+                    .collect(Collectors.toSet())));
+      } catch (IOException e) {
+        logger.info(
+            "Failed to create the cache directory: {}. Ignored. {}",
+            e.getMessage(),
+            cacheDir.getAbsoluteFile());
+        return this;
+      }
     }
     if (!this.cacheDir.exists()) {
-      logger.debug("Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
+      logger.debug(
+          "Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
       return this;
     }
     logger.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
@@ -207,7 +212,7 @@ class FileCacheManager {
     }
     if (Constants.getOS() == Constants.OS.WINDOWS) {
       return new File(
-              new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
+          new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
     } else if (Constants.getOS() == Constants.OS.MAC) {
       return new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
     } else {
@@ -225,9 +230,9 @@ class FileCacheManager {
 
   private static String getHomeDirProperty() {
     String homeDir = systemGetProperty("user.home");
-      if (homeDir != null && isWritable(homeDir)) {
-          return homeDir;
-      }
+    if (homeDir != null && isWritable(homeDir)) {
+      return homeDir;
+    }
     return null;
   }
 
@@ -292,7 +297,8 @@ class FileCacheManager {
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
         if (onlyOwnerPermissions) {
           FileUtil.throwWhenFilePermissionsWiderThanUserOnly(cacheFile, "Write to cache");
-          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Write to cache");
+          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(
+              cacheFile, "Write to cache");
         } else {
           FileUtil.logFileUsage(cacheFile, "Write to cache", false);
         }
@@ -355,7 +361,8 @@ class FileCacheManager {
           logger.debug("Deleted expired cache lock directory.", false);
         }
       } catch (Exception e) {
-        logger.debug("Failed to delete the directory. Dir: {}, Error: {}", cacheLockFile, e.getMessage());
+        logger.debug(
+            "Failed to delete the directory. Dir: {}, Error: {}", cacheLockFile, e.getMessage());
       }
     }
   }
@@ -365,7 +372,7 @@ class FileCacheManager {
    *
    * @return epoch time in ms
    */
-  private synchronized static long fileCreationTime(File targetFile) {
+  private static synchronized long fileCreationTime(File targetFile) {
     if (!targetFile.exists()) {
       logger.debug("File not exists. File: {}", targetFile);
       return -1;

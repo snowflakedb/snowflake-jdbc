@@ -1592,7 +1592,9 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     public String toString() {
       return String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
-          HexUtil.byteToHexString(nameHash), HexUtil.byteToHexString(keyHash), serialNumber.toString());
+          HexUtil.byteToHexString(nameHash),
+          HexUtil.byteToHexString(keyHash),
+          serialNumber.toString());
     }
   }
 
