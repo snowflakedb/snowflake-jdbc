@@ -31,6 +31,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.Properties;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
@@ -308,48 +309,53 @@ public class SSOConnectionTest {
 
   @Test
   public void testIdTokenInSSO() throws Throwable {
-    String cacheDirectory =
-        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
-            .toAbsolutePath()
-            .toString();
-    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
-        Mockito.mockStatic(SnowflakeUtil.class)) {
-      snowflakeUtilMockedStatic
-          .when(() -> systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))
-          .thenReturn(cacheDirectory);
-      snowflakeUtilMockedStatic.when(() -> systemGetProperty("os.name")).thenReturn("linux");
-      try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
-          MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser =
-              mockStatic(SessionUtilExternalBrowser.class)) {
+    try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
+      constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
+      String cacheDirectory =
+          Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
+              .toAbsolutePath()
+              .toString();
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(() -> systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))
+            .thenReturn(cacheDirectory);
+        snowflakeUtilMockedStatic.when(() -> systemGetProperty("os.name")).thenReturn("linux");
+        try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
+            MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser =
+                mockStatic(SessionUtilExternalBrowser.class)) {
 
-        initMock(mockedHttpUtil, mockedSessionUtilExternalBrowser);
-        SessionUtil.deleteIdTokenCache("testaccount.snowflakecomputing.com", "testuser");
+          initMock(mockedHttpUtil, mockedSessionUtilExternalBrowser);
+          SessionUtil.deleteIdTokenCache("testaccount.snowflakecomputing.com", "testuser");
 
-        Properties properties = new Properties();
-        properties.put("user", "testuser");
-        properties.put("password", "testpassword");
-        properties.put("account", "testaccount");
-        properties.put("insecureMode", true);
-        properties.put("authenticator", "externalbrowser");
-        properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
+          Properties properties = new Properties();
+          properties.put("user", "testuser");
+          properties.put("password", "testpassword");
+          properties.put("account", "testaccount");
+          properties.put("insecureMode", true);
+          properties.put("authenticator", "externalbrowser");
+          properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
 
-        // connect url
-        String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+          // connect url
+          String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
 
-        // initial connection getting id token and storing in the cache file.
-        Connection con = DriverManager.getConnection(url, properties);
-        SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
-        assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
-        assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
+          // initial connection getting id token and storing in the cache file.
+          Connection con = DriverManager.getConnection(url, properties);
+          SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+          assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
+          assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
 
-        // second connection reads the cache and use the id token to get the
-        // session token.
-        Connection conSecond = DriverManager.getConnection(url, properties);
-        SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
-        assertThat(
-            "token", sfconSecond.getSfSession().getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
-        // we won't get a new id_token here
-        assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
+          // second connection reads the cache and use the id token to get the
+          // session token.
+          Connection conSecond = DriverManager.getConnection(url, properties);
+          SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
+          assertThat(
+              "token",
+              sfconSecond.getSfSession().getSessionToken(),
+              equalTo(MOCK_NEW_SESSION_TOKEN));
+          // we won't get a new id_token here
+          assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
+        }
       }
     }
   }
