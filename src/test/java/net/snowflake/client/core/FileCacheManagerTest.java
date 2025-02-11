@@ -227,6 +227,9 @@ class FileCacheManagerTest extends BaseJDBCTest {
       if (Files.exists(cacheFile)) {
         Files.delete(cacheFile);
       }
+      if (Files.exists(cacheFile.getParent())) {
+        Files.delete(cacheFile.getParent());
+      }
       Files.createDirectories(cacheFile.getParent(),
               PosixFilePermissions.asFileAttribute(
                       Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
