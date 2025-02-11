@@ -320,7 +320,6 @@ public class SSOConnectionTest {
         snowflakeUtilMockedStatic
             .when(() -> systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))
             .thenReturn(cacheDirectory);
-        snowflakeUtilMockedStatic.when(() -> systemGetProperty("os.name")).thenReturn("linux");
         try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
             MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser =
                 mockStatic(SessionUtilExternalBrowser.class)) {
