@@ -108,13 +108,13 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private ObjectNode localCacheToJson(Map<String, Map<String, String>> cache) {
     ObjectNode res = mapper.createObjectNode();
     for (Map.Entry<String, Map<String, String>> elem : cache.entrySet()) {
-      String elemHost = elem.getKey();
-      Map<String, String> hostMap = elem.getValue();
-      ObjectNode hostNode = mapper.createObjectNode();
-      for (Map.Entry<String, String> elem0 : hostMap.entrySet()) {
-        hostNode.put(elem0.getKey(), elem0.getValue());
+      String rootObject = elem.getKey();
+      Map<String, String> subMap = elem.getValue();
+      ObjectNode subNode = mapper.createObjectNode();
+      for (Map.Entry<String, String> elem0 : subMap.entrySet()) {
+          subNode.put(elem0.getKey(), elem0.getValue());
       }
-      res.set(elemHost, hostNode);
+      res.set(rootObject, subNode);
     }
     return res;
   }
