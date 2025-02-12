@@ -1,7 +1,8 @@
 package net.snowflake.client.core;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -109,24 +110,22 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
             .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
             .collect(Collectors.toList());
 
-    if (vanityUrlCalls.size() < 2) {
-      fail(
-          "Expected multiple calls to "
-              + OKTA_AUTH_API_ENDPOINT
-              + ", got "
-              + vanityUrlCalls.size());
-    }
+    assertThat("Expected multiple calls to "
+            + OKTA_AUTH_API_ENDPOINT
+            + ", got "
+            + vanityUrlCalls.size(), vanityUrlCalls.size(), greaterThan(2));
 
     // Ensure each consecutive pair of calls has at least 1-second gap (1000 ms).
     for (int i = 1; i < vanityUrlCalls.size(); i++) {
       long t1 = vanityUrlCalls.get(i - 1).getRequest().getLoggedDate().getTime();
       long t2 = vanityUrlCalls.get(i).getRequest().getLoggedDate().getTime();
       long deltaMillis = t2 - t1;
-      assertTrue(
-          deltaMillis >= EXPECTED_MIN_RETRY_DELAY_MS,
-          String.format(
+      assertThat(
+              String.format(
               "Consecutive calls to %s were only %d ms apart (index %d -> %d).",
-              OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i));
+              OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i),
+              deltaMillis,
+              greaterThan(EXPECTED_MIN_RETRY_DELAY_MS));
     }
   }
 }
