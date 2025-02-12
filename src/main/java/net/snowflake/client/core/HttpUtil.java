@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -40,7 +41,6 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
-import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -690,7 +690,7 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         ocspAndProxyAndGzipKey,
         new ExecTimeTelemetryData(),
-            retryContext);
+        retryContext);
   }
 
   /**
@@ -828,7 +828,7 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey),
         execTimeData,
-            retryContext);
+        retryContext);
   }
 
   /**
@@ -904,7 +904,7 @@ public class HttpUtil {
               includeRequestGuid,
               retryOnHTTP403,
               execTimeData,
-                  retryContext);
+              retryContext);
       if (logger.isDebugEnabled() && stopwatch != null) {
         stopwatch.stop();
       }

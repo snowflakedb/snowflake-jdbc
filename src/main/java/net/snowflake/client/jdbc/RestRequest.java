@@ -73,8 +73,8 @@ public class RestRequest {
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
-   * @param retryHTTP403 whether to retry on HTTP 403 or not
-   *     should be executed before and/or after the retry
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -127,8 +127,8 @@ public class RestRequest {
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
-   * @param retryHTTP403 whether to retry on HTTP 403 or not
-   *     should be executed before and/or after the retry
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -183,8 +183,7 @@ public class RestRequest {
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
-   * @param execTimeData ExecTimeTelemetryData
-   *     should be executed before and/or after the retry
+   * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -220,7 +219,7 @@ public class RestRequest {
         retryHTTP403,
         false, // noRetry
         execTimeData,
-            retryContext);
+        retryContext);
   }
 
   /**
@@ -241,8 +240,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
-   * @param retryManager RetryContext - object allowing to optionally pass custom logic that
-   *     should be executed before and/or after the retry
+   * @param retryManager RetryContext - object allowing to optionally pass custom logic that should
+   *     be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc

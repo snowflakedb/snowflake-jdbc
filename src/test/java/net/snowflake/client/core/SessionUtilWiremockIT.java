@@ -110,10 +110,10 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
             .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
             .collect(Collectors.toList());
 
-    assertThat("Expected multiple calls to "
-            + OKTA_AUTH_API_ENDPOINT
-            + ", got "
-            + vanityUrlCalls.size(), vanityUrlCalls.size(), greaterThan(2));
+    assertThat(
+        "Expected multiple calls to " + OKTA_AUTH_API_ENDPOINT + ", got " + vanityUrlCalls.size(),
+        vanityUrlCalls.size(),
+        greaterThan(2));
 
     // Ensure each consecutive pair of calls has at least 1-second gap (1000 ms).
     for (int i = 1; i < vanityUrlCalls.size(); i++) {
@@ -121,11 +121,11 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       long t2 = vanityUrlCalls.get(i).getRequest().getLoggedDate().getTime();
       long deltaMillis = t2 - t1;
       assertThat(
-              String.format(
+          String.format(
               "Consecutive calls to %s were only %d ms apart (index %d -> %d).",
               OKTA_AUTH_API_ENDPOINT, deltaMillis, i - 1, i),
-              deltaMillis,
-              greaterThan(EXPECTED_MIN_RETRY_DELAY_MS));
+          deltaMillis,
+          greaterThan(EXPECTED_MIN_RETRY_DELAY_MS));
     }
   }
 }

@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -270,8 +268,7 @@ public abstract class BaseWiremockTest {
             "Could not find file under the specified path: " + filePath);
       }
       try (InputStreamReader isr = new InputStreamReader(inputStream);
-           BufferedReader br = new BufferedReader(isr)
-      ) {
+          BufferedReader br = new BufferedReader(isr)) {
         return br.lines().collect(Collectors.joining("\n"));
       }
     }

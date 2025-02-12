@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -41,7 +41,6 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.client.util.ThrowingCallable;
@@ -1788,7 +1787,10 @@ public class SessionUtil {
 
   private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
-    String userName = Strings.isNullOrEmpty(loginInput.getOKTAUserName()) ? loginInput.getUserName() : loginInput.getOKTAUserName();
+    String userName =
+        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+            ? loginInput.getUserName()
+            : loginInput.getOKTAUserName();
     try {
       StringEntity params =
           new StringEntity(
