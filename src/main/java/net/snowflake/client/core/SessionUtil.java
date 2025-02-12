@@ -1726,8 +1726,15 @@ public class SessionUtil {
     return false;
   }
 
-  private static HttpPost prepareFederatedFlowStep1PostRequest(
-      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+  /**
+   * Prepares an HTTP POST request for the first step of the federated authentication flow.
+   *
+   * @param loginInput The login information for the request.
+   * @param inputData The JSON input data to include in the request.
+   * @return An {@link HttpPost} object ready to execute the federated flow request.
+   * @throws URISyntaxException If the constructed URI is invalid.
+   */
+  private static HttpPost prepareFederatedFlowStep1PostRequest(SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872
@@ -1738,15 +1745,20 @@ public class SessionUtil {
     postRequest.setEntity(inputData);
     postRequest.addHeader("accept", "application/json");
 
-    // Add headers for driver name and version
     postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
     postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
     return postRequest;
   }
 
-  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
-      throws JsonProcessingException {
+  /**
+   * Prepares the JSON input for the first step of the federated authentication flow.
+   *
+   * @param loginInput The login information for the request.
+   * @return A {@link StringEntity} containing the JSON input for the request.
+   * @throws JsonProcessingException If there is an error generating the JSON input.
+   */
+  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput) throws JsonProcessingException {
     Map<String, Object> data = new HashMap<>();
     data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
     data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
@@ -1756,53 +1768,45 @@ public class SessionUtil {
     ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
     String json = mapper.writeValueAsString(authnData);
 
-    // attach the login info json body to the post request
     StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
     input.setContentType("application/json");
     return input;
   }
 
-  private static void setFederatedFlowStep3PostRequestAuthData(
-      HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
-    String userName =
-        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
-            ? loginInput.getUserName()
-            : loginInput.getOKTAUserName();
+  /**
+   * Sets the authentication data for the third step of the federated authentication flow.
+   *
+   * @param postRequest The {@link HttpPost} request to update with authentication data.
+   * @param loginInput The login information for the request.
+   * @throws SnowflakeSQLException If an error occurs while preparing the request.
+   */
+  private static void setFederatedFlowStep3PostRequestAuthData(HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
+    String userName = Strings.isNullOrEmpty(loginInput.getOKTAUserName()) ? loginInput.getUserName() : loginInput.getOKTAUserName();
     try {
-      StringEntity params =
-          new StringEntity(
-              "{\"username\":\""
-                  + userName
-                  + "\",\"password\":\""
-                  + loginInput.getPassword()
-                  + "\"}");
+      StringEntity params = new StringEntity("{\"username\":\"" + userName + "\",\"password\":\"" + loginInput.getPassword() + "\"}");
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();
       headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "application/json"));
       headers.addHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
       postRequest.setHeaders(headers.getAllHeaders());
-
     } catch (IOException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
   }
 
   /**
-   * Helper method that updates an HttpRequestBase with a given
-   * one-time token in the query parameters and the common headers.
+   * Prepares an HTTP GET request for the fourth step of the federated authentication flow.
    *
-   * @param ssoUrl the base SSO URL
-   * @param oneTimeToken the one-time token to be included as a parameter
-   * @throws MalformedURLException if the URL is malformed
-   * @throws URISyntaxException if the URI cannot be built
+   * @param retrieveSamlRequest The {@link HttpRequestBase} to update with the SAML request details.
+   * @param ssoUrl The SSO URL to use for the request.
+   * @param oneTimeToken The one-time token to include in the request.
+   * @throws MalformedURLException If the SSO URL is malformed.
+   * @throws URISyntaxException If the URI for the request cannot be built.
    */
-  private static void prepareFederatedFlowStep4Request(
-      HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken)
-      throws MalformedURLException, URISyntaxException {
+  private static void prepareFederatedFlowStep4Request(HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken) throws MalformedURLException, URISyntaxException {
     final URL url = new URL(ssoUrl);
-    URI oktaGetUri =
-        new URIBuilder()
+    URI oktaGetUri = new URIBuilder()
             .setScheme(url.getProtocol())
             .setHost(url.getHost())
             .setPort(url.getPort())
@@ -1811,6 +1815,7 @@ public class SessionUtil {
             .setParameter("onetimetoken", oneTimeToken)
             .build();
     retrieveSamlRequest.setURI(oktaGetUri);
+
     HeaderGroup headers = new HeaderGroup();
     headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "*/*"));
     retrieveSamlRequest.setHeaders(headers.getAllHeaders());
