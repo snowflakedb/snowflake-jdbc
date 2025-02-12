@@ -1789,8 +1789,8 @@ public class SessionUtil {
   }
 
   /**
-   * Helper method that creates (or updates) an HttpRequestBase (an HttpGet in this case) with the
-   * given one-time token in the query parameters and the common headers.
+   * Helper method that updates an HttpRequestBase with a given
+   * one-time token in the query parameters and the common headers.
    *
    * @param ssoUrl the base SSO URL
    * @param oneTimeToken the one-time token to be included as a parameter
