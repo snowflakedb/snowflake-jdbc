@@ -1,18 +1,21 @@
-package net.snowflake.client.util;
+package net.snowflake.client.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.util.ThrowingFunction;
 import org.apache.http.client.methods.HttpRequestBase;
 
 /**
  * RetryContextManager lets you register logic (as callbacks) that will be re-executed during a
  * retry.
  */
+@SnowflakeJdbcInternalApi
 public class RetryContextManager {
 
   // List of retry callbacks that will be executed in the order they were registered.
-  private final List<RetryCallback<HttpRequestBase>> retryCallbacks = new ArrayList<>();
+  private final List<ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException>> retryCallbacks = new ArrayList<>();
 
   // A RetryHook flag that can be used by client code to decide when (or if) callbacks should be
   // executed.
@@ -24,23 +27,6 @@ public class RetryContextManager {
     ALWAYS_BEFORE_RETRY,
     /** Only execute the callbacks on specific conditions (e.g. authentication timeouts). */
     ONLY_ON_AUTH_TIMEOUT
-  }
-
-  /**
-   * A functional interface for retry callbacks that operate on an object of type T and may throw a
-   * SnowflakeSQLException.
-   *
-   * @param <T> the type of the input to the callback.
-   */
-  @FunctionalInterface
-  public interface RetryCallback<T> {
-    /**
-     * Performs this operation on the given argument.
-     *
-     * @param t the input argument.
-     * @throws SnowflakeSQLException if an error occurs during the callback execution.
-     */
-    void accept(T t) throws SnowflakeSQLException;
   }
 
   /** Default constructor using ALWAYS_BEFORE_RETRY as the default retry hook. */
@@ -63,7 +49,7 @@ public class RetryContextManager {
    * @param callback A RetryCallback encapsulating the logic to be replayed on retry.
    * @return the current instance for fluent chaining.
    */
-  public RetryContextManager registerRetryCallback(RetryCallback<HttpRequestBase> callback) {
+  public RetryContextManager registerRetryCallback(ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException> callback) {
     retryCallbacks.add(callback);
     return this;
   }
@@ -76,8 +62,8 @@ public class RetryContextManager {
    * @throws SnowflakeSQLException if an error occurs during callback execution.
    */
   public void executeRetryCallbacks(HttpRequestBase requestToRetry) throws SnowflakeSQLException {
-    for (RetryCallback<HttpRequestBase> callback : retryCallbacks) {
-      callback.accept(requestToRetry);
+    for (ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException> callback : retryCallbacks) {
+      callback.apply(requestToRetry);
     }
   }
 
