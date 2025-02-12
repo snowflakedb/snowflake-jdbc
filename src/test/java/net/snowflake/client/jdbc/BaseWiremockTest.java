@@ -10,10 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+
+import java.io.*;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,7 +23,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Scanner;
+import java.util.stream.Collectors;
+
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -265,14 +264,15 @@ public abstract class BaseWiremockTest {
 
     // If not found, attempt to read from the classpath (resources directory).
     // Has to start from '/' followed by a subdirectory of the resources directory.
-    try (InputStream in = getClass().getResourceAsStream(filePath)) {
-      if (in == null) {
+    try (InputStream inputStream = getClass().getResourceAsStream(filePath)) {
+      if (inputStream == null) {
         throw new IllegalStateException(
             "Could not find file under the specified path: " + filePath);
       }
-      try (Scanner scanner = new Scanner(in, StandardCharsets.UTF_8.name())) {
-        scanner.useDelimiter("\\A"); // Read the entire file content
-        return scanner.hasNext() ? scanner.next() : "";
+      try (InputStreamReader isr = new InputStreamReader(inputStream);
+           BufferedReader br = new BufferedReader(isr)
+      ) {
+        return br.lines().collect(Collectors.joining("\n"));
       }
     }
   }
