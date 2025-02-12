@@ -90,7 +90,6 @@ public class RestRequest {
         execTimeTelemetryData);
   }
 
-
   /**
    * Execute an HTTP request with retry logic.
    *
@@ -462,8 +461,8 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
-//            TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall ?
-//            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
+            // TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall?
+            // Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);

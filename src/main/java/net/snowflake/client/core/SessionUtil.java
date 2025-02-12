@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
@@ -1720,9 +1719,9 @@ public class SessionUtil {
     URI requestURI = request.getURI();
     String requestPath = requestURI.getPath();
     if (requestPath != null) {
-        return requestPath.equals(SF_PATH_LOGIN_REQUEST)
-                || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
-                || requestPath.equals(SF_PATH_TOKEN_REQUEST);
+      return requestPath.equals(SF_PATH_LOGIN_REQUEST)
+          || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
+          || requestPath.equals(SF_PATH_TOKEN_REQUEST);
     }
     return false;
   }
@@ -1765,7 +1764,10 @@ public class SessionUtil {
 
   private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
-    String userName = Strings.isNullOrEmpty(loginInput.getOKTAUserName()) ? loginInput.getUserName() : loginInput.getOKTAUserName();
+    String userName =
+        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+            ? loginInput.getUserName()
+            : loginInput.getOKTAUserName();
     try {
       StringEntity params =
           new StringEntity(
