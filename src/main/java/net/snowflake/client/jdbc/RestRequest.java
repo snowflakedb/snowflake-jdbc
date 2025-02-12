@@ -203,7 +203,7 @@ public class RestRequest {
       boolean includeRequestGuid,
       boolean retryHTTP403,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContext retryContext)
       throws SnowflakeSQLException {
     return execute(
         httpClient,
@@ -220,7 +220,7 @@ public class RestRequest {
         retryHTTP403,
         false, // noRetry
         execTimeData,
-        retryContextManager);
+            retryContext);
   }
 
   /**
@@ -241,7 +241,7 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
-   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
+   * @param retryManager RetryContext - object allowing to optionally pass custom logic that
    *     should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
@@ -262,7 +262,7 @@ public class RestRequest {
       boolean retryHTTP403,
       boolean noRetry,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryManager)
+      RetryContext retryManager)
       throws SnowflakeSQLException {
     Stopwatch stopwatch = null;
 
@@ -611,12 +611,12 @@ public class RestRequest {
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
 
-        RetryContextManager.RetryHook retryManagerHook = null;
+        RetryContext.RetryHook retryManagerHook = null;
         if (retryManager != null) {
           retryManagerHook = retryManager.getRetryHook();
         }
 
-        if (retryManagerHook == RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY) {
+        if (retryManagerHook == RetryContext.RetryHook.ALWAYS_BEFORE_RETRY) {
           retryManager.executeRetryCallbacks(httpRequest);
         }
 

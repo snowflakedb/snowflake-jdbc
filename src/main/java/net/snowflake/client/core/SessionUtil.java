@@ -41,7 +41,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.jdbc.RetryContextManager;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.client.util.ThrowingCallable;
@@ -1190,8 +1190,8 @@ public class SessionUtil {
     String responseHtml = "";
 
     try {
-      RetryContextManager retryWithNewOTTManager =
-          new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
+      RetryContext retryWithNewOTTManager =
+          new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
       retryWithNewOTTManager.registerRetryCallback(
           (HttpRequestBase retrieveSamlRequest) -> {
             try {

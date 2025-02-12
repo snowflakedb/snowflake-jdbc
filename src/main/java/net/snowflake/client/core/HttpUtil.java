@@ -40,7 +40,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
-import net.snowflake.client.jdbc.RetryContextManager;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -663,7 +663,7 @@ public class HttpUtil {
    * @param socketTimeout socket timeout (in ms)
    * @param retryCount retry count for the request
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
-   * @param retryContextManager RetryContextManager used to customize retry handling functionality
+   * @param retryContext RetryContext used to customize retry handling functionality
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -675,7 +675,7 @@ public class HttpUtil {
       int socketTimeout,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey,
-      RetryContextManager retryContextManager)
+      RetryContext retryContext)
       throws SnowflakeSQLException, IOException {
     logger.debug("Executing general request");
     return executeRequest(
@@ -690,7 +690,7 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         ocspAndProxyAndGzipKey,
         new ExecTimeTelemetryData(),
-        retryContextManager);
+            retryContext);
   }
 
   /**
@@ -792,7 +792,7 @@ public class HttpUtil {
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @param execTimeData query execution time telemetry data object
-   * @param retryContextManager RetryContextManager used to customize retry handling functionality
+   * @param retryContext RetryContext used to customize retry handling functionality
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -809,7 +809,7 @@ public class HttpUtil {
       boolean retryOnHTTP403,
       HttpClientSettingsKey ocspAndProxyKey,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContext retryContext)
       throws SnowflakeSQLException, IOException {
     boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.DISABLE_OCSP_CHECKS));
     logger.debug("Executing request with OCSP enabled: {}", ocspEnabled);
@@ -828,7 +828,7 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey),
         execTimeData,
-        retryContextManager);
+            retryContext);
   }
 
   /**
@@ -850,7 +850,7 @@ public class HttpUtil {
    * @param includeRequestGuid whether to include request_guid
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
-   * @param retryContextManager RetryContextManager used to customize retry handling functionality
+   * @param retryContext RetryContext used to customize retry handling functionality
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -869,7 +869,7 @@ public class HttpUtil {
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContext retryContext)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -904,7 +904,7 @@ public class HttpUtil {
               includeRequestGuid,
               retryOnHTTP403,
               execTimeData,
-              retryContextManager);
+                  retryContext);
       if (logger.isDebugEnabled() && stopwatch != null) {
         stopwatch.stop();
       }
