@@ -1734,7 +1734,8 @@ public class SessionUtil {
    * @return An {@link HttpPost} object ready to execute the federated flow request.
    * @throws URISyntaxException If the constructed URI is invalid.
    */
-  private static HttpPost prepareFederatedFlowStep1PostRequest(SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+  private static HttpPost prepareFederatedFlowStep1PostRequest(
+      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872
@@ -1758,7 +1759,8 @@ public class SessionUtil {
    * @return A {@link StringEntity} containing the JSON input for the request.
    * @throws JsonProcessingException If there is an error generating the JSON input.
    */
-  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput) throws JsonProcessingException {
+  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
+      throws JsonProcessingException {
     Map<String, Object> data = new HashMap<>();
     data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
     data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
@@ -1780,10 +1782,20 @@ public class SessionUtil {
    * @param loginInput The login information for the request.
    * @throws SnowflakeSQLException If an error occurs while preparing the request.
    */
-  private static void setFederatedFlowStep3PostRequestAuthData(HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
-    String userName = Strings.isNullOrEmpty(loginInput.getOKTAUserName()) ? loginInput.getUserName() : loginInput.getOKTAUserName();
+  private static void setFederatedFlowStep3PostRequestAuthData(
+      HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
+    String userName =
+        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+            ? loginInput.getUserName()
+            : loginInput.getOKTAUserName();
     try {
-      StringEntity params = new StringEntity("{\"username\":\"" + userName + "\",\"password\":\"" + loginInput.getPassword() + "\"}");
+      StringEntity params =
+          new StringEntity(
+              "{\"username\":\""
+                  + userName
+                  + "\",\"password\":\""
+                  + loginInput.getPassword()
+                  + "\"}");
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();
@@ -1804,9 +1816,12 @@ public class SessionUtil {
    * @throws MalformedURLException If the SSO URL is malformed.
    * @throws URISyntaxException If the URI for the request cannot be built.
    */
-  private static void prepareFederatedFlowStep4Request(HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken) throws MalformedURLException, URISyntaxException {
+  private static void prepareFederatedFlowStep4Request(
+      HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken)
+      throws MalformedURLException, URISyntaxException {
     final URL url = new URL(ssoUrl);
-    URI oktaGetUri = new URIBuilder()
+    URI oktaGetUri =
+        new URIBuilder()
             .setScheme(url.getProtocol())
             .setHost(url.getHost())
             .setPort(url.getPort())
