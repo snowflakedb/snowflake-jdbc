@@ -61,7 +61,7 @@ public class RetryContext {
    * @param requestToRetry the HTTP request to retry.
    * @throws SnowflakeSQLException if an error occurs during callback execution.
    */
-  public void executeRetryCallbacks(HttpRequestBase requestToRetry) throws SnowflakeSQLException {
+  protected void executeRetryCallbacks(HttpRequestBase requestToRetry) throws SnowflakeSQLException {
     for (ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException> callback : retryCallbacks) {
       callback.apply(requestToRetry);
     }
