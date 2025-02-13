@@ -1339,6 +1339,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
+
     logger.debug("Response: {}", removeSensitiveJsonElementsForLogging(jsonNode));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
@@ -1349,8 +1350,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param jsonNode A JsonNode that needs to have sensitive data removed before logging.
    * @return A string value of the JSON without any sensitive data for logging.
    */
-  private static String removeSensitiveJsonElementsForLogging(JsonNode jsonNode) {
-    return ((ObjectNode) jsonNode.path("data")).remove("encryptionMaterial").toString();
+  private static String removeSensitiveJsonElementsForLogging(JsonNode jsonNode)
+      throws SnowflakeSQLException {
+    JsonNode result = jsonNode.deepCopy();
+    return ((ObjectNode) result.path("data")).remove("encryptionMaterial").toString();
   }
 
   /**
