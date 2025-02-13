@@ -1,0 +1,120 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Successful writing access token and refresh token to empty cache",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Acquired tokens",
+      "request": {
+        "urlPathPattern": "/oauth/token-request.*",
+        "method": "POST",
+        "headers": {
+          "Authorization": {
+            "contains": "Basic"
+          },
+          "Content-Type": {
+            "contains": "application/x-www-form-urlencoded; charset=UTF-8"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "contains": "grant_type=client_credentials&scope=session%3Arole%3AANALYST"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "access_token": "access-token-123",
+          "refresh_token": "refresh-token-123",
+          "token_type": "Bearer",
+          "username": "user",
+          "scope": "refresh_token session:role:ANALYST",
+          "expires_in": 600,
+          "refresh_token_expires_in": 86399,
+          "idpInitiated": false
+        }      }
+    },
+    {
+      "scenarioName": "Successful writing access token and refresh token to empty cache",
+      "requiredScenarioState": "Acquired tokens",
+      "newScenarioState": "Cached tokens",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST",
+        "headers": {
+          "CLIENT_APP_ID": {
+            "equalTo": "MOCK_APP_ID"
+          },
+          "CLIENT_APP_VERSION": {
+            "equalTo": "MOCK_APP_VERSION"
+          },
+          "Authorization": {
+            "equalTo": "Basic"
+          },
+          "accept": {
+            "equalTo": "application/json"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "equalToJson" : {
+              "data": {
+                "ACCOUNT_NAME": "MOCK_ACCOUNT_NAME",
+                "CLIENT_APP_ID": "MOCK_APP_ID",
+                "CLIENT_ENVIRONMENT": {
+                  "tracing": "INFO",
+                  "OCSP_MODE": "FAIL_OPEN"
+                },
+                "CLIENT_APP_VERSION": "MOCK_APP_VERSION",
+                "TOKEN": "access-token-123",
+                "LOGIN_NAME": "MOCK_USERNAME",
+                "AUTHENTICATOR": "OAUTH",
+                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS"
+              }
+            },
+            "ignoreExtraElements" : true
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "OAUTH_TEST_AUTH_CODE",
+            "serverVersion": "8.48.0 b2024121104444034239f05",
+            "firstLogin": false,
+            "remMeToken": null,
+            "remMeValidityInSeconds": 0,
+            "healthCheckInterval": 45,
+            "newClientForUpgrade": "3.12.3",
+            "sessionId": 1172562260498,
+            "parameters": [
+              {
+                "name": "CLIENT_PREFETCH_THREADS",
+                "value": 4
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST_DHEYMAN",
+              "schemaName": "TEST_JDBC",
+              "warehouseName": "TEST_XSMALL",
+              "roleName": "ANALYST"
+            },
+            "idToken": null,
+            "idTokenValidityInSeconds": 0,
+            "responseData": null,
+            "mfaToken": null,
+            "mfaTokenValidityInSeconds": 0
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}

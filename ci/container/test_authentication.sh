@@ -9,6 +9,8 @@ MVNW_EXE=$SOURCE_ROOT/mvnw
 AUTH_PARAMETER_FILE=./.github/workflows/parameters_aws_auth_tests.json
 eval $(jq -r '.authtestparams | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $AUTH_PARAMETER_FILE)
 
+export SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
+
 $MVNW_EXE -DjenkinsIT \
     -Djava.io.tmpdir=$WORKSPACE \
     -Djacoco.skip.instrument=true \
