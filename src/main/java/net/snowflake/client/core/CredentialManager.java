@@ -13,6 +13,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
+  private static final CredentialManager INSTANCE = new CredentialManager();
 
   private SecureStorageManager secureStorageManager;
 
@@ -52,12 +53,8 @@ public class CredentialManager {
     getInstance().secureStorageManager = manager;
   }
 
-  private static class CredentialManagerHolder {
-    private static final CredentialManager INSTANCE = new CredentialManager();
-  }
-
   public static CredentialManager getInstance() {
-    return CredentialManagerHolder.INSTANCE;
+    return INSTANCE;
   }
 
   /**
