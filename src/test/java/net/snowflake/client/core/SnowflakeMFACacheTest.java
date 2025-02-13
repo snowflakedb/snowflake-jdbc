@@ -117,7 +117,6 @@ public class SnowflakeMFACacheTest {
                     SnowflakeUtil.systemGetProperty(
                         "net.snowflake.jdbc.temporaryCredentialCacheDir"))
             .thenReturn(cacheDirectory);
-        snowflakeUtilMockedStatic.when(() -> systemGetProperty("os.name")).thenReturn("linux");
         SessionUtil.deleteMfaTokenCache(host, user);
         try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
           mockedHttpUtil

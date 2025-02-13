@@ -112,6 +112,8 @@ class FileCacheManager {
 
   synchronized FileCacheManager build() {
     // try to get cacheDir from system property or environment variable
+    logger.info("Cache file from property: ", systemGetProperty(this.cacheDirectorySystemProperty));
+    logger.info("Cache file from env: ", systemGetEnv(this.cacheDirectoryEnvironmentVariable));
     String cacheDirPath =
         this.cacheDirectorySystemProperty != null
             ? systemGetProperty(this.cacheDirectorySystemProperty)
@@ -133,8 +135,10 @@ class FileCacheManager {
 
     if (cacheDirPath != null) {
       this.cacheDir = new File(cacheDirPath);
+      logger.info("Using cache dir: ", cacheDirPath);
     } else {
       this.cacheDir = getDefaultCacheDir();
+      logger.info("Using default cache dir : ", cacheDir.getAbsoluteFile());
     }
     if (cacheDir == null) {
       return this;
