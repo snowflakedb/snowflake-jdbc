@@ -43,7 +43,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
   private static final Map<Integer, String> LobSizeStringValues = new HashMap<>();
 
   // Max LOB size is testable from version 3.15.0 and above.
-  private static int maxLobSize = 16 * 1024 * 1024; // default value
+  private static int maxLobSize = 128 * 1024 * 1024; // default value
   private static int largeLobSize = maxLobSize / 2;
   private static int mediumLobSize = largeLobSize / 2;
   private static int smallLobSize = 16;
@@ -103,7 +103,9 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     String createTableQuery =
         "create or replace table "
             + tableName
-            + " (c1 varchar, c2 varchar("
+            + " (c1 varchar("
+            + lobSize
+            + "), c2 varchar("
             + lobSize
             + "), c3 varchar)";
     stmt.execute(createTableQuery);
