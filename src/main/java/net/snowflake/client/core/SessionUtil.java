@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.util.StringUtils;
@@ -351,7 +352,7 @@ public class SessionUtil {
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
       boolean experimentalAuthenticationMethodsEnabled =
           Boolean.parseBoolean(
-              systemGetProperty("snowflake.jdbc.enableExperimentalAuthentication"));
+              systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
       AssertUtil.assertTrue(
           experimentalAuthenticationMethodsEnabled,
           "Following authentication method not yet supported: " + authenticator);

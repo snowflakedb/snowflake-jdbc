@@ -111,6 +111,8 @@ echo "MAVEN OPTIONS %MAVEN_OPTS%"
 REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
 
+set SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
+
 if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
     echo "[INFO] Run Fips tests"
@@ -120,7 +122,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -DintegrationTestSuites=FipsTestSuite ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar ^
-        -Dsnowflake.jdbc.enableExperimentalAuthentication=true ^
         verify ^
         --batch-mode --show-version > log.txt & type log.txt
     echo "[INFO] Check for test execution status"
@@ -141,7 +142,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
-        -Dsnowflake.jdbc.enableExperimentalAuthentication=true ^
         verify ^
         --batch-mode --show-version > log.txt & type log.txt
     echo "[INFO] Check for test execution status"

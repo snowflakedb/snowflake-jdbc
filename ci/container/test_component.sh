@@ -76,6 +76,8 @@ cd $SOURCE_ROOT
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 $MVNW_EXE --batch-mode --show-version dependency:go-offline
 
+export SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
+
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
         JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
@@ -85,7 +87,6 @@ if [[ "$is_old_driver" == "true" ]]; then
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-            -Dsnowflake.jdbc.enableExperimentalAuthentication=true \
             verify \
             --batch-mode --show-version
     popd >& /dev/null
@@ -98,7 +99,6 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
             -DintegrationTestSuites=FipsTestSuite \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             -Dnot-self-contained-jar \
-            -Dsnowflake.jdbc.enableExperimentalAuthentication=true \
             verify \
             --batch-mode --show-version
     popd >& /dev/null
@@ -110,7 +110,6 @@ else
         -DintegrationTestSuites="$JDBC_TEST_SUITES" \
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
-        -Dsnowflake.jdbc.enableExperimentalAuthentication=true \
         verify \
         --batch-mode --show-version
 fi

@@ -258,8 +258,8 @@ public class SessionUtilTest {
       snowflakeUtilMockedStatic
           .when(
               () ->
-                  SnowflakeUtil.systemGetProperty(
-                      "snowflake.jdbc.enableExperimentalAuthentication"))
+                  SnowflakeUtil.systemGetEnv(
+                      "SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn(null);
       Assertions.assertThrows(
           SFException.class,
@@ -280,8 +280,8 @@ public class SessionUtilTest {
       snowflakeUtilMockedStatic
           .when(
               () ->
-                  SnowflakeUtil.systemGetProperty(
-                      "snowflake.jdbc.enableExperimentalAuthentication"))
+                  SnowflakeUtil.systemGetEnv(
+                      "SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn("true");
       Assertions.assertDoesNotThrow(
           () ->
