@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,6 +20,7 @@ import com.sun.jna.ptr.PointerByReference;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -28,6 +30,7 @@ import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.jupiter.api.Disabled;
@@ -100,131 +103,152 @@ public class SnowflakeMFACacheTest {
 
   @Test
   public void testMFAFunctionality() throws SQLException {
-    SessionUtil.deleteMfaTokenCache(host, user);
-    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
-      mockedHttpUtil
-          .when(
-              () ->
-                  HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class),
-                      anyInt(),
-                      anyInt(),
-                      anyInt(),
-                      anyInt(),
-                      any(HttpClientSettingsKey.class)))
-          .thenAnswer(
-              new Answer<String>() {
-                int callCount = 0;
+    try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
+      constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
+      String cacheDirectory =
+          Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
+              .toAbsolutePath()
+              .toString();
+      try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+          Mockito.mockStatic(SnowflakeUtil.class)) {
+        snowflakeUtilMockedStatic
+            .when(
+                () ->
+                    SnowflakeUtil.systemGetProperty(
+                        "net.snowflake.jdbc.temporaryCredentialCacheDir"))
+            .thenReturn(cacheDirectory);
+        SessionUtil.deleteMfaTokenCache(host, user);
+        try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
+          mockedHttpUtil
+              .when(
+                  () ->
+                      HttpUtil.executeGeneralRequest(
+                          any(HttpPost.class),
+                          anyInt(),
+                          anyInt(),
+                          anyInt(),
+                          anyInt(),
+                          any(HttpClientSettingsKey.class)))
+              .thenAnswer(
+                  new Answer<String>() {
+                    int callCount = 0;
 
-                @Override
-                public String answer(InvocationOnMock invocation) throws Throwable {
-                  String res;
-                  JsonNode jsonNode;
-                  final Object[] args = invocation.getArguments();
+                    @Override
+                    public String answer(InvocationOnMock invocation) throws Throwable {
+                      String res;
+                      JsonNode jsonNode;
+                      final Object[] args = invocation.getArguments();
 
-                  if (callCount == 0) {
-                    // First connection request
-                    jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(
-                        jsonNode
-                            .path("data")
-                            .path("SESSION_PARAMETERS")
-                            .path("CLIENT_REQUEST_MFA_TOKEN")
-                            .asBoolean());
-                    // return first mfa token
-                    res = getNormalMockedHttpResponse(true, 0).toString();
-                  } else if (callCount == 1) {
-                    // First close() request
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else if (callCount == 2) {
-                    // Second connection request
-                    jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(
-                        jsonNode
-                            .path("data")
-                            .path("SESSION_PARAMETERS")
-                            .path("CLIENT_REQUEST_MFA_TOKEN")
-                            .asBoolean());
-                    assertEquals(mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
-                    // Normally backend won't send a new mfa token in this case. For testing
-                    // purpose, we issue a new token to test whether the mfa token can be refreshed
-                    // when receiving a new one from server.
-                    res = getNormalMockedHttpResponse(true, 1).toString();
-                  } else if (callCount == 3) {
-                    // Second close() request
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else if (callCount == 4) {
-                    // Third connection request
-                    // Check for the new mfa token
-                    jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(
-                        jsonNode
-                            .path("data")
-                            .path("SESSION_PARAMETERS")
-                            .path("CLIENT_REQUEST_MFA_TOKEN")
-                            .asBoolean());
-                    assertEquals(mockedMfaToken[1], jsonNode.path("data").path("TOKEN").asText());
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else if (callCount == 5) {
-                    // Third close() request
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else if (callCount == 6) {
-                    // test if failed log in response can delete the cached mfa token
-                    res = getNormalMockedHttpResponse(false, -1).toString();
-                  } else if (callCount == 7) {
-                    jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(
-                        jsonNode
-                            .path("data")
-                            .path("SESSION_PARAMETERS")
-                            .path("CLIENT_REQUEST_MFA_TOKEN")
-                            .asBoolean());
-                    // no token should be included this time.
-                    assertEquals("", jsonNode.path("data").path("TOKEN").asText());
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else if (callCount == 8) {
-                    // final close()
-                    res = getNormalMockedHttpResponse(true, -1).toString();
-                  } else {
-                    // unexpected request
-                    res = getNormalMockedHttpResponse(false, -1).toString();
-                  }
+                      if (callCount == 0) {
+                        // First connection request
+                        jsonNode = parseRequest((HttpPost) args[0]);
+                        assertTrue(
+                            jsonNode
+                                .path("data")
+                                .path("SESSION_PARAMETERS")
+                                .path("CLIENT_REQUEST_MFA_TOKEN")
+                                .asBoolean());
+                        // return first mfa token
+                        res = getNormalMockedHttpResponse(true, 0).toString();
+                      } else if (callCount == 1) {
+                        // First close() request
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else if (callCount == 2) {
+                        // Second connection request
+                        jsonNode = parseRequest((HttpPost) args[0]);
+                        assertTrue(
+                            jsonNode
+                                .path("data")
+                                .path("SESSION_PARAMETERS")
+                                .path("CLIENT_REQUEST_MFA_TOKEN")
+                                .asBoolean());
+                        assertEquals(
+                            mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
+                        // Normally backend won't send a new mfa token in this case. For testing
+                        // purpose, we issue a new token to test whether the mfa token can be
+                        // refreshed
+                        // when receiving a new one from server.
+                        res = getNormalMockedHttpResponse(true, 1).toString();
+                      } else if (callCount == 3) {
+                        // Second close() request
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else if (callCount == 4) {
+                        // Third connection request
+                        // Check for the new mfa token
+                        jsonNode = parseRequest((HttpPost) args[0]);
+                        assertTrue(
+                            jsonNode
+                                .path("data")
+                                .path("SESSION_PARAMETERS")
+                                .path("CLIENT_REQUEST_MFA_TOKEN")
+                                .asBoolean());
+                        assertEquals(
+                            mockedMfaToken[1], jsonNode.path("data").path("TOKEN").asText());
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else if (callCount == 5) {
+                        // Third close() request
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else if (callCount == 6) {
+                        // test if failed log in response can delete the cached mfa token
+                        res = getNormalMockedHttpResponse(false, -1).toString();
+                      } else if (callCount == 7) {
+                        jsonNode = parseRequest((HttpPost) args[0]);
+                        assertTrue(
+                            jsonNode
+                                .path("data")
+                                .path("SESSION_PARAMETERS")
+                                .path("CLIENT_REQUEST_MFA_TOKEN")
+                                .asBoolean());
+                        // no token should be included this time.
+                        assertEquals("", jsonNode.path("data").path("TOKEN").asText());
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else if (callCount == 8) {
+                        // final close()
+                        res = getNormalMockedHttpResponse(true, -1).toString();
+                      } else {
+                        // unexpected request
+                        res = getNormalMockedHttpResponse(false, -1).toString();
+                      }
 
-                  callCount += 1; // this will be incremented on both connecting and closing
-                  return res;
-                }
-              });
+                      callCount += 1; // this will be incremented on both connecting and closing
+                      return res;
+                    }
+                  });
 
-      Properties prop = getBaseProp();
+          Properties prop = getBaseProp();
 
-      // connect url
-      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+          // connect url
+          String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
 
-      // The first connection contains no mfa token. After the connection, a mfa token will be saved
-      Connection con = DriverManager.getConnection(url, prop);
-      con.close();
+          // The first connection contains no mfa token. After the connection, a mfa token will be
+          // saved
+          Connection con = DriverManager.getConnection(url, prop);
+          con.close();
 
-      // The second connection is expected to include the mfa token issued for the first connection
-      // and a new mfa token is issued
-      Connection con1 = DriverManager.getConnection(url, prop);
-      con1.close();
+          // The second connection is expected to include the mfa token issued for the first
+          // connection
+          // and a new mfa token is issued
+          Connection con1 = DriverManager.getConnection(url, prop);
+          con1.close();
 
-      // The third connection is expected to include the new mfa token.
-      Connection con2 = DriverManager.getConnection(url, prop);
-      con2.close();
+          // The third connection is expected to include the new mfa token.
+          Connection con2 = DriverManager.getConnection(url, prop);
+          con2.close();
 
-      // This connection would receive an exception and then should clean up the mfa cache
-      try {
-        Connection con3 = DriverManager.getConnection(url, prop);
-        fail();
-      } catch (SnowflakeSQLException ex) {
-        // An exception is forced to happen by mocking. Do nothing.
+          // This connection would receive an exception and then should clean up the mfa cache
+          try {
+            Connection con3 = DriverManager.getConnection(url, prop);
+            fail();
+          } catch (SnowflakeSQLException ex) {
+            // An exception is forced to happen by mocking. Do nothing.
+          }
+          // This connect request should not contain mfa cached token
+          Connection con4 = DriverManager.getConnection(url, prop);
+          con4.close();
+        }
+        SessionUtil.deleteMfaTokenCache(host, user);
       }
-      // This connect request should not contain mfa cached token
-      Connection con4 = DriverManager.getConnection(url, prop);
-      con4.close();
     }
-    SessionUtil.deleteMfaTokenCache(host, user);
   }
 
   class MockUnavailableAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {

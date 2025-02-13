@@ -24,7 +24,7 @@ public class TokenResponseDTO {
 
   @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
   public TokenResponseDTO(
-      @JsonProperty("access_token") String accessToken,
+      @JsonProperty(value = "access_token", required = true) String accessToken,
       @JsonProperty("refresh_token") String refreshToken,
       @JsonProperty("token_type") String tokenType,
       @JsonProperty("scope") String scope,
