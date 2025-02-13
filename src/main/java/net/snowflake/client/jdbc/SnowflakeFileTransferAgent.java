@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
@@ -1338,10 +1339,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
-    logger.debug("Response: {}", jsonNode.toString());
+    logger.debug("Response: {}", removeSensitiveJsonElementsForLogging(jsonNode));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
+  }
+
+  /**
+   * @param jsonNode A JsonNode that needs to have sensitive data removed before logging.
+   * @return A string value of the JSON without any sensitive data for logging.
+   */
+  private static String removeSensitiveJsonElementsForLogging(JsonNode jsonNode) {
+    return ((ObjectNode) jsonNode.path("data")).remove("encryptionMaterial").toString();
   }
 
   /**
