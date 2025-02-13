@@ -256,10 +256,7 @@ public class SessionUtilTest {
   public void shouldProperlyCheckIfExperimentalAuthEnabled() {
     try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic = mockStatic(SnowflakeUtil.class)) {
       snowflakeUtilMockedStatic
-          .when(
-              () ->
-                  SnowflakeUtil.systemGetEnv(
-                      "SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
+          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn(null);
       Assertions.assertThrows(
           SFException.class,
@@ -278,10 +275,7 @@ public class SessionUtilTest {
                   AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
 
       snowflakeUtilMockedStatic
-          .when(
-              () ->
-                  SnowflakeUtil.systemGetEnv(
-                      "SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
+          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn("true");
       Assertions.assertDoesNotThrow(
           () ->

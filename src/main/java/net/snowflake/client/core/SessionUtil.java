@@ -351,8 +351,7 @@ public class SessionUtil {
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
       boolean experimentalAuthenticationMethodsEnabled =
-          Boolean.parseBoolean(
-              systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
+          Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
       AssertUtil.assertTrue(
           experimentalAuthenticationMethodsEnabled,
           "Following authentication method not yet supported: " + authenticator);

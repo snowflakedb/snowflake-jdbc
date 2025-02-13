@@ -309,8 +309,9 @@ public class SSOConnectionTest {
 
   @Test
   public void testIdTokenInSSO() throws Throwable {
+    Constants.OS os = Constants.getOS();
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
-      constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
+      constantsMockedStatic.when(Constants::getOS).thenReturn(os);
       String cacheDirectory =
           Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
               .toAbsolutePath()
