@@ -122,7 +122,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -DintegrationTestSuites=FipsTestSuite ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar ^
-        -Dsnowflake.jdbc.enableExperimentalAuthentication=true ^
         verify ^
         --batch-mode --show-version > log.txt & type log.txt
     echo "[INFO] Check for test execution status"
@@ -143,7 +142,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
-        -Dsnowflake.jdbc.enableExperimentalAuthentication=true ^
         verify ^
         --batch-mode --show-version > log.txt & type log.txt
     echo "[INFO] Check for test execution status"
