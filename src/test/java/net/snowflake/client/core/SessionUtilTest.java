@@ -94,25 +94,30 @@ public class SessionUtilTest {
 
   @Test
   public void testConvertSystemPropertyToIntValue() {
-    // Test that setting real value works
-    System.setProperty("net.snowflake.jdbc.max_connections", "500");
-    assertEquals(
-        500,
-        SystemUtil.convertSystemPropertyToIntValue(
-            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
-    // Test that entering a non-int sets the value to the default
-    System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
-    assertEquals(
-        HttpUtil.DEFAULT_MAX_CONNECTIONS,
-        SystemUtil.convertSystemPropertyToIntValue(
-            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
-    // Test another system property
-    System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
-    assertEquals(
-        30,
-        SystemUtil.convertSystemPropertyToIntValue(
-            HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
-            HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
+    try {
+      // Test that setting real value works
+      System.setProperty("net.snowflake.jdbc.max_connections", "500");
+      assertEquals(
+          500,
+          SystemUtil.convertSystemPropertyToIntValue(
+              HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+      // Test that entering a non-int sets the value to the default
+      System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
+      assertEquals(
+          HttpUtil.DEFAULT_MAX_CONNECTIONS,
+          SystemUtil.convertSystemPropertyToIntValue(
+              HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+      // Test another system property
+      System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
+      assertEquals(
+          30,
+          SystemUtil.convertSystemPropertyToIntValue(
+              HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
+              HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
+    } finally {
+      System.clearProperty("net.snowflake.jdbc.max_connections");
+      System.clearProperty("net.snowflake.jdbc.max_connections_per_route");
+    }
   }
 
   @Test

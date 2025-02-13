@@ -101,6 +101,7 @@ public enum SFSessionProperty {
   DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
+  ENABLE_EXACT_SCHEMA_SEARCH_ENABLED("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
