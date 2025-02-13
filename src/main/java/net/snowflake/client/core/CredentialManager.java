@@ -23,7 +23,7 @@ public class CredentialManager {
   private void initSecureStorageManager() {
     try {
       if (Constants.getOS() == Constants.OS.MAC) {
-        secureStorageManager = SecureStorageLinuxManager.getInstance();
+        secureStorageManager = SecureStorageAppleManager.builder();
       } else if (Constants.getOS() == Constants.OS.WINDOWS) {
         secureStorageManager = SecureStorageWindowsManager.builder();
       } else if (Constants.getOS() == Constants.OS.LINUX) {
