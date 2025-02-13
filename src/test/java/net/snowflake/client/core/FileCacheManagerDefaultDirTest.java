@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import java.io.File;
+import net.snowflake.client.annotations.RunOnLinuxOrMac;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.mockito.Mockito;
 public class FileCacheManagerDefaultDirTest {
 
   @Test
+  @RunOnLinuxOrMac
   public void shouldCreateCacheDirForLinuxXDG() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
@@ -29,6 +31,7 @@ public class FileCacheManagerDefaultDirTest {
   }
 
   @Test
+  @RunOnLinuxOrMac
   public void shouldCreateCacheDirForLinuxWithoutXDG() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
@@ -51,6 +54,7 @@ public class FileCacheManagerDefaultDirTest {
   }
 
   @Test
+  @RunOnLinuxOrMac
   public void shouldCreateCacheDirForWindows() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.WINDOWS);
@@ -71,6 +75,7 @@ public class FileCacheManagerDefaultDirTest {
   }
 
   @Test
+  @RunOnLinuxOrMac
   public void shouldCreateCacheDirForMacOS() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.MAC);
@@ -91,6 +96,7 @@ public class FileCacheManagerDefaultDirTest {
   }
 
   @Test
+  @RunOnLinuxOrMac
   public void shouldReturnNullWhenNoHomeDirSet() {
     try (MockedStatic<Constants> constantsMockedStatic = Mockito.mockStatic(Constants.class)) {
       constantsMockedStatic.when(Constants::getOS).thenReturn(Constants.OS.LINUX);
