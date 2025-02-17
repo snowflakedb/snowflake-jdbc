@@ -1333,7 +1333,8 @@ public class SessionUtil {
     JsonNode dataNode = null;
     try {
       StringEntity requestInput = prepareFederatedFlowStep1RequestInput(loginInput);
-      HttpRequestBase postRequest = prepareFederatedFlowStep1PostRequest(loginInput, requestInput);
+      HttpPost postRequest = new HttpPost();
+      prepareFederatedFlowStep1PostRequest(postRequest, loginInput, requestInput);
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
@@ -1754,25 +1755,22 @@ public class SessionUtil {
    *
    * @param loginInput The login information for the request.
    * @param inputData The JSON input data to include in the request.
-   * @return An {@link HttpPost} object ready to execute the federated flow request.
    * @throws URISyntaxException If the constructed URI is invalid.
    */
-  private static HttpRequestBase prepareFederatedFlowStep1PostRequest(
-      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+  private static void prepareFederatedFlowStep1PostRequest(
+          HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872
     fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
     URI fedUrlUri = fedUriBuilder.build();
+    postRequest.setURI(fedUrlUri);
 
-    HttpPost postRequest = new HttpPost(fedUrlUri);
     postRequest.setEntity(inputData);
     postRequest.addHeader("accept", "application/json");
 
     postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
     postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
-
-    return postRequest;
   }
 
   /**
