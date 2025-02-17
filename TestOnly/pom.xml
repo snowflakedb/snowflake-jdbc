@@ -21,6 +21,7 @@
     <junit.version>5.11.1</junit.version>
     <surefire.version>3.5.1</surefire.version>
     <mockito.version>3.5.6</mockito.version>
+    <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
   </properties>
 
@@ -249,6 +250,19 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-platform</artifactId>
       <version>${jna.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${apache.httpcomponents.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>4.4.16</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
