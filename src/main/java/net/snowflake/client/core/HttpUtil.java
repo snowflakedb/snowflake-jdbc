@@ -580,7 +580,7 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
+   * Executes an HTTP request with the cookie spec set to IGNORE_COOKIES
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
@@ -622,7 +622,7 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request for Snowflake.
+   * Executes an HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
@@ -658,7 +658,7 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request for Snowflake
+   * Executes an HTTP request for Snowflake
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
@@ -696,7 +696,7 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request for Snowflake.
+   * Executes an HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout

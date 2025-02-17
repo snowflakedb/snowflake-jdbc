@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLHandshakeException;
@@ -90,7 +91,7 @@ public class RestRequest {
   }
 
   /**
-   * Execute an http request with retry logic.
+   * Execute an HTTP request with retry logic.
    *
    * @param httpClient client object used to communicate with other machine
    * @param httpRequest request object contains all the request information
@@ -197,6 +198,9 @@ public class RestRequest {
 
     int retryCount = 0;
 
+    setRequestConfig(
+        httpRequest, withoutCookies, injectSocketTimeout, requestIdStr, authTimeoutInMilli);
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug(
@@ -211,63 +215,16 @@ public class RestRequest {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
-        if (withoutCookies) {
-          httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
-        }
+        setRequestURI(
+            httpRequest,
+            requestIdStr,
+            includeRetryParameters,
+            includeRequestGuid,
+            retryCount,
+            lastStatusCodeForRetry,
+            startTime,
+            requestInfoScrubbed);
 
-        // for first call, simulate a socket timeout by setting socket timeout
-        // to the injected socket timeout value
-        if (injectSocketTimeout != 0 && retryCount == 0) {
-          // test code path
-          logger.debug(
-              "{}Injecting socket timeout by setting socket timeout to {} ms",
-              requestIdStr,
-              injectSocketTimeout);
-          httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                  injectSocketTimeout, withoutCookies));
-        }
-
-        /*
-         * Add retryCount if the first request failed
-         * GS can uses the parameter for optimization. Specifically GS
-         * will only check metadata database to see if a query has been running
-         * for a retry request. This way for the majority of query requests
-         * which are not part of retry we don't have to pay the performance
-         * overhead of looking up in metadata database.
-         */
-        URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        // If HTAP
-        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
-            && builder.getPathSegments().contains("query-request")) {
-          logger.debug("{}Setting htap simulation", requestIdStr);
-          builder.setParameter("target", "htap_simulation");
-        }
-        if (includeRetryParameters && retryCount > 0) {
-          builder.setParameter("retryCount", String.valueOf(retryCount));
-          builder.setParameter("retryReason", lastStatusCodeForRetry);
-          builder.setParameter("clientStartTime", String.valueOf(startTime));
-        }
-
-        // When the auth timeout is set, set the socket timeout as the authTimeout
-        // so that it can be renewed in time and pass it to the http request configuration.
-        if (authTimeout > 0) {
-          int requestSocketAndConnectTimeout = (int) authTimeout * 1000;
-          logger.debug(
-              "{}Setting auth timeout as the socket timeout: {} s", requestIdStr, authTimeout);
-          httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
-                  requestSocketAndConnectTimeout, withoutCookies));
-        }
-
-        if (includeRequestGuid) {
-          UUID guid = UUIDUtils.getUUID();
-          logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
-          // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, guid.toString());
-        }
-
-        httpRequest.setURI(builder.build());
         execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
         execTimeData.setHttpClientEnd();
@@ -296,7 +253,7 @@ public class RestRequest {
       } catch (Exception ex) {
 
         savedEx = ex;
-        // if the request took more than socket timeout log an error
+        // if the request took more than socket timeout log a warning
         long currentMillis = System.currentTimeMillis();
         if ((currentMillis - startTimePerRequest) > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
@@ -368,6 +325,7 @@ public class RestRequest {
         retryCount = 0;
         break;
       } else {
+        //        Potentially retryable error
         if (response != null) {
           logger.debug(
               "{}HTTP response not ok: status code: {}, request: {}",
@@ -432,7 +390,7 @@ public class RestRequest {
           breakRetryEventName = "HttpRequestRetryLimitExceeded";
         }
 
-        if (breakRetryEventName != "" && !breakRetryEventName.isEmpty()) {
+        if (!breakRetryEventName.isEmpty()) {
           // If either of network timeout is exhausted or max retries have been reached, stop
           // retrying!
           TelemetryService.getInstance()
@@ -475,7 +433,7 @@ public class RestRequest {
         }
 
         // Make sure that any authenticator specific info that needs to be
-        // updated get's updated before the next retry. Ex - JWT token
+        // updated gets updated before the next retry. Ex - JWT token
         // Check to see if customer set socket/connect timeout has been reached,
         // if not we don't increase the retry count since JWT renew doesn't count as a retry
         // attempt.
@@ -503,6 +461,8 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
+            // TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall?
+            // Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
             logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
@@ -699,5 +659,80 @@ public class RestRequest {
       ex0 = ex0.getCause();
     }
     return ex0;
+  }
+
+  private static void setRequestConfig(
+      HttpRequestBase httpRequest,
+      boolean withoutCookies,
+      int injectSocketTimeout,
+      String requestIdStr,
+      long authTimeoutInMilli) {
+    if (withoutCookies) {
+      httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
+    }
+
+    // For first call, simulate a socket timeout by setting socket timeout
+    // to the injected socket timeout value
+    if (injectSocketTimeout != 0) {
+      // test code path
+      logger.debug(
+          "{}Injecting socket timeout by setting socket timeout to {} ms",
+          requestIdStr,
+          injectSocketTimeout);
+      httpRequest.setConfig(
+          HttpUtil.getDefaultRequestConfigWithSocketTimeout(injectSocketTimeout, withoutCookies));
+    }
+
+    // When the auth timeout is set, set the socket timeout as the authTimeout
+    // so that it can be renewed in time and pass it to the http request configuration.
+    if (authTimeoutInMilli > 0) {
+      int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
+      logger.debug(
+          "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
+      httpRequest.setConfig(
+          HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+              requestSocketAndConnectTimeout, withoutCookies));
+    }
+  }
+
+  private static void setRequestURI(
+      HttpRequestBase httpRequest,
+      String requestIdStr,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      int retryCount,
+      String lastStatusCodeForRetry,
+      long startTime,
+      String requestInfoScrubbed)
+      throws URISyntaxException {
+    /*
+     * Add retryCount if the first request failed
+     * GS can use the parameter for optimization. Specifically GS
+     * will only check metadata database to see if a query has been running
+     * for a retry request. This way for the majority of query requests
+     * which are not part of retry we don't have to pay the performance
+     * overhead of looking up in metadata database.
+     */
+    URIBuilder builder = new URIBuilder(httpRequest.getURI());
+    // If HTAP
+    if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+        && builder.getPathSegments().contains("query-request")) {
+      logger.debug("{}Setting htap simulation", requestIdStr);
+      builder.setParameter("target", "htap_simulation");
+    }
+    if (includeRetryParameters && retryCount > 0) {
+      builder.setParameter("retryCount", String.valueOf(retryCount));
+      builder.setParameter("retryReason", lastStatusCodeForRetry);
+      builder.setParameter("clientStartTime", String.valueOf(startTime));
+    }
+
+    if (includeRequestGuid) {
+      UUID guid = UUIDUtils.getUUID();
+      logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
+      // Add request_guid for better tracing
+      builder.setParameter(SF_REQUEST_GUID, guid.toString());
+    }
+
+    httpRequest.setURI(builder.build());
   }
 }
