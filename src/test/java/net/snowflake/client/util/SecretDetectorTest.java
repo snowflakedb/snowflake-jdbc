@@ -214,6 +214,8 @@ public class SecretDetectorTest {
     testParametersMasked.put("password", "test");
     testParametersMasked.put("sessionToken", "test");
     testParametersMasked.put("token", "test");
+    testParametersMasked.put("oauthClientId", "test");
+    testParametersMasked.put("oauthClientSecret", "test");
 
     Map<String, String> testParametersUnmasked = new HashMap<>();
     testParametersUnmasked.put("oktausername", "test");
@@ -247,6 +249,37 @@ public class SecretDetectorTest {
     assertThat(
         "Text with connection token is not masked",
         maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
+  }
+
+  @Test
+  public void testMaskOAuthSecrets() {
+    String tokenResponseJson =
+        "{\n"
+            + "  \"access_token\" : \"some:FAKE_token123\",\n"
+            + "  \"refresh_token\" : \"some:FAKE_token123\",\n"
+            + "  \"token_type\" : \"Bearer\",\n"
+            + "  \"username\" : \"OAUTH_TEST_AUTH_CODE\",\n"
+            + "  \"scope\" : \"refresh_token session:role:ANALYST\",\n"
+            + "  \"expires_in\" : 600,\n"
+            + "  \"refresh_token_expires_in\" : 86399,\n"
+            + "  \"idpInitiated\" : false\n"
+            + "}";
+
+    String maskedTokenResponseJson =
+        "{\n"
+            + "  \"access_token\":\"****\",\n"
+            + "  \"refresh_token\":\"****\",\n"
+            + "  \"token_type\" : \"Bearer\",\n"
+            + "  \"username\" : \"OAUTH_TEST_AUTH_CODE\",\n"
+            + "  \"scope\" : \"refresh_token session:role:ANALYST\",\n"
+            + "  \"expires_in\" : 600,\n"
+            + "  \"refresh_token_expires_in\" : 86399,\n"
+            + "  \"idpInitiated\" : false\n"
+            + "}";
+
+    assertThat(
+        "Text with OAuth tokens is not masked",
+        maskedTokenResponseJson.equals(SecretDetector.maskSecrets(tokenResponseJson)));
   }
 
   private JSONObject generateJsonObject() {
