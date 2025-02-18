@@ -155,10 +155,12 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   @Override
   public void close() throws SQLException {
     // no exception
-    try {
-      getStatement().close(); // should close both result set and statement.
-    } catch (SQLException ex) {
-      logger.debug("Failed to close", ex);
+    if (!isClosed()) { // Nothing to do if already closed.
+      try {
+        getStatement().close(); // should close both result set and statement.
+      } catch (SQLException ex) {
+        logger.debug("Failed to close", ex);
+      }
     }
   }
 
