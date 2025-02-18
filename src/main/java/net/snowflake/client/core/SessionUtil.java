@@ -1135,7 +1135,7 @@ public class SessionUtil {
           HttpUtil.executeGeneralRequest(
               postRequest,
               loginInput.getLoginTimeout(),
-              loginInput.getAuthTimeout(),
+              0,
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
