@@ -139,7 +139,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     assertTrue(tmp.toFile().isDirectory());
     PosixFileAttributes attributes = Files.readAttributes(tmp, PosixFileAttributes.class);
     Set<PosixFilePermission> permissions = attributes.permissions();
-    assertEquals(PosixFilePermissions.toString(permissions), "rw-------");
+    assertEquals(PosixFilePermissions.toString(permissions), "rwx------");
   }
 
   @Test
