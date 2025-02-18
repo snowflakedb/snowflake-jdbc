@@ -50,20 +50,20 @@ public class FileUtil {
     return true;
   }
 
-  public static void throwWhenParentDirectoryPermissionsWiderThanUserOnly(
+  public static void handleWhenParentDirectoryPermissionsWiderThanUserOnly(
       File file, String context) {
-    throwWhenDirectoryPermissionsWiderThanUserOnly(file.getParentFile(), context);
+    handleWhenDirectoryPermissionsWiderThanUserOnly(file.getParentFile(), context);
   }
 
-  public static void throwWhenFilePermissionsWiderThanUserOnly(File file, String context) {
-    throwWhenPermissionsWiderThanUserOnly(file.toPath(), context, false);
+  public static void handleWhenFilePermissionsWiderThanUserOnly(File file, String context) {
+    handleWhenPermissionsWiderThanUserOnly(file.toPath(), context, false);
   }
 
-  public static void throwWhenDirectoryPermissionsWiderThanUserOnly(File file, String context) {
-    throwWhenPermissionsWiderThanUserOnly(file.toPath(), context, true);
+  public static void handleWhenDirectoryPermissionsWiderThanUserOnly(File file, String context) {
+    handleWhenPermissionsWiderThanUserOnly(file.toPath(), context, true);
   }
 
-  public static void throwWhenPermissionsWiderThanUserOnly(
+  public static void handleWhenPermissionsWiderThanUserOnly(
       Path filePath, String context, boolean isDirectory) {
     // we do not check the permissions for Windows
     if (isWindows()) {
@@ -88,16 +88,26 @@ public class FileUtil {
             getContextStr(context),
             filePath,
             filePermissions);
-        throw new SecurityException(
+        String message =
             String.format(
-                "Access to file or directory %s is wider than allowed only to the owner. Remove cached file/directory and re-run the driver.",
-                filePath));
+                "Access to file or directory %s is wider than allowed. Remove cache file/directory and re-run the driver.",
+                filePath);
+        if (isDirectory) {
+          logger.warn(message);
+        } else {
+          throw new SecurityException(message);
+        }
       }
     } catch (IOException e) {
-      throw new SecurityException(
+      String message =
           String.format(
               "%s Unable to access the file/directory to check the permissions. Error: %s",
-              filePath, e));
+              filePath, e);
+      if (isDirectory) {
+        logger.warn(message);
+      } else {
+        throw new SecurityException(message);
+      }
     }
   }
 

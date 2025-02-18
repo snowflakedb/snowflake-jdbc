@@ -72,7 +72,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
   @CsvSource({
     "rwx------,rwx------,false",
     "rw-------,rwx------,true",
-    "rw-------,rwx--xrwx,false",
+    "rw-------,rwx--xrwx,true",
     "r-x------,rwx------,false",
     "r--------,rwx------,true",
     "rwxrwx---,rwx------,false",
@@ -103,7 +103,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
     } else {
       SecurityException ex =
           assertThrows(SecurityException.class, () -> fileCacheManager.readCacheFile());
-      assertTrue(ex.getMessage().contains("is wider than allowed only to the owner"));
+      assertTrue(ex.getMessage().contains("is wider than allowed."));
     }
   }
 

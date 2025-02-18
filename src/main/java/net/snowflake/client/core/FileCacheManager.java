@@ -99,8 +99,8 @@ class FileCacheManager {
       logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
     }
     if (onlyOwnerPermissions) {
-      FileUtil.throwWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
-      FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(
+      FileUtil.handleWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
+      FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(
           newCacheFile, "Override cache file");
     } else {
       FileUtil.logFileUsage(cacheFile, "Override cache file", false);
@@ -273,8 +273,8 @@ class FileCacheManager {
           new InputStreamReader(new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
 
         if (onlyOwnerPermissions) {
-          FileUtil.throwWhenFilePermissionsWiderThanUserOnly(cacheFile, "Read cache");
-          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Read cache");
+          FileUtil.handleWhenFilePermissionsWiderThanUserOnly(cacheFile, "Read cache");
+          FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Read cache");
           FileUtil.throwWhenOwnerDifferentThanCurrentUser(cacheFile, "Read cache");
         } else {
           FileUtil.logFileUsage(cacheFile, "Read cache", false);
@@ -296,8 +296,8 @@ class FileCacheManager {
       try (Writer writer =
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
         if (onlyOwnerPermissions) {
-          FileUtil.throwWhenFilePermissionsWiderThanUserOnly(cacheFile, "Write to cache");
-          FileUtil.throwWhenParentDirectoryPermissionsWiderThanUserOnly(
+          FileUtil.handleWhenFilePermissionsWiderThanUserOnly(cacheFile, "Write to cache");
+          FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(
               cacheFile, "Write to cache");
         } else {
           FileUtil.logFileUsage(cacheFile, "Write to cache", false);
