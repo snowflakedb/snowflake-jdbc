@@ -29,12 +29,12 @@ public enum SFSessionProperty {
   AUTHENTICATOR("authenticator", false, String.class),
   OKTA_USERNAME("oktausername", false, String.class),
   PRIVATE_KEY("privateKey", false, PrivateKey.class),
-  OAUTH_REDIRECT_URI("redirectUri", false, String.class),
-  CLIENT_ID("clientID", false, String.class),
-  CLIENT_SECRET("clientSecret", false, String.class),
-  OAUTH_SCOPE("scope", false, String.class),
-  EXTERNAL_AUTHORIZATION_URL("externalAuthorizationUrl", false, String.class),
-  EXTERNAL_TOKEN_REQUEST_URL("externalTokenRequestUrl", false, String.class),
+  OAUTH_REDIRECT_URI("oauthRedirectUri", false, String.class),
+  OAUTH_CLIENT_ID("oauthClientID", false, String.class),
+  OAUTH_CLIENT_SECRET("oauthClientSecret", false, String.class),
+  OAUTH_SCOPE("oauthScope", false, String.class),
+  OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
+  OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
@@ -101,6 +101,7 @@ public enum SFSessionProperty {
   DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
+  ENABLE_EXACT_SCHEMA_SEARCH_ENABLED("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 

@@ -243,7 +243,8 @@ public class SFSession extends SFBaseSession {
             queryID,
             this,
             e.getMessage(),
-            "No response or invalid response from GET request. Error: {}");
+            "No response or invalid response from GET request. Error: " + e.getMessage(),
+            e);
       }
 
       // Get response as JSON and parse it to get the query status
@@ -511,6 +512,13 @@ public class SFSession extends SFBaseSession {
             setEnablePatternSearch(getBooleanValue(propertyValue));
           }
           break;
+
+        case ENABLE_EXACT_SCHEMA_SEARCH_ENABLED:
+          if (propertyValue != null) {
+            setEnableExactSchemaSearch(getBooleanValue(propertyValue));
+          }
+          break;
+
         case DISABLE_GCS_DEFAULT_CREDENTIALS:
           if (propertyValue != null) {
             setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
@@ -671,11 +679,11 @@ public class SFSession extends SFBaseSession {
     SFLoginInput loginInput = new SFLoginInput();
     SFOauthLoginInput oauthLoginInput =
         new SFOauthLoginInput(
-            (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_ID),
-            (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_SECRET),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_ID),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_SECRET),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_AUTHORIZATION_URL),
-            (String) connectionPropertiesMap.get(SFSessionProperty.EXTERNAL_TOKEN_REQUEST_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_AUTHORIZATION_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_TOKEN_REQUEST_URL),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE));
 
     loginInput

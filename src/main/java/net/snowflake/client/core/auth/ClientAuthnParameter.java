@@ -21,6 +21,5 @@ public enum ClientAuthnParameter {
   SESSION_PARAMETERS,
   PROOF_KEY,
   TOKEN,
-  OAUTH_TYPE,
-  IDP_HOST
+  OAUTH_TYPE
 }

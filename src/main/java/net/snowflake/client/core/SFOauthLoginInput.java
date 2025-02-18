@@ -10,22 +10,22 @@ public class SFOauthLoginInput {
   private final String clientId;
   private final String clientSecret;
   private final String redirectUri;
-  private final String externalAuthorizationUrl;
-  private final String externalTokenRequestUrl;
+  private final String authorizationUrl;
+  private final String tokenRequestUrl;
   private final String scope;
 
   public SFOauthLoginInput(
       String clientId,
       String clientSecret,
       String redirectUri,
-      String externalAuthorizationUrl,
-      String externalTokenRequestUrl,
+      String authorizationUrl,
+      String tokenRequestUrl,
       String scope) {
     this.redirectUri = redirectUri;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
-    this.externalAuthorizationUrl = externalAuthorizationUrl;
-    this.externalTokenRequestUrl = externalTokenRequestUrl;
+    this.authorizationUrl = authorizationUrl;
+    this.tokenRequestUrl = tokenRequestUrl;
     this.scope = scope;
   }
 
@@ -41,12 +41,12 @@ public class SFOauthLoginInput {
     return clientSecret;
   }
 
-  public String getExternalAuthorizationUrl() {
-    return externalAuthorizationUrl;
+  public String getAuthorizationUrl() {
+    return authorizationUrl;
   }
 
-  public String getExternalTokenRequestUrl() {
-    return externalTokenRequestUrl;
+  public String getTokenRequestUrl() {
+    return tokenRequestUrl;
   }
 
   public String getScope() {

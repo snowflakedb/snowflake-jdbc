@@ -69,8 +69,7 @@
                 "TOKEN": "access-token-123",
                 "LOGIN_NAME": "MOCK_USERNAME",
                 "AUTHENTICATOR": "OAUTH",
-                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS",
-                "IDP_HOST": "localhost"
+                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS"
               }
             },
             "ignoreExtraElements" : true

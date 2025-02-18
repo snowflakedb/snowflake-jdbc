@@ -139,17 +139,12 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   }
 
   private SFLoginInput createLoginInputStub(
-      String redirectUri, String externalAuthorizationUrl, String externalTokenUrl) {
+      String redirectUri, String authorizationUrl, String tokenRequestUrl) {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     loginInputStub.setOauthLoginInput(
         new SFOauthLoginInput(
-            "123",
-            "123",
-            redirectUri,
-            externalAuthorizationUrl,
-            externalTokenUrl,
-            "session:role:ANALYST"));
+            "123", "123", redirectUri, authorizationUrl, tokenRequestUrl, "session:role:ANALYST"));
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 

@@ -5,8 +5,10 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -31,7 +33,6 @@ import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
-import net.snowflake.client.core.auth.oauth.OAuthUtil;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -284,22 +285,18 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-    checkIfSoteriaAuthnEnabled(authenticator);
+    checkIfExperimentalAuthnEnabled(authenticator);
 
-    if (authenticator.equals(AuthenticatorType.OAUTH)
-        || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)) {
-      // OAUTH and PAT needs either token or password
+    if (isTokenOrPasswordRequired(authenticator)) {
       AssertUtil.assertTrue(
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");
-    } else {
-      // OAuth and PAT do not require a username
+    }
+    if (isUsernameRequired(authenticator)) {
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
     }
-    if (authenticator.equals(AuthenticatorType.EXTERNALBROWSER)
-        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
-        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)) {
+    if (isEligibleForTokenCaching(authenticator)) {
       if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
           && loginInput.isEnableClientStoreTemporaryCredential()) {
         // force to set the flag for Mac/Windows users
@@ -328,7 +325,7 @@ public class SessionUtil {
       }
     }
 
-    readCachedTokens(loginInput);
+    readCachedTokensIfPossible(loginInput);
 
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
@@ -349,16 +346,34 @@ public class SessionUtil {
     }
   }
 
-  static void checkIfSoteriaAuthnEnabled(AuthenticatorType authenticator) throws SFException {
+  static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
     if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
-      boolean soteriaAuthenticationMethodsEnabled =
-          Boolean.parseBoolean(systemGetProperty("snowflake.jdbc.enableSoteria"));
+      boolean experimentalAuthenticationMethodsEnabled =
+          Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
       AssertUtil.assertTrue(
-          soteriaAuthenticationMethodsEnabled,
+          experimentalAuthenticationMethodsEnabled,
           "Following authentication method not yet supported: " + authenticator);
     }
+  }
+
+  private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {
+    return authenticator.equals(AuthenticatorType.EXTERNALBROWSER)
+        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
+        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
+  }
+
+  private static boolean isTokenOrPasswordRequired(AuthenticatorType authenticator) {
+    return authenticator.equals(AuthenticatorType.OAUTH)
+        || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN);
+  }
+
+  private static boolean isUsernameRequired(AuthenticatorType authenticator) {
+    return !authenticator.equals(AuthenticatorType.OAUTH)
+        && !authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
+        && !authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
+        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
   }
 
   private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
@@ -409,11 +424,13 @@ public class SessionUtil {
     }
   }
 
-  private static void readCachedTokens(SFLoginInput loginInput) throws SFException {
+  private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      CredentialManager.fillCachedIdToken(loginInput);
-      CredentialManager.fillCachedOAuthAccessToken(loginInput);
-      CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+      if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+        CredentialManager.fillCachedIdToken(loginInput);
+        CredentialManager.fillCachedOAuthAccessToken(loginInput);
+        CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+      }
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
@@ -606,10 +623,6 @@ public class SessionUtil {
       if (authenticatorType == AuthenticatorType.OAUTH
           && loginInput.getOriginalAuthenticator() != null) {
         data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
-        URI idpUri =
-            OAuthUtil.getTokenRequestUrl(
-                loginInput.getOauthLoginInput(), loginInput.getServerUrl());
-        data.put(ClientAuthnParameter.IDP_HOST.name(), idpUri.getHost());
       }
 
       // map of client environment parameters, including connection parameters

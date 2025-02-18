@@ -84,7 +84,8 @@ public class OAuthAccessTokenProviderFactoryTest {
                     AuthenticatorType.OAUTH_CLIENT_CREDENTIALS, loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains("passing clientId is required for OAUTH_CLIENT_CREDENTIALS authentication."));
+            .contains(
+                "passing oauthClientId is required for OAUTH_CLIENT_CREDENTIALS authentication."));
   }
 
   @Test
@@ -99,7 +100,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "passing clientSecret is required for OAUTH_CLIENT_CREDENTIALS authentication."));
+                "passing oauthClientSecret is required for OAUTH_CLIENT_CREDENTIALS authentication."));
   }
 
   @Test
@@ -114,7 +115,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "passing externalTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication."));
+                "passing oauthTokenRequestUrl is required for OAUTH_CLIENT_CREDENTIALS authentication."));
   }
 
   @Test
@@ -138,7 +139,8 @@ public class OAuthAccessTokenProviderFactoryTest {
                     AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput));
     Assertions.assertTrue(
         e.getMessage()
-            .contains("passing clientId is required for OAUTH_AUTHORIZATION_CODE authentication."));
+            .contains(
+                "passing oauthClientId is required for OAUTH_AUTHORIZATION_CODE authentication."));
   }
 
   @Test
@@ -153,7 +155,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "passing clientSecret is required for OAUTH_AUTHORIZATION_CODE authentication."));
+                "passing oauthClientSecret is required for OAUTH_AUTHORIZATION_CODE authentication."));
   }
 
   @Test
@@ -184,7 +186,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Error during OAuth Authorization Code authentication: For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified"));
+                "Error during OAuth Authorization Code authentication: For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both oauthAuthorizationUrl and oauthTokenRequestUrl must be specified"));
   }
 
   @Test
@@ -201,7 +203,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Error during OAuth Authorization Code authentication: For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both externalAuthorizationUrl and externalTokenRequestUrl must be specified"));
+                "Error during OAuth Authorization Code authentication: For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both oauthAuthorizationUrl and oauthTokenRequestUrl must be specified"));
   }
 
   @Test
@@ -222,7 +224,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=invalid/url/format externalTokenRequestUrl=https://some.ext.idp.com/token"));
+                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; oauthAuthorizationUrl=invalid/url/format oauthTokenRequestUrl=https://some.ext.idp.com/token"));
   }
 
   @Test
@@ -243,7 +245,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     Assertions.assertTrue(
         e.getMessage()
             .contains(
-                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; externalAuthorizationUrl=https://some.ext.idp.com/authz externalTokenRequestUrl=invalid-token-format"));
+                "Error during OAuth Authorization Code authentication: OAuth authorization URL and token URL must be specified in proper format; oauthAuthorizationUrl=https://some.ext.idp.com/authz oauthTokenRequestUrl=invalid-token-format"));
   }
 
   @Test
@@ -266,20 +268,20 @@ public class OAuthAccessTokenProviderFactoryTest {
           .createAccessTokenProvider(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
       Mockito.verify(loggerMock)
           .warn(
-              "Both externalAuthorizationUrl and externalTokenRequestUrl should belong to the same host; externalAuthorizationUrl=https://malicious.ext.idp.com/authz-url externalTokenRequestUrl=https://some.ext.idp.com/token-url");
+              "Both oauthAuthorizationUrl and oauthTokenRequestUrl should belong to the same host; oauthAuthorizationUrl=https://malicious.ext.idp.com/authz-url oauthTokenRequestUrl=https://some.ext.idp.com/token-url");
     }
   }
 
   private SFLoginInput createLoginInputStub(
       String clientId,
       String clientSecret,
-      String externalAuthorizationUrl,
-      String externalTokenUrl,
+      String authorizationUrl,
+      String tokenUrl,
       String redirectUri) {
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setOauthLoginInput(
         new SFOauthLoginInput(
-            clientId, clientSecret, redirectUri, externalAuthorizationUrl, externalTokenUrl, null));
+            clientId, clientSecret, redirectUri, authorizationUrl, tokenUrl, null));
     return loginInput;
   }
 }
