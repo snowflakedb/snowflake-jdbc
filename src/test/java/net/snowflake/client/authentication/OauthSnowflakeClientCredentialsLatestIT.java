@@ -52,7 +52,7 @@ public class OauthSnowflakeClientCredentialsLatestIT {
   void shouldThrowErrorForUnauthorizedClientCredentials()
       throws InterruptedException, SnowflakeSQLException {
     Properties properties = getOAuthSnowflakeClientCredentialParameters();
-    properties.put("clientId", "invalidClientId");
+    properties.put("oauthClientId", "invalidClientId");
 
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
