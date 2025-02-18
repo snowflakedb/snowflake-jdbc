@@ -168,9 +168,7 @@
         },
         "jsonBody": {
           "data": {
-            "tokenUrl": "https://testauth.okta.com/api/v1/authn",
-            "ssoUrl": "https://testauth.okta.com/app/snowflake/tokenlikepartofurl/sso/saml",
-            "proofKey": null
+            "some": "data-that-will-be-ignored-in-current-testcase-but-should-be-replaced-with-correct-response-for-further-tests"
           },
           "code": null,
           "message": null,
