@@ -8,11 +8,8 @@ import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherSe
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-<<<<<<< HEAD
 import com.amazonaws.util.StringUtils;
-=======
 import com.fasterxml.jackson.core.JsonProcessingException;
->>>>>>> 808407a1f44159ccad4f6a5c6111d8181ebe8b84
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
