@@ -52,7 +52,8 @@ public class HeartbeatIT extends AbstractDriverIT {
             "alter system set"
                 + " master_token_validity=60"
                 + ",session_token_validity=20"
-                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1");
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1"
+                + ",ENABLE_FIX_1907944_ACCOUNT_VALIDATION_MODE=0");
       }
     }
   }
@@ -70,7 +71,8 @@ public class HeartbeatIT extends AbstractDriverIT {
             "alter system set"
                 + " master_token_validity=default"
                 + ",session_token_validity=default"
-                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default");
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default"
+                + ",ENABLE_FIX_1907944_ACCOUNT_VALIDATION_MODE=default");
       }
     }
   }
