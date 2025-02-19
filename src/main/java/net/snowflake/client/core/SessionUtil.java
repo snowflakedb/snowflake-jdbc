@@ -8,7 +8,11 @@ import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherSe
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+<<<<<<< HEAD
 import com.amazonaws.util.StringUtils;
+=======
+import com.fasterxml.jackson.core.JsonProcessingException;
+>>>>>>> 808407a1f44159ccad4f6a5c6111d8181ebe8b84
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -826,7 +830,7 @@ public class SessionUtil {
               // In RestRequest.execute(), socket timeout is replaced with auth timeout
               // so we can renew the request within auth timeout.
               // auth timeout within socket timeout is thrown without backoff,
-              // and we need to update time remained in socket timeout here to control the
+              // and we need to update time remained in socket timeout here to control
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeoutInMillis() > 0) {
                 if (ex.issocketTimeoutNoBackoff()) {
@@ -856,29 +860,7 @@ public class SessionUtil {
         break;
       }
 
-      if (theString == null) {
-        if (lastRestException != null) {
-          logger.error(
-              "Failed to open new session for user: {}, host: {}. Error: {}",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl(),
-              lastRestException);
-          throw lastRestException;
-        } else {
-          SnowflakeSQLException exception =
-              new SnowflakeSQLException(
-                  NO_QUERY_ID,
-                  "empty authentication response",
-                  SqlState.CONNECTION_EXCEPTION,
-                  ErrorCode.CONNECTION_ERROR.getMessageCode());
-          logger.error(
-              "Failed to open new session for user: {}, host: {}. Error: {}",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl(),
-              exception);
-          throw exception;
-        }
-      }
+      handleEmptyAuthResponse(theString, loginInput, lastRestException);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1336,22 +1318,11 @@ public class SessionUtil {
   private static String federatedFlowStep4(
       SFLoginInput loginInput, String ssoUrl, String oneTimeToken) throws SnowflakeSQLException {
     String responseHtml = "";
+
     try {
 
-      final URL url = new URL(ssoUrl);
-      URI oktaGetUri =
-          new URIBuilder()
-              .setScheme(url.getProtocol())
-              .setHost(url.getHost())
-              .setPath(url.getPath())
-              .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
-              .setParameter("onetimetoken", oneTimeToken)
-              .build();
-      HttpGet httpGet = new HttpGet(oktaGetUri);
-
-      HeaderGroup headers = new HeaderGroup();
-      headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "*/*"));
-      httpGet.setHeaders(headers.getAllHeaders());
+      HttpGet httpGet = new HttpGet();
+      prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
@@ -1411,26 +1382,7 @@ public class SessionUtil {
       URL url = new URL(tokenUrl);
       URI tokenUri = url.toURI();
       final HttpPost postRequest = new HttpPost(tokenUri);
-
-      String userName;
-      if (Strings.isNullOrEmpty(loginInput.getOKTAUserName())) {
-        userName = loginInput.getUserName();
-      } else {
-        userName = loginInput.getOKTAUserName();
-      }
-      StringEntity params =
-          new StringEntity(
-              "{\"username\":\""
-                  + userName
-                  + "\",\"password\":\""
-                  + loginInput.getPassword()
-                  + "\"}");
-      postRequest.setEntity(params);
-
-      HeaderGroup headers = new HeaderGroup();
-      headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "application/json"));
-      headers.addHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-      postRequest.setHeaders(headers.getAllHeaders());
+      setFederatedFlowStep3PostRequestAuthData(postRequest, loginInput);
 
       final String idpResponse =
           HttpUtil.executeRequestWithoutCookies(
@@ -1498,29 +1450,8 @@ public class SessionUtil {
   private static JsonNode federatedFlowStep1(SFLoginInput loginInput) throws SnowflakeSQLException {
     JsonNode dataNode = null;
     try {
-      URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
-      fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
-      URI fedUrlUri = fedUriBuilder.build();
-
-      Map<String, Object> data = new HashMap<>();
-      data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
-      data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
-      data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
-      data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
-
-      ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
-      String json = mapper.writeValueAsString(authnData);
-
-      // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
-      input.setContentType("application/json");
-      HttpPost postRequest = new HttpPost(fedUrlUri);
-      postRequest.setEntity(input);
-      postRequest.addHeader("accept", "application/json");
-
-      // Add headers for driver name and version
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
+      StringEntity requestInput = prepareFederatedFlowStep1RequestInput(loginInput);
+      HttpPost postRequest = prepareFederatedFlowStep1PostRequest(loginInput, requestInput);
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
@@ -1530,6 +1461,7 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
+
       logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
@@ -1925,12 +1857,148 @@ public class SessionUtil {
     URI requestURI = request.getURI();
     String requestPath = requestURI.getPath();
     if (requestPath != null) {
-      if (requestPath.equals(SF_PATH_LOGIN_REQUEST)
+      return requestPath.equals(SF_PATH_LOGIN_REQUEST)
           || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
-          || requestPath.equals(SF_PATH_TOKEN_REQUEST)) {
-        return true;
-      }
+          || requestPath.equals(SF_PATH_TOKEN_REQUEST);
     }
     return false;
+  }
+
+  /**
+   * Prepares an HTTP POST request for the first step of the federated authentication flow.
+   *
+   * @param loginInput The login information for the request.
+   * @param inputData The JSON input data to include in the request.
+   * @return An {@link HttpPost} object ready to execute the federated flow request.
+   * @throws URISyntaxException If the constructed URI is invalid.
+   */
+  private static HttpPost prepareFederatedFlowStep1PostRequest(
+      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+    URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
+    // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
+    // overwritten here - to be fixed in SNOW-1922872
+    fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
+    URI fedUrlUri = fedUriBuilder.build();
+
+    HttpPost postRequest = new HttpPost(fedUrlUri);
+    postRequest.setEntity(inputData);
+    postRequest.addHeader("accept", "application/json");
+
+    postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
+    postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
+
+    return postRequest;
+  }
+
+  /**
+   * Prepares the JSON input for the first step of the federated authentication flow.
+   *
+   * @param loginInput The login information for the request.
+   * @return A {@link StringEntity} containing the JSON input for the request.
+   * @throws JsonProcessingException If there is an error generating the JSON input.
+   */
+  private static StringEntity prepareFederatedFlowStep1RequestInput(SFLoginInput loginInput)
+      throws JsonProcessingException {
+    Map<String, Object> data = new HashMap<>();
+    data.put(ClientAuthnParameter.ACCOUNT_NAME.name(), loginInput.getAccountName());
+    data.put(ClientAuthnParameter.AUTHENTICATOR.name(), loginInput.getAuthenticator());
+    data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
+    data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
+
+    ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
+    String json = mapper.writeValueAsString(authnData);
+
+    StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
+    input.setContentType("application/json");
+    return input;
+  }
+
+  /**
+   * Sets the authentication data for the third step of the federated authentication flow.
+   *
+   * @param postRequest The {@link HttpPost} request to update with authentication data.
+   * @param loginInput The login information for the request.
+   * @throws SnowflakeSQLException If an error occurs while preparing the request.
+   */
+  private static void setFederatedFlowStep3PostRequestAuthData(
+      HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
+    String userName =
+        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+            ? loginInput.getUserName()
+            : loginInput.getOKTAUserName();
+    try {
+      StringEntity params =
+          new StringEntity(
+              "{\"username\":\""
+                  + userName
+                  + "\",\"password\":\""
+                  + loginInput.getPassword()
+                  + "\"}");
+      postRequest.setEntity(params);
+
+      HeaderGroup headers = new HeaderGroup();
+      headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "application/json"));
+      headers.addHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+      postRequest.setHeaders(headers.getAllHeaders());
+    } catch (IOException ex) {
+      handleFederatedFlowError(loginInput, ex);
+    }
+  }
+
+  /**
+   * Prepares an HTTP GET request for the fourth step of the federated authentication flow.
+   *
+   * @param retrieveSamlRequest The {@link HttpRequestBase} to update with the SAML request details.
+   * @param ssoUrl The SSO URL to use for the request.
+   * @param oneTimeToken The one-time token to include in the request.
+   * @throws MalformedURLException If the SSO URL is malformed.
+   * @throws URISyntaxException If the URI for the request cannot be built.
+   */
+  private static void prepareFederatedFlowStep4Request(
+      HttpRequestBase retrieveSamlRequest, String ssoUrl, String oneTimeToken)
+      throws MalformedURLException, URISyntaxException {
+    final URL url = new URL(ssoUrl);
+    URI oktaGetUri =
+        new URIBuilder()
+            .setScheme(url.getProtocol())
+            .setHost(url.getHost())
+            .setPort(url.getPort())
+            .setPath(url.getPath())
+            .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
+            .setParameter("onetimetoken", oneTimeToken)
+            .build();
+    retrieveSamlRequest.setURI(oktaGetUri);
+
+    HeaderGroup headers = new HeaderGroup();
+    headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "*/*"));
+    retrieveSamlRequest.setHeaders(headers.getAllHeaders());
+  }
+
+  private static void handleEmptyAuthResponse(
+      String theString, SFLoginInput loginInput, Exception lastRestException)
+      throws Exception, SFException {
+    if (theString == null) {
+      if (lastRestException != null) {
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            lastRestException);
+        throw lastRestException;
+      } else {
+        SnowflakeSQLException exception =
+            new SnowflakeSQLException(
+                NO_QUERY_ID,
+                "empty authentication response",
+                SqlState.CONNECTION_EXCEPTION,
+                ErrorCode.CONNECTION_ERROR.getMessageCode());
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            exception);
+        throw exception;
+      }
+    }
   }
 }
