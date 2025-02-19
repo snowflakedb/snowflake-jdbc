@@ -44,6 +44,20 @@ public class AuthorizationCodeRedirectRequestHandlerTest {
   }
 
   @Test
+  public void shouldReturnEscapedErrorResponse() {
+    Map<String, String> params = new HashMap<>();
+    params.put("error", "<script>some malicious script<script>");
+
+    String response =
+        AuthorizationCodeRedirectRequestHandler.handleRedirectRequest(
+            params, authorizationCodeFutureMock, new State("abc"));
+    Mockito.verify(authorizationCodeFutureMock)
+        .completeExceptionally(Mockito.any(SFException.class));
+    Assertions.assertEquals(
+        "Authorization error: &lt;script&gt;some malicious script&lt;script&gt;", response);
+  }
+
+  @Test
   public void shouldReturnInvalidStateErrorResponse() {
     Map<String, String> params = new HashMap<>();
     params.put("authorization_code", "some authorization code");

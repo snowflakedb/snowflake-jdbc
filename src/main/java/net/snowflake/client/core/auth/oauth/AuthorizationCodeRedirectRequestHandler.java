@@ -5,6 +5,7 @@
 package net.snowflake.client.core.auth.oauth;
 
 import com.amazonaws.util.StringUtils;
+import com.google.common.html.HtmlEscapers;
 import com.nimbusds.oauth2.sdk.id.State;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -55,6 +56,6 @@ class AuthorizationCodeRedirectRequestHandler {
         response = "Authorization error: authorization code has not been returned to the driver.";
       }
     }
-    return response;
+    return HtmlEscapers.htmlEscaper().escape(response);
   }
 }
