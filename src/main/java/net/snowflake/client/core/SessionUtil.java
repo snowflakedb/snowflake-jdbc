@@ -306,6 +306,8 @@ public class SessionUtil {
       }
     }
 
+    convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
+
     preNewSession(loginInput);
 
     try {
@@ -314,6 +316,16 @@ public class SessionUtil {
       // Id Token expired. We run newSession again with id_token cache cleared
       logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
+    }
+  }
+
+  private static void convertSessionParameterStringValueToBooleanIfGiven(
+      SFLoginInput loginInput, String parameterName) {
+    Object currentClientRequestMfaToken = loginInput.getSessionParameters().get(parameterName);
+    if (currentClientRequestMfaToken instanceof String) {
+      loginInput
+          .getSessionParameters()
+          .put(parameterName, Boolean.parseBoolean((String) currentClientRequestMfaToken));
     }
   }
 
