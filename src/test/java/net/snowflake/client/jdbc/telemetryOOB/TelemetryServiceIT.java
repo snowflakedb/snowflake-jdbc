@@ -426,7 +426,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   public void testCreateLogAndMetricBuilderWithException() {
     TelemetryService service = TelemetryService.getInstance();
     try {
-      int a = 10 / 0;
+      throw new Exception();
     } catch (Exception ex) {
       // example for an exception log
       // this log will be delivered to snowflake
@@ -445,6 +445,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   // Test for creation of Exception for the Code coverage purpose.
+  @SuppressWarnings("deprecation")
   @Test
   public void testWithNameWithValueMethod() {
     try {
@@ -457,6 +458,8 @@ public class TelemetryServiceIT extends BaseJDBCTest {
           logBuilder.withName("ExampleLog").withValue("This is an example log").build();
       assertThat("check log value", log.get("Value").equals("This is an example log"));
       service.report(log);
+
+      log.getDeployment();
     }
   }
 }
