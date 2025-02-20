@@ -20,6 +20,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -42,7 +43,9 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   static TimeZone ogTz;
-
+  private static final TimeZone nuukTimeZone = TimeZone.getTimeZone(ZoneId.of("America/Nuuk"));
+  private static final Calendar nuukCalendar = Calendar.getInstance(nuukTimeZone);
+  
   static class DataProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
@@ -459,7 +462,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
             // ResultSet.getTimestamp()
             assertEquals(new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
             assertEquals(ts, resultSet.getTimestamp("COLTS"));
+            assertEquals(ts, resultSet.getTimestamp("COLTS", nuukCalendar));
             assertEquals(new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
+
             try {
               resultSet.getTimestamp("COLSTRING");
               fail();
