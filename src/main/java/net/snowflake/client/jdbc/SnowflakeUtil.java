@@ -73,8 +73,8 @@ public class SnowflakeUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  private static final Set<PosixFilePermission> ownerOnlyPermission =
-      PosixFilePermissions.fromString("rw-------");
+  private static final Set<PosixFilePermission> directoryOwnerOnlyPermission =
+      PosixFilePermissions.fromString("rwx------");
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -922,7 +922,8 @@ public class SnowflakeUtil {
     boolean isDirCreated = true;
     Path dir = Paths.get(location);
     try {
-      Files.createDirectory(dir, PosixFilePermissions.asFileAttribute(ownerOnlyPermission));
+      Files.createDirectory(
+          dir, PosixFilePermissions.asFileAttribute(directoryOwnerOnlyPermission));
     } catch (IOException e) {
       logger.error(
           "Failed to set OwnerOnly permission for {}. This may cause the file download to fail ",
