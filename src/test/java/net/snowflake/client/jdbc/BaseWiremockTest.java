@@ -95,7 +95,13 @@ public abstract class BaseWiremockTest {
                             "--proxy-pass-through",
                             "false", // pass through only matched requests
                             "--port",
-                            String.valueOf(wiremockHttpPort))
+                            String.valueOf(wiremockHttpPort),
+                            "--https-port",
+                            String.valueOf(wiremockHttpsPort),
+                            "--https-keystore",
+                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
+                            "--ca-keystore",
+                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
                         .inheritIO()
                         .start();
                 waitForWiremock();
