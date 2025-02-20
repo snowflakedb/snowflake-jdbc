@@ -326,8 +326,9 @@ public class SessionUtil {
       }
     }
 
-    readCachedTokensIfPossible(loginInput);
+    convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
+    readCachedTokensIfPossible(loginInput);
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -425,17 +426,27 @@ public class SessionUtil {
     }
   }
 
+  private static void convertSessionParameterStringValueToBooleanIfGiven(
+      SFLoginInput loginInput, String parameterName) {
+    Object currentClientRequestMfaToken = loginInput.getSessionParameters().get(parameterName);
+    if (currentClientRequestMfaToken instanceof String) {
+      loginInput
+          .getSessionParameters()
+          .put(parameterName, Boolean.parseBoolean((String) currentClientRequestMfaToken));
+    }
+  }
+
   private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+    if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+      if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
         CredentialManager.fillCachedOAuthAccessToken(loginInput);
         CredentialManager.fillCachedOAuthRefreshToken(loginInput);
       }
-    }
 
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.fillCachedMfaToken(loginInput);
+      if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
+        CredentialManager.fillCachedMfaToken(loginInput);
+      }
     }
   }
 
