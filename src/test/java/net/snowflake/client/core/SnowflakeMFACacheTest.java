@@ -147,7 +147,8 @@ public class SnowflakeMFACacheTest {
                             .asBoolean());
                     assertEquals(mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
                     // Normally backend won't send a new mfa token in this case. For testing
-                    // purpose, we issue a new token to test whether the mfa token can be refreshed
+                    // purpose, we issue a new token to test whether the mfa token can be
+                    // refreshed
                     // when receiving a new one from server.
                     res = getNormalMockedHttpResponse(true, 1).toString();
                   } else if (callCount == 3) {
@@ -200,11 +201,13 @@ public class SnowflakeMFACacheTest {
       // connect url
       String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
 
-      // The first connection contains no mfa token. After the connection, a mfa token will be saved
+      // The first connection contains no mfa token. After the connection, a mfa token will be
+      // saved
       Connection con = DriverManager.getConnection(url, prop);
       con.close();
 
-      // The second connection is expected to include the mfa token issued for the first connection
+      // The second connection is expected to include the mfa token issued for the first
+      // connection
       // and a new mfa token is issued
       Connection con1 = DriverManager.getConnection(url, prop);
       con1.close();
@@ -317,7 +320,7 @@ public class SnowflakeMFACacheTest {
     try {
       SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockUnavailableAdvapi32Lib());
       SecureStorageWindowsManager manager = SecureStorageWindowsManager.builder();
-      CredentialManager.getInstance().injectSecureStorageManager(manager);
+      CredentialManager.injectSecureStorageManager(manager);
       unavailableLSSWindowsTestBody();
     } finally {
       SecureStorageWindowsManager.Advapi32LibManager.resetInstance();
@@ -329,7 +332,7 @@ public class SnowflakeMFACacheTest {
     try {
       testUnavailableLSSWindowsHelper();
     } finally {
-      CredentialManager.getInstance().resetSecureStorageManager();
+      CredentialManager.resetSecureStorageManager();
     }
   }
 

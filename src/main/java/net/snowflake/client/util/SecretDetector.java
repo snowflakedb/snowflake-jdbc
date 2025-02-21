@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -32,6 +33,14 @@ public class SecretDetector {
   private static final Pattern AWS_TOKEN_PATTERN =
       Pattern.compile(
           "(accessToken|tempToken|keySecret)\"\\s*:\\s*\"([a-z0-9/+]{32,}={0,2})\"",
+          Pattern.CASE_INSENSITIVE);
+
+  // Used for detecting OAuth tokens in serialized JSON
+  private static final Pattern OAUTH_JSON_PATTERN =
+      Pattern.compile(
+          "(access_token|refresh_token)\""
+              + "\\s*:\\s*"
+              + "\"([a-zA-Z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{3,})\"",
           Pattern.CASE_INSENSITIVE);
 
   // Signature added in the query string of a URL in SAS based authentication
@@ -88,6 +97,10 @@ public class SecretDetector {
     "sig",
     "signature",
     "temptoken",
+    "oauthClientId",
+    "oauthClientSecret",
+    "accessToken",
+    "refreshToken"
   };
 
   private static Set<String> SENSITIVE_NAME_SET = new HashSet<>(Arrays.asList(SENSITIVE_NAMES));
@@ -113,7 +126,7 @@ public class SecretDetector {
   private static boolean isSensitiveParameter(String name) {
     Pattern PASSWORD_IN_NAME =
         Pattern.compile(
-            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword|private_key_base).*?",
+            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword|private_key_base|oauthClientSecret|oauthClientId).*?",
             Pattern.CASE_INSENSITIVE);
     Matcher matcher = PASSWORD_IN_NAME.matcher(name);
     return isSensitive(name) || matcher.matches();
@@ -208,7 +221,26 @@ public class SecretDetector {
    */
   public static String maskSecrets(String text) {
     return filterAccessTokens(
-        filterConnectionTokens(filterPassword(filterSASTokens(filterAWSKeys(text)))));
+        filterConnectionTokens(
+            filterPassword(filterSASTokens(filterAWSKeys(filterOAuthTokens(text))))));
+  }
+
+  /**
+   * Masks any secrets present in the OAuth token request JSON response.
+   *
+   * @param text Text which may contain secrets
+   * @return Masked string
+   */
+  @SnowflakeJdbcInternalApi
+  public static String filterOAuthTokens(String text) {
+    Matcher matcher =
+        OAUTH_JSON_PATTERN.matcher(
+            text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    if (matcher.find()) {
+      return matcher.replaceAll("$1\":\"****\"");
+    }
+    return text;
   }
 
   /**
