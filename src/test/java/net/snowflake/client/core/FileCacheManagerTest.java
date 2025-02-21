@@ -148,8 +148,8 @@ class FileCacheManagerTest extends BaseJDBCTest {
     Path symlink = createSymlink();
     try {
       SecurityException ex =
-              assertThrows(
-                      SecurityException.class, () -> fileCacheManager.overrideCacheFile(symlink.toFile()));
+          assertThrows(
+              SecurityException.class, () -> fileCacheManager.overrideCacheFile(symlink.toFile()));
       assertTrue(ex.getMessage().contains("Symbolic link is not allowed for file cache"));
     } finally {
       if (Files.exists(symlink)) {
@@ -193,7 +193,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
   }
 
   private Path createSymlink() throws IOException {
-    Path link = Paths.get(cacheFile.getParent(),"symlink_" + CACHE_FILE_NAME);
+    Path link = Paths.get(cacheFile.getParent(), "symlink_" + CACHE_FILE_NAME);
     if (Files.exists(link)) {
       Files.delete(link);
     }
