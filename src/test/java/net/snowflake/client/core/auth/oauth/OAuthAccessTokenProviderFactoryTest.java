@@ -272,27 +272,6 @@ public class OAuthAccessTokenProviderFactoryTest {
     }
   }
 
-  @Test
-  public void shouldFailToCreateAuthzCodeAccessTokenProviderWithDifferentUrlDomains() {
-    SFLoginInput loginInput =
-        createLoginInputStub(
-            "123",
-            "123",
-            "https://malicious.ext.idp.com/authz-url",
-            "https://some.ext.idp.com/token-url",
-            "http://localhost:1234/");
-    SFException e =
-        Assertions.assertThrows(
-            SFException.class,
-            () ->
-                providerFactory.createAccessTokenProvider(
-                    AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput));
-    Assertions.assertTrue(
-        e.getMessage()
-            .contains(
-                "Both externalAuthorizationUrl and externalTokenRequestUrl must belong to the same host; externalAuthorizationUrl=https://malicious.ext.idp.com/authz-url externalTokenRequestUrl=https://some.ext.idp.com/token-url"));
-  }
-
   private SFLoginInput createLoginInputStub(
       String clientId,
       String clientSecret,

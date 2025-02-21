@@ -28,6 +28,7 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, login);
     AuthTestHelper.deleteOauthToken(AuthConnectionParameters.HOST, login);
     AuthTestHelper.deleteOauthRefreshToken(AuthConnectionParameters.HOST, login);
+    properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
   }
 
   @AfterEach
@@ -46,7 +47,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
 
   @Test
   void shouldAuthenticateUsingSnowflakeOauthAuthorizationCode() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
     Thread provideCredentialsThread =
         new Thread(
             () ->
@@ -61,7 +61,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
 
   @Test
   void shouldThrowErrorForMismatchedOauthSnowflakeUsername() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
     properties.setProperty("user", "invalidUser@snowflake.com");
     Thread provideCredentialsThread =
         new Thread(
@@ -78,7 +77,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
 
   @Test
   void shouldThrowErrorForOauthSnowflakeTimeout() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
     properties.put("BROWSER_RESPONSE_TIMEOUT", "0");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
@@ -88,7 +86,6 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
 
   @Test
   void shouldAuthenticateUsingTokenCacheOauthSnowflake() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
     Thread provideCredentialsThread =
         new Thread(
@@ -101,5 +98,26 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
     authTestHelper.verifyExceptionIsNotThrown();
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsNotThrown();
+  }
+
+  @Test
+  void shouldNotAuthenticateUsingTokenCacheOauthSnowflake() throws InterruptedException {
+    properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
+    properties.remove("user");
+    Thread provideCredentialsThread =
+            new Thread(
+                    () ->
+                            authTestHelper.provideCredentials(
+                                    "internalOauthSnowflakeSuccess", login, password));
+    Thread connectThread = authTestHelper.getConnectAndExecuteSimpleQueryThread(properties, null);
+
+    authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
+    authTestHelper.verifyExceptionIsNotThrown();
+
+    properties.put("BROWSER_RESPONSE_TIMEOUT", "5");
+    authTestHelper.connectAndExecuteSimpleQuery(properties, null);
+    authTestHelper.verifyExceptionIsThrown(
+        "Error during OAuth Authorization Code authentication: Authorization request timed out. "
+            + "Snowflake driver did not receive authorization code back to the redirect URI. Verify your security integration and driver configuration.");
   }
 }

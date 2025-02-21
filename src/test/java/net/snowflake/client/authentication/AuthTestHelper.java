@@ -116,7 +116,6 @@ public class AuthTestHelper {
       assertTrue(rs.next());
       int value = rs.getInt(1);
       assertEquals(1, value);
-      System.out.println(value);
       saveToken(con);
       saveAccessToken(con);
     } catch (SQLException e) {

@@ -22,6 +22,7 @@ public class OauthSnowflakeClientCredentialsLatestIT {
   public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, login);
     AuthTestHelper.deleteOauthToken(OKTA, login);
+    properties = getOAuthSnowflakeClientCredentialParameters();
   }
 
   @AfterAll
@@ -33,14 +34,12 @@ public class OauthSnowflakeClientCredentialsLatestIT {
 
   @Test
   void shouldAuthenticateUsingSnowflakeOauthClientCredentials() {
-    Properties properties = getOAuthSnowflakeClientCredentialParameters();
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsNotThrown();
   }
 
   @Test
   void shouldThrowErrorForClientCredentialsMismatchedUsername() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeClientCredentialParameters();
     properties.put("user", "invalidUser@snowflake.com");
 
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
@@ -51,7 +50,6 @@ public class OauthSnowflakeClientCredentialsLatestIT {
   @Test
   void shouldThrowErrorForUnauthorizedClientCredentials()
       throws InterruptedException, SnowflakeSQLException {
-    Properties properties = getOAuthSnowflakeClientCredentialParameters();
     properties.put("oauthClientId", "invalidClientId");
 
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
