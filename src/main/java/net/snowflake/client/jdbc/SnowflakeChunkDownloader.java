@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.MB;
@@ -48,11 +44,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 
-/**
- * Class for managing async download of offline result chunks
- *
- * <p>Created by jhuang on 11/12/14.
- */
+/** Class for managing async download of offline result chunks W */
 public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   // object mapper for deserialize JSON

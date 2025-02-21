@@ -38,7 +38,6 @@ import net.snowflake.client.log.SFLoggerFactory;
  *
  * <p>Adapted by Snowflake to return File object when file is spilled to disk.
  *
- * @author Chris Nokleberg
  * @since 1.0
  */
 @Beta

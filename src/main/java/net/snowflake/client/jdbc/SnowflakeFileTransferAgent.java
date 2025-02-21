@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
@@ -79,11 +75,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-/**
- * Class for uploading/downloading files
- *
- * @author jhuang
- */
+/** Class for uploading/downloading files */
 public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
