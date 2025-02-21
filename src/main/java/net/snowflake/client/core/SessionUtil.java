@@ -1106,6 +1106,7 @@ public class SessionUtil {
    * @param host The host string
    * @param user The user
    */
+  @SnowflakeJdbcInternalApi
   public static void deleteOAuthAccessTokenCache(String host, String user) {
     CredentialManager.deleteOAuthAccessTokenCache(host, user);
   }
@@ -1116,6 +1117,7 @@ public class SessionUtil {
    * @param host The host string
    * @param user The user
    */
+  @SnowflakeJdbcInternalApi
   public static void deleteOAuthRefreshTokenCache(String host, String user) {
     CredentialManager.deleteOAuthRefreshTokenCache(host, user);
   }

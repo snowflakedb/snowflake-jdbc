@@ -27,6 +27,7 @@ public class OauthSnowflakeAuthorizationCodeWildcardsLatestIT {
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, login);
     AuthTestHelper.deleteOauthToken(AuthConnectionParameters.HOST, login);
     AuthTestHelper.deleteOauthRefreshToken(AuthConnectionParameters.HOST, login);
+    properties = getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters();
   }
 
   @AfterEach
@@ -45,7 +46,6 @@ public class OauthSnowflakeAuthorizationCodeWildcardsLatestIT {
 
   @Test
   void shouldAuthenticateUsingSnowflakeOauthAuthorizationCode() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters();
     Thread provideCredentialsThread =
         new Thread(
             () ->
@@ -60,7 +60,6 @@ public class OauthSnowflakeAuthorizationCodeWildcardsLatestIT {
 
   @Test
   void shouldThrowErrorForMismatchedOauthSnowflakeUsername() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters();
     properties.setProperty("user", "invalidUser@snowflake.com");
     Thread provideCredentialsThread =
         new Thread(
@@ -77,7 +76,6 @@ public class OauthSnowflakeAuthorizationCodeWildcardsLatestIT {
 
   @Test
   void shouldThrowErrorForOauthSnowflakeTimeout() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters();
     properties.put("BROWSER_RESPONSE_TIMEOUT", "0");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
@@ -87,7 +85,6 @@ public class OauthSnowflakeAuthorizationCodeWildcardsLatestIT {
 
   @Test
   void shouldAuthenticateUsingTokenCacheOauthSnowflake() throws InterruptedException {
-    Properties properties = getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters();
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
     Thread provideCredentialsThread =
         new Thread(

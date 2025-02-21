@@ -290,25 +290,13 @@ public class CredentialManager {
   /** Delete the OAuth access token cache */
   static void deleteOAuthAccessTokenCache(SFLoginInput loginInput) throws SFException {
     String host = getHostForOAuthCacheKey(loginInput);
-    logger.debug(
-        "Removing cached OAuth access token from a secure storage for user: {}, host: {}",
-        loginInput.getUserName(),
-        host);
-    getInstance()
-        .deleteTemporaryCredential(
-            host, loginInput.getUserName(), CachedCredentialType.OAUTH_ACCESS_TOKEN);
+    deleteOAuthAccessTokenCache(host, loginInput.getUserName());
   }
 
   /** Delete the OAuth refresh token cache */
   static void deleteOAuthRefreshTokenCache(SFLoginInput loginInput) throws SFException {
     String host = getHostForOAuthCacheKey(loginInput);
-    logger.debug(
-        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
-        loginInput.getUserName(),
-        host);
-    getInstance()
-        .deleteTemporaryCredential(
-            host, loginInput.getUserName(), CachedCredentialType.OAUTH_REFRESH_TOKEN);
+    deleteOAuthRefreshTokenCache(host, loginInput.getUserName());
   }
 
   /** Delete the Oauth refresh token cache */

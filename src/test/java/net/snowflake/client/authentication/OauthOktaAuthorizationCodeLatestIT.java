@@ -16,11 +16,15 @@ public class OauthOktaAuthorizationCodeLatestIT {
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
   AuthTestHelper authTestHelper = new AuthTestHelper();
+  Properties properties;
+
 
   @BeforeEach
   public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken();
     AuthTestHelper.deleteOauthToken();
+    properties = getOAuthExternalAuthorizationCodeConnectionParameters();
+
   }
 
   @AfterEach
@@ -36,7 +40,6 @@ public class OauthOktaAuthorizationCodeLatestIT {
 
   @Test
   void shouldAuthenticateUsingExternalOauthOktaAuthorizationCode() throws InterruptedException {
-    Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
     Thread provideCredentialsThread =
         new Thread(
             () -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
@@ -49,9 +52,7 @@ public class OauthOktaAuthorizationCodeLatestIT {
 
   @Test
   void shouldThrowErrorForMismatchedOauthOktaUsername() throws InterruptedException {
-    Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
     properties.setProperty("user", "invalidUser@snowflake.com");
-
     Thread provideCredentialsThread =
         new Thread(
             () -> authTestHelper.provideCredentials("externalOauthOktaSuccess", login, password));
@@ -64,7 +65,6 @@ public class OauthOktaAuthorizationCodeLatestIT {
 
   @Test
   void shouldThrowErrorForOauthOktaTimeout() throws InterruptedException {
-    Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
     properties.put("BROWSER_RESPONSE_TIMEOUT", "0");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
@@ -74,7 +74,6 @@ public class OauthOktaAuthorizationCodeLatestIT {
 
   @Test
   void shouldAuthenticateUsingTokenCacheForOauthOkta() throws InterruptedException {
-    Properties properties = getOAuthExternalAuthorizationCodeConnectionParameters();
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
 
     Thread provideCredentialsThread =

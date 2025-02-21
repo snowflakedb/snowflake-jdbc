@@ -1259,6 +1259,7 @@ public class SFSession extends SFBaseSession {
     return idToken;
   }
 
+  @SnowflakeJdbcInternalApi
   public String getAccessToken() {
     return oauthAccessToken;
   }
