@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.ClientConfiguration;
@@ -17,8 +14,6 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 /**
  * Factory object for abstracting the creation of storage client objects: SnowflakeStorageClient and
  * StorageObjectMetadata
- *
- * @author lgiakoumakis
  */
 public class StorageClientFactory {
 

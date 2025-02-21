@@ -2,7 +2,6 @@ package net.snowflake.client.util;
 
 import java.util.Objects;
 
-/** Created by hyu on 2/1/18. */
 public class SFPair<L, R> {
   public L left;
 

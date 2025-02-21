@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;

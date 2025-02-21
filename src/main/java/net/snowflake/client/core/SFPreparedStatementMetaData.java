@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
@@ -12,12 +8,7 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Statement metadata which includes the result metadata and bind information.
- *
- * @author jhuang
- *     <p>Created on 1/21/16
- */
+/** Statement metadata which includes the result metadata and bind information. */
 public class SFPreparedStatementMetaData {
   // result metadata
   private SFResultSetMetaData resultSetMetaData;

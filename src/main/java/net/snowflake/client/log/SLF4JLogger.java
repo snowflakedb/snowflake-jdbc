@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import net.snowflake.client.util.SecretDetector;
@@ -10,7 +7,6 @@ import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.LocationAwareLogger;
 
-/** Created by hyu on 11/17/16. */
 public class SLF4JLogger implements SFLogger {
   private Logger slf4jLogger;
 

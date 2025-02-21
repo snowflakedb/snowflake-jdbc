@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.StmtUtil.eventHandler;
@@ -27,11 +23,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Snowflake ResultSet implementation
- *
- * @author jhuang
- */
+/** Snowflake ResultSet implementation */
 public class SFResultSet extends SFJsonResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
