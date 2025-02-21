@@ -16,10 +16,14 @@ class ExternalBrowserLatestIT {
   String login = AuthConnectionParameters.SSO_USER;
   String password = AuthConnectionParameters.SSO_PASSWORD;
   AuthTestHelper authTestHelper = new AuthTestHelper();
+  Properties properties;
+
 
   @BeforeEach
   public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken();
+    properties = getExternalBrowserConnectionParameters();
+
   }
 
   @AfterEach
@@ -33,8 +37,7 @@ class ExternalBrowserLatestIT {
     Thread provideCredentialsThread =
         new Thread(() -> authTestHelper.provideCredentials("success", login, password));
     Thread connectThread =
-        authTestHelper.getConnectAndExecuteSimpleQueryThread(
-            getExternalBrowserConnectionParameters());
+        authTestHelper.getConnectAndExecuteSimpleQueryThread(properties);
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsNotThrown();
@@ -42,7 +45,6 @@ class ExternalBrowserLatestIT {
 
   @Test
   void shouldThrowErrorForMismatchedUsername() throws InterruptedException {
-    Properties properties = getExternalBrowserConnectionParameters();
     properties.put("user", "differentUsername");
     Thread provideCredentialsThread =
         new Thread(() -> authTestHelper.provideCredentials("success", login, password));
@@ -61,7 +63,7 @@ class ExternalBrowserLatestIT {
         new Thread(() -> authTestHelper.provideCredentials("fail", login, password));
     Thread connectThread =
         authTestHelper.getConnectAndExecuteSimpleQueryThread(
-            getExternalBrowserConnectionParameters(), "BROWSER_RESPONSE_TIMEOUT=10");
+                properties, "BROWSER_RESPONSE_TIMEOUT=10");
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsThrown(
@@ -74,7 +76,7 @@ class ExternalBrowserLatestIT {
         new Thread(() -> authTestHelper.provideCredentials("timeout", login, password));
     Thread connectThread =
         authTestHelper.getConnectAndExecuteSimpleQueryThread(
-            getExternalBrowserConnectionParameters(), "BROWSER_RESPONSE_TIMEOUT=1");
+                properties, "BROWSER_RESPONSE_TIMEOUT=1");
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsThrown(
