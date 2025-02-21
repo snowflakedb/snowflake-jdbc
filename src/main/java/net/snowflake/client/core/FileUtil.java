@@ -56,6 +56,9 @@ public class FileUtil {
   }
 
   public static void handleWhenFilePermissionsWiderThanUserOnly(File file, String context) {
+    if (Files.isSymbolicLink(file.toPath())) {
+      throw new SecurityException("Symbolic link is not allowed for file cache: " + file);
+    }
     handleWhenPermissionsWiderThanUserOnly(file.toPath(), context, false);
   }
 
@@ -96,6 +99,10 @@ public class FileUtil {
           logger.warn(message);
         } else {
           throw new SecurityException(message);
+        }
+      } else {
+        if (!isDirectory && Files.isSymbolicLink(filePath)) {
+          throw new SecurityException("Symbolic link is not allowed for file cache: " + filePath);
         }
       }
     } catch (IOException e) {

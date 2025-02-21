@@ -142,6 +142,22 @@ class FileCacheManagerTest extends BaseJDBCTest {
                 "Unable to access the file/directory to check the permissions. Error: java.nio.file.NoSuchFileException:"));
   }
 
+  @Test
+  @RunOnLinuxOrMac
+  public void throwWhenSymlinkAsCache() throws IOException {
+    Path symlink = createSymlink();
+    try {
+      SecurityException ex =
+              assertThrows(
+                      SecurityException.class, () -> fileCacheManager.overrideCacheFile(symlink.toFile()));
+      assertTrue(ex.getMessage().contains("Symbolic link is not allowed for file cache"));
+    } finally {
+      if (Files.exists(symlink)) {
+        Files.delete(symlink);
+      }
+    }
+  }
+
   private File createCacheFile() {
     Path cacheFile =
         Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_cache", CACHE_FILE_NAME);
@@ -174,5 +190,13 @@ class FileCacheManagerTest extends BaseJDBCTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private Path createSymlink() throws IOException {
+    Path link = Paths.get(cacheFile.getParent(),"symlink_" + CACHE_FILE_NAME);
+    if (Files.exists(link)) {
+      Files.delete(link);
+    }
+    return Files.createSymbolicLink(link, cacheFile.toPath());
   }
 }
