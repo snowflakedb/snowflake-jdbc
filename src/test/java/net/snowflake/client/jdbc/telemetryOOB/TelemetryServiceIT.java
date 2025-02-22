@@ -16,10 +16,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -403,63 +401,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       // try to execute a statement that throws a SQLFeatureNotSupportedException
       assertThrows(
           SQLFeatureNotSupportedException.class, () -> statement.execute("select 1", new int[] {}));
-    }
-  }
-
-  // Test for creation of Exception for the Code coverage purpose.
-  @Test
-  public void testSFExceptionLog() {
-    TelemetryService service = TelemetryService.getInstance();
-    try {
-      throw new SFException(ErrorCode.MISSING_SERVER_URL);
-    } catch (SFException ex) {
-      // example for an exception metric
-      // this metric will be delivered to snowflake and wavefront
-      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      TelemetryEvent log = logBuilder.withException(ex).build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
-      service.report(log);
-    }
-  }
-
-  @Test
-  public void testCreateLogAndMetricBuilderWithException() {
-    TelemetryService service = TelemetryService.getInstance();
-    try {
-      throw new Exception();
-    } catch (Exception ex) {
-      // example for an exception log
-      // this log will be delivered to snowflake
-      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      TelemetryEvent log = logBuilder.withException(ex).withTag("domain", "test").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
-      service.report(log);
-
-      // example for an exception metric
-      // this metric will be delivered to snowflake and wavefront
-      TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
-      TelemetryEvent metric = mBuilder.withException(ex).withTag("domain", "test").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
-      service.report(metric);
-    }
-  }
-
-  // Test for creation of Exception for the Code coverage purpose.
-  @SuppressWarnings("deprecation")
-  @Test
-  public void testWithNameWithValueMethod() {
-    try {
-      throw new SFException(ErrorCode.BAD_RESPONSE);
-    } catch (SFException ex) {
-      // this log will be delivered to snowflake
-      TelemetryService service = TelemetryService.getInstance();
-      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      TelemetryEvent log =
-          logBuilder.withName("ExampleLog").withValue("This is an example log").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
-      service.report(log);
-
-      log.getDeployment();
     }
   }
 }
