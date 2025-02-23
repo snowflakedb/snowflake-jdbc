@@ -13,12 +13,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
@@ -33,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -65,6 +72,9 @@ public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
+
+  private static final Set<PosixFilePermission> directoryOwnerOnlyPermission =
+      PosixFilePermissions.fromString("rwx------");
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -899,6 +909,51 @@ public class SnowflakeUtil {
               .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
     } else {
       return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+  }
+
+  /** create a directory with Owner only permission (0600) */
+  @SnowflakeJdbcInternalApi
+  public static boolean createOwnerOnlyPermissionDir(String location) {
+    if (isWindows()) {
+      return false;
+    }
+
+    boolean isDirCreated = true;
+    Path dir = Paths.get(location);
+    try {
+      Files.createDirectory(
+          dir, PosixFilePermissions.asFileAttribute(directoryOwnerOnlyPermission));
+    } catch (IOException e) {
+      logger.error(
+          "Failed to set OwnerOnly permission for {}. This may cause the file download to fail ",
+          location);
+      isDirCreated = false;
+    }
+    return isDirCreated;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void assureOnlyUserAccessibleFilePermissions(File file) throws IOException {
+    if (isWindows()) {
+      return;
+    }
+    boolean disableUserPermissions =
+        file.setReadable(false, false)
+            && file.setWritable(false, false)
+            && file.setExecutable(false, false);
+    boolean setOwnerPermissionsOnly = file.setReadable(true, true) && file.setWritable(true, true);
+
+    if (disableUserPermissions && setOwnerPermissionsOnly) {
+      logger.info("Successfuly set OwnerOnly permission for {}. ", file.getAbsolutePath());
+    } else {
+      file.delete();
+      logger.error(
+          "Failed to set OwnerOnly permission for {}. Failed to download", file.getAbsolutePath());
+      throw new IOException(
+          String.format(
+              "Failed to set OwnerOnly permission for %s. Failed to download",
+              file.getAbsolutePath()));
     }
   }
 
