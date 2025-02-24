@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Mock Okta Authenticator Request",
+      "scenarioName": "Multiple 429 in federated step 3",
       "requiredScenarioState": "Started",
       "newScenarioState": "Authenticator Requested",
       "request": {
@@ -31,8 +31,8 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
-      "requiredScenarioState": "Started",
+      "scenarioName": "Multiple 429 in federated step 3",
+      "requiredScenarioState": "Authenticator Requested",
       "newScenarioState": "FirstFailed",
       "request": {
         "method": "POST",
@@ -49,7 +49,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Multiple 429 in federated step 3",
       "requiredScenarioState": "FirstFailed",
       "newScenarioState": "SecondFailed",
       "request": {
@@ -67,7 +67,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Multiple 429 in federated step 3",
       "requiredScenarioState": "SecondFailed",
       "newScenarioState": "ThirdFailed",
       "request": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Multiple 429 in federated step 3",
       "requiredScenarioState": "ThirdFailed",
       "newScenarioState": "FourthFailed",
       "request": {
@@ -103,7 +103,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Multiple 429 in federated step 3",
       "requiredScenarioState": "FourthFailed",
       "newScenarioState": "Successful",
       "request": {
