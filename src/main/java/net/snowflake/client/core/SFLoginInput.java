@@ -19,6 +19,7 @@ public class SFLoginInput {
   private String warehouse;
   private String role;
   private boolean validateDefaultParameters;
+  private String originalAuthenticator;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -41,6 +42,8 @@ public class SFLoginInput {
   private String application;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String serviceName;
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
@@ -48,6 +51,8 @@ public class SFLoginInput {
   private String privateKeyBase64;
   private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
+
+  private SFOauthLoginInput oauthLoginInput;
 
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
@@ -59,7 +64,8 @@ public class SFLoginInput {
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
-  SFLoginInput() {}
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput() {}
 
   Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
@@ -74,7 +80,8 @@ public class SFLoginInput {
     return serverUrl;
   }
 
-  SFLoginInput setServerUrl(String serverUrl) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
   }
@@ -160,7 +167,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getLoginTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getLoginTimeout() {
     return loginTimeout;
   }
 
@@ -184,7 +192,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getAuthTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getAuthTimeout() {
     return authTimeout;
   }
 
@@ -238,7 +247,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getSocketTimeoutInMillis() {
+  @SnowflakeJdbcInternalApi
+  public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
@@ -307,6 +317,25 @@ public class SFLoginInput {
 
   SFLoginInput setMfaToken(String mfaToken) {
     this.mfaToken = mfaToken;
+    return this;
+  }
+
+  String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  SFLoginInput setOauthAccessToken(String oauthAccessToken) {
+    this.oauthAccessToken = oauthAccessToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getOauthRefreshToken() {
+    return oauthRefreshToken;
+  }
+
+  SFLoginInput setOauthRefreshToken(String oauthRefreshToken) {
+    this.oauthRefreshToken = oauthRefreshToken;
     return this;
   }
 
@@ -388,7 +417,8 @@ public class SFLoginInput {
     return this;
   }
 
-  HttpClientSettingsKey getHttpClientSettingsKey() {
+  @SnowflakeJdbcInternalApi
+  public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 
@@ -396,13 +426,13 @@ public class SFLoginInput {
     this.httpClientKey = key;
     return this;
   }
-
   // Opaque string sent for Snowsight account activation
+
   String getInFlightCtx() {
     return inFlightCtx;
   }
-
   // Opaque string sent for Snowsight account activation
+
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
     return this;
@@ -420,7 +450,6 @@ public class SFLoginInput {
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
   }
-
   /**
    * Set additional http headers to apply to the outgoing request. The additional headers cannot be
    * used to replace or overwrite a header in use by the driver. These will be applied to the
@@ -483,6 +512,30 @@ public class SFLoginInput {
 
   SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
     this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFOauthLoginInput getOauthLoginInput() {
+    return oauthLoginInput;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
+    this.oauthLoginInput = oauthLoginInput;
+    return this;
+  }
+
+  void restoreOriginalAuthenticator() {
+    this.authenticator = this.originalAuthenticator;
+  }
+
+  String getOriginalAuthenticator() {
+    return this.originalAuthenticator;
+  }
+
+  SFLoginInput setOriginalAuthenticator(String originalAuthenticator) {
+    this.originalAuthenticator = originalAuthenticator;
     return this;
   }
 }

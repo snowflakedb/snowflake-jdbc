@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import static java.util.Arrays.stream;
+import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -180,6 +181,7 @@ public class SnowflakeUtil {
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
         case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
+        case OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE:
           throw new SnowflakeReauthenticationRequest(queryId, errorMessage, sqlState, errorCode);
       }
     }
