@@ -59,6 +59,11 @@ public class SFLoginInput {
   private boolean enableClientStoreTemporaryCredential;
   private boolean enableClientRequestMfaToken;
 
+  // OAuth
+  private int redirectUriPort = -1;
+  private String clientId;
+  private String clientSecret;
+
   private Duration browserResponseTimeout;
 
   // Additional headers to add for Snowsight.
@@ -426,13 +431,13 @@ public class SFLoginInput {
     this.httpClientKey = key;
     return this;
   }
-  // Opaque string sent for Snowsight account activation
 
+  // Opaque string sent for Snowsight account activation
   String getInFlightCtx() {
     return inFlightCtx;
   }
-  // Opaque string sent for Snowsight account activation
 
+  // Opaque string sent for Snowsight account activation
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
     return this;
@@ -444,6 +449,33 @@ public class SFLoginInput {
 
   SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
     this.disableSamlURLCheck = disableSamlURLCheck;
+    return this;
+  }
+
+  public int getRedirectUriPort() {
+    return redirectUriPort;
+  }
+
+  public SFLoginInput setRedirectUriPort(int redirectUriPort) {
+    this.redirectUriPort = redirectUriPort;
+    return this;
+  }
+
+  public String getClientId() {
+    return clientId;
+  }
+
+  public SFLoginInput setClientId(String clientId) {
+    this.clientId = clientId;
+    return this;
+  }
+
+  public String getClientSecret() {
+    return clientSecret;
+  }
+
+  public SFLoginInput setClientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
     return this;
   }
 

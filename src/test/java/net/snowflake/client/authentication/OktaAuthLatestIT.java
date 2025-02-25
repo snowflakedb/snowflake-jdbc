@@ -15,10 +15,12 @@ import org.junit.jupiter.api.Test;
 class OktaAuthLatestIT {
 
   AuthTestHelper authTestHelper;
+  Properties properties;
 
   @BeforeEach
   public void setUp() throws IOException {
     authTestHelper = new AuthTestHelper();
+    properties = getOktaConnectionParameters();
   }
 
   @Test
@@ -29,7 +31,6 @@ class OktaAuthLatestIT {
 
   @Test
   void shouldAuthenticateUsingOktaWithOktaUsernameParam() {
-    Properties properties = getOktaConnectionParameters();
     properties.replace("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, "oktausername=" + SSO_USER);
     authTestHelper.verifyExceptionIsNotThrown();
@@ -37,7 +38,6 @@ class OktaAuthLatestIT {
 
   @Test
   void shouldThrowErrorForWrongOktaCredentials() {
-    Properties properties = getOktaConnectionParameters();
     properties.put("user", "invalidUsername");
     properties.put("password", "fakepassword");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
@@ -47,7 +47,6 @@ class OktaAuthLatestIT {
 
   @Test
   void shouldThrowErrorForWrongOktaCredentialsInOktaUsernameParam() {
-    Properties properties = getOktaConnectionParameters();
     properties.replace("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, "oktausername=invalidUser");
     authTestHelper.verifyExceptionIsThrown(
@@ -56,7 +55,6 @@ class OktaAuthLatestIT {
 
   @Test
   void shouldThrowErrorForWrongOktaUrl() {
-    Properties properties = getOktaConnectionParameters();
     properties.put("authenticator", "https://invalid.okta.com/");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
@@ -66,7 +64,6 @@ class OktaAuthLatestIT {
   @Test
   @Disabled // todo SNOW-1852279 implement error handling for invalid URL
   void shouldThrowErrorForWrongUrlWithoutOktaPath() {
-    Properties properties = getOktaConnectionParameters();
     properties.put("authenticator", "https://invalid.abc.com/");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown("todo");

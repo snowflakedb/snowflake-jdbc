@@ -12,6 +12,8 @@ eval $(jq -r '.authtestparams | to_entries | map("export \(.key)=\(.value|tostri
 export SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
 
 $MVNW_EXE -DjenkinsIT \
+    -Dnet.snowflake.jdbc.temporaryCredentialCacheDir=/mnt/workspace/abc \
+    -Dnet.snowflake.jdbc.ocspResponseCacheDir=/mnt/workspace/abc \
     -Djava.io.tmpdir=$WORKSPACE \
     -Djacoco.skip.instrument=true \
     -Dskip.unitTests=true \
