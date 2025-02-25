@@ -60,7 +60,7 @@
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <joda.time.version>2.8.1</joda.time.version>
-    <json.smart.version>2.5.1</json.smart.version>
+    <json.smart.version>2.5.2</json.smart.version>
     <junit4.version>4.13.2</junit4.version>
     <junit.version>5.11.1</junit.version>
     <junit.platform.version>1.11.1</junit.platform.version>
