@@ -21,7 +21,7 @@
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <zstd-jni.version>1.5.6-5</zstd-jni.version>
     <arrow.version>17.0.0</arrow.version>
-    <asm.version>9.6</asm.version>
+    <asm.version>9.7.1</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.655</awssdk.version>
@@ -60,7 +60,7 @@
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <joda.time.version>2.8.1</joda.time.version>
-    <json.smart.version>2.5.1</json.smart.version>
+    <json.smart.version>2.5.2</json.smart.version>
     <junit4.version>4.13.2</junit4.version>
     <junit.version>5.11.1</junit.version>
     <junit.platform.version>1.11.1</junit.platform.version>
