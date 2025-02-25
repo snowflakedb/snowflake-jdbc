@@ -487,8 +487,14 @@ public class SFStatement extends SFBaseStatement {
       // if timeout is set, start a thread to cancel the request after timeout
       // reached.
       if (this.queryTimeout > 0) {
-        executor = Executors.newScheduledThreadPool(1);
-        setTimeBomb(executor);
+        if (session.getImplicitServerSideQueryTimeout()) {
+          // Server side only query timeout
+          statementParametersMap.put("STATEMENT_TIMEOUT_IN_SECONDS", this.queryTimeout);
+        } else {
+          // client side only query timeout
+          executor = Executors.newScheduledThreadPool(1);
+          setTimeBomb(executor);
+        }
       }
 
       StmtUtil.StmtOutput stmtOutput = null;
