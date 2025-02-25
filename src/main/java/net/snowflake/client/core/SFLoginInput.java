@@ -59,7 +59,7 @@ public class SFLoginInput {
   private boolean enableClientStoreTemporaryCredential;
   private boolean enableClientRequestMfaToken;
 
-  //OAuth
+  // OAuth
   private int redirectUriPort = -1;
   private String clientId;
   private String clientSecret;

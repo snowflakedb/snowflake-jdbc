@@ -105,10 +105,10 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
     properties.remove("user");
     Thread provideCredentialsThread =
-            new Thread(
-                    () ->
-                            authTestHelper.provideCredentials(
-                                    "internalOauthSnowflakeSuccess", login, password));
+        new Thread(
+            () ->
+                authTestHelper.provideCredentials(
+                    "internalOauthSnowflakeSuccess", login, password));
     Thread connectThread = authTestHelper.getConnectAndExecuteSimpleQueryThread(properties, null);
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);

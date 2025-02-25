@@ -18,13 +18,11 @@ public class OauthOktaAuthorizationCodeLatestIT {
   AuthTestHelper authTestHelper = new AuthTestHelper();
   Properties properties;
 
-
   @BeforeEach
   public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken();
     AuthTestHelper.deleteOauthToken();
     properties = getOAuthExternalAuthorizationCodeConnectionParameters();
-
   }
 
   @AfterEach

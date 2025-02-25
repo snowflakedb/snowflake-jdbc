@@ -1,6 +1,7 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.authentication.AuthConnectionParameters.*;
+import static net.snowflake.client.authentication.AuthConnectionParameters.OAUTH_PASSWORD;
+import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters;
 
 import java.io.IOException;
 import java.util.Properties;
