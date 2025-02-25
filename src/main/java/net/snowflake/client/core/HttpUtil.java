@@ -918,6 +918,7 @@ public class HttpUtil {
           EntityUtils.consume(response.getEntity());
         }
 
+        // We throw here exception if timeout was reached for login
         throw new SnowflakeSQLException(
             SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode(),

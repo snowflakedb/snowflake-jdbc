@@ -557,11 +557,6 @@ public class RestRequest {
           break;
         }
 
-        // If this was a request for an Okta one-time token that failed with a retry-able error,
-        // throw exception to renew the token before trying again.
-
-        // Make sure that any authenticator specific info that needs to be
-        // updated gets updated before the next retry. Ex - JWT token
         // Check to see if customer set socket/connect timeout has been reached,
         // if not we don't increase the retry count since JWT renew doesn't count as a retry
         // attempt.
@@ -589,6 +584,7 @@ public class RestRequest {
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
+
             // TODO: shouldn't we sleep here for backoffInMilli - elapsedMilliForLastCall?
             // Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             Thread.sleep(backoffInMilli);
@@ -615,8 +611,16 @@ public class RestRequest {
         RetryContextManager.RetryHook retryManagerHook = null;
         if (retryManager != null) {
           retryManagerHook = retryManager.getRetryHook();
+          retryManager.getRetryContext()
+                  .setElapsedTimeInMillis(elapsedMilliForTransientIssues)
+                  .setRetryTimeoutInMillis(retryTimeoutInMilliseconds);
         }
 
+        // Make sure that any authenticator specific info that needs to be
+        // updated gets updated before the next retry. Ex - OKTA OTT, JWT token
+        // Aim is to achieve this using RetryContextManager, but raising AUTHENTICATOR_REQUEST_TIMEOUT Exception is
+        // still supported as well. In both cases the retried request must be aware of the elapsed time not to exceed
+        // the timeout limit.
         if (retryManagerHook == RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY) {
           retryManager.executeRetryCallbacks(httpRequest);
         }

@@ -30,6 +30,7 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -43,7 +44,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.client.util.ThrowingCallable;
+import net.snowflake.client.util.ThrowingFunction;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -1184,9 +1185,10 @@ public class SessionUtil {
   private static String federatedFlowStep4(
       SFLoginInput loginInput,
       String ssoUrl,
-      ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier)
+      ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier)
       throws SnowflakeSQLException {
-    String oneTimeToken = oneTimeTokenSupplier.call();
+    // Retrieve token without any RetryContext
+    String oneTimeToken = oneTimeTokenSupplier.apply(null);
     String responseHtml = "";
 
     try {
@@ -1213,19 +1215,19 @@ public class SessionUtil {
     return responseHtml;
   }
 
-  private static RetryContextManager createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
+  private static RetryContextManager createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier) {
     RetryContextManager retryWithNewOTTManager =
         new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
     retryWithNewOTTManager.registerRetryCallback(
-        (HttpRequestBase retrieveSamlRequest) -> {
+        (HttpRequestBase retrieveSamlRequest, RetryContext retryContext) -> {
           try {
-            String newOneTimeToken = oneTimeTokenSupplier.call();
+            String newOneTimeToken = oneTimeTokenSupplier.apply(retryContext);
             prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
 
-          return null;
+          return retryContext;
         });
     return retryWithNewOTTManager;
   }
@@ -1263,7 +1265,7 @@ public class SessionUtil {
    * @return Returns the one time token
    * @throws SnowflakeSQLException Will be thrown if the execute request fails
    */
-  private static String federatedFlowStep3(SFLoginInput loginInput, String tokenUrl)
+  private static String federatedFlowStep3(SFLoginInput loginInput, String tokenUrl, RetryContext retryContext)
       throws SnowflakeSQLException {
 
     String oneTimeToken = "";
@@ -1273,10 +1275,21 @@ public class SessionUtil {
       final HttpPost postRequest = new HttpPost(tokenUri);
       setFederatedFlowStep3PostRequestAuthData(postRequest, loginInput);
 
+      int retryTimeout;
+
+      if (retryContext != null) {
+        // This casting could be avoided if all execution methods from SessionUtil to RestRequest shared the same data
+        // type (either long or int) for the retryTimeout parameter. Now they are all cast to long at
+        // the end (in RestRequest's methods).
+        retryTimeout = (int) retryContext.getLeftRetryTimeoutInMillis();
+      } else {
+        retryTimeout = loginInput.getLoginTimeout();
+      }
+
       final String idpResponse =
           HttpUtil.executeRequestWithoutCookies(
               postRequest,
-              loginInput.getLoginTimeout(),
+              retryTimeout,
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
@@ -1419,8 +1432,8 @@ public class SessionUtil {
         String tokenUrl = dataNode.path("tokenUrl").asText();
         String ssoUrl = dataNode.path("ssoUrl").asText();
         federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-        ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier =
-            () -> federatedFlowStep3(loginInput, tokenUrl);
+        ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier =
+            (RetryContext retryContext) -> federatedFlowStep3(loginInput, tokenUrl, retryContext);
 
         return federatedFlowStep4(loginInput, ssoUrl, oneTimeTokenSupplier);
       } catch (SnowflakeSQLException ex) {
