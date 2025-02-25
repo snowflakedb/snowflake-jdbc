@@ -9,6 +9,9 @@ public class AuthConnectionParameters {
   static final String SSO_USER = systemGetEnv("SNOWFLAKE_AUTH_TEST_BROWSER_USER");
   static final String HOST = systemGetEnv("SNOWFLAKE_AUTH_TEST_HOST");
   static final String SSO_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_PASS");
+  static final String OKTA = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_NAME");
+  static final String OAUTH_PASSWORD =
+      systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
 
   static Properties getBaseConnectionParameters() {
     Properties properties = new Properties();
@@ -19,6 +22,7 @@ public class AuthConnectionParameters {
     properties.put("db", systemGetEnv("SNOWFLAKE_AUTH_TEST_DATABASE"));
     properties.put("schema", systemGetEnv("SNOWFLAKE_AUTH_TEST_SCHEMA"));
     properties.put("warehouse", systemGetEnv("SNOWFLAKE_AUTH_TEST_WAREHOUSE"));
+    properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", false);
     return properties;
   }
 
@@ -48,6 +52,67 @@ public class AuthConnectionParameters {
     properties.put("user", SSO_USER);
     properties.put("authenticator", "OAUTH");
     properties.put("token", token);
+    return properties;
+  }
+
+  static Properties getOAuthExternalAuthorizationCodeConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
+    properties.put(
+        "oauthClientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    properties.put(
+        "oauthClientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put(
+        "oauthRedirectURI", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_REDIRECT_URI"));
+    properties.put(
+        "oauthAuthorizationUrl", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_AUTH_URL"));
+    properties.put(
+        "oauthTokenRequestUrl", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put("user", SSO_USER);
+
+    return properties;
+  }
+
+  static Properties getOAuthSnowflakeAuthorizationCodeConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
+    properties.put(
+        "oauthClientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_ID"));
+    properties.put(
+        "oauthClientSecret",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET"));
+    properties.put(
+        "oauthRedirectURI",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI"));
+    properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    return properties;
+  }
+
+  static Properties getOAuthSnowflakeWildcardsAuthorizationCodeConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
+    properties.put(
+        "oauthClientId",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_ID"));
+    properties.put(
+        "oauthClientSecret",
+        systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_WILDCARDS_CLIENT_SECRET"));
+    properties.put("role", systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE"));
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    return properties;
+  }
+
+  static Properties getOAuthSnowflakeClientCredentialParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
+    properties.put(
+        "oauthClientId", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    properties.put(
+        "oauthClientSecret", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_SECRET"));
+    properties.put(
+        "oauthTokenRequestUrl", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
     return properties;
   }
 }

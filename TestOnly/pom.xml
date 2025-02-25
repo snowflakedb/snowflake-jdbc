@@ -22,6 +22,7 @@
     <surefire.version>3.5.1</surefire.version>
     <mockito.version>3.5.6</mockito.version>
     <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
+    <netty.version>4.1.118.Final</netty.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
   </properties>
 
@@ -29,12 +30,12 @@
     <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
-      <version>4.1.115.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
-      <version>4.1.115.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -427,6 +428,8 @@
             <exclude>**/ResultSetAsyncIT.java</exclude>
             <!-- ResultSet serialization is new -->
             <exclude>**/SnowflakeResultSetSerializable*IT.java</exclude>
+            <!-- AuthTestHelper is a new class for authentication tests -->
+            <exclude>**/AuthTestHelper.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>

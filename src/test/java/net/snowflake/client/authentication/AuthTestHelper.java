@@ -22,6 +22,7 @@ public class AuthTestHelper {
 
   private Exception exception;
   private String idToken;
+  private String accessToken;
   private final boolean runAuthTestsManually;
 
   public AuthTestHelper() {
@@ -87,8 +88,25 @@ public class AuthTestHelper {
         AuthConnectionParameters.HOST, AuthConnectionParameters.SSO_USER);
   }
 
+  public static void deleteIdToken(String host, String user) {
+    SessionUtil.deleteIdTokenCache(host, user);
+  }
+
+  public static void deleteOauthToken() {
+    SessionUtil.deleteOAuthAccessTokenCache(
+        AuthConnectionParameters.OKTA, AuthConnectionParameters.SSO_USER);
+  }
+
+  public static void deleteOauthToken(String host, String user) {
+    SessionUtil.deleteOAuthAccessTokenCache(host, user);
+  }
+
+  public static void deleteOauthRefreshToken(String host, String user) {
+    SessionUtil.deleteOAuthRefreshTokenCache(host, user);
+  }
+
   public void connectAndExecuteSimpleQuery(Properties props, String sessionParameters) {
-    String url = String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port"));
+    String url = String.format("jdbc:snowflake://%s", props.get("host"));
     if (sessionParameters != null) {
       url += "?" + sessionParameters;
     }
@@ -96,8 +114,10 @@ public class AuthTestHelper {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
+      int value = rs.getInt(1);
+      assertEquals(1, value);
       saveToken(con);
+      saveAccessToken(con);
     } catch (SQLException e) {
       this.exception = e;
     }
@@ -108,7 +128,16 @@ public class AuthTestHelper {
     this.idToken = sfcon.getSfSession().getIdToken();
   }
 
+  private void saveAccessToken(Connection con) throws SnowflakeSQLException {
+    SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+    this.accessToken = sfcon.getSfSession().getAccessToken();
+  }
+
   public String getIdToken() {
     return idToken;
+  }
+
+  public String getAccessToken() {
+    return accessToken;
   }
 }
