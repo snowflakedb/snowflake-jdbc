@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,15 +17,20 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.UUID;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
@@ -33,6 +39,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -378,7 +385,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContext.class)))
           .thenThrow(new IOException());
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -407,7 +415,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   // Testing retry with Okta calls the service to get a new unique token. This is valid after
   // version 3.15.1.
   @Test
-  public void testOktaAuthRetry() throws Throwable {
+  public void testOktaAuthRetriesUsingTimeoutExceptionRaisedWhenAuthenticatingInSnowflakeUsingOTT()
+      throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     SnowflakeSQLException ex =
@@ -457,7 +466,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContext.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -505,7 +515,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(AtomicBoolean.class),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn(
-              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"test-session-token-2\"}");
 
       mockedHttpUtil
           .when(
@@ -516,7 +526,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContext.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -567,7 +578,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContext.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -621,13 +633,38 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContext.class)))
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
       fail("Should be failed because of the invalid form");
     } catch (SnowflakeSQLException ex) {
       assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
+    }
+  }
+
+  @Test
+  public void testOktaAuthRequestsAreRetriedUsingLoginRetryStrategy() {
+    final String oktaAuthPath = "api/v1/authn";
+    List<String> oktaAuthURLs = new ArrayList<String>();
+    oktaAuthURLs.add("https://anytestpath.okta.com"); // default *.okta.com URL
+    oktaAuthURLs.add("https://vanity-url.somecompany.com"); // some custom Vanity OKTA URL
+
+    for (String oktaAuthURL : oktaAuthURLs) {
+      try {
+        URIBuilder uriBuilder = new URIBuilder(oktaAuthURL);
+        uriBuilder.setPath(oktaAuthPath);
+        URI uri = uriBuilder.build();
+        HttpPost postRequest = new HttpPost(uri);
+        assertThat(
+            "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
+            SessionUtil.isNewRetryStrategyRequest(postRequest));
+      } catch (URISyntaxException e) {
+        fail(
+            "Test case data cannot be treated as a valid URL and path. Check test input data. Error: "
+                + e.getMessage());
+      }
     }
   }
 }
