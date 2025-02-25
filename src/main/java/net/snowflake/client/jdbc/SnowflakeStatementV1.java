@@ -893,10 +893,12 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     try {
       if (this.sfBaseStatement != null) {
         this.sfBaseStatement.addProperty("STATEMENT_TIMEOUT_IN_SECONDS", seconds);
+        // disable statement level query timeout to avoid override by connection parameter
+        this.setQueryTimeout(0);
       }
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+          null, ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
