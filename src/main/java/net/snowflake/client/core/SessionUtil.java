@@ -686,7 +686,8 @@ public class SessionUtil {
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               } else if (authenticatorType == AuthenticatorType.OKTA) {
-                // TODO: there is no retry manager passed here for now - we still raise the exception to retry in the old way
+                // TODO: there is no retry manager passed here for now - we still raise the
+                // exception to retry in the old way
                 logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
@@ -1192,7 +1193,8 @@ public class SessionUtil {
     String responseHtml = "";
 
     try {
-      RetryContextManager retryWithNewOTTManager = createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
+      RetryContextManager retryWithNewOTTManager =
+          createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1215,7 +1217,9 @@ public class SessionUtil {
     return responseHtml;
   }
 
-  private static RetryContextManager createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier) {
+  private static RetryContextManager createFederatedFlowStep4RetryContext(
+      String ssoUrl,
+      ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier) {
     RetryContextManager retryWithNewOTTManager =
         new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
     retryWithNewOTTManager.registerRetryCallback(
@@ -1265,7 +1269,8 @@ public class SessionUtil {
    * @return Returns the one time token
    * @throws SnowflakeSQLException Will be thrown if the execute request fails
    */
-  private static String federatedFlowStep3(SFLoginInput loginInput, String tokenUrl, RetryContext retryContext)
+  private static String federatedFlowStep3(
+      SFLoginInput loginInput, String tokenUrl, RetryContext retryContext)
       throws SnowflakeSQLException {
 
     String oneTimeToken = "";
@@ -1278,9 +1283,9 @@ public class SessionUtil {
       int retryTimeout;
 
       if (retryContext != null) {
-        // This casting could be avoided if all execution methods from SessionUtil to RestRequest shared the same data
-        // type (either long or int) for the retryTimeout parameter. Now they are all cast to long at
-        // the end (in RestRequest's methods).
+        // This casting could be avoided if all execution methods from SessionUtil to RestRequest
+        // shared the same data type (either long or int) for the retryTimeout parameter. Now they
+        // are all cast to long at the end (in RestRequest's methods).
         retryTimeout = (int) retryContext.getLeftRetryTimeoutInMillis();
       } else {
         retryTimeout = loginInput.getLoginTimeout();
@@ -1362,7 +1367,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
-              0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to decide when to end the retries
+              0, // max retries is set to 0 => it will be ignored and only retryTimeout will
+                 // determine when to end the retries
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
@@ -1778,7 +1784,8 @@ public class SessionUtil {
    * @throws URISyntaxException If the constructed URI is invalid.
    */
   private static void prepareFederatedFlowStep1PostRequest(
-          HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+      HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData)
+      throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872

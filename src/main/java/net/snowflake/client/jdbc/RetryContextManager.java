@@ -2,17 +2,20 @@ package net.snowflake.client.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.http.client.methods.HttpRequestBase;
 
-/** RetryContextManager lets you register logic (as callbacks) that will be re-executed during a retry of a request. */
+/**
+ * RetryContextManager lets you register logic (as callbacks) that will be re-executed during a
+ * retry of a request.
+ */
 @SnowflakeJdbcInternalApi
 public class RetryContextManager {
 
   // List of retry callbacks that will be executed in the order they were registered.
-  private final List<ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException>>
+  private final List<
+          ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException>>
       retryCallbacks = new ArrayList<>();
 
   // A RetryHook flag that can be used by client code to decide when (or if) callbacks should be
@@ -50,7 +53,8 @@ public class RetryContextManager {
    * @return the current instance for fluent chaining.
    */
   public RetryContextManager registerRetryCallback(
-      ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException> callback) {
+      ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException>
+          callback) {
     retryCallbacks.add(callback);
     return this;
   }
@@ -64,7 +68,8 @@ public class RetryContextManager {
    */
   protected void executeRetryCallbacks(HttpRequestBase requestToRetry)
       throws SnowflakeSQLException {
-    for (ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException> callback : retryCallbacks) {
+    for (ThrowingBiFunction<HttpRequestBase, RetryContext, RetryContext, SnowflakeSQLException>
+        callback : retryCallbacks) {
       retryContext = callback.apply(requestToRetry, retryContext);
     }
   }

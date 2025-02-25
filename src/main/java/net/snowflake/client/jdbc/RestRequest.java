@@ -219,7 +219,7 @@ public class RestRequest {
         retryHTTP403,
         false, // noRetry
         execTimeData,
-            retryContextManager);
+        retryContextManager);
   }
 
   /**
@@ -240,8 +240,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
-   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that should
-   *     be executed before and/or after the retry
+   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
+   *     should be executed before and/or after the retry
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -611,16 +611,17 @@ public class RestRequest {
         RetryContextManager.RetryHook retryManagerHook = null;
         if (retryManager != null) {
           retryManagerHook = retryManager.getRetryHook();
-          retryManager.getRetryContext()
-                  .setElapsedTimeInMillis(elapsedMilliForTransientIssues)
-                  .setRetryTimeoutInMillis(retryTimeoutInMilliseconds);
+          retryManager
+              .getRetryContext()
+              .setElapsedTimeInMillis(elapsedMilliForTransientIssues)
+              .setRetryTimeoutInMillis(retryTimeoutInMilliseconds);
         }
 
         // Make sure that any authenticator specific info that needs to be
         // updated gets updated before the next retry. Ex - OKTA OTT, JWT token
-        // Aim is to achieve this using RetryContextManager, but raising AUTHENTICATOR_REQUEST_TIMEOUT Exception is
-        // still supported as well. In both cases the retried request must be aware of the elapsed time not to exceed
-        // the timeout limit.
+        // Aim is to achieve this using RetryContextManager, but raising
+        // AUTHENTICATOR_REQUEST_TIMEOUT Exception is still supported as well. In both cases the
+        // retried request must be aware of the elapsed time not to exceed the timeout limit.
         if (retryManagerHook == RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY) {
           retryManager.executeRetryCallbacks(httpRequest);
         }

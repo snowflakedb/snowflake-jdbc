@@ -690,7 +690,7 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         ocspAndProxyAndGzipKey,
         new ExecTimeTelemetryData(),
-            retryContextManager);
+        retryContextManager);
   }
 
   /**
@@ -828,7 +828,7 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey),
         execTimeData,
-            retryContextManager);
+        retryContextManager);
   }
 
   /**
@@ -904,7 +904,7 @@ public class HttpUtil {
               includeRequestGuid,
               retryOnHTTP403,
               execTimeData,
-                  retryContextManager);
+              retryContextManager);
       if (logger.isDebugEnabled() && stopwatch != null) {
         stopwatch.stop();
       }
