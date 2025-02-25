@@ -123,7 +123,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta SAML Response",
+      "scenarioName": "Multiple 429 in federated step 3",
       "request": {
         "method": "GET",
         "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml",
@@ -148,7 +148,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Login Request",
+      "scenarioName": "Multiple 429 in federated step 3",
       "request": {
         "method": "POST",
         "urlPath": "/session/v1/login-request",

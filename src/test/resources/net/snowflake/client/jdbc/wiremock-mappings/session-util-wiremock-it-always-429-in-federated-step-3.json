@@ -1,9 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Mock Okta Authenticator Request",
-      "requiredScenarioState": "Started",
-      "newScenarioState": "Authenticator Requested",
+      "scenarioName": "Always 429 in federated step 3",
       "request": {
         "method": "POST",
         "urlPath": "/session/authenticator-request",
@@ -31,7 +29,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Always 429 in federated step 3",
       "request": {
         "method": "POST",
         "urlPath": "/okta-stub/vanity-url/api/v1/authn"

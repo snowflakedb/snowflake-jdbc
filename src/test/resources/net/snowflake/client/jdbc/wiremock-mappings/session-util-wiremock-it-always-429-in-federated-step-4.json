@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Mock Okta Authenticator Request",
+      "scenarioName": "Always 429 in federated step 4",
       "request": {
         "method": "POST",
         "urlPath": "/session/authenticator-request",
@@ -29,10 +29,43 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Always 429 in federated step 4",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "TokenRetrieved",
       "request": {
         "method": "POST",
         "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "expiresAt": "2023-10-13T19:18:09.000Z",
+          "status": "SUCCESS",
+          "sessionToken": "test-session-token-1"
+        }
+      }
+    },
+    {
+      "scenarioName": "Always 429 in federated step 4",
+      "requiredScenarioState": "TokenRetrieved",
+      "newScenarioState": "RateLimited",
+      "request": {
+        "method": "GET",
+        "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml",
+        "queryParameters": {
+          "RelayState": {
+            "matches": ".*"
+          },
+          "onetimetoken": {
+            "matches": ".*"
+          },
+          "request_guid": {
+            "matches": ".*"
+          }
+        }
       },
       "response": {
         "status": 429,
@@ -41,6 +74,26 @@
         },
         "jsonBody": {
           "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Always 429 in federated step 4",
+      "requiredScenarioState": "RateLimited",
+      "newScenarioState": "TokenRetrieved",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "expiresAt": "2023-10-13T19:18:09.000Z",
+          "status": "SUCCESS",
+          "sessionToken": "test-session-token-N"
         }
       }
     }
