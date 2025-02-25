@@ -30,7 +30,7 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.RetryContext;
+import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -1190,7 +1190,7 @@ public class SessionUtil {
     String responseHtml = "";
 
     try {
-      RetryContext retryWithNewOTTManager = createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
+      RetryContextManager retryWithNewOTTManager = createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1213,9 +1213,9 @@ public class SessionUtil {
     return responseHtml;
   }
 
-  private static RetryContext createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
-    RetryContext retryWithNewOTTManager =
-        new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
+  private static RetryContextManager createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
+    RetryContextManager retryWithNewOTTManager =
+        new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
     retryWithNewOTTManager.registerRetryCallback(
         (HttpRequestBase retrieveSamlRequest) -> {
           try {

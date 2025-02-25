@@ -30,7 +30,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.RetryContext;
+import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
@@ -386,7 +386,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContext.class)))
+                      Mockito.nullable(RetryContextManager.class)))
           .thenThrow(new IOException());
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -467,7 +467,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContext.class)))
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -527,7 +527,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContext.class)))
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -579,7 +579,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContext.class)))
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -634,7 +634,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContext.class)))
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");

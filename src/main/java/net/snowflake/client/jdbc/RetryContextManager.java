@@ -6,9 +6,9 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.util.ThrowingFunction;
 import org.apache.http.client.methods.HttpRequestBase;
 
-/** RetryContext lets you register logic (as callbacks) that will be re-executed during a retry. */
+/** RetryContextManager lets you register logic (as callbacks) that will be re-executed during a retry. */
 @SnowflakeJdbcInternalApi
-public class RetryContext {
+public class RetryContextManager {
 
   // List of retry callbacks that will be executed in the order they were registered.
   private final List<ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException>>
@@ -27,7 +27,7 @@ public class RetryContext {
   }
 
   /** Default constructor using ALWAYS_BEFORE_RETRY as the default retry hook. */
-  public RetryContext() {
+  public RetryContextManager() {
     this(RetryHook.ALWAYS_BEFORE_RETRY);
   }
 
@@ -36,7 +36,7 @@ public class RetryContext {
    *
    * @param retryHook the retry hook strategy.
    */
-  public RetryContext(RetryHook retryHook) {
+  public RetryContextManager(RetryHook retryHook) {
     this.retryHook = retryHook;
   }
 
@@ -46,7 +46,7 @@ public class RetryContext {
    * @param callback A RetryCallback encapsulating the logic to be replayed on retry.
    * @return the current instance for fluent chaining.
    */
-  public RetryContext registerRetryCallback(
+  public RetryContextManager registerRetryCallback(
       ThrowingFunction<HttpRequestBase, Void, SnowflakeSQLException> callback) {
     retryCallbacks.add(callback);
     return this;
