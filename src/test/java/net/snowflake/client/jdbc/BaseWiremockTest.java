@@ -26,11 +26,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -51,6 +53,7 @@ public abstract class BaseWiremockTest {
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
   protected static final String WIREMOCK_HOST = "localhost";
   protected static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
+  protected static final String MAPPINGS_BASE_DIR = "/wiremock/mappings";
   protected static int wiremockHttpPort;
   protected static int wiremockHttpsPort;
   private static String originalTrustStorePath;
@@ -247,6 +250,15 @@ public abstract class BaseWiremockTest {
         CloseableHttpResponse response = client.execute(postRequest)) {
       assertEquals(201, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void importMappingFromResources(String relativePath) {
+    try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
+      String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8);
+      importMapping(scenario);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }

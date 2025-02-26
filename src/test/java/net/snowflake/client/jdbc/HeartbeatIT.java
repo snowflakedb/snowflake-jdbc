@@ -92,7 +92,7 @@ public class HeartbeatIT extends AbstractDriverIT {
         "CLIENT_SESSION_KEEP_ALIVE",
         useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
 
-    try (Connection connection = getConnection(sessionParams);
+    try (Connection connection = getConnection("s3testaccount", sessionParams);
         Statement statement = connection.createStatement()) {
 
       Thread.sleep(61000); // sleep 61 seconds

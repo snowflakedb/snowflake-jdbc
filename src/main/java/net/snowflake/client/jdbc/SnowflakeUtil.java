@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import static java.util.Arrays.stream;
+import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,8 +74,8 @@ public class SnowflakeUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  private static final Set<PosixFilePermission> ownerOnlyPermission =
-      PosixFilePermissions.fromString("rw-------");
+  private static final Set<PosixFilePermission> directoryOwnerOnlyPermission =
+      PosixFilePermissions.fromString("rwx------");
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -180,6 +181,7 @@ public class SnowflakeUtil {
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
         case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
+        case OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE:
           throw new SnowflakeReauthenticationRequest(queryId, errorMessage, sqlState, errorCode);
       }
     }
@@ -922,7 +924,8 @@ public class SnowflakeUtil {
     boolean isDirCreated = true;
     Path dir = Paths.get(location);
     try {
-      Files.createDirectory(dir, PosixFilePermissions.asFileAttribute(ownerOnlyPermission));
+      Files.createDirectory(
+          dir, PosixFilePermissions.asFileAttribute(directoryOwnerOnlyPermission));
     } catch (IOException e) {
       logger.error(
           "Failed to set OwnerOnly permission for {}. This may cause the file download to fail ",

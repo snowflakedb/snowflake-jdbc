@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2024-2025 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.core.auth;
 
@@ -41,5 +41,20 @@ public enum AuthenticatorType {
   /*
    * Authenticator to enable token for regular login with mfa
    */
-  USERNAME_PASSWORD_MFA
+  USERNAME_PASSWORD_MFA,
+
+  /*
+   * Authorization code flow with browser popup
+   */
+  OAUTH_AUTHORIZATION_CODE,
+
+  /*
+   * Client credentials flow with clientId and clientSecret as input
+   */
+  OAUTH_CLIENT_CREDENTIALS,
+
+  /*
+   * Authenticator to support PAT created in Snowflake
+   */
+  PROGRAMMATIC_ACCESS_TOKEN
 }
