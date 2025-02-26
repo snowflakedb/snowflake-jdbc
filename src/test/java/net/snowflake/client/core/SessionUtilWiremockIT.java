@@ -30,13 +30,13 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   private static final String ALWAYS_429_IN_FEDERATED_STEP_3 =
       "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
   private static final String ALWAYS_429_IN_FEDERATED_STEP_4 =
-      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-4.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_3 =
-      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_4 =
-      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
   private static final String MULTIPLE_429_FROM_OKTA_WHEN_LOGIN_TO_SF =
-      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-from-okta-in-login-request-to-sf.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
