@@ -3,6 +3,7 @@ name: Snyk Issue
 on:
   schedule:
     - cron: '* */12 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read

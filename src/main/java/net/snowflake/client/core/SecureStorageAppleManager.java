@@ -32,7 +32,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
       return SecureStorageStatus.SUCCESS;
     }
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
     byte[] credBytes = cred.getBytes(StandardCharsets.UTF_8);
@@ -92,7 +92,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public String getCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -141,7 +141,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
