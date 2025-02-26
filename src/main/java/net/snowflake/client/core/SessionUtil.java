@@ -815,7 +815,8 @@ public class SessionUtil {
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               } else if (authenticatorType == AuthenticatorType.OKTA) {
-                // TODO: there is no retry manager passed here for now - we still raise the exception to retry in the old way
+                // TODO: there is no retry manager passed here for now - we still raise the
+                // exception to retry in the old way
                 logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
@@ -1358,7 +1359,8 @@ public class SessionUtil {
     String responseHtml = "";
 
     try {
-      RetryContext retryWithNewOTTManager = createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
+      RetryContext retryWithNewOTTManager =
+          createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1381,7 +1383,8 @@ public class SessionUtil {
     return responseHtml;
   }
 
-  private static RetryContext createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
+  private static RetryContext createFederatedFlowStep4RetryContext(
+      String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
     RetryContext retryWithNewOTTManager =
         new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
     retryWithNewOTTManager.registerRetryCallback(
@@ -1517,7 +1520,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
-              0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to decide when to end the retries
+              0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to
+                 // decide when to end the retries
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
@@ -1933,7 +1937,8 @@ public class SessionUtil {
    * @throws URISyntaxException If the constructed URI is invalid.
    */
   private static void prepareFederatedFlowStep1PostRequest(
-          HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+      HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData)
+      throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872

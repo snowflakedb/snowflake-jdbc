@@ -39,7 +39,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -322,35 +321,36 @@ public abstract class BaseWiremockTest {
   }
 
   protected static void assertRequestsToWiremockHaveDelay(
-          List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
+      List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
     for (int i = 1; i < requestEvents.size(); i++) {
       long t1 = requestEvents.get(i - 1).getRequest().getLoggedDate().getTime();
       long t2 = requestEvents.get(i).getRequest().getLoggedDate().getTime();
       long deltaMillis = t2 - t1;
       assertThat(
           String.format(
-                  "Consecutive calls were only %d ms apart (index %d -> %d).",
-                  deltaMillis, i - 1, i),
+              "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
           deltaMillis,
           greaterThan(minExpectedDelayBetweenCalls));
     }
   }
 
   /**
-   * Ensures that each request *with* the given parameter uses a unique value.
-   * Requests that do not have the parameter are ignored.
-   * Fails if any duplicate parameter values are detected.
+   * Ensures that each request *with* the given parameter uses a unique value. Requests that do not
+   * have the parameter are ignored. Fails if any duplicate parameter values are detected.
    */
   protected static void assertRequestsToWiremockHaveDifferentValuesOfParameter(
-          List<ServeEvent> requestEvents, String parameterName) {
+      List<ServeEvent> requestEvents, String parameterName) {
     // Extract all parameter values from requests that have this parameter
-    List<String> paramValues = requestEvents.stream()
+    List<String> paramValues =
+        requestEvents.stream()
             .filter(e -> e.getRequest().getQueryParams().containsKey(parameterName))
             .map(e -> e.getRequest().getQueryParams().get(parameterName).firstValue())
             .collect(Collectors.toList());
 
     long distinctCount = paramValues.stream().distinct().count();
-    assertThat("Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
-            distinctCount, not(equalTo(paramValues.size())));
+    assertThat(
+        "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
+        distinctCount,
+        not(equalTo(paramValues.size())));
   }
 }
