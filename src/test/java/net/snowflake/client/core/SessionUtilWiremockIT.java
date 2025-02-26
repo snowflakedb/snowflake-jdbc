@@ -21,7 +21,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.OTHERS)
+@Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   final int DECREASED_LOGIN_TIMEOUT = 5;
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
@@ -35,8 +35,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_4 =
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
-  private static final String MULTIPLE_429_FROM_OKTA_WHEN_LOGIN_TO_SF =
-      "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-from-okta-in-login-request-to-sf.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
