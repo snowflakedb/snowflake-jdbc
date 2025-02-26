@@ -225,7 +225,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
-            .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
             .setOnlyOwnerPermissions(false)
             .build();
@@ -407,8 +406,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static String CertificateIDToString(CertificateID certificateID) {
     return String.format(
         "CertID. NameHash: %s, KeyHash: %s, Serial Number: %s",
-        byteToHexString(certificateID.getIssuerNameHash()),
-        byteToHexString(certificateID.getIssuerKeyHash()),
+        HexUtil.byteToHexString(certificateID.getIssuerNameHash()),
+        HexUtil.byteToHexString(certificateID.getIssuerKeyHash()),
         MessageFormat.format("{0,number,#}", certificateID.getSerialNumber()));
   }
 
@@ -536,23 +535,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException ex) {
       throw new CertificateEncodingException("Failed to verify the signature.", ex);
     }
-  }
-
-  /**
-   * Converts Byte array to hex string
-   *
-   * @param bytes a byte array
-   * @return a string in hexadecimal code
-   */
-  private static String byteToHexString(byte[] bytes) {
-    final char[] hexArray = "0123456789ABCDEF".toCharArray();
-    char[] hexChars = new char[bytes.length * 2];
-    for (int j = 0; j < bytes.length; j++) {
-      int v = bytes[j] & 0xFF;
-      hexChars[j * 2] = hexArray[v >>> 4];
-      hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-    }
-    return new String(hexChars);
   }
 
   /**
@@ -1610,7 +1592,9 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     public String toString() {
       return String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
-          byteToHexString(nameHash), byteToHexString(keyHash), serialNumber.toString());
+          HexUtil.byteToHexString(nameHash),
+          HexUtil.byteToHexString(keyHash),
+          serialNumber.toString());
     }
   }
 

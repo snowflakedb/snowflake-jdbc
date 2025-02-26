@@ -86,6 +86,8 @@ public class SFSession extends SFBaseSession {
   private long masterTokenValidityInSeconds;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String privateKeyFileLocation;
   private String privateKeyBase64;
   private String privateKeyPassword;
@@ -260,7 +262,7 @@ public class SFSession extends SFBaseSession {
             // If we fail to renew the session based on a re-authentication error, try to
             // re-authenticate the session first
             if (ex instanceof SnowflakeReauthenticationRequest
-                && this.isExternalbrowserAuthenticator()) {
+                && this.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
               try {
                 this.open();
               } catch (SFException e) {
@@ -675,6 +677,14 @@ public class SFSession extends SFBaseSession {
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
+    SFOauthLoginInput oauthLoginInput =
+        new SFOauthLoginInput(
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_ID),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_SECRET),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_AUTHORIZATION_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_TOKEN_REQUEST_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE));
 
     loginInput
         .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
@@ -685,6 +695,8 @@ public class SFSession extends SFBaseSession {
         .setValidateDefaultParameters(
             connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
         .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+        .setOriginalAuthenticator(
+            (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
         .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
@@ -712,6 +724,7 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setOauthLoginInput(oauthLoginInput)
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -761,6 +774,8 @@ public class SFSession extends SFBaseSession {
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
     mfaToken = loginOutput.getMfaToken();
+    oauthAccessToken = loginOutput.getOauthAccessToken();
+    oauthRefreshToken = loginOutput.getOauthRefreshToken();
     setDatabaseVersion(loginOutput.getDatabaseVersion());
     setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
     setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
@@ -848,15 +863,12 @@ public class SFSession extends SFBaseSession {
         || AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
-  /**
-   * Returns true If authenticator is EXTERNALBROWSER.
-   *
-   * @return true if authenticator type is EXTERNALBROWSER
-   */
-  boolean isExternalbrowserAuthenticator() {
+  boolean isExternalbrowserOrOAuthFullFlowAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator)
+        || AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name().equalsIgnoreCase(authenticator)
+        || AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -906,6 +918,8 @@ public class SFSession extends SFBaseSession {
         .setMasterToken(masterToken)
         .setIdToken(idToken)
         .setMfaToken(mfaToken)
+        .setOauthAccessToken(oauthAccessToken)
+        .setOauthRefreshToken(oauthRefreshToken)
         .setLoginTimeout(loginTimeout)
         .setRetryTimeout(retryTimeout)
         .setDatabaseName(getDatabase())
@@ -1243,6 +1257,11 @@ public class SFSession extends SFBaseSession {
 
   public String getIdToken() {
     return idToken;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getAccessToken() {
+    return oauthAccessToken;
   }
 
   public String getMfaToken() {
