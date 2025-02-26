@@ -1521,7 +1521,7 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to
-                 // decide when to end the retries
+              // decide when to end the retries
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
