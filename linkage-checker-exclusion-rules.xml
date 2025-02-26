@@ -29,6 +29,7 @@
         <Source><Package name="com.google.api.gax"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+
     <LinkageError>
         <Target><Package name="org.osgi"/></Target>
         <Source><Package name="org.apache.tika.config"/></Source>
@@ -47,6 +48,26 @@
     <LinkageError>
         <Target><Package name="java.nio"/></Target>
         <Source><Package name="org.bouncycastle.pqc.legacy.crypto.ntru"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.cryptomator"/></Target>
+        <Source><Package name="com.nimbusds"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.opensaml"/></Target>
+        <Source><Package name="com.nimbusds"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="jakarta.servlet"/></Target>
+        <Source><Package name="com.nimbusds"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="net.shibboleth.utilities"/></Target>
+        <Source><Package name="com.nimbusds"/></Source>
         <Reason>?</Reason>
     </LinkageError>
     <!--
