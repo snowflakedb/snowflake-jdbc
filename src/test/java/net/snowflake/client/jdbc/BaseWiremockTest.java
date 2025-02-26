@@ -20,7 +20,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.*;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Date;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import net.snowflake.client.core.HttpUtil;
@@ -316,6 +322,7 @@ public abstract class BaseWiremockTest {
     public static class MinimalRequest {
       private String url;
       private Date loggedDate;
+      private Map<String, MinimalQueryParameter> queryParams;
 
       public String getUrl() {
         return url;
@@ -333,16 +340,35 @@ public abstract class BaseWiremockTest {
         this.loggedDate = loggedDate;
       }
 
-      public Map<Object, MinimalQueryParameter> getQueryParams() {
+      public Map<String, MinimalQueryParameter> getQueryParams() {
+        return queryParams;
+      }
+
+      public void setQueryParams(Map<String, MinimalQueryParameter> queryParams) {
+        this.queryParams = queryParams;
       }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class MinimalQueryParameter {
+      private List<String> values;
+
+      public List<String> getValues() {
+        return values;
+      }
+
+      public void setValues(List<String> values) {
+        this.values = values;
+      }
+
+      /**
+       * Returns the first value in the query parameter list, or null if no values are present.
+       */
       public String firstValue() {
+        return (values != null && !values.isEmpty()) ? values.get(0) : null;
       }
     }
-    }
+  }
 
   /**
    * A wrapper for the serve events JSON structure returned by WireMock. The JSON has a top-level

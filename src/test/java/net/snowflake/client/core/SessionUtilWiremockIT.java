@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.ErrorCode;
