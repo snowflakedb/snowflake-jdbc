@@ -17,5 +17,6 @@ public enum ClientAuthnParameter {
   BROWSER_MODE_REDIRECT_PORT,
   SESSION_PARAMETERS,
   PROOF_KEY,
-  TOKEN
+  TOKEN,
+  OAUTH_TYPE
 }

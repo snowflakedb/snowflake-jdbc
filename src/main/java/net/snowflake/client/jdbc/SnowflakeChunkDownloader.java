@@ -44,7 +44,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 
-/** Class for managing async download of offline result chunks W */
+/** Class for managing async download of offline result chunks */
 public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   // object mapper for deserialize JSON

@@ -18,6 +18,10 @@ public final class Constants {
   // Error code for all invalid id token cases during login request
   public static final int ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE = 390195;
 
+  public static final int OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE = 390318;
+
+  public static final int OAUTH_ACCESS_TOKEN_INVALID_GS_CODE = 390303;
+
   // Error message for IOException when no space is left for GET
   public static final String NO_SPACE_LEFT_ON_DEVICE_ERR = "No space left on device";
 

@@ -10,11 +10,7 @@ import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/**
- * Abstract class to encapsulate a Client-side Event and any methods associated with it.
- *
- * @author jrosen
- */
+/** Abstract class to encapsulate a Client-side Event and any methods associated with it. */
 public abstract class Event {
   private static final SFLogger logger = SFLoggerFactory.getLogger(Event.class);
 

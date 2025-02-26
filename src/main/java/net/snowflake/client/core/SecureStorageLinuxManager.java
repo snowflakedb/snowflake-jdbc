@@ -19,14 +19,12 @@ import net.snowflake.client.log.SFLoggerFactory;
  */
 public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SecureStorageLinuxManager.class);
-  private static final String CACHE_FILE_NAME = "temporary_credential.json";
+  private static final String CACHE_FILE_NAME = "credential_cache_v1.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
-  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+  private static final String CACHE_FILE_TOKENS_OBJECT_NAME = "tokens";
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
-  private FileCacheManager fileCacheManager;
-
-  private final Map<String, Map<String, String>> localCredCache = new HashMap<>();
+  private final FileCacheManager fileCacheManager;
 
   private SecureStorageLinuxManager() {
     fileCacheManager =
@@ -34,7 +32,6 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
-            .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
             .build();
     logger.debug(
@@ -49,78 +46,89 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     return SecureStorageLinuxManagerHolder.INSTANCE;
   }
 
-  private ObjectNode localCacheToJson() {
-    ObjectNode res = mapper.createObjectNode();
-    for (Map.Entry<String, Map<String, String>> elem : localCredCache.entrySet()) {
-      String elemHost = elem.getKey();
-      Map<String, String> hostMap = elem.getValue();
-      ObjectNode hostNode = mapper.createObjectNode();
-      for (Map.Entry<String, String> elem0 : hostMap.entrySet()) {
-        hostNode.put(elem0.getKey(), elem0.getValue());
-      }
-      res.set(elemHost, hostNode);
-    }
-    return res;
-  }
-
+  @Override
   public synchronized SecureStorageStatus setCredential(
       String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
-
-    localCredCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
-
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    hostMap.put(SecureStorageManager.convertTarget(host, user, type), token);
-
-    fileCacheManager.writeCacheFile(localCacheToJson());
+    fileCacheManager.withLock(
+        () -> {
+          Map<String, Map<String, String>> cachedCredentials =
+              readJsonStoreCache(fileCacheManager.readCacheFile());
+          cachedCredentials.computeIfAbsent(
+              CACHE_FILE_TOKENS_OBJECT_NAME, tokensMap -> new HashMap<>());
+          Map<String, String> credentialsMap = cachedCredentials.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+          credentialsMap.put(SecureStorageManager.buildCredentialsKey(host, user, type), token);
+          fileCacheManager.writeCacheFile(
+              SecureStorageLinuxManager.this.localCacheToJson(cachedCredentials));
+          return null;
+        });
     return SecureStorageStatus.SUCCESS;
   }
 
+  @Override
   public synchronized String getCredential(String host, String user, String type) {
-    JsonNode res = fileCacheManager.readCacheFile();
-    readJsonStoreCache(res);
-
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-
-    if (hostMap == null) {
-      return null;
-    }
-
-    return hostMap.get(SecureStorageManager.convertTarget(host, user, type));
+    return fileCacheManager.withLock(
+        () -> {
+          JsonNode res = fileCacheManager.readCacheFile();
+          Map<String, Map<String, String>> cache = readJsonStoreCache(res);
+          Map<String, String> credentialsMap = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+          if (credentialsMap == null) {
+            return null;
+          }
+          return credentialsMap.get(SecureStorageManager.buildCredentialsKey(host, user, type));
+        });
   }
 
-  /** May delete credentials which doesn't belong to this process */
+  @Override
   public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    if (hostMap != null) {
-      hostMap.remove(SecureStorageManager.convertTarget(host, user, type));
-      if (hostMap.isEmpty()) {
-        localCredCache.remove(host.toUpperCase());
-      }
-    }
-    fileCacheManager.writeCacheFile(localCacheToJson());
+    fileCacheManager.withLock(
+        () -> {
+          JsonNode res = fileCacheManager.readCacheFile();
+          Map<String, Map<String, String>> cache = readJsonStoreCache(res);
+          Map<String, String> credentialsMap = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+          if (credentialsMap != null) {
+            credentialsMap.remove(SecureStorageManager.buildCredentialsKey(host, user, type));
+            if (credentialsMap.isEmpty()) {
+              cache.remove(CACHE_FILE_TOKENS_OBJECT_NAME);
+            }
+          }
+          fileCacheManager.writeCacheFile(localCacheToJson(cache));
+          return null;
+        });
     return SecureStorageStatus.SUCCESS;
   }
 
-  private void readJsonStoreCache(JsonNode m) {
-    if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT)) {
+  private ObjectNode localCacheToJson(Map<String, Map<String, String>> cache) {
+    ObjectNode jsonNode = mapper.createObjectNode();
+    Map<String, String> tokensMap = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    if (tokensMap != null) {
+      ObjectNode tokensNode = mapper.createObjectNode();
+      for (Map.Entry<String, String> credential : tokensMap.entrySet()) {
+        tokensNode.put(credential.getKey(), credential.getValue());
+      }
+      jsonNode.set(CACHE_FILE_TOKENS_OBJECT_NAME, tokensNode);
+    }
+    return jsonNode;
+  }
+
+  private Map<String, Map<String, String>> readJsonStoreCache(JsonNode node) {
+    Map<String, Map<String, String>> cache = new HashMap<>();
+    if (node == null || !node.getNodeType().equals(JsonNodeType.OBJECT)) {
       logger.debug("Invalid cache file format.");
-      return;
+      return cache;
     }
-    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); ) {
-      Map.Entry<String, JsonNode> hostMap = itr.next();
-      String host = hostMap.getKey();
-      if (!localCredCache.containsKey(host)) {
-        localCredCache.put(host, new HashMap<>());
-      }
-      JsonNode userJsonNode = hostMap.getValue();
-      for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext(); ) {
-        Map.Entry<String, JsonNode> userMap = itr0.next();
-        localCredCache.get(host).put(userMap.getKey(), userMap.getValue().asText());
+    cache.put(CACHE_FILE_TOKENS_OBJECT_NAME, new HashMap<>());
+    JsonNode credentialsNode = node.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    Map<String, String> credentialsCache = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
+    if (credentialsNode != null && node.getNodeType().equals(JsonNodeType.OBJECT)) {
+      for (Iterator<Map.Entry<String, JsonNode>> itr = credentialsNode.fields(); itr.hasNext(); ) {
+        Map.Entry<String, JsonNode> credential = itr.next();
+        credentialsCache.put(credential.getKey(), credential.getValue().asText());
       }
     }
+    return cache;
   }
 }

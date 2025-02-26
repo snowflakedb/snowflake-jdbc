@@ -29,9 +29,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.joda.time.DateTime;
 
-/**
- * @author jrosen
- */
 public class EventHandler extends Handler {
   private static final SFLogger logger = SFLoggerFactory.getLogger(EventHandler.class);
 
