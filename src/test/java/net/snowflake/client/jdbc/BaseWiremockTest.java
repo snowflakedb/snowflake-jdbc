@@ -8,8 +8,6 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -303,11 +301,11 @@ public abstract class BaseWiremockTest {
    *
    * @return A list of ServeEvent objects representing requests WireMock has recorded.
    */
-  protected List<ServeEvent> getAllServeEvents() {
-    // Create a WireMock client pointed to the admin port
-    WireMock wm = new WireMock(WIREMOCK_HOST, getAdminPort());
-    return wm.getServeEvents();
-  }
+//  protected List<ServeEvent> getAllServeEvents() {
+//    // Create a WireMock client pointed to the admin port
+//    WireMock wm = new WireMock(WIREMOCK_HOST, getAdminPort());
+//    return wm.getServeEvents();
+//  }
 
   protected void importMappingFromResources(String relativePath) {
     try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
