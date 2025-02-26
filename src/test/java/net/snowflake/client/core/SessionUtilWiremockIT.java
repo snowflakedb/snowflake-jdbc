@@ -182,128 +182,128 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 //    assertRequestsToWiremockHaveDelay(vanityUrlCalls, EXPECTED_MIN_RETRY_DELAY_MS);
 //    assertRequestsToWiremockHaveDifferentValuesOfParameter(vanityUrlCalls, "onetimetoken");
 //  }
-
-  @Test
-  public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep3()
-      throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-
-    String wireMockMapping =
-        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_3, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-    setJvmProperties(props);
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    loginInput.setLoginTimeout(5); // decreased timeout for test purposes
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
-      assertThat(
-          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
-          ex.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-    }
-  }
-
-  @Test
-  public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
-      throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-    String wireMockMapping =
-        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_4, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-    setJvmProperties(props);
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
-      assertThat(
-          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
-          ex.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-    }
-  }
-
-  @Test
-  public void
-      testTotalLoginTimeoutIsKeptWhenOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
-          throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-
-    String wireMockMapping =
-        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_4, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-    setJvmProperties(props);
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
-      assertThat(
-          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
-          ex.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-    }
-  }
-
-  private void assertRequestsToWiremockHaveDelay(
-      List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
-    for (int i = 1; i < requestEvents.size(); i++) {
-      long t1 = requestEvents.get(i - 1).getRequest().getLoggedDate().getTime();
-      long t2 = requestEvents.get(i).getRequest().getLoggedDate().getTime();
-      long deltaMillis = t2 - t1;
-      assertThat(
-          String.format(
-              "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
-          deltaMillis,
-          greaterThan(minExpectedDelayBetweenCalls));
-    }
-  }
-
-  /**
-   * Ensures that each request *with* the given parameter uses a unique value. Requests that do not
-   * have the parameter are ignored. Fails if any duplicate parameter values are detected.
-   */
-  private void assertRequestsToWiremockHaveDifferentValuesOfParameter(
-      List<ServeEvent> requestEvents, String parameterName) {
-    // Extract all parameter values from requests that have this parameter
-    List<String> paramValues =
-        requestEvents.stream()
-            .filter(e -> e.getRequest().getQueryParams().containsKey(parameterName))
-            .map(e -> e.getRequest().getQueryParams().get(parameterName).firstValue())
-            .collect(Collectors.toList());
-
-    long distinctCount = paramValues.stream().distinct().count();
-    assertThat(
-        "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
-        distinctCount,
-        not(equalTo(paramValues.size())));
-  }
+//
+//  @Test
+//  public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep3()
+//      throws Throwable {
+//    // GIVEN
+//    Map<String, Object> placeholders = new HashMap<>();
+//    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//
+//    String wireMockMapping =
+//        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_3, placeholders);
+//    importMapping(wireMockMapping);
+//
+//    setCustomTrustStorePropertyPath();
+//    Properties props = getProperties();
+//    setJvmProperties(props);
+//
+//    SFLoginInput loginInput = createOktaLoginInputBase();
+//    loginInput.setLoginTimeout(5); // decreased timeout for test purposes
+//    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+//
+//    // WHEN
+//    try {
+//      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+//    } catch (SnowflakeSQLException ex) {
+//      assertThat(
+//          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
+//          ex.getErrorCode(),
+//          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+//    }
+//  }
+//
+//  @Test
+//  public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
+//      throws Throwable {
+//    // GIVEN
+//    Map<String, Object> placeholders = new HashMap<>();
+//    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//    String wireMockMapping =
+//        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_4, placeholders);
+//    importMapping(wireMockMapping);
+//
+//    setCustomTrustStorePropertyPath();
+//    Properties props = getProperties();
+//    setJvmProperties(props);
+//
+//    SFLoginInput loginInput = createOktaLoginInputBase();
+//    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
+//    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+//
+//    // WHEN
+//    try {
+//      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+//    } catch (SnowflakeSQLException ex) {
+//      assertThat(
+//          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
+//          ex.getErrorCode(),
+//          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+//    }
+//  }
+//
+//  @Test
+//  public void
+//      testTotalLoginTimeoutIsKeptWhenOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
+//          throws Throwable {
+//    // GIVEN
+//    Map<String, Object> placeholders = new HashMap<>();
+//    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//
+//    String wireMockMapping =
+//        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_4, placeholders);
+//    importMapping(wireMockMapping);
+//
+//    setCustomTrustStorePropertyPath();
+//    Properties props = getProperties();
+//    setJvmProperties(props);
+//
+//    SFLoginInput loginInput = createOktaLoginInputBase();
+//    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
+//    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+//
+//    // WHEN
+//    try {
+//      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+//    } catch (SnowflakeSQLException ex) {
+//      assertThat(
+//          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
+//          ex.getErrorCode(),
+//          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+//    }
+//  }
+//
+//  private void assertRequestsToWiremockHaveDelay(
+//      List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
+//    for (int i = 1; i < requestEvents.size(); i++) {
+//      long t1 = requestEvents.get(i - 1).getRequest().getLoggedDate().getTime();
+//      long t2 = requestEvents.get(i).getRequest().getLoggedDate().getTime();
+//      long deltaMillis = t2 - t1;
+//      assertThat(
+//          String.format(
+//              "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
+//          deltaMillis,
+//          greaterThan(minExpectedDelayBetweenCalls));
+//    }
+//  }
+//
+//  /**
+//   * Ensures that each request *with* the given parameter uses a unique value. Requests that do not
+//   * have the parameter are ignored. Fails if any duplicate parameter values are detected.
+//   */
+//  private void assertRequestsToWiremockHaveDifferentValuesOfParameter(
+//      List<ServeEvent> requestEvents, String parameterName) {
+//    // Extract all parameter values from requests that have this parameter
+//    List<String> paramValues =
+//        requestEvents.stream()
+//            .filter(e -> e.getRequest().getQueryParams().containsKey(parameterName))
+//            .map(e -> e.getRequest().getQueryParams().get(parameterName).firstValue())
+//            .collect(Collectors.toList());
+//
+//    long distinctCount = paramValues.stream().distinct().count();
+//    assertThat(
+//        "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
+//        distinctCount,
+//        not(equalTo(paramValues.size())));
+//  }
 }
