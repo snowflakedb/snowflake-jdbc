@@ -28,15 +28,15 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   private static final String OKTA_AUTH_API_ENDPOINT = OKTA_VANITY_PATH + "/api/v1";
   private static final String OKTA_SAML_RESPONSE_SUBPATH = "/sso/saml";
   private static final String ALWAYS_429_IN_FEDERATED_STEP_3 =
-      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
   private static final String ALWAYS_429_IN_FEDERATED_STEP_4 =
-      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-always-429-in-federated-step-4.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_3 =
-      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-multiple-429-in-federated-step-3.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_4 =
-      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_FROM_OKTA_WHEN_LOGIN_TO_SF =
-      "/net/snowflake/client/jdbc/wiremock-mappings/session-util-wiremock-it-multiple-429-from-okta-in-login-request-to-sf.json";
+      "/wiremock/mappings/session/session-util-wiremock-it-always-429-in-federated-step-3.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
