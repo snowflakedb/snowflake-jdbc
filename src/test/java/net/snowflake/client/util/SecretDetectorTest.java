@@ -389,9 +389,6 @@ public class SecretDetectorTest {
         maskedNestedArrayStr.equals(SecretDetector.maskJacksonNode(objNode4).toString()));
   }
 
-  /*
-
-  */
   @Test
   public void testEncryptionMaterialFilter() throws Exception {
     String messageText =
