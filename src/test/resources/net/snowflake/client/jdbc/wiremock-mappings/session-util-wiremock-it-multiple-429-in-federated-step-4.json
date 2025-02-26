@@ -1,9 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Mock Okta Authenticator Request",
-      "requiredScenarioState": "Started",
-      "newScenarioState": "Authenticator Requested",
+      "scenarioName": "Multiple 429 in federated step 4",
       "request": {
         "method": "POST",
         "urlPath": "/session/authenticator-request",
@@ -31,81 +29,9 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Authn Response",
+      "scenarioName": "Multiple 429 in federated step 4",
       "requiredScenarioState": "Started",
-      "newScenarioState": "FirstFailed",
-      "request": {
-        "method": "POST",
-        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
-      },
-      "response": {
-        "status": 429,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "jsonBody": {
-          "message": "Too Many Requests"
-        }
-      }
-    },
-    {
-      "scenarioName": "Mock Okta Authn Response",
-      "requiredScenarioState": "FirstFailed",
-      "newScenarioState": "SecondFailed",
-      "request": {
-        "method": "POST",
-        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
-      },
-      "response": {
-        "status": 429,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "jsonBody": {
-          "message": "Too Many Requests"
-        }
-      }
-    },
-    {
-      "scenarioName": "Mock Okta Authn Response",
-      "requiredScenarioState": "SecondFailed",
-      "newScenarioState": "ThirdFailed",
-      "request": {
-        "method": "POST",
-        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
-      },
-      "response": {
-        "status": 429,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "jsonBody": {
-          "message": "Too Many Requests"
-        }
-      }
-    },
-    {
-      "scenarioName": "Mock Okta Authn Response",
-      "requiredScenarioState": "ThirdFailed",
-      "newScenarioState": "FourthFailed",
-      "request": {
-        "method": "POST",
-        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
-      },
-      "response": {
-        "status": 429,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "jsonBody": {
-          "message": "Too Many Requests"
-        }
-      }
-    },
-    {
-      "scenarioName": "Mock Okta Authn Response",
-      "requiredScenarioState": "FourthFailed",
-      "newScenarioState": "Successful",
+      "newScenarioState": "TokenRetrieved",
       "request": {
         "method": "POST",
         "urlPath": "/okta-stub/vanity-url/api/v1/authn"
@@ -118,12 +44,14 @@
         "jsonBody": {
           "expiresAt": "2023-10-13T19:18:09.000Z",
           "status": "SUCCESS",
-          "sessionToken": "testsessiontoken"
+          "sessionToken": "test-session-token-1"
         }
       }
     },
     {
-      "scenarioName": "Mock Okta SAML Response",
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "TokenRetrieved",
+      "newScenarioState": "FirstRateLimited",
       "request": {
         "method": "GET",
         "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml",
@@ -140,6 +68,120 @@
         }
       },
       "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "FirstRateLimited",
+      "newScenarioState": "FirstRateLimitedRetriedStep3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "expiresAt": "2023-10-13T19:18:09.000Z",
+          "status": "SUCCESS",
+          "sessionToken": "test-session-token-2"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "FirstRateLimitedRetriedStep3",
+      "newScenarioState": "SecondRateLimited",
+      "request": {
+        "method": "GET",
+        "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "SecondRateLimited",
+      "newScenarioState": "SecondRateLimitedRetriedStep3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "expiresAt": "2023-10-13T19:18:09.000Z",
+          "status": "SUCCESS",
+          "sessionToken": "test-session-token-3"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "SecondRateLimitedRetriedStep3",
+      "newScenarioState": "ThirdRateLimited",
+      "request": {
+        "method": "GET",
+        "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "ThirdRateLimited",
+      "newScenarioState": "ThirdRateLimitedRetriedStep3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "expiresAt": "2023-10-13T19:18:09.000Z",
+          "status": "SUCCESS",
+          "sessionToken": "test-session-token-4"
+        }
+      }
+    },
+    {
+      "scenarioName": "Multiple 429 in federated step 4",
+      "requiredScenarioState": "ThirdRateLimitedRetriedStep3",
+      "newScenarioState": "SuccessfulSAML",
+      "request": {
+        "method": "GET",
+        "urlPath": "/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml"
+      },
+      "response": {
         "status": 200,
         "headers": {
           "Content-Type": "text/html"
@@ -148,7 +190,7 @@
       }
     },
     {
-      "scenarioName": "Mock Okta Login Request",
+      "scenarioName": "Mock SF Login Request",
       "request": {
         "method": "POST",
         "urlPath": "/session/v1/login-request",
@@ -168,9 +210,7 @@
         },
         "jsonBody": {
           "data": {
-            "tokenUrl": "https://testauth.okta.com/api/v1/authn",
-            "ssoUrl": "https://testauth.okta.com/app/snowflake/tokenlikepartofurl/sso/saml",
-            "proofKey": null
+            "some": "data-that-will-be-ignored-in-current-testcase-but-should-be-replaced-with-correct-response-for-further-tests"
           },
           "code": null,
           "message": null,
