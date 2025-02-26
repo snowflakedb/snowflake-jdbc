@@ -36,6 +36,7 @@ import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvi
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -48,6 +49,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -74,6 +76,7 @@ public class SessionUtil {
   // Request path
   private static final String SF_PATH_LOGIN_REQUEST = "/session/v1/login-request";
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
+  private static final String SF_PATH_OKTA_REQUEST_SUFFIX = "/api/v1/authn";
   public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
   public static final String SF_PATH_CONSOLE_LOGIN_REQUEST = "/console/login";
 
@@ -812,6 +815,8 @@ public class SessionUtil {
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               } else if (authenticatorType == AuthenticatorType.OKTA) {
+                // TODO: there is no retry manager passed here for now - we still raise the
+                // exception to retry in the old way
                 logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
@@ -1340,16 +1345,22 @@ public class SessionUtil {
    *
    * @param loginInput Login Info for the request
    * @param ssoUrl URL to use for SSO
-   * @param oneTimeToken The token used for SSO
+   * @param oneTimeTokenSupplier The function returning token used for SSO
    * @return The response in HTML form
    * @throws SnowflakeSQLException Will be thrown if the destination URL in the SAML assertion does
    *     not match
    */
   private static String federatedFlowStep4(
-      SFLoginInput loginInput, String ssoUrl, String oneTimeToken) throws SnowflakeSQLException {
+      SFLoginInput loginInput,
+      String ssoUrl,
+      ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier)
+      throws SnowflakeSQLException {
+    String oneTimeToken = oneTimeTokenSupplier.call();
     String responseHtml = "";
 
     try {
+      RetryContext retryWithNewOTTManager =
+          createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1361,7 +1372,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              retryWithNewOTTManager);
 
       // step 5
       validateSAML(responseHtml, loginInput);
@@ -1369,6 +1381,24 @@ public class SessionUtil {
       handleFederatedFlowError(loginInput, ex);
     }
     return responseHtml;
+  }
+
+  private static RetryContext createFederatedFlowStep4RetryContext(
+      String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
+    RetryContext retryWithNewOTTManager =
+        new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
+    retryWithNewOTTManager.registerRetryCallback(
+        (HttpRequestBase retrieveSamlRequest) -> {
+          try {
+            String newOneTimeToken = oneTimeTokenSupplier.call();
+            prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+
+          return null;
+        });
+    return retryWithNewOTTManager;
   }
 
   private static void validateSAML(String responseHtml, SFLoginInput loginInput)
@@ -1481,7 +1511,8 @@ public class SessionUtil {
     JsonNode dataNode = null;
     try {
       StringEntity requestInput = prepareFederatedFlowStep1RequestInput(loginInput);
-      HttpPost postRequest = prepareFederatedFlowStep1PostRequest(loginInput, requestInput);
+      HttpPost postRequest = new HttpPost();
+      prepareFederatedFlowStep1PostRequest(postRequest, loginInput, requestInput);
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
@@ -1489,7 +1520,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
-              0,
+              0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to
+              // decide when to end the retries
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
@@ -1559,8 +1591,10 @@ public class SessionUtil {
         String tokenUrl = dataNode.path("tokenUrl").asText();
         String ssoUrl = dataNode.path("ssoUrl").asText();
         federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-        final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
-        return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+        ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier =
+            () -> federatedFlowStep3(loginInput, tokenUrl);
+
+        return federatedFlowStep4(loginInput, ssoUrl, oneTimeTokenSupplier);
       } catch (SnowflakeSQLException ex) {
         // This error gets thrown if the okta request encountered a retry-able error that
         // requires getting a new one-time token.
@@ -1889,7 +1923,8 @@ public class SessionUtil {
     if (requestPath != null) {
       return requestPath.equals(SF_PATH_LOGIN_REQUEST)
           || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
-          || requestPath.equals(SF_PATH_TOKEN_REQUEST);
+          || requestPath.equals(SF_PATH_TOKEN_REQUEST)
+          || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
     }
     return false;
   }
@@ -1899,25 +1934,23 @@ public class SessionUtil {
    *
    * @param loginInput The login information for the request.
    * @param inputData The JSON input data to include in the request.
-   * @return An {@link HttpPost} object ready to execute the federated flow request.
    * @throws URISyntaxException If the constructed URI is invalid.
    */
-  private static HttpPost prepareFederatedFlowStep1PostRequest(
-      SFLoginInput loginInput, StringEntity inputData) throws URISyntaxException {
+  private static void prepareFederatedFlowStep1PostRequest(
+      HttpPost postRequest, SFLoginInput loginInput, StringEntity inputData)
+      throws URISyntaxException {
     URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
     // TODO: if loginInput.serverUrl contains port or additional segments - it will be ignored and
     // overwritten here - to be fixed in SNOW-1922872
     fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
     URI fedUrlUri = fedUriBuilder.build();
+    postRequest.setURI(fedUrlUri);
 
-    HttpPost postRequest = new HttpPost(fedUrlUri);
     postRequest.setEntity(inputData);
     postRequest.addHeader("accept", "application/json");
 
     postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
     postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
-
-    return postRequest;
   }
 
   /**

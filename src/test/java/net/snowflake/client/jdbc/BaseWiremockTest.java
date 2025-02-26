@@ -6,19 +6,29 @@ import static net.snowflake.client.AssumptionUtils.assumeNotRunningOnJava21;
 import static net.snowflake.client.AssumptionUtils.assumeNotRunningOnJava8;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -243,6 +253,64 @@ public abstract class BaseWiremockTest {
     }
   }
 
+  /**
+   * Reads JSON content from a file, supporting both absolute paths and classpath resources.
+   *
+   * @param filePath The file path (absolute or from the resources directory).
+   * @return JSON content as a String.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  private String readJSONFromFile(String filePath) throws IOException {
+    // Check if the file exists as an absolute file path
+    Path sourceFilePath = Paths.get(filePath);
+    if (Files.exists(sourceFilePath)) {
+      return new String(Files.readAllBytes(sourceFilePath), StandardCharsets.UTF_8);
+    }
+
+    // If not found, attempt to read from the classpath (resources directory).
+    // Has to start from '/' followed by a subdirectory of the resources directory.
+    try (InputStream inputStream = getClass().getResourceAsStream(filePath)) {
+      if (inputStream == null) {
+        throw new IllegalStateException(
+            "Could not find file under the specified path: " + filePath);
+      }
+      try (InputStreamReader isr = new InputStreamReader(inputStream);
+          BufferedReader br = new BufferedReader(isr)) {
+        return br.lines().collect(Collectors.joining("\n"));
+      }
+    }
+  }
+
+  /**
+   * Reads JSON content from a file and replaces placeholders dynamically.
+   *
+   * @param mappingPath The path to the JSON file in the classpath.
+   * @param placeholdersMappings A map of placeholders to be replaced in the JSON content.
+   * @return The JSON content as a String with placeholders replaced.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  protected String getWireMockMappingFromFile(
+      String mappingPath, Map<String, Object> placeholdersMappings) throws IOException {
+    String jsonContent = readJSONFromFile(mappingPath);
+
+    // Replace placeholders with actual values
+    for (Map.Entry<String, Object> entry : placeholdersMappings.entrySet()) {
+      jsonContent = jsonContent.replace(entry.getKey(), String.valueOf(entry.getValue()));
+    }
+    return jsonContent;
+  }
+
+  /**
+   * Retrieves all serve events recorded by WireMock using the built-in API.
+   *
+   * @return A list of ServeEvent objects representing requests WireMock has recorded.
+   */
+  protected List<ServeEvent> getAllServeEvents() {
+    // Create a WireMock client pointed to the admin port
+    WireMock wm = new WireMock(WIREMOCK_HOST, getAdminPort());
+    return wm.getServeEvents();
+  }
+
   protected void importMappingFromResources(String relativePath) {
     try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
       String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8);
@@ -250,5 +318,39 @@ public abstract class BaseWiremockTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected static void assertRequestsToWiremockHaveDelay(
+      List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
+    for (int i = 1; i < requestEvents.size(); i++) {
+      long t1 = requestEvents.get(i - 1).getRequest().getLoggedDate().getTime();
+      long t2 = requestEvents.get(i).getRequest().getLoggedDate().getTime();
+      long deltaMillis = t2 - t1;
+      assertThat(
+          String.format(
+              "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
+          deltaMillis,
+          greaterThan(minExpectedDelayBetweenCalls));
+    }
+  }
+
+  /**
+   * Ensures that each request *with* the given parameter uses a unique value. Requests that do not
+   * have the parameter are ignored. Fails if any duplicate parameter values are detected.
+   */
+  protected static void assertRequestsToWiremockHaveDifferentValuesOfParameter(
+      List<ServeEvent> requestEvents, String parameterName) {
+    // Extract all parameter values from requests that have this parameter
+    List<String> paramValues =
+        requestEvents.stream()
+            .filter(e -> e.getRequest().getQueryParams().containsKey(parameterName))
+            .map(e -> e.getRequest().getQueryParams().get(parameterName).firstValue())
+            .collect(Collectors.toList());
+
+    long distinctCount = paramValues.stream().distinct().count();
+    assertThat(
+        "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
+        distinctCount,
+        not(equalTo(paramValues.size())));
   }
 }
