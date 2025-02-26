@@ -8,6 +8,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -20,15 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Date;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -44,9 +44,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class BaseWiremockTest {
 
@@ -304,7 +301,6 @@ public abstract class BaseWiremockTest {
     return jsonContent;
   }
 
-
   /** A minimal POJO representing a serve event from WireMock. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class MinimalServeEvent {
@@ -361,9 +357,7 @@ public abstract class BaseWiremockTest {
         this.values = values;
       }
 
-      /**
-       * Returns the first value in the query parameter list, or null if no values are present.
-       */
+      /** Returns the first value in the query parameter list, or null if no values are present. */
       public String firstValue() {
         return (values != null && !values.isEmpty()) ? values.get(0) : null;
       }
@@ -391,8 +385,10 @@ public abstract class BaseWiremockTest {
    * Retrieves all serve events recorded by WireMock by querying the admin endpoint. This
    * implementation uses our minimal POJOs to avoid deserialization issues.
    *
-   * We have to use wiremock api endpoints to retrieve those events, because we are unable to import
-   * wiremock.stubbing.ServeEvent - it would cause tests to fail on Java8 - since it would be still imported during compilation.
+   * <p>We have to use wiremock api endpoints to retrieve those events, because we are unable to
+   * import wiremock.stubbing.ServeEvent - it would cause tests to fail on Java8 - since it would be
+   * still imported during compilation.
+   *
    * @return A list of MinimalServeEvent objects representing the requests WireMock has recorded.
    */
   protected List<MinimalServeEvent> getAllServeEvents() {

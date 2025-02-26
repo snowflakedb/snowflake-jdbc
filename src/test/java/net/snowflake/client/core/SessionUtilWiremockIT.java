@@ -13,14 +13,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
 
 @Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
