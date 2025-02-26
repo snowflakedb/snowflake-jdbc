@@ -90,100 +90,98 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
-  @Disabled
-  @Test
-  public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep3()
-      throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//  @Test
+//  public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep3()
+//      throws Throwable {
+//    // GIVEN
+//    Map<String, Object> placeholders = new HashMap<>();
+//    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//
+//    String wireMockMapping =
+//        getWireMockMappingFromFile(MULTIPLE_429_IN_FEDERATED_STEP_3, placeholders);
+//    importMapping(wireMockMapping);
+//
+//    setCustomTrustStorePropertyPath();
+//    Properties props = getProperties();
+//    setJvmProperties(props);
+//
+//    SFLoginInput loginInput = createOktaLoginInputBase();
+//    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+//
+//    // WHEN
+//    try {
+//      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+//    } catch (SnowflakeSQLException ex) {
+//      fail(ex.getMessage());
+//    }
+//
+//    // THEN
+//    List<ServeEvent> allEvents = getAllServeEvents();
+//
+//    // Filter only events that hit "/okta-stub/vanity-url/".
+//    List<ServeEvent> vanityUrlCalls =
+//        allEvents.stream()
+//            .filter(e -> e.getRequest().getUrl().contains(OKTA_AUTH_API_ENDPOINT))
+//            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
+//            .collect(Collectors.toList());
+//
+//    assertThat(
+//        "Expected multiple calls to " + OKTA_AUTH_API_ENDPOINT + ", got " + vanityUrlCalls.size(),
+//        vanityUrlCalls.size(),
+//        greaterThan(2));
+//
+//    // Ensure each consecutive pair of calls has at least EXPECTED_MIN_RETRY_DELAY_MS gap
+//    // (determined by RestRequest.minBackoffInMilli (=1000 ms)).
+//    assertRequestsToWiremockHaveDelay(vanityUrlCalls, EXPECTED_MIN_RETRY_DELAY_MS);
+//  }
 
-    String wireMockMapping =
-        getWireMockMappingFromFile(MULTIPLE_429_IN_FEDERATED_STEP_3, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-    setJvmProperties(props);
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
-      fail(ex.getMessage());
-    }
-
-    // THEN
-    List<ServeEvent> allEvents = getAllServeEvents();
-
-    // Filter only events that hit "/okta-stub/vanity-url/".
-    List<ServeEvent> vanityUrlCalls =
-        allEvents.stream()
-            .filter(e -> e.getRequest().getUrl().contains(OKTA_AUTH_API_ENDPOINT))
-            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
-            .collect(Collectors.toList());
-
-    assertThat(
-        "Expected multiple calls to " + OKTA_AUTH_API_ENDPOINT + ", got " + vanityUrlCalls.size(),
-        vanityUrlCalls.size(),
-        greaterThan(2));
-
-    // Ensure each consecutive pair of calls has at least EXPECTED_MIN_RETRY_DELAY_MS gap
-    // (determined by RestRequest.minBackoffInMilli (=1000 ms)).
-    assertRequestsToWiremockHaveDelay(vanityUrlCalls, EXPECTED_MIN_RETRY_DELAY_MS);
-  }
-
-  @Test
-  @Disabled
-  public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep4()
-      throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-
-    String wireMockMapping =
-        getWireMockMappingFromFile(MULTIPLE_429_IN_FEDERATED_STEP_4, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-    setJvmProperties(props);
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
-      fail(ex.getMessage());
-    }
-
-    // THEN
-    List<ServeEvent> allEvents = getAllServeEvents();
-
-    // Filter only events that hit the final endpoint (federated step 4) - using the retrieved
-    // token.
-    List<ServeEvent> vanityUrlCalls =
-        allEvents.stream()
-            .filter(e -> e.getRequest().getUrl().contains(OKTA_SAML_RESPONSE_SUBPATH))
-            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
-            .collect(Collectors.toList());
-
-    assertThat(
-        "Expected multiple calls to "
-            + OKTA_SAML_RESPONSE_SUBPATH
-            + ", got "
-            + vanityUrlCalls.size(),
-        vanityUrlCalls.size(),
-        greaterThan(2));
-
-    assertRequestsToWiremockHaveDelay(vanityUrlCalls, EXPECTED_MIN_RETRY_DELAY_MS);
-    assertRequestsToWiremockHaveDifferentValuesOfParameter(vanityUrlCalls, "onetimetoken");
-  }
+//  @Test
+//  public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep4()
+//      throws Throwable {
+//    // GIVEN
+//    Map<String, Object> placeholders = new HashMap<>();
+//    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+//
+//    String wireMockMapping =
+//        getWireMockMappingFromFile(MULTIPLE_429_IN_FEDERATED_STEP_4, placeholders);
+//    importMapping(wireMockMapping);
+//
+//    setCustomTrustStorePropertyPath();
+//    Properties props = getProperties();
+//    setJvmProperties(props);
+//
+//    SFLoginInput loginInput = createOktaLoginInputBase();
+//    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+//
+//    // WHEN
+//    try {
+//      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+//    } catch (SnowflakeSQLException ex) {
+//      fail(ex.getMessage());
+//    }
+//
+//    // THEN
+//    List<ServeEvent> allEvents = getAllServeEvents();
+//
+//    // Filter only events that hit the final endpoint (federated step 4) - using the retrieved
+//    // token.
+//    List<ServeEvent> vanityUrlCalls =
+//        allEvents.stream()
+//            .filter(e -> e.getRequest().getUrl().contains(OKTA_SAML_RESPONSE_SUBPATH))
+//            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
+//            .collect(Collectors.toList());
+//
+//    assertThat(
+//        "Expected multiple calls to "
+//            + OKTA_SAML_RESPONSE_SUBPATH
+//            + ", got "
+//            + vanityUrlCalls.size(),
+//        vanityUrlCalls.size(),
+//        greaterThan(2));
+//
+//    assertRequestsToWiremockHaveDelay(vanityUrlCalls, EXPECTED_MIN_RETRY_DELAY_MS);
+//    assertRequestsToWiremockHaveDifferentValuesOfParameter(vanityUrlCalls, "onetimetoken");
+//  }
 
   @Test
   public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep3()
