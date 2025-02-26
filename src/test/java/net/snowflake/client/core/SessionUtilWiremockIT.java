@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//TODO: change
-@Disabled
+
 @Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   final int DECREASED_LOGIN_TIMEOUT = 5;
@@ -91,6 +90,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return connectionPropertiesMap;
   }
 
+  @Disabled
   @Test
   public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep3()
       throws Throwable {
@@ -137,6 +137,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   }
 
   @Test
+  @Disabled
   public void testOktaRetryWaitsUsingDefaultRetryStrategyWhen429InFederatedStep4()
       throws Throwable {
     // GIVEN
