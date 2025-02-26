@@ -3,6 +3,7 @@ package net.snowflake.client.core;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
@@ -270,5 +271,39 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
           ex.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
     }
+  }
+
+  private void assertRequestsToWiremockHaveDelay(
+      List<ServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
+    for (int i = 1; i < requestEvents.size(); i++) {
+      long t1 = requestEvents.get(i - 1).getRequest().getLoggedDate().getTime();
+      long t2 = requestEvents.get(i).getRequest().getLoggedDate().getTime();
+      long deltaMillis = t2 - t1;
+      assertThat(
+          String.format(
+              "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
+          deltaMillis,
+          greaterThan(minExpectedDelayBetweenCalls));
+    }
+  }
+
+  /**
+   * Ensures that each request *with* the given parameter uses a unique value. Requests that do not
+   * have the parameter are ignored. Fails if any duplicate parameter values are detected.
+   */
+  private void assertRequestsToWiremockHaveDifferentValuesOfParameter(
+      List<ServeEvent> requestEvents, String parameterName) {
+    // Extract all parameter values from requests that have this parameter
+    List<String> paramValues =
+        requestEvents.stream()
+            .filter(e -> e.getRequest().getQueryParams().containsKey(parameterName))
+            .map(e -> e.getRequest().getQueryParams().get(parameterName).firstValue())
+            .collect(Collectors.toList());
+
+    long distinctCount = paramValues.stream().distinct().count();
+    assertThat(
+        "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
+        distinctCount,
+        not(equalTo(paramValues.size())));
   }
 }
