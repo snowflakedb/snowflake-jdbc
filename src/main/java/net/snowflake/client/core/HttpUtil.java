@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
@@ -105,9 +106,11 @@ public class HttpUtil {
       new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
+  // TODO SNOW-1943242 consider making it HttpClientSettingsKey bound
   private static PoolingHttpClientConnectionManager connectionManager = null;
 
   /** default request configuration, to be copied on individual requests. */
+  // TODO SNOW-1943242 consider making it HttpClientSettingsKey bound
   private static RequestConfig DefaultRequestConfig = null;
 
   private static boolean socksProxyDisabled = false;
@@ -350,6 +353,8 @@ public class HttpUtil {
               .build();
 
       // Build a connection manager with enough connections
+      // TODO SNOW-1943242 consider not creating connection manager if already exists and/or
+      //   synchronization
       connectionManager =
           new PoolingHttpClientConnectionManager(
               registry, null, null, null, timeToLive, TimeUnit.SECONDS);
@@ -497,8 +502,33 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
-    return httpClient.computeIfAbsent(
-        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+    CloseableHttpClient closeableHttpClient =
+        httpClient.computeIfAbsent(
+            key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+    if (detectClosedConnectionManager(closeableHttpClient)) {
+      // TODO SNOW-1943242 consider dropping connectionManager
+      httpClient.remove(key);
+      return httpClient.computeIfAbsent(
+          key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+    }
+    return closeableHttpClient;
+  }
+
+  private static boolean detectClosedConnectionManager(CloseableHttpClient closeableHttpClient)
+      throws RuntimeException {
+    // There is no simple way to detect is the connection manager is closed...
+    try {
+      Field connManagerField = closeableHttpClient.getClass().getDeclaredField("connManager");
+      connManagerField.setAccessible(true);
+      PoolingHttpClientConnectionManager connectionManager =
+          (PoolingHttpClientConnectionManager) connManagerField.get(closeableHttpClient);
+      Field isShutdownField = connectionManager.getClass().getDeclaredField("isShutDown");
+      isShutdownField.setAccessible(true);
+      AtomicBoolean isShutdown = (AtomicBoolean) isShutdownField.get(connectionManager);
+      return isShutdown.get();
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
