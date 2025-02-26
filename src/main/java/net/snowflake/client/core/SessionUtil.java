@@ -815,6 +815,7 @@ public class SessionUtil {
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               } else if (authenticatorType == AuthenticatorType.OKTA) {
+                // TODO: there is no retry manager passed here for now - we still raise the exception to retry in the old way
                 logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
@@ -1357,19 +1358,7 @@ public class SessionUtil {
     String responseHtml = "";
 
     try {
-      RetryContext retryWithNewOTTManager =
-          new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
-      retryWithNewOTTManager.registerRetryCallback(
-          (HttpRequestBase retrieveSamlRequest) -> {
-            try {
-              String newOneTimeToken = oneTimeTokenSupplier.call();
-              prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
-            } catch (Exception e) {
-              throw new RuntimeException(e);
-            }
-
-            return null;
-          });
+      RetryContext retryWithNewOTTManager = createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1381,7 +1370,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              retryWithNewOTTManager);
 
       // step 5
       validateSAML(responseHtml, loginInput);
@@ -1389,6 +1379,23 @@ public class SessionUtil {
       handleFederatedFlowError(loginInput, ex);
     }
     return responseHtml;
+  }
+
+  private static RetryContext createFederatedFlowStep4RetryContext(String ssoUrl, ThrowingCallable<String, SnowflakeSQLException> oneTimeTokenSupplier) {
+    RetryContext retryWithNewOTTManager =
+        new RetryContext(RetryContext.RetryHook.ALWAYS_BEFORE_RETRY);
+    retryWithNewOTTManager.registerRetryCallback(
+        (HttpRequestBase retrieveSamlRequest) -> {
+          try {
+            String newOneTimeToken = oneTimeTokenSupplier.call();
+            prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+
+          return null;
+        });
+    return retryWithNewOTTManager;
   }
 
   private static void validateSAML(String responseHtml, SFLoginInput loginInput)
@@ -1510,7 +1517,7 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
-              0,
+              0, // max retries is set to 0 => it will be ignored and only retryTimeout will be  to decide when to end the retries
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
