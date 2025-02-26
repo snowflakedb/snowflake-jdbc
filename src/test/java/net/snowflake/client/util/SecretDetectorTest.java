@@ -388,4 +388,30 @@ public class SecretDetectorTest {
         "Nested Jackson array node is not masked successfully",
         maskedNestedArrayStr.equals(SecretDetector.maskJacksonNode(objNode4).toString()));
   }
+
+  /*
+
+  */
+  @Test
+  public void testEncryptionMaterialFilter() throws Exception {
+    String messageText =
+        "{\"data\":"
+            + "{\"autoCompress\":true,"
+            + "\"overwrite\":false,"
+            + "\"clientShowEncryptionParameter\":true,"
+            + "\"encryptionMaterial\":{\"queryStageMasterKey\":\"asdfasdfasdfasdf==\",\"queryId\":\"01b6f5ba-0002-0181-0000-11111111da\",\"smkId\":1111},"
+            + "\"stageInfo\":{\"locationType\":\"AZURE\", \"region\":\"eastus2\"}";
+
+    String filteredMessageText =
+        "{\"data\":"
+            + "{\"autoCompress\":true,"
+            + "\"overwrite\":false,"
+            + "\"clientShowEncryptionParameter\":true,"
+            + "\"encryptionMaterial\" : ****,"
+            + "\"stageInfo\":{\"locationType\":\"AZURE\", \"region\":\"eastus2\"}";
+
+    String result = SecretDetector.filterEncryptionMaterial(messageText);
+
+    assertEquals(filteredMessageText, result);
+  }
 }

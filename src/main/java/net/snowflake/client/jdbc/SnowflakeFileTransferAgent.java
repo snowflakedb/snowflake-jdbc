@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
@@ -72,6 +71,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
@@ -1340,20 +1340,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     JsonNode jsonNode = (JsonNode) result;
 
-    logger.debug("Response: {}", removeSensitiveJsonElementsForLogging(jsonNode));
+    logger.debug("Response: {}", SecretDetector.filterEncryptionMaterial(jsonNode.toString()));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
-  }
-
-  /**
-   * @param jsonNode A JsonNode that needs to have sensitive data removed before logging.
-   * @return A string value of the JSON without any sensitive data for logging.
-   */
-  private static String removeSensitiveJsonElementsForLogging(JsonNode jsonNode)
-      throws SnowflakeSQLException {
-    JsonNode result = jsonNode.deepCopy();
-    return ((ObjectNode) result.path("data")).remove("encryptionMaterial").toString();
   }
 
   /**

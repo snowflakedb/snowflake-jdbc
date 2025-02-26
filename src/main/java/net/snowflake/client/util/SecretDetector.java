@@ -70,6 +70,9 @@ public class SecretDetector {
           "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
           Pattern.CASE_INSENSITIVE);
 
+  private static final Pattern ENCRYPTION_MATERIAL_PATTERN =
+      Pattern.compile("\"encryptionMaterial\"\\s*:\\s*\\{.*?\\}", Pattern.CASE_INSENSITIVE);
+
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
 
@@ -248,6 +251,23 @@ public class SecretDetector {
       message = gcsMatcher.replaceAll("\"privateKeyData\": \"XXXX\"");
     }
 
+    return message;
+  }
+
+  /**
+   * Filter encryption material that may be buried inside a JSON string.
+   *
+   * @param message the message text which may contain encryption material
+   * @return Return filtered message
+   */
+  public static String filterEncryptionMaterial(String message) {
+    Matcher matcher =
+        ENCRYPTION_MATERIAL_PATTERN.matcher(
+            message.length() <= MAX_LENGTH ? message : message.substring(0, MAX_LENGTH));
+
+    if (matcher.find()) {
+      return matcher.replaceAll("\"encryptionMaterial\" : ****");
+    }
     return message;
   }
 
