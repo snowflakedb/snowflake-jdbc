@@ -390,8 +390,8 @@ public class SFLoginInput {
   }
 
   boolean isPrivateKeyProvided() {
-    return (getPrivateKey() != null
-        || getPrivateKeyFile() != null
+    return (getPrivateKeyFile() != null
+        || getPrivateKey() != null
         || getPrivateKeyBase64() != null);
   }
 
