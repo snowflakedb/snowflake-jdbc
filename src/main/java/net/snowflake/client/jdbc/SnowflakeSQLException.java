@@ -225,7 +225,7 @@ public class SnowflakeSQLException extends SQLException {
   /**
    * @param errorCode error code
    * @param retryCount retry count
-   * @param issocketTimeoutNoBackoff issocketTimeoutNoBackoff
+   * @param issocketTimeoutNoBackoff isSocketTimeoutNoBackoff
    * @param elapsedSeconds time elapsed in seconds
    */
   public SnowflakeSQLException(

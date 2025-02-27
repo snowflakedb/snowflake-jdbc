@@ -8,17 +8,27 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -29,6 +39,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -249,6 +260,127 @@ public abstract class BaseWiremockTest {
       importMapping(scenario);
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Reads JSON content from a file, supporting both absolute paths and classpath resources.
+   *
+   * @param filePath The file path (absolute or from the resources directory).
+   * @return JSON content as a String.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  private String readJSONFromFile(String filePath) throws IOException {
+    // Check if the file exists as an absolute file path
+    Path sourceFilePath = Paths.get(filePath);
+    if (Files.exists(sourceFilePath)) {
+      return new String(Files.readAllBytes(sourceFilePath), StandardCharsets.UTF_8);
+    }
+
+    // If not found, attempt to read from the classpath (resources directory).
+    // Has to start from '/' followed by a subdirectory of the resources directory.
+    try (InputStream inputStream = getClass().getResourceAsStream(filePath)) {
+      if (inputStream == null) {
+        throw new IllegalStateException(
+            "Could not find file under the specified path: " + filePath);
+      }
+      try (InputStreamReader isr = new InputStreamReader(inputStream);
+          BufferedReader br = new BufferedReader(isr)) {
+        return br.lines().collect(Collectors.joining("\n"));
+      }
+    }
+  }
+
+  /**
+   * Reads JSON content from a file and replaces placeholders dynamically.
+   *
+   * @param mappingPath The path to the JSON file in the classpath.
+   * @param placeholdersMappings A map of placeholders to be replaced in the JSON content.
+   * @return The JSON content as a String with placeholders replaced.
+   * @throws IOException If an error occurs while reading the file.
+   */
+  protected String getWireMockMappingFromFile(
+      String mappingPath, Map<String, Object> placeholdersMappings) throws IOException {
+    String jsonContent = readJSONFromFile(mappingPath);
+
+    // Replace placeholders with actual values
+    for (Map.Entry<String, Object> entry : placeholdersMappings.entrySet()) {
+      jsonContent = jsonContent.replace(entry.getKey(), String.valueOf(entry.getValue()));
+    }
+    return jsonContent;
+  }
+
+  /** A minimal POJO representing a serve event from WireMock. */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class MinimalServeEvent {
+    private MinimalRequest request;
+
+    public MinimalRequest getRequest() {
+      return request;
+    }
+
+    public void setRequest(MinimalRequest request) {
+      this.request = request;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class MinimalRequest {
+      private String url;
+      private Date loggedDate;
+
+      public String getUrl() {
+        return url;
+      }
+
+      public void setUrl(String url) {
+        this.url = url;
+      }
+
+      public Date getLoggedDate() {
+        return loggedDate;
+      }
+
+      public void setLoggedDate(Date loggedDate) {
+        this.loggedDate = loggedDate;
+      }
+    }
+  }
+
+  /**
+   * A wrapper for the serve events JSON structure returned by WireMock. The JSON has a top-level
+   * "requests" field which is an array of serve events.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class ServeEventsWrapper {
+    private List<MinimalServeEvent> requests = new ArrayList<>();
+
+    public List<MinimalServeEvent> getRequests() {
+      return requests;
+    }
+
+    public void setRequests(List<MinimalServeEvent> requests) {
+      this.requests = requests;
+    }
+  }
+
+  /**
+   * Retrieves all serve events recorded by WireMock by querying the admin endpoint. This
+   * implementation uses our minimal POJOs to avoid deserialization issues.
+   *
+   * @return A list of MinimalServeEvent objects representing the requests WireMock has recorded.
+   */
+  protected List<MinimalServeEvent> getAllServeEvents() {
+    String url = "http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/requests";
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
+      HttpGet request = new HttpGet(url);
+      try (CloseableHttpResponse response = client.execute(request)) {
+        String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        ServeEventsWrapper wrapper = mapper.readValue(json, ServeEventsWrapper.class);
+        return wrapper.getRequests();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to get serve events from WireMock", e);
     }
   }
 }
