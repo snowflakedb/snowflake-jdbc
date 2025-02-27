@@ -414,6 +414,8 @@
             <exclude>**/ResultSetAsyncIT.java</exclude>
             <!-- ResultSet serialization is new -->
             <exclude>**/SnowflakeResultSetSerializable*IT.java</exclude>
+            <!-- AuthTestHelper is a new class for authentication tests -->
+            <exclude>**/AuthTestHelper.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
