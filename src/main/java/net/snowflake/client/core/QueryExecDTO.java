@@ -6,6 +6,8 @@ import java.util.Map;
 public class QueryExecDTO {
   private String sqlText;
 
+  private String dataframeAst;
+
   @Deprecated private Integer sequenceId;
 
   private Map<String, ParameterBindingDTO> bindings;
@@ -57,6 +59,14 @@ public class QueryExecDTO {
 
   public void setSqlText(String sqlText) {
     this.sqlText = sqlText;
+  }
+
+  public String getDataframeAst() {
+    return this.dataframeAst;
+  }
+
+  public void setDataframeAst(String dataframeAst) {
+    this.dataframeAst = dataframeAst;
   }
 
   @Deprecated
