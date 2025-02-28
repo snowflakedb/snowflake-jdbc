@@ -55,6 +55,7 @@ public class StmtUtil {
   /** Input for executing a statement on server */
   static class StmtInput {
     String sql;
+    String dataframeAst = null;
 
     // default to snowflake (a special json format for snowflake query result
     String mediaType = SF_MEDIA_TYPE;
@@ -100,6 +101,11 @@ public class StmtUtil {
 
     public StmtInput setSql(String sql) {
       this.sql = sql;
+      return this;
+    }
+
+    public StmtInput setDataframeAst(String dataframeAst) {
+      this.dataframeAst = dataframeAst;
       return this;
     }
 
