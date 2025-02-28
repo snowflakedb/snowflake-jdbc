@@ -146,7 +146,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
 
     raiseSQLExceptionIfStatementIsClosed();
-    ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, null, false, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", execTimeData.getLogString());
@@ -164,10 +164,23 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ExecTimeTelemetryData execTimeData =
         new ExecTimeTelemetryData("ResultSet Statement.executeAsyncQuery(String)", this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
-    ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, null, true, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
+    return rs;
+  }
+
+ // todo: add doc
+  public ResultSet executeDataframeAst(String dataframeAst) throws SQLException {
+    ExecTimeTelemetryData execTimeData =
+            new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
+
+    raiseSQLExceptionIfStatementIsClosed();
+    ResultSet rs = executeQueryInternal("", dataframeAst, false, null, execTimeData);
+    execTimeData.setQueryEnd();
+    execTimeData.generateTelemetry();
+    logger.debug("Query completed. {}", execTimeData.getLogString());
     return rs;
   }
 
@@ -274,6 +287,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   ResultSet executeQueryInternal(
       String sql,
+      String dataframeAst,
       boolean asyncExec,
       Map<String, ParameterBindingDTO> parameterBindings,
       ExecTimeTelemetryData execTimeData)

@@ -105,10 +105,13 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
+
+
   /**
    * Execute SQL query with an option for describe only
    *
    * @param sql sql statement
+   * @param dataframeAst ...
    * @param describeOnly true if describe only
    * @return query result set
    * @throws SQLException if connection is already closed
@@ -116,6 +119,7 @@ public class SFStatement extends SFBaseStatement {
    */
   private SFBaseResultSet executeQuery(
       String sql,
+      String dataframeAst,
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
       boolean asyncExec,
@@ -144,6 +148,7 @@ public class SFStatement extends SFBaseStatement {
     // NOTE: It is intentional two describeOnly parameters are specified.
     return executeQueryInternal(
         sql,
+        dataframeAst,
         parametersBinding,
         describeOnly,
         describeOnly, // internal query if describeOnly is true
@@ -163,7 +168,7 @@ public class SFStatement extends SFBaseStatement {
   @Override
   public SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException {
     SFBaseResultSet baseResultSet =
-        executeQuery(sql, null, true, false, null, new ExecTimeTelemetryData());
+        executeQuery(sql, null, null, true, false, null, new ExecTimeTelemetryData());
 
     describeJobUUID = baseResultSet.getQueryId();
 
@@ -192,6 +197,7 @@ public class SFStatement extends SFBaseStatement {
    */
   SFBaseResultSet executeQueryInternal(
       String sql,
+      String dataframeAst,
       Map<String, ParameterBindingDTO> parameterBindings,
       boolean describeOnly,
       boolean internal,
@@ -210,6 +216,7 @@ public class SFStatement extends SFBaseStatement {
     Object result =
         executeHelper(
             sql,
+            dataframeAst,
             StmtUtil.SF_MEDIA_TYPE,
             parameterBindings,
             describeOnly,
@@ -322,6 +329,7 @@ public class SFStatement extends SFBaseStatement {
    */
   public Object executeHelper(
       String sql,
+      String dataframeAst,
       String mediaType,
       Map<String, ParameterBindingDTO> bindValues,
       boolean describeOnly,
@@ -399,6 +407,7 @@ public class SFStatement extends SFBaseStatement {
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       stmtInput
           .setSql(sql)
+          .setDataframeAst(dataframeAst)
           .setMediaType(mediaType)
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
@@ -694,7 +703,18 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, false, parametersBinding, caller, execTimeData);
+    return execute(sql, null, false, parametersBinding, caller, execTimeData);
+  }
+
+  @Override
+  public SFBaseResultSet execute(
+          String sql,
+          String dataframeAst,
+          Map<String, ParameterBindingDTO> parametersBinding,
+          CallingMethod caller,
+          ExecTimeTelemetryData execTimeData)
+          throws SQLException, SFException {
+    return execute(sql, dataframeAst, false, parametersBinding, caller, execTimeData);
   }
 
   /**
@@ -743,6 +763,7 @@ public class SFStatement extends SFBaseStatement {
    * Execute sql
    *
    * @param sql sql statement.
+   * @param dataframeAst ...
    * @param asyncExec is async exec
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
@@ -754,12 +775,15 @@ public class SFStatement extends SFBaseStatement {
    */
   public SFBaseResultSet execute(
       String sql,
+      String dataframeAst,
       boolean asyncExec,
       Map<String, ParameterBindingDTO> parametersBinding,
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
+
+    // todo: if (dataframeAst == null)
     sanityCheckQuery(sql);
 
     session.injectedDelay();
@@ -776,7 +800,7 @@ public class SFStatement extends SFBaseStatement {
       executeSetProperty(sql);
       return null;
     }
-    return executeQuery(sql, parametersBinding, false, asyncExec, caller, execTimeData);
+    return executeQuery(sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {
@@ -952,6 +976,6 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, true, parametersBinding, caller, execTimeData);
+    return execute(sql, null, true, parametersBinding, caller, execTimeData);
   }
 }
