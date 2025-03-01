@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -33,9 +29,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.joda.time.DateTime;
 
-/**
- * @author jrosen
- */
 public class EventHandler extends Handler {
   private static final SFLogger logger = SFLoggerFactory.getLogger(EventHandler.class);
 

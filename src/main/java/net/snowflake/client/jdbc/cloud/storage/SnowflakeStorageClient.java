@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2017-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.File;
@@ -16,11 +13,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Interface for storage client provider implementations
- *
- * @author lgiakoumakis
- */
+/** Interface for storage client provider implementations */
 public interface SnowflakeStorageClient {
   /**
    * @return Returns the Max number of retry attempts

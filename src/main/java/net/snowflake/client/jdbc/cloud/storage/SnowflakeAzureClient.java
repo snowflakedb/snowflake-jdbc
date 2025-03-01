@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -62,11 +59,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 
-/**
- * Encapsulates the Azure Storage client and all Azure Storage operations and logic
- *
- * @author lgiakoumakis
- */
+/** Encapsulates the Azure Storage client and all Azure Storage operations and logic */
 public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
   private static final String localFileSep = systemGetProperty("file.separator");

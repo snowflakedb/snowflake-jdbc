@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
@@ -50,7 +47,7 @@ import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.util.io.pem.PemReader;
 
-/** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
+/** Class used to compute jwt token for key pair authentication. */
 class SessionUtilKeyPair {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);

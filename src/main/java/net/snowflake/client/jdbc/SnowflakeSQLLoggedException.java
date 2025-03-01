@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,11 +28,10 @@ import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 
 /**
- * @author mknister
- *     <p>This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB
- *     telemetry data for sql exceptions. Not all sql exceptions require OOB telemetry logging so
- *     the exceptions in this class should only be thrown if there is a need for logging the
- *     exception with OOB telemetry.
+ * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB
+ * telemetry data for sql exceptions. Not all sql exceptions require OOB telemetry logging so the
+ * exceptions in this class should only be thrown if there is a need for logging the exception with
+ * OOB telemetry.
  */
 public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   private static final SFLogger logger =

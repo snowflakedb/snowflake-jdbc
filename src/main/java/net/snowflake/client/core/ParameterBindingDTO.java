@@ -1,12 +1,8 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.BindingParameterMetadata;
 
-/** This class represents a binding object passed to server side Created by hyu on 6/15/17. */
+/** This class represents a binding object passed to server side. */
 public class ParameterBindingDTO {
   /** Type of binding */
   private String type;

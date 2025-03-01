@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import java.util.Map;
@@ -12,8 +9,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
  *
  * <p>Only the metadata accessors and mutators used by the JDBC client currently are supported,
  * additional methods should be added as needed
- *
- * @author lgiakoumakis, ppaulus (rename)
  */
 public class CommonObjectMetadata implements StorageObjectMetadata {
   private long contentLength;

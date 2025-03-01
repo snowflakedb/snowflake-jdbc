@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -31,11 +28,7 @@ import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
-/**
- * Handles encryption and decryption using AES CBC (for files) and ECB (for keys).
- *
- * @author ppaulus
- */
+/** Handles encryption and decryption using AES CBC (for files) and ECB (for keys). */
 public class EncryptionProvider {
   private static final String AES = "AES";
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";

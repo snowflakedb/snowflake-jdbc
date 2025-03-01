@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.bind;
 
 import static java.nio.charset.StandardCharsets.UTF_8;

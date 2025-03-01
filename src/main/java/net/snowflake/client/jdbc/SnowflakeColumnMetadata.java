@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getFieldMetadata;
@@ -16,9 +12,6 @@ import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
-/**
- * @author jhuang
- */
 public class SnowflakeColumnMetadata implements Serializable {
   private static final long serialVersionUID = 1L;
   private String name;

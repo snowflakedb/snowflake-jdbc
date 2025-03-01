@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -25,9 +21,6 @@ import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/**
- * @author jrosen + mkeller
- */
 public class IncidentUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(IncidentUtil.class);
 

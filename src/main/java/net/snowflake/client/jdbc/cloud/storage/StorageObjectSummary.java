@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -15,11 +12,7 @@ import java.util.Base64;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/**
- * Storage platform agnostic class that encapsulates remote storage object properties
- *
- * @author lgiakoumakis
- */
+/** Storage platform agnostic class that encapsulates remote storage object properties */
 public class StorageObjectSummary {
   private static final SFLogger logger = SFLoggerFactory.getLogger(StorageObjectSummary.class);
   private String location; // location translates to "bucket" for S3

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -12,8 +9,6 @@ import java.util.List;
 
 /**
  * Provides and iterator over storage object summaries from all supported cloud storage providers
- *
- * @author lgiakoumakis
  */
 public class StorageObjectSummaryCollection implements Iterable<StorageObjectSummary> {
 

@@ -1,18 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import net.snowflake.client.util.SecretDetector;
 
-/**
- * Class for result chunk
- *
- * <p>Created by jhuang on 11/12/14.
- */
+/** Class for result chunk */
 public abstract class SnowflakeResultChunk {
   public boolean isReleased() {
     return released;
