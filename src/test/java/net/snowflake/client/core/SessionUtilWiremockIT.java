@@ -20,7 +20,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.OTHERS)
+@Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   final int DECREASED_LOGIN_TIMEOUT = 5;
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
@@ -100,7 +100,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
-    setJvmProperties(props);
+//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
@@ -145,7 +145,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
-    setJvmProperties(props);
+//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
@@ -193,7 +193,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
-    setJvmProperties(props);
+//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(5); // decreased timeout for test purposes
@@ -222,7 +222,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
-    setJvmProperties(props);
+//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
@@ -253,7 +253,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
     setCustomTrustStorePropertyPath();
     Properties props = getProperties();
-    setJvmProperties(props);
+//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
