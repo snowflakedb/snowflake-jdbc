@@ -2,7 +2,7 @@ package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -99,7 +99,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     try {
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     } catch (SnowflakeSQLException ex) {
-      assertTrue(ex.getMessage().contains("429"));
+      fail("SessionUtil test failed with error: " + ex.getMessage());
     }
 
     // THEN
