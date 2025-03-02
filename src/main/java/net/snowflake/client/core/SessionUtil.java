@@ -5,8 +5,10 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +31,10 @@ import java.util.stream.Stream;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
+import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
+import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
+import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -139,6 +145,7 @@ public class SessionUtil {
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
+
   public static Map<String, String> JVM_PARAMS_TO_PARAMS =
       Stream.of(
               new String[][] {
@@ -218,9 +225,21 @@ public class SessionUtil {
           .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
         return AuthenticatorType.EXTERNALBROWSER;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
+        return AuthenticatorType.OAUTH_AUTHORIZATION_CODE;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name())) {
+        return AuthenticatorType.OAUTH_CLIENT_CREDENTIALS;
       } else if (loginInput.getAuthenticator().equalsIgnoreCase(AuthenticatorType.OAUTH.name())) {
-        // OAuth Authentication
+        // OAuth access code Authentication
         return AuthenticatorType.OAUTH;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name())) {
+        return AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN;
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.SNOWFLAKE_JWT.name())) {
@@ -267,17 +286,18 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-    if (!authenticator.equals(AuthenticatorType.OAUTH)) {
-      // OAuth does not require a username
-      AssertUtil.assertTrue(
-          loginInput.getUserName() != null, "missing user name for opening session");
-    } else {
-      // OAUTH needs either token or password
+    checkIfExperimentalAuthnEnabled(authenticator);
+
+    if (isTokenOrPasswordRequired(authenticator)) {
       AssertUtil.assertTrue(
           loginInput.getToken() != null || loginInput.getPassword() != null,
           "missing token or password for opening session");
     }
-    if (authenticator.equals(AuthenticatorType.EXTERNALBROWSER)) {
+    if (isUsernameRequired(authenticator)) {
+      AssertUtil.assertTrue(
+          loginInput.getUserName() != null, "missing user name for opening session");
+    }
+    if (isEligibleForTokenCaching(authenticator)) {
       if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
           && loginInput.isEnableClientStoreTemporaryCredential()) {
         // force to set the flag for Mac/Windows users
@@ -306,24 +326,127 @@ public class SessionUtil {
       }
     }
 
-    preNewSession(loginInput);
+    convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
+
+    readCachedTokensIfPossible(loginInput);
+    if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
+      obtainAuthAccessTokenAndUpdateInput(loginInput);
+    }
 
     try {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     } catch (SnowflakeReauthenticationRequest ex) {
-      // Id Token expired. We run newSession again with id_token cache cleared
-      logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
+      if (ex.getErrorCode() == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
+        if (loginInput.getOauthRefreshToken() != null) {
+          refreshOAuthAccessTokenAndUpdateInput(loginInput);
+        } else {
+          loginInput.restoreOriginalAuthenticator();
+          fetchOAuthAccessTokenAndUpdateInput(loginInput);
+        }
+      }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
   }
 
-  private static void preNewSession(SFLoginInput loginInput) throws SFException {
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      CredentialManager.getInstance().fillCachedIdToken(loginInput);
+  static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
+    if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
+        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
+        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
+      boolean experimentalAuthenticationMethodsEnabled =
+          Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
+      AssertUtil.assertTrue(
+          experimentalAuthenticationMethodsEnabled,
+          "Following authentication method not yet supported: " + authenticator);
     }
+  }
 
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().fillCachedMfaToken(loginInput);
+  private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {
+    return authenticator.equals(AuthenticatorType.EXTERNALBROWSER)
+        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
+        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
+  }
+
+  private static boolean isTokenOrPasswordRequired(AuthenticatorType authenticator) {
+    return authenticator.equals(AuthenticatorType.OAUTH)
+        || authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN);
+  }
+
+  private static boolean isUsernameRequired(AuthenticatorType authenticator) {
+    return !authenticator.equals(AuthenticatorType.OAUTH)
+        && !authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
+        && !authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
+        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
+  }
+
+  private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
+      throws SFException {
+    if (loginInput.getOauthAccessToken() != null) { // Access Token was cached
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      loginInput.setToken(loginInput.getOauthAccessToken());
+    } else { // Access Token not cached
+      fetchOAuthAccessTokenAndUpdateInput(loginInput);
+    }
+  }
+
+  private static void fetchOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
+      throws SFException {
+    OAuthAccessTokenProviderFactory accessTokenProviderFactory =
+        new OAuthAccessTokenProviderFactory(
+            new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
+            loginInput.getBrowserResponseTimeout().getSeconds());
+    AccessTokenProvider accessTokenProvider =
+        accessTokenProviderFactory.createAccessTokenProvider(
+            getAuthenticator(loginInput), loginInput);
+    TokenResponseDTO tokenResponse = accessTokenProvider.getAccessToken(loginInput);
+    loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+    loginInput.setToken(tokenResponse.getAccessToken());
+    loginInput.setOauthAccessToken(tokenResponse.getAccessToken());
+    loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
+  }
+
+  private static void refreshOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
+      throws SFException {
+    try {
+      OAuthAccessTokenForRefreshTokenProvider tokenRefresher =
+          new OAuthAccessTokenForRefreshTokenProvider();
+      TokenResponseDTO tokenResponse = tokenRefresher.getAccessToken(loginInput);
+      loginInput.setToken(tokenResponse.getAccessToken());
+      loginInput.setOauthAccessToken(tokenResponse.getAccessToken());
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      if (tokenResponse.getRefreshToken() != null) {
+        loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
+      }
+    } catch (SFException | Exception e) {
+      logger.debug(
+          "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
+          e);
+      CredentialManager.deleteOAuthRefreshTokenCache(loginInput);
+      loginInput.restoreOriginalAuthenticator();
+      fetchOAuthAccessTokenAndUpdateInput(loginInput);
+    }
+  }
+
+  private static void convertSessionParameterStringValueToBooleanIfGiven(
+      SFLoginInput loginInput, String parameterName) {
+    Object currentClientRequestMfaToken = loginInput.getSessionParameters().get(parameterName);
+    if (currentClientRequestMfaToken instanceof String) {
+      loginInput
+          .getSessionParameters()
+          .put(parameterName, Boolean.parseBoolean((String) currentClientRequestMfaToken));
+    }
+  }
+
+  private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
+    if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+      if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+        CredentialManager.fillCachedIdToken(loginInput);
+        CredentialManager.fillCachedOAuthAccessToken(loginInput);
+        CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+      }
+
+      if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
+        CredentialManager.fillCachedMfaToken(loginInput);
+      }
     }
   }
 
@@ -340,7 +463,7 @@ public class SessionUtil {
     return false;
   }
 
-  private static SFLoginOutput newSession(
+  static SFLoginOutput newSession(
       SFLoginInput loginInput,
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
@@ -483,7 +606,8 @@ public class SessionUtil {
         }
       } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == AuthenticatorType.OAUTH) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH
+          || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
@@ -505,6 +629,12 @@ public class SessionUtil {
         if (loginInput.getMfaToken() != null) {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getMfaToken());
         }
+      }
+
+      // OAuth metrics data
+      if (authenticatorType == AuthenticatorType.OAUTH
+          && loginInput.getOriginalAuthenticator() != null) {
+        data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
       }
 
       // map of client environment parameters, including connection parameters
@@ -754,8 +884,22 @@ public class SessionUtil {
           deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
 
           logger.debug(
-              "ID Token Expired / Not Applicable. Reauthenticating without ID Token...: {}",
+              "ID Token Expired / Not Applicable. Reauthenticating with ID Token cleared...: {}",
               errorCode);
+          SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
+        }
+
+        if (errorCode == Constants.OAUTH_ACCESS_TOKEN_INVALID_GS_CODE) {
+          logger.debug("OAuth Access Token Invalid: {}", errorCode);
+          loginInput.setOauthAccessToken(null);
+          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+        }
+
+        if (errorCode == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
+          loginInput.setOauthAccessToken(null);
+          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+
+          logger.debug("OAuth Access Token Expired: {}", errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
         }
 
@@ -882,6 +1026,8 @@ public class SessionUtil {
             masterTokenValidityInSeconds,
             idToken,
             mfaToken,
+            loginInput.getOauthAccessToken(),
+            loginInput.getOauthRefreshToken(),
             databaseVersion,
             databaseMajorVersion,
             databaseMinorVersion,
@@ -894,13 +1040,20 @@ public class SessionUtil {
             sessionId,
             commonParams);
 
-    if (consentCacheIdToken
-        && asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      CredentialManager.getInstance().writeIdToken(loginInput, ret);
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+      if (consentCacheIdToken) {
+        CredentialManager.writeIdToken(loginInput, ret.getIdToken());
+      }
+      if (loginInput.getOauthAccessToken() != null) {
+        CredentialManager.writeOAuthAccessToken(loginInput);
+      }
+      if (loginInput.getOauthRefreshToken() != null) {
+        CredentialManager.writeOAuthRefreshToken(loginInput);
+      }
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().writeMfaToken(loginInput, ret);
+      CredentialManager.writeMfaToken(loginInput, ret.getMfaToken());
     }
 
     stopwatch.stop();
@@ -934,7 +1087,29 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteIdTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteIdTokenCache(host, user);
+    CredentialManager.deleteIdTokenCache(host, user);
+  }
+
+  /**
+   * Delete the Oauth access token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
+  @SnowflakeJdbcInternalApi
+  public static void deleteOAuthAccessTokenCache(String host, String user) {
+    CredentialManager.deleteOAuthAccessTokenCache(host, user);
+  }
+
+  /**
+   * Delete the Oauth refresh token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
+  @SnowflakeJdbcInternalApi
+  public static void deleteOAuthRefreshTokenCache(String host, String user) {
+    CredentialManager.deleteOAuthRefreshTokenCache(host, user);
   }
 
   /**
@@ -944,18 +1119,11 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteMfaTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
+    CredentialManager.deleteMfaTokenCache(host, user);
   }
 
   /**
    * Renew a session.
-   *
-   * <p>Use cases: - Session and Master tokens are provided. No Id token: - succeed in getting a new
-   * Session token. - fail and raise SnowflakeReauthenticationRequest because Master token expires.
-   * Since no id token exists, the exception is thrown to the upstream. - Session and Id tokens are
-   * provided. No Master token: - fail and raise SnowflakeReauthenticationRequest and issue a new
-   * Session token - fail and raise SnowflakeReauthenticationRequest and fail to issue a new Session
-   * token as the
    *
    * @param loginInput login information
    * @return login output
@@ -964,10 +1132,10 @@ public class SessionUtil {
    */
   static SFLoginOutput renewSession(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
-    return tokenRequest(loginInput, TokenRequestType.RENEW);
+    return renewTokenRequest(loginInput);
   }
 
-  private static SFLoginOutput tokenRequest(SFLoginInput loginInput, TokenRequestType requestType)
+  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null, "missing server URL for tokenRequest");
 
@@ -1011,7 +1179,7 @@ public class SessionUtil {
       Map<String, String> payload = new HashMap<>();
       String headerToken = loginInput.getMasterToken();
       payload.put("oldSessionToken", loginInput.getSessionToken());
-      payload.put("requestType", requestType.value);
+      payload.put("requestType", TokenRequestType.RENEW.value);
       String json = mapper.writeValueAsString(payload);
 
       // attach the login info json body to the post request
@@ -1034,7 +1202,7 @@ public class SessionUtil {
 
       logger.debug(
           "Request type: {}, old session token: {}, " + "master token: {}",
-          requestType.value,
+          TokenRequestType.RENEW.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
