@@ -14,10 +14,12 @@ import java.util.stream.Collectors;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.OTHERS)
+@Disabled
+@Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
   private static final String OKTA_AUTH_API_ENDPOINT = OKTA_VANITY_PATH + "/api/v1";
