@@ -408,7 +408,7 @@ public abstract class BaseWiremockTest {
 
   protected void importMappingFromResources(String relativePath) {
     try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
-      String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8);
+      String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8.name());
       importMapping(scenario);
     } catch (Exception e) {
       throw new RuntimeException(e);
