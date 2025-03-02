@@ -109,7 +109,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     try {
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     } catch (SnowflakeSQLException ex) {
-      fail(ex.getMessage());
+      fail("SessionUtil test failed with error: " + ex.getMessage());
     }
 
     // THEN
