@@ -1363,7 +1363,7 @@ public class SessionUtil {
 
     try {
       RetryContextManager retryWithNewOTTManager =
-          createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier);
+          createFederatedFlowStep4RetryContext(ssoUrl, oneTimeTokenSupplier, loginInput);
 
       HttpGet httpGet = new HttpGet();
       prepareFederatedFlowStep4Request(httpGet, ssoUrl, oneTimeToken);
@@ -1388,7 +1388,8 @@ public class SessionUtil {
 
   private static RetryContextManager createFederatedFlowStep4RetryContext(
       String ssoUrl,
-      ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier) {
+      ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier,
+      SFLoginInput loginInput) {
     RetryContextManager retryWithNewOTTManager =
         new RetryContextManager(RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY);
     retryWithNewOTTManager.registerRetryCallback(
@@ -1396,8 +1397,8 @@ public class SessionUtil {
           try {
             String newOneTimeToken = oneTimeTokenSupplier.apply(retryContext);
             prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
+          } catch (MalformedURLException | URISyntaxException ex) {
+              handleFederatedFlowError(loginInput, ex);
           }
 
           return retryContext;
