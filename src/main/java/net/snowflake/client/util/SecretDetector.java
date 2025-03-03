@@ -225,7 +225,9 @@ public class SecretDetector {
   public static String maskSecrets(String text) {
     return filterAccessTokens(
         filterConnectionTokens(
-            filterPassword(filterSASTokens(filterAWSKeys(filterOAuthTokens(filterEncryptionMaterial(text)))))));
+            filterPassword(
+                filterSASTokens(
+                    filterAWSKeys(filterOAuthTokens(filterEncryptionMaterial(text)))))));
   }
 
   /**
