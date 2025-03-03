@@ -99,8 +99,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     importMapping(wireMockMapping);
 
     setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
@@ -144,8 +142,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     importMapping(wireMockMapping);
 
     setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
@@ -192,8 +188,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     importMapping(wireMockMapping);
 
     setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(5); // decreased timeout for test purposes
@@ -221,8 +215,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     importMapping(wireMockMapping);
 
     setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
@@ -252,8 +244,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     importMapping(wireMockMapping);
 
     setCustomTrustStorePropertyPath();
-    Properties props = getProperties();
-//    setJvmProperties(props);
 
     SFLoginInput loginInput = createOktaLoginInputBase();
     loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes

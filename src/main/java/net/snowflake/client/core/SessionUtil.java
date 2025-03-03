@@ -77,7 +77,8 @@ public class SessionUtil {
   // Request path
   private static final String SF_PATH_LOGIN_REQUEST = "/session/v1/login-request";
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
-  private static final String SF_PATH_OKTA_REQUEST_SUFFIX = "/api/v1/authn";
+  private static final String SF_PATH_OKTA_TOKEN_REQUEST_SUFFIX = "/api/v1/authn";
+  private static final String SF_PATH_OKTA_SSO_REQUEST_SUFFIX = "/sso/saml";
   public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
   public static final String SF_PATH_CONSOLE_LOGIN_REQUEST = "/console/login";
 
@@ -1939,7 +1940,8 @@ public class SessionUtil {
       return requestPath.equals(SF_PATH_LOGIN_REQUEST)
           || requestPath.equals(SF_PATH_AUTHENTICATOR_REQUEST)
           || requestPath.equals(SF_PATH_TOKEN_REQUEST)
-          || requestPath.contains(SF_PATH_OKTA_REQUEST_SUFFIX);
+          || requestPath.contains(SF_PATH_OKTA_TOKEN_REQUEST_SUFFIX)
+          || requestPath.contains(SF_PATH_OKTA_SSO_REQUEST_SUFFIX);
     }
     return false;
   }
