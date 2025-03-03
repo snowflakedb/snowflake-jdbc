@@ -1398,7 +1398,7 @@ public class SessionUtil {
             String newOneTimeToken = oneTimeTokenSupplier.apply(retryContext);
             prepareFederatedFlowStep4Request(retrieveSamlRequest, ssoUrl, newOneTimeToken);
           } catch (MalformedURLException | URISyntaxException ex) {
-              handleFederatedFlowError(loginInput, ex);
+            handleFederatedFlowError(loginInput, ex);
           }
 
           return retryContext;

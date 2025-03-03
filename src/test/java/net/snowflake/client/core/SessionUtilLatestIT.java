@@ -666,13 +666,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     }
   }
 
-  private void assertThatPathIsRecognizedAsNewRetryStrategy(String uriToTest, String pathToTest) throws URISyntaxException {
+  private void assertThatPathIsRecognizedAsNewRetryStrategy(String uriToTest, String pathToTest)
+      throws URISyntaxException {
     URIBuilder uriBuilder = new URIBuilder(uriToTest);
     uriBuilder.setPath(pathToTest);
     URI uri = uriBuilder.build();
     HttpPost postRequest = new HttpPost(uri);
     assertThat(
-            "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
-            SessionUtil.isNewRetryStrategyRequest(postRequest));
+        "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
+        SessionUtil.isNewRetryStrategyRequest(postRequest));
   }
 }
