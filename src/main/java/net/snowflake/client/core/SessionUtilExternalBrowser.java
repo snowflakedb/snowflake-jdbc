@@ -62,7 +62,8 @@ public class SessionUtilExternalBrowser {
     void output(String msg);
   }
 
-  static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
+  @SnowflakeJdbcInternalApi
+  public static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
     @Override
     public HttpPost build(URI uri) {
       return new HttpPost(uri);
@@ -81,11 +82,11 @@ public class SessionUtilExternalBrowser {
             && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
           Desktop.getDesktop().browse(new URI(ssoUrl));
         } else if (os == Constants.OS.MAC) {
-          runtime.exec("open " + ssoUrl);
+          runtime.exec(new String[] {"open", ssoUrl});
         } else if (os == Constants.OS.WINDOWS) {
           runtime.exec(new String[] {"rundll32", "url.dll,FileProtocolHandler", ssoUrl});
         } else {
-          runtime.exec("xdg-open " + ssoUrl);
+          runtime.exec(new String[] {"xdg-open", ssoUrl});
         }
       } catch (URISyntaxException | IOException ex) {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
