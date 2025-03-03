@@ -1340,7 +1340,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     JsonNode jsonNode = (JsonNode) result;
 
-    logger.debug("Response: {}", SecretDetector.filterEncryptionMaterial(jsonNode.toString()));
+    logger.debug("Response: {}", SecretDetector.maskSecrets(jsonNode.toString()));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
