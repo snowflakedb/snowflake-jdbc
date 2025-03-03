@@ -60,27 +60,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     return input;
   }
 
-  private String getProxyProtocol(Properties props) {
-    return props.get("ssl").toString().equals("on") ? "https" : "http";
-  }
-
-  private int getProxyPort(String proxyProtocol) {
-    return Objects.equals(proxyProtocol, "http") ? wiremockHttpPort : wiremockHttpsPort;
-  }
-
-  private void setJvmProperties(Properties props) {
-    String proxyProtocol = getProxyProtocol(props);
-    System.setProperty("http.useProxy", "true");
-    System.setProperty("http.proxyProtocol", proxyProtocol);
-    if (Objects.equals(proxyProtocol, "http")) {
-      System.setProperty("http.proxyHost", WIREMOCK_HOST);
-      System.setProperty("http.proxyPort", String.valueOf(getProxyPort(proxyProtocol)));
-    } else {
-      System.setProperty("https.proxyHost", WIREMOCK_HOST);
-      System.setProperty("https.proxyPort", String.valueOf(getProxyPort(proxyProtocol)));
-    }
-  }
-
   private Map<SFSessionProperty, Object> initConnectionPropertiesMap() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
     connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
