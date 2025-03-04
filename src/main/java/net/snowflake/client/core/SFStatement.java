@@ -11,6 +11,11 @@ import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.Context;
+
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -22,6 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import net.minidev.json.JSONObject;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -127,6 +134,14 @@ public class SFStatement extends SFBaseStatement {
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     sanityCheckQuery(sql);
+    
+    // Check if the TelemetryService is holding the current context. If NOT, then update the
+    // TelemteryService context by calling updateContext.
+    // Use this code: TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
+    logger.info("executeQuery(with params) SFStatement thread id: {}", String.valueOf(Thread.currentThread().getId()));
+    logger.info("executeQuery(with params) SFStatement context: TraceID = {}, SpanID = {}", 
+        Span.current().getSpanContext().getTraceId(),
+        Span.current().getSpanContext().getSpanId());
 
     String trimmedSql = sql.trim();
 

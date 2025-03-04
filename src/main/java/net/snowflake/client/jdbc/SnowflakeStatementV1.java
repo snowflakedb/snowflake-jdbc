@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.opentelemetry.api.trace.Span;
 import net.snowflake.client.core.CancellationReason;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
@@ -146,9 +148,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
+    logger.info("executeQuery SnowflakeStatementV1 thread id: {}", String.valueOf(Thread.currentThread().getId()));
+      logger.info("executeQuery SnowflakeStatementV1 context: TraceID: {}, SpanID: {}", 
+          Span.current().getSpanContext().getTraceId(), Span.current().getSpanContext().getSpanId());
     ExecTimeTelemetryData execTimeData =
         new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
-
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd();
