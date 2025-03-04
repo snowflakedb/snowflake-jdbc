@@ -264,7 +264,7 @@ class FileCacheManager {
   /** Reads the cache file. */
   synchronized JsonNode readCacheFile() {
     try {
-      if (!cacheFile.exists()) {
+      if (cacheFile == null || !cacheFile.exists()) {
         logger.debug("Cache file doesn't exists. File: {}", cacheFile);
         return null;
       }
