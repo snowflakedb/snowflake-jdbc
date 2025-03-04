@@ -91,8 +91,8 @@ class FileCacheManager {
    * @param newCacheFile a file object to override the default one.
    */
   synchronized void overrideCacheFile(File newCacheFile) {
-    if (!newCacheFile.exists()) {
-      logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
+    if (!FileUtil.exists(newCacheFile)) {
+      logger.debug("Cache file doesn't exist. File: {}", newCacheFile);
     }
     if (onlyOwnerPermissions) {
       FileUtil.handleWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
@@ -264,8 +264,8 @@ class FileCacheManager {
   /** Reads the cache file. */
   synchronized JsonNode readCacheFile() {
     try {
-      if (cacheFile == null || !cacheFile.exists()) {
-        logger.debug("Cache file doesn't exists. File: {}", cacheFile);
+      if (!FileUtil.exists(cacheFile)) {
+        logger.debug("Cache file doesn't exist. File: {}", cacheFile);
         return null;
       }
 
@@ -373,8 +373,8 @@ class FileCacheManager {
    * @return epoch time in ms
    */
   private static synchronized long fileCreationTime(File targetFile) {
-    if (!targetFile.exists()) {
-      logger.debug("File not exists. File: {}", targetFile);
+    if (!FileUtil.exists(targetFile)) {
+      logger.debug("File does not exist. File: {}", targetFile);
       return -1;
     }
     try {
