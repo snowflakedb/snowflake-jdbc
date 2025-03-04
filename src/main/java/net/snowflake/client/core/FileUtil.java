@@ -192,4 +192,15 @@ public class FileUtil {
   private static String getContextStr(String context) {
     return Strings.isNullOrEmpty(context) ? "" : context + ": ";
   }
+
+  public static boolean exists(File file) {
+    if (file == null) {
+      return false;
+    }
+    try {
+    return file.exists();
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }
