@@ -791,25 +791,23 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
 
-    if (dataframeAst != null) {
-      return executeQuery(sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
-    }
+    if (dataframeAst == null) {
+      sanityCheckQuery(sql);
 
-    sanityCheckQuery(sql);
+      session.injectedDelay();
 
-    session.injectedDelay();
+      if (session.getPreparedStatementLogging()) {
+        logger.info("Execute: {}", sql);
+      } else {
+        logger.debug("Execute: {}", sql);
+      }
 
-    if (session.getPreparedStatementLogging()) {
-      logger.info("Execute: {}", sql);
-    } else {
-      logger.debug("Execute: {}", sql);
-    }
+      String trimmedSql = sql.trim();
 
-    String trimmedSql = sql.trim();
-
-    if (trimmedSql.length() >= 20 && trimmedSql.toLowerCase().startsWith("set-sf-property")) {
-      executeSetProperty(sql);
-      return null;
+      if (trimmedSql.length() >= 20 && trimmedSql.toLowerCase().startsWith("set-sf-property")) {
+        executeSetProperty(sql);
+        return null;
+      }
     }
     return executeQuery(sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
   }

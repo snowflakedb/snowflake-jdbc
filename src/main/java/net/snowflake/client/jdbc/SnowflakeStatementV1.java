@@ -316,7 +316,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       } else {
         sfResultSet =
             sfBaseStatement.execute(
-                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
+                sql, dataframeAst, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
         resultSetMetadataHandler(sfResultSet);
       }
       sfResultSet.setSession(this.connection.getSFBaseSession());
