@@ -115,7 +115,7 @@ public class SFStatement extends SFBaseStatement {
    * Execute SQL query with an option for describe only
    *
    * @param sql sql statement
-   * @param dataframeAst ...
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param describeOnly true if describe only
    * @return query result set
    * @throws SQLException if connection is already closed
@@ -130,23 +130,25 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    sanityCheckQuery(sql);
+    if (dataframeAst == null) {
+      sanityCheckQuery(sql);
 
-    String trimmedSql = sql.trim();
+      String trimmedSql = sql.trim();
 
-    // snowflake specific client side commands
-    if (isFileTransfer(trimmedSql)) {
-      // Server side value or Connection string value is false then disable the PUT/GET command
-      if ((session != null && !(session.getJdbcEnablePutGet() && session.getEnablePutGet()))) {
-        // PUT/GET command disabled either on server side or in the client connection string
-        logger.debug("Executing file transfer locally is disabled: {}", sql);
-        throw new SnowflakeSQLException("File transfers have been disabled.");
+      // snowflake specific client side commands
+      if (isFileTransfer(trimmedSql)) {
+        // Server side value or Connection string value is false then disable the PUT/GET command
+        if ((session != null && !(session.getJdbcEnablePutGet() && session.getEnablePutGet()))) {
+          // PUT/GET command disabled either on server side or in the client connection string
+          logger.debug("Executing file transfer locally is disabled: {}", sql);
+          throw new SnowflakeSQLException("File transfers have been disabled.");
+        }
+
+        // PUT/GET command
+        logger.debug("Executing file transfer locally: {}", sql);
+
+        return executeFileTransfer(sql);
       }
-
-      // PUT/GET command
-      logger.debug("Executing file transfer locally: {}", sql);
-
-      return executeFileTransfer(sql);
     }
 
     // NOTE: It is intentional two describeOnly parameters are specified.
@@ -191,6 +193,7 @@ public class SFStatement extends SFBaseStatement {
    * <p>
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param parameterBindings binding information
    * @param describeOnly true if just showing result set metadata
    * @param internal true if internal command not showing up in the history
@@ -321,6 +324,7 @@ public class SFStatement extends SFBaseStatement {
    * A helper method to build URL and submit the SQL to snowflake for exec
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param mediaType media type
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
@@ -767,7 +771,7 @@ public class SFStatement extends SFBaseStatement {
    * Execute sql
    *
    * @param sql sql statement.
-   * @param dataframeAst ...
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param asyncExec is async exec
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
@@ -787,7 +791,10 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
 
-    // todo: if (dataframeAst == null)
+    if (dataframeAst != null) {
+      return executeQuery(sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
+    }
+
     sanityCheckQuery(sql);
 
     session.injectedDelay();

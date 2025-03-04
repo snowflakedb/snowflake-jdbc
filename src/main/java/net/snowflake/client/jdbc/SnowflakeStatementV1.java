@@ -175,7 +175,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     return rs;
   }
 
- // todo: add doc
+  /**
+   * Execute SQL query asynchronously
+   *
+   * @param dataframeAst encoded string representation of the dataframe AST
+   * @return ResultSet
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   */
   public ResultSet executeDataframeAst(String dataframeAst) throws SQLException {
     ExecTimeTelemetryData execTimeData =
             new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
@@ -284,6 +290,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * Internal method for executing a query with bindings accepted.
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param asyncExec execute query asynchronously
    * @param parameterBindings parameters bindings
    * @return query result set
