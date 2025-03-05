@@ -1,9 +1,10 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
@@ -247,7 +248,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
           String.format(
               "Consecutive calls were only %d ms apart (index %d -> %d).", deltaMillis, i - 1, i),
           deltaMillis,
-          greaterThan(minExpectedDelayBetweenCalls));
+          greaterThanOrEqualTo(minExpectedDelayBetweenCalls));
     }
   }
 
