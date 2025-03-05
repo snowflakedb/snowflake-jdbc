@@ -63,4 +63,6 @@ public interface SnowflakeResultSet {
    */
   List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
       throws SQLException;
+
+  ArrowBatches getArrowBatches() throws SQLException;
 }
