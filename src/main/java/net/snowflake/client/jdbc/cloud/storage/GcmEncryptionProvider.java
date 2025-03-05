@@ -83,7 +83,7 @@ class GcmEncryptionProvider {
   private static byte[] encryptKey(byte[] kekBytes, byte[] keyBytes, byte[] keyIvData, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
-    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+    SecretKey kek = new SecretKeySpec(kekBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, keyIvData);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.ENCRYPT_MODE, kek, gcmParameterSpec);
@@ -97,7 +97,7 @@ class GcmEncryptionProvider {
       InputStream src, byte[] keyBytes, byte[] dataIvBytes, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException,
           NoSuchAlgorithmException {
-    SecretKey fileKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, AES);
+    SecretKey fileKey = new SecretKeySpec(keyBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, dataIvBytes);
     Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.ENCRYPT_MODE, fileKey, gcmParameterSpec);
@@ -213,7 +213,7 @@ class GcmEncryptionProvider {
   private static byte[] decryptKey(byte[] kekBytes, byte[] ivBytes, byte[] keyBytes, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
-    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+    SecretKey kek = new SecretKeySpec(kekBytes, AES);
     GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, ivBytes);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.DECRYPT_MODE, kek, gcmParameterSpec);
