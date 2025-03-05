@@ -84,10 +84,10 @@ public abstract class SFBaseStatement {
       throws SQLException, SFException;
 
   /**
-   * Executes the given SQL string.
+   * Executes the given SQL string, with dataframe AST parameter.
    *
    * @param sql The SQL string to execute, synchronously.
-   * @param dataframeAst ...
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
    * @param execTimeData OOB telemetry object to record timings

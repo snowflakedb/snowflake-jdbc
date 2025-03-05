@@ -40,6 +40,7 @@ public class QueryExecDTO {
 
   public QueryExecDTO(
       String sqlText,
+      String dataframeAst,
       boolean describeOnly,
       Integer sequenceId,
       Map<String, ParameterBindingDTO> bindings,
@@ -50,6 +51,7 @@ public class QueryExecDTO {
       boolean internal,
       boolean asyncExec) {
     this.sqlText = sqlText;
+    this.dataframeAst = dataframeAst;
     this.describeOnly = describeOnly;
     this.sequenceId = sequenceId;
     this.bindings = bindings;
