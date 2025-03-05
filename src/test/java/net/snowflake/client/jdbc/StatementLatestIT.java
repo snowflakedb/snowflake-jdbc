@@ -11,6 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -114,15 +115,12 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
 
           // put files
           try (ResultSet rset = statement.executeQuery("PUT file://" + path + " @%test_copy")) {
-            try {
-              rset.getString(1);
-              fail("Should raise No row found exception, because no next() is called.");
-            } catch (SQLException ex) {
-              assertThat(
-                  "No row found error",
-                  ex.getErrorCode(),
-                  equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
-            }
+            SQLException ex = assertThrows(SQLException.class, () -> rset.getString(1));
+            assertThat(
+                "No row found error",
+                ex.getErrorCode(),
+                equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
+
             int cnt = 0;
             while (rset.next()) {
               assertThat("uploaded file name", rset.getString(1), equalTo(fileName));
@@ -267,14 +265,13 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testQueryIdIsSetOnFailedQueryExecute() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-      try {
-        stmt.execute("use database not_existing_database");
-        fail("Statement should fail with exception");
-      } catch (SnowflakeSQLException e) {
-        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-        TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
-      }
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> stmt.execute("use database not_existing_database"));
+      String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+      TestUtil.assertValidQueryId(queryID);
+      assertEquals(queryID, e.getQueryId());
     }
   }
 
@@ -283,14 +280,13 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testQueryIdIsSetOnFailedExecuteUpdate() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-      try {
-        stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
-        fail("Statement should fail with exception");
-      } catch (SnowflakeSQLException e) {
-        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-        TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
-      }
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> stmt.executeUpdate("update not_existing_table set a = 1 where id = 42"));
+      String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+      TestUtil.assertValidQueryId(queryID);
+      assertEquals(queryID, e.getQueryId());
     }
   }
 
@@ -299,14 +295,13 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testQueryIdIsSetOnFailedExecuteQuery() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-      try {
-        stmt.executeQuery("select * from not_existing_table");
-        fail("Statement should fail with exception");
-      } catch (SnowflakeSQLException e) {
-        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-        TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
-      }
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> stmt.executeQuery("select * from not_existing_table"));
+      String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+      TestUtil.assertValidQueryId(queryID);
+      assertEquals(queryID, e.getQueryId());
     }
   }
 
@@ -367,10 +362,11 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
                 () -> {
                   try (Statement statement = con.createStatement()) {
                     statement.setQueryTimeout(3);
-                    statement.executeQuery(sql);
-                    fail("This query should fail.");
-                  } catch (SQLException e) {
+                    SQLException e =
+                        assertThrows(SQLException.class, () -> statement.executeQuery(sql));
                     assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+                  } catch (SQLException e) {
+                    fail(e.getMessage());
                   }
                 }));
       }
@@ -408,10 +404,11 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             executor.submit(
                 () -> {
                   try (Statement statement = con.createStatement()) {
-                    statement.executeQuery(sql);
-                    fail("This query should fail.");
-                  } catch (SQLException e) {
+                    SQLException e =
+                        assertThrows(SQLException.class, () -> statement.executeQuery(sql));
                     assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+                  } catch (SQLException e) {
+                    fail(e.getMessage());
                   }
                 }));
       }

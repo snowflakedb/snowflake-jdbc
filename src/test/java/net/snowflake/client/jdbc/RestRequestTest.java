@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -392,12 +391,8 @@ public class RestRequestTest {
                 @Override
                 public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
                   callCount += 1;
-                  if (callCount <= 1) {
-                    return retryResponse(); // return a retryable resp on the first attempt
-                  } else {
-                    fail("No retry should happen when noRetry = true");
-                  }
-                  return successResponse();
+                  assertTrue(callCount <= 1);
+                  return retryResponse(); // return a retryable resp on the first attempt
                 }
               });
 
@@ -588,7 +583,7 @@ public class RestRequestTest {
   }
 
   @Test
-  public void testMaxRetriesWithSuccessfulResponse() throws IOException {
+  public void testMaxRetriesWithSuccessfulResponse() throws IOException, SnowflakeSQLException {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -611,8 +606,6 @@ public class RestRequestTest {
     try {
       TelemetryService.disable();
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 4);
-    } catch (SnowflakeSQLException e) {
-      fail("testMaxRetriesWithSuccessfulResponse");
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();

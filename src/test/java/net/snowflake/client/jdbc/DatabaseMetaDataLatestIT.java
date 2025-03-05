@@ -15,8 +15,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -1593,12 +1593,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
           assertTrue(resultSet.next());
           assertEquals("%", resultSet.getString("COLUMN_DEF"));
-          try {
-            resultSet.getString("INVALID_COLUMN");
-            fail("must fail");
-          } catch (SQLException ex) {
-            // nop
-          }
+          assertThrows(SQLException.class, () -> resultSet.getString("INVALID_COLUMN"));
         }
 
         // no column privilege is supported.

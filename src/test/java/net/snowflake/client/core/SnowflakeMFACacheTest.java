@@ -5,8 +5,8 @@
 package net.snowflake.client.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 
@@ -217,12 +217,8 @@ public class SnowflakeMFACacheTest {
       con2.close();
 
       // This connection would receive an exception and then should clean up the mfa cache
-      try {
-        Connection con3 = DriverManager.getConnection(url, prop);
-        fail();
-      } catch (SnowflakeSQLException ex) {
-        // An exception is forced to happen by mocking. Do nothing.
-      }
+      assertThrows(SnowflakeSQLException.class, () -> DriverManager.getConnection(url, prop));
+
       // This connect request should not contain mfa cached token
       Connection con4 = DriverManager.getConnection(url, prop);
       con4.close();

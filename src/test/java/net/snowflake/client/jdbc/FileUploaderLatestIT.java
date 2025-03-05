@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -678,8 +677,6 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
           String actualValue = resultSet.getString("last_modified");
           assertEquals(expectedValue, actualValue);
         }
-      } catch (Exception e) {
-        fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -708,8 +705,6 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
           assertFalse(expectedValue.equals(actualValue));
         }
-      } catch (Exception e) {
-        fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }

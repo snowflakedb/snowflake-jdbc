@@ -6,8 +6,8 @@ package net.snowflake.client.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -319,54 +319,50 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
   @Test
   public void testGetFileTransferMetadatasUploadError() throws Exception {
     JsonNode downloadNode = mapper.readTree("{\"data\": {\"command\": \"DOWNLOAD\"}}");
-    try {
-      SnowflakeFileTransferAgent.getFileTransferMetadatas(downloadNode);
-      fail();
-    } catch (SnowflakeSQLException err) {
-      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      assertEquals(
-          "JDBC driver internal error: This API only supports PUT commands.", err.getMessage());
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.getFileTransferMetadatas(downloadNode));
+    assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+    assertEquals(
+        "JDBC driver internal error: This API only supports PUT commands.", err.getMessage());
   }
 
   @Test
   public void testGetFileTransferMetadatasEncryptionMaterialError() throws Exception {
     JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": [1, 2]}}");
-    try {
-      SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
-      fail();
-    } catch (SnowflakeSQLException err) {
-      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      assertTrue(
-          err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode));
+    assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+    assertTrue(
+        err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
   }
 
   @Test
-  public void testGetFileTransferMetadatasUnsupportedLocationError() throws Exception {
+  public void testGetFileTransferMetadatasUnsupportedLocationError() {
     JsonNode modifiedNode = exampleS3JsonNode.deepCopy();
     ObjectNode foo = (ObjectNode) modifiedNode.path("data").path("stageInfo");
     foo.put("locationType", "LOCAL_FS");
-    try {
-      SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
-      fail();
-    } catch (SnowflakeSQLException err) {
-      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      assertTrue(err.getMessage().contains("JDBC driver internal error: This API only supports"));
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode));
+    assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+    assertTrue(err.getMessage().contains("JDBC driver internal error: This API only supports"));
   }
 
   @Test
   public void testGetFileTransferMetadatasSrcLocationsArrayError() throws JsonProcessingException {
     JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": \"abc\"}}");
-    try {
-      SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
-      fail();
-    } catch (SnowflakeSQLException err) {
-      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      assertTrue(
-          err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode));
+    assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+    assertTrue(
+        err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
   }
 
   @Test
@@ -374,12 +370,11 @@ public class FileUploaderSessionlessTest extends FileUploaderPrep {
     JsonNode modifiedNode = exampleS3JsonNode.deepCopy();
     ObjectNode foo = (ObjectNode) modifiedNode.path("data");
     foo.put("encryptionMaterial", "[1, 2, 3]]");
-    try {
-      SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
-      fail();
-    } catch (SnowflakeSQLException err) {
-      assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      assertTrue(err.getMessage().contains("Failed to parse encryptionMaterial"));
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode));
+    assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+    assertTrue(err.getMessage().contains("Failed to parse encryptionMaterial"));
   }
 }

@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Sets;
 import java.math.BigDecimal;
@@ -782,16 +782,12 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           stmt.addBatch();
           stmt.setInt(1, 1);
           stmt.setObject(2, "test1");
-          try {
-            stmt.addBatch();
-            fail("Must fail");
-          } catch (SnowflakeSQLException ex) {
-            assertThat(
-                "Error code is wrong",
-                ex.getErrorCode(),
-                equalTo(ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode()));
-            assertThat("Location", ex.getMessage(), containsString("Column: 2, Row: 3"));
-          }
+          SnowflakeSQLException ex = assertThrows(SnowflakeSQLException.class, stmt::addBatch);
+          assertThat(
+              "Error code is wrong",
+              ex.getErrorCode(),
+              equalTo(ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode()));
+          assertThat("Location", ex.getMessage(), containsString("Column: 2, Row: 3"));
         }
       }
     }
@@ -835,12 +831,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   private void assertException(RunnableWithSQLException runnable, int expectedCode) {
-    try {
-      runnable.run();
-      fail();
-    } catch (SQLException e) {
-      assertThat(e.getErrorCode(), is(expectedCode));
-    }
+    SQLException e = assertThrows(SQLException.class, runnable::run);
+    assertThat(e.getErrorCode(), is(expectedCode));
   }
 
   private interface RunnableWithSQLException {
@@ -853,28 +845,28 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.prepareStatement(
           "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      try {
-        connection.prepareStatement(
-            "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        fail("updateable cursor is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.prepareStatement(
+                      "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       connection.prepareStatement(
           "select 1",
           ResultSet.TYPE_FORWARD_ONLY,
           ResultSet.CONCUR_READ_ONLY,
           ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      try {
-        connection.prepareStatement(
-            "select 1",
-            ResultSet.TYPE_FORWARD_ONLY,
-            ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        fail("hold cursor over commit is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+      ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.prepareStatement(
+                      "select 1",
+                      ResultSet.TYPE_FORWARD_ONLY,
+                      ResultSet.CONCUR_READ_ONLY,
+                      ResultSet.HOLD_CURSORS_OVER_COMMIT));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
     }
   }
 

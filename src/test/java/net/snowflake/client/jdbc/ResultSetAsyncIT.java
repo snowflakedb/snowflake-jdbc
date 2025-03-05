@@ -7,8 +7,8 @@ package net.snowflake.client.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -347,13 +347,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
       // empty ResultSet returns all nulls, 0s, and empty values.
       assertFalse(rs.isClosed());
       assertEquals(0, rs.getInt(1));
-      try {
-        rs.getInt("col1");
-        fail("Fetching from a column name that does not exist should return a SQLException");
-      } catch (SQLException e) {
-        // findColumn fails with empty metadata with exception "Column not found".
-        assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
-      }
+      SQLException e = assertThrows(SQLException.class, () -> rs.getInt("col1"));
+      assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
     }
   }
 }

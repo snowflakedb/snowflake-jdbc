@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
@@ -95,28 +95,31 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testMemoryClearingAfterInterrupt(String queryResultFormat) throws Throwable {
     try (Statement statement = createStatement(queryResultFormat)) {
       final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
-      try {
-        // Inject an InterruptedException into the SnowflakeChunkDownloader.terminate() function
-        SnowflakeChunkDownloader.setInjectedDownloaderException(new InterruptedException());
-        // 10000 rows should be enough to force result into multiple chunks
-        try (ResultSet resultSet =
-            statement.executeQuery(
-                "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
-          assertThat(
-              "hold memory usage for the resultSet before close",
-              SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
-          // Result closure should catch InterruptedException and throw a SQLException after its
-          // caught
-        }
-        fail("Exception should have been thrown");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
-        // Assert all memory was released
-        assertThat(
-            "closing statement didn't release memory allocated for result",
-            SnowflakeChunkDownloader.getCurrentMemoryUsage(),
-            equalTo(initialMemoryUsage));
-      }
+      // Inject an InterruptedException into the SnowflakeChunkDownloader.terminate() function
+      SnowflakeChunkDownloader.setInjectedDownloaderException(new InterruptedException());
+      // 10000 rows should be enough to force result into multiple chunks
+
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                try (ResultSet resultSet =
+                    statement.executeQuery(
+                        "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
+                  assertThat(
+                      "hold memory usage for the resultSet before close",
+                      SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
+                  // Result closure should catch InterruptedException and throw a SQLException after
+                  // its
+                  // caught
+                }
+              });
+      assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
+      // Assert all memory was released
+      assertThat(
+          "closing statement didn't release memory allocated for result",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
+          equalTo(initialMemoryUsage));
       // Unset the exception injection so statement and connection can close without exceptions
       SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     }
@@ -529,12 +532,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
 
       for (int i = 7; i < 12; i++) {
-        try {
-          resultSet.getBytes(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getBytes(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
 
       byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
@@ -564,15 +565,15 @@ public class ResultSetLatestIT extends ResultSet0IT {
         SnowflakeChunkDownloader.setInjectedDownloaderException(
             new OutOfMemoryError("Fake OOM error for testing"));
         try (ResultSet resultSet = statement.executeQuery(query)) {
-          try {
-            // Normally this step won't cause too long. Because we will get exception once trying to
-            // get
-            // result from the first chunk downloader
-            while (resultSet.next()) {}
-            fail("Should not reach here. Last next() command is supposed to throw an exception");
-          } catch (SnowflakeSQLException ex) {
-            // pass, do nothing
-          }
+          // Normally this step won't cause too long. Because we will get exception once trying to
+          // get
+          // result from the first chunk downloader
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                while (resultSet.next()) {}
+              },
+              "Should not reach here. Last next() command is supposed to throw an exception");
         }
       } finally {
         SnowflakeChunkDownloader.setInjectedDownloaderException(null);

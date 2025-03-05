@@ -5,7 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -97,12 +97,7 @@ public class StatementNoOpLatestIT {
   }
 
   protected void expectSQLException(BaseJDBCTest.MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      // no op
-    }
+    assertThrows(SQLException.class, f::run);
   }
 
   protected void expectNoOp(NoOpMethod f) throws SQLException {

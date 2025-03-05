@@ -7,6 +7,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.ClientConfiguration;
@@ -31,11 +32,13 @@ public class CoreUtilsMiscellaneousTest {
    */
   @Test
   public void testSnowflakeAssertTrue() {
-    try {
-      AssertUtil.assertTrue(1 == 0, "Numbers do not match");
-    } catch (SFException e) {
-      assertEquals("JDBC driver internal error: Numbers do not match.", e.getMessage());
-    }
+    SFException e =
+        assertThrows(
+            SFException.class,
+            () -> {
+              AssertUtil.assertTrue(1 == 0, "Numbers do not match");
+            });
+    assertEquals("JDBC driver internal error: Numbers do not match.", e.getMessage());
   }
 
   /** Test that Constants.getOS function is working as expected */
@@ -138,11 +141,13 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals("testuser", clientConfig.getProxyUsername());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
-    try {
-      S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
-    } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
-    }
+    SnowflakeSQLException e =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> {
+              S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
+            });
+    assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
 
   @Test
@@ -178,11 +183,13 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals(new InetSocketAddress("localhost", 8084), proxy.address());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
-    try {
-      HttpUtil.setSessionlessProxyForAzure(props, op);
-    } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
-    }
+    SnowflakeSQLException e =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> {
+              HttpUtil.setSessionlessProxyForAzure(props, op);
+            });
+    assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
 
   @Test
@@ -337,11 +344,13 @@ public class CoreUtilsMiscellaneousTest {
 
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
-    try {
-      settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
-    } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
-    }
+    SnowflakeSQLException e =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> {
+              SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+            });
+    assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
 
   @Test

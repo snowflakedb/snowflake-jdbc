@@ -8,8 +8,8 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -149,30 +149,27 @@ public class HeartbeatIT extends AbstractDriverIT {
   @DontRunOnGithubActions
   public void testFailure() throws Exception {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
-    try {
-      Future<?> future =
-          executorService.submit(
-              () -> {
-                try {
-                  submitQuery(false, 0);
-                } catch (SQLException e) {
-                  throw new RuntimeSQLException("SQLException", e);
-                } catch (InterruptedException e) {
-                  throw new IllegalStateException("task interrupted", e);
-                }
-              });
-      executorService.shutdown();
-      future.get();
-      fail("should fail and raise an exception");
-    } catch (ExecutionException ex) {
-      Throwable rootCause = ex.getCause();
-      assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
+    Future<?> future =
+        executorService.submit(
+            () -> {
+              try {
+                submitQuery(false, 0);
+              } catch (SQLException e) {
+                throw new RuntimeSQLException("SQLException", e);
+              } catch (InterruptedException e) {
+                throw new IllegalStateException("task interrupted", e);
+              }
+            });
+    executorService.shutdown();
+    future.get();
+    ExecutionException ex = assertThrows(ExecutionException.class, future::get);
+    Throwable rootCause = ex.getCause();
+    assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
 
-      rootCause = rootCause.getCause();
+    rootCause = rootCause.getCause();
 
-      assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
-      assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
-    }
+    assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
+    assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
   }
 
   class RuntimeSQLException extends RuntimeException {

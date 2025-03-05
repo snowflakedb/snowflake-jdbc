@@ -8,8 +8,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -447,37 +447,28 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
             // ResultSet.getDate()
             assertEquals(date, resultSet.getDate("COLDATE"));
-            try {
-              resultSet.getDate("COLTIME");
-              fail();
-            } catch (SnowflakeSQLException e) {
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-            }
+
+            SnowflakeSQLException e =
+                assertThrows(SnowflakeSQLException.class, () -> resultSet.getDate("COLTIME"));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
 
             // ResultSet.getTimestamp()
             assertEquals(new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
             assertEquals(ts, resultSet.getTimestamp("COLTS"));
             assertEquals(new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
-            try {
-              resultSet.getTimestamp("COLSTRING");
-              fail();
-            } catch (SnowflakeSQLException e) {
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-            }
+
+            e =
+                assertThrows(
+                    SnowflakeSQLException.class, () -> resultSet.getTimestamp("COLSTRING"));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
 
             // ResultSet.getTime()
-            try {
-              resultSet.getTime("COLDATE");
-              fail();
-            } catch (SnowflakeSQLException e) {
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-            }
+            e = assertThrows(SnowflakeSQLException.class, () -> resultSet.getTime("COLDATE"));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+
             assertEquals(time, resultSet.getTime("COLTIME"));
             assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));
           }

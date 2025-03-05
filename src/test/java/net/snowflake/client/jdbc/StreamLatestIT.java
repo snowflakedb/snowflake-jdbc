@@ -4,8 +4,8 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -113,12 +113,13 @@ public class StreamLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
 
       try {
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
-        fail("should throw a storage provider exception for blob not found");
-      } catch (Exception ex) {
-        assertTrue(ex instanceof SQLException);
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () ->
+                    connection
+                        .unwrap(SnowflakeConnection.class)
+                        .downloadStream("~", DEST_PREFIX + "/abc.gz", true));
         assertTrue(
             ex.getMessage().contains("File not found"),
             "Wrong exception message: " + ex.getMessage());

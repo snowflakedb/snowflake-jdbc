@@ -8,10 +8,11 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -362,30 +363,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals((String.format("%.2f", cases[i])), rs.getString(1));
           assertEquals(cases[i], rs.getFloat(1), delta);
@@ -394,13 +382,9 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
           if (isJSON(queryResultFormat)) {
-            try {
-              rs.getByte(1);
-              fail();
-            } catch (Exception e) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            }
+            Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
           } else {
             assertEquals(((byte) (cases[i] * 100)), rs.getByte(1));
           }
@@ -471,19 +455,15 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           if (cases[i] <= 127 && cases[i] >= -128) {
             assertEquals(cases[i], rs.getByte(1));
           } else {
-            try {
-              rs.getByte(1);
-              fail();
-            } catch (Exception e) {
-              if (isJSON(queryResultFormat)) {
-                // Note: not caught by SQLException!
-                assertTrue(e.toString().contains("NumberFormatException"));
-              } else {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
+            Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+            if (isJSON(queryResultFormat)) {
+              // Note: not caught by SQLException!
+              assertTrue(e.toString().contains("NumberFormatException"));
+            } else {
+              SQLException se = assertInstanceOf(SQLException.class, e);
+              assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
             }
           }
           ByteBuffer bb = ByteBuffer.allocate(2);
@@ -547,30 +527,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals((String.format("%.3f", cases[i])), rs.getString(1));
           assertEquals(cases[i], rs.getFloat(1), delta);
@@ -578,31 +545,24 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
-          try {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(2);
-            byteBuffer.putShort(shortCompact[i]);
+
+          ByteBuffer byteBuffer = ByteBuffer.allocate(2);
+          byteBuffer.putShort(shortCompact[i]);
+          if (isJSON(queryResultFormat)) {
+            se = assertThrows(SQLException.class, () -> rs.getBytes(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+          } else {
             assertArrayEquals(byteBuffer.array(), rs.getBytes(1));
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
 
@@ -660,17 +620,9 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           if (cases[i] >= Short.MIN_VALUE && cases[i] <= Short.MAX_VALUE) {
             assertEquals((short) cases[i], rs.getShort(1));
           } else {
-            try {
-              assertEquals((short) cases[i], rs.getShort(1));
-              fail();
-            } catch (Exception e) {
-              {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
-            }
+            SQLException se = assertThrows(SQLException.class, () -> rs.getShort(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
           assertEquals((long) cases[i], rs.getLong(1));
           assertEquals((Integer.toString(cases[i])), rs.getString(1));
@@ -682,19 +634,15 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           if (cases[i] <= 127 && cases[i] >= -128) {
             assertEquals(cases[i], rs.getByte(1));
           } else {
-            try {
-              rs.getByte(1);
-              fail();
-            } catch (Exception e) {
-              if (isJSON(queryResultFormat)) {
-                // Note: not caught by SQLException!
-                assertTrue(e.toString().contains("NumberFormatException"));
-              } else {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
+            Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+            if (isJSON(queryResultFormat)) {
+              // Note: not caught by SQLException!
+              assertTrue(e.toString().contains("NumberFormatException"));
+            } else {
+              SQLException se = assertInstanceOf(SQLException.class, e);
+              assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
             }
           }
           ByteBuffer bb = ByteBuffer.allocate(4);
@@ -766,30 +714,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals(cases[i].toPlainString(), rs.getString(1));
           assertEquals(Float.parseFloat(cases[i].toString()), rs.getFloat(1), delta);
@@ -797,31 +732,25 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
-          try {
+
+          if (isJSON(queryResultFormat)) {
+            se = assertThrows(SQLException.class, () -> rs.getBytes(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+          } else {
             ByteBuffer byteBuffer = ByteBuffer.allocate(4);
             byteBuffer.putInt(intCompacts[i]);
             assertArrayEquals(byteBuffer.array(), rs.getBytes(1));
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
 
@@ -895,32 +824,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           if (cases[i] >= Integer.MIN_VALUE && cases[i] <= Integer.MAX_VALUE) {
             assertEquals(cases[i], rs.getInt(1));
           } else {
-            try {
-              assertEquals(cases[i], rs.getInt(1));
-              fail();
-            } catch (Exception e) {
-              {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
-            }
+            SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
+
           if (cases[i] >= Short.MIN_VALUE && cases[i] <= Short.MAX_VALUE) {
             assertEquals((short) cases[i], rs.getShort(1));
           } else {
-            try {
-              assertEquals((short) cases[i], rs.getShort(1));
-              fail();
-            } catch (Exception e) {
-              {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
-            }
+            SQLException se = assertThrows(SQLException.class, () -> rs.getShort(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
           assertEquals(cases[i], rs.getLong(1));
           assertEquals((Long.toString(cases[i])), rs.getString(1));
@@ -932,19 +846,15 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           if (cases[i] <= 127 && cases[i] >= -128) {
             assertEquals(cases[i], rs.getByte(1));
           } else {
-            try {
-              rs.getByte(1);
-              fail();
-            } catch (Exception e) {
-              if (isJSON(queryResultFormat)) {
-                // Note: not caught by SQLException!
-                assertTrue(e.toString().contains("NumberFormatException"));
-              } else {
-                SQLException se = (SQLException) e;
-                assertEquals(
-                    (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-                assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-              }
+            Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+            if (isJSON(queryResultFormat)) {
+              // Note: not caught by SQLException!
+              assertTrue(e.toString().contains("NumberFormatException"));
+            } else {
+              SQLException se = assertInstanceOf(SQLException.class, e);
+              assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
             }
           }
           ByteBuffer bb = ByteBuffer.allocate(8);
@@ -1014,30 +924,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals(cases[i].toPlainString(), rs.getString(1));
           assertEquals(Float.parseFloat(cases[i].toString()), rs.getFloat(1), delta);
@@ -1045,31 +942,25 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
-          try {
+
+          if (isJSON(queryResultFormat)) {
+            se = assertThrows(SQLException.class, () -> rs.getBytes(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+          } else {
             ByteBuffer byteBuffer = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
             byteBuffer.putLong(longCompacts[i]);
             assertArrayEquals(byteBuffer.array(), rs.getBytes(1));
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
 
@@ -1135,30 +1026,18 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals(cases[i].toPlainString(), rs.getString(1));
           assertEquals(Float.parseFloat(cases[i].toString()), rs.getFloat(1), delta);
@@ -1166,19 +1045,15 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
           assertArrayEquals(cases[i].toBigInteger().toByteArray(), rs.getBytes(1));
         }
@@ -1244,30 +1119,18 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals(cases[i].toPlainString(), rs.getString(1));
           assertEquals(Float.parseFloat(cases[i].toString()), rs.getFloat(1), delta);
@@ -1275,29 +1138,23 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
-          try {
+
+          if (isJSON(queryResultFormat)) {
+            se = assertThrows(SQLException.class, () -> rs.getBytes(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+          } else {
             assertArrayEquals(cases[i].toBigInteger().toByteArray(), rs.getBytes(1));
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
 
@@ -1364,30 +1221,18 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
         for (int i = 0; i < cases.length; i++) {
           assertTrue(rs.next());
-          try {
-            rs.getInt(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getShort(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
-          try {
-            rs.getLong(1);
-            fail();
-          } catch (Exception e) {
-            SQLException se = (SQLException) e;
-            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-          }
+
+          SQLException se = assertThrows(SQLException.class, () -> rs.getInt(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getShort(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+
+          se = assertThrows(SQLException.class, () -> rs.getLong(1));
+          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
 
           assertEquals(cases[i].toPlainString(), rs.getString(1));
           assertEquals(Float.parseFloat(cases[i].toString()), rs.getFloat(1), delta);
@@ -1395,29 +1240,23 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           assertEquals(val, rs.getDouble(1), delta);
           assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
           assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-          try {
-            rs.getByte(1);
-            fail();
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            } else {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
+
+          Exception e = assertThrows(Exception.class, () -> rs.getByte(1));
+          if (isJSON(queryResultFormat)) {
+            // Note: not caught by SQLException!
+            assertTrue(e.toString().contains("NumberFormatException"));
+          } else {
+            se = assertInstanceOf(SQLException.class, e);
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
           }
-          try {
+
+          if (isJSON(queryResultFormat)) {
+            se = assertThrows(SQLException.class, () -> rs.getBytes(1));
+            assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+            assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+          } else {
             assertArrayEquals(byteBuf.putLong(0, longCompacts[i]).array(), rs.getBytes(1));
-          } catch (Exception e) {
-            if (isJSON(queryResultFormat)) {
-              SQLException se = (SQLException) e;
-              assertEquals(
-                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
 

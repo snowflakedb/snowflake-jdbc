@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -165,12 +164,9 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @DontRunOnGithubActions
   public void errorInterruptedException() throws SnowflakeSQLException {
     // Can still retry, no error thrown
-    try {
-      spyingClient.handleStorageException(
-          new InterruptedException(), 0, "upload", sfSession, command, null);
-    } catch (Exception e) {
-      fail("Should not have exception here");
-    }
+    spyingClient.handleStorageException(
+        new InterruptedException(), 0, "upload", sfSession, command, null);
+
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     assertThrows(
         SnowflakeSQLException.class,
@@ -183,12 +179,9 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @DontRunOnGithubActions
   public void errorSocketTimeoutException() throws SnowflakeSQLException {
     // Can still retry, no error thrown
-    try {
-      spyingClient.handleStorageException(
-          new SocketTimeoutException(), 0, "upload", sfSession, command, null);
-    } catch (Exception e) {
-      fail("Should not have exception here");
-    }
+    spyingClient.handleStorageException(
+        new SocketTimeoutException(), 0, "upload", sfSession, command, null);
+
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     assertThrows(
         SnowflakeSQLException.class,

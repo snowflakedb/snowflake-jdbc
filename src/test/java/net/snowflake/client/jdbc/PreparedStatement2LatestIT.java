@@ -9,8 +9,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -71,9 +71,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
             connection.prepareStatement("select * from table(employee_detail(?, 123))"); ) {
           // second argument is invalid
           prepStatement.setInt(1, 1);
-          prepStatement.execute();
-          fail();
-        } catch (SQLException e) {
+          SQLException e = assertThrows(SQLException.class, prepStatement::execute);
           // failed because argument type did not match
           assertThat(e.getErrorCode(), is(1044));
         }
