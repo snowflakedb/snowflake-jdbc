@@ -330,6 +330,7 @@ public class StmtUtil {
         QueryExecDTO sqlJsonBody =
             new QueryExecDTO(
                 stmtInput.sql,
+                stmtInput.dataframeAst,
                 stmtInput.describeOnly,
                 stmtInput.sequenceId,
                 stmtInput.bindValues,
