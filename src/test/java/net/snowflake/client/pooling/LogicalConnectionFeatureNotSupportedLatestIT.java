@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.pooling;
 
 import java.sql.Connection;

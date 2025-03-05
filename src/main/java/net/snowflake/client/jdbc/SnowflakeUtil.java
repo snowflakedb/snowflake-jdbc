@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static java.util.Arrays.stream;
@@ -59,9 +55,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 
-/**
- * @author jhuang
- */
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);

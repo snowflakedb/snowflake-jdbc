@@ -1,15 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-/**
- * Used to create SFLogger instance
- *
- * <p>Created by hyu on 11/17/16.
- */
+/** Used to create SFLogger instance */
 public class SFLoggerFactory {
   private static LoggerImpl loggerImplementation;
 

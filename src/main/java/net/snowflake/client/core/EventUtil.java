@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -9,11 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Utility class to encapsulate support information pertaining to the EventHandler and events.
- *
- * @author jrosen
- */
+/** Utility class to encapsulate support information pertaining to the EventHandler and events. */
 public class EventUtil {
   public static final String DUMP_PATH_PROP = "snowflake.dump_path";
   public static final String DUMP_SIZE_PROP = "snowflake.max_dump_size";

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -27,8 +24,6 @@ import net.snowflake.client.util.SecretDetector;
  *
  * <p>Log Level mapping from SFLogger to java.util.logging: ERROR -- SEVERE WARN -- WARNING INFO --
  * INFO DEBUG -- FINE TRACE -- FINEST
- *
- * <p>Created by hyu on 11/17/16.
  */
 public class JDK14Logger implements SFLogger {
   private Logger jdkLogger;

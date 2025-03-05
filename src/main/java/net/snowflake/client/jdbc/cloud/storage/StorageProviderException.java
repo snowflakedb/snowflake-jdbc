@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.AmazonServiceException;
@@ -8,8 +5,6 @@ import org.apache.http.HttpStatus;
 
 /**
  * Custom exception class to signal a remote provider exception in a platform-independent manner.
- *
- * @author lgiakoumakis
  */
 public class StorageProviderException extends RuntimeException {
   private static final long serialVersionUID = 1L;

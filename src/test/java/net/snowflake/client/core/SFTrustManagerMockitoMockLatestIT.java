@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2020 Snowflake Computing Inc. All right reserved.
- */
-
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;

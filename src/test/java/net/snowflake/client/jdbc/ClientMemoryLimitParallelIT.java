@@ -17,9 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
- */
+/** attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading */
 @Tag(TestTags.OTHERS)
 public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT {
   private static Logger LOGGER =

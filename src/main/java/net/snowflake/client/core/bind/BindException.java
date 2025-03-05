@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.bind;
 
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
