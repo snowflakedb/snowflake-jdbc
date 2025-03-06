@@ -197,10 +197,6 @@ public class FileUtil {
     if (file == null) {
       return false;
     }
-    try {
-      return file.exists();
-    } catch (Exception e) {
-      return false;
-    }
+    return file.exists();
   }
 }
