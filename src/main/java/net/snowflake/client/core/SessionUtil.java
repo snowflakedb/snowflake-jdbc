@@ -1456,7 +1456,7 @@ public class SessionUtil {
         // This casting could be avoided if all execution methods from SessionUtil to RestRequest
         // shared the same data type (either long or int) for the retryTimeout parameter. Now they
         // are all cast to long at the end (in RestRequest's methods).
-        retryTimeout = (int) retryContext.getLeftRetryTimeoutInMillis();
+        retryTimeout = (int) retryContext.getRemainingRetryTimeoutInMillis();
       } else {
         retryTimeout = loginInput.getLoginTimeout();
       }

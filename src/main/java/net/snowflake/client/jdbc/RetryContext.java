@@ -20,7 +20,7 @@ public class RetryContext {
     return this;
   }
 
-  public long getLeftRetryTimeoutInMillis() {
+  public long getRemainingRetryTimeoutInMillis() {
     return retryTimeoutInMillis - elapsedTimeInMillis;
   }
 }
