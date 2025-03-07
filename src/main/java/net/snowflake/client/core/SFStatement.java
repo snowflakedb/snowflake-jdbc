@@ -791,6 +791,7 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
 
+    // if dataframeAst is passed, then no need for sql checks and can skip
     if (dataframeAst == null) {
       sanityCheckQuery(sql);
 

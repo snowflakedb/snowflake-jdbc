@@ -176,7 +176,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   /**
-   * Execute SQL query asynchronously
+   * Execute SQL query
    *
    * @param dataframeAst encoded string representation of the dataframe AST
    * @return ResultSet
