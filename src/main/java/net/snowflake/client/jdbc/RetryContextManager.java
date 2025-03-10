@@ -27,8 +27,6 @@ public class RetryContextManager {
   public enum RetryHook {
     /** Always execute the registered retry callbacks on every retry. */
     ALWAYS_BEFORE_RETRY,
-    /** Only execute the callbacks on specific conditions (e.g. authentication timeouts). */
-    ONLY_ON_AUTH_TIMEOUT
   }
 
   /** Default constructor using ALWAYS_BEFORE_RETRY as the default retry hook. */

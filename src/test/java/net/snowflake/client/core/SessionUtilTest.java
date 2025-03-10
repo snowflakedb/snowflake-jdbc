@@ -5,9 +5,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -295,5 +293,38 @@ public class SessionUtilTest {
   private void resetOcspConfiguration() {
     SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = null;
     SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+  }
+
+  @Test
+  public void testOktaAuthRequestsAreRetriedUsingLoginRetryStrategy() {
+    final String oktaSSOAuthPath = "api/v1/authn";
+    final String oktaTokenAuthPath = "app/snowflake/tokenlikepartofurl/sso/saml";
+    List<String> oktaAuthURLs = new ArrayList<String>();
+    oktaAuthURLs.add("https://anytestpath.okta.com"); // default *.okta.com URL
+    oktaAuthURLs.add("https://vanity-url.somecompany.com"); // some custom Vanity OKTA URL
+
+    for (String oktaAuthURL : oktaAuthURLs) {
+      try {
+        // Check that SSO path is recognized as the new retry strategy
+        assertThatPathIsRecognizedAsNewRetryStrategy(oktaAuthURL, oktaSSOAuthPath);
+        // Check that Token path is recognized as the new retry strategy
+        assertThatPathIsRecognizedAsNewRetryStrategy(oktaAuthURL, oktaTokenAuthPath);
+      } catch (URISyntaxException e) {
+        fail(
+                "Test case data cannot be treated as a valid URL and path. Check test input data. Error: "
+                        + e.getMessage());
+      }
+    }
+  }
+
+  private void assertThatPathIsRecognizedAsNewRetryStrategy(String uriToTest, String pathToTest)
+          throws URISyntaxException {
+    URIBuilder uriBuilder = new URIBuilder(uriToTest);
+    uriBuilder.setPath(pathToTest);
+    URI uri = uriBuilder.build();
+    HttpPost postRequest = new HttpPost(uri);
+    assertThat(
+            "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
+            SessionUtil.isNewRetryStrategyRequest(postRequest));
   }
 }

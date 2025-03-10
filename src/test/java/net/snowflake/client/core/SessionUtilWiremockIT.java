@@ -168,7 +168,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     setCustomTrustStorePropertyPath();
 
     SFLoginInput loginInput = createOktaLoginInputBase();
-    loginInput.setLoginTimeout(5); // decreased timeout for test purposes
+    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
 
     // WHEN

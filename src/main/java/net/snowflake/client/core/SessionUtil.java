@@ -1456,7 +1456,7 @@ public class SessionUtil {
         // This casting could be avoided if all execution methods from SessionUtil to RestRequest
         // shared the same data type (either long or int) for the retryTimeout parameter. Now they
         // are all cast to long at the end (in RestRequest's methods).
-        retryTimeout = (int) retryContext.getRemainingRetryTimeoutInMillis();
+        retryTimeout = (int) retryContext.getRemainingRetryTimeoutInSeconds();
       } else {
         retryTimeout = loginInput.getLoginTimeout();
       }
@@ -1537,8 +1537,7 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
-              0, // max retries is set to 0 => it will be ignored and only retryTimeout will
-              // determine when to end the retries
+              0,
               loginInput.getHttpClientSettingsKey());
 
       logger.debug("Authenticator-request response: {}", gsResponse);
