@@ -1400,7 +1400,6 @@ public class SessionUtil {
           } catch (MalformedURLException | URISyntaxException ex) {
             handleFederatedFlowError(loginInput, ex);
           }
-
           return retryContext;
         });
     return retryWithNewOTTManager;
