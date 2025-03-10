@@ -213,30 +213,39 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     // Filter only events that hit the final endpoint (federated step 4) - using the retrieved
     // token.
     List<MinimalServeEvent> vanityUrlCalls =
-            allEvents.stream()
-                    .filter(e -> e.getRequest().getUrl().contains(OKTA_VANITY_PATH))
-                    .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
-                    .collect(Collectors.toList());
+        allEvents.stream()
+            .filter(e -> e.getRequest().getUrl().contains(OKTA_VANITY_PATH))
+            .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
+            .collect(Collectors.toList());
 
-   // This can cause test to be flaky - if for some reason execution of steps before sending the first request takes too long (time is approximated based on time of arrival of the first and the last request to wiremock)
-    // Most important for this check is to make sure that we honor the login timeout even when retryContext is injected (which issues requests as well inside)
-    assertThatTotalLoginTimeoutIsKeptWhenRetrying(vanityUrlCalls, loginInput.getLoginTimeout(), ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS);
+    // This can cause test to be flaky - if for some reason execution of steps before sending the
+    // first request takes too long (time is approximated based on time of arrival of the first and
+    // the last request to wiremock)
+    // Most important for this check is to make sure that we honor the login timeout even when
+    // retryContext is injected (which issues requests as well inside)
+    assertThatTotalLoginTimeoutIsKeptWhenRetrying(
+        vanityUrlCalls,
+        loginInput.getLoginTimeout(),
+        ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS);
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(
-    List<MinimalServeEvent> requestEvents, long loginTimeout, long allowedDifferenceInMs) {
-      final int SECONDS_TO_MS_FACTOR = 1000;
-      long firstRequestTime = requestEvents.get(0).getRequest().getLoggedDate().getTime();
-      long lastRequestTime = requestEvents.get(requestEvents.size() - 1).getRequest().getLoggedDate().getTime();
-      long approximatedDurationOfOktaRetriesBasedOnLogsInMs = lastRequestTime - firstRequestTime;
-      long differenceBetweenTimeoutAndCalculatedDurationInMs = Math.abs(loginTimeout * SECONDS_TO_MS_FACTOR - approximatedDurationOfOktaRetriesBasedOnLogsInMs);
-      assertThat(
-              String.format(
-                      "Retrying calls to okta lasted %d ms, while login timeout was set to %d ms.", approximatedDurationOfOktaRetriesBasedOnLogsInMs, loginTimeout),
-              allowedDifferenceInMs,
-              greaterThanOrEqualTo(differenceBetweenTimeoutAndCalculatedDurationInMs));
-    }
-
+      List<MinimalServeEvent> requestEvents, long loginTimeout, long allowedDifferenceInMs) {
+    final int SECONDS_TO_MS_FACTOR = 1000;
+    long firstRequestTime = requestEvents.get(0).getRequest().getLoggedDate().getTime();
+    long lastRequestTime =
+        requestEvents.get(requestEvents.size() - 1).getRequest().getLoggedDate().getTime();
+    long approximatedDurationOfOktaRetriesBasedOnLogsInMs = lastRequestTime - firstRequestTime;
+    long differenceBetweenTimeoutAndCalculatedDurationInMs =
+        Math.abs(
+            loginTimeout * SECONDS_TO_MS_FACTOR - approximatedDurationOfOktaRetriesBasedOnLogsInMs);
+    assertThat(
+        String.format(
+            "Retrying calls to okta lasted %d ms, while login timeout was set to %d ms.",
+            approximatedDurationOfOktaRetriesBasedOnLogsInMs, loginTimeout),
+        allowedDifferenceInMs,
+        greaterThanOrEqualTo(differenceBetweenTimeoutAndCalculatedDurationInMs));
+  }
 
   private void assertRequestsToWiremockHaveDelay(
       List<MinimalServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
