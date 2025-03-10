@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
@@ -21,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
-  final int DECREASED_LOGIN_TIMEOUT = 5;
+  private static final int DECREASED_LOGIN_TIMEOUT = 5;
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";
   private static final String OKTA_AUTH_API_ENDPOINT = OKTA_VANITY_PATH + "/api/v1";
   private static final String OKTA_SAML_RESPONSE_SUBPATH = "/sso/saml";
@@ -281,6 +280,6 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     assertThat(
         "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
         distinctCount,
-        not(equalTo(paramValues.size())));
+        equalTo((long) paramValues.size()));
   }
 }

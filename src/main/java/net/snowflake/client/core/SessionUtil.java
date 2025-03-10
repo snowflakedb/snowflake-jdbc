@@ -1357,7 +1357,10 @@ public class SessionUtil {
       String ssoUrl,
       ThrowingFunction<RetryContext, String, SnowflakeSQLException> oneTimeTokenSupplier)
       throws SnowflakeSQLException {
-    // Retrieve token without any RetryContext
+    // This call of the oneTimeTokenSupplier is a part of the basic federated flow (before any
+    // retries). It is distinguished by a retrieval of a token without any RetryContext (passing
+    // 'null'). We pass a RetryContext instance only when we are currently during retries process -
+    // and we want to exchange information between the injected logic and the outer scope.
     String oneTimeToken = oneTimeTokenSupplier.apply(null);
     String responseHtml = "";
 
