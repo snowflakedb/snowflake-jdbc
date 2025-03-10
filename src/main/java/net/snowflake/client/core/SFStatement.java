@@ -130,6 +130,7 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
+    // if dataframeAst is passed, then can skip sql checks
     if (dataframeAst == null) {
       sanityCheckQuery(sql);
 
