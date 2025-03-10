@@ -311,20 +311,20 @@ public class SessionUtilTest {
         assertThatPathIsRecognizedAsNewRetryStrategy(oktaAuthURL, oktaTokenAuthPath);
       } catch (URISyntaxException e) {
         fail(
-                "Test case data cannot be treated as a valid URL and path. Check test input data. Error: "
-                        + e.getMessage());
+            "Test case data cannot be treated as a valid URL and path. Check test input data. Error: "
+                + e.getMessage());
       }
     }
   }
 
   private void assertThatPathIsRecognizedAsNewRetryStrategy(String uriToTest, String pathToTest)
-          throws URISyntaxException {
+      throws URISyntaxException {
     URIBuilder uriBuilder = new URIBuilder(uriToTest);
     uriBuilder.setPath(pathToTest);
     URI uri = uriBuilder.build();
     HttpPost postRequest = new HttpPost(uri);
     assertThat(
-            "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
-            SessionUtil.isNewRetryStrategyRequest(postRequest));
+        "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
+        SessionUtil.isNewRetryStrategyRequest(postRequest));
   }
 }

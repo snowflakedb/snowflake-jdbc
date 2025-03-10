@@ -587,7 +587,8 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and only retryTimeout will determine when to end the retries
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
@@ -630,7 +631,8 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and only retryTimeout will determine when to end the retries
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
@@ -661,7 +663,8 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and only retryTimeout will determine when to end the retries
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @param retryContextManager RetryContext used to customize retry handling functionality
    * @return response
@@ -701,7 +704,8 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and only retryTimeout will determine when to end the retries
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param httpClient client object used to communicate with other machine
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
