@@ -1,10 +1,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
@@ -183,9 +180,11 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   }
 
   @Test
+  // This test can be flake due to approximated value of duration of retries execution
   public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
       throws Throwable {
     // GIVEN
+    final int ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS = 500;
     Map<String, Object> placeholders = new HashMap<>();
     placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
     String wireMockMapping =
@@ -198,45 +197,46 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
 
-    // WHEN
     try {
+      // WHEN
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+      // THEN
     } catch (SnowflakeSQLException ex) {
       assertThat(
           "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
           ex.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
     }
+
+    List<MinimalServeEvent> allEvents = getAllServeEvents();
+
+    // Filter only events that hit the final endpoint (federated step 4) - using the retrieved
+    // token.
+    List<MinimalServeEvent> vanityUrlCalls =
+            allEvents.stream()
+                    .filter(e -> e.getRequest().getUrl().contains(OKTA_VANITY_PATH))
+                    .sorted(Comparator.comparing(e -> e.getRequest().getLoggedDate()))
+                    .collect(Collectors.toList());
+
+   // This can cause test to be flaky - if for some reason execution of steps before sending the first request takes too long (time is approximated based on time of arrival of the first and the last request to wiremock)
+    // Most important for this check is to make sure that we honor the login timeout even when retryContext is injected (which issues requests as well inside)
+    assertThatTotalLoginTimeoutIsKeptWhenRetrying(vanityUrlCalls, loginInput.getLoginTimeout(), ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS);
   }
 
-  @Test
-  public void
-      testTotalLoginTimeoutIsKeptWhenOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
-          throws Throwable {
-    // GIVEN
-    Map<String, Object> placeholders = new HashMap<>();
-    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
-
-    String wireMockMapping =
-        getWireMockMappingFromFile(ALWAYS_429_IN_FEDERATED_STEP_4, placeholders);
-    importMapping(wireMockMapping);
-
-    setCustomTrustStorePropertyPath();
-
-    SFLoginInput loginInput = createOktaLoginInputBase();
-    loginInput.setLoginTimeout(DECREASED_LOGIN_TIMEOUT); // decreased timeout for test purposes
-    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-
-    // WHEN
-    try {
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    } catch (SnowflakeSQLException ex) {
+  private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(
+    List<MinimalServeEvent> requestEvents, long loginTimeout, long allowedDifferenceInMs) {
+      final int SECONDS_TO_MS_FACTOR = 1000;
+      long firstRequestTime = requestEvents.get(0).getRequest().getLoggedDate().getTime();
+      long lastRequestTime = requestEvents.get(requestEvents.size() - 1).getRequest().getLoggedDate().getTime();
+      long approximatedDurationOfOktaRetriesBasedOnLogsInMs = lastRequestTime - firstRequestTime;
+      long differenceBetweenTimeoutAndCalculatedDurationInMs = Math.abs(loginTimeout * SECONDS_TO_MS_FACTOR - approximatedDurationOfOktaRetriesBasedOnLogsInMs);
       assertThat(
-          "When timeout for login in retrieving OKTA auth response is reached NETWORK_ERROR should be raised",
-          ex.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+              String.format(
+                      "Retrying calls to okta lasted %d ms, while login timeout was set to %d ms.", approximatedDurationOfOktaRetriesBasedOnLogsInMs, loginTimeout),
+              allowedDifferenceInMs,
+              greaterThanOrEqualTo(differenceBetweenTimeoutAndCalculatedDurationInMs));
     }
-  }
+
 
   private void assertRequestsToWiremockHaveDelay(
       List<MinimalServeEvent> requestEvents, long minExpectedDelayBetweenCalls) {
