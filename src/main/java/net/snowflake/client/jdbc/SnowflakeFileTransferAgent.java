@@ -70,6 +70,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
@@ -1337,7 +1338,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
-    logger.debug("Response: {}", jsonNode.toString());
+
+    logger.debug("Response: {}", SecretDetector.maskSecrets(jsonNode.toString()));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
