@@ -105,8 +105,6 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
-
-
   /**
    * Execute SQL query with an option for describe only
    *
