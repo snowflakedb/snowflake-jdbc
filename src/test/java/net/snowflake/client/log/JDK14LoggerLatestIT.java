@@ -4,7 +4,6 @@
 package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -236,7 +235,7 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
     @Override
     public void close() {}
   }
-  
+
   @Test
   public void testInstantiateLoggerForCodeCov() throws IOException {
     System.setProperty("snowflake.jdbc.log.size", "100000");
@@ -252,11 +251,11 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
     JDK14Logger.instantiateLogger(tracingLevel, logOutputPath);
     assertTrue(logger.isTraceEnabled());
   }
-  
+
   @Test
   public void testInstantiateLoggerForCodeCovSTDOUT() throws IOException {
-	  String level = "all";
-	    Level tracingLevel = Level.parse(level.toUpperCase());
-	  JDK14Logger.instantiateLogger(tracingLevel,"STDOUT");
+    String level = "all";
+    Level tracingLevel = Level.parse(level.toUpperCase());
+    JDK14Logger.instantiateLogger(tracingLevel, "STDOUT");
   }
 }
