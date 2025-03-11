@@ -145,7 +145,7 @@ public abstract class SFBaseSession {
   private boolean enableExactSchemaSearch = false;
 
   /** Disable lookup for default credentials by GCS library */
-  private boolean disableGcsDefaultCredentials = false;
+  private boolean disableGcsDefaultCredentials = true;
 
   private Map<String, Object> commonParameters;
 
