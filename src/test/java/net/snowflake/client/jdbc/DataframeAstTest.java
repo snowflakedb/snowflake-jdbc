@@ -52,7 +52,7 @@ public class DataframeAstTest {
                       anyBoolean(),
                       any(),
                       any()))
-          .thenReturn("dummy");
+          .thenReturn("{\"result\":\"dummy\"}");
       SnowflakeStatementV1 stmt =
           new SnowflakeStatementV1(
               mockedConn,

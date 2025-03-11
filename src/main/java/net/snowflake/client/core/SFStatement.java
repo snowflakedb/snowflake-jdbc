@@ -319,6 +319,33 @@ public class SFStatement extends SFBaseStatement {
    * A helper method to build URL and submit the SQL to snowflake for exec
    *
    * @param sql sql statement
+   * @param mediaType media type
+   * @param bindValues map of binding values
+   * @param describeOnly whether only show the result set metadata
+   * @param internal run internal query not showing up in history
+   * @param asyncExec is async execute
+   * @param execTimeData ExecTimeTelemetryData
+   * @return raw json response
+   * @throws SFException if query is canceled
+   * @throws SnowflakeSQLException if query is already running
+   */
+  public Object executeHelper(
+      String sql,
+      String mediaType,
+      Map<String, ParameterBindingDTO> bindValues,
+      boolean describeOnly,
+      boolean internal,
+      boolean asyncExec,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException, SFException {
+    return executeHelper(
+        sql, null, mediaType, bindValues, describeOnly, internal, asyncExec, execTimeData);
+  }
+
+  /**
+   * A helper method to build URL and submit the SQL to snowflake for exec
+   *
+   * @param sql sql statement
    * @param dataframeAst encoded string representation of the dataframe AST
    * @param mediaType media type
    * @param bindValues map of binding values
@@ -706,7 +733,7 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, null, false, parametersBinding, caller, execTimeData);
+    return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
   @Override
@@ -760,6 +787,29 @@ public class SFStatement extends SFBaseStatement {
       this.sequenceId = -1;
       this.requestId = null;
     }
+  }
+
+  /**
+   * Execute sql
+   *
+   * @param sql sql statement.
+   * @param asyncExec is async exec
+   * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  public SFBaseResultSet execute(
+      String sql,
+      boolean asyncExec,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException, SFException {
+    return execute(sql, null, asyncExec, parametersBinding, caller, execTimeData);
   }
 
   /**

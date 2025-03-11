@@ -92,13 +92,16 @@ public abstract class SFBaseStatement {
    * @throws SFException exception raised from Snowflake components
    * @throws SQLException if SQL error occurs
    */
-  public abstract SFBaseResultSet execute(
+  public SFBaseResultSet execute(
       String sql,
       String dataframeAst,
       Map<String, ParameterBindingDTO> parametersBinding,
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
-      throws SQLException, SFException;
+      throws SQLException, SFException {
+    // only used internally, not a public API
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Execute sql asynchronously. Note that at a minimum, this does not have to be supported; if
