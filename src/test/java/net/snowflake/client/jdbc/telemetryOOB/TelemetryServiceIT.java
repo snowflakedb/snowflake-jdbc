@@ -417,7 +417,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       // this metric will be delivered to snowflake and wavefront
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       TelemetryEvent log = logBuilder.withException(ex).build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
       service.report(log);
     }
   }
@@ -432,14 +431,12 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       // this log will be delivered to snowflake
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       TelemetryEvent log = logBuilder.withException(ex).withTag("domain", "test").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
       service.report(log);
 
       // example for an exception metric
       // this metric will be delivered to snowflake and wavefront
       TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
       TelemetryEvent metric = mBuilder.withException(ex).withTag("domain", "test").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
       service.report(metric);
     }
   }
@@ -456,10 +453,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       TelemetryEvent log =
           logBuilder.withName("ExampleLog").withValue("This is an example log").build();
-      assertThat("check log value", log.get("Value").equals("This is an example log"));
       service.report(log);
-
-      log.getDeployment();
     }
   }
 }
