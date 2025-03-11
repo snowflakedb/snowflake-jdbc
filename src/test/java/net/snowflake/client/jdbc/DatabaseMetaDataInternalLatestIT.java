@@ -177,12 +177,13 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
             databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertThat("Columns metadata SPECIFIC_NAME should contains expected columns ",
-                resultSet
-                        .getString("SPECIFIC_NAME")
-                        .replaceAll("\\s", "")
-                        .matches(
-                                "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -200,12 +201,13 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertThat("Columns metadata SPECIFIC_NAME should contains expected columns ",
-                resultSet
-                        .getString("SPECIFIC_NAME")
-                        .replaceAll("\\s", "")
-                        .matches(
-                                "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -224,12 +226,13 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
             databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertThat("Columns metadata SPECIFIC_NAME should contains expected columns ",
-                resultSet
-                        .getString("SPECIFIC_NAME")
-                        .replaceAll("\\s", "")
-                        .matches(
-                                "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -247,7 +250,8 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertThat("Columns metadata SPECIFIC_NAME should contains expected columns ",
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
             resultSet
                 .getString("SPECIFIC_NAME")
                 .replaceAll("\\s", "")
