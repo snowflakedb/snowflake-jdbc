@@ -32,6 +32,31 @@ public class QueryExecDTO {
 
   public QueryExecDTO(
       String sqlText,
+      boolean describeOnly,
+      Integer sequenceId,
+      Map<String, ParameterBindingDTO> bindings,
+      String bindStage,
+      Map<String, Object> parameters,
+      QueryContextDTO queryContext,
+      long querySubmissionTime,
+      boolean internal,
+      boolean asyncExec) {
+    this(
+        sqlText,
+        null,
+        describeOnly,
+        sequenceId,
+        bindings,
+        bindStage,
+        parameters,
+        queryContext,
+        querySubmissionTime,
+        internal,
+        asyncExec);
+  }
+
+  public QueryExecDTO(
+      String sqlText,
       String dataframeAst,
       boolean describeOnly,
       Integer sequenceId,
