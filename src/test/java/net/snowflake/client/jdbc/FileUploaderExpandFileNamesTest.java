@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -76,12 +77,12 @@ public class FileUploaderExpandFileNamesTest {
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new Exception());
     String[] locations = {"/Tes*Fil*A", "/TestFil?B", "~/TestFileC", "TestFileD"};
 
-    try {
-      SnowflakeFileTransferAgent.expandFileNames(locations, null);
-    } catch (SnowflakeSQLException err) {
-      assertEquals(200007, err.getErrorCode());
-      assertEquals("22000", err.getSQLState());
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.expandFileNames(locations, null));
+    assertEquals(200007, err.getErrorCode());
+    assertEquals("22000", err.getSQLState());
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 

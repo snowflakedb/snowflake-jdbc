@@ -184,14 +184,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
         // Attempt to set threshold to an invalid value such as a negative number
         String commandWithInvalidThreshold = command + " threshold=-1";
-        try {
-          agent =
-              new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement);
-        }
-        // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
-        catch (SQLException e) {
-          assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        }
+        SQLException e = assertThrows(SQLException.class, () -> new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement));
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       }
     } catch (SQLException ex) {
       throw ex;
@@ -463,12 +457,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     assertEquals(0, info.length);
 
     // invalid URL still throws SQLException
-    try {
-      url = "snowflake.reg.local:8082";
-      driver.getPropertyInfo(url, props);
-    } catch (SQLException e) {
-      assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
-    }
+    String invalidUrl = "snowflake.reg.local:8082";
+    Properties fileProps = new Properties();
+    Driver finalDriver = driver;
+    SQLException e = assertThrows(SQLException.class,() -> finalDriver.getPropertyInfo(invalidUrl, fileProps));
+    assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
   }
 
   /**
@@ -577,11 +570,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     for (int i = 0; i < accounts.size(); i++) {
       try (Connection connection = getConnection(accounts.get(i), paramProperties);
           Statement statement = connection.createStatement()) {
-        statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
-
-        assertTrue(false, "Shouldn't come here");
-      } catch (Exception ex) {
-        // Expected
+        Exception ex = assertThrows(Exception.class, () -> statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage"));
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }
@@ -609,12 +598,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       try (Connection connection = getConnection(accounts.get(i), paramProperties);
           Statement statement = connection.createStatement()) {
 
-        statement.execute(
-            "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+        Exception ex = assertThrows(Exception.class, () -> statement.execute(
+            "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-        assertTrue(false, "Shouldn't come here");
-      } catch (Exception ex) {
-        // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }

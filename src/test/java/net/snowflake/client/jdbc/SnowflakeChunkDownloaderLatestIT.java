@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -64,8 +65,6 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     Properties properties = new Properties();
     properties.put("maxHttpRetries", 2);
 
-    SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = null;
-
     try (Connection connection = getConnection(properties);
         Statement statement = connection.createStatement()) {
       // execute a query that will require chunk downloading
@@ -77,14 +76,12 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
         SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
         SnowflakeChunkDownloader downloader =
             new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
-        snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
-        snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+        SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
+        SnowflakeSQLException exception = assertThrows(SnowflakeSQLException.class, snowflakeChunkDownloaderSpy::getNextChunkToConsume);
+        Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
+        assertTrue(exception.getMessage().contains("Max retry reached for the download of chunk#0"));
+        assertTrue(exception.getMessage().contains("retry: 2"));
       }
-    } catch (SnowflakeSQLException exception) {
-      // verify that request was retried twice before reaching max retries
-      Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
-      assertTrue(exception.getMessage().contains("Max retry reached for the download of chunk#0"));
-      assertTrue(exception.getMessage().contains("retry: 2"));
     }
   }
 }

@@ -862,13 +862,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInvalidUnWrap(String queryResultFormat) throws SQLException {
     try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
-      try {
-        rs.unwrap(SnowflakeUtil.class);
-      } catch (SQLException ex) {
-        assertEquals(
-            ex.getMessage(),
-            "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
-      }
+      SQLException ex = assertThrows(SQLException.class, () -> rs.unwrap(SnowflakeUtil.class));
+      assertEquals(
+          ex.getMessage(),
+          "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
     }
   }
 
