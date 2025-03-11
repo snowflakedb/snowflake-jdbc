@@ -137,14 +137,18 @@ class FileCacheManager {
     }
     if (!cacheDir.exists()) {
       try {
-        Files.createDirectories(
-            cacheDir.toPath(),
-            PosixFilePermissions.asFileAttribute(
-                Stream.of(
-                        PosixFilePermission.OWNER_READ,
-                        PosixFilePermission.OWNER_WRITE,
-                        PosixFilePermission.OWNER_EXECUTE)
-                    .collect(Collectors.toSet())));
+        if (!isWindows() && onlyOwnerPermissions) {
+          Files.createDirectories(
+              cacheDir.toPath(),
+              PosixFilePermissions.asFileAttribute(
+                  Stream.of(
+                          PosixFilePermission.OWNER_READ,
+                          PosixFilePermission.OWNER_WRITE,
+                          PosixFilePermission.OWNER_EXECUTE)
+                      .collect(Collectors.toSet())));
+        } else {
+          Files.createDirectories(cacheDir.toPath());
+        }
       } catch (IOException e) {
         logger.info(
             "Failed to create the cache directory: {}. Ignored. {}",
