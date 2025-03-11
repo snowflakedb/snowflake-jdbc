@@ -61,6 +61,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
   public static final int BAD_REQUEST_GS_CODE = 390400;
+  public static final int NETWORK_ERROR_CODE = 200015;
 
   public static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
 
