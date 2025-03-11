@@ -1365,8 +1365,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
-        || convertSystemPropertyToBooleanValue(
-            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
+        || convertSystemPropertyToBooleanValue(DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, true);
   }
 
   private static boolean isSuccessStatusCode(int code) {
