@@ -6,8 +6,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,12 +45,7 @@ public class LoaderIT extends LoaderBase {
       Object[] row = new Object[] {i, "foo_" + i, rnd.nextInt() / 3, new Date(), json};
       loader.submitRow(row);
     }
-    try {
-      loader.finish();
-      fail("Should raise and error");
-    } catch (Loader.DataError ex) {
-      assertThat("Loader.DataError is raised", true);
-    }
+    assertThrows(Loader.DataError.class, loader::finish);
   }
 
   @Test
@@ -59,24 +54,16 @@ public class LoaderIT extends LoaderBase {
     StreamLoader loaderBefore = tdcbBefore.setOnError("ABORT_STATEMENT").getStreamLoader();
     loaderBefore.setProperty(LoaderProperty.executeBefore, "SELECT * FROOOOOM TBL");
     loaderBefore.start();
-    try {
-      loaderBefore.finish();
-      fail("SQL Error should be raised.");
-    } catch (Loader.ConnectionError e) {
-      assertThat(e.getCause(), instanceOf(SQLException.class));
-    }
+    Loader.ConnectionError e = assertThrows(Loader.ConnectionError.class, loaderBefore::finish);
+    assertThat(e.getCause(), instanceOf(SQLException.class));
 
     TestDataConfigBuilder tdcbAfter = new TestDataConfigBuilder(testConnection, putConnection);
     StreamLoader loaderAfter = tdcbAfter.setOnError("ABORT_STATEMENT").getStreamLoader();
     loaderAfter.setProperty(LoaderProperty.executeBefore, "select current_version()");
     loaderAfter.setProperty(LoaderProperty.executeAfter, "SELECT * FROM TBBBBBBL");
     loaderAfter.start();
-    try {
-      loaderAfter.finish();
-      fail("SQL Error should be raised.");
-    } catch (Loader.ConnectionError e) {
-      assertThat(e.getCause(), instanceOf(SQLException.class));
-    }
+    e = assertThrows(Loader.ConnectionError.class, loaderAfter::finish);
+    assertThat(e.getCause(), instanceOf(SQLException.class));
   }
 
   /**
@@ -477,12 +464,8 @@ public class LoaderIT extends LoaderBase {
       Object[] row = new Object[] {i, "foo_" + i, v, new Date(), json};
       loader.submitRow(row);
     }
-    try {
-      loader.finish();
-      fail("should raise an exception");
-    } catch (Loader.DataError ex) {
-      assertThat(ex.toString(), containsString("INVALID_INTEGER"));
-    }
+    Loader.DataError ex = assertThrows(Loader.DataError.class, loader::finish);
+    assertThat(ex.toString(), containsString("INVALID_INTEGER"));
   }
 
   @Test

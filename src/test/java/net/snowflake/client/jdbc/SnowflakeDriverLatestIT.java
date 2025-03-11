@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.storage.StorageException;
@@ -182,14 +181,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
         // Attempt to set threshold to an invalid value such as a negative number
         String commandWithInvalidThreshold = command + " threshold=-1";
-        try {
-          agent =
-              new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement);
-        }
-        // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
-        catch (SQLException e) {
-          assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        }
+        SQLException e =
+            assertThrows(
+                SQLException.class,
+                () ->
+                    new SnowflakeFileTransferAgent(
+                        commandWithInvalidThreshold, sfSession, sfStatement));
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       }
     } catch (SQLException ex) {
       throw ex;
@@ -376,8 +374,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
-    int expectExceptionCount = 1;
-    int actualExceptionCount = -1;
     try (Connection connection = getConnection("gcpaccount");
         Statement statement = connection.createStatement()) {
       try {
@@ -403,19 +399,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
 
-        // Below function call should fail.
-        actualExceptionCount = 0;
-        sfAgent.getFileTransferMetadatas();
-        fail("Above function should raise exception for GET");
-
-      } catch (Exception ex) {
-        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
-        actualExceptionCount++;
+        assertThrows(Exception.class, sfAgent::getFileTransferMetadatas);
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
-    assertEquals(expectExceptionCount, actualExceptionCount);
   }
 
   @Test
@@ -471,12 +459,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     assertEquals(0, info.length);
 
     // invalid URL still throws SQLException
-    try {
-      url = "snowflake.reg.local:8082";
-      driver.getPropertyInfo(url, props);
-    } catch (SQLException e) {
-      assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
-    }
+    String invalidUrl = "snowflake.reg.local:8082";
+    Properties fileProps = new Properties();
+    Driver finalDriver = driver;
+    SQLException e =
+        assertThrows(SQLException.class, () -> finalDriver.getPropertyInfo(invalidUrl, fileProps));
+    assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
   }
 
   /**
@@ -585,11 +573,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     for (int i = 0; i < accounts.size(); i++) {
       try (Connection connection = getConnection(accounts.get(i), paramProperties);
           Statement statement = connection.createStatement()) {
-        statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
-
-        assertTrue(false, "Shouldn't come here");
-      } catch (Exception ex) {
-        // Expected
+        Exception ex =
+            assertThrows(
+                Exception.class,
+                () ->
+                    statement.execute(
+                        "PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage"));
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }
@@ -617,12 +606,15 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       try (Connection connection = getConnection(accounts.get(i), paramProperties);
           Statement statement = connection.createStatement()) {
 
-        statement.execute(
-            "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+        Exception ex =
+            assertThrows(
+                Exception.class,
+                () ->
+                    statement.execute(
+                        "GET @testPutGet_disable_stage 'file://"
+                            + destFolderCanonicalPath
+                            + "' parallel=8"));
 
-        assertTrue(false, "Shouldn't come here");
-      } catch (Exception ex) {
-        // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }
@@ -648,19 +640,18 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setNull(1, 4); // int
           preparedStatement.setNull(2, 4); // int
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
-            }
-          } else {
-            fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with OFFSET and LIMIT set to NULL");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(10, resultSet.getInt(1));
           }
 
           ////////////////////////////
@@ -668,21 +659,18 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setString(1, "");
           preparedStatement.setString(2, "");
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
-            }
-          } else {
-            fail(
-                "Could not execute preparedStatement with OFFSET and LIMIT set "
-                    + "to empty string");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with OFFSET and LIMIT set to empty string");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(10, resultSet.getInt(1));
           }
 
           ////////////////////////////
@@ -690,15 +678,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setNull(1, 4); // int
           preparedStatement.setInt(2, 2);
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
-            }
-          } else {
-            fail("Could not execute preparedStatement with LIMIT set to NULL");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with LIMIT set to NULL");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(10, resultSet.getInt(1));
           }
 
           ////////////////////////////
@@ -706,15 +693,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setString(1, "");
           preparedStatement.setInt(2, 2);
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
-            }
-          } else {
-            fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with LIMIT set to empty string");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(10, resultSet.getInt(1));
           }
 
           ////////////////////////////
@@ -722,17 +708,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setInt(1, 3); // int
           preparedStatement.setNull(2, 4);
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-            }
-          } else {
-            fail("Could not execute preparedStatement with OFFSET set to NULL");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with OFFSET set to NULL");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
           }
 
           ////////////////////////////
@@ -740,17 +725,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           preparedStatement.setInt(1, 3); // int
           preparedStatement.setNull(2, 4);
 
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-            }
-          } else {
-            fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute preparedStatement with OFFSET set to empty string");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertTrue(resultSet.next());
+            assertEquals(8, resultSet.getInt(1));
           }
         }
         ////////////////////////////
@@ -759,34 +743,30 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             connection.prepareStatement("SELECT 1 FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?")) {
           preparedStatement.setNull(1, 4); // int
           preparedStatement.setNull(2, 4); // int
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              for (int i = 0; i < 4; i++) {
-                assertTrue(resultSet.next());
-                assertEquals(1, resultSet.getInt(1));
-              }
+
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute constant preparedStatement with OFFSET and LIMIT set to NULL");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            for (int i = 0; i < 4; i++) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
             }
-          } else {
-            fail(
-                "Could not execute constant preparedStatement with OFFSET and "
-                    + "LIMIT set to NULL");
           }
 
           ////////////////////////////
           // OFFSET and LIMIT empty string for constant select query
           preparedStatement.setString(1, ""); // int
           preparedStatement.setString(2, ""); // int
-          if (preparedStatement.execute()) {
-            try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              for (int i = 0; i < 4; i++) {
-                assertTrue(resultSet.next());
-                assertEquals(1, resultSet.getInt(1));
-              }
+
+          assertTrue(
+              preparedStatement.execute(),
+              "Could not execute constant preparedStatement with OFFSET and LIMIT set to empty string");
+          try (ResultSet resultSet = preparedStatement.getResultSet()) {
+            for (int i = 0; i < 4; i++) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
             }
-          } else {
-            fail(
-                "Could not execute constant preparedStatement with OFFSET and "
-                    + "LIMIT set to empty string");
           }
         }
       } finally {

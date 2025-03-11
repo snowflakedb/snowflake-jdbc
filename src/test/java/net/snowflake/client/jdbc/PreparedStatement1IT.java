@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -65,12 +65,11 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         // try to access a binding parameter that is out of range of the list of parameters (in this
         // case, the list is
         // empty so everything is out of range) and ensure an exception is thrown
-        try {
-          preparedStatement.getParameterMetaData().getParameterType(3);
-          fail("An exception should have been thrown");
-        } catch (SQLException e) {
-          assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
-        }
+        SQLException e =
+            assertThrows(
+                SQLException.class,
+                () -> preparedStatement.getParameterMetaData().getParameterType(3));
+        assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
       }
     }
   }
@@ -328,12 +327,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           prepStatement.setShort(6, (short) 0);
           prepStatement.addBatch();
 
-          try {
-            prepStatement.executeBatch();
-            fail("An exception should have been thrown");
-          } catch (SQLException ex) {
-            // SQLException is expected.
-          }
+          assertThrows(SQLException.class, prepStatement::executeBatch);
         }
       }
     }

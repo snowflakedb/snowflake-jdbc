@@ -9,8 +9,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
@@ -63,27 +63,19 @@ public class SFClientConfigParserTest {
   @Test
   public void testLoadSFClientConfigInValidPath() {
     String configFilePath = "InvalidPath";
-    SFClientConfig config = null;
-    try {
-      SFClientConfigParser.loadSFClientConfig(configFilePath);
-      fail("testLoadSFClientConfigInValidPath"); // this will not be reached!
-    } catch (IOException e) {
-      // do nothing
-    }
+    assertThrows(IOException.class, () -> SFClientConfigParser.loadSFClientConfig(configFilePath));
   }
 
   @Test
   public void testLoadSFClientConfigInValidJson() {
-    try {
-      String invalidJson = "invalidJson";
-      configFilePath = Paths.get("config.json");
-      Files.write(configFilePath, invalidJson.getBytes());
-      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-
-      fail("testLoadSFClientConfigInValidJson");
-    } catch (IOException e) {
-      // DO Nothing
-    }
+    assertThrows(
+        IOException.class,
+        () -> {
+          String invalidJson = "invalidJson";
+          configFilePath = Paths.get("config.json");
+          Files.write(configFilePath, invalidJson.getBytes());
+          SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+        });
   }
 
   @Test

@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -663,25 +664,25 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
           // Expected to hit credential issue when access the result.
           assertEquals(resultSetSerializables.size(), 1);
-          try {
-            SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
+          SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
 
-            ResultSet resultSet =
-                resultSetSerializable.getResultSet(
-                    SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
-                        .setProxyProperties(new Properties())
-                        .setSfFullURL(sfFullURL)
-                        .build());
+          ResultSet resultSet =
+              resultSetSerializable.getResultSet(
+                  SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                      .setProxyProperties(new Properties())
+                      .setSfFullURL(sfFullURL)
+                      .build());
 
-            while (resultSet.next()) {
-              resultSet.getString(1);
-            }
-            fail(
-                "error should happen when accessing the data because the "
-                    + "file URL is corrupted.");
-          } catch (SQLException ex) {
-            assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
-          }
+          SQLException ex =
+              assertThrows(
+                  SQLException.class,
+                  () -> {
+                    while (resultSet.next()) {
+                      resultSet.getString(1);
+                    }
+                  },
+                  "error should happen when accessing the data because the file URL is corrupted.");
+          assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
         }
       }
     }
@@ -712,13 +713,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
       // The getResultSetSerializables() can only be called for unclosed
       // result set.
-      try {
-        List<SnowflakeResultSetSerializable> resultSetSerializables =
-            ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-        fail("error should happen when accessing closed result set.");
-      } catch (SQLException ex) {
-        System.out.println("Negative test hits expected error: " + ex.getMessage());
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024));
+      System.out.println("Negative test hits expected error: " + ex.getMessage());
     }
   }
 
@@ -777,12 +776,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       String chunkResultString = deserializeResultSetWithProperties(fileNameList, props);
       System.out.println(chunkResultString.length());
     } else {
-      try {
-        deserializeResultSetWithProperties(fileNameList, props);
-        fail("This is negative test.");
-      } catch (Exception ex) {
-        // since the proxy is wrong, the connection should hit error.
-      }
+      assertThrows(Exception.class, () -> deserializeResultSetWithProperties(fileNameList, props));
     }
   }
 

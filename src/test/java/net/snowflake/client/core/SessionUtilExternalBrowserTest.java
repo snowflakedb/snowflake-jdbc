@@ -2,8 +2,8 @@ package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -193,12 +193,13 @@ public class SessionUtilExternalBrowserTest {
 
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
-      try {
-        sub.authenticate();
-        fail("should have failed with an exception.");
-      } catch (SnowflakeSQLException ex) {
-        MatcherAssert.assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
-      }
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                sub.authenticate();
+              });
+      MatcherAssert.assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
     }
   }
 
@@ -218,11 +219,13 @@ public class SessionUtilExternalBrowserTest {
   public void testInvalidSSOUrl() {
     SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers handler =
         new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers();
-    try {
-      handler.openBrowser("file://invalidUrl");
-    } catch (SFException ex) {
-      assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
-    }
+    SFException ex =
+        assertThrows(
+            SFException.class,
+            () -> {
+              handler.openBrowser("file://invalidUrl");
+            });
+    assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
   }
 
   /**
@@ -275,11 +278,12 @@ public class SessionUtilExternalBrowserTest {
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
     ds.setBrowserResponseTimeout(10);
-    try {
-      ds.getConnection();
-      fail();
-    } catch (SnowflakeSQLLoggedException e) {
-      assertTrue(e.getMessage().contains("External browser authentication failed"));
-    }
+    SnowflakeSQLLoggedException e =
+        assertThrows(
+            SnowflakeSQLLoggedException.class,
+            () -> {
+              ds.getConnection();
+            });
+    assertTrue(e.getMessage().contains("External browser authentication failed"));
   }
 }

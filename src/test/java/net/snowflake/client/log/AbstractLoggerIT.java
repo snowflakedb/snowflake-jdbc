@@ -33,7 +33,7 @@ public abstract class AbstractLoggerIT {
         "Value: {}",
         (ArgSupplier)
             () -> {
-              fail("Lambda expression evaluated even though message " + "is not logged");
+              fail("Lambda expression evaluated even though message is not logged");
               return 0;
             });
   }

@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 
 import com.amazonaws.services.kms.model.UnsupportedOperationException;
@@ -36,12 +35,14 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
       RemoteStoreFileEncryptionMaterial content =
           new RemoteStoreFileEncryptionMaterial(
               "EXAMPLEQUERYSTAGEMASTERKEY", "EXAMPLEQUERYID", 123L);
-      try {
-        SnowflakeAzureClient.createSnowflakeAzureClient(sfAgent.getStageInfo(), content, sfSession);
-        fail();
-      } catch (SnowflakeSQLLoggedException ex) {
-        assertEquals(200001, ex.getErrorCode());
-      }
+
+      SnowflakeSQLLoggedException ex =
+          assertThrows(
+              SnowflakeSQLLoggedException.class,
+              () ->
+                  SnowflakeAzureClient.createSnowflakeAzureClient(
+                      sfAgent.getStageInfo(), content, sfSession));
+      assertEquals(200001, ex.getErrorCode());
     }
   }
 

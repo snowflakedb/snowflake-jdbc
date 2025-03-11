@@ -4,8 +4,8 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -114,24 +114,17 @@ public class LoaderLatestIT extends LoaderBase {
       TestDataConfigBuilder.ResultListener listener = tdcbUpsert.getListener();
       listener.throwOnError = true; // should trigger rollback
       loader.start();
-      try {
+      Object[] noerr = new Object[] {"10001", "inserted", "something", "42", new Date(), "{}"};
+      loader.submitRow(noerr);
 
-        Object[] noerr = new Object[] {"10001", "inserted", "something", "42", new Date(), "{}"};
-        loader.submitRow(noerr);
+      Object[] err = new Object[] {"10002-", "inserted", "something", "42-", new Date(), "{}"};
+      loader.submitRow(err);
 
-        Object[] err = new Object[] {"10002-", "inserted", "something", "42-", new Date(), "{}"};
-        loader.submitRow(err);
-
-        loader.finish();
-
-        fail("Test must raise Loader.DataError exception");
-      } catch (Loader.DataError e) {
-        // we are good
-        assertThat(
-            "error message",
-            e.getMessage(),
-            allOf(containsString("10002-"), containsString("not recognized")));
-      }
+      Loader.DataError e = assertThrows(Loader.DataError.class, loader::finish);
+      assertThat(
+          "error message",
+          e.getMessage(),
+          allOf(containsString("10002-"), containsString("not recognized")));
 
       assertThat("processed", listener.processed.get(), equalTo(0));
       assertThat("submitted row", listener.getSubmittedRowCount(), equalTo(2));

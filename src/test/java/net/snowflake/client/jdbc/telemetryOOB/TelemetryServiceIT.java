@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -234,23 +233,21 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       throws SQLException, InterruptedException {
     // make a connection to initialize telemetry instance
     int fakeVendorCode = 27;
-    try {
-      generateDummyException(fakeVendorCode, null);
-      fail();
-    } catch (SnowflakeSQLLoggedException e) {
-      // The error response has the same code as the fakeErrorCode
-      assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
+    SnowflakeSQLLoggedException e =
+        assertThrows(
+            SnowflakeSQLLoggedException.class, () -> generateDummyException(fakeVendorCode, null));
+    // The error response has the same code as the fakeErrorCode
+    assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
 
-      // since it returns normal response,
-      // the telemetry does not create new event
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
-      }
+    // since it returns normal response,
+    // the telemetry does not create new event
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
     }
   }
 
@@ -267,20 +264,18 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @RunOnTestaccountNotOnGithubActions
   public void testSQLFeatureNotSupportedOOBTelemetry() throws InterruptedException {
     // with null session, OOB telemetry will be thrown
-    try {
-      generateSQLFeatureNotSupportedException();
-      fail("SqlFeatureNotSupportedException failed to throw.");
-    } catch (SQLFeatureNotSupportedException e) {
-      // since it returns normal response,
-      // the telemetry does not create new event
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
-      }
+    SQLFeatureNotSupportedException e =
+        assertThrows(
+            SQLFeatureNotSupportedException.class, this::generateSQLFeatureNotSupportedException);
+    // since it returns normal response,
+    // the telemetry does not create new event
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
     }
   }
 
@@ -376,14 +371,14 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     // make a connection to initialize telemetry instance
     try (Connection con = getConnection()) {
       int fakeErrorCode = 27;
-      try {
-        generateDummyException(
-            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
-        fail();
-      } catch (SnowflakeSQLLoggedException e) {
-        // The error response has the same code as the fakeErrorCode
-        assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
-      }
+      SnowflakeSQLLoggedException e =
+          assertThrows(
+              SnowflakeSQLLoggedException.class,
+              () ->
+                  generateDummyException(
+                      fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession()));
+      // The error response has the same code as the fakeErrorCode
+      assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
     }
   }
 

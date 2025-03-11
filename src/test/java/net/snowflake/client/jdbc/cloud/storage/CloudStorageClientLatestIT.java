@@ -1,10 +1,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -32,14 +29,12 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
       try {
         statement.execute("CREATE OR REPLACE TEMP STAGE " + stageName);
 
-        try (InputStream out =
-            connection
-                .unwrap(SnowflakeConnection.class)
-                .downloadStream("@" + stageName, "/fileNotExist.gz", true)) {
-          fail("file should not exist");
-        } catch (Throwable e) {
-          assertThat(e, instanceOf(SQLException.class));
-        }
+        assertThrows(
+            SQLException.class,
+            () ->
+                connection
+                    .unwrap(SnowflakeConnection.class)
+                    .downloadStream("@" + stageName, "/fileNotExist.gz", true));
       } finally {
         statement.execute("DROP STAGE IF EXISTS " + stageName);
       }

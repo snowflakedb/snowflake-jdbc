@@ -3,7 +3,6 @@ package net.snowflake.client.log;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @Test
   @Disabled
-  public void testJDK14LoggingWithClientConfig() throws IOException {
+  public void testJDK14LoggingWithClientConfig() throws IOException, SQLException {
     File configFile = new File(tmpFolder, "config.json");
     configFile.createNewFile();
     Path configFilePath = configFile.toPath();
@@ -58,21 +57,16 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Path logFolderPath = logFolder.toPath();
     String configJson =
         "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + logFolderPath + "\"}}";
-    try {
-      Files.write(configFilePath, configJson.getBytes());
-      Properties properties = new Properties();
-      properties.put("client_config_file", configFilePath.toString());
-      try (Connection connection = getConnection(properties);
-          Statement statement = connection.createStatement()) {
-        statement.executeQuery("select 1");
 
-        File file = new File(Paths.get(logFolderPath.toString(), "jdbc").toString());
-        assertTrue(file.exists());
-      }
-    } catch (IOException e) {
-      fail("testJDK14LoggingWithClientConfig failed");
-    } catch (SQLException e) {
-      fail("testJDK14LoggingWithClientConfig failed");
+    Files.write(configFilePath, configJson.getBytes());
+    Properties properties = new Properties();
+    properties.put("client_config_file", configFilePath.toString());
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
+      statement.executeQuery("select 1");
+
+      File file = new File(Paths.get(logFolderPath.toString(), "jdbc").toString());
+      assertTrue(file.exists());
     }
   }
 
@@ -172,10 +166,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
-    try (Connection connection = getConnection(properties)) {
-      fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
-    } catch (SnowflakeSQLLoggedException e) {
-      // Succeed
+    try {
+      assertThrows(SnowflakeSQLLoggedException.class, () -> getConnection(properties));
     } finally {
       System.setProperty("user.home", homePath);
       Files.deleteIfExists(configFilePath);
