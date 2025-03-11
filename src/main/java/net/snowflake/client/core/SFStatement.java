@@ -711,12 +711,12 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseResultSet execute(
-          String sql,
-          String dataframeAst,
-          Map<String, ParameterBindingDTO> parametersBinding,
-          CallingMethod caller,
-          ExecTimeTelemetryData execTimeData)
-          throws SQLException, SFException {
+      String sql,
+      String dataframeAst,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException, SFException {
     return execute(sql, dataframeAst, false, parametersBinding, caller, execTimeData);
   }
 
@@ -805,7 +805,8 @@ public class SFStatement extends SFBaseStatement {
         return null;
       }
     }
-    return executeQuery(sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
+    return executeQuery(
+        sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {

@@ -180,7 +180,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   public ResultSet executeDataframeAst(String dataframeAst) throws SQLException {
     ExecTimeTelemetryData execTimeData =
-            new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
+        new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
 
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal("", dataframeAst, false, null, execTimeData);
@@ -312,7 +312,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       } else {
         sfResultSet =
             sfBaseStatement.execute(
-                sql, dataframeAst, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
+                sql,
+                dataframeAst,
+                parameterBindings,
+                SFBaseStatement.CallingMethod.EXECUTE_QUERY,
+                execTimeData);
         resultSetMetadataHandler(sfResultSet);
       }
       sfResultSet.setSession(this.connection.getSFBaseSession());
