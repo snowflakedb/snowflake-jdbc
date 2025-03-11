@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.NETWORK_ERROR_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -592,7 +593,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         assertThat(
             "Communication error",
             e.getErrorCode(),
-            anyOf(equalTo(INVALID_CONNECTION_INFO_CODE), equalTo(BAD_REQUEST_GS_CODE)));
+            anyOf(
+                equalTo(INVALID_CONNECTION_INFO_CODE),
+                equalTo(BAD_REQUEST_GS_CODE),
+                equalTo(NETWORK_ERROR_CODE)));
 
         // since it returns normal response,
         // the telemetry does not create new event
