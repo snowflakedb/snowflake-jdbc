@@ -223,7 +223,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals(3, getSizeOfResultSet(resultSet));
     // resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
 
-    SQLException e = assertThrows(SQLException.class, () -> databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%"));
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%"));
     assertEquals(2003, e.getErrorCode());
 
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
@@ -467,7 +470,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
       databaseMetaData = connection.getMetaData();
 
-      SQLException e = assertThrows(SQLException.class, () -> databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"}));
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () -> databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"}));
       assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
       assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
 

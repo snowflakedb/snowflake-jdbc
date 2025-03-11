@@ -54,7 +54,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testFetchDirection() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
-      assertThrows(SQLFeatureNotSupportedException.class, () -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
+      assertThrows(
+          SQLFeatureNotSupportedException.class,
+          () -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
     }
   }
 
@@ -98,7 +100,12 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       assertEquals(0, statement.getQueryTimeout());
       statement.setQueryTimeout(5);
       assertEquals(5, statement.getQueryTimeout());
-      SQLException e = assertThrows(SQLException.class, () -> statement.executeQuery("select count(*) from table(generator(timeLimit => 100))"));
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  statement.executeQuery(
+                      "select count(*) from table(generator(timeLimit => 100))"));
       assertTrue(true);
       assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
       assertEquals("SQL execution canceled", e.getMessage());

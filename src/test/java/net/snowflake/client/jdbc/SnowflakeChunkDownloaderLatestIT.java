@@ -77,9 +77,12 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
         SnowflakeChunkDownloader downloader =
             new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
         SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
-        SnowflakeSQLException exception = assertThrows(SnowflakeSQLException.class, snowflakeChunkDownloaderSpy::getNextChunkToConsume);
+        SnowflakeSQLException exception =
+            assertThrows(
+                SnowflakeSQLException.class, snowflakeChunkDownloaderSpy::getNextChunkToConsume);
         Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
-        assertTrue(exception.getMessage().contains("Max retry reached for the download of chunk#0"));
+        assertTrue(
+            exception.getMessage().contains("Max retry reached for the download of chunk#0"));
         assertTrue(exception.getMessage().contains("retry: 2"));
       }
     }

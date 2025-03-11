@@ -355,7 +355,12 @@ public class RestRequestTest {
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
-    SnowflakeSQLException ex = assertThrows(SnowflakeSQLException.class, () -> execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                execute(
+                    client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
     assertThat(
         ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
   }
@@ -366,7 +371,12 @@ public class RestRequestTest {
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryLoginResponse());
 
-    SnowflakeSQLException ex = assertThrows(SnowflakeSQLException.class, () -> execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                execute(
+                    client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
     assertThat(
         ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
   }

@@ -32,7 +32,10 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
         Statement stmt = con.createStatement()) {
       stmt.execute("alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY='ENABLED'");
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=false");
-      SnowflakeSQLException e = assertThrows(SnowflakeSQLException.class, () -> stmt.execute("select randstr(20000000, random()) as large_str"));
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> stmt.execute("select randstr(20000000, random()) as large_str"));
       assertThat(e.getMessage(), CoreMatchers.containsString("exceeds supported length"));
 
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=true");
