@@ -171,7 +171,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     return rs;
   }
 
- // todo: add doc
+  /**
+   * Execute dataframeAst query
+   *
+   * @param dataframeAst encoded string representation of the dataframe AST
+   * @return ResultSet
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   */
   public ResultSet executeDataframeAst(String dataframeAst) throws SQLException {
     ExecTimeTelemetryData execTimeData =
             new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
@@ -280,6 +286,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * Internal method for executing a query with bindings accepted.
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param asyncExec execute query asynchronously
    * @param parameterBindings parameters bindings
    * @return query result set
@@ -305,7 +312,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       } else {
         sfResultSet =
             sfBaseStatement.execute(
-                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
+                sql, dataframeAst, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
         resultSetMetadataHandler(sfResultSet);
       }
       sfResultSet.setSession(this.connection.getSFBaseSession());
