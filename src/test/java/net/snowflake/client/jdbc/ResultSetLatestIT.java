@@ -110,8 +110,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
                       "hold memory usage for the resultSet before close",
                       SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
                   // Result closure should catch InterruptedException and throw a SQLException after
-                  // its
-                  // caught
+                  // its caught
                 }
               });
       assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());

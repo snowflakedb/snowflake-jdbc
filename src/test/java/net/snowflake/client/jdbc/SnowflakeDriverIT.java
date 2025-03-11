@@ -1063,7 +1063,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assertThrows(
               SQLException.class,
               () -> statement.executeQuery("SELECT * FROM nonexistence").close());
-      assertEquals("42S02", ex.getSQLState(), "sqlstate mismatch");
+      assertEquals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND, ex.getSQLState(), "sqlstate mismatch");
     }
   }
 
@@ -2282,7 +2282,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               SQLException.class,
               () ->
                   statement
-                      .executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120)))")
+                      .executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")
                       .close());
       // assert the sqlstate is what we expect (QUERY CANCELLED)
       assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
