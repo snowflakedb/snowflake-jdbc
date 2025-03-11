@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.kms.model.UnsupportedOperationException;
@@ -12,8 +8,6 @@ import java.util.List;
 /**
  * Iterator class for ObjectSummary objects on S3 Wraps an iterator of S3 object summaries and
  * returns platform independent instances (StorageObjectSummary)
- *
- * @author lgiakoumakis
  */
 public class S3ObjectSummariesIterator implements Iterator<StorageObjectSummary> {
 

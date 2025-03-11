@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
@@ -39,8 +35,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
  *
  * <p>Currently it only has one method for retrying http request execution so that the same logic
  * doesn't have to be replicated at difference places where retry is needed.
- *
- * @author jhuang
  */
 public class RestRequest {
   private static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);

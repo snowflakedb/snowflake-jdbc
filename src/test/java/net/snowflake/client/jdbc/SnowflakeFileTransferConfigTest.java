@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

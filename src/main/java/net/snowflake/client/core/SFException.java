@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
@@ -9,7 +5,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 
-/** Created by jhuang on 1/5/16. */
 public class SFException extends Throwable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);
 
