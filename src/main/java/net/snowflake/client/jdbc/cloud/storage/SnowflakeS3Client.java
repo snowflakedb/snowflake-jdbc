@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -77,11 +73,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
-/**
- * Wrapper around AmazonS3Client.
- *
- * @author ffunke
- */
+/** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private static final String localFileSep = systemGetProperty("file.separator");
