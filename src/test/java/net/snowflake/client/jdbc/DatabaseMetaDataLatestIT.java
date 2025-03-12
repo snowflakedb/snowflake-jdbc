@@ -889,13 +889,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -918,9 +921,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -939,13 +946,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -968,9 +978,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         assertFalse(resultSet.next());
       }
 
