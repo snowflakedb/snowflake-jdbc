@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.BindUploaderIT.SELECT_FROM_STAGE;

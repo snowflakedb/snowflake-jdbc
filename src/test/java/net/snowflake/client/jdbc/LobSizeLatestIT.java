@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +20,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
@@ -135,6 +133,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testStandardInsertAndSelectWithMaxLobSizeEnabled(int lobSize, String resultFormat)
       throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
@@ -157,6 +156,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testPreparedInsertWithMaxLobSizeEnabled(int lobSize, String resultFormat)
       throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
@@ -179,6 +179,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testPutAndGet(int lobSize, String resultFormat) throws IOException, SQLException {
     File tempFile = File.createTempFile("LobSizeTest", ".csv");
     // Delete file when JVM shuts down

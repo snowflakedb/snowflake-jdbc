@@ -1,19 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.security.PrivateKey;
 import java.util.regex.Pattern;
 import net.snowflake.client.jdbc.ErrorCode;
 
-/**
- * session properties accepted for opening a new session.
- *
- * @author jhuang
- *     <p>Created on 11/3/15
- */
+/** session properties accepted for opening a new session. */
 public enum SFSessionProperty {
   SERVER_URL("serverURL", true, String.class),
   USER("user", false, String.class),

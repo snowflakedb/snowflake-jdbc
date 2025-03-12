@@ -27,10 +27,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 /**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Out of Band Telemetry Service This is a thread safe singleton queue containing telemetry
- * messages
+ * Out of Band Telemetry Service This is a thread safe singleton queue containing telemetry messages
  */
 public class TelemetryService {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TelemetryService.class);

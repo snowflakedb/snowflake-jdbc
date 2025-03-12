@@ -5,11 +5,7 @@ import java.nio.ByteBuffer;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>This is the Java version of the ODBC's ResultJsonParserV2 class
- */
+/** This is the Java version of the ODBC's ResultJsonParserV2 class */
 public class ResultJsonParserV2 {
 
   private enum State {

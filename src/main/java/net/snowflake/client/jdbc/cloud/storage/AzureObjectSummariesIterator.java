@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.kms.model.UnsupportedOperationException;
@@ -15,8 +11,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 /**
  * Iterator class for ObjectSummary objects on Azure Returns platform-independent instances
  * (StorageObjectSummary)
- *
- * @author lgiakoumakis
  */
 public class AzureObjectSummariesIterator implements Iterator<StorageObjectSummary> {
   private static final SFLogger logger =
