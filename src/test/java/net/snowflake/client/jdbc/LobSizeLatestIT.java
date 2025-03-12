@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
@@ -34,6 +36,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag(TestTags.STATEMENT)
+
 public class LobSizeLatestIT extends BaseJDBCTest {
 
   private static final Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
@@ -132,6 +135,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testStandardInsertAndSelectWithMaxLobSizeEnabled(int lobSize, String resultFormat)
       throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
@@ -154,6 +158,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testPreparedInsertWithMaxLobSizeEnabled(int lobSize, String resultFormat)
       throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
@@ -176,6 +181,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
+  @DontRunOnJenkins // the MxLobParameters isn't configured properly on new environment
   public void testPutAndGet(int lobSize, String resultFormat) throws IOException, SQLException {
     File tempFile = File.createTempFile("LobSizeTest", ".csv");
     // Delete file when JVM shuts down
