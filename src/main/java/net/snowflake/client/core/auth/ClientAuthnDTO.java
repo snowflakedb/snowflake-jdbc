@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core.auth;
 
 import java.util.Map;

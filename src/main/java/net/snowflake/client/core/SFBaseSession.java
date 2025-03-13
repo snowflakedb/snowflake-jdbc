@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
@@ -146,7 +142,7 @@ public abstract class SFBaseSession {
   private boolean enableExactSchemaSearch = false;
 
   /** Disable lookup for default credentials by GCS library */
-  private boolean disableGcsDefaultCredentials = false;
+  private boolean disableGcsDefaultCredentials = true;
 
   private Map<String, Object> commonParameters;
 

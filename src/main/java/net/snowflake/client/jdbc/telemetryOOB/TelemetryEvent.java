@@ -11,11 +11,7 @@ import net.snowflake.client.util.SFTimestamp;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.ResourceBundleManager;
 
-/**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Telemetry Event Class
- */
+/** Telemetry Event Class */
 public class TelemetryEvent extends JSONObject {
   private static final long serialVersionUID = 1L;
   private static final int schemaVersion = 1;

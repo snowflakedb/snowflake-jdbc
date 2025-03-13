@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
@@ -10,9 +6,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 
-/**
- * @author jhuang
- */
 public class SnowflakeSQLException extends SQLException {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
 
@@ -225,7 +218,7 @@ public class SnowflakeSQLException extends SQLException {
   /**
    * @param errorCode error code
    * @param retryCount retry count
-   * @param issocketTimeoutNoBackoff issocketTimeoutNoBackoff
+   * @param issocketTimeoutNoBackoff isSocketTimeoutNoBackoff
    * @param elapsedSeconds time elapsed in seconds
    */
   public SnowflakeSQLException(
