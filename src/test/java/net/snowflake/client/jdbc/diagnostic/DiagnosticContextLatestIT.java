@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc.diagnostic;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -352,5 +353,18 @@ public class DiagnosticContextLatestIT {
     if (oldJvmHttpsProxyPort != null) {
       System.getProperty(HTTPS_PROXY_PORT, oldJvmHttpsProxyPort);
     }
+  }
+
+  /** Test added in version > 3.16.1 */
+  @Test
+  public void testRunDiagnosticContextMethods() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+    File allowlistFile = new File("src/test/resources/allowlist.json");
+
+    DiagnosticContext diagnosticContext =
+        new DiagnosticContext(allowlistFile.getAbsolutePath(), connectionPropertiesMap);
+    diagnosticContext.runDiagnostics();
+    diagnosticContext.logEnvironmentInfo();
+    assertNotNull(diagnosticContext.getEndpoints());
   }
 }
