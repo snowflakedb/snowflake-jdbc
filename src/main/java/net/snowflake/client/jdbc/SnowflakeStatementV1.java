@@ -16,15 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import net.snowflake.client.core.CancellationReason;
-import net.snowflake.client.core.ExecTimeTelemetryData;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseStatement;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.core.StmtUtil;
+
+import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
@@ -146,7 +139,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
 
     raiseSQLExceptionIfStatementIsClosed();
-    ResultSet rs = executeQueryInternal(sql, null, false, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", execTimeData.getLogString());
@@ -164,7 +157,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ExecTimeTelemetryData execTimeData =
         new ExecTimeTelemetryData("ResultSet Statement.executeAsyncQuery(String)", this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
-    ResultSet rs = executeQueryInternal(sql, null, true, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
@@ -178,6 +171,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return ResultSet
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
+  @SnowflakeJdbcInternalApi
   public ResultSet executeDataframeAst(String dataframeAst) throws SQLException {
     ExecTimeTelemetryData execTimeData =
         new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
@@ -281,6 +275,23 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       this.queryID = null;
     }
   }
+  /**
+   * Internal method for executing a query with bindings accepted.
+   *
+   * @param sql sql statement
+   * @param asyncExec execute query asynchronously
+   * @param parameterBindings parameters bindings
+   * @return query result set
+   * @throws SQLException if @link{SFStatement.execute(String)} throws exception
+   */
+  ResultSet executeQueryInternal(
+          String sql,
+          boolean asyncExec,
+          Map<String, ParameterBindingDTO> parameterBindings,
+          ExecTimeTelemetryData execTimeData)
+          throws SQLException {
+    return executeQueryInternal(sql,null, asyncExec, parameterBindings, execTimeData);
+  }
 
   /**
    * Internal method for executing a query with bindings accepted.
@@ -292,6 +303,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return query result set
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
+  @SnowflakeJdbcInternalApi
   ResultSet executeQueryInternal(
       String sql,
       String dataframeAst,

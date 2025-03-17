@@ -1317,7 +1317,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       result =
           statement.executeHelper(
               command,
-              null,
               "application/json",
               null, // bindValues
               false, // describeOnly

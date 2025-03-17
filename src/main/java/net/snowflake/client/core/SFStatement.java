@@ -357,6 +357,7 @@ public class SFStatement extends SFBaseStatement {
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
    */
+  @SnowflakeJdbcInternalApi
   public Object executeHelper(
       String sql,
       String dataframeAst,
@@ -736,6 +737,8 @@ public class SFStatement extends SFBaseStatement {
     return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
+
+  @SnowflakeJdbcInternalApi
   @Override
   public SFBaseResultSet execute(
       String sql,
@@ -826,6 +829,7 @@ public class SFStatement extends SFBaseStatement {
    * @throws SFException exception raised from Snowflake components
    * @throws SQLException if SQL error occurs
    */
+  @SnowflakeJdbcInternalApi
   public SFBaseResultSet execute(
       String sql,
       String dataframeAst,
@@ -1032,6 +1036,6 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, null, true, parametersBinding, caller, execTimeData);
+    return execute(sql, true, parametersBinding, caller, execTimeData);
   }
 }

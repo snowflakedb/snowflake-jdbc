@@ -164,7 +164,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.trace("executeQuery()", false);
     }
-    ResultSet rs = executeQueryInternal(sql, null, false, parameterBindings, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", execTimeData.getLogString());
@@ -186,7 +186,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.trace("executeAsyncQuery()", false);
     }
-    ResultSet rs = executeQueryInternal(sql, null, true, parameterBindings, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     logger.debug("Query completed. {}", execTimeData.getLogString());

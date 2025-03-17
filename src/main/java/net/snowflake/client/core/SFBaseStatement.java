@@ -92,6 +92,7 @@ public abstract class SFBaseStatement {
    * @throws SFException exception raised from Snowflake components
    * @throws SQLException if SQL error occurs
    */
+  @SnowflakeJdbcInternalApi
   public SFBaseResultSet execute(
       String sql,
       String dataframeAst,
@@ -99,7 +100,6 @@ public abstract class SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    // only used internally, not a public API
     throw new UnsupportedOperationException();
   }
 

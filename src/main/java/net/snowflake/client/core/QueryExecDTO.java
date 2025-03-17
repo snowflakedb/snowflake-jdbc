@@ -55,6 +55,7 @@ public class QueryExecDTO {
         asyncExec);
   }
 
+  @SnowflakeJdbcInternalApi
   public QueryExecDTO(
       String sqlText,
       String dataframeAst,
@@ -88,10 +89,12 @@ public class QueryExecDTO {
     this.sqlText = sqlText;
   }
 
+  @SnowflakeJdbcInternalApi
   public String getDataframeAst() {
     return this.dataframeAst;
   }
 
+  @SnowflakeJdbcInternalApi
   public void setDataframeAst(String dataframeAst) {
     this.dataframeAst = dataframeAst;
   }
