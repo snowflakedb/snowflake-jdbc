@@ -4,7 +4,6 @@ import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherSe
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -438,7 +437,7 @@ public class SessionUtil {
   }
 
   private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
-    if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+    if (!Strings.isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
         CredentialManager.fillCachedOAuthAccessToken(loginInput);
