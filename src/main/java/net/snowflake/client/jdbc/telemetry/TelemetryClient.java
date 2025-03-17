@@ -67,6 +67,7 @@ public class TelemetryClient implements Telemetry {
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
     this.serverUrl = session.getUrl();
+    this.isTelemetryServiceAvailable = session.isTelemetryServiceAvailable();
     this.httpClient = null;
 
     if (this.serverUrl.endsWith("/")) {
