@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -285,12 +284,12 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
   ResultSet executeQueryInternal(
-          String sql,
-          boolean asyncExec,
-          Map<String, ParameterBindingDTO> parameterBindings,
-          ExecTimeTelemetryData execTimeData)
-          throws SQLException {
-    return executeQueryInternal(sql,null, asyncExec, parameterBindings, execTimeData);
+      String sql,
+      boolean asyncExec,
+      Map<String, ParameterBindingDTO> parameterBindings,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException {
+    return executeQueryInternal(sql, null, asyncExec, parameterBindings, execTimeData);
   }
 
   /**

@@ -737,7 +737,6 @@ public class SFStatement extends SFBaseStatement {
     return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
-
   @SnowflakeJdbcInternalApi
   @Override
   public SFBaseResultSet execute(
