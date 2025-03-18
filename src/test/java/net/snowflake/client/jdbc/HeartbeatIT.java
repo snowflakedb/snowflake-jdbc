@@ -158,7 +158,6 @@ public class HeartbeatIT extends AbstractDriverIT {
               }
             });
     executorService.shutdown();
-    future.get();
     ExecutionException ex = assertThrows(ExecutionException.class, future::get);
     Throwable rootCause = ex.getCause();
     assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
