@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.lang.reflect.Field;
@@ -37,7 +33,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.22.1";
+  public static String implementVersion = "3.23.2";
 
   static int majorVersion = 0;
   static int minorVersion = 0;

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
@@ -70,6 +66,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
@@ -78,11 +75,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-/**
- * Class for uploading/downloading files
- *
- * @author jhuang
- */
+/** Class for uploading/downloading files */
 public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
@@ -1337,7 +1330,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
-    logger.debug("Response: {}", jsonNode.toString());
+
+    logger.debug("Response: {}", SecretDetector.maskSecrets(jsonNode.toString()));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;

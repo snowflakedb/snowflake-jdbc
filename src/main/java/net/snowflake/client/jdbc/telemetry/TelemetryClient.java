@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,11 +25,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-/**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Telemetry Service Interface
- */
+/** Telemetry Service Interface */
 public class TelemetryClient implements Telemetry {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
 

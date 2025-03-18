@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;

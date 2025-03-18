@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.StmtUtil.mapper;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -109,6 +106,26 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   @Test
   @RunOnLinuxOrMac
+  public void notThrowExceptionWhenCacheFolderIsNotAccessible() throws IOException {
+    try {
+      Files.setPosixFilePermissions(
+          cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("---------"));
+      FileCacheManager fcm =
+          FileCacheManager.builder()
+              .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
+              .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
+              .setBaseCacheFileName(CACHE_FILE_NAME)
+              .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+              .build();
+      assertDoesNotThrow(fcm::readCacheFile);
+    } finally {
+      Files.setPosixFilePermissions(
+          cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("rwx------"));
+    }
+  }
+
+  @Test
+  @RunOnLinuxOrMac
   public void throwWhenOverrideCacheFileHasDifferentOwnerThanCurrentUserTest() {
     try (MockedStatic<FileUtil> fileUtilMock =
         Mockito.mockStatic(FileUtil.class, Mockito.CALLS_REAL_METHODS)) {
@@ -168,19 +185,28 @@ class FileCacheManagerTest extends BaseJDBCTest {
       if (Files.exists(cacheFile.getParent())) {
         Files.delete(cacheFile.getParent());
       }
-      Files.createDirectories(
-          cacheFile.getParent(),
-          PosixFilePermissions.asFileAttribute(
-              Stream.of(
-                      PosixFilePermission.OWNER_READ,
-                      PosixFilePermission.OWNER_WRITE,
-                      PosixFilePermission.OWNER_EXECUTE)
-                  .collect(Collectors.toSet())));
-      Files.createFile(
-          cacheFile,
-          PosixFilePermissions.asFileAttribute(
-              Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
-                  .collect(Collectors.toSet())));
+      if (!isWindows()) {
+        Files.createDirectories(
+            cacheFile.getParent(),
+            PosixFilePermissions.asFileAttribute(
+                Stream.of(
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE)
+                    .collect(Collectors.toSet())));
+      } else {
+        Files.createDirectories(cacheFile.getParent());
+      }
+
+      if (!isWindows()) {
+        Files.createFile(
+            cacheFile,
+            PosixFilePermissions.asFileAttribute(
+                Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+                    .collect(Collectors.toSet())));
+      } else {
+        Files.createFile(cacheFile);
+      }
       ObjectNode cacheContent = mapper.createObjectNode();
       cacheContent.put("token", "tokenValue");
       fileCacheManager.overrideCacheFile(cacheFile.toFile());
@@ -198,5 +224,18 @@ class FileCacheManagerTest extends BaseJDBCTest {
       Files.delete(link);
     }
     return Files.createSymbolicLink(link, cacheFile.toPath());
+  }
+
+  @Test
+  void shouldCreateDirAndFile() {
+    String tmpDirPath = System.getProperty("java.io.tmpdir");
+    String cacheDirPath = tmpDirPath + File.separator + "snowflake-cache-dir";
+    System.setProperty("FILE_CACHE_MANAGER_SHOULD_CREATE_DIR_AND_FILE", cacheDirPath);
+    FileCacheManager.builder()
+        .setOnlyOwnerPermissions(false)
+        .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_SHOULD_CREATE_DIR_AND_FILE")
+        .setBaseCacheFileName("cache-file")
+        .build();
+    assertTrue(new File(tmpDirPath).exists());
   }
 }

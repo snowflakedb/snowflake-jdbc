@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -12,8 +9,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
  * ObjectMetadata class
  *
  * <p>It only supports a limited set of metadata properties currently used by the JDBC client
- *
- * @author lgiakoumakis
  */
 public class S3ObjectMetadata implements StorageObjectMetadata {
   private ObjectMetadata objectMetadata;

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2022 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

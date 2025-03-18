@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -77,11 +74,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
-/**
- * Encapsulates the GCS Storage client and all GCS operations and logic
- *
- * @author ppaulus
- */
+/** Encapsulates the GCS Storage client and all GCS operations and logic */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @SnowflakeJdbcInternalApi
   public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
@@ -1372,8 +1365,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
-        || convertSystemPropertyToBooleanValue(
-            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
+        || convertSystemPropertyToBooleanValue(DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, true);
   }
 
   private static boolean isSuccessStatusCode(int code) {

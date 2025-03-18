@@ -134,14 +134,14 @@ public class FileUtil {
       boolean isReadableByOthers = isPermPresent(filePermissions, READ_BY_OTHERS);
       boolean isExecutable = isPermPresent(filePermissions, EXECUTABLE);
 
-      if (isWritableByOthers || (isReadableByOthers || isExecutable)) {
+      if (isWritableByOthers || (isReadableByOthers && logReadAccess) || isExecutable) {
         logger.warn(
             "{}File {} is accessible by others to:{}{}",
             getContextStr(context),
             filePath,
             isReadableByOthers && logReadAccess ? " read" : "",
             isWritableByOthers ? " write" : "",
-            isExecutable ? " executable" : "");
+            isExecutable ? " execute" : "");
       }
     } catch (IOException e) {
       logger.warn(
@@ -191,5 +191,12 @@ public class FileUtil {
 
   private static String getContextStr(String context) {
     return Strings.isNullOrEmpty(context) ? "" : context + ": ";
+  }
+
+  public static boolean exists(File file) {
+    if (file == null) {
+      return false;
+    }
+    return file.exists();
   }
 }

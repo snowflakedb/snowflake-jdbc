@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.FileUtil.isWritable;
@@ -95,8 +91,8 @@ class FileCacheManager {
    * @param newCacheFile a file object to override the default one.
    */
   synchronized void overrideCacheFile(File newCacheFile) {
-    if (!newCacheFile.exists()) {
-      logger.debug("Cache file doesn't exists. File: {}", newCacheFile);
+    if (!FileUtil.exists(newCacheFile)) {
+      logger.debug("Cache file doesn't exist. File: {}", newCacheFile);
     }
     if (onlyOwnerPermissions) {
       FileUtil.handleWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
@@ -141,14 +137,18 @@ class FileCacheManager {
     }
     if (!cacheDir.exists()) {
       try {
-        Files.createDirectories(
-            cacheDir.toPath(),
-            PosixFilePermissions.asFileAttribute(
-                Stream.of(
-                        PosixFilePermission.OWNER_READ,
-                        PosixFilePermission.OWNER_WRITE,
-                        PosixFilePermission.OWNER_EXECUTE)
-                    .collect(Collectors.toSet())));
+        if (!isWindows() && onlyOwnerPermissions) {
+          Files.createDirectories(
+              cacheDir.toPath(),
+              PosixFilePermissions.asFileAttribute(
+                  Stream.of(
+                          PosixFilePermission.OWNER_READ,
+                          PosixFilePermission.OWNER_WRITE,
+                          PosixFilePermission.OWNER_EXECUTE)
+                      .collect(Collectors.toSet())));
+        } else {
+          Files.createDirectories(cacheDir.toPath());
+        }
       } catch (IOException e) {
         logger.info(
             "Failed to create the cache directory: {}. Ignored. {}",
@@ -264,8 +264,8 @@ class FileCacheManager {
   /** Reads the cache file. */
   synchronized JsonNode readCacheFile() {
     try {
-      if (!cacheFile.exists()) {
-        logger.debug("Cache file doesn't exists. File: {}", cacheFile);
+      if (!FileUtil.exists(cacheFile)) {
+        logger.debug("Cache file doesn't exist. File: {}", cacheFile);
         return null;
       }
 
@@ -373,8 +373,8 @@ class FileCacheManager {
    * @return epoch time in ms
    */
   private static synchronized long fileCreationTime(File targetFile) {
-    if (!targetFile.exists()) {
-      logger.debug("File not exists. File: {}", targetFile);
+    if (!FileUtil.exists(targetFile)) {
+      logger.debug("File does not exist. File: {}", targetFile);
       return -1;
     }
     try {
