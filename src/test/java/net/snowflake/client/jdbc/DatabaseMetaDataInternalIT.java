@@ -220,12 +220,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals(3, getSizeOfResultSet(resultSet));
     // resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
 
-    // TODO: Investigate expected behaviour
-    /*SQLException e =
-        assertThrows(
-            SQLException.class,
-            () -> databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%"));
-    assertEquals(2003, e.getErrorCode());*/
+    resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
+    assertEquals(0, getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
