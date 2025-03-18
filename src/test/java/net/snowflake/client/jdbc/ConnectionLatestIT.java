@@ -611,9 +611,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           "Communication error",
           e.getErrorCode(),
           anyOf(
-                equalTo(INVALID_CONNECTION_INFO_CODE),
-                equalTo(BAD_REQUEST_GS_CODE),
-                equalTo(NETWORK_ERROR_CODE)));
+              equalTo(INVALID_CONNECTION_INFO_CODE),
+              equalTo(BAD_REQUEST_GS_CODE),
+              equalTo(NETWORK_ERROR_CODE)));
 
       // since it returns normal response,
       // the telemetry does not create new event
