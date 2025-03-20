@@ -65,7 +65,8 @@ public class DataframeAstTest {
               ResultSet.CLOSE_CURSORS_AT_COMMIT);
       stmt.executeDataframeAst(ast);
     } catch (Exception e) {
-      // do nothing, let it terminate early
+      // do nothing
+      // the remaining part is not related to this feature, let it terminate early.
     }
     HttpPost result = captor.getValue();
     ObjectMapper mapper = new ObjectMapper();
