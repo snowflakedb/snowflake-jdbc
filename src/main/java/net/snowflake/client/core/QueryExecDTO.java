@@ -90,11 +90,6 @@ public class QueryExecDTO {
   }
 
   @SnowflakeJdbcInternalApi
-  public String getDataframeAst() {
-    return this.dataframeAst;
-  }
-
-  @SnowflakeJdbcInternalApi
   public void setDataframeAst(String dataframeAst) {
     this.dataframeAst = dataframeAst;
   }
