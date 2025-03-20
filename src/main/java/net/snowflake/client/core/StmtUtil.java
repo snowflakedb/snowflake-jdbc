@@ -326,7 +326,6 @@ public class StmtUtil {
         QueryExecDTO sqlJsonBody =
             new QueryExecDTO(
                 stmtInput.sql,
-                stmtInput.dataframeAst,
                 stmtInput.describeOnly,
                 stmtInput.sequenceId,
                 stmtInput.bindValues,
@@ -335,7 +334,8 @@ public class StmtUtil {
                 stmtInput.queryContextDTO,
                 stmtInput.querySubmissionTime,
                 stmtInput.describeOnly || stmtInput.internal,
-                stmtInput.asyncExec);
+                stmtInput.asyncExec,
+                stmtInput.dataframeAst);
 
         if (!stmtInput.describeOnly) {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);

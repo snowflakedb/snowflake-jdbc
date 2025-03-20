@@ -43,7 +43,6 @@ public class QueryExecDTO {
       boolean asyncExec) {
     this(
         sqlText,
-        null,
         describeOnly,
         sequenceId,
         bindings,
@@ -52,13 +51,13 @@ public class QueryExecDTO {
         queryContext,
         querySubmissionTime,
         internal,
-        asyncExec);
+        asyncExec,
+        null);
   }
 
   @SnowflakeJdbcInternalApi
   public QueryExecDTO(
       String sqlText,
-      String dataframeAst,
       boolean describeOnly,
       Integer sequenceId,
       Map<String, ParameterBindingDTO> bindings,
@@ -67,7 +66,8 @@ public class QueryExecDTO {
       QueryContextDTO queryContext,
       long querySubmissionTime,
       boolean internal,
-      boolean asyncExec) {
+      boolean asyncExec,
+      String dataframeAst) {
     this.sqlText = sqlText;
     this.dataframeAst = dataframeAst;
     this.describeOnly = describeOnly;
