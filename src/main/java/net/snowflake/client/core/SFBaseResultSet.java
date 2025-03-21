@@ -26,8 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.jdbc.ArrowBatches;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -134,6 +136,10 @@ public abstract class SFBaseResultSet {
 
   public SFBaseSession getSession() {
     return this.session;
+  }
+
+  public ArrowBatches getArrowBatches() throws SnowflakeLoggedFeatureNotSupportedException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   // default implementation
