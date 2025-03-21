@@ -1,6 +1,6 @@
 package net.snowflake.client.config;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,8 +55,6 @@ public class SFPermissionsTest {
     Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
     Boolean result =
         SFClientConfigParser.checkGroupOthersWritePermissions(configFilePath.toString());
-    if (isSucceed != result) {
-      fail("testLogDirectoryPermissions failed. Expected " + isSucceed);
-    }
+    assertEquals(isSucceed, result);
   }
 }
