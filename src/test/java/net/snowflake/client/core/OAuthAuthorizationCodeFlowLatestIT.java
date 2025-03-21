@@ -28,6 +28,10 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/authorization_code";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/successful_flow.json";
+  private static final String SUCCESSFUL_DPOP_FLOW_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/successful_dpop_flow.json";
+  private static final String DPOP_NONCE_ERROR_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/dpop_nonce_error_flow.json";
   private static final String BROWSER_TIMEOUT_SCENARIO_MAPPING =
       SCENARIOS_BASE_DIR + "/browser_timeout_authorization_error.json";
   private static final String INVALID_SCOPE_SCENARIO_MAPPING =
@@ -49,11 +53,41 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
       new OAuthAuthorizationCodeAccessTokenProvider(
           wiremockProxyRequestBrowserHandler, new MockStateProvider(), 30);
 
+  public OAuthAuthorizationCodeFlowLatestIT() throws SFException {}
+
   @Test
   public void successfulFlowScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8009/snowflake/oauth-redirect", null, null);
+
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
+
+    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertEquals("access-token-123", accessToken);
+  }
+
+  @Test
+  public void successfulFlowDPoPScenario() throws SFException {
+    importMappingFromResources(SUCCESSFUL_DPOP_FLOW_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput =
+        createLoginInputStubWithDPoPEnabled(
+            "http://localhost:8012/snowflake/oauth-redirect", null, null);
+
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
+
+    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertEquals("access-token-123", accessToken);
+  }
+
+  @Test
+  public void successfulFlowDPoPScenarioWithNonce() throws SFException {
+    importMappingFromResources(DPOP_NONCE_ERROR_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput =
+        createLoginInputStubWithDPoPEnabled(
+            "http://localhost:8013/snowflake/oauth-redirect", null, null);
 
     TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
     String accessToken = tokenResponse.getAccessToken();
@@ -79,7 +113,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void browserTimeoutFlowScenario() {
+  public void browserTimeoutFlowScenario() throws SFException {
     importMappingFromResources(BROWSER_TIMEOUT_SCENARIO_MAPPING);
     SFLoginInput loginInput =
         createLoginInputStub("http://localhost:8004/snowflake/oauth-redirect", null, null);
@@ -144,6 +178,14 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
 
+    return loginInputStub;
+  }
+
+  private SFLoginInput createLoginInputStubWithDPoPEnabled(
+      String redirectUri, String authorizationUrl, String tokenRequestUrl) {
+    SFLoginInput loginInputStub =
+        createLoginInputStub(redirectUri, authorizationUrl, tokenRequestUrl);
+    loginInputStub.setDPoPEnabled(true);
     return loginInputStub;
   }
 

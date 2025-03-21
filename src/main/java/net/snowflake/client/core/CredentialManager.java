@@ -124,6 +124,22 @@ public class CredentialManager {
             loginInput, host, loginInput.getUserName(), CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 
+  /**
+   * Reuse the cached OAuth DPoP public kley stored locally
+   *
+   * @param loginInput login input to attach refresh token
+   */
+  static void fillCachedDPoPPublicKey(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Looking for cached DPoP public key for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .fillCachedCredential(
+            loginInput, host, loginInput.getUserName(), CachedCredentialType.DPOP_PUBLIC_KEY);
+  }
+
   /** Reuse the cached token stored locally */
   synchronized void fillCachedCredential(
       SFLoginInput loginInput, String host, String username, CachedCredentialType credType)
@@ -167,6 +183,9 @@ public class CredentialManager {
         break;
       case OAUTH_REFRESH_TOKEN:
         loginInput.setOauthRefreshToken(cred);
+        break;
+      case DPOP_PUBLIC_KEY:
+        loginInput.setDPoPPublicKeyBase64(cred);
         break;
       default:
         throw new SFException(
@@ -238,6 +257,25 @@ public class CredentialManager {
             CachedCredentialType.OAUTH_REFRESH_TOKEN);
   }
 
+  /**
+   * Store OAuth DPoP Public Key
+   *
+   * @param loginInput loginInput to denote to the cache
+   */
+  static void writeDPoPPublicKey(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    logger.debug(
+        "Caching DPoP public key in a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
+    getInstance()
+        .writeTemporaryCredential(
+            host,
+            loginInput.getUserName(),
+            loginInput.getDPoPPublicKeyBase64(),
+            CachedCredentialType.DPOP_PUBLIC_KEY);
+  }
+
   /** Store the temporary credential */
   synchronized void writeTemporaryCredential(
       String host, String user, String cred, CachedCredentialType credType) {
@@ -279,8 +317,26 @@ public class CredentialManager {
   /** Delete the Oauth access token cache */
   static void deleteOAuthAccessTokenCache(String host, String user) {
     logger.debug(
-        "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
+        "Removing cached oauth access token from a secure storage for user: {}, host: {}",
+        user,
+        host);
     getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_ACCESS_TOKEN);
+  }
+
+  /** Delete the Oauth refresh token cache */
+  static void deleteOAuthRefreshTokenCache(String host, String user) {
+    logger.debug(
+        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
+        user,
+        host);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN);
+  }
+
+  /** Delete the Oauth access token cache */
+  static void deleteDPoPPublicKeyCache(String host, String user) {
+    logger.debug(
+        "Removing cached DPoP public key from a secure storage for user: {}, host: {}", user, host);
+    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.DPOP_PUBLIC_KEY);
   }
 
   /** Delete the OAuth access token cache */
@@ -295,13 +351,10 @@ public class CredentialManager {
     deleteOAuthRefreshTokenCache(host, loginInput.getUserName());
   }
 
-  /** Delete the Oauth refresh token cache */
-  static void deleteOAuthRefreshTokenCache(String host, String user) {
-    logger.debug(
-        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
-        user,
-        host);
-    getInstance().deleteTemporaryCredential(host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN);
+  /** Delete the DPoP refresh token cache */
+  static void deleteDPoPPublicKeyCache(SFLoginInput loginInput) throws SFException {
+    String host = getHostForOAuthCacheKey(loginInput);
+    deleteDPoPPublicKeyCache(host, loginInput.getUserName());
   }
 
   /**

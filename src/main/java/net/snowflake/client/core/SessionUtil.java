@@ -28,6 +28,7 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.DPoPUtil;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
@@ -329,7 +330,7 @@ public class SessionUtil {
 
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
-    readCachedTokensIfPossible(loginInput);
+    readCachedCredentialsIfPossible(loginInput);
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -403,6 +404,7 @@ public class SessionUtil {
     loginInput.setToken(tokenResponse.getAccessToken());
     loginInput.setOauthAccessToken(tokenResponse.getAccessToken());
     loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
+    loginInput.setDPoPPublicKeyBase64(accessTokenProvider.getDPoPPublicKeyBase64());
   }
 
   private static void refreshOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
@@ -437,12 +439,13 @@ public class SessionUtil {
     }
   }
 
-  private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
+  private static void readCachedCredentialsIfPossible(SFLoginInput loginInput) throws SFException {
     if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
         CredentialManager.fillCachedOAuthAccessToken(loginInput);
         CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+        CredentialManager.fillCachedDPoPPublicKey(loginInput);
       }
 
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
@@ -768,6 +771,10 @@ public class SessionUtil {
 
       postRequest.addHeader("accept", "application/json");
       postRequest.addHeader("Accept-Encoding", "");
+      if (loginInput.isDPoPEnabled()) {
+        new DPoPUtil(loginInput.getDPoPPublicKeyBase64())
+            .addDPoPProofHeaderToRequest(postRequest, null);
+      }
 
       /*
        * HttpClient should take authorization header from char[] instead of
@@ -896,11 +903,13 @@ public class SessionUtil {
           logger.debug("OAuth Access Token Invalid: {}", errorCode);
           loginInput.setOauthAccessToken(null);
           CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+          CredentialManager.deleteDPoPPublicKeyCache(loginInput);
         }
 
         if (errorCode == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
           loginInput.setOauthAccessToken(null);
           CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+          CredentialManager.deleteDPoPPublicKeyCache(loginInput);
 
           logger.debug("OAuth Access Token Expired: {}", errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
@@ -1052,6 +1061,9 @@ public class SessionUtil {
       }
       if (loginInput.getOauthRefreshToken() != null) {
         CredentialManager.writeOAuthRefreshToken(loginInput);
+      }
+      if (loginInput.getDPoPPublicKeyBase64() != null && loginInput.isDPoPEnabled()) {
+        CredentialManager.writeDPoPPublicKey(loginInput);
       }
     }
 
