@@ -361,6 +361,7 @@ public class TelemetryClient implements Telemetry {
                 ? HttpUtil.executeGeneralRequest(
                     post,
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
+                    0,
                     (int) HttpUtil.getSocketTimeout().toMillis(),
                     0,
                     this.httpClient)
