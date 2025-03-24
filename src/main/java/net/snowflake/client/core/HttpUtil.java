@@ -601,6 +601,7 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
    * @param retryCount retry count for the request
    * @param httpClient client object used to communicate with other machine
@@ -611,6 +612,7 @@ public class HttpUtil {
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
       int socketTimeout,
       int retryCount,
       CloseableHttpClient httpClient)
@@ -618,7 +620,7 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
-        0,
+        authTimeout,
         socketTimeout,
         retryCount,
         0, // no inject socket timeout
