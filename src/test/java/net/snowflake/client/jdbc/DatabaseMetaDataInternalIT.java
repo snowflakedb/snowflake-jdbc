@@ -1,11 +1,11 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -13,24 +13,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;
   private DatabaseMetaData databaseMetaData;
   private ResultSet resultSet;
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection con = getConnection()) {
       initMetaData(con);
@@ -59,14 +58,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       st.execute("create or replace database JDBC_DB2");
       st.execute("create or replace schema JDBC_SCHEMA21");
       st.execute("create or replace table JDBC_TBL211(colA string)");
-      st.execute("create or replace table JDBC_BIN(bin1 binary, bin2 binary(100))");
+      st.execute("create or replace table JDBC_BIN(bin1 binary(8388608), bin2 binary(100))");
 
       //    st.execute("create or replace table JDBC_TBL211(colA string(25) NOT NULL DEFAULT
       // 'defstring')");
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection con = getConnection()) {
       endMetaData(con);
@@ -81,7 +80,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetColumn() throws SQLException {
     String getAllColumnsCount = "select count(*) from db.information_schema.columns";
     connection = getConnection();
@@ -111,7 +111,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN1");
     resultSet.next();
-    assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
+    assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
     assertEquals(1, getSizeOfResultSet(resultSet) + 1);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN2");
@@ -164,7 +164,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctions() throws SQLException {
     connection = getConnection();
     statement = connection.createStatement();
@@ -187,8 +187,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // test each column return the right value
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
-    DatabaseMetaDataIT.verifyResultSetMetaDataColumns(
-        resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
+    verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
     resultSet.next();
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -220,11 +219,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getFunctions(null, "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
     // resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
-    try {
-      resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
-    } catch (SQLException e) {
-      assertEquals(2003, e.getErrorCode());
-    }
+
+    resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
+    assertEquals(0, getSizeOfResultSet(resultSet));
+
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA1_", "_DBCFUNCTEST11_");
@@ -240,7 +238,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetSchema() throws SQLException {
     String getSchemaCount = "select count(*) from db.information_schema.schemata";
     connection = getConnection();
@@ -289,9 +288,9 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
    * getTables() function Author: Andong Zhan Created on 09/28/2018
    */
   @Test
-  @Ignore // SNOW-85084 detected this is a flaky test, so ignore it here.
+  @Disabled // SNOW-85084 detected this is a flaky test, so ignore it here.
   // We have other regression tests to cover it
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablesReusingCachedResults() throws SQLException {
     Connection snowflakeConnection = getSnowflakeAdminConnection();
     Statement snowflake = snowflakeConnection.createStatement();
@@ -448,7 +447,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled // TODO: SNOW-1805299
+  @DontRunOnGithubActions
   public void testGetTables() throws SQLException {
     String getAllTable = "select count(*) from db.information_schema.tables";
     String getAllBaseTable =
@@ -464,12 +464,12 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
       databaseMetaData = connection.getMetaData();
 
-      try {
-        ResultSet resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
-      } catch (SQLException e) {
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () -> databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"}));
+      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
+      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"SYSTEM_TABLE"})) {
@@ -578,7 +578,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

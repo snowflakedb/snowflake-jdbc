@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemPropertyToBooleanValue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -14,9 +15,11 @@ import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpStorageOptions;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
@@ -58,10 +61,10 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
@@ -71,11 +74,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
-/**
- * Encapsulates the GCS Storage client and all GCS operations and logic
- *
- * @author ppaulus
- */
+/** Encapsulates the GCS Storage client and all GCS operations and logic */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @SnowflakeJdbcInternalApi
   public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
@@ -106,6 +105,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   public static SnowflakeGCSClient createSnowflakeGCSClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
+    logger.debug(
+        "Initializing Snowflake GCS client with encryption: {}", encMat != null ? "true" : "false");
     SnowflakeGCSClient sfGcsClient = new SnowflakeGCSClient();
     sfGcsClient.setupGCSClient(stage, encMat, session);
 
@@ -165,6 +166,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
+    logger.debug("Renewing the Snowflake GCS client");
     stageInfo.setCredentials(stageCredentials);
     setupGCSClient(stageInfo, encMat, session);
   }
@@ -179,8 +181,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *
    * @param remoteStorageLocation bucket name
    * @param prefix Path
-   * @return
-   * @throws StorageProviderException
+   * @return a collection of storage summary objects
+   * @throws StorageProviderException cloud storage provider error
    */
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
@@ -249,14 +251,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    int retryCount = 0;
     String localFilePath = localLocation + localFileSep + destFileName;
+    logger.debug(
+        "Staring download of file from GCS stage path: {} to {}", stageFilePath, localFilePath);
+    int retryCount = 0;
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     File localFile = new File(localFilePath);
-
     do {
       try {
         String key = null;
         String iv = null;
+        long downloadMillis = 0;
         if (!Strings.isNullOrEmpty(presignedUrl)) {
           logger.debug("Starting download with presigned URL", false);
           URIBuilder uriBuilder = new URIBuilder(presignedUrl);
@@ -269,7 +275,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           CloseableHttpClient httpClient =
               HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
 
-          // Put the file on storage using the presigned url
+          // Get the file on storage using the presigned url
           HttpResponse response =
               RestRequest.execute(
                   httpClient,
@@ -302,19 +308,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.close();
               bodyStream.close();
               if (isEncrypting()) {
-                for (Header header : response.getAllHeaders()) {
-                  if (header
-                      .getName()
-                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
-                    AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue(), queryId);
-
-                    key = encryptionData.getKey();
-                    iv = encryptionData.getValue();
-                    break;
-                  }
-                }
+                Map<String, String> userDefinedHeaders =
+                    createCaseInsensitiveMap(response.getAllHeaders());
+                AbstractMap.SimpleEntry<String, String> encryptionData =
+                    parseEncryptionData(
+                        userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
+                        queryId);
+                key = encryptionData.getKey();
+                iv = encryptionData.getValue();
               }
+              stopwatch.stop();
+              downloadMillis = stopwatch.elapsedMillis();
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
@@ -340,12 +344,15 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Starting download without presigned URL", false);
           blob.downloadTo(
               localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
+          stopwatch.stop();
+          downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
-          Map<String, String> userDefinedMetadata = blob.getMetadata();
+          Map<String, String> userDefinedMetadata =
+              SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
           if (isEncrypting()) {
-            if (userDefinedMetadata != null) {
+            if (!userDefinedMetadata.isEmpty()) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
                   parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
@@ -370,7 +377,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Decrypt file
           try {
+            stopwatch.start();
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            stopwatch.stop();
+            long decryptMillis = stopwatch.elapsedMillis();
+            logger.info(
+                "GCS file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+                stageFilePath,
+                localFile.getAbsolutePath(),
+                downloadMillis + decryptMillis,
+                downloadMillis,
+                decryptMillis,
+                retryCount);
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
             throw new SnowflakeSQLLoggedException(
@@ -380,6 +398,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 SqlState.INTERNAL_ERROR,
                 "Cannot decrypt file");
           }
+        } else {
+          logger.info(
+              "GCS file {} downloaded to {}. It took {} ms with {} retries",
+              stageFilePath,
+              localFile.getAbsolutePath(),
+              downloadMillis,
+              retryCount);
         }
         return;
       } catch (Exception ex) {
@@ -421,8 +446,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    logger.debug("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
     int retryCount = 0;
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     InputStream inputStream = null;
+    long downloadMillis = 0;
     do {
       try {
         String key = null;
@@ -465,19 +494,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               inputStream = response.getEntity().getContent();
 
               if (isEncrypting()) {
-                for (Header header : response.getAllHeaders()) {
-                  if (header
-                      .getName()
-                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
-                    AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue(), queryId);
-
-                    key = encryptionData.getKey();
-                    iv = encryptionData.getValue();
-                    break;
-                  }
-                }
+                Map<String, String> userDefinedHeaders =
+                    createCaseInsensitiveMap(response.getAllHeaders());
+                AbstractMap.SimpleEntry<String, String> encryptionData =
+                    parseEncryptionData(
+                        userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
+                        queryId);
+                key = encryptionData.getKey();
+                iv = encryptionData.getValue();
               }
+              stopwatch.stop();
+              downloadMillis = stopwatch.elapsedMillis();
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
@@ -502,16 +529,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           inputStream = Channels.newInputStream(blob.reader());
           if (isEncrypting()) {
             // Get the user-defined BLOB metadata
-            Map<String, String> userDefinedMetadata = blob.getMetadata();
+            Map<String, String> userDefinedMetadata =
+                SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
             AbstractMap.SimpleEntry<String, String> encryptionData =
                 parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
             key = encryptionData.getKey();
             iv = encryptionData.getValue();
           }
+          stopwatch.stop();
+          downloadMillis = stopwatch.elapsedMillis();
         }
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLException(
                 queryId,
@@ -523,7 +554,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // Decrypt file
           try {
             if (inputStream != null) {
+
               inputStream = EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
+              stopwatch.stop();
+              long decryptMillis = stopwatch.elapsedMillis();
+              logger.info(
+                  "GCS file {} downloaded to stream. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+                  stageFilePath,
+                  downloadMillis + decryptMillis,
+                  downloadMillis,
+                  decryptMillis,
+                  retryCount);
               return inputStream;
             }
           } catch (Exception ex) {
@@ -535,7 +576,15 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 SqlState.INTERNAL_ERROR,
                 "Cannot decrypt file");
           }
+        } else {
+          logger.info(
+              "GCS file {} downloaded to stream. Download took {} ms with {} retries",
+              stageFilePath,
+              downloadMillis,
+              retryCount);
         }
+
+        return inputStream;
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
         handleStorageException(ex, ++retryCount, "download", session, command, queryId);
@@ -584,6 +633,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    logger.info(
+        StorageHelper.getStartUploadLog(
+            "GCS", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
 
@@ -601,7 +653,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     if (!(meta instanceof CommonObjectMetadata)) {
       throw new IllegalArgumentException("Unexpected metadata object type");
     }
-
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     if (Strings.isNullOrEmpty(presignedUrl) || "null".equalsIgnoreCase(presignedUrl)) {
       logger.debug("Starting upload with downscoped token");
       uploadWithDownScopedToken(
@@ -611,7 +664,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           meta.getUserMetadata(),
           uploadStreamInfo.left,
           queryId);
-      logger.debug("Upload successfully with downscoped token");
+      logger.debug("Upload successful with downscoped token");
     } else {
       logger.debug("Starting upload with presigned url");
 
@@ -625,6 +678,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           ocspModeAndProxyKey,
           queryId);
       logger.debug("Upload successfully with presigned url");
+    }
+    stopwatch.stop();
+
+    if (uploadFromStream) {
+      logger.info(
+          "Uploaded data from input stream to GCS location: {}. It took {} ms",
+          remoteStorageLocation,
+          stopwatch.elapsedMillis());
+    } else {
+      logger.info(
+          "Uploaded file {} to GCS location: {}. It took {} ms",
+          srcFile.getAbsolutePath(),
+          remoteStorageLocation,
+          stopwatch.elapsedMillis());
     }
 
     // close any open streams in the "toClose" list and return
@@ -667,6 +734,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    logger.info(
+        StorageHelper.getStartUploadLog(
+            "GCS", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
 
@@ -685,6 +755,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       throw new IllegalArgumentException("Unexpected metadata object type");
     }
 
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     if (!Strings.isNullOrEmpty(presignedUrl)) {
       logger.debug("Starting upload with downscope token", false);
       uploadWithPresignedUrl(
@@ -696,7 +768,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           presignedUrl,
           session.getHttpClientKey(),
           queryId);
+      stopwatch.stop();
       logger.debug("Upload successful", false);
+      if (uploadFromStream) {
+        logger.info(
+            "Uploaded data from input stream to GCS location: {}. It took {} ms",
+            remoteStorageLocation,
+            stopwatch.elapsedMillis());
+      } else {
+        logger.info(
+            "Uploaded file {} to GCS location: {}. It took {} ms",
+            srcFile.getAbsolutePath(),
+            remoteStorageLocation,
+            stopwatch.elapsedMillis());
+      }
 
       // close any open streams in the "toClose" list and return
       for (FileInputStream is : toClose) {
@@ -720,7 +805,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             uploadStreamInfo.left,
             queryId);
 
+        stopwatch.stop();
         logger.debug("Upload successful", false);
+        if (uploadFromStream) {
+          logger.info(
+              "Uploaded data from input stream to GCS location: {}. It took {} ms",
+              remoteStorageLocation,
+              stopwatch.elapsedMillis());
+        } else {
+          logger.info(
+              "Uploaded file {} to GCS location: {}. It took {} ms",
+              srcFile.getAbsolutePath(),
+              remoteStorageLocation,
+              stopwatch.elapsedMillis());
+        }
 
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose) {
@@ -930,7 +1028,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     final InputStream stream;
     FileInputStream srcFileStream = null;
     try {
-      if (isEncrypting() && getEncryptionKeySize() < 256) {
+      if (isEncrypting() && getEncryptionKeySize() <= 256) {
         try {
           final InputStream uploadStream =
               uploadFromStream
@@ -1012,7 +1110,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
-    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+    if (getRootCause(ex) instanceof IOException) {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
@@ -1072,7 +1170,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
       }
     } else if (ex instanceof InterruptedException
-        || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
+        || getRootCause(ex) instanceof SocketTimeoutException) {
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
             queryId,
@@ -1111,14 +1209,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       StorageObjectMetadata meta,
       MatDesc matDesc,
       byte[] ivData,
-      byte[] encKeK,
+      byte[] encryptedKey,
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         GCS_ENCRYPTIONDATAPROP,
         buildEncryptionMetadataJSON(
             Base64.getEncoder().encodeToString(ivData),
-            Base64.getEncoder().encodeToString(encKeK)));
+            Base64.getEncoder().encodeToString(encryptedKey)));
     meta.setContentLength(contentLength);
   }
 
@@ -1169,7 +1267,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   /** Adds digest metadata to the StorageObjectMetadata object */
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
-    if (!SnowflakeUtil.isBlank(digest)) {
+    if (!isBlank(digest)) {
       meta.addUserMetadata("sfc-digest", digest);
     }
   }
@@ -1206,6 +1304,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (accessToken != null) {
         // We are authenticated with an oauth access token.
         StorageOptions.Builder builder = StorageOptions.newBuilder();
+        overrideHost(stage, builder);
+
         if (areDisabledGcsDefaultCredentials(session)) {
           logger.debug(
               "Adding explicit credentials to avoid default credential lookup by the GCS client");
@@ -1223,7 +1323,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 .getService();
       } else {
         // Use anonymous authentication.
-        this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
+        HttpStorageOptions.Builder builder =
+            HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
+        overrideHost(stage, builder);
+        this.gcsClient = builder.build().getService();
       }
 
       if (encMat != null) {
@@ -1244,10 +1347,22 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
   }
 
+  private static void overrideHost(StageInfo stage, StorageOptions.Builder builder) {
+    stage
+        .gcsCustomEndpoint()
+        .ifPresent(
+            host -> {
+              if (host.startsWith("https://")) {
+                builder.setHost(host);
+              } else {
+                builder.setHost("https://" + host);
+              }
+            });
+  }
+
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
-        || SnowflakeUtil.convertSystemPropertyToBooleanValue(
-            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
+        || convertSystemPropertyToBooleanValue(DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, true);
   }
 
   private static boolean isSuccessStatusCode(int code) {
@@ -1265,13 +1380,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);

@@ -1,11 +1,9 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,6 +11,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -27,12 +26,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
@@ -46,7 +45,8 @@ import org.apache.http.entity.StringEntity;
  * user can type IdP username and password. 4. Return token and proof key to the GS to gain access.
  */
 public class SessionUtilExternalBrowser {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
 
   public interface AuthExternalBrowserHandlers {
     // build a HTTP post object
@@ -59,7 +59,8 @@ public class SessionUtilExternalBrowser {
     void output(String msg);
   }
 
-  static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
+  @SnowflakeJdbcInternalApi
+  public static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers {
     @Override
     public HttpPost build(URI uri) {
       return new HttpPost(uri);
@@ -67,24 +68,22 @@ public class SessionUtilExternalBrowser {
 
     @Override
     public void openBrowser(String ssoUrl) throws SFException {
+      if (!URLUtil.isValidURL(ssoUrl)) {
+        throw new SFException(ErrorCode.INVALID_CONNECTION_URL, "Invalid SSOUrl found - " + ssoUrl);
+      }
       try {
         // start web browser
-        if (!URLUtil.isValidURL(ssoUrl)) {
-          throw new SFException(
-              ErrorCode.INVALID_CONNECTION_URL, "Invalid SSOUrl found - " + ssoUrl);
-        }
-        if (java.awt.Desktop.isDesktopSupported()) {
-          URI uri = new URI(ssoUrl);
-          java.awt.Desktop.getDesktop().browse(uri);
+        Runtime runtime = Runtime.getRuntime();
+        Constants.OS os = Constants.getOS();
+        if (Desktop.isDesktopSupported()
+            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+          Desktop.getDesktop().browse(new URI(ssoUrl));
+        } else if (os == Constants.OS.MAC) {
+          runtime.exec(new String[] {"open", ssoUrl});
+        } else if (os == Constants.OS.WINDOWS) {
+          runtime.exec(new String[] {"rundll32", "url.dll,FileProtocolHandler", ssoUrl});
         } else {
-          Runtime runtime = Runtime.getRuntime();
-          Constants.OS os = Constants.getOS();
-          if (os == Constants.OS.MAC) {
-            runtime.exec("open " + ssoUrl);
-          } else {
-            // linux?
-            runtime.exec("xdg-open " + ssoUrl);
-          }
+          runtime.exec(new String[] {"xdg-open", ssoUrl});
         }
       } catch (URISyntaxException | IOException ex) {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
@@ -173,7 +172,6 @@ public class SessionUtilExternalBrowser {
 
       HttpPost postRequest = this.handlers.build(fedUrlUri);
 
-      ClientAuthnDTO authnData = new ClientAuthnDTO();
       Map<String, Object> data = new HashMap<>();
 
       data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator);
@@ -183,7 +181,7 @@ public class SessionUtilExternalBrowser {
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
 
-      authnData.setData(data);
+      ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request
@@ -202,14 +200,14 @@ public class SessionUtilExternalBrowser {
               0,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("authenticator-request response: {}", theString);
+      logger.debug("Authenticator-request response: {}", theString);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
         String errorCode = jsonNode.path("code").asText();
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
@@ -240,7 +238,7 @@ public class SessionUtilExternalBrowser {
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
-      logger.debug("console login url: {}", consoleLoginUrl);
+      logger.debug("Console login url: {}", consoleLoginUrl);
 
       return consoleLoginUrl;
     } catch (Exception ex) {
@@ -255,6 +253,10 @@ public class SessionUtilExternalBrowser {
     return Base64.getEncoder().encodeToString(randomness);
   }
 
+  private int getBrowserResponseTimeout() {
+    return (int) loginInput.getBrowserResponseTimeout().toMillis();
+  }
+
   /**
    * Authenticate
    *
@@ -264,9 +266,10 @@ public class SessionUtilExternalBrowser {
   void authenticate() throws SFException, SnowflakeSQLException {
     ServerSocket ssocket = this.getServerSocket();
     try {
+      ssocket.setSoTimeout(getBrowserResponseTimeout());
       // main procedure
       int port = this.getLocalPort(ssocket);
-      logger.debug("Listening localhost:{}", port);
+      logger.debug("Listening localhost: {}", port);
 
       if (loginInput.getDisableConsoleLogin()) {
         // Access GS to get SSO URL
@@ -304,6 +307,13 @@ public class SessionUtilExternalBrowser {
           socket.close();
         }
       }
+    } catch (SocketTimeoutException e) {
+      throw new SFException(
+          e,
+          ErrorCode.NETWORK_ERROR,
+          "External browser authentication failed within timeout of "
+              + getBrowserResponseTimeout()
+              + " milliseconds");
     } catch (IOException ex) {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     } finally {

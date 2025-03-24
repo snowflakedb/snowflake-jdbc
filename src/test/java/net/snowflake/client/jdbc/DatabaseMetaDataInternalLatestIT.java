@@ -2,8 +2,9 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
 import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -17,13 +18,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -31,17 +31,17 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     try (Connection con = getConnection()) {
       initMetaData(con);
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     try (Connection con = getConnection()) {
       endMetaData(con);
@@ -49,7 +49,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -79,7 +79,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctionColumns() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -91,7 +91,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
               + "sharedCol decimal)");
       statement.execute(
           "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 "
-              + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
+              + "() RETURNS TABLE(colA string(16777216), colB decimal, bin2 binary(8388608), sharedCol decimal) COMMENT= 'returns "
               + "table of 4 columns'"
               + " as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA, JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, "
               + "JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1"
@@ -173,12 +173,17 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -196,9 +201,13 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -213,12 +222,17 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -236,9 +250,13 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         // setting catalog to % will result in 0 columns. % does not apply for catalog, only for
         // other
         // params
@@ -251,7 +269,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   /** Tests that calling getTables() concurrently doesn't cause data race condition. */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablesRaceCondition()
       throws SQLException, ExecutionException, InterruptedException {
     try (Connection connection = getConnection()) {

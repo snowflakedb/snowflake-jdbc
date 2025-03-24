@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.ClientConfiguration;
@@ -10,13 +6,19 @@ import com.google.common.base.Strings;
 import java.util.Properties;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpProtocol;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 
 @SnowflakeJdbcInternalApi
 public class S3HttpUtil {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
+
   /**
    * A static function to set S3 proxy params when there is a valid session
    *
@@ -30,11 +32,28 @@ public class S3HttpUtil {
       clientConfig.setProxyHost(key.getProxyHost());
       clientConfig.setProxyPort(key.getProxyPort());
       clientConfig.setNonProxyHosts(key.getNonProxyHosts());
+      String logMessage =
+          "Setting S3 proxy. Host: "
+              + key.getProxyHost()
+              + ", port: "
+              + key.getProxyPort()
+              + ", protocol: "
+              + key.getProxyHttpProtocol()
+              + ", non-proxy hosts: "
+              + key.getNonProxyHosts();
       if (!Strings.isNullOrEmpty(key.getProxyUser())
           && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+        logMessage +=
+            ", user: "
+                + key.getProxyUser()
+                + ", password is "
+                + SFLoggerUtil.isVariableProvided(key.getProxyPassword());
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
+      logger.debug(logMessage);
+    } else {
+      logger.debug("Omitting S3 proxy setup");
     }
   }
 
@@ -44,7 +63,7 @@ public class S3HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when an error is encountered
    */
   public static void setSessionlessProxyForS3(
       Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
@@ -84,11 +103,26 @@ public class S3HttpUtil {
         clientConfig.setProxyPort(proxyPort);
         clientConfig.setNonProxyHosts(nonProxyHosts);
         clientConfig.setProxyProtocol(protocolEnum);
+        String logMessage =
+            "Setting sessionless S3 proxy. Host: "
+                + proxyHost
+                + ", port: "
+                + proxyPort
+                + ", non-proxy hosts: "
+                + nonProxyHosts
+                + ", protocol: "
+                + proxyProtocol;
         if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
+          logMessage += ", user: " + proxyUser + " with password provided";
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
         }
+        logger.debug(logMessage);
+      } else {
+        logger.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
       }
+    } else {
+      logger.debug("Omitting sessionless S3 proxy setup");
     }
   }
 }

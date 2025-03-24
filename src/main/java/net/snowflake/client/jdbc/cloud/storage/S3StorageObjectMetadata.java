@@ -1,16 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 
-/**
- * Implementation of StorageObjectMetadata for S3 for remote storage object metadata.
- *
- * @author ppaulus
- */
+/** Implementation of StorageObjectMetadata for S3 for remote storage object metadata. */
 public class S3StorageObjectMetadata implements StorageObjectMetadata {
   private ObjectMetadata s3Metadata;
 
@@ -26,7 +20,7 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata {
    */
   @Override
   public Map<String, String> getUserMetadata() {
-    return this.s3Metadata.getUserMetadata();
+    return SnowflakeUtil.createCaseInsensitiveMap(this.s3Metadata.getUserMetadata());
   }
 
   /**

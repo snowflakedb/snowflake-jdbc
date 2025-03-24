@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.loader;
 
 import java.io.IOException;
@@ -13,14 +9,14 @@ import net.snowflake.client.log.SFLoggerFactory;
  * ProcessQueue.
  */
 public class PutQueue implements Runnable {
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(PutQueue.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(PutQueue.class);
 
   private final Thread _thread;
 
   private final StreamLoader _loader;
 
   public PutQueue(StreamLoader loader) {
-    LOGGER.debug("", false);
+    logger.trace("Creating new PutQueue", false);
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("PutQueueThread");
@@ -60,7 +56,7 @@ public class PutQueue implements Runnable {
         }
 
       } catch (InterruptedException | IOException ex) {
-        LOGGER.error("Exception: ", ex);
+        logger.error("Exception: ", ex);
         break;
       } finally {
 
@@ -72,7 +68,7 @@ public class PutQueue implements Runnable {
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {
-      LOGGER.error("Exception: ", ex);
+      logger.error("Exception: ", ex);
     }
   }
 }

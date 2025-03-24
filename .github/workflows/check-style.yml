@@ -7,9 +7,9 @@ on:
 jobs:
     check-style:
         name: Check Style
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Check Style
               shell: bash
               run: mvn clean validate --batch-mode --show-version -P check-style

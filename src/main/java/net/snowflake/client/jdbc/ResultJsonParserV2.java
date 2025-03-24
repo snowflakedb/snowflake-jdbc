@@ -5,11 +5,7 @@ import java.nio.ByteBuffer;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>This is the Java version of the ODBC's ResultJsonParserV2 class
- */
+/** This is the Java version of the ODBC's ResultJsonParserV2 class */
 public class ResultJsonParserV2 {
 
   private enum State {
@@ -59,6 +55,10 @@ public class ResultJsonParserV2 {
   /**
    * Check if the chunk has been parsed correctly. After calling this it is safe to acquire the
    * output data
+   *
+   * @param in byte buffer
+   * @param session SFBaseSession
+   * @throws SnowflakeSQLException if parsing fails
    */
   public void endParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
     continueParsingInternal(in, true, session);
@@ -79,6 +79,9 @@ public class ResultJsonParserV2 {
    *
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to
    *     limit)
+   * @param session SFBaseSession
+   * @return int remaining number of elements in byteBuffer
+   * @throws SnowflakeSQLException if an error is encountered during parsing
    */
   public int continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {
@@ -95,6 +98,7 @@ public class ResultJsonParserV2 {
   /**
    * @param in readOnly byteBuffer backed by an array (the data is from position to limit)
    * @param lastData If true, this signifies this is the last data in parsing
+   * @param session SFBaseSession
    * @throws SnowflakeSQLException Will be thrown if parsing the chunk data fails
    */
   private void continueParsingInternal(ByteBuffer in, boolean lastData, SFBaseSession session)

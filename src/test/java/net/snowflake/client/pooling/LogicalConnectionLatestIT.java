@@ -1,13 +1,15 @@
-/*
- * Copyright (c) 2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.pooling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.sql.CallableStatement;
 import java.sql.Clob;
@@ -21,14 +23,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class LogicalConnectionLatestIT extends BaseJDBCTest {
   Map<String, String> properties = getConnectionParameters();
 
@@ -76,12 +78,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       assertTrue(logicalConnection.isValid(10));
-      try {
-        assertTrue(logicalConnection.isValid(-10));
-        fail("must fail");
-      } catch (SQLException ex) {
-        // nop, no specific error code is provided.
-      }
+      assertThrows(SQLException.class, () -> logicalConnection.isValid(-10));
     }
     pooledConnection.close();
   }
@@ -139,18 +136,10 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       boolean canUnwrap = logicalConnection.isWrapperFor(SnowflakeConnectionV1.class);
       assertTrue(canUnwrap);
-      if (canUnwrap) {
-        SnowflakeConnectionV1 sfconnection = logicalConnection.unwrap(SnowflakeConnectionV1.class);
-        sfconnection.createStatement();
-      } else {
-        fail("should be able to unwrap");
-      }
-      try {
-        logicalConnection.unwrap(SnowflakeDriver.class);
-        fail("should fail to cast");
-      } catch (SQLException ex) {
-        // nop
-      }
+      SnowflakeConnectionV1 sfconnection = logicalConnection.unwrap(SnowflakeConnectionV1.class);
+      sfconnection.createStatement();
+
+      assertThrows(SQLException.class, () -> logicalConnection.unwrap(SnowflakeDriver.class));
     }
   }
 
@@ -368,6 +357,77 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       assertEquals("Snowflake", databaseMetaData.getDatabaseProductName());
       assertEquals(properties.get("user"), databaseMetaData.getUserName());
     }
+  }
+
+  @Test
+  public void testLogicalConnectionWhenPhysicalConnectionThrowsErrors() throws SQLException {
+    Connection connection = mock(Connection.class);
+    SnowflakePooledConnection snowflakePooledConnection = mock(SnowflakePooledConnection.class);
+    when(snowflakePooledConnection.getPhysicalConnection()).thenReturn(connection);
+    SQLException sqlException = new SQLException("mocking error");
+    when(connection.createStatement()).thenThrow(sqlException);
+    when(connection.createStatement(1, 2, 3)).thenThrow(sqlException);
+
+    when(connection.prepareStatement("mocksql")).thenThrow(sqlException);
+    when(connection.prepareCall("mocksql")).thenThrow(sqlException);
+    when(connection.prepareCall("mocksql", 1, 2, 3)).thenThrow(sqlException);
+    when(connection.nativeSQL("mocksql")).thenThrow(sqlException);
+    when(connection.getAutoCommit()).thenThrow(sqlException);
+    when(connection.getMetaData()).thenThrow(sqlException);
+    when(connection.isReadOnly()).thenThrow(sqlException);
+    when(connection.getCatalog()).thenThrow(sqlException);
+    when(connection.getTransactionIsolation()).thenThrow(sqlException);
+    when(connection.getWarnings()).thenThrow(sqlException);
+    when(connection.prepareCall("mocksql", 1, 2)).thenThrow(sqlException);
+    when(connection.getTypeMap()).thenThrow(sqlException);
+    when(connection.getHoldability()).thenThrow(sqlException);
+    when(connection.createClob()).thenThrow(sqlException);
+    when(connection.getClientInfo("mocksql")).thenThrow(sqlException);
+    when(connection.getClientInfo()).thenThrow(sqlException);
+    when(connection.createArrayOf("mock", null)).thenThrow(sqlException);
+    when(connection.getSchema()).thenThrow(sqlException);
+    when(connection.getNetworkTimeout()).thenThrow(sqlException);
+    when(connection.isWrapperFor(Connection.class)).thenThrow(sqlException);
+
+    doThrow(sqlException).when(connection).setAutoCommit(false);
+    doThrow(sqlException).when(connection).commit();
+    doThrow(sqlException).when(connection).rollback();
+    doThrow(sqlException).when(connection).setReadOnly(false);
+    doThrow(sqlException).when(connection).clearWarnings();
+    doThrow(sqlException).when(connection).setSchema(null);
+    doThrow(sqlException).when(connection).abort(null);
+    doThrow(sqlException).when(connection).setNetworkTimeout(null, 1);
+
+    LogicalConnection logicalConnection = new LogicalConnection(snowflakePooledConnection);
+
+    assertThrows(SQLException.class, logicalConnection::createStatement);
+    assertThrows(SQLException.class, () -> logicalConnection.createStatement(1, 2, 3));
+    assertThrows(SQLException.class, () -> logicalConnection.nativeSQL("mocksql"));
+    assertThrows(SQLException.class, logicalConnection::getAutoCommit);
+    assertThrows(SQLException.class, logicalConnection::getMetaData);
+    assertThrows(SQLException.class, logicalConnection::isReadOnly);
+    assertThrows(SQLException.class, logicalConnection::getCatalog);
+    assertThrows(SQLException.class, logicalConnection::getTransactionIsolation);
+    assertThrows(SQLException.class, logicalConnection::getWarnings);
+    assertThrows(SQLException.class, () -> logicalConnection.prepareCall("mocksql"));
+    assertThrows(SQLException.class, logicalConnection::getTypeMap);
+    assertThrows(SQLException.class, logicalConnection::getHoldability);
+    assertThrows(SQLException.class, logicalConnection::createClob);
+    assertThrows(SQLException.class, () -> logicalConnection.getClientInfo("mocksql"));
+    assertThrows(SQLException.class, logicalConnection::getClientInfo);
+    assertThrows(SQLException.class, () -> logicalConnection.createArrayOf("mock", null));
+    assertThrows(SQLException.class, logicalConnection::getSchema);
+    assertThrows(SQLException.class, logicalConnection::getNetworkTimeout);
+    assertThrows(SQLException.class, () -> logicalConnection.isWrapperFor(Connection.class));
+    assertThrows(SQLException.class, () -> logicalConnection.setAutoCommit(false));
+    assertThrows(SQLException.class, logicalConnection::rollback);
+    assertThrows(SQLException.class, () -> logicalConnection.setReadOnly(false));
+    assertThrows(SQLException.class, logicalConnection::clearWarnings);
+    assertThrows(SQLException.class, () -> logicalConnection.setSchema(null));
+    assertThrows(SQLException.class, () -> logicalConnection.abort(null));
+    assertThrows(SQLException.class, () -> logicalConnection.setNetworkTimeout(null, 1));
+
+    verify(snowflakePooledConnection, times(26)).fireConnectionErrorEvent(sqlException);
   }
 
   private SnowflakeConnectionPoolDataSource setProperties(

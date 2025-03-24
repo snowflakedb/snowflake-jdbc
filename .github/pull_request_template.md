@@ -13,7 +13,7 @@ SNOW-XXXXX
 
 1. What GitHub issue is this PR addressing? Make sure that there is an accompanying issue to your PR.
 
-   Fixes #NNNN 
+   Issue: #NNNN
 
 
 2. Fill out the following pre-review checklist:

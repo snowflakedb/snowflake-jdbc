@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
@@ -11,9 +8,15 @@ import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 
+/** Converter from Arrow VarBinaryVector to Binary. */
 public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter {
   private VarBinaryVector varBinaryVector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public VarBinaryToBinaryConverter(
       ValueVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.BINARY.name(), valueVector, columnIndex, context);

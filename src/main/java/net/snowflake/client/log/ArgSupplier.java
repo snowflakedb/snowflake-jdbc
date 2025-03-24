@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 /**
@@ -11,5 +8,10 @@ package net.snowflake.client.log;
  */
 @FunctionalInterface
 public interface ArgSupplier {
+  /**
+   * Get value
+   *
+   * @return Object value.
+   */
   Object get();
 }

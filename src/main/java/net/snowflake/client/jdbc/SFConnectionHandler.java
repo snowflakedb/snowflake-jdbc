@@ -17,25 +17,47 @@ import net.snowflake.client.core.SFBaseStatement;
 public interface SFConnectionHandler {
 
   /**
-   * Whether this Connection supports asynchronous queries. If yes, createAsyncResultSet may be
-   * called.
+   * @return Whether this Connection supports asynchronous queries. If yes, createAsyncResultSet may
+   *     be called.
    */
   boolean supportsAsyncQuery();
 
-  /** Initializes the SnowflakeConnection */
+  /**
+   * Initializes the SnowflakeConnection
+   *
+   * @param url url string
+   * @param info connection parameters
+   * @throws SQLException if any error is encountered
+   */
   void initializeConnection(String url, Properties info) throws SQLException;
 
-  /** Gets the SFBaseSession implementation for this connection implementation */
+  /**
+   * @return Gets the SFBaseSession implementation for this connection implementation
+   */
   SFBaseSession getSFSession();
 
-  /** Returns the SFStatementInterface implementation for this connection implementation */
+  /**
+   * @return Returns the SFStatementInterface implementation for this connection implementation
+   * @throws SQLException if any error occurs
+   */
   SFBaseStatement getSFStatement() throws SQLException;
 
-  /** Creates a result set from a query id. */
+  /**
+   * Creates a result set from a query id.
+   *
+   * @param queryID the query ID
+   * @param statement Statement object
+   * @return ResultSet
+   * @throws SQLException if any error occurs
+   */
   ResultSet createResultSet(String queryID, Statement statement) throws SQLException;
 
   /**
-   * Creates a SnowflakeResultSet from a base SFBaseResultSet for this connection implementation.
+   * @param resultSet SFBaseResultSet
+   * @param statement Statement
+   * @return Creates a SnowflakeResultSet from a base SFBaseResultSet for this connection
+   *     implementation.
+   * @throws SQLException if an error occurs
    */
   SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
@@ -43,6 +65,11 @@ public interface SFConnectionHandler {
   /**
    * Creates an asynchronous result set from a base SFBaseResultSet for this connection
    * implementation.
+   *
+   * @param resultSet SFBaseResultSet
+   * @param statement Statement
+   * @return An asynchronous result set from SFBaseResultSet
+   * @throws SQLException if an error occurs
    */
   SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
@@ -50,6 +77,9 @@ public interface SFConnectionHandler {
   /**
    * @param command The command to parse for this file transfer (e.g., PUT/GET)
    * @param statement The statement to use for this file transfer
+   * @return SFBaseFileTransferAgent
+   * @throws SQLNonTransientConnectionException if a connection error occurs
+   * @throws SnowflakeSQLException if any other exception occurs
    */
   SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;

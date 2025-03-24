@@ -1,15 +1,11 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,25 +15,39 @@ import java.sql.Time;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import java.util.stream.Stream;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Integration tests for binding variable */
-@RunWith(Theories.class)
-@Category(TestCategoryOthers.class)
-public class BindingDataIT extends AbstractDriverIT {
-  @DataPoints public static short[] shortValues = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE};
+@Tag(TestTags.OTHERS)
+public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
+  static TimeZone timeZone;
 
-  @Theory
+  @BeforeAll
+  public static void setTimeZone() {
+    timeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+  }
+
+  @AfterAll
+  public static void resetTimeZone() {
+    TimeZone.setDefault(timeZone);
+  }
+
+  @ParameterizedTest
+  @ValueSource(shorts = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE})
   public void testBindShort(short shortValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_short(c1 number)");
 
@@ -61,10 +71,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ValueSource(shorts = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE})
   public void testBindShortViaSetObject(short shortValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_short(c1 number)");
 
@@ -88,12 +98,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @DataPoints public static int[] intValues = {0, 1, -1, Integer.MAX_VALUE, Integer.MIN_VALUE};
-
-  @Theory
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE})
   public void testBindInt(int intValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_int(c1 number)");
 
@@ -118,12 +126,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @DataPoints public static byte[] byteValues = {0, 1, -1, Byte.MAX_VALUE, Byte.MIN_VALUE};
-
-  @Theory
+  @ParameterizedTest
+  @ValueSource(bytes = {0, 1, -1, Byte.MAX_VALUE, Byte.MIN_VALUE})
   public void testBindByte(byte byteValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_byte(c1 integer)");
 
@@ -149,8 +155,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Test
   public void testBindNull() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_null(id number, val " + "number)");
 
@@ -191,21 +196,23 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @DataPoints
-  public static Time[] timeValues = {
-    Time.valueOf("00:00:00"),
-    Time.valueOf("12:34:56"),
-    Time.valueOf("12:00:00"),
-    Time.valueOf("11:59:59"),
-    Time.valueOf("15:30:00"),
-    Time.valueOf("13:01:01"),
-    Time.valueOf("12:00:00"),
-  };
+  static class TimeProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of(Time.valueOf("00:00:00")),
+          Arguments.of(Time.valueOf("12:34:56")),
+          Arguments.of(Time.valueOf("12:00:00")),
+          Arguments.of(Time.valueOf("11:59:59")),
+          Arguments.of(Time.valueOf("15:30:00")),
+          Arguments.of(Time.valueOf("13:01:01")));
+    }
+  }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTime(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -233,13 +240,13 @@ public class BindingDataIT extends AbstractDriverIT {
    * Bind time with calendar is not supported now. Everything is in UTC, need to revisit in the
    * future
    */
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeWithCalendar(Time timeVal) throws SQLException {
     Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     Calendar laCal = Calendar.getInstance(TimeZone.getTimeZone("PST"));
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time_calendar(c1 " + "time)");
 
@@ -265,10 +272,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeViaSetObject(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -292,10 +299,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeViaSetObjectCast(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -319,21 +326,24 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @DataPoints
-  public static Date[] dateValues = {
-    Date.valueOf("2000-01-01"),
-    Date.valueOf("3000-01-01"),
-    Date.valueOf("1970-01-01"),
-    Date.valueOf("1969-01-01"),
-    Date.valueOf("1500-01-01"),
-    Date.valueOf("1400-01-01"),
-    Date.valueOf("1000-01-01")
-  };
+  static class DateProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of(Date.valueOf("2000-01-01")),
+          Arguments.of(Date.valueOf("3000-01-01")),
+          Arguments.of(Date.valueOf("1970-01-01")),
+          Arguments.of(Date.valueOf("1969-01-01")),
+          Arguments.of(Date.valueOf("1500-01-01")),
+          Arguments.of(Date.valueOf("1400-01-01")),
+          Arguments.of(Date.valueOf("1000-01-01")));
+    }
+  }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(DateProvider.class)
   public void testBindDate(Date dateValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_date(c1 date)");
 
@@ -358,12 +368,12 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(DateProvider.class)
   public void testBindDateWithCalendar(Date dateValue) throws SQLException {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_date(c1 date)");
 
@@ -388,10 +398,10 @@ public class BindingDataIT extends AbstractDriverIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE})
   public void testBindObjectWithScaleZero(int intValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_object_0(c1 number)");
 
@@ -419,8 +429,7 @@ public class BindingDataIT extends AbstractDriverIT {
   /** Binding null as all types. */
   @Test
   public void testBindNullForAllTypes() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace table TEST_BIND_ALL_TYPES(C0 string,"
               + "C1 number(20, 3), C2 INTEGER, C3 double, C4 varchar(1000),"
@@ -444,7 +453,7 @@ public class BindingDataIT extends AbstractDriverIT {
         while (result.next()) {
           String testType = result.getString(1);
           for (int i = 2; i <= 13; ++i) {
-            assertNull(String.format("Java Type: %s is not null", testType), result.getString(i));
+            assertNull(result.getString(i), String.format("Java Type: %s is not null", testType));
           }
         }
       }

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
@@ -37,6 +34,7 @@ public interface SFSqlInput extends SQLInput {
    *
    * @param <T> the type of the class modeled by this Class object
    * @param type Class representing the Java data type to convert the attribute to.
+   * @param tz timezone to consider.
    * @return the attribute at the head of the stream as an {@code Object} in the Java programming
    *     language;{@code null} if the attribute is SQL {@code NULL}
    * @exception SQLException if a database access error occurs

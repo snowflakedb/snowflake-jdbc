@@ -1,46 +1,39 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Multi Statement tests */
-@Category(TestCategoryStatement.class)
-public class MultiStatementIT extends BaseJDBCTest {
+@Tag(TestTags.STATEMENT)
+public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  @BeforeEach
+  public void setQueryResultFormat() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
   public void testMultiStmtExecuteUpdateFail() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "select 1;\n"
               + "create or replace temporary table test_multi (cola int);\n"
@@ -48,40 +41,32 @@ public class MultiStatementIT extends BaseJDBCTest {
               + "select cola from test_multi order by cola asc";
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-      try {
-        statement.executeUpdate(multiStmtQuery);
-        fail("executeUpdate should have failed because the first statement yields a result set");
-      } catch (SQLException ex) {
-        assertThat(
-            ex.getErrorCode(), is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
-      }
+      SQLException ex =
+          assertThrows(SQLException.class, () -> statement.executeUpdate(multiStmtQuery));
+      assertThat(
+          ex.getErrorCode(), is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
     }
   }
 
   @Test
   public void testMultiStmtExecuteQueryFail() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "create or replace temporary table test_multi (cola int);\n"
               + "insert into test_multi VALUES (1), (2);\n"
               + "select cola from test_multi order by cola asc";
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-      try {
-        statement.executeQuery(multiStmtQuery);
-        fail("executeQuery should have failed because the first statement yields an update count");
-      } catch (SQLException ex) {
-        assertThat(
-            ex.getErrorCode(), is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));
-      }
+      SQLException ex =
+          assertThrows(SQLException.class, () -> statement.executeQuery(multiStmtQuery));
+      assertThat(
+          ex.getErrorCode(), is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));
     }
   }
 
   @Test
   public void testMultiStmtSetUnset() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       // setting session variable should propagate outside of query
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -93,39 +78,29 @@ public class MultiStatementIT extends BaseJDBCTest {
         assertEquals(1, rs.getInt(1));
 
         // selecting unset variable should cause error
-        try {
-          statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-          statement.execute("unset testvar; select $testvar");
-          fail("Expected a failure");
-        } catch (SQLException ex) {
-          assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
-        }
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
+        SQLException ex =
+            assertThrows(
+                SQLException.class, () -> statement.execute("unset testvar; select $testvar"));
+        assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
 
         // unsetting session variable should propagate outside of query
-        try {
-          statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-          statement.execute("select $testvar");
-          fail("Expected a failure");
-        } catch (SQLException ex) {
-          assertEquals(SqlState.NO_DATA, ex.getSQLState());
-        }
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
+        ex = assertThrows(SQLException.class, () -> statement.execute("select $testvar"));
+        assertEquals(SqlState.NO_DATA, ex.getSQLState());
       }
     }
   }
 
   @Test
   public void testMultiStmtParseError() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       statement.execute("set testvar = 1");
-      try {
-        // fails in the antlr parser
-        statement.execute("garbage text; set testvar = 2");
-        fail("Expected a compiler error to be thrown");
-      } catch (SQLException ex) {
-        assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class, () -> statement.execute("garbage text; set testvar = 2"));
+      assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
 
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
         assertTrue(rs.next());
@@ -136,17 +111,16 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtExecError() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-        // fails during execution (javascript invokes statement where it gets typechecked)
-        statement.execute(
-            "set testvar = 1; select nonexistent_column from nonexistent_table; set testvar = 2");
-        fail("Expected an execution error to be thrown");
-      } catch (SQLException ex) {
-        assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
-      }
+    try (Statement statement = connection.createStatement()) {
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      // fails during execution (javascript invokes statement where it gets typechecked)
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  statement.execute(
+                      "set testvar = 1; select nonexistent_column from nonexistent_table; set testvar = 2"));
+      assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
@@ -158,8 +132,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtTempTable() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       String entry = "success";
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -178,8 +151,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtUseStmt() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       SFSession session =
           statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -212,8 +184,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtAlterSessionParams() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       SFSession session =
           statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -232,8 +203,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtMultiLine() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       // these statements should not fail
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute("select 1;\nselect 2");
@@ -245,8 +215,7 @@ public class MultiStatementIT extends BaseJDBCTest {
   @Test
   public void testMultiStmtQuotes() throws SQLException {
     // test various quotation usage and ensure they succeed
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(
           "create or replace temporary table \"test_multi\" (cola string); select * from \"test_multi\"");
@@ -259,53 +228,56 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtCommitRollback() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       statement.execute("begin");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "commit" inside multistatement commits previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); commit");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); commit");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       statement.execute("begin");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "rollback" inside multistatement rolls back previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); rollback");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); rollback");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("begin; insert into test_multi values ('abc')");
+      statement.execute("begin; insert into test_multi_commit_rollback values ('abc')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("insert into test_multi values ('def')");
+      statement.execute("insert into test_multi_commit_rollback values ('def')");
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("begin; insert into test_multi values ('abc')");
+      statement.execute("begin; insert into test_multi_commit_rollback values ('abc')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("insert into test_multi values ('def')");
+      statement.execute("insert into test_multi_commit_rollback values ('def')");
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
@@ -314,52 +286,55 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtCommitRollbackNoAutocommit() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
-      statement.execute("create or replace table test_multi (cola string)");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "commit" inside multistatement commits previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); commit");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); commit");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "rollback" inside multistatement rolls back previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); rollback");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); rollback");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(
-          "insert into test_multi values ('abc'); insert into test_multi values ('def')");
+          "insert into test_multi_commit_rollback values ('abc'); insert into test_multi_commit_rollback values ('def')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(
-          "insert into test_multi values ('abc'); insert into test_multi values ('def')");
+          "insert into test_multi_commit_rollback values ('abc'); insert into test_multi_commit_rollback values ('def')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
@@ -371,8 +346,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     // this test verifies that multiple-statement support does not break
     // with many statements
     // it also ensures that results are returned in the correct order
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       StringBuilder multiStmtBuilder = new StringBuilder();
       String query = "SELECT %d;";
       for (int i = 0; i < 100; i++) {
@@ -401,22 +375,14 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtCountNotMatch() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("select 1; select 2; select 3");
-        fail();
-      } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(8));
-      }
+    try (Statement statement = connection.createStatement()) {
+      SQLException e =
+          assertThrows(SQLException.class, () -> statement.execute("select 1; select 2; select 3"));
+      assertThat(e.getErrorCode(), is(8));
 
-      try {
-        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-        statement.execute("select 1");
-        fail();
-      } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(8));
-      }
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      e = assertThrows(SQLException.class, () -> statement.execute("select 1"));
+      assertThat(e.getErrorCode(), is(8));
 
       // 0 means any number of statement can be executed
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 0);
@@ -425,12 +391,11 @@ public class MultiStatementIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInvalidParameterCount() throws SQLException {
     String userName = null;
     String accountName = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       try (ResultSet rs = statement.executeQuery("select current_account_locator()")) {
         assertTrue(rs.next());
@@ -459,14 +424,11 @@ public class MultiStatementIT extends BaseJDBCTest {
       expectedErrorCodes[4] = 1008;
 
       statement.execute("use role accountadmin");
-
       for (int i = 0; i < testSuites.length; i++) {
-        try {
-          statement.execute(testSuites[i]);
-          Assert.fail();
-        } catch (SQLException e) {
-          assertThat(e.getErrorCode(), is(expectedErrorCodes[i]));
-        }
+        int finalI = i;
+        SQLException e =
+            assertThrows(SQLException.class, () -> statement.execute(testSuites[finalI]));
+        assertThat(e.getErrorCode(), is(expectedErrorCodes[i]));
       }
     }
   }

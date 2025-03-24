@@ -1,26 +1,22 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 
 /**
  * Implements platform-independent interface Azure BLOB and GCS object metadata
  *
  * <p>Only the metadata accessors and mutators used by the JDBC client currently are supported,
  * additional methods should be added as needed
- *
- * @author lgiakoumakis, ppaulus (rename)
  */
 public class CommonObjectMetadata implements StorageObjectMetadata {
   private long contentLength;
-  private Map<String, String> userDefinedMetadata;
+  private final Map<String, String> userDefinedMetadata;
   private String contentEncoding;
 
   CommonObjectMetadata() {
-    userDefinedMetadata = new HashMap<>();
+    userDefinedMetadata = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
   }
 
   /*
@@ -31,7 +27,7 @@ public class CommonObjectMetadata implements StorageObjectMetadata {
       long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata) {
     this.contentEncoding = contentEncoding;
     this.contentLength = contentLength;
-    this.userDefinedMetadata = userDefinedMetadata;
+    this.userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(userDefinedMetadata);
   }
 
   /**
@@ -41,7 +37,6 @@ public class CommonObjectMetadata implements StorageObjectMetadata {
   public Map<String, String> getUserMetadata() {
     return userDefinedMetadata;
   }
-  ;
 
   /**
    * @return returns the size of object in bytes

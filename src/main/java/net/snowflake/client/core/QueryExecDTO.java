@@ -1,16 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.util.Map;
 
-/**
- * Body of a query request
- *
- * <p>Created by hyu on 6/30/17.
- */
+/** Body of a query request */
 public class QueryExecDTO {
   private String sqlText;
 

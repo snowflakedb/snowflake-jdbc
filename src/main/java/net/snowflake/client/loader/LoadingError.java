@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.loader;
 
 import java.sql.ResultSet;
@@ -13,7 +9,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Wrapper for data format errors returned by the COPY/validate command */
 public class LoadingError {
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(LoadingError.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(LoadingError.class);
 
   public enum ErrorProperty {
     ERROR,
@@ -65,7 +61,7 @@ public class LoadingError {
       try {
         _properties.put(p, rs.getString(p.name()));
       } catch (SQLException ex) {
-        LOGGER.error("Exception", ex);
+        logger.error("Exception", ex);
       }
     }
   }

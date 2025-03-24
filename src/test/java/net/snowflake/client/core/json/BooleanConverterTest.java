@@ -2,10 +2,11 @@ package net.snowflake.client.core.json;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BooleanConverterTest {
   private final BooleanConverter booleanConverter = new BooleanConverter();
@@ -44,8 +45,8 @@ public class BooleanConverterTest {
     assertThat(booleanConverter.getBoolean("FALSE", Types.CHAR), equalTo(false));
   }
 
-  @Test(expected = SFException.class)
-  public void testConvertOtherType() throws SFException {
-    booleanConverter.getBoolean("1", Types.BINARY);
+  @Test
+  public void testConvertOtherType() {
+    assertThrows(SFException.class, () -> booleanConverter.getBoolean("1", Types.BINARY));
   }
 }

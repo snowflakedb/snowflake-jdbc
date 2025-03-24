@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.util.SecretDetector;
 
-/** Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved. */
 public class TelemetryData {
   // message is a json node
   private final ObjectNode message;

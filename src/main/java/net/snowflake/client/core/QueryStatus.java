@@ -39,6 +39,7 @@ public enum QueryStatus {
 
   /**
    * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @return error message
    */
   @Deprecated
   public String getErrorMessage() {
@@ -47,6 +48,7 @@ public enum QueryStatus {
 
   /**
    * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @return error code
    */
   @Deprecated
   public int getErrorCode() {
@@ -55,6 +57,7 @@ public enum QueryStatus {
 
   /**
    * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @param message the error message
    */
   @Deprecated
   public void setErrorMessage(String message) {
@@ -63,12 +66,19 @@ public enum QueryStatus {
 
   /**
    * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @param errorCode the error code
    */
   @Deprecated
   public void setErrorCode(int errorCode) {
     this.errorCode = errorCode;
   }
 
+  /**
+   * Check if query is still running.
+   *
+   * @param status QueryStatus
+   * @return true if query is still running
+   */
   public static boolean isStillRunning(QueryStatus status) {
     switch (status.getValue()) {
       case 0: // "RUNNING"
@@ -83,6 +93,12 @@ public enum QueryStatus {
     }
   }
 
+  /**
+   * Check if query status is an error
+   *
+   * @param status QueryStatus
+   * @return true if query status is an error status
+   */
   public static boolean isAnError(QueryStatus status) {
     switch (status.getValue()) {
       case 1: // Aborting
@@ -97,6 +113,12 @@ public enum QueryStatus {
     }
   }
 
+  /**
+   * Get the query status from a string description
+   *
+   * @param description the status description
+   * @return QueryStatus
+   */
   public static QueryStatus getStatusFromString(String description) {
     if (description != null) {
       for (QueryStatus st : QueryStatus.values()) {

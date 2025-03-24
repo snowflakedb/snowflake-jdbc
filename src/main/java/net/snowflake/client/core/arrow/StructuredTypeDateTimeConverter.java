@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.arrow;
 
 import static net.snowflake.client.jdbc.SnowflakeType.TIMESTAMP_LTZ;
@@ -92,7 +88,8 @@ public class StructuredTypeDateTimeConverter {
             false);
       }
     } else if (obj instanceof Long) {
-      return BigIntToTimestampLTZConverter.getTimestamp((long) obj, scale);
+      return BigIntToTimestampLTZConverter.getTimestamp(
+          (long) obj, scale, sessionTimeZone, useSessionTimezone);
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT,

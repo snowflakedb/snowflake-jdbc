@@ -1,10 +1,6 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -15,8 +11,8 @@ import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SFFormatterTest {
   // Change these numbers if necessary
@@ -28,7 +24,7 @@ public class SFFormatterTest {
   /** Log record generator */
   private LRGenerator recordGenerator;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     recordGenerator = new LRGenerator(SFFormatter.CLASS_NAME_PREFIX + "TestClass", "TestMethod");
     recordGenerator.setFormatter(new SFFormatter());
@@ -56,8 +52,8 @@ public class SFFormatterTest {
       Date date = extractDate(record);
       long nowInMs = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
       assertTrue(
-          "Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms",
-          nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
+          nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY,
+          "Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms");
     } finally {
       TimeZone.setDefault(originalTz);
     }

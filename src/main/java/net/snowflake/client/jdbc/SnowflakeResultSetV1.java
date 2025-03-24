@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.io.InputStream;
@@ -28,15 +24,17 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ArrowSqlInput;
-import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetV1.class);
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -61,7 +59,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   public QueryStatus getStatus() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -71,7 +69,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   @Override
   public QueryStatusV2 getStatusV2() throws SQLException {
@@ -83,7 +81,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   @Override
   public String getQueryErrorMessage() throws SQLException {
@@ -267,16 +265,22 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     raiseSQLExceptionIfResultSetIsClosed();
     Object object =
         SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+
     if (object == null) {
       return null;
-    } else if (object instanceof JsonSqlInput) {
-      return ((JsonSqlInput) object).getText();
-    } else if (object instanceof ArrowSqlInput) {
-      throw new SQLException(
-          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
-    } else {
-      return object;
     }
+
+    if (object instanceof StructObjectWrapper) {
+      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) object;
+      if (resultSetMetaData.isStructuredTypeColumn(columnIndex)
+          && structObjectWrapper.getJsonString() != null) {
+        return structObjectWrapper.getJsonString();
+      }
+
+      return structObjectWrapper.getObject();
+    }
+
+    return object;
   }
 
   public Array getArray(int columnIndex) throws SQLException {
@@ -359,7 +363,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -367,7 +371,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(

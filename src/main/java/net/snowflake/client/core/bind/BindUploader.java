@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.bind;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -159,6 +155,7 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Timestamp v1 = new Timestamp(sec * 1000);
+    ZoneOffset offsetId;
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
     if ("TIMESTAMP_LTZ".equals(type)) {
@@ -166,9 +163,10 @@ public class BindUploader implements Closeable {
       cal.setTimeZone(tz);
       cal.clear();
       timestampFormat.setCalendar(cal);
+      offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
+    } else {
+      offsetId = ZoneOffset.UTC;
     }
-
-    ZoneOffset offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.now());
 
     return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
@@ -185,7 +183,13 @@ public class BindUploader implements Closeable {
     return new BindUploader(session, stageDir);
   }
 
-  /** Wrapper around upload() with default compression to true. */
+  /**
+   * Wrapper around upload() with default compression to true.
+   *
+   * @param bindValues the bind map to upload
+   * @throws BindException if there is an error when uploading bind values
+   * @throws SQLException if any error occurs
+   */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
       throws BindException, SQLException {
     upload(bindValues, true);
@@ -197,8 +201,8 @@ public class BindUploader implements Closeable {
    *
    * @param bindValues the bind map to upload
    * @param compressData whether or not to compress data
-   * @throws BindException
-   * @throws SQLException
+   * @throws BindException if there is an error when uploading bind values
+   * @throws SQLException if any error occurs
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues, boolean compressData)
       throws BindException, SQLException {
@@ -252,6 +256,7 @@ public class BindUploader implements Closeable {
    * @param destFileName destination file name to use
    * @param compressData whether compression is requested fore uploading data
    * @throws SQLException raises if any error occurs
+   * @throws BindException if there is an error when uploading bind values
    */
   private void uploadStreamInternal(
       InputStream inputStream, String destFileName, boolean compressData)

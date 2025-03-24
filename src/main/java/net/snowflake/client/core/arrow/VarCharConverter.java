@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
@@ -22,6 +19,11 @@ import org.apache.arrow.vector.VarCharVector;
 public class VarCharConverter extends AbstractArrowVectorConverter {
   private VarCharVector varCharVector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public VarCharConverter(ValueVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TEXT.name(), valueVector, columnIndex, context);
     this.varCharVector = (VarCharVector) valueVector;

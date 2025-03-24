@@ -6,9 +6,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-/** Created by hyu on 2/2/18. */
 public class SnowflakeConnectionV1Test {
 
   @Test

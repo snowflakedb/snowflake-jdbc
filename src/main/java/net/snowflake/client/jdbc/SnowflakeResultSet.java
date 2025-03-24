@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
@@ -12,6 +8,7 @@ import net.snowflake.client.core.QueryStatus;
 public interface SnowflakeResultSet {
   /**
    * @return the Snowflake query ID of the query which generated this result set
+   * @throws SQLException if an error is encountered
    */
   String getQueryID() throws SQLException;
 
@@ -23,7 +20,7 @@ public interface SnowflakeResultSet {
    * query statuses. QueryStatus = SUCCESS means results can be retrieved.
    *
    * @return QueryStatus enum showing status of query
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    */
   QueryStatus getStatus() throws SQLException;
 
@@ -33,7 +30,7 @@ public interface SnowflakeResultSet {
    * returned.
    *
    * @return String value of query's error message
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    */
   String getQueryErrorMessage() throws SQLException;
 
@@ -45,7 +42,7 @@ public interface SnowflakeResultSet {
    * <p><code>status.isSuccess()</code> means that results can be retrieved.
    *
    * @return an instance containing query metadata
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    */
   QueryStatusV2 getStatusV2() throws SQLException;
 

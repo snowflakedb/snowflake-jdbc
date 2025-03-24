@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -9,7 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -22,7 +19,7 @@ public class TestUtil {
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
     try {
       testCode.run();
-      Assert.fail();
+      Assertions.fail();
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(errorCode));
     }
@@ -37,7 +34,7 @@ public class TestUtil {
   /**
    * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
    * null.
-   *
+   * @deprecated This method should be replaced by SnowflakeUtil.systemGetEnv.
    * <p>This is replicated from SnowflakeUtil.systemGetEnv, because the old driver doesn't have that
    * function for the tests to use it. Replace this function call with SnowflakeUtil.systemGetEnv
    * when it is available.
@@ -45,6 +42,7 @@ public class TestUtil {
    * @param env the environment variable name.
    * @return the environment variable value if set, otherwise null.
    */
+  @Deprecated
   public static String systemGetEnv(String env) {
     try {
       return System.getenv(env);

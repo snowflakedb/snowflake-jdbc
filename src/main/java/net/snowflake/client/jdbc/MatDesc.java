@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,11 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
 
-/**
- * A class to handle S3 material descriptor metadata entries (matdesc).
- *
- * @author ffunke
- */
+/** A class to handle S3 material descriptor metadata entries (matdesc). */
 public class MatDesc {
   /** MatDesc key for query ID */
   public static String QUERY_ID = "queryId";

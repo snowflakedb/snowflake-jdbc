@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.util.List;
@@ -41,7 +38,7 @@ public class ArrowResultChunkIndexSorter {
    * This method is only used when sf-property sort is on
    *
    * @return sorted indices
-   * @throws SFException
+   * @throws SFException when exception encountered
    */
   public IntVector sort() throws SFException {
     quickSort(0, resultChunk.get(0).getValueCount() - 1);

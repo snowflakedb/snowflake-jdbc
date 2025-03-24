@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.QueryStatus.NO_DATA;
@@ -21,11 +17,15 @@ import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation. Note: For Snowflake internal use */
 public class SFAsyncResultSet extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFAsyncResultSet.class);
+
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
   private String queryID;
@@ -367,7 +367,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -375,7 +375,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(

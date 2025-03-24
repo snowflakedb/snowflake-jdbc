@@ -11,10 +11,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -25,10 +27,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 /**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Out of Band Telemetry Service This is a thread safe singleton queue containing telemetry
- * messages
+ * Out of Band Telemetry Service This is a thread safe singleton queue containing telemetry messages
  */
 public class TelemetryService {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TelemetryService.class);
@@ -108,26 +107,36 @@ public class TelemetryService {
 
   public static void enable() {
     synchronized (enableLock) {
+      logger.debug("Enabling out-of-band telemetry", false);
       enabled = true;
     }
   }
 
   public static void disable() {
     synchronized (enableLock) {
+      logger.debug("Disabling out-of-band telemetry", false);
       enabled = false;
     }
   }
 
   public static void enableHTAP() {
     synchronized (enableHTAPLock) {
+      logger.debug("Enabling out-of-band HTAP telemetry");
       htapEnabled = true;
     }
   }
 
   public static void disableHTAP() {
     synchronized (enableHTAPLock) {
+      logger.debug("Disabling out-of-band HTAP telemetry");
       htapEnabled = false;
     }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void disableOOBTelemetry() {
+    disable();
+    disableHTAP();
   }
 
   public boolean isEnabled() {
@@ -146,7 +155,11 @@ public class TelemetryService {
     return context;
   }
 
-  /** Note: Only used for IT */
+  /**
+   * Note: Only used for IT
+   *
+   * @param params parameter map
+   */
   public void updateContextForIT(Map<String, String> params) {
     Properties info = new Properties();
     for (String key : params.keySet()) {
@@ -235,7 +248,11 @@ public class TelemetryService {
     this.setDeployment(deployment);
   }
 
-  /** whether the telemetry service is enabled for current deployment */
+  /**
+   * whether the telemetry service is enabled for current deployment
+   *
+   * @return true if the telemetry service is enabled for current deployment
+   */
   public boolean isDeploymentEnabled() {
     return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
@@ -309,6 +326,7 @@ public class TelemetryService {
   }
 
   public void setDeployment(TELEMETRY_SERVER_DEPLOYMENT deployment) {
+    logger.debug("Setting out-of-band telemetry sever deployment to {}", deployment);
     serverDeployment = deployment;
   }
 
@@ -359,7 +377,11 @@ public class TelemetryService {
     eventCnt.incrementAndGet();
   }
 
-  /** Report the event to the telemetry server in a new thread */
+  /**
+   * Report the event to the telemetry server in a new thread
+   *
+   * @param event TelemetryEvent
+   */
   public void report(TelemetryEvent event) {
     reportChooseEvent(event, /* isHTAP */ false);
   }
@@ -376,7 +398,12 @@ public class TelemetryService {
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
-  /** Convert an event to a payload in string */
+  /**
+   * Convert an event to a payload in string
+   *
+   * @param event TelemetryEvent
+   * @return the string payload
+   */
   public String exportQueueToString(TelemetryEvent event) {
     JSONArray logs = new JSONArray();
     logs.add(event);
@@ -421,13 +448,13 @@ public class TelemetryService {
 
       if (!instance.isDeploymentEnabled()) {
         // skip the disabled deployment
-        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
+        logger.debug("Skip the disabled deployment: ", instance.serverDeployment.name);
         return;
       }
 
       if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN)) {
         // skip the disabled deployment
-        logger.debug("ignore invalid url: ", instance.serverDeployment.url);
+        logger.debug("Ignore invalid url: ", instance.serverDeployment.url);
         return;
       }
 
@@ -435,7 +462,10 @@ public class TelemetryService {
     }
 
     private void uploadPayload() {
-      logger.debugNoMask("Running telemetry uploader. The payload is: " + payloadLogStr);
+      Stopwatch stopwatch = new Stopwatch();
+      stopwatch.start();
+      logger.debugNoMask(
+          "Running out-of-band telemetry uploader. The payload is: " + payloadLogStr);
       CloseableHttpResponse response = null;
       boolean success = true;
 
@@ -450,13 +480,14 @@ public class TelemetryService {
           int statusCode = response.getStatusLine().getStatusCode();
 
           if (statusCode == 200) {
-            logger.debug("telemetry server request success: {}", response, true);
+            logger.debug("Out-of-band telemetry server request success: {}", response, true);
             instance.count();
           } else if (statusCode == 429) {
-            logger.debug("telemetry server request hit server cap on response: {}", response);
+            logger.debug(
+                "Out-of-band telemetry server request hit server cap on response: {}", response);
             instance.serverFailureCnt.incrementAndGet();
           } else {
-            logger.debug("telemetry server request error: {}", response, true);
+            logger.debug("Out-of-band telemetry server request error: {}", response, true);
             instance.lastClientError = response.toString();
             instance.clientFailureCnt.incrementAndGet();
             success = false;
@@ -467,7 +498,7 @@ public class TelemetryService {
       } catch (Exception e) {
         // exception from here is always captured
         logger.debug(
-            "Telemetry request failed, Exception" + "response: {}, exception: {}",
+            "Out-of-band telemetry request failed, Exception response: {}, exception: {}",
             response,
             e.getMessage());
         String res = "null";
@@ -478,12 +509,27 @@ public class TelemetryService {
         instance.clientFailureCnt.incrementAndGet();
         success = false;
       } finally {
-        logger.debug("Telemetry request success={} " + "and clean the current queue", success);
+        stopwatch.stop();
+        logger.debug(
+            "Out-of-band telemetry request success: {} and clean the current queue. It took {} ms."
+                + " Total successful events: {}, total unsuccessful events: {} (client failures: {}, server failures: {})",
+            success,
+            stopwatch.elapsedMillis(),
+            instance.eventCnt,
+            instance.clientFailureCnt.get() + instance.serverFailureCnt.get(),
+            instance.clientFailureCnt,
+            instance.serverFailureCnt);
       }
     }
   }
 
-  /** log OCSP exception to telemetry */
+  /**
+   * log OCSP exception to telemetry
+   *
+   * @param eventType event type
+   * @param telemetryData JSON telemetry data
+   * @param ex CertificateException
+   */
   public void logOCSPExceptionTelemetryEvent(
       String eventType, JSONObject telemetryData, CertificateException ex) {
     if (enabled) {
@@ -507,7 +553,24 @@ public class TelemetryService {
     }
   }
 
-  /** log error http response to telemetry */
+  /**
+   * log error http response to telemetry
+   *
+   * @param eventName the event name
+   * @param request the HttpRequestBase
+   * @param injectSocketTimeout the socket timeout
+   * @param canceling cancelling
+   * @param withoutCookies without cookies
+   * @param includeRetryParameters include retry parameters
+   * @param includeRequestGuid include rest GUID
+   * @param response the CloseableHttpResponse
+   * @param savedEx the saved exception
+   * @param breakRetryReason the break retry reason
+   * @param retryTimeout the retry timeout
+   * @param retryCount retry count
+   * @param sqlState the SQL state
+   * @param errorCode the error code
+   */
   public void logHttpRequestTelemetryEvent(
       String eventName,
       HttpRequestBase request,
@@ -567,7 +630,12 @@ public class TelemetryService {
     }
   }
 
-  /** log execution times from various processing slices */
+  /**
+   * log execution times from various processing slices
+   *
+   * @param telemetryData JSON telemetry data
+   * @param eventName the event name
+   */
   public void logExecutionTimeTelemetryEvent(JSONObject telemetryData, String eventName) {
     if (htapEnabled) {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();

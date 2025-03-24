@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
@@ -43,9 +40,18 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
 
+  /** Timezone index */
   public static final String FIELD_NAME_TIME_ZONE_INDEX = "timezone"; // time zone index
+
+  /** Fraction in nanoseconds */
   public static final String FIELD_NAME_FRACTION = "fraction"; // fraction in nanoseconds
 
+  /**
+   * @param logicalTypeStr snowflake logical type of the target arrow vector.
+   * @param valueVector value vector
+   * @param vectorIndex value index
+   * @param context DataConversionContext
+   */
   AbstractArrowVectorConverter(
       String logicalTypeStr,
       ValueVector valueVector,
@@ -153,6 +159,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
   }
 
+  /**
+   * True if should treat decimal as int type.
+   *
+   * @return true or false if decimal should be treated as int type.
+   */
   boolean shouldTreatDecimalAsInt() {
     return shouldTreatDecimalAsInt;
   }

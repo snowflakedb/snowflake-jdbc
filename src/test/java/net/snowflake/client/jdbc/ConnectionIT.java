@@ -1,18 +1,15 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AssumptionUtils.assumeRunningOnGithubActions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,41 +30,44 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Connection integration tests */
-@Category(TestCategoryConnection.class)
-public class ConnectionIT extends BaseJDBCTest {
+@Tag(TestTags.CONNECTION)
+public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
   public static final int BAD_REQUEST_GS_CODE = 390400;
+  public static final int NETWORK_ERROR_CODE = 200015;
 
   public static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
 
   String errorMessage = null;
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testSimpleConnection() throws SQLException {
@@ -83,14 +83,13 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
     int size = 300;
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       statement.execute(
           "create or replace table bigTable(rowNum number,rando "
               + "number) as (select seq4(),"
@@ -122,12 +121,14 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setLoginTimeout(10);
 
     long startLoginTime = System.currentTimeMillis();
-    try {
-      ds.getConnection();
-      fail();
-    } catch (SQLException e) {
-      assertThat(e.getErrorCode(), is(ErrorCode.NETWORK_ERROR.getMessageCode()));
-    }
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              ds.getConnection();
+            });
+    assertThat(e.getErrorCode(), is(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
     long endLoginTime = System.currentTimeMillis();
 
     assertTrue(endLoginTime - startLoginTime < 30000);
@@ -153,20 +154,20 @@ public class ConnectionIT extends BaseJDBCTest {
     properties.put("account", "fakeaccount");
 
     for (String url : deploymentUrls) {
-      try {
-        DriverManager.getConnection(url, properties);
-        fail();
-      } catch (SQLException e) {
-        assertThat(
-            e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                DriverManager.getConnection(url, properties);
+              });
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
     }
   }
 
   @Test
   public void testSetCatalogSchema() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String db = connection.getCatalog();
       String schema = connection.getSchema();
       connection.setCatalog(db);
@@ -213,35 +214,34 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     final String SECOND_DATABASE = "SECOND_DATABASE";
     final String SECOND_SCHEMA = "SECOND_SCHEMA";
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         final String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
         final String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
 
-        assertEquals(database, con.getCatalog());
-        assertEquals(schema, con.getSchema());
+        assertEquals(database, connection.getCatalog());
+        assertEquals(schema, connection.getSchema());
 
         statement.execute(String.format("create or replace database %s", SECOND_DATABASE));
         statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
         statement.execute(String.format("use database %s", database));
 
-        con.setCatalog(SECOND_DATABASE);
-        assertEquals(SECOND_DATABASE, con.getCatalog());
-        assertEquals("PUBLIC", con.getSchema());
+        connection.setCatalog(SECOND_DATABASE);
+        assertEquals(SECOND_DATABASE, connection.getCatalog());
+        assertEquals("PUBLIC", connection.getSchema());
 
-        con.setSchema(SECOND_SCHEMA);
-        assertEquals(SECOND_SCHEMA, con.getSchema());
+        connection.setSchema(SECOND_SCHEMA);
+        assertEquals(SECOND_SCHEMA, connection.getSchema());
 
         statement.execute(String.format("use database %s", database));
         statement.execute(String.format("use schema %s", schema));
 
-        assertEquals(database, con.getCatalog());
-        assertEquals(schema, con.getSchema());
+        assertEquals(database, connection.getCatalog());
+        assertEquals(schema, connection.getSchema());
       } finally {
         statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
       }
@@ -250,40 +250,42 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testConnectionClientInfo() throws SQLException {
-    try (Connection con = getConnection()) {
-      Properties property = con.getClientInfo();
-      assertEquals(0, property.size());
-      Properties clientInfo = new Properties();
-      clientInfo.setProperty("name", "Peter");
-      clientInfo.setProperty("description", "SNOWFLAKE JDBC");
-      try {
-        con.setClientInfo(clientInfo);
-        fail("setClientInfo should fail for any parameter.");
-      } catch (SQLClientInfoException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        assertEquals(200047, e.getErrorCode());
-        assertEquals(2, e.getFailedProperties().size());
-      }
-      try {
-        con.setClientInfo("ApplicationName", "valueA");
-        fail("setClientInfo should fail for any parameter.");
-      } catch (SQLClientInfoException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        assertEquals(200047, e.getErrorCode());
-        assertEquals(1, e.getFailedProperties().size());
-      }
-    }
+    Properties property = connection.getClientInfo();
+    assertEquals(0, property.size());
+    Properties clientInfo = new Properties();
+    clientInfo.setProperty("name", "Peter");
+    clientInfo.setProperty("description", "SNOWFLAKE JDBC");
+    SQLClientInfoException e =
+        assertThrows(
+            SQLClientInfoException.class,
+            () -> {
+              connection.setClientInfo(clientInfo);
+            });
+    assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+    assertEquals(200047, e.getErrorCode());
+    assertEquals(2, e.getFailedProperties().size());
+
+    e =
+        assertThrows(
+            SQLClientInfoException.class,
+            () -> {
+              connection.setClientInfo("ApplicationName", "valueA");
+            });
+    assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+    assertEquals(200047, e.getErrorCode());
+    assertEquals(1, e.getFailedProperties().size());
   }
 
   // only support get and set
   @Test
   public void testNetworkTimeout() throws SQLException {
-    try (Connection con = getConnection()) {
-      int millis = con.getNetworkTimeout();
-      assertEquals(0, millis);
-      con.setNetworkTimeout(null, 200);
-      assertEquals(200, con.getNetworkTimeout());
-    }
+    int millis = connection.getNetworkTimeout();
+    assertEquals(0, millis);
+    connection.setNetworkTimeout(null, 200);
+    assertEquals(200, connection.getNetworkTimeout());
+    // Reset timeout to 0 since we are reusing connection in tests
+    connection.setNetworkTimeout(null, 0);
+    assertEquals(0, millis);
   }
 
   @Test
@@ -300,13 +302,15 @@ public class ConnectionIT extends BaseJDBCTest {
     properties.put("queryTimeout", "5");
     try (Connection connection = getConnection(properties);
         Statement statement = connection.createStatement()) {
-      try {
-        statement.executeQuery("select count(*) from table(generator(timeLimit => 1000000))");
-        fail("This query should be failed.");
-      } catch (SQLException e) {
-        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
-        assertEquals("SQL execution canceled", e.getMessage());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                statement.executeQuery(
+                    "select count(*) from table(generator(timeLimit => 1000000))");
+              });
+      assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+      assertEquals("SQL execution canceled", e.getMessage());
     }
   }
 
@@ -351,7 +355,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaSerialization() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -369,7 +373,8 @@ public class ConnectionIT extends BaseJDBCTest {
         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -392,7 +397,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -446,12 +451,14 @@ public class ConnectionIT extends BaseJDBCTest {
     PublicKey publicKey2 = keyPair.getPublic();
     PrivateKey privateKey2 = keyPair.getPrivate();
     properties.put("privateKey", privateKey2);
-    try {
-      DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      Assert.assertEquals(390144, e.getErrorCode());
-    }
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(uri, properties);
+            });
+    assertEquals(390144, e.getErrorCode());
+
     // test multiple key pair
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -459,13 +466,17 @@ public class ConnectionIT extends BaseJDBCTest {
       String encodePublicKey2 = Base64.encodeBase64String(publicKey2.getEncoded());
       statement.execute(
           String.format("alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
-    } finally {
-      try (Connection connection = DriverManager.getConnection(uri, properties);
-          Statement statement = connection.createStatement()) {
-        statement.execute("use role accountadmin");
-        statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-        statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
-      }
+    }
+
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      assertFalse(connection.isClosed());
+    }
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+      statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
     }
   }
 
@@ -484,26 +495,27 @@ public class ConnectionIT extends BaseJDBCTest {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
     PrivateKey dsaPrivateKey = keyPairGenerator.generateKeyPair().getPrivate();
 
-    try {
-      properties.put("privateKey", "bad string");
-      DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      assertThat(e.getErrorCode(), is(ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode()));
-    }
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              properties.put("privateKey", "bad string");
+              DriverManager.getConnection(uri, properties);
+            });
+    assertThat(e.getErrorCode(), is(ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode()));
 
-    try {
-      properties.put("privateKey", dsaPrivateKey);
-      DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      assertThat(
-          e.getErrorCode(), is(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode()));
-    }
+    e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              properties.put("privateKey", dsaPrivateKey);
+              DriverManager.getConnection(uri, properties);
+            });
+    assertThat(e.getErrorCode(), is(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode()));
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDifferentKeyLength() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -541,46 +553,42 @@ public class ConnectionIT extends BaseJDBCTest {
 
       // test correct private key one
       properties.put("privateKey", privateKey);
-      try (Connection connection = DriverManager.getConnection(uri, properties);
+      try (Connection connection = DriverManager.getConnection(uri, properties)) {
+        assertFalse(connection.isClosed());
+      }
+
+      try (Connection connection = getConnection();
           Statement statement = connection.createStatement()) {
+        statement.execute("use role accountadmin");
         statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
       }
     }
   }
 
   /** Test production connectivity with insecure mode enabled. */
-  @Test
-  public void testInsecureMode() throws SQLException {
-    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testInsecureMode(boolean insecureModeInProperties) {
+    String deploymentUrl;
 
     Properties properties = new Properties();
 
     properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
-    properties.put("insecureMode", true);
-    try {
-      DriverManager.getConnection(deploymentUrl, properties);
-      fail();
-    } catch (SQLException e) {
-      assertThat(
-          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+    if (insecureModeInProperties) {
+      properties.put("insecureMode", true);
+      deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+    } else {
+      deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
     }
-
-    deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
-
-    properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    try {
-      DriverManager.getConnection(deploymentUrl, properties);
-      fail();
-    } catch (SQLException e) {
-      assertThat(
-          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-    }
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(deploymentUrl, properties);
+            });
+    assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
   /** Verify the passed memory parameters are set in the session */
@@ -713,25 +721,21 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testNativeSQL() throws Throwable {
-    try (Connection connection = getConnection()) {
-      // today returning the source SQL.
-      assertEquals("select 1", connection.nativeSQL("select 1"));
-    }
+    // today returning the source SQL.
+    assertEquals("select 1", connection.nativeSQL("select 1"));
   }
 
   @Test
   public void testGetTypeMap() throws Throwable {
-    try (Connection connection = getConnection()) {
-      // return an empty type map. setTypeMap is not supported.
-      assertEquals(Collections.emptyMap(), connection.getTypeMap());
-    }
+    // return an empty type map. setTypeMap is not supported.
+    assertEquals(Collections.emptyMap(), connection.getTypeMap());
   }
 
   @Test
   public void testHolderbility() throws Throwable {
     try (Connection connection = getConnection()) {
       try {
-        connection.setHoldability(0);
+        connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
       } catch (SQLFeatureNotSupportedException ex) {
         // nop
       }
@@ -744,12 +748,11 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testIsValid() throws Throwable {
     try (Connection connection = getConnection()) {
       assertTrue(connection.isValid(10));
-      try {
-        assertTrue(connection.isValid(-10));
-        fail("must fail");
-      } catch (SQLException ex) {
-        // nop, no specific error code is provided.
-      }
+      assertThrows(
+          SQLException.class,
+          () -> {
+            assertTrue(connection.isValid(-10));
+          });
     }
   }
 
@@ -758,18 +761,13 @@ public class ConnectionIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       boolean canUnwrap = connection.isWrapperFor(SnowflakeConnectionV1.class);
       assertTrue(canUnwrap);
-      if (canUnwrap) {
-        SnowflakeConnectionV1 sfconnection = connection.unwrap(SnowflakeConnectionV1.class);
-        sfconnection.createStatement();
-      } else {
-        fail("should be able to unwrap");
-      }
-      try {
-        connection.unwrap(SnowflakeDriver.class);
-        fail("should fail to cast");
-      } catch (SQLException ex) {
-        // nop
-      }
+      SnowflakeConnectionV1 sfconnection = connection.unwrap(SnowflakeConnectionV1.class);
+      sfconnection.createStatement();
+      assertThrows(
+          SQLException.class,
+          () -> {
+            connection.unwrap(SnowflakeDriver.class);
+          });
     }
   }
 
@@ -792,8 +790,31 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testReadDateAfterSplittingResultSet() throws Exception {
+    Connection conn = getConnection();
+    try (Statement statement = conn.createStatement()) {
+      statement.execute("create or replace table table_with_date (int_c int, date_c date)");
+      statement.execute("insert into table_with_date values (1, '2015-10-25')");
+
+      try (ResultSet rs = statement.executeQuery("select * from table_with_date")) {
+        final SnowflakeResultSet resultSet = rs.unwrap(SnowflakeResultSet.class);
+        final long arbitrarySizeInBytes = 1024;
+        final List<SnowflakeResultSetSerializable> serializables =
+            resultSet.getResultSetSerializables(arbitrarySizeInBytes);
+        final ArrayList<Date> dates = new ArrayList<>();
+        for (SnowflakeResultSetSerializable s : serializables) {
+          ResultSet srs = s.getResultSet();
+          srs.next();
+          dates.add(srs.getDate(2));
+        }
+        assertEquals(1, dates.size());
+        assertEquals("2015-10-25", dates.get(0).toString());
+      }
+    }
+  }
+
+  @Test
   public void testResultSetsClosedByStatement() throws SQLException {
-    Connection connection = getConnection();
     Statement statement2 = connection.createStatement();
     ResultSet rs1 = statement2.executeQuery("select 2;");
     ResultSet rs2 = statement2.executeQuery("select 2;");
@@ -810,92 +831,29 @@ public class ConnectionIT extends BaseJDBCTest {
     assertTrue(rs2.isClosed());
     assertTrue(rs3.isClosed());
     assertTrue(rs4.isClosed());
-    connection.close();
   }
 
-  @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
-  public void testOKTAConnection() throws Throwable {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    properties.put("user", params.get("ssoUser"));
-    properties.put("password", params.get("ssoPassword"));
-    properties.put("ssl", params.get("ssl"));
-    properties.put("authenticator", "https://snowflakecomputing.okta.com/");
-
-    DriverManager.getConnection(
-        String.format(
-            "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
-            params.get("account"), params.get("port")),
-        properties);
-  }
-
-  @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
-  public void testOKTAConnectionWithOktauserParam() throws Throwable {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    properties.put("user", "test");
-    properties.put("password", params.get("ssoPassword"));
-    properties.put("ssl", params.get("ssl"));
-    properties.put(
-        "authenticator",
-        String.format(
-            "https://snowflakecomputing.okta.com;oktausername=%s;", params.get("ssoUser")));
-
-    DriverManager.getConnection(
-        String.format(
-            "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
-            params.get("account"), params.get("port")),
-        properties);
-  }
-
-  @Test
-  public void testValidateDefaultParameters() throws Throwable {
+  @ParameterizedTest
+  @CsvSource({
+    "db," + SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED,
+    "schema," + SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED,
+    "warehouse," + SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED,
+    "role," + ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST
+  })
+  public void testValidateDefaultParameters(String propertyName, int expectedErrorCode)
+      throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties props;
 
     props = setCommonConnectionParameters(true);
-    props.put("db", "NOT_EXISTS");
-    try {
-      DriverManager.getConnection(params.get("uri"), props);
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
-    }
-
-    // schema is invalid
-    props = setCommonConnectionParameters(true);
-    props.put("schema", "NOT_EXISTS");
-    try {
-      DriverManager.getConnection(params.get("uri"), props);
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
-    }
-
-    // warehouse is invalid
-    props = setCommonConnectionParameters(true);
-    props.put("warehouse", "NOT_EXISTS");
-    try {
-      DriverManager.getConnection(params.get("uri"), props);
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertEquals(
-          "error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
-    }
-
-    // role is invalid
-    props = setCommonConnectionParameters(true);
-    props.put("role", "NOT_EXISTS");
-    try {
-      DriverManager.getConnection(params.get("uri"), props);
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
-    }
+    props.put(propertyName, "NOT_EXISTS");
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(params.get("uri"), props);
+            });
+    assertEquals(ex.getErrorCode(), expectedErrorCode, "error code");
   }
 
   @Test
@@ -920,12 +878,14 @@ public class ConnectionIT extends BaseJDBCTest {
     // role is invalid
     props = setCommonConnectionParameters(false);
     props.put("role", "NOT_EXISTS");
-    try {
-      DriverManager.getConnection(params.get("uri"), props);
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
-    }
+    Properties finalProps = props;
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(params.get("uri"), finalProps);
+            });
+    assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
   }
 
   /**
@@ -935,7 +895,7 @@ public class ConnectionIT extends BaseJDBCTest {
    *
    * @throws SQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrl() throws SQLException {
     Properties props = new Properties();
@@ -961,7 +921,7 @@ public class ConnectionIT extends BaseJDBCTest {
    * @throws SQLException
    * @throws NoSuchAlgorithmException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
 
@@ -1016,7 +976,7 @@ public class ConnectionIT extends BaseJDBCTest {
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
-    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
+    assumeRunningOnGithubActions();
 
     Map<String, String> kvParams = getConnectionParameters(null, "ORG");
     Properties connProps = kvMap2Properties(kvParams, false);

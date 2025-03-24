@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
@@ -17,6 +14,11 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter {
   protected TinyIntVector tinyIntVector;
   protected int sfScale = 0;
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public TinyIntToFixedConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(

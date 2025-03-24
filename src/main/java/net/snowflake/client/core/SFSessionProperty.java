@@ -1,19 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.security.PrivateKey;
 import java.util.regex.Pattern;
 import net.snowflake.client.jdbc.ErrorCode;
 
-/**
- * session properties accepted for opening a new session.
- *
- * @author jhuang
- *     <p>Created on 11/3/15
- */
+/** session properties accepted for opening a new session. */
 public enum SFSessionProperty {
   SERVER_URL("serverURL", true, String.class),
   USER("user", false, String.class),
@@ -29,6 +20,12 @@ public enum SFSessionProperty {
   AUTHENTICATOR("authenticator", false, String.class),
   OKTA_USERNAME("oktausername", false, String.class),
   PRIVATE_KEY("privateKey", false, PrivateKey.class),
+  OAUTH_REDIRECT_URI("oauthRedirectUri", false, String.class),
+  OAUTH_CLIENT_ID("oauthClientID", false, String.class),
+  OAUTH_CLIENT_SECRET("oauthClientSecret", false, String.class),
+  OAUTH_SCOPE("oauthScope", false, String.class),
+  OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
+  OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
@@ -37,7 +34,13 @@ public enum SFSessionProperty {
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
   OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
+  /**
+   * @deprecated Use {@link #DISABLE_OCSP_CHECKS} for clarity. This configuration option is used to
+   *     disable OCSP verification.
+   */
+  @Deprecated
   INSECURE_MODE("insecureMode", false, Boolean.class),
+  DISABLE_OCSP_CHECKS("disableOCSPChecks", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   STRINGS_QUOTED("stringsQuotedForColumnDef", false, Boolean.class),
   APPLICATION("application", false, String.class),
@@ -54,7 +57,15 @@ public enum SFSessionProperty {
   VALIDATE_DEFAULT_PARAMETERS("validateDefaultParameters", false, Boolean.class),
   INJECT_WAIT_IN_PUT("inject_wait_in_put", false, Integer.class),
   PRIVATE_KEY_FILE("private_key_file", false, String.class),
+  PRIVATE_KEY_BASE64("private_key_base64", false, String.class),
+  /**
+   * @deprecated Use {@link #PRIVATE_KEY_PWD} for clarity. The given password will be used to
+   *     decrypt the private key value independent of whether that value is supplied as a file or
+   *     base64 string
+   */
+  @Deprecated
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class),
+  PRIVATE_KEY_PWD("private_key_pwd", false, String.class),
   CLIENT_INFO("snowflakeClientInfo", false, String.class),
   ALLOW_UNDERSCORES_IN_HOST("allowUnderscoresInHost", false, Boolean.class),
 
@@ -77,14 +88,45 @@ public enum SFSessionProperty {
   PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class),
 
   RETRY_TIMEOUT("retryTimeout", false, Integer.class),
+  ENABLE_DIAGNOSTICS("ENABLE_DIAGNOSTICS", false, Boolean.class),
+  DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
+  ENABLE_EXACT_SCHEMA_SEARCH_ENABLED("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class),
 
-  DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class);
+  DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class),
+
+  // Used to determine whether to use the previously hardcoded value for the formatter (for
+  // backwards compatibility) or use the value of JDBC_FORMAT_DATE_WITH_TIMEZONE
+  JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE(
+      "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class),
+
+  // Used as a fix for issue SNOW-354859. Remove with snowflake-jdbc version 4.x with BCR changes.
+  JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class),
+
+  BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class),
+
+  ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL("clientStoreTemporaryCredential", false, Boolean.class),
+
+  ENABLE_CLIENT_REQUEST_MFA_TOKEN("clientRequestMfaToken", false, Boolean.class),
+
+  HTTP_CLIENT_CONNECTION_TIMEOUT("HTTP_CLIENT_CONNECTION_TIMEOUT", false, Integer.class),
+
+  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class),
+
+  JAVA_LOGGING_CONSOLE_STD_OUT("JAVA_LOGGING_CONSOLE_STD_OUT", false, Boolean.class),
+
+  JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD(
+      "JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD", false, String.class),
+
+  IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", false, Boolean.class),
+
+  CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

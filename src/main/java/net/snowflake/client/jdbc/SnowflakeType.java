@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.math.BigDecimal;
@@ -102,7 +98,12 @@ public enum SnowflakeType {
     }
   }
 
-  /** Converts text of data type (returned from SQL query) into Types type, represented by an int */
+  /**
+   * Converts text of data type (returned from SQL query) into Types type, represented by an int
+   *
+   * @param typeName type name
+   * @return int representation of type
+   */
   public static int convertStringToType(String typeName) {
     int retval = Types.NULL;
     if (typeName == null || typeName.trim().isEmpty()) {

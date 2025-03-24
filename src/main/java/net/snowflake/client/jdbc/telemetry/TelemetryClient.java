@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,16 +19,13 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.Stopwatch;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-/**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Telemetry Service Interface
- */
+/** Telemetry Service Interface */
 public class TelemetryClient implements Telemetry {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
 
@@ -117,6 +111,11 @@ public class TelemetryClient implements Telemetry {
     this.logBatch = new LinkedList<>();
     this.isClosed = false;
     this.forceFlushSize = flushSize;
+    logger.debug(
+        "Initializing telemetry client with telemetry url: {}, flush size: {}, auth type: {}",
+        telemetryUrl,
+        forceFlushSize,
+        authType);
   }
 
   /**
@@ -131,6 +130,7 @@ public class TelemetryClient implements Telemetry {
 
   /** Disable any use of the client to add/send metrics */
   public void disableTelemetry() {
+    logger.debug("Disabling telemetry");
     this.isTelemetryServiceAvailable = false;
   }
 
@@ -146,7 +146,7 @@ public class TelemetryClient implements Telemetry {
       return createTelemetry(
           (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSFBaseSession(), flushSize);
     } catch (SQLException ex) {
-      logger.debug("input connection is not a SnowflakeConnection", false);
+      logger.debug("Input connection is not a SnowflakeConnection", false);
       return null;
     }
   }
@@ -243,7 +243,9 @@ public class TelemetryClient implements Telemetry {
       this.logBatch.add(log);
     }
 
-    if (this.logBatch.size() >= this.forceFlushSize) {
+    int logBatchSize = this.logBatch.size();
+    if (logBatchSize >= this.forceFlushSize) {
+      logger.debug("Force flushing telemetry batch of size: {}", logBatchSize);
       this.sendBatchAsync();
     }
   }
@@ -312,7 +314,6 @@ public class TelemetryClient implements Telemetry {
    * @throws IOException if closed or uploading batch fails
    */
   private boolean sendBatch() throws IOException {
-
     if (isClosed) {
       throw new IOException("Telemetry connector is closed");
     }
@@ -331,6 +332,8 @@ public class TelemetryClient implements Telemetry {
     }
 
     if (!tmpList.isEmpty()) {
+      Stopwatch stopwatch = new Stopwatch();
+      stopwatch.start();
       // session shared with JDBC
       String payload = logsToString(tmpList);
 
@@ -369,11 +372,16 @@ public class TelemetryClient implements Telemetry {
                     this.session.getHttpClientSocketTimeout(),
                     0,
                     this.session.getHttpClientKey());
+        stopwatch.stop();
+        logger.debug(
+            "Sending telemetry took {} ms. Batch size: {}",
+            stopwatch.elapsedMillis(),
+            tmpList.size());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance
         logger.error(
-            "Telemetry request failed, " + "response: {}, exception: {}", response, e.getMessage());
+            "Telemetry request failed, response: {}, exception: {}", response, e.getMessage());
         return false;
       }
     }

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.pooling;
 
 import java.sql.Connection;
@@ -11,12 +8,12 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.PooledConnection;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
 
   @Test
@@ -66,8 +63,6 @@ public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(logicalConnection::createBlob);
     expectFeatureNotSupportedException(logicalConnection::createNClob);
     expectFeatureNotSupportedException(logicalConnection::createSQLXML);
-    expectFeatureNotSupportedException(
-        () -> logicalConnection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
     expectFeatureNotSupportedException(
         () -> logicalConnection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
     expectFeatureNotSupportedException(

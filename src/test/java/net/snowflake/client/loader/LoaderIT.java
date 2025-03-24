@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -9,10 +6,12 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -20,13 +19,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Loader IT */
-@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderIT extends LoaderBase {
   @Test
   public void testInjectBadStagedFileInsert() throws Exception {
@@ -46,12 +45,7 @@ public class LoaderIT extends LoaderBase {
       Object[] row = new Object[] {i, "foo_" + i, rnd.nextInt() / 3, new Date(), json};
       loader.submitRow(row);
     }
-    try {
-      loader.finish();
-      fail("Should raise and error");
-    } catch (Loader.DataError ex) {
-      assertThat("Loader.DataError is raised", true);
-    }
+    assertThrows(Loader.DataError.class, loader::finish);
   }
 
   @Test
@@ -60,24 +54,16 @@ public class LoaderIT extends LoaderBase {
     StreamLoader loaderBefore = tdcbBefore.setOnError("ABORT_STATEMENT").getStreamLoader();
     loaderBefore.setProperty(LoaderProperty.executeBefore, "SELECT * FROOOOOM TBL");
     loaderBefore.start();
-    try {
-      loaderBefore.finish();
-      fail("SQL Error should be raised.");
-    } catch (Loader.ConnectionError e) {
-      assertThat(e.getCause(), instanceOf(SQLException.class));
-    }
+    Loader.ConnectionError e = assertThrows(Loader.ConnectionError.class, loaderBefore::finish);
+    assertThat(e.getCause(), instanceOf(SQLException.class));
 
     TestDataConfigBuilder tdcbAfter = new TestDataConfigBuilder(testConnection, putConnection);
     StreamLoader loaderAfter = tdcbAfter.setOnError("ABORT_STATEMENT").getStreamLoader();
     loaderAfter.setProperty(LoaderProperty.executeBefore, "select current_version()");
     loaderAfter.setProperty(LoaderProperty.executeAfter, "SELECT * FROM TBBBBBBL");
     loaderAfter.start();
-    try {
-      loaderAfter.finish();
-      fail("SQL Error should be raised.");
-    } catch (Loader.ConnectionError e) {
-      assertThat(e.getCause(), instanceOf(SQLException.class));
-    }
+    e = assertThrows(Loader.ConnectionError.class, loaderAfter::finish);
+    assertThat(e.getCause(), instanceOf(SQLException.class));
   }
 
   /**
@@ -91,7 +77,7 @@ public class LoaderIT extends LoaderBase {
    *
    * @throws Exception raises an exception if any error occurs.
    */
-  @Ignore("Performance test")
+  @Disabled("Performance test")
   @Test
   public void testLoaderLargeInsert() throws Exception {
     new TestDataConfigBuilder(testConnection, putConnection)
@@ -142,19 +128,20 @@ public class LoaderIT extends LoaderBase {
         errorMessage = listener.getErrors().get(0).getException().toString();
       }
       assertThat(String.format("Error: %s", errorMessage), listener.getErrorCount(), equalTo(0));
-      ResultSet rs =
-          testConnection
-              .createStatement()
-              .executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName));
-      rs.next();
-      Time rsTm = rs.getTime(1);
-      Date rsDt = rs.getDate(2);
-      assertThat("Time column didn't match", rsTm, equalTo(tm));
+      try (Statement statement = testConnection.createStatement()) {
+        try (ResultSet rs =
+            statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName))) {
+          assertTrue(rs.next());
+          Time rsTm = rs.getTime(1);
+          Date rsDt = rs.getDate(2);
+          assertThat("Time column didn't match", rsTm, equalTo(tm));
 
-      Calendar cal = cutOffTimeFromDate(dt);
-      long dtEpoch = cal.getTimeInMillis();
-      long rsDtEpoch = rsDt.getTime();
-      assertThat("Date column didn't match", rsDtEpoch, equalTo(dtEpoch));
+          Calendar cal = cutOffTimeFromDate(dt);
+          long dtEpoch = cal.getTimeInMillis();
+          long rsDtEpoch = rsDt.getTime();
+          assertThat("Date column didn't match", rsDtEpoch, equalTo(dtEpoch));
+        }
+      }
     } finally {
       testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
     }
@@ -477,12 +464,8 @@ public class LoaderIT extends LoaderBase {
       Object[] row = new Object[] {i, "foo_" + i, v, new Date(), json};
       loader.submitRow(row);
     }
-    try {
-      loader.finish();
-      fail("should raise an exception");
-    } catch (Loader.DataError ex) {
-      assertThat(ex.toString(), containsString("INVALID_INTEGER"));
-    }
+    Loader.DataError ex = assertThrows(Loader.DataError.class, loader::finish);
+    assertThat(ex.toString(), containsString("INVALID_INTEGER"));
   }
 
   @Test

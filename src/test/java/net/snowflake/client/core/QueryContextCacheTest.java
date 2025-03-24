@@ -1,13 +1,12 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class QueryContextCacheTest {
   private QueryContextCache qcc = null;
@@ -217,6 +216,11 @@ public class QueryContextCacheTest {
 
     qcc.deserializeQueryContextDTO(requestData);
     assertCacheDataWithContext(null);
+
+    QueryContextCache mockQcc = spy(qcc);
+    mockQcc.deserializeQueryContextDTO(null);
+    verify(mockQcc).clearCache();
+    verify(mockQcc, times(2)).logCacheEntries();
   }
 
   private void assertCacheData() {

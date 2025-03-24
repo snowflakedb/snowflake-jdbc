@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -14,15 +11,14 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Stream interface tests. Snowflake JDBC specific API */
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class StreamIT extends BaseJDBCTest {
   /**
    * Test Upload Stream
@@ -53,7 +49,7 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
@@ -69,7 +65,7 @@ public class StreamIT extends BaseJDBCTest {
    * @throws Throwable if any error occurs.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
@@ -132,7 +128,7 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
 
       } finally {

@@ -1,25 +1,25 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.NETWORK_ERROR_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.AnyOf.anyOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,37 +40,43 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnAWS;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ClientAuthnParameter;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -78,13 +84,14 @@ import org.junit.rules.TemporaryFolder;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionLatestIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
 
   private boolean defaultState;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
     service.updateContextForIT(getConnectionParameters());
@@ -93,7 +100,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     TelemetryService.enable();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws InterruptedException {
     TelemetryService service = TelemetryService.getInstance();
     // wait 5 seconds while the service is flushing
@@ -183,12 +190,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryID() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
@@ -200,7 +208,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String statementPutQueryId = snowflakeStatement.getQueryID();
         TestUtil.assertValidQueryId(statementPutQueryId);
         assertNotEquals(
-            "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+            createStageQueryId, statementPutQueryId, "create query id is override by put query id");
         resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetPutQueryId);
         assertEquals(resultSetPutQueryId, statementPutQueryId);
@@ -212,7 +220,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetGetQueryId);
         assertNotEquals(
-            "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
+            resultSetGetQueryId, resultSetPutQueryId, "put and get query id should be different");
         assertEquals(resultSetGetQueryId, statementGetQueryId);
       }
     }
@@ -220,42 +228,54 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.14.4 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryIDEvenWhenFail() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
-      try {
-        statement.executeQuery("PUT file://" + sourceFilePath + " @not_existing_state");
-        fail("PUT statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement
+                    .executeQuery("PUT file://" + sourceFilePath + " @not_existing_state")
+                    .close();
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+
       String putQueryId = snowflakeStatement.getQueryID();
-      try {
-        statement.executeQuery(
-            "GET @not_existing_state 'file://" + destFolderCanonicalPath + "' parallel=8");
-        fail("GET statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement
+                    .executeQuery(
+                        "GET @not_existing_state 'file://"
+                            + destFolderCanonicalPath
+                            + "' parallel=8")
+                    .close();
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+
       String getQueryId = snowflakeStatement.getQueryID();
-      assertNotEquals("put and get query id should be different", putQueryId, getQueryId);
+      assertNotEquals(putQueryId, getQueryId, "put and get query id should be different");
       String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       statement.execute("CREATE OR REPLACE STAGE " + stageName);
       TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-      try {
-        statement.executeQuery("PUT file://not_existing_file @" + stageName);
-        fail("PUT statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement.executeQuery("PUT file://not_existing_file @" + stageName);
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
     }
   }
 
@@ -264,7 +284,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
     String queryID = null;
-    QueryStatusV2 statusV2 = null;
     try (Connection con = getConnection();
         Statement statement = con.createStatement();
         ResultSet rs1 =
@@ -278,7 +297,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       await()
           .atMost(Duration.ofSeconds(5))
           .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
-      statusV2 = sfrs.getStatusV2();
+      QueryStatusV2 statusV2 = sfrs.getStatusV2();
       // Query should take 60 seconds so should be running
       assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
       assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
@@ -288,14 +307,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     Thread.sleep(1000 * 70);
     // Create a new connection and new instance of a resultSet using query ID
     try (Connection con = getConnection()) {
-      try (ResultSet rs =
-          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID")) {
-        fail("Query ID should be rejected");
-      } catch (SQLException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  con.unwrap(SnowflakeConnection.class)
+                      .createResultSet("Totally invalid query ID")
+                      .close());
+      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
-        statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        QueryStatusV2 statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
         // Assert status of query is a success
         assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
         assertEquals("No error reported", statusV2.getErrorMessage());
@@ -308,27 +329,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     .unwrap(SnowflakeStatement.class)
                     .executeAsyncQuery("select * from nonexistentTable")) {
           Thread.sleep(100);
-          statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-          // when GS response is slow, allow up to 1 second of retries to get final query status
           SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
           await()
               .atMost(Duration.ofSeconds(10))
-              .until(
-                  () -> {
-                    QueryStatus qs = sfrs1.getStatusV2().getStatus();
-                    return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
-                  });
-          // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
-          // response has returned,
-          // assert it is the error message that we are expecting.
-          if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-            assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-            assertEquals(2003, statusV2.getErrorCode());
-            assertEquals(
-                "SQL compilation error:\n"
-                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-                statusV2.getErrorMessage());
-          }
+              .until(() -> sfrs1.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+          statusV2 = sfrs1.getStatusV2();
+          assertEquals(2003, statusV2.getErrorCode());
+          assertEquals(
+              "SQL compilation error:\n"
+                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+              statusV2.getErrorMessage());
         }
       }
     }
@@ -341,17 +351,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Create another query that will not be successful (querying table that does not exist)
       try (ResultSet rs1 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!")) {
-        try {
-          rs1.next();
-        } catch (SQLException ex) {
-          assertEquals(
-              "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-                  + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-              ex.getMessage());
-          assertEquals(
-              "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-              rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
-        }
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () -> {
+                  rs1.next();
+                });
+        assertEquals(
+            "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+                + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+            ex.getMessage());
+        assertEquals(
+            "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+            rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
       }
       try (ResultSet rs2 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
@@ -427,8 +439,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       await()
           .atMost(Duration.ofSeconds(10))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+
+      // it may take more time to finish the test when running in parallel in CI builds
       await()
-          .atMost(Duration.ofSeconds(50))
+          .atMost(Duration.ofSeconds(360))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
     }
   }
@@ -570,90 +584,53 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
     // Adding authenticator type for code coverage purposes
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
+    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
     int count = TelemetryService.getInstance().getEventCount();
-    try {
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
 
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
-      if (TelemetryService.getInstance()
-              .getServerDeploymentName()
-              .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
-          || TelemetryService.getInstance()
-              .getServerDeploymentName()
-              .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
-        // a connection error response (wrong user and password)
-        // with status code 200 is returned in RT
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    if (TelemetryService.getInstance()
+            .getServerDeploymentName()
+            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
+        || TelemetryService.getInstance()
+            .getServerDeploymentName()
+            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
+      // a connection error response (wrong user and password)
+      // with status code 200 is returned in RT
+      assertThat(
+          "Communication error",
+          e.getErrorCode(),
+          anyOf(
+              equalTo(INVALID_CONNECTION_INFO_CODE),
+              equalTo(BAD_REQUEST_GS_CODE),
+              equalTo(NETWORK_ERROR_CODE)));
+
+      // since it returns normal response,
+      // the telemetry does not create new event
+      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+      if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(
-            "Communication error",
-            e.getErrorCode(),
-            anyOf(equalTo(INVALID_CONNECTION_INFO_CODE), equalTo(BAD_REQUEST_GS_CODE)));
-
-        // since it returns normal response,
-        // the telemetry does not create new event
-        Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-        if (TelemetryService.getInstance().isDeploymentEnabled()) {
-          assertThat(
-              "Telemetry should not create new event",
-              TelemetryService.getInstance().getEventCount(),
-              equalTo(count));
-        }
-      } else {
-        // in qa1 and others, 404 http status code should be returned
-        assertThat(
-            "Communication error",
-            e.getErrorCode(),
-            equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-
-        if (TelemetryService.getInstance().isDeploymentEnabled()) {
-          assertThat(
-              "Telemetry event has not been reported successfully. Error: "
-                  + TelemetryService.getInstance().getLastClientError(),
-              TelemetryService.getInstance().getClientFailureCount(),
-              equalTo(0));
-        }
+            "Telemetry should not create new event",
+            TelemetryService.getInstance().getEventCount(),
+            equalTo(count));
       }
-      return;
-    }
-    fail();
-  }
-
-  @Test
-  public void testWrongHostNameTimeout() throws InterruptedException {
-    long connStart = 0, conEnd;
-    Properties properties = new Properties();
-    properties.put("account", "testaccount");
-    properties.put("loginTimeout", "20");
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepassword");
-    // Adding authenticator type for code coverage purposes
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
-    try {
-      connStart = System.currentTimeMillis();
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri =
-          params.get("uri").replace("." + hostItems[hostItems.length - 2] + ".", ".wronghostname.");
-
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
+    } else {
+      // in qa1 and others, 404 http status code should be returned
       assertThat(
           "Communication error",
           e.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
-      conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(
             "Telemetry event has not been reported successfully. Error: "
@@ -661,9 +638,48 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             TelemetryService.getInstance().getClientFailureCount(),
             equalTo(0));
       }
-      return;
     }
-    fail();
+  }
+
+  @Test
+  public void testWrongHostNameTimeout() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("account", "testaccount");
+    properties.put("loginTimeout", "20");
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
+    long connStart = System.currentTimeMillis(), conEnd;
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri =
+                  params
+                      .get("uri")
+                      .replace("." + hostItems[hostItems.length - 2] + ".", ".wronghostname.");
+
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
+    conEnd = System.currentTimeMillis();
+    assertThat("Login time out not taking effective", conEnd - connStart < 300000);
+
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
+    }
   }
 
   @Test
@@ -677,39 +693,337 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // only when ssl is on can trigger the login timeout
     // ssl is off will trigger 404
     properties.put("ssl", "on");
-    try {
-      connStart = System.currentTimeMillis();
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
-      assertThat(
-          "Communication error",
-          e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+    connStart = System.currentTimeMillis();
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
-      conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
-      }
-      return;
+    conEnd = System.currentTimeMillis();
+    assertThat("Login time out not taking effective", conEnd - connStart < 300000);
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
     }
-    fail();
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testKeyPairFileDataSourceSerialization() throws Exception {
     // test with key/pair authentication where key is in file
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    try {
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setServerName(params.get("host"));
+      ds.setSsl("on".equals(params.get("ssl")));
+      ds.setAccount(params.get("account"));
+      ds.setPortNumber(Integer.parseInt(params.get("port")));
+      ds.setUser(params.get("user"));
+      String privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      ds.setPrivateKeyFile(privateKeyLocation, "test");
+
+      // set up public key
+      setUpPublicKey("encrypted_rsa_key.pub", params.get("user"));
+
+      connectAndExecuteSelect1(ds);
+
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
+      // serialize datasource object into a file
+      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+        out.writeObject(ds);
+      }
+      // deserialize into datasource object again
+      try (FileInputStream inputFile = new FileInputStream(serializedFile);
+          ObjectInputStream in = new ObjectInputStream(inputFile)) {
+        SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+        // test connection a second time
+        connectAndExecuteSelect1(ds2);
+      }
+    } finally {
+      unsetPublicKey(params.get("user"));
+    }
+  }
+
+  private static String readPrivateKeyFileToBase64Content(String fileName) throws IOException {
+    return Base64.getEncoder()
+        .encodeToString(Files.readAllBytes(Paths.get(getFullPathFileInResource(fileName))));
+  }
+
+  /** Works in > 3.18.0 */
+  @Test
+  @DontRunOnGithubActions
+  public void testKeyPairBase64DataSourceSerialization() throws Exception {
+    // test with key/pair authentication where key is passed as a Base64 string value
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    try {
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setServerName(params.get("host"));
+      ds.setSsl("on".equals(params.get("ssl")));
+      ds.setAccount(params.get("account"));
+      ds.setPortNumber(Integer.parseInt(params.get("port")));
+      ds.setUser(params.get("user"));
+      String privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      ds.setPrivateKeyBase64(privateKeyBase64, "test");
+
+      // set up public key
+      setUpPublicKey("encrypted_rsa_key.pub", params.get("user"));
+
+      connectAndExecuteSelect1(ds);
+
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
+      // serialize datasource object into a file
+      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+        out.writeObject(ds);
+      }
+      // deserialize into datasource object again
+      try (FileInputStream inputFile = new FileInputStream(serializedFile);
+          ObjectInputStream in = new ObjectInputStream(inputFile)) {
+        SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+        // test connection a second time
+        connectAndExecuteSelect1(ds2);
+      }
+    } finally {
+      unsetPublicKey(params.get("user"));
+    }
+  }
+
+  /**
+   * This test may be split but let's keep it with multiple keys checks to not slow down test *
+   * executions
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testPrivateKeyInConnectionString() throws SQLException, IOException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    String baseUri = parameters.get("uri");
+    try {
+      // Test with non-password-protected private key file (.pem)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      Properties properties = preparePropertiesForPrivateKeyTests(parameters);
+
+      // PKCS #8
+      String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
+      String uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectSuccessfully(uri, properties);
+
+      // PKCS #1
+      privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
+      uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectSuccessfully(uri, properties);
+
+      // test with password-protected private key file (.p8)
+      setUpPublicKey("encrypted_rsa_key.pub", testUser);
+
+      privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
+
+      connectSuccessfully(uri, properties);
+      // test with incorrect password for private key
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "wrong_password");
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+      // test with invalid public/private key combo (using 1st public key with 2nd private key)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
+      connectExpectingError390144(uri, properties);
+
+      // test with invalid private key
+      privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
+      uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+    } finally {
+      unsetPublicKey(testUser);
+    }
+  }
+
+  private static String uriWithPrivateKeyFile(String baseUri, String privateKeyLocation) {
+    return baseUri
+        + "/?"
+        + SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey()
+        + "="
+        + privateKeyLocation;
+  }
+
+  private static String uriWithPrivateKeyFileAndPassword(
+      String baseUri, String privateKeyLocation, String password) {
+    return uriWithPrivateKeyFile(baseUri, privateKeyLocation)
+        + "&"
+        + SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()
+        + "="
+        + password;
+  }
+
+  private static void connectExpectingError390144(String fullUri, Properties properties) {
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(fullUri, properties).close());
+    assertEquals(390144, e.getErrorCode());
+  }
+
+  private static void connectSuccessfully(String uri, Properties properties) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+  }
+
+  private static void setUpPublicKey(String fileName, String testUser)
+      throws SQLException, IOException {
+    Properties properties = new Properties();
+    properties.put("role", "accountadmin");
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
+      String pathfile = getFullPathFileInResource(fileName);
+      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
+  }
+
+  private static void unsetPublicKey(String testUser) throws SQLException {
+    Properties props = new Properties();
+    props.put("role", "accountadmin");
+    try (Connection connection = getConnection(props);
+        Statement statement = connection.createStatement()) {
+      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+    }
+  }
+
+  // This will only work with JDBC driver versions higher than 3.15.1
+  @Test
+  @DontRunOnGithubActions
+  public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testPrivateKeyInConnectionString();
+  }
+
+  /**
+   * Works in > 3.18.0
+   *
+   * <p>This test may be split but let's keep it with multiple keys checks to not slow down test
+   * executions
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testPrivateKeyBase64InConnectionString() throws SQLException, IOException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    String baseUri = parameters.get("uri");
+    try {
+      // Test with non-password-protected private key file (.pem)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      Properties properties = preparePropertiesForPrivateKeyTests(parameters);
+
+      // PKCS #8
+      String privateKeyBase64 = readPrivateKeyFileToBase64Content("rsa_key.p8");
+      String uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+      connectSuccessfully(uri, properties);
+
+      // PKCS #1
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("rsa_key.pem");
+      uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+      connectSuccessfully(uri, properties);
+
+      // test with password-protected private key file (.p8)
+      setUpPublicKey("encrypted_rsa_key.pub", testUser);
+
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
+      connectSuccessfully(uri, properties);
+
+      // test with incorrect password for private key
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "wrong_password");
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+      // test with invalid public/private key combo (using 1st public key with 2nd private key)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
+      connectExpectingError390144(uri, properties);
+
+      // test with invalid private key
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("invalid_private_key.pem");
+      uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+    } finally {
+      // clean up
+      unsetPublicKey(testUser);
+    }
+  }
+
+  private static String uriWithPrivateKeyBase64(String baseUri, String privateKeyBase64) {
+    return baseUri
+        + "/?"
+        + SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey()
+        + "="
+        + privateKeyBase64;
+  }
+
+  private static String uriWithPrivateKeyBase64AndPassword(
+      String baseUri, String privateKeyBase64, String password) {
+    return uriWithPrivateKeyBase64(baseUri, privateKeyBase64)
+        + "&"
+        + SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()
+        + "="
+        + password;
+  }
+
+  private static Properties preparePropertiesForPrivateKeyTests(Map<String, String> parameters) {
+    Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", parameters.get("user"));
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    return properties;
+  }
+
+  private static void connectExpectingInvalidOrUnsupportedPrivateKey(
+      String uri, Properties properties) {
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(uri, properties).close());
+    assertEquals(
+        (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+  }
+
+  /** Works in > 3.18.0 */
+  @Test
+  @DontRunOnGithubActions
+  public void testPrivateKeyBase64InConnectionStringWithBouncyCastle()
+      throws SQLException, IOException {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testPrivateKeyBase64InConnectionString();
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  public void testBasicDataSourceSerialization() throws Exception {
+    // test with username/password authentication
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -718,28 +1032,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
-    String privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    ds.setPrivateKeyFile(privateKeyLocation, "test");
+    ds.setPassword(params.get("password"));
 
-    // set up public key
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      statement.execute("use role accountadmin");
-      String pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(
-          String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
-    }
+    connectAndExecuteSelect1(ds);
 
-    try (Connection con = ds.getConnection();
-        Statement statement = con.createStatement();
-        ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    }
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+    serializedFile.createNewFile();
     // serialize datasource object into a file
     try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
         ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -749,180 +1047,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (FileInputStream inputFile = new FileInputStream(serializedFile);
         ObjectInputStream in = new ObjectInputStream(inputFile)) {
       SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
-      // test connection a second time
-      try (Connection con = ds2.getConnection();
-          Statement statement = con.createStatement()) {
-        ResultSet resultSet = statement.executeQuery("select 1");
-        resultSet.next();
-        assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      }
-
-      // clean up
-      try (Connection connection = getConnection()) {
-        Statement statement = connection.createStatement();
-        statement.execute("use role accountadmin");
-        statement.execute(String.format("alter user %s unset rsa_public_key", params.get("user")));
-      }
+      connectAndExecuteSelect1(ds2);
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPrivateKeyInConnectionString() throws SQLException, IOException {
-    Map<String, String> parameters = getConnectionParameters();
-    String testUser = parameters.get("user");
-    String pathfile = null;
-    String pubKey = null;
-    // Test with non-password-protected private key file (.pem)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    }
-
-    // PKCS #8
-    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
-    String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-
-    // PKCS #1
-    privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-
-    // test with password-protected private key file (.p8)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    }
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    // test with incorrect password for private key
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=wrong_password&private_key_file="
-            + privateKeyLocation;
-
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
-
-    // test with invalid public/private key combo (using 1st public key with 2nd private key)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    }
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(390144, e.getErrorCode());
-    }
-
-    // test with invalid private key
-    privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
-
-    // clean up
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-    }
-  }
-
-  // This will only work with JDBC driver versions higher than 3.15.1
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
-    testPrivateKeyInConnectionString();
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testBasicDataSourceSerialization() throws Exception {
-    // test with username/password authentication
-    // set up DataSource object and ensure connection works
-    Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    SnowflakeBasicDataSource ds2 = null;
-    ds.setServerName(params.get("host"));
-    ds.setSsl("on".equals(params.get("ssl")));
-    ds.setAccount(params.get("account"));
-    ds.setPortNumber(Integer.parseInt(params.get("port")));
-    ds.setUser(params.get("user"));
-    ds.setPassword(params.get("password"));
+  private static void connectAndExecuteSelect1(SnowflakeBasicDataSource ds) throws SQLException {
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      con.close();
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
-      // serialize datasource object into a file
-      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
-          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
-        out.writeObject(ds);
-      }
-      // deserialize into datasource object again
-      try (FileInputStream inputFile = new FileInputStream(serializedFile);
-          ObjectInputStream in = new ObjectInputStream(inputFile)) {
-        ds2 = (SnowflakeBasicDataSource) in.readObject();
-      }
-    }
-
-    // test connection a second time
-    try (Connection con = ds2.getConnection();
-        Statement statement = con.createStatement();
-        ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      assertTrue(resultSet.next());
+      assertEquals(1, resultSet.getInt(1));
     }
   }
 
@@ -1059,22 +1193,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
           queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         }
-        try {
-          connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-          fail("The getChildQueryIds() should fail because query is running");
-        } catch (SQLException ex) {
-          String msg = ex.getMessage();
-          if (!msg.contains("Status of query associated with resultSet is")
-              || !msg.contains("Results not generated.")) {
-            ex.printStackTrace();
-            QueryStatus qs =
-                connection
-                    .unwrap(SnowflakeConnectionV1.class)
-                    .getSfSession()
-                    .getQueryStatus(queryID);
-            fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
-          }
+        String finalQueryID = queryID;
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () -> {
+                  connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(finalQueryID);
+                });
+        String msg = ex.getMessage();
+        if (!msg.contains("Status of query associated with resultSet is")
+            || !msg.contains("Results not generated.")) {
+          ex.printStackTrace();
+          QueryStatus qs =
+              connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
+          fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
+
       } finally {
         try (Statement statement = connection.createStatement()) {
           statement.execute("select system$cancel_query('" + queryID + "')");
@@ -1085,7 +1219,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetChildQueryIdsNegativeTestQueryFailed() throws Exception {
-    String queryID = null;
+    String queryID;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       String multiStmtQuery = "select 1; select to_date('not_date'); select 2";
@@ -1095,17 +1229,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
       }
-      try {
-        waitForAsyncQueryDone(connection, queryID);
-        connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        fail("The getChildQueryIds() should fail because the query fails");
-      } catch (SQLException ex) {
-        assertTrue(
-            ex.getMessage()
-                .contains(
-                    "Uncaught Execution of multiple statements failed on statement \"select"
-                        + " to_date('not_date')\""));
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                waitForAsyncQueryDone(connection, queryID);
+                connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+              });
+      assertTrue(
+          ex.getMessage()
+              .contains(
+                  "Uncaught Execution of multiple statements failed on statement \"select"
+                      + " to_date('not_date')\""));
     }
   }
 
@@ -1114,7 +1249,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * likely not having the test account we used here.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAuthenticatorEndpointWithDashInAccountName() throws Exception {
     Map<String, String> params = getConnectionParameters();
     String serverUrl =
@@ -1130,8 +1265,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     Map<String, Object> data =
         Collections.singletonMap(ClientAuthnParameter.ACCOUNT_NAME.name(), "snowhouse-local");
-    ClientAuthnDTO authnData = new ClientAuthnDTO();
-    authnData.setData(data);
+    ClientAuthnDTO authnData = new ClientAuthnDTO(data, null);
 
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     String json = mapper.writeValueAsString(authnData);
@@ -1167,19 +1301,28 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * Test case for the method testDownloadStreamWithFileNotFoundException. This test verifies that a
+   * SQLException is thrown when attempting to download a file that does not exist. It verifies that
+   * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
+   */
   @Test
+  @RunOnAWS
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
       long startDownloadTime = System.currentTimeMillis();
-      try {
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
-      } catch (SQLException ex) {
-        assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                connection
+                    .unwrap(SnowflakeConnection.class)
+                    .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+              });
+      assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
+
       long endDownloadTime = System.currentTimeMillis();
       // S3Client retries some exception for a default timeout of 5 minutes
       // Check that 404 was not retried
@@ -1229,19 +1372,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String passphrase = System.getenv(passphraseEnv);
 
     assertNotNull(
+        passphrase,
         privateKeyFileNameEnv
             + " environment variable can't be empty. "
-            + "Please provide the filename for your private key located in the resource folder",
-        passphrase);
+            + "Please provide the filename for your private key located in the resource folder");
 
     assertNotNull(
+        passphrase,
         publicKeyFileNameEnv
             + " environment variable can't be empty. "
-            + "Please provide the filename for your public key located in the resource folder",
-        passphrase);
+            + "Please provide the filename for your public key located in the resource folder");
 
     assertNotNull(
-        passphraseEnv + " environment variable is required to decrypt private key.", passphrase);
+        passphrase, passphraseEnv + " environment variable is required to decrypt private key.");
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
     Properties properties = new Properties();
@@ -1262,7 +1405,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String privateKeyLocation = getFullPathFileInResource(privateKeyFile);
     String uri =
         parameters.get("uri")
-            + "/?private_key_file_pwd="
+            + "/?private_key_pwd="
             + passphrase
             + "&private_key_file="
             + privateKeyLocation;
@@ -1271,12 +1414,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       return false;
     }
 
-    // clean up
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-    connection.close();
+    unsetPublicKey(testUser);
     return true;
   }
 
@@ -1304,8 +1442,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws IOException
    */
   @Test
-  @Ignore
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled
+  @DontRunOnGithubActions
   public void testPbes2Support() throws SQLException, IOException {
     System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
     boolean pbes2Supported = isPbes2KeySupported();
@@ -1318,7 +1456,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String failureMessage =
         "The failure means that the JDK version can decrypt a private key generated by OpenSSL v3 and "
             + "BouncyCastle shouldn't be needed anymore";
-    assertFalse(failureMessage, pbes2Supported);
+    assertFalse(pbes2Supported, failureMessage);
 
     // The expectation is that this is going to pass once we add Bouncy Castle in the list of
     // providers
@@ -1328,12 +1466,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         "Bouncy Castle Provider should have been loaded with the -D"
             + SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM
             + "JVM argument and this should have decrypted the private key generated by OpenSSL v3";
-    assertTrue(failureMessage, pbes2Supported);
+    assertTrue(pbes2Supported, failureMessage);
   }
 
   // Test for regenerating okta one-time token for versions > 3.15.1
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaGenerates429StatusCode() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -1364,5 +1502,175 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     for (Thread thread : threadList) {
       thread.join();
     }
+  }
+
+  /**
+   * SNOW-1465374: For TIMESTAMP_LTZ we were returning timestamps without timezone when scale was
+   * set e.g. to 6 in Arrow format The problem wasn't visible when calling getString, but was
+   * visible when we called toString on passed getTimestamp since we returned {@link
+   * java.sql.Timestamp}, not {@link SnowflakeTimestampWithTimezone}
+   *
+   * <p>Timestamps before 1582-10-05 are always returned as {@link java.sql.Timestamp}, not {@link
+   * SnowflakeTimestampWithTimezone} {SnowflakeTimestampWithTimezone}
+   *
+   * <p>Added in > 3.16.1
+   */
+  @Test
+  public void shouldGetDifferentTimestampLtzConsistentBetweenFormats() throws Exception {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.executeUpdate(
+          "create or replace table DATETIMETZ_TYPE(timestamp_tzcol timestamp_ltz, timestamp_tzpcol timestamp_ltz(6), timestamptzcol timestampltz, timestampwtzcol timestamp with local time zone);");
+      Arrays.asList(
+              "insert into DATETIMETZ_TYPE values('9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999','9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999999');",
+              "insert into DATETIMETZ_TYPE values('1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000001','1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456 +0100','2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456789 +0100');",
+              "insert into DATETIMETZ_TYPE values(current_timestamp(),current_timestamp(),current_timestamp(),current_timestamp());",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.12345 -0530','2000-06-18 18:29:30.123 -0530','2000-06-18 18:29:30.123456 -0530','2000-06-18 18:29:30.123 -0530');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30');",
+              "insert into DATETIMETZ_TYPE values('1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000001','1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000001','1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000001','1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000000001');")
+          .forEach(
+              insert -> {
+                try {
+                  statement.executeUpdate(insert);
+                } catch (SQLException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      try (ResultSet arrowResultSet = statement.executeQuery("select * from DATETIMETZ_TYPE")) {
+        try (Connection jsonConnection = getConnection();
+            Statement jsonStatement = jsonConnection.createStatement()) {
+          jsonStatement.execute("alter session set JDBC_QUERY_RESULT_FORMAT=JSON");
+          try (ResultSet jsonResultSet =
+              jsonStatement.executeQuery("select * from DATETIMETZ_TYPE")) {
+            int rowIdx = 0;
+            while (arrowResultSet.next()) {
+              logger.debug("Checking row " + rowIdx);
+              assertTrue(jsonResultSet.next());
+              for (int column = 1; column <= 4; ++column) {
+                logger.trace(
+                    "JSON row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    jsonResultSet.getString(column),
+                    jsonResultSet.getTimestamp(column),
+                    jsonResultSet.getTimestamp(column).getTime(),
+                    jsonResultSet.getTimestamp(column).getTimezoneOffset(),
+                    jsonResultSet.getTimestamp(column).getClass());
+                logger.trace(
+                    "ARROW row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    arrowResultSet.getString(column),
+                    arrowResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column).getTime(),
+                    arrowResultSet.getTimestamp(column).getTimezoneOffset(),
+                    arrowResultSet.getTimestamp(column).getClass());
+                assertEquals(
+                    jsonResultSet.getString(column),
+                    arrowResultSet.getString(column),
+                    "Expecting that string representation are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
+                assertEquals(
+                    jsonResultSet.getTimestamp(column).toString(),
+                    arrowResultSet.getTimestamp(column).toString(),
+                    "Expecting that string representation (via toString) are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
+                assertEquals(
+                    jsonResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column),
+                    "Expecting that timestamps are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
+              }
+              rowIdx++;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testSetHoldability() throws Throwable {
+    try (Connection connection = getConnection()) {
+      connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      // return an empty type map. setTypeMap is not supported.
+      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
+      connection.close();
+      expectConnectionAlreadyClosedException(
+          () -> connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
+    }
+  }
+
+  /** Added in > 3.14.5 and modified in > 3.18.0 */
+  @Test
+  public void shouldGetOverridenConnectionAndSocketTimeouts() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 100);
+    paramProperties.put("HTTP_CLIENT_SOCKET_TIMEOUT", 200);
+
+    try (Connection connection = getConnection(paramProperties)) {
+      assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
+      assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
+    }
+  }
+
+  /** Added in > 3.19.0 */
+  @Test
+  public void shouldFailOnSslExceptionWithLinkToTroubleShootingGuide() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("user", "fakeuser");
+    properties.put("password", "testpassword");
+    properties.put("ocspFailOpen", Boolean.FALSE.toString());
+
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+            });
+    // *.badssl.com may fail with timeout
+    if (!(e.getCause() instanceof SSLHandshakeException)
+        && e.getCause().getMessage().toLowerCase().contains("timed out")) {
+      return;
+    }
+    assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+    assertTrue(
+        e.getMessage()
+            .contains(
+                "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+  }
+
+  /**
+   * Test production connectivity with disableOCSPChecksMode enabled. This test applies to driver
+   * versions after 3.21.0
+   */
+  @Test
+  public void testDisableOCSPChecksMode() throws SQLException {
+
+    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+    Properties properties = new Properties();
+
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepwd");
+    properties.put("account", "fakeaccount");
+    properties.put("disableOCSPChecks", true);
+    SQLException thrown =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(deploymentUrl, properties);
+            });
+
+    assertThat(
+        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 }

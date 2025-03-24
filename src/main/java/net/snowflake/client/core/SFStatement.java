@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
@@ -44,7 +40,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
   private SFSession session;
 
@@ -80,7 +76,7 @@ public class SFStatement extends SFBaseStatement {
   private long conservativeMemoryLimit; // in bytes
 
   public SFStatement(SFSession session) {
-    logger.debug(" public SFStatement(SFSession session)", false);
+    logger.trace("SFStatement(SFSession session)", false);
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
@@ -91,7 +87,7 @@ public class SFStatement extends SFBaseStatement {
   private void verifyArrowSupport() {
     if (SnowflakeDriver.isDisableArrowResultFormat()) {
       logger.debug(
-          "disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
+          "Disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
       statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
     }
   }
@@ -205,7 +201,7 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     resetState();
 
-    logger.debug("executeQuery: {}", sql);
+    logger.debug("ExecuteQuery: {}", sql);
 
     if (session == null || session.isClosed()) {
       throw new SQLException("connection is closed");
@@ -298,7 +294,7 @@ public class SFStatement extends SFBaseStatement {
       @Override
       public Void call() throws SQLException {
         try {
-          statement.cancel();
+          statement.cancel(CancellationReason.TIMEOUT);
         } catch (SFException ex) {
           throw new SnowflakeSQLLoggedException(
               session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
@@ -318,6 +314,8 @@ public class SFStatement extends SFBaseStatement {
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
    * @param internal run internal query not showing up in history
+   * @param asyncExec is async execute
+   * @param execTimeData ExecTimeTelemetryData
    * @return raw json response
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
@@ -433,11 +431,11 @@ public class SFStatement extends SFBaseStatement {
       }
       if (numBinds > 0 && session.getPreparedStatementLogging()) {
         if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING) {
-          logger.info(
+          logger.debug(
               "Number of binds exceeds logging limit. Printing off {} binding parameters.",
               MAX_BINDING_PARAMS_FOR_LOGGING);
         } else {
-          logger.info("Printing off {} binding parameters.", numBinds);
+          logger.debug("Printing off {} binding parameters.", numBinds);
         }
         int counter = 0;
         // if it's an array bind, print off the first few rows from each column.
@@ -456,7 +454,7 @@ public class SFStatement extends SFBaseStatement {
               rows += bindRows.get(i) + ", ";
             }
             rows += "]";
-            logger.info("Column {}: {}", entry.getKey(), rows);
+            logger.debug("Column {}: {}", entry.getKey(), rows);
             counter += numRowsPrinted;
             if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) {
               break;
@@ -470,7 +468,7 @@ public class SFStatement extends SFBaseStatement {
               break;
             }
             counter++;
-            logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
+            logger.debug("Column {}: {}", entry.getKey(), entry.getValue().getValue());
           }
         }
       }
@@ -485,8 +483,14 @@ public class SFStatement extends SFBaseStatement {
       // if timeout is set, start a thread to cancel the request after timeout
       // reached.
       if (this.queryTimeout > 0) {
-        executor = Executors.newScheduledThreadPool(1);
-        setTimeBomb(executor);
+        if (session.getImplicitServerSideQueryTimeout()) {
+          // Server side only query timeout
+          statementParametersMap.put("STATEMENT_TIMEOUT_IN_SECONDS", this.queryTimeout);
+        } else {
+          // client side only query timeout
+          executor = Executors.newScheduledThreadPool(1);
+          setTimeBomb(executor);
+        }
       }
 
       StmtUtil.StmtOutput stmtOutput = null;
@@ -503,8 +507,8 @@ public class SFStatement extends SFBaseStatement {
               // renew the session
               session.renewSession(stmtInput.sessionToken);
             } catch (SnowflakeReauthenticationRequest ex0) {
-              if (session.isExternalbrowserAuthenticator()) {
-                reauthenticate();
+              if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
+                session.open();
               } else {
                 throw ex0;
               }
@@ -693,28 +697,16 @@ public class SFStatement extends SFBaseStatement {
     return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
-  private void reauthenticate() throws SFException, SnowflakeSQLException {
-    SFLoginInput input =
-        new SFLoginInput()
-            .setRole(session.getRole())
-            .setWarehouse(session.getWarehouse())
-            .setDatabaseName(session.getDatabase())
-            .setSchemaName(session.getSchema())
-            .setOCSPMode(session.getOCSPMode())
-            .setHttpClientSettingsKey(session.getHttpClientKey());
-
-    session.open();
-  }
-
   /**
    * A helper method to build URL and cancel the SQL for exec
    *
    * @param sql sql statement
    * @param mediaType media type
+   * @param cancellationReason reason for the cancellation
    * @throws SnowflakeSQLException if failed to cancel the statement
    * @throws SFException if statement is already closed
    */
-  private void cancelHelper(String sql, String mediaType)
+  private void cancelHelper(String sql, String mediaType, CancellationReason cancellationReason)
       throws SnowflakeSQLException, SFException {
     synchronized (this) {
       if (isClosed) {
@@ -734,7 +726,7 @@ public class SFStatement extends SFBaseStatement {
         .setMaxRetries(session.getMaxHttpRetries())
         .setHttpClientSettingsKey(session.getHttpClientKey());
 
-    StmtUtil.cancel(stmtInput);
+    StmtUtil.cancel(stmtInput, cancellationReason);
 
     synchronized (this) {
       /*
@@ -751,8 +743,10 @@ public class SFStatement extends SFBaseStatement {
    * Execute sql
    *
    * @param sql sql statement.
+   * @param asyncExec is async exec
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
@@ -771,9 +765,9 @@ public class SFStatement extends SFBaseStatement {
     session.injectedDelay();
 
     if (session.getPreparedStatementLogging()) {
-      logger.info("execute: {}", sql);
+      logger.info("Execute: {}", sql);
     } else {
-      logger.debug("execute: {}", sql);
+      logger.debug("Execute: {}", sql);
     }
 
     String trimmedSql = sql.trim();
@@ -798,7 +792,7 @@ public class SFStatement extends SFBaseStatement {
     try {
       transferAgent.execute();
 
-      logger.debug("setting result set", false);
+      logger.debug("Setting result set", false);
 
       resultSet = (SFFixedViewResultSet) transferAgent.getResultSet();
       childResults = Collections.emptyList();
@@ -814,7 +808,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void close() {
-    logger.debug("public void close()", false);
+    logger.trace("void close()", false);
 
     if (requestId != null) {
       EventUtil.triggerStateTransition(
@@ -827,7 +821,7 @@ public class SFStatement extends SFBaseStatement {
     isClosed = true;
 
     if (httpRequest != null) {
-      logger.debug("releasing connection for the http request", false);
+      logger.debug("Releasing connection for the http request", false);
 
       httpRequest.releaseConnection();
       httpRequest = null;
@@ -841,7 +835,13 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void cancel() throws SFException, SQLException {
-    logger.debug("public void cancel()", false);
+    logger.trace("void cancel()", false);
+    cancel(CancellationReason.UNKNOWN);
+  }
+
+  @Override
+  public void cancel(CancellationReason cancellationReason) throws SFException, SQLException {
+    logger.trace("void cancel(CancellationReason)", false);
 
     if (canceling.get()) {
       logger.debug("Query is already cancelled", false);
@@ -866,7 +866,7 @@ public class SFStatement extends SFBaseStatement {
       }
 
       // cancel the query on the server side if it has been issued
-      cancelHelper(this.sqlText, StmtUtil.SF_MEDIA_TYPE);
+      cancelHelper(this.sqlText, StmtUtil.SF_MEDIA_TYPE, cancellationReason);
     }
   }
 

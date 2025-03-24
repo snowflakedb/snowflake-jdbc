@@ -1,50 +1,51 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryArrow;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.ProvidersUtil;
+import net.snowflake.client.providers.ScaleProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
+import net.snowflake.client.providers.SnowflakeArgumentsProvider;
+import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-@RunWith(Parameterized.class)
-@Category(TestCategoryArrow.class)
-public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
-  @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Collection<Object[]> data() {
-    // all tests in this class need to run for both query result formats json and arrow
-    String[] timeZones = new String[] {"UTC", "America/New_York", "Asia/Singapore"};
-    String[] queryFormats = new String[] {"json", "arrow"};
-    List<Object[]> ret = new ArrayList<>();
-    for (String queryFormat : queryFormats) {
-      for (String timeZone : timeZones) {
-        ret.add(new Object[] {queryFormat, timeZone});
-      }
+@Tag(TestTags.ARROW)
+public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionIT {
+  static String originalTz;
+
+  static class DataProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(
+          context, new SimpleResultFormatProvider(), new TimezoneProvider(3));
     }
-    return ret;
   }
 
-  private final String queryResultFormat;
-  private final String tz;
+  static class DataWithScaleProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(context, new DataProvider(), new ScaleProvider());
+    }
+  }
 
-  public static Connection getConnection(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-
+  @BeforeEach
+  public void setSessionTimezone() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
@@ -55,27 +56,39 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     }
-    return connection;
   }
 
-  public ResultSetJsonVsArrowMultiTZIT(String queryResultFormat, String timeZone) {
-    this.queryResultFormat = queryResultFormat;
-    System.setProperty("user.timezone", timeZone);
-    tz = timeZone;
+  private static void setTimezone(String tz) {
+    System.setProperty("user.timezone", tz);
   }
 
-  private Connection init(String table, String column, String values) throws SQLException {
-    Connection con = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    try (Statement statement = con.createStatement()) {
+  @BeforeAll
+  public static void saveTimezone() {
+    originalTz = System.getProperty("user.timezone");
+  }
+
+  @AfterAll
+  public static void restoreTimezone() {
+    if (originalTz != null) {
+      System.setProperty("user.timezone", originalTz);
+    } else {
+      System.clearProperty("user.timezone");
+    }
+  }
+
+  private void init(String table, String column, String values, String queryResultFormat)
+      throws SQLException {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
       statement.execute("create or replace table " + table + " " + column);
       statement.execute("insert into " + table + " values " + values);
     }
-    return con;
   }
 
-  @Test
-  public void testTime() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataWithScaleProvider.class)
+  public void testTime(String queryResultFormat, String tz, int scale) throws SQLException {
+    setTimezone(tz);
     String[] times = {
       "00:01:23",
       "00:01:23.1",
@@ -88,13 +101,13 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
       "00:01:23.12345678",
       "00:01:23.123456789"
     };
-    for (int scale = 0; scale <= 9; scale++) {
-      testTimeWithScale(times, scale);
-    }
+    testTimeWithScale(times, scale, queryResultFormat);
   }
 
-  @Test
-  public void testDate() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testDate(String queryResultFormat, String tz) throws Exception {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01",
       "2014-01-02",
@@ -112,8 +125,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a date)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
+    init(table, column, values, queryResultFormat);
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
@@ -133,13 +146,13 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     }
   }
 
-  public void testTimeWithScale(String[] times, int scale) throws SQLException {
+  public void testTimeWithScale(String[] times, int scale, String queryResultFormat)
+      throws SQLException {
     String table = "test_arrow_time";
     String column = "(a time(" + scale + "))";
     String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
-
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement();
+    init(table, column, values, queryResultFormat);
+    try (Statement statement = createStatement(queryResultFormat);
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
         assertTrue(rs.next());
@@ -151,14 +164,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testTimestampNTZ() throws SQLException {
-    for (int scale = 0; scale <= 9; scale++) {
-      testTimestampNTZWithScale(scale);
-    }
-  }
-
-  public void testTimestampNTZWithScale(int scale) throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataWithScaleProvider.class)
+  public void testTimestampNTZWithScale(String queryResultFormat, String tz, int scale)
+      throws SQLException {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01 12:00:00",
       "2014-01-02 16:00:00",
@@ -186,8 +196,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
+    init(table, column, values, queryResultFormat);
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
@@ -198,12 +208,13 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
-      System.clearProperty("user.timezone");
     }
   }
 
-  @Test
-  public void testTimestampNTZWithNanos() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampNTZWithNanos(String queryResultFormat, String tz) throws SQLException {
+    setTimezone(tz);
     String[] cases = {
       "2017-01-01 12:00:00.123456789",
       "2014-01-02 16:00:00.0123",
@@ -220,8 +231,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
+    init(table, column, values, queryResultFormat);
+    try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
@@ -232,7 +243,6 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
-        System.clearProperty("user.timezone");
       }
     }
   }

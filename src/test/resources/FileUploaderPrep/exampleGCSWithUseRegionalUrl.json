@@ -1,0 +1,49 @@
+{
+  "data": {
+    "uploadInfo": {
+      "locationType": "GCS",
+      "useRegionalUrl": true,
+      "location": "foo/tables/9224/",
+      "path": "tables/9224/",
+      "region": "US-WEST1",
+      "storageAccount": "",
+      "isClientSideEncrypted": true,
+      "creds": {},
+      "presignedUrl": "EXAMPLE_PRESIGNED_URL",
+      "endPoint": ""
+    },
+    "src_locations": [
+      "/foo/bart/orders_100.csv"
+    ],
+    "parallel": 4,
+    "threshold": 209715200,
+    "autoCompress": true,
+    "overwrite": false,
+    "sourceCompression": "auto_detect",
+    "clientShowEncryptionParameter": false,
+    "queryId": "EXAMPLE_QUERY_ID",
+    "encryptionMaterial": {
+      "queryStageMasterKey": "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+      "queryId": "EXAMPLE_QUERY_ID",
+      "smkId": 123
+    },
+    "stageInfo": {
+      "locationType": "GCS",
+      "useRegionalUrl": true,
+      "location": "foo/tables/9224/",
+      "path": "tables/9224/",
+      "region": "US-WEST1",
+      "storageAccount": "",
+      "isClientSideEncrypted": true,
+      "creds": {},
+      "presignedUrl": "EXAMPLE_PRESIGNED_URL",
+      "endPoint": ""
+    },
+    "command": "UPLOAD",
+    "kind": null,
+    "operation": "Node"
+  },
+  "code": null,
+  "message": null,
+  "success": true
+}

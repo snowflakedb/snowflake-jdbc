@@ -1,9 +1,7 @@
-/*
- * Copyright (c) 2022 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,11 +9,40 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
-import org.junit.Test;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@Tag(TestTags.CORE)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
+  private static String originalProxyHost;
+  private static String originalProxyPort;
+  private static String originalNonProxyHosts;
 
+  @BeforeAll
+  public static void setUp() throws Exception {
+    originalProxyHost = System.getProperty("https.proxyHost");
+    originalProxyPort = System.getProperty("https.proxyPort");
+    originalNonProxyHosts = System.getProperty("https.nonProxyHosts");
+  }
+
+  private static void restoreProperty(String key, String value) {
+    if (value != null) {
+      System.setProperty(key, value);
+    } else {
+      System.clearProperty(key);
+    }
+  }
+
+  @AfterAll
+  public static void tearDown() throws Exception {
+    restoreProperty("https.proxyHost", originalProxyHost);
+    restoreProperty("https.proxyPort", originalProxyPort);
+    restoreProperty("https.nonProxyHosts", originalNonProxyHosts);
+  }
   /**
    * Tests that the chunk downloader uses the maxHttpRetries and doesn't enter and infinite loop of
    * retries.
@@ -35,8 +62,6 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     Properties properties = new Properties();
     properties.put("maxHttpRetries", 2);
 
-    SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = null;
-
     try (Connection connection = getConnection(properties);
         Statement statement = connection.createStatement()) {
       // execute a query that will require chunk downloading
@@ -48,14 +73,15 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
         SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
         SnowflakeChunkDownloader downloader =
             new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
-        snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
-        snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+        SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
+        SnowflakeSQLException exception =
+            assertThrows(
+                SnowflakeSQLException.class, snowflakeChunkDownloaderSpy::getNextChunkToConsume);
+        Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
+        assertTrue(
+            exception.getMessage().contains("Max retry reached for the download of chunk#0"));
+        assertTrue(exception.getMessage().contains("retry: 2"));
       }
-    } catch (SnowflakeSQLException exception) {
-      // verify that request was retried twice before reaching max retries
-      Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
-      assertTrue(exception.getMessage().contains("Max retry reached for the download of #chunk0"));
-      assertTrue(exception.getMessage().contains("retry=2"));
     }
   }
 }

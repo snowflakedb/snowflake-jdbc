@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.pooling;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -8,7 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,11 +17,11 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
   @Test
   public void testPooledConnection() throws SQLException {
@@ -47,13 +44,9 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
         Statement statement = connection.createStatement()) {
       statement.execute("select 1");
 
-      try {
-        // should fire connection error events
-        connection.setCatalog("nonexistent_database");
-        fail();
-      } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(2043));
-      }
+      SQLException e =
+          assertThrows(SQLException.class, () -> connection.setCatalog("nonexistent_database"));
+      assertThat(e.getErrorCode(), is(2043));
 
       // should not close underlying physical connection
       // and fire connection closed events

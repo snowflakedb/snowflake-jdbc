@@ -1,27 +1,26 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnection;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class CloudStorageClientLatestIT extends BaseJDBCTest {
 
   /**
    * Test for SNOW-565154 - it was waiting for ~5 minutes so the test is waiting much shorter time
    */
-  @Test(timeout = 30000L)
+  @Test
+  @Timeout(30)
   public void testDownloadStreamShouldFailFastOnNotExistingFile() throws Throwable {
     String stageName =
         "testDownloadStream_stage_" + UUID.randomUUID().toString().replaceAll("-", "_");
@@ -30,14 +29,12 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
       try {
         statement.execute("CREATE OR REPLACE TEMP STAGE " + stageName);
 
-        try (InputStream out =
-            connection
-                .unwrap(SnowflakeConnection.class)
-                .downloadStream("@" + stageName, "/fileNotExist.gz", true)) {
-          fail("file should not exist");
-        } catch (Throwable e) {
-          assertThat(e, instanceOf(SQLException.class));
-        }
+        assertThrows(
+            SQLException.class,
+            () ->
+                connection
+                    .unwrap(SnowflakeConnection.class)
+                    .downloadStream("@" + stageName, "/fileNotExist.gz", true));
       } finally {
         statement.execute("DROP STAGE IF EXISTS " + stageName);
       }

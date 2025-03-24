@@ -1,7 +1,7 @@
 package net.snowflake.client.util;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -12,7 +12,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SecretDetectorTest {
   @Test
@@ -202,9 +202,20 @@ public class SecretDetectorTest {
     testParametersMasked.put("passcodeInPassword", "test");
     testParametersMasked.put("passcode", "test");
     testParametersMasked.put("id_token", "test");
-    testParametersMasked.put("private_key_file_pwd", "test");
+    testParametersMasked.put("private_key_pwd", "test");
     testParametersMasked.put("proxyPassword", "test");
     testParametersMasked.put("proxyUser", "test");
+    testParametersMasked.put("privatekey", "test");
+    testParametersMasked.put("private_key_base64", "test");
+    testParametersMasked.put("privateKeyBase64", "test");
+    testParametersMasked.put("id_token_password", "test");
+    testParametersMasked.put("masterToken", "test");
+    testParametersMasked.put("mfaToken", "test");
+    testParametersMasked.put("password", "test");
+    testParametersMasked.put("sessionToken", "test");
+    testParametersMasked.put("token", "test");
+    testParametersMasked.put("oauthClientId", "test");
+    testParametersMasked.put("oauthClientSecret", "test");
 
     Map<String, String> testParametersUnmasked = new HashMap<>();
     testParametersUnmasked.put("oktausername", "test");
@@ -238,6 +249,37 @@ public class SecretDetectorTest {
     assertThat(
         "Text with connection token is not masked",
         maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
+  }
+
+  @Test
+  public void testMaskOAuthSecrets() {
+    String tokenResponseJson =
+        "{\n"
+            + "  \"access_token\" : \"some:FAKE_token123\",\n"
+            + "  \"refresh_token\" : \"some:FAKE_token123\",\n"
+            + "  \"token_type\" : \"Bearer\",\n"
+            + "  \"username\" : \"OAUTH_TEST_AUTH_CODE\",\n"
+            + "  \"scope\" : \"refresh_token session:role:ANALYST\",\n"
+            + "  \"expires_in\" : 600,\n"
+            + "  \"refresh_token_expires_in\" : 86399,\n"
+            + "  \"idpInitiated\" : false\n"
+            + "}";
+
+    String maskedTokenResponseJson =
+        "{\n"
+            + "  \"access_token\":\"****\",\n"
+            + "  \"refresh_token\":\"****\",\n"
+            + "  \"token_type\" : \"Bearer\",\n"
+            + "  \"username\" : \"OAUTH_TEST_AUTH_CODE\",\n"
+            + "  \"scope\" : \"refresh_token session:role:ANALYST\",\n"
+            + "  \"expires_in\" : 600,\n"
+            + "  \"refresh_token_expires_in\" : 86399,\n"
+            + "  \"idpInitiated\" : false\n"
+            + "}";
+
+    assertThat(
+        "Text with OAuth tokens is not masked",
+        maskedTokenResponseJson.equals(SecretDetector.maskSecrets(tokenResponseJson)));
   }
 
   private JSONObject generateJsonObject() {
@@ -378,5 +420,28 @@ public class SecretDetectorTest {
     assertThat(
         "Nested Jackson array node is not masked successfully",
         maskedNestedArrayStr.equals(SecretDetector.maskJacksonNode(objNode4).toString()));
+  }
+
+  @Test
+  public void testEncryptionMaterialFilter() throws Exception {
+    String messageText =
+        "{\"data\":"
+            + "{\"autoCompress\":true,"
+            + "\"overwrite\":false,"
+            + "\"clientShowEncryptionParameter\":true,"
+            + "\"encryptionMaterial\":{\"queryStageMasterKey\":\"asdfasdfasdfasdf==\",\"queryId\":\"01b6f5ba-0002-0181-0000-11111111da\",\"smkId\":1111},"
+            + "\"stageInfo\":{\"locationType\":\"AZURE\", \"region\":\"eastus2\"}";
+
+    String filteredMessageText =
+        "{\"data\":"
+            + "{\"autoCompress\":true,"
+            + "\"overwrite\":false,"
+            + "\"clientShowEncryptionParameter\":true,"
+            + "\"encryptionMaterial\" : ****,"
+            + "\"stageInfo\":{\"locationType\":\"AZURE\", \"region\":\"eastus2\"}";
+
+    String result = SecretDetector.filterEncryptionMaterial(messageText);
+
+    assertEquals(filteredMessageText, result);
   }
 }

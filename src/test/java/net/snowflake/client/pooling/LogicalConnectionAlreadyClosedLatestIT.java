@@ -1,18 +1,15 @@
-/*
- * Copyright (c) 2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.pooling;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.PooledConnection;
-import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
 
   @Test
@@ -49,5 +46,6 @@ public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
     expectConnectionAlreadyClosedException(() -> logicalConnection.setSchema("fakedb"));
     expectConnectionAlreadyClosedException(
         () -> logicalConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
+    expectConnectionAlreadyClosedException(() -> logicalConnection.createArrayOf("faketype", null));
   }
 }

@@ -1,17 +1,15 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.sql.BatchUpdateException;
@@ -20,23 +18,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Statement tests */
-@Category(TestCategoryStatement.class)
-public class StatementIT extends BaseJDBCTest {
+@Tag(TestTags.STATEMENT)
+public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
   public static Connection getConnection() throws SQLException {
@@ -47,26 +45,22 @@ public class StatementIT extends BaseJDBCTest {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testFetchDirection() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
-      try {
-        statement.setFetchDirection(ResultSet.FETCH_REVERSE);
-      } catch (SQLFeatureNotSupportedException e) {
-        assertTrue(true);
-      }
+      assertThrows(
+          SQLFeatureNotSupportedException.class,
+          () -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
     }
   }
 
-  @Ignore("Not working for setFetchSize")
+  @Disabled("Not working for setFetchSize")
   @Test
   public void testFetchSize() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(50, statement.getFetchSize());
       statement.setFetchSize(1);
       ResultSet rs = statement.executeQuery("select * from JDBC_STATEMENT");
@@ -76,8 +70,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testMaxRows() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       assertEquals(0, statement.getMaxRows());
 
@@ -100,25 +93,25 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testQueryTimeOut() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(0, statement.getQueryTimeout());
       statement.setQueryTimeout(5);
       assertEquals(5, statement.getQueryTimeout());
-      try {
-        statement.executeQuery("select count(*) from table(generator(timeLimit => 100))");
-      } catch (SQLException e) {
-        assertTrue(true);
-        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
-        assertEquals("SQL execution canceled", e.getMessage());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  statement.executeQuery(
+                      "select count(*) from table(generator(timeLimit => 100))"));
+      assertTrue(true);
+      assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+      assertEquals("SQL execution canceled", e.getMessage());
     }
   }
 
   @Test
   public void testStatementClose() throws SQLException {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement(); ) {
       assertEquals(connection, statement.getConnection());
       assertTrue(!statement.isClosed());
       statement.close();
@@ -128,8 +121,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteSelect() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       boolean success = statement.execute(sqlSelect);
@@ -154,8 +146,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteInsert() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_insert(cola number)");
 
@@ -189,8 +180,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateAndDelete() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table test_update(cola number, colb string) "
@@ -226,8 +216,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMerge() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String mergeSQL =
           "merge into target using source on target.id = source.id "
               + "when matched and source.sb =22 then update set ta = 'newStr' "
@@ -259,16 +248,14 @@ public class StatementIT extends BaseJDBCTest {
    */
   @Test
   public void testAutogenerateKey() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table t(c1 int)");
       statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
-      try {
-        statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS);
-        fail("no autogenerate key is supported");
-      } catch (SQLFeatureNotSupportedException ex) {
-        // nop
-      }
+
+      assertThrows(
+          SQLFeatureNotSupportedException.class,
+          () -> statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS));
+
       // empty result
       try (ResultSet rset = statement.getGeneratedKeys()) {
         assertFalse(rset.next());
@@ -278,8 +265,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMultiInsert() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiInsertionSQL =
           " insert all "
               + "into foo "
@@ -314,8 +300,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteBatch() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         connection.setAutoCommit(false);
         // mixed of ddl/dml in batch
@@ -347,23 +332,20 @@ public class StatementIT extends BaseJDBCTest {
 
           // one of the batch is query instead of ddl/dml
           // it should continuing processing
-          try {
-            statement.addBatch("insert into test_batch values('str3', 3)");
-            statement.addBatch("select * from test_batch");
-            statement.addBatch("select * from test_batch_not_exist");
-            statement.addBatch("insert into test_batch values('str4', 4)");
-            statement.executeBatch();
-            fail();
-          } catch (BatchUpdateException e) {
-            rowCounts = e.getUpdateCounts();
-            assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
-            assertThat(rowCounts[0], is(1));
-            assertThat(rowCounts[1], is(Statement.SUCCESS_NO_INFO));
-            assertThat(rowCounts[2], is(Statement.EXECUTE_FAILED));
-            assertThat(rowCounts[3], is(1));
+          statement.addBatch("insert into test_batch values('str3', 3)");
+          statement.addBatch("select * from test_batch");
+          statement.addBatch("select * from test_batch_not_exist");
+          statement.addBatch("insert into test_batch values('str4', 4)");
+          BatchUpdateException e =
+              assertThrows(BatchUpdateException.class, statement::executeBatch);
+          rowCounts = e.getUpdateCounts();
+          assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
+          assertThat(rowCounts[0], is(1));
+          assertThat(rowCounts[1], is(Statement.SUCCESS_NO_INFO));
+          assertThat(rowCounts[2], is(Statement.EXECUTE_FAILED));
+          assertThat(rowCounts[3], is(1));
 
-            connection.rollback();
-          }
+          connection.rollback();
 
           statement.clearBatch();
 
@@ -371,8 +353,9 @@ public class StatementIT extends BaseJDBCTest {
               "put file://"
                   + getFullPathFileInResource(TEST_DATA_FILE)
                   + " @%test_batch auto_compress=false");
-          File tempFolder = tmpFolder.newFolder("test_downloads_folder");
-          statement.addBatch("get @%test_batch file://" + tempFolder);
+          File tempFolder = new File(tmpFolder, "test_downloads_folder");
+          tempFolder.mkdirs();
+          statement.addBatch("get @%test_batch file://" + tempFolder.getCanonicalPath());
 
           rowCounts = statement.executeBatch();
           assertThat(rowCounts.length, is(2));
@@ -388,8 +371,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteLargeBatch() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       /**
        * Generate a table with several rows and 1 column named test_large_batch Note: to truly test
        * that executeLargeBatch works with a number of rows greater than MAX_INT, replace rowcount
@@ -433,7 +415,7 @@ public class StatementIT extends BaseJDBCTest {
    * @throws SQLException if any error occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExecuteUpdateZeroCount() throws SQLException {
     try (Connection connection = getConnection()) {
       String[] testCommands = {
@@ -477,8 +459,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateFail() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String[] testCommands = {
         "list @~",
         "ls @~",
@@ -490,15 +471,15 @@ public class StatementIT extends BaseJDBCTest {
       };
 
       for (String testCommand : testCommands) {
-        try {
-          statement.executeUpdate(testCommand);
-          fail("TestCommand: " + testCommand + " is expected to be failed to execute");
-        } catch (SQLException e) {
-          assertThat(
-              testCommand,
-              e.getErrorCode(),
-              is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
-        }
+        SQLException e =
+            assertThrows(
+                SQLException.class,
+                () -> statement.executeUpdate(testCommand),
+                "TestCommand: " + testCommand + " is expected to be failed to execute");
+        assertThat(
+            testCommand,
+            e.getErrorCode(),
+            is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
       }
     }
   }
@@ -506,8 +487,7 @@ public class StatementIT extends BaseJDBCTest {
   @Test
   public void testTelemetryBatch() throws SQLException {
     Telemetry telemetryClient = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       statement.execute(sqlSelect);
@@ -528,37 +508,33 @@ public class StatementIT extends BaseJDBCTest {
       // there should be logs ready to be sent
       assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
     }
-    // closing the statement should flush the buffer, however, flush is async,
-    // sleep some time before check buffer size
-    try {
-      Thread.sleep(1000);
-    } catch (Throwable e) {
-    }
-    assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
+
+    Telemetry finalTelemetryClient = telemetryClient;
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(10))
+        .until(() -> ((TelemetryClient) finalTelemetryClient).bufferSize(), equalTo(0));
   }
 
   @Test
   public void testMultiStmtNotEnabled() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "create or replace temporary table test_multi (cola int);\n"
               + "insert into test_multi VALUES (1), (2);\n"
               + "select cola from test_multi order by cola asc";
 
-      try {
-        statement.execute(multiStmtQuery);
-        fail("Using a multi-statement query without the parameter set should fail");
-      } catch (SnowflakeSQLException ex) {
-        assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
-      }
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> statement.execute(multiStmtQuery),
+              "Using a multi-statement query without the parameter set should fail");
+      assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
     }
   }
 
   @Test
   public void testCallStoredProcedure() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace procedure SP()\n"
               + "returns string not null\n"
@@ -585,52 +561,46 @@ public class StatementIT extends BaseJDBCTest {
   public void testCreateStatementWithParameters() throws Throwable {
     try (Connection connection = getConnection()) {
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      try {
-        connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        fail("updateable cursor is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.createStatement(
+                      ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+
       connection.createStatement(
           ResultSet.TYPE_FORWARD_ONLY,
           ResultSet.CONCUR_READ_ONLY,
           ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      try {
-        connection.createStatement(
-            ResultSet.TYPE_FORWARD_ONLY,
-            ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        fail("hold cursor over commit is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+
+      ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.createStatement(
+                      ResultSet.TYPE_FORWARD_ONLY,
+                      ResultSet.CONCUR_READ_ONLY,
+                      ResultSet.HOLD_CURSORS_OVER_COMMIT));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
     }
   }
 
   @Test
   public void testUnwrapper() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
-        statement.execute("select 1");
-        SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
-        assertNotNull(sfstatement.getQueryID());
-      } else {
-        fail("should be able to unwrap");
-      }
-      try {
-        statement.unwrap(SnowflakeConnectionV1.class);
-        fail("should fail to cast");
-      } catch (SQLException ex) {
-        // nop
-      }
+    try (Statement statement = connection.createStatement()) {
+      assertTrue(statement.isWrapperFor(SnowflakeStatementV1.class));
+      statement.execute("select 1");
+      SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
+      assertNotNull(sfstatement.getQueryID());
+
+      assertThrows(SQLException.class, () -> statement.unwrap(SnowflakeConnectionV1.class));
     }
   }
 
   @Test
   public void testQueryIdIsNullOnFreshStatement() throws SQLException {
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
     }
   }

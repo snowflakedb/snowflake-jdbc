@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.ClientConfiguration;
@@ -17,8 +14,6 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 /**
  * Factory object for abstracting the creation of storage client objects: SnowflakeStorageClient and
  * StorageObjectMetadata
- *
- * @author lgiakoumakis
  */
 public class StorageClientFactory {
 
@@ -47,19 +42,21 @@ public class StorageClientFactory {
    * @param stage the stage properties
    * @param parallel the degree of parallelism to be used by the client
    * @param encMat encryption material for the client
+   * @param session SFSession
    * @return a SnowflakeStorageClient interface to the instance created
    * @throws SnowflakeSQLException if any error occurs
    */
   public SnowflakeStorageClient createClient(
       StageInfo stage, int parallel, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
-    logger.debug("createClient client type={}", stage.getStageType().name());
+    logger.debug("Creating storage client. Client type: {}", stage.getStageType().name());
 
     switch (stage.getStageType()) {
       case S3:
         boolean useS3RegionalUrl =
-            (stage.getUseS3RegionalUrl()
-                || (session != null && session.getUseRegionalS3EndpointsForPresignedURL()));
+            stage.getUseS3RegionalUrl()
+                || stage.getUseRegionalUrl()
+                || session != null && session.getUseRegionalS3EndpointsForPresignedURL();
         return createS3Client(
             stage.getCredentials(),
             parallel,
@@ -113,7 +110,7 @@ public class StorageClientFactory {
       throws SnowflakeSQLException {
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
-    logger.debug("createS3Client encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating S3 client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeS3Client s3Client;
 
@@ -130,8 +127,8 @@ public class StorageClientFactory {
     clientConfig.setProxyPassword("");
 
     logger.debug(
-        "s3 client configuration: maxConnection={}, connectionTimeout={}, "
-            + "socketTimeout={}, maxErrorRetry={}",
+        "S3 client configuration: maxConnection: {}, connectionTimeout: {}, "
+            + "socketTimeout: {}, maxErrorRetry: {}",
         clientConfig.getMaxConnections(),
         clientConfig.getConnectionTimeout(),
         clientConfig.getSocketTimeout(),
@@ -153,7 +150,7 @@ public class StorageClientFactory {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
     }
-    logger.debug("s3 client created", false);
+    logger.debug("S3 Storage client created", false);
 
     return s3Client;
   }
@@ -195,7 +192,7 @@ public class StorageClientFactory {
   private SnowflakeAzureClient createAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFBaseSession session)
       throws SnowflakeSQLException {
-    logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating Azure client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeAzureClient azureClient;
 
@@ -220,7 +217,7 @@ public class StorageClientFactory {
   private SnowflakeGCSClient createGCSClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
-    logger.debug("createGCSClient encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating GCS client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeGCSClient gcsClient;
 

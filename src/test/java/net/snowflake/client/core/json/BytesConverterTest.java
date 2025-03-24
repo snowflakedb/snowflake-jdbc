@@ -1,6 +1,6 @@
 package net.snowflake.client.core.json;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -8,7 +8,7 @@ import java.sql.Types;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BytesConverterTest {
   private final Converters converters =

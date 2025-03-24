@@ -1,15 +1,12 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Driver unit test */
 public class SnowflakeDriverTest {
@@ -52,16 +49,16 @@ public class SnowflakeDriverTest {
       int port = sc.getPort();
       Map<String, Object> parameters = sc.getParameters();
 
-      assertEquals("URL scheme: " + url, this.scheme, scheme);
-      assertEquals("URL scheme: " + url, this.host, host);
-      assertEquals("URL scheme: " + url, this.port, port);
-      assertEquals("URL scheme: " + url, this.parameters.size(), parameters.size());
-      assertEquals("URL scheme. " + url, this.account, account);
+      assertEquals(this.scheme, scheme, "URL scheme: " + url);
+      assertEquals(this.host, host, "URL scheme: " + url);
+      assertEquals(this.port, port, "URL scheme: " + url);
+      assertEquals(this.parameters.size(), parameters.size(), "URL scheme: " + url);
+      assertEquals(this.account, account, "URL scheme. " + url);
 
       for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
         String k = entry.getKey().toUpperCase(Locale.US);
         Object v = parameters.get(k);
-        assertEquals("URL scheme: " + url + ", key: " + k, entry.getValue(), v);
+        assertEquals(entry.getValue(), v, "URL scheme: " + url + ", key: " + k);
       }
     }
   }
@@ -355,7 +352,7 @@ public class SnowflakeDriverTest {
             expectedParameters));
 
     for (TestCase t : testCases) {
-      assertTrue("URL is not valid: " + t.url, snowflakeDriver.acceptsURL(t.url));
+      assertTrue(snowflakeDriver.acceptsURL(t.url), "URL is not valid: " + t.url);
       t.match(t.url, SnowflakeConnectString.parse(t.url, SnowflakeDriver.EMPTY_PROPERTIES));
     }
 
@@ -376,12 +373,9 @@ public class SnowflakeDriverTest {
   @Test
   public void testInvalidNullConnect() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    try {
-      snowflakeDriver.connect(/* url= */ null, null);
-      fail();
-    } catch (SQLException ex) {
-      assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
-    }
+    SQLException ex =
+        assertThrows(SQLException.class, () -> snowflakeDriver.connect(null, null).close());
+    assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
   }
 
   @Test
@@ -427,13 +421,11 @@ public class SnowflakeDriverTest {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     Properties info = new Properties();
     String jdbcConnectString =
-        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_file_pwd=test_password&user=test_user";
-    try {
-      snowflakeDriver.connect(jdbcConnectString, info);
-      fail();
-    } catch (Exception ex) {
-      assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
-    }
+        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_pwd=test_password&user=test_user";
+    Exception ex =
+        assertThrows(
+            Exception.class, () -> snowflakeDriver.connect(jdbcConnectString, info).close());
+    assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
   }
 
   @Test
@@ -445,14 +437,15 @@ public class SnowflakeDriverTest {
   }
 
   @Test
-  public void testConnectWithMissingAccountIdentifier() throws SQLException {
+  public void testConnectWithMissingAccountIdentifier() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    try {
-      snowflakeDriver.getPropertyInfo("jdbc:snowflake://localhost:443/?&ssl=on", new Properties());
-      fail();
-    } catch (SnowflakeSQLException ex) {
-      assertEquals(
-          "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
-    }
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                snowflakeDriver.getPropertyInfo(
+                    "jdbc:snowflake://localhost:443/?&ssl=on", new Properties()));
+    assertEquals(
+        "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
   }
 }

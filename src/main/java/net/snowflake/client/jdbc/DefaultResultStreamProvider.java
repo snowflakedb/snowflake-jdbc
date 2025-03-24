@@ -1,7 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.MB;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -11,6 +9,8 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
@@ -21,6 +21,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 public class DefaultResultStreamProvider implements ResultStreamProvider {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(DefaultResultStreamProvider.class);
   // SSE-C algorithm header
   private static final String SSE_C_ALGORITHM = "x-amz-server-side-encryption-customer-algorithm";
 
@@ -30,7 +32,11 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
   // SSE-C algorithm value
   private static final String SSE_C_AES = "AES256";
 
-  private static final int STREAM_BUFFER_SIZE = MB;
+  private CompressedStreamFactory compressedStreamFactory;
+
+  public DefaultResultStreamProvider() {
+    this.compressedStreamFactory = new CompressedStreamFactory();
+  }
 
   @Override
   public InputStream getInputStream(ChunkDownloadContext context) throws Exception {
@@ -53,26 +59,27 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
      * means failure.
      */
     if (response == null || response.getStatusLine().getStatusCode() != 200) {
-      SnowflakeResultSetSerializableV1.logger.error(
-          "Error fetching chunk from: {}", context.getResultChunk().getScrubbedUrl());
+      logger.error("Error fetching chunk from: {}", context.getResultChunk().getScrubbedUrl());
 
-      SnowflakeUtil.logResponseDetails(response, SnowflakeResultSetSerializableV1.logger);
+      SnowflakeUtil.logResponseDetails(response, logger);
 
       throw new SnowflakeSQLException(
           SqlState.IO_ERROR,
           ErrorCode.NETWORK_ERROR.getMessageCode(),
           "Error encountered when downloading a result chunk: HTTP "
-              + "status="
+              + "status: "
               + ((response != null) ? response.getStatusLine().getStatusCode() : "null response"));
     }
 
     InputStream inputStream;
     final HttpEntity entity = response.getEntity();
+    Header encoding = response.getFirstHeader("Content-Encoding");
     try {
-      // read the chunk data
-      inputStream = detectContentEncodingAndGetInputStream(response, entity.getContent());
+      // create stream based on compression type
+      inputStream =
+          compressedStreamFactory.createBasedOnEncodingHeader(entity.getContent(), encoding);
     } catch (Exception ex) {
-      SnowflakeResultSetSerializableV1.logger.error("Failed to decompress data: {}", response);
+      logger.error("Failed to decompress data: {}", response);
 
       throw new SnowflakeSQLLoggedException(
           context.getSession(),
@@ -82,7 +89,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     }
 
     // trace the response if requested
-    SnowflakeResultSetSerializableV1.logger.debug("Json response: {}", response);
+    logger.debug("Json response: {}", response);
 
     return inputStream;
   }
@@ -94,8 +101,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     if (context.getChunkHeadersMap() != null && context.getChunkHeadersMap().size() != 0) {
       for (Map.Entry<String, String> entry : context.getChunkHeadersMap().entrySet()) {
-        SnowflakeResultSetSerializableV1.logger.debug(
-            "Adding header key={}, value={}", entry.getKey(), entry.getValue());
+        logger.debug("Adding header key: {}", entry.getKey());
         httpRequest.addHeader(entry.getKey(), entry.getValue());
       }
     }
@@ -103,11 +109,11 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     else if (context.getQrmk() != null) {
       httpRequest.addHeader(SSE_C_ALGORITHM, SSE_C_AES);
       httpRequest.addHeader(SSE_C_KEY, context.getQrmk());
-      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers", false);
+      logger.debug("Adding SSE-C headers", false);
     }
 
-    SnowflakeResultSetSerializableV1.logger.debug(
-        "Thread {} Fetching result #chunk{}: {}",
+    logger.debug(
+        "Thread {} Fetching result chunk#{}: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),
         context.getResultChunk().getScrubbedUrl());
@@ -133,35 +139,13 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             true, // no retry on http request
             new ExecTimeTelemetryData());
 
-    SnowflakeResultSetSerializableV1.logger.debug(
-        "Thread {} Call #chunk{} returned for URL: {}, response={}",
+    logger.debug(
+        "Thread {} Call chunk#{} returned for URL: {}, response: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),
         (ArgSupplier) () -> SecretDetector.maskSASToken(context.getResultChunk().getUrl()),
         response);
     return response;
-  }
-
-  private InputStream detectContentEncodingAndGetInputStream(HttpResponse response, InputStream is)
-      throws IOException, SnowflakeSQLException {
-    InputStream inputStream = is; // Determine the format of the response, if it is not
-    // either plain text or gzip, raise an error.
-    Header encoding = response.getFirstHeader("Content-Encoding");
-    if (encoding != null) {
-      if ("gzip".equalsIgnoreCase(encoding.getValue())) {
-        /* specify buffer size for GZIPInputStream */
-        inputStream = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
-      } else {
-        throw new SnowflakeSQLException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            "Exception: unexpected compression got " + encoding.getValue());
-      }
-    } else {
-      inputStream = detectGzipAndGetStream(is);
-    }
-
-    return inputStream;
   }
 
   public static InputStream detectGzipAndGetStream(InputStream is) throws IOException {

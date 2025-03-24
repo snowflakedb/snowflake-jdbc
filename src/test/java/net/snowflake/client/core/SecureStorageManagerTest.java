@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -13,14 +10,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnLinux;
-import net.snowflake.client.RunningNotOnWinMac;
-import org.junit.Rule;
-import org.junit.Test;
+import net.snowflake.client.annotations.RunOnLinux;
+import net.snowflake.client.annotations.RunOnMac;
+import net.snowflake.client.annotations.RunOnWindows;
+import net.snowflake.client.annotations.RunOnWindowsOrMac;
+import net.snowflake.client.jdbc.SnowflakeUtil;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
   @Override
@@ -213,8 +215,6 @@ class MockMacKeychainManager {
 }
 
 public class SecureStorageManagerTest {
-  // This is required to use ConditionalIgnore annotation
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";
@@ -227,7 +227,35 @@ public class SecureStorageManagerTest {
   private static final String MFA_TOKEN = "MFATOKEN";
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
+  public void testBuildCredentialsKey() {
+    // hex values obtained using https://emn178.github.io/online-tools/sha256.html
+    String hashedKey =
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue());
+    Assertions.assertEquals(
+        "A7C7EBB89312E88552CD00664A0E20929801FACFBD682BF7C2363FB6EC8F914E", hashedKey);
+
+    hashedKey =
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue());
+    Assertions.assertEquals(
+        "DB37028833FA02B125FBD6DE8CE679C7E62E7D38FAC585E98060E00987F96772", hashedKey);
+
+    hashedKey =
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.ID_TOKEN.getValue());
+    Assertions.assertEquals(
+        "6AA3F783E07D1D2182DAB59442806E2433C55C2BD4D9240790FD5B4B91FD4FDB", hashedKey);
+
+    hashedKey =
+        SecureStorageManager.buildCredentialsKey(
+            host, user, CachedCredentialType.MFA_TOKEN.getValue());
+    Assertions.assertEquals(
+        "9D10D4EFE45605D85993C6AC95334F1B63D36611B83615656EC7F277A947BF4B", hashedKey);
+  }
+
+  @Test
+  @RunOnWindowsOrMac
   public void testLoadNativeLibrary() {
     // Only run on Mac or Windows. Make sure the loading of native platform library won't break.
     if (Constants.getOS() == Constants.OS.MAC) {
@@ -240,6 +268,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnWindows
   public void testWindowsManager() {
     SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockAdvapi32Lib());
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
@@ -249,6 +278,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnMac
   public void testMacManager() {
     SecureStorageAppleManager.SecurityLibManager.setInstance(new MockSecurityLib());
     SecureStorageManager manager = SecureStorageAppleManager.builder();
@@ -258,12 +288,24 @@ public class SecureStorageManagerTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnLinux.class)
+  @RunOnLinux
   public void testLinuxManager() {
-    SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
+    String cacheDirectory =
+        Paths.get(systemGetProperty("user.home"), ".cache", "snowflake_test_cache")
+            .toAbsolutePath()
+            .toString();
+    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
+        Mockito.mockStatic(SnowflakeUtil.class)) {
+      snowflakeUtilMockedStatic
+          .when(
+              () ->
+                  SnowflakeUtil.systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))
+          .thenReturn(cacheDirectory);
+      SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
 
-    testBody(manager);
-    testDeleteLinux(manager);
+      testBody(manager);
+      testDeleteLinux(manager);
+    }
   }
 
   private void testBody(SecureStorageManager manager) {

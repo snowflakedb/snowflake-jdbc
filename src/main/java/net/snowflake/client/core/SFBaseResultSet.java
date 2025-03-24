@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getJsonNodeStringValue;
@@ -113,6 +109,9 @@ public abstract class SFBaseResultSet {
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
+  @SnowflakeJdbcInternalApi
+  public abstract Object getObjectWithoutString(int columnIndex) throws SFException;
+
   public Array getArray(int columnIndex) throws SFException {
     throw new UnsupportedOperationException();
   }
@@ -139,12 +138,12 @@ public abstract class SFBaseResultSet {
 
   // default implementation
   public boolean next() throws SFException, SnowflakeSQLException {
-    logger.debug("public boolean next()", false);
+    logger.trace("boolean next()", false);
     return false;
   }
 
   public void close() throws SnowflakeSQLException {
-    logger.debug("public void close()", false);
+    logger.trace("void close()", false);
 
     // no exception even if already closed.
     resultSetMetaData = null;
@@ -152,7 +151,7 @@ public abstract class SFBaseResultSet {
   }
 
   public boolean wasNull() {
-    logger.debug("public boolean wasNull() returning {}", wasNull);
+    logger.trace("boolean wasNull() returning {}", wasNull);
 
     return wasNull;
   }
@@ -273,7 +272,7 @@ public abstract class SFBaseResultSet {
   }
 
   @SnowflakeJdbcInternalApi
-  protected SfSqlArray getJsonArray(String obj, int columnIndex) throws SFException {
+  protected SfSqlArray getJsonArray(String arrayString, int columnIndex) throws SFException {
     try {
       List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
       if (fieldMetadataList.size() != 1) {
@@ -288,33 +287,38 @@ public abstract class SFBaseResultSet {
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
+      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(arrayString);
       Iterator<JsonNode> nodeElements = arrayNode.elements();
 
       switch (columnType) {
         case Types.INTEGER:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().integerConverter(columnType))
                   .toArray(Integer[]::new));
         case Types.SMALLINT:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().smallIntConverter(columnType))
                   .toArray(Short[]::new));
         case Types.TINYINT:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().tinyIntConverter(columnType))
                   .toArray(Byte[]::new));
         case Types.BIGINT:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().bigIntConverter(columnType))
                   .toArray(Long[]::new));
         case Types.DECIMAL:
         case Types.NUMERIC:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               convertToFixedArray(
                   getStream(nodeElements, getConverters().bigDecimalConverter(columnType))));
@@ -322,6 +326,7 @@ public abstract class SFBaseResultSet {
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(
                       nodeElements,
@@ -329,32 +334,38 @@ public abstract class SFBaseResultSet {
                   .toArray(String[]::new));
         case Types.BINARY:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().bytesConverter(columnType, scale))
                   .toArray(Byte[][]::new));
         case Types.FLOAT:
         case Types.REAL:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().floatConverter(columnType))
                   .toArray(Float[]::new));
         case Types.DOUBLE:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().doubleConverter(columnType))
                   .toArray(Double[]::new));
         case Types.DATE:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().dateStringConverter(session))
                   .toArray(Date[]::new));
         case Types.TIME:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().timeFromStringConverter(session))
                   .toArray(Time[]::new));
         case Types.TIMESTAMP:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(
                       nodeElements,
@@ -364,16 +375,19 @@ public abstract class SFBaseResultSet {
                   .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().booleanConverter(columnType))
                   .toArray(Boolean[]::new));
         case Types.STRUCT:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().structConverter(OBJECT_MAPPER))
                   .toArray(Map[]::new));
         case Types.ARRAY:
           return new SfSqlArray(
+              arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().arrayConverter(OBJECT_MAPPER))
                   .toArray(Map[][]::new));

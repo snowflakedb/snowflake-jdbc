@@ -18,9 +18,13 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
     implements CallableStatement, SnowflakeCallableStatement {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeCallableStatementV1.class);
 
   /**
    * Construct SnowflakePreparedStatementV1
@@ -61,7 +65,7 @@ final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
   static String parseSqlEscapeSyntax(String originalSql) {
     originalSql = originalSql.trim();
     if (originalSql.startsWith("{") && originalSql.endsWith("}")) {
-      logger.info("Curly brackets {} removed before sending sql to server.", false);
+      logger.debug("Curly brackets {} removed before sending sql to server.", false);
       return originalSql.substring(1, originalSql.length() - 1);
     }
     return originalSql;

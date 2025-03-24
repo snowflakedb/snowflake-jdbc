@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.net.MalformedURLException;
@@ -19,6 +15,7 @@ public class SFLoginInput {
   private String warehouse;
   private String role;
   private boolean validateDefaultParameters;
+  private String originalAuthenticator;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -41,26 +38,51 @@ public class SFLoginInput {
   private String application;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String serviceName;
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
-  private String privateKeyFilePwd;
+  private String privateKeyBase64;
+  private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
+
+  private SFOauthLoginInput oauthLoginInput;
 
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
+  private boolean enableClientStoreTemporaryCredential;
+  private boolean enableClientRequestMfaToken;
+
+  // OAuth
+  private int redirectUriPort = -1;
+  private String clientId;
+  private String clientSecret;
+
+  private Duration browserResponseTimeout;
 
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
-  SFLoginInput() {}
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput() {}
+
+  Duration getBrowserResponseTimeout() {
+    return browserResponseTimeout;
+  }
+
+  SFLoginInput setBrowserResponseTimeout(Duration browserResponseTimeout) {
+    this.browserResponseTimeout = browserResponseTimeout;
+    return this;
+  }
 
   public String getServerUrl() {
     return serverUrl;
   }
 
-  SFLoginInput setServerUrl(String serverUrl) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
   }
@@ -146,7 +168,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getLoginTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getLoginTimeout() {
     return loginTimeout;
   }
 
@@ -170,7 +193,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getAuthTimeout() {
+  @SnowflakeJdbcInternalApi
+  public int getAuthTimeout() {
     return authTimeout;
   }
 
@@ -215,8 +239,8 @@ public class SFLoginInput {
     return this;
   }
 
-  Duration getConnectionTimeout() {
-    return connectionTimeout;
+  int getConnectionTimeoutInMillis() {
+    return (int) connectionTimeout.toMillis();
   }
 
   SFLoginInput setConnectionTimeout(Duration connectionTimeout) {
@@ -224,7 +248,8 @@ public class SFLoginInput {
     return this;
   }
 
-  int getSocketTimeoutInMillis() {
+  @SnowflakeJdbcInternalApi
+  public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
@@ -296,6 +321,25 @@ public class SFLoginInput {
     return this;
   }
 
+  String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  SFLoginInput setOauthAccessToken(String oauthAccessToken) {
+    this.oauthAccessToken = oauthAccessToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getOauthRefreshToken() {
+    return oauthRefreshToken;
+  }
+
+  SFLoginInput setOauthRefreshToken(String oauthRefreshToken) {
+    this.oauthRefreshToken = oauthRefreshToken;
+    return this;
+  }
+
   Map<String, Object> getSessionParameters() {
     return sessionParameters;
   }
@@ -314,13 +358,22 @@ public class SFLoginInput {
     return this;
   }
 
+  String getPrivateKeyBase64() {
+    return privateKeyBase64;
+  }
+
+  SFLoginInput setPrivateKeyBase64(String privateKeyBase64) {
+    this.privateKeyBase64 = privateKeyBase64;
+    return this;
+  }
+
   SFLoginInput setPrivateKeyFile(String privateKeyFile) {
     this.privateKeyFile = privateKeyFile;
     return this;
   }
 
-  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd) {
-    this.privateKeyFilePwd = privateKeyFilePwd;
+  SFLoginInput setPrivateKeyPwd(String privateKeyPwd) {
+    this.privateKeyPwd = privateKeyPwd;
     return this;
   }
 
@@ -328,8 +381,14 @@ public class SFLoginInput {
     return privateKeyFile;
   }
 
-  String getPrivateKeyFilePwd() {
-    return privateKeyFilePwd;
+  String getPrivateKeyPwd() {
+    return privateKeyPwd;
+  }
+
+  boolean isPrivateKeyProvided() {
+    return (getPrivateKey() != null
+        || getPrivateKeyFile() != null
+        || getPrivateKeyBase64() != null);
   }
 
   public String getApplication() {
@@ -359,7 +418,8 @@ public class SFLoginInput {
     return this;
   }
 
-  HttpClientSettingsKey getHttpClientSettingsKey() {
+  @SnowflakeJdbcInternalApi
+  public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 
@@ -388,10 +448,36 @@ public class SFLoginInput {
     return this;
   }
 
+  public int getRedirectUriPort() {
+    return redirectUriPort;
+  }
+
+  public SFLoginInput setRedirectUriPort(int redirectUriPort) {
+    this.redirectUriPort = redirectUriPort;
+    return this;
+  }
+
+  public String getClientId() {
+    return clientId;
+  }
+
+  public SFLoginInput setClientId(String clientId) {
+    this.clientId = clientId;
+    return this;
+  }
+
+  public String getClientSecret() {
+    return clientSecret;
+  }
+
+  public SFLoginInput setClientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
+    return this;
+  }
+
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
   }
-
   /**
    * Set additional http headers to apply to the outgoing request. The additional headers cannot be
    * used to replace or overwrite a header in use by the driver. These will be applied to the
@@ -426,11 +512,58 @@ public class SFLoginInput {
   String getHostFromServerUrl() throws SFException {
     URL url;
     try {
-      url = new URL(serverUrl);
+      if (!serverUrl.startsWith("http")) {
+        url = new URL("https://" + serverUrl);
+      } else {
+        url = new URL(serverUrl);
+      }
     } catch (MalformedURLException e) {
       throw new SFException(
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
     }
     return url.getHost();
+  }
+
+  boolean isEnableClientStoreTemporaryCredential() {
+    return enableClientStoreTemporaryCredential;
+  }
+
+  SFLoginInput setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.enableClientStoreTemporaryCredential = enableClientStoreTemporaryCredential;
+    return this;
+  }
+
+  boolean isEnableClientRequestMfaToken() {
+    return enableClientRequestMfaToken;
+  }
+
+  SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFOauthLoginInput getOauthLoginInput() {
+    return oauthLoginInput;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
+    this.oauthLoginInput = oauthLoginInput;
+    return this;
+  }
+
+  void restoreOriginalAuthenticator() {
+    this.authenticator = this.originalAuthenticator;
+  }
+
+  String getOriginalAuthenticator() {
+    return this.originalAuthenticator;
+  }
+
+  SFLoginInput setOriginalAuthenticator(String originalAuthenticator) {
+    this.originalAuthenticator = originalAuthenticator;
+    return this;
   }
 }

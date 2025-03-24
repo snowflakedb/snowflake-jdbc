@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -23,7 +19,8 @@ import org.apache.http.protocol.HttpContext;
 
 /** Snowflake custom SSLConnectionSocketFactory */
 public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
 
   private static final String SSL_VERSION = "TLSv1.2";
 

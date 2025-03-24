@@ -1,15 +1,15 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core.arrow;
 
+import java.nio.ByteOrder;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 
 public class BaseConverterTest implements DataConversionContext {
   private SnowflakeDateTimeFormat dateTimeFormat =
@@ -27,9 +27,16 @@ public class BaseConverterTest implements DataConversionContext {
   private boolean honorClientTZForTimestampNTZ;
   protected final int invalidConversionErrorCode = ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
-  @After
+  @AfterEach
   public void clearTimeZone() {
     System.clearProperty("user.timezone");
+  }
+
+  @BeforeEach
+  public void assumeLittleEndian() {
+    Assumptions.assumeTrue(
+        ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN),
+        "Arrow doesn't support cross endianness");
   }
 
   @Override

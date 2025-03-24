@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.time.Duration;
@@ -14,10 +10,13 @@ public class SFLoginOutput {
   private long masterTokenValidityInSeconds;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
   private Duration httpClientSocketTimeout;
+  private Duration httpClientConnectionTimeout;
   private String sessionDatabase;
   private String sessionSchema;
   private String sessionRole;
@@ -34,10 +33,13 @@ public class SFLoginOutput {
       long masterTokenValidityInSeconds,
       String idToken,
       String mfaToken,
+      String oauthAccessToken,
+      String oauthRefreshToken,
       String databaseVersion,
       int databaseMajorVersion,
       int databaseMinorVersion,
       int httpClientSocketTimeout,
+      int httpClientConnectionTimeout,
       String sessionDatabase,
       String sessionSchema,
       String sessionRole,
@@ -48,10 +50,13 @@ public class SFLoginOutput {
     this.masterToken = masterToken;
     this.idToken = idToken;
     this.mfaToken = mfaToken;
+    this.oauthAccessToken = oauthAccessToken;
+    this.oauthRefreshToken = oauthRefreshToken;
     this.databaseVersion = databaseVersion;
     this.databaseMajorVersion = databaseMajorVersion;
     this.databaseMinorVersion = databaseMinorVersion;
     this.httpClientSocketTimeout = Duration.ofMillis(httpClientSocketTimeout);
+    this.httpClientConnectionTimeout = Duration.ofMillis(httpClientConnectionTimeout);
     this.sessionDatabase = sessionDatabase;
     this.sessionSchema = sessionSchema;
     this.sessionRole = sessionRole;
@@ -95,6 +100,14 @@ public class SFLoginOutput {
     return mfaToken;
   }
 
+  String getOauthAccessToken() {
+    return oauthAccessToken;
+  }
+
+  String getOauthRefreshToken() {
+    return oauthRefreshToken;
+  }
+
   String getDatabaseVersion() {
     return databaseVersion;
   }
@@ -109,6 +122,10 @@ public class SFLoginOutput {
 
   Duration getHttpClientSocketTimeout() {
     return httpClientSocketTimeout;
+  }
+
+  Duration getHttpClientConnectionTimeout() {
+    return httpClientConnectionTimeout;
   }
 
   Map<String, Object> getCommonParams() {

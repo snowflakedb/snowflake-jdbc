@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.sql.Date;
@@ -25,7 +21,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Snowflake ResultSetMetaData */
 public class SFResultSetMetaData {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSetMetaData.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSetMetaData.class);
 
   private int columnCount = 0;
 
@@ -36,6 +32,8 @@ public class SFResultSetMetaData {
   private List<Integer> columnTypes;
 
   private List<Integer> precisions;
+
+  private List<Integer> dimensions;
 
   private List<Integer> scales;
 
@@ -143,6 +141,7 @@ public class SFResultSetMetaData {
     this.columnTypeNames = new ArrayList<>(this.columnCount);
     this.columnTypes = new ArrayList<>(this.columnCount);
     this.precisions = new ArrayList<>(this.columnCount);
+    this.dimensions = new ArrayList<>(this.columnCount);
     this.scales = new ArrayList<>(this.columnCount);
     this.nullables = new ArrayList<>(this.columnCount);
     this.columnSrcDatabases = new ArrayList<>(this.columnCount);
@@ -156,6 +155,7 @@ public class SFResultSetMetaData {
       columnNames.add(columnMetadata.get(colIdx).getName());
       columnTypeNames.add(columnMetadata.get(colIdx).getTypeName());
       precisions.add(calculatePrecision(columnMetadata.get(colIdx)));
+      dimensions.add(calculateDimension(columnMetadata.get(colIdx)));
       columnTypes.add(columnMetadata.get(colIdx).getType());
       scales.add(columnMetadata.get(colIdx).getScale());
       nullables.add(
@@ -198,6 +198,14 @@ public class SFResultSetMetaData {
       default:
         return 0;
     }
+  }
+
+  private Integer calculateDimension(SnowflakeColumnMetadata columnMetadata) {
+    int columnType = columnMetadata.getType();
+    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+      return columnMetadata.getDimension();
+    }
+    return 0;
   }
 
   private Integer calculateDisplaySize(SnowflakeColumnMetadata columnMetadata) {
@@ -363,11 +371,12 @@ public class SFResultSetMetaData {
   public int getInternalColumnType(int column) throws SFException {
     int columnIdx = column - 1;
     if (column < 1 || column > columnTypes.size()) {
-      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnTypes.get(columnIdx) == null) {
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
+      throw new SFException(
+          queryId, ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypes.get(columnIdx);
@@ -375,11 +384,12 @@ public class SFResultSetMetaData {
 
   public String getColumnTypeName(int column) throws SFException {
     if (column < 1 || column > columnTypeNames.size()) {
-      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnTypeNames.get(column - 1) == null) {
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
+      throw new SFException(
+          queryId, ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypeNames.get(column - 1);
@@ -400,6 +410,14 @@ public class SFResultSetMetaData {
     } else {
       // TODO: fix this later to use different defaults for number or timestamp
       return 9;
+    }
+  }
+
+  public int getDimension(int column) {
+    if (dimensions != null && dimensions.size() >= column && column > 0) {
+      return dimensions.get(column - 1);
+    } else {
+      return 0;
     }
   }
 
@@ -477,11 +495,12 @@ public class SFResultSetMetaData {
   @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getColumnFields(int column) throws SFException {
     if (column < 1 || column > columnMetadata.size()) {
-      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnMetadata.get(column - 1) == null) {
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
+      throw new SFException(
+          queryId, ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
     }
 
     return columnMetadata.get(column - 1).getFields();

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -32,6 +28,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
+import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -39,7 +36,9 @@ import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
@@ -63,6 +62,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
+/** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
@@ -75,13 +75,12 @@ public class HttpUtil {
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
-  static final String JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_connection_timeout_in_ms";
-  static final String JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_socket_timeout_in_ms";
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
+
+  private static Duration connectionTimeout;
+  private static Duration socketTimeout;
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-lived clients. Key =
@@ -112,16 +111,28 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS));
+    return connectionTimeout != null
+        ? connectionTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
   }
 
   @SnowflakeJdbcInternalApi
   public static Duration getSocketTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS));
+    return socketTimeout != null
+        ? socketTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setConnectionTimeout(int timeout) {
+    connectionTimeout = Duration.ofMillis(timeout);
+    initDefaultRequestConfig(connectionTimeout.toMillis(), getSocketTimeout().toMillis());
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setSocketTimeout(int timeout) {
+    socketTimeout = Duration.ofMillis(timeout);
+    initDefaultRequestConfig(getConnectionTimeout().toMillis(), socketTimeout.toMillis());
   }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
@@ -131,7 +142,7 @@ public class HttpUtil {
   public static void closeExpiredAndIdleConnections() {
     if (connectionManager != null) {
       synchronized (connectionManager) {
-        logger.debug("connection pool stats: {}", connectionManager.getTotalStats());
+        logger.debug("Connection pool stats: {}", connectionManager.getTotalStats());
         connectionManager.closeExpiredConnections();
         connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
       }
@@ -157,7 +168,7 @@ public class HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when exception encountered
    * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties, ClientConfiguration)}
    *     instead
    */
@@ -173,7 +184,7 @@ public class HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param opContext the configuration needed by Azure to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when invalid proxy properties encountered
    */
   public static void setSessionlessProxyForAzure(
       Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
@@ -196,8 +207,13 @@ public class HttpUtil {
               ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
         }
         Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        logger.debug("Setting sessionless Azure proxy. Host: {}, port: {}", proxyHost, proxyPort);
         opContext.setProxy(azProxy);
+      } else {
+        logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
       }
+    } else {
+      logger.debug("Omitting sessionless Azure proxy setup");
     }
   }
 
@@ -211,7 +227,11 @@ public class HttpUtil {
     if (key != null && key.usesProxy()) {
       Proxy azProxy =
           new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      logger.debug(
+          "Setting Azure proxy. Host: {}, port: {}", key.getProxyHost(), key.getProxyPort());
       opContext.setProxy(azProxy);
+    } else {
+      logger.debug("Omitting Azure proxy setup");
     }
   }
 
@@ -262,53 +282,42 @@ public class HttpUtil {
    */
   public static CloseableHttpClient buildHttpClient(
       @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
+    logger.debug(
+        "Building http client with client settings key: {}, ocsp cache file: {}, download uncompressed: {}",
+        key != null ? key.toString() : null,
+        ocspCacheFile,
+        downloadUnCompressed);
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
     int timeToLive = SystemUtil.convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
-    logger.debug("time to live in connection pooling manager: {}", timeToLive);
     long connectTimeout = getConnectionTimeout().toMillis();
     long socketTimeout = getSocketTimeout().toMillis();
     logger.debug(
-        "Connect timeout is {} ms and socket timeout is {} for connection pooling manager",
+        "Connection pooling manager connect timeout: {} ms, socket timeout: {} ms, ttl: {} s",
         connectTimeout,
-        socketTimeout);
+        socketTimeout,
+        timeToLive);
 
-    // Set proxy settings for DefaultRequestConfig. If current proxy settings are the same as for
-    // the last request, keep the current DefaultRequestConfig. If not, build a new
-    // DefaultRequestConfig and set the new proxy settings for it
-    HttpHost proxy =
-        (key != null && key.usesProxy())
-            ? new HttpHost(
-                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme())
-            : null;
-    // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
-    // settings, re-build it (current or old proxy settings could be null, so null check is
-    // included)
-    boolean noDefaultRequestConfig =
-        DefaultRequestConfig == null || DefaultRequestConfig.getProxy() == null;
-    if (noDefaultRequestConfig || !DefaultRequestConfig.getProxy().equals(proxy)) {
-      RequestConfig.Builder builder =
-          RequestConfig.custom()
-              .setConnectTimeout((int) connectTimeout)
-              .setConnectionRequestTimeout((int) connectTimeout)
-              .setSocketTimeout((int) socketTimeout);
-      // only set the proxy settings if they are not null
-      // but no value has been specified for nonProxyHosts
-      // the route planner will determine whether to use a proxy based on nonProxyHosts value.
-      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
-        builder.setProxy(proxy);
-      }
-      DefaultRequestConfig = builder.build();
+    // Create default request config without proxy since different connections could use different
+    // proxies in multi tenant environments
+    // Proxy is set later with route planner
+    if (DefaultRequestConfig == null) {
+      initDefaultRequestConfig(connectTimeout, socketTimeout);
     }
 
     TrustManager[] trustManagers = null;
-    if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
-      // A custom TrustManager is required only if insecureMode is disabled,
-      // which is by default in the production. insecureMode can be enabled
+    if (key != null && key.getOcspMode() != OCSPMode.DISABLE_OCSP_CHECKS) {
+      // A custom TrustManager is required only if disableOCSPChecks is disabled,
+      // which is by default in the production. disableOCSPChecks can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
+        if (ocspCacheFile == null) {
+          logger.debug("Instantiating trust manager with default ocsp cache file");
+        } else {
+          logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
+        }
         TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
         trustManagers = tm;
       } catch (Exception | Error err) {
@@ -318,8 +327,18 @@ public class HttpUtil {
         logger.error(errors.toString(), true);
         throw new RuntimeException(err); // rethrow the exception
       }
+    } else if (key != null) {
+      logger.debug(
+          "Omitting trust manager instantiation as OCSP mode is set to {}", key.getOcspMode());
+    } else {
+      logger.debug("Omitting trust manager instantiation as configuration is not provided");
     }
     try {
+      logger.debug(
+          "Registering https connection socket factory with socks proxy disabled: {} and http "
+              + "connection socket factory",
+          socksProxyDisabled);
+
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register(
@@ -344,6 +363,7 @@ public class HttpUtil {
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
+      logger.debug("Disabling cookie management for http client");
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
@@ -352,9 +372,18 @@ public class HttpUtil {
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent(buildUserAgent(userAgentSuffix)) // needed for Okta
-              .disableCookieManagement(); // SNOW-39748
-
+              .disableCookieManagement() // SNOW-39748
+              .setDefaultRequestConfig(DefaultRequestConfig);
       if (key != null && key.usesProxy()) {
+        HttpHost proxy =
+            new HttpHost(
+                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme());
+        logger.debug(
+            "Configuring proxy and route planner - host: {}, port: {}, scheme: {}, nonProxyHosts: {}",
+            key.getProxyHost(),
+            key.getProxyPort(),
+            key.getProxyHttpProtocol().getScheme(),
+            key.getNonProxyHosts());
         // use the custom proxy properties
         SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
             httpClientRoutePlanner.computeIfAbsent(
@@ -365,25 +394,45 @@ public class HttpUtil {
                         key.getProxyPort(),
                         key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
-        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+        httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())
             && !Strings.isNullOrEmpty(key.getProxyPassword())) {
           Credentials credentials =
               new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
           CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+          logger.debug(
+              "Using user: {}, password is {} for proxy host: {}, port: {}",
+              key.getProxyUser(),
+              SFLoggerUtil.isVariableProvided(key.getProxyPassword()),
+              key.getProxyHost(),
+              key.getProxyPort());
           credentialsProvider.setCredentials(authScope, credentials);
-          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+          httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
       }
-      httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
       if (downloadUnCompressed) {
-        httpClientBuilder = httpClientBuilder.disableContentCompression();
+        logger.debug("Disabling content compression for http client");
+        httpClientBuilder.disableContentCompression();
       }
       return httpClientBuilder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
     }
+  }
+
+  private static void initDefaultRequestConfig(long connectTimeout, long socketTimeout) {
+    RequestConfig.Builder builder =
+        RequestConfig.custom()
+            .setConnectTimeout((int) connectTimeout)
+            .setConnectionRequestTimeout((int) connectTimeout)
+            .setSocketTimeout((int) socketTimeout);
+    logger.debug(
+        "Rebuilding request config. Connect timeout: {} ms, connection request timeout: {} ms, socket timeout: {} ms",
+        connectTimeout,
+        connectTimeout,
+        socketTimeout);
+    DefaultRequestConfig = builder.build();
   }
 
   public static void updateRoutePlanner(HttpClientSettingsKey key) {
@@ -392,6 +441,11 @@ public class HttpUtil {
             .get(key)
             .getNonProxyHosts()
             .equalsIgnoreCase(key.getNonProxyHosts())) {
+      logger.debug(
+          "Updating route planner non-proxy hosts for proxy: {}:{} to: {}",
+          key.getProxyHost(),
+          key.getProxyPort(),
+          key.getNonProxyHosts());
       httpClientRoutePlanner.get(key).setNonProxyHosts(key.getNonProxyHosts());
     }
   }
@@ -490,6 +544,7 @@ public class HttpUtil {
   }
 
   public static void setRequestConfig(RequestConfig requestConfig) {
+    logger.debug("Setting default request config to: {}", requestConfig);
     DefaultRequestConfig = requestConfig;
   }
 
@@ -508,6 +563,7 @@ public class HttpUtil {
    * @param socksProxyDisabled new value
    */
   public static void setSocksProxyDisabled(boolean socksProxyDisabled) {
+    logger.debug("Setting socks proxy disabled to {}", socksProxyDisabled);
     HttpUtil.socksProxyDisabled = socksProxyDisabled;
   }
 
@@ -521,13 +577,14 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
+   * Executes an HTTP request with the cookie spec set to IGNORE_COOKIES
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
@@ -545,6 +602,7 @@ public class HttpUtil {
       AtomicBoolean canceling,
       HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
+    logger.debug("Executing request without cookies");
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
@@ -558,17 +616,19 @@ public class HttpUtil {
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
         getHttpClient(ocspAndProxyKey),
-        new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData(),
+        null);
   }
 
   /**
-   * Executes a HTTP request for Snowflake.
+   * Executes an HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
@@ -582,6 +642,42 @@ public class HttpUtil {
       int retryCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey)
       throws SnowflakeSQLException, IOException {
+    return executeGeneralRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        ocspAndProxyAndGzipKey,
+        null);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
+   * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  @SnowflakeJdbcInternalApi
+  public static String executeGeneralRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      RetryContextManager retryContextManager)
+      throws SnowflakeSQLException, IOException {
+    logger.debug("Executing general request");
     return executeRequest(
         httpRequest,
         retryTimeout,
@@ -593,17 +689,19 @@ public class HttpUtil {
         false, // no retry parameter
         false, // no retry on HTTP 403
         ocspAndProxyAndGzipKey,
-        new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData(),
+        retryContextManager);
   }
 
   /**
-   * Executes a HTTP request for Snowflake
+   * Executes an HTTP request for Snowflake
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
    * @param httpClient client object used to communicate with other machine
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
@@ -617,6 +715,7 @@ public class HttpUtil {
       int retryCount,
       CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
+    logger.debug("Executing general request");
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
@@ -630,11 +729,12 @@ public class HttpUtil {
         true, // include request GUID
         false, // no retry on HTTP 403
         httpClient,
-        new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData(),
+        null);
   }
 
   /**
-   * Executes a HTTP request for Snowflake.
+   * Executes an HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
@@ -646,6 +746,7 @@ public class HttpUtil {
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param execTimeData query execution time telemetry data object
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -663,7 +764,56 @@ public class HttpUtil {
       HttpClientSettingsKey ocspAndProxyKey,
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
-    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.INSECURE));
+    return executeRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        includeRetryParameters,
+        retryOnHTTP403,
+        ocspAndProxyKey,
+        execTimeData,
+        null);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param maxRetries retry count for the request
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param retryOnHTTP403 whether to retry on HTTP 403 or not
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param execTimeData query execution time telemetry data object
+   * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean includeRetryParameters,
+      boolean retryOnHTTP403,
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager)
+      throws SnowflakeSQLException, IOException {
+    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.DISABLE_OCSP_CHECKS));
+    logger.debug("Executing request with OCSP enabled: {}", ocspEnabled);
     execTimeData.setOCSPStatus(ocspEnabled);
     return executeRequestInternal(
         httpRequest,
@@ -678,7 +828,8 @@ public class HttpUtil {
         true, // include request GUID
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey),
-        execTimeData);
+        execTimeData,
+        retryContextManager);
   }
 
   /**
@@ -700,6 +851,7 @@ public class HttpUtil {
    * @param includeRequestGuid whether to include request_guid
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
+   * @param retryContextManager RetryContext used to customize retry handling functionality
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -717,7 +869,8 @@ public class HttpUtil {
       boolean includeRequestGuid,
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
-      ExecTimeTelemetryData execTimeData)
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -729,6 +882,12 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
+    Stopwatch stopwatch = null;
+
+    if (logger.isDebugEnabled()) {
+      stopwatch = new Stopwatch();
+      stopwatch.start();
+    }
 
     try {
       response =
@@ -745,7 +904,11 @@ public class HttpUtil {
               includeRetryParameters,
               includeRequestGuid,
               retryOnHTTP403,
-              execTimeData);
+              execTimeData,
+              retryContextManager);
+      if (logger.isDebugEnabled() && stopwatch != null) {
+        stopwatch.stop();
+      }
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
@@ -756,6 +919,7 @@ public class HttpUtil {
           EntityUtils.consume(response.getEntity());
         }
 
+        // We throw here exception if timeout was reached for login
         throw new SnowflakeSQLException(
             SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode(),
@@ -778,9 +942,10 @@ public class HttpUtil {
     }
 
     logger.debug(
-        "Pool: {} Request returned for: {}",
+        "Pool: {} Request returned for: {} took {} ms",
         (ArgSupplier) HttpUtil::getHttpClientStats,
-        requestInfoScrubbed);
+        requestInfoScrubbed,
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
     return theString;
   }
@@ -855,8 +1020,10 @@ public class HttpUtil {
     @Override
     public Socket createSocket(HttpContext ctx) throws IOException {
       if (socksProxyDisabled) {
+        logger.trace("Creating socket with no proxy");
         return new Socket(Proxy.NO_PROXY);
       }
+      logger.trace("Creating socket with proxy");
       return super.createSocket(ctx);
     }
   }

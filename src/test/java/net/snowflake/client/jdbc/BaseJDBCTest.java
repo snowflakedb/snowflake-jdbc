@@ -1,11 +1,8 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +32,7 @@ import java.util.UUID;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.core.SFException;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
@@ -44,53 +42,61 @@ public class BaseJDBCTest extends AbstractDriverIT {
     void run() throws SQLException;
   }
 
+  protected interface MethodRaisesSFException {
+    void run() throws SFException;
+  }
+
   protected interface MethodRaisesSQLClientInfoException {
     void run() throws SQLClientInfoException;
   }
 
   protected void expectConnectionAlreadyClosedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals((int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
-    }
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              f.run();
+            });
+    assertEquals((int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
   }
 
   protected void expectStatementAlreadyClosedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals((int) ErrorCode.STATEMENT_CLOSED.getMessageCode(), ex.getErrorCode());
-    }
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              f.run();
+            });
+    assertEquals((int) ErrorCode.STATEMENT_CLOSED.getMessageCode(), ex.getErrorCode());
   }
 
   protected void expectResultSetAlreadyClosedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
-    }
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              f.run();
+            });
+    assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
   }
 
   protected void expectFeatureNotSupportedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertTrue(ex instanceof SQLFeatureNotSupportedException);
-    }
+    SQLException ex =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              f.run();
+            });
+    assertTrue(ex instanceof SQLFeatureNotSupportedException);
   }
 
   protected void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLClientInfoException ex) {
-      // noup
-    }
+    SQLClientInfoException ex =
+        assertThrows(
+            SQLClientInfoException.class,
+            () -> {
+              f.run();
+            });
   }
 
   int getSizeOfResultSet(ResultSet rs) throws SQLException {

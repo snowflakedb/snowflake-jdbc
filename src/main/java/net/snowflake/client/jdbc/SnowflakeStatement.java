@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.sql.ResultSet;
@@ -14,11 +10,13 @@ public interface SnowflakeStatement {
   /**
    * @return the Snowflake query ID of the latest executed query (even failed one) or null when the
    *     last query ID is not available
+   * @throws SQLException if an error is encountered
    */
   String getQueryID() throws SQLException;
 
   /**
    * @return the Snowflake query IDs of the latest executed batch queries
+   * @throws SQLException if an error is encountered
    */
   List<String> getBatchQueryIDs() throws SQLException;
 
@@ -27,9 +25,15 @@ public interface SnowflakeStatement {
    *
    * @param name parameter name
    * @param value parameter value
+   * @throws SQLException if an error is encountered
    */
   void setParameter(String name, Object value) throws SQLException;
 
+  /**
+   * Set batch ID
+   *
+   * @param batchID the batch ID
+   */
   void setBatchID(String batchID);
 
   /**
@@ -46,8 +50,16 @@ public interface SnowflakeStatement {
    * required as SnowflakeStatementV1 doesn't directly expose ResultSet to the sub-classes making it
    * challenging to get additional information from the previously executed query.
    *
-   * @param resultSet
-   * @throws SQLException
+   * @param resultSet SFBaseResultSet
+   * @throws SQLException if an error is encountered
    */
   void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException;
+
+  /**
+   * Sets the query timeout when running an async query.
+   *
+   * @param seconds The number of seconds until timeout.
+   * @throws SQLException if an error is encountered
+   */
+  void setAsyncQueryTimeout(int seconds) throws SQLException;
 }

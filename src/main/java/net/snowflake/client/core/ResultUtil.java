@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,7 +25,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
 
 public class ResultUtil {
-  static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
 
   public static final int MILLIS_IN_ONE_DAY = 86400000;
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =
@@ -83,6 +79,12 @@ public class ResultUtil {
   /**
    * Helper function building a formatter for a specialized timestamp type. Note that it will be
    * based on either the 'param' value if set, or the default format provided.
+   *
+   * @param parameters keyed in parameter name and valued in parameter value
+   * @param id id
+   * @param param timestamp output format param
+   * @param defaultFormat default format
+   * @return {@link SnowflakeDateTimeFormat}
    */
   public static SnowflakeDateTimeFormat specializedFormatter(
       Map<String, Object> parameters, String id, String param, String defaultFormat) {
@@ -184,7 +186,7 @@ public class ResultUtil {
       TimeZone sessionTZ,
       SFBaseSession session)
       throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
+    logger.trace("Timestamp getTimestamp(int columnIndex)", false);
 
     try {
       TimeUtil.TimestampType tsType = null;

@@ -1,12 +1,11 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.base.Strings;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -22,12 +21,9 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
-  // This is required to use ConditionalIgnore annotation.
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
@@ -385,7 +381,11 @@ public class AbstractDriverIT {
     ClassLoader classLoader = AbstractDriverIT.class.getClassLoader();
     URL url = classLoader.getResource(fileName);
     if (url != null) {
-      return url.getFile();
+      try {
+        return Paths.get(url.toURI()).toAbsolutePath().toString();
+      } catch (URISyntaxException ex) {
+        throw new RuntimeException("Unable to get absolute path: " + fileName);
+      }
     } else {
       throw new RuntimeException("No file is found: " + fileName);
     }

@@ -1,9 +1,7 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
+import static java.util.Arrays.stream;
+import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
@@ -31,10 +30,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -51,10 +53,8 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 
-/**
- * @author jhuang
- */
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
@@ -164,64 +164,27 @@ public class SnowflakeUtil {
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
         case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
+        case OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE:
           throw new SnowflakeReauthenticationRequest(queryId, errorMessage, sqlState, errorCode);
       }
     }
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState, errorCode);
   }
 
+  /**
+   * This method should only be used internally
+   *
+   * @param colNode JsonNode
+   * @param jdbcTreatDecimalAsInt true if should treat Decimal as Int
+   * @param session SFBaseSession
+   * @return SnowflakeColumnMetadata
+   * @throws SnowflakeSQLException if an error occurs
+   */
+  @Deprecated
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLException {
-    String colName = colNode.path("name").asText();
-    String internalColTypeName = colNode.path("type").asText();
-    boolean nullable = colNode.path("nullable").asBoolean();
-    int precision = colNode.path("precision").asInt();
-    int scale = colNode.path("scale").asInt();
-    int length = colNode.path("length").asInt();
-    boolean fixed = colNode.path("fixed").asBoolean();
-    JsonNode udtOutputType = colNode.path("outputType");
-    JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    String extColTypeName = null;
-    if (!extColTypeNameNode.isMissingNode()
-        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
-      extColTypeName = extColTypeNameNode.asText();
-    }
-    List<FieldMetadata> fieldsMetadata =
-        getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
-
-    int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-    ColumnTypeInfo columnTypeInfo =
-        getSnowflakeType(
-            internalColTypeName,
-            extColTypeName,
-            udtOutputType,
-            session,
-            fixedColType,
-            fieldsMetadata.size() > 0,
-            isVectorType(internalColTypeName));
-
-    String colSrcDatabase = colNode.path("database").asText();
-    String colSrcSchema = colNode.path("schema").asText();
-    String colSrcTable = colNode.path("table").asText();
-
-    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
-
-    return new SnowflakeColumnMetadata(
-        colName,
-        columnTypeInfo.getColumnType(),
-        nullable,
-        length,
-        precision,
-        scale,
-        columnTypeInfo.getExtColTypeName(),
-        fixed,
-        columnTypeInfo.getSnowflakeType(),
-        fieldsMetadata,
-        colSrcDatabase,
-        colSrcSchema,
-        colSrcTable,
-        isAutoIncrement);
+    return new SnowflakeColumnMetadata(colNode, jdbcTreatDecimalAsInt, session);
   }
 
   static ColumnTypeInfo getSnowflakeType(
@@ -383,7 +346,13 @@ public class SnowflakeUtil {
       throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
-      String colName = node.path("name").asText();
+      String colName;
+      if (!node.path("fieldType").isEmpty()) {
+        colName = node.path("fieldName").asText();
+        node = node.path("fieldType");
+      } else {
+        colName = node.path("name").asText();
+      }
       int scale = node.path("scale").asInt();
       int precision = node.path("precision").asInt();
       String internalColTypeName = node.path("type").asText();
@@ -425,11 +394,11 @@ public class SnowflakeUtil {
     return fields;
   }
 
-  private static boolean isVectorType(String internalColumnTypeName) {
+  static boolean isVectorType(String internalColumnTypeName) {
     return internalColumnTypeName.equalsIgnoreCase("vector");
   }
 
-  private static List<FieldMetadata> getFieldMetadata(
+  static List<FieldMetadata> getFieldMetadata(
       boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
@@ -558,7 +527,9 @@ public class SnowflakeUtil {
               "", // database
               "", // schema
               "",
-              false)); // isAutoincrement
+              false, // isAutoincrement
+              0 // dimension
+              ));
     }
 
     return rowType;
@@ -697,7 +668,12 @@ public class SnowflakeUtil {
     return null;
   }
 
-  /** System.setEnv function. Can be used for unit tests. */
+  /**
+   * System.setEnv function. Can be used for unit tests.
+   *
+   * @param key key
+   * @param value value
+   */
   public static void systemSetEnv(String key, String value) {
     try {
       Map<String, String> env = System.getenv();
@@ -706,8 +682,19 @@ public class SnowflakeUtil {
       field.setAccessible(true);
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.put(key, value);
+
+      // To an environment variable is set on Windows, it uses a different map to store the values
+      // when the system.getenv(VAR_NAME) is used its required to update in this additional place.
+      if (Constants.getOS() == Constants.OS.WINDOWS) {
+        Class<?> pe = Class.forName("java.lang.ProcessEnvironment");
+        Method getenv = pe.getDeclaredMethod("getenv", String.class);
+        getenv.setAccessible(true);
+        Field props = pe.getDeclaredField("theCaseInsensitiveEnvironment");
+        props.setAccessible(true);
+        Map<String, String> writableEnvForGet = (Map<String, String>) props.get(null);
+        writableEnvForGet.put(key, value);
+      }
     } catch (Exception e) {
-      System.out.println("Failed to set value");
       logger.error(
           "Failed to set environment variable {}. Exception raised: {}", key, e.getMessage());
     }
@@ -716,7 +703,7 @@ public class SnowflakeUtil {
   /**
    * System.unsetEnv function to remove a system environment parameter in the map
    *
-   * @param key
+   * @param key key value
    */
   public static void systemUnsetEnv(String key) {
     try {
@@ -727,7 +714,6 @@ public class SnowflakeUtil {
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.remove(key);
     } catch (Exception e) {
-      System.out.println("Failed to unset value");
       logger.error(
           "Failed to remove environment variable {}. Exception raised: {}", key, e.getMessage());
     }
@@ -738,6 +724,8 @@ public class SnowflakeUtil {
    *
    * @param mode OCSP mode
    * @param info proxy server properties.
+   * @return HttpClientSettingsKey
+   * @throws SnowflakeSQLException if an error occurs
    */
   public static HttpClientSettingsKey convertProxyPropertiesToHttpClientKey(
       OCSPMode mode, Properties info) throws SnowflakeSQLException {
@@ -793,8 +781,8 @@ public class SnowflakeUtil {
    * SimpleDateFormatter. Negative values have to be rounded to the next negative value, while
    * positive values should be cut off with no rounding.
    *
-   * @param millis
-   * @return
+   * @param millis milliseconds
+   * @return seconds as long value
    */
   public static long getSecondsFromMillis(long millis) {
     long returnVal;
@@ -842,6 +830,22 @@ public class SnowflakeUtil {
     }
     return defaultValue;
   }
+  /**
+   * Helper function to convert environment variable to boolean
+   *
+   * @param envVariableKey property name of the environment variable
+   * @param defaultValue default value used
+   * @return the value of the environment variable as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemGetEnvToBooleanValue(
+      String envVariableKey, boolean defaultValue) {
+    String environmentVariableValue = systemGetEnv(envVariableKey);
+    if (environmentVariableValue != null) {
+      return Boolean.parseBoolean(environmentVariableValue);
+    }
+    return defaultValue;
+  }
 
   @SnowflakeJdbcInternalApi
   public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
@@ -858,5 +862,48 @@ public class SnowflakeUtil {
       return null;
     }
     return node.isValueNode() ? node.asText() : node.toString();
+  }
+
+  /**
+   * Method introduced to avoid inconsistencies in custom headers handling, since these are defined
+   * on drivers side e.g. some drivers might internally convert headers to canonical form.
+   *
+   * @param input map input
+   * @return case insensitive map
+   */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> createCaseInsensitiveMap(Map<String, String> input) {
+    Map<String, String> caseInsensitiveMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    if (input != null) {
+      caseInsensitiveMap.putAll(input);
+    }
+    return caseInsensitiveMap;
+  }
+
+  /**
+   * toCaseInsensitiveMap, but adjusted to Headers[] argument type
+   *
+   * @param headers array of headers
+   * @return case insensitive map
+   */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> createCaseInsensitiveMap(Header[] headers) {
+    if (headers != null) {
+      return createCaseInsensitiveMap(
+          stream(headers)
+              .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+    } else {
+      return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+  }
+
+  /**
+   * Check whether the OS is Windows
+   *
+   * @return boolean
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean isWindows() {
+    return Constants.getOS() == Constants.OS.WINDOWS;
   }
 }

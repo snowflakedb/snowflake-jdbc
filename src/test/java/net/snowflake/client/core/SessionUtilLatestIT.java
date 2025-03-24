@@ -1,12 +1,8 @@
-/*
- * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -21,11 +17,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -33,14 +30,14 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**
@@ -50,7 +47,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
    * @throws SFException
    * @throws SnowflakeSQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testJwtAuthTimeoutRetry() throws SFException, SnowflakeSQLException {
     final SFLoginInput loginInput = initMockLoginInput();
@@ -85,12 +82,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
-    when(loginInput.getAuthenticator())
-        .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
+    when(loginInput.getAuthenticator()).thenReturn(AuthenticatorType.SNOWFLAKE_JWT.name());
     when(loginInput.getPrivateKeyFile())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
-    when(loginInput.getPrivateKeyFilePwd())
-        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
+    when(loginInput.getPrivateKeyPwd()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD"));
     when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getAppId()).thenReturn("testid");
@@ -265,10 +260,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn("{\"code\":null,\"message\":\"POST request failed\",\"success\":false}");
-
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
-    } catch (SnowflakeSQLException e) {
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals("POST request failed", e.getMessage());
       assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
@@ -295,10 +290,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
               "{\"data\":{\"tokenUrl\":\"invalid!@url$%^\","
                   + "\"ssoUrl\":\"invalid!@url$%^\","
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
-
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
-    } catch (SnowflakeSQLException e) {
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
       assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
@@ -326,9 +321,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   + "\"ssoUrl\":\"https://testauth.okta.com/^123\","
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
 
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
-    } catch (SnowflakeSQLException e) {
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals((int) ErrorCode.CONNECTION_ERROR.getMessageCode(), e.getErrorCode());
       assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
@@ -380,12 +376,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContextManager.class)))
           .thenThrow(new IOException());
 
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
-    } catch (SnowflakeSQLException e) {
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
       assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
@@ -409,7 +407,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   // Testing retry with Okta calls the service to get a new unique token. This is valid after
   // version 3.15.1.
   @Test
-  public void testOktaAuthRetry() throws Throwable {
+  public void testOktaAuthRetriesUsingTimeoutExceptionRaisedWhenAuthenticatingInSnowflakeUsingOTT()
+      throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     SnowflakeSQLException ex =
@@ -459,7 +458,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -507,7 +507,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(AtomicBoolean.class),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn(
-              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"test-session-token-2\"}");
 
       mockedHttpUtil
           .when(
@@ -518,7 +518,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -569,12 +570,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Should be failed because of the invalid form");
-    } catch (SnowflakeSQLException ex) {
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
     }
   }
@@ -623,12 +626,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(RetryContextManager.class)))
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Should be failed because of the invalid form");
-    } catch (SnowflakeSQLException ex) {
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
       assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
     }
   }

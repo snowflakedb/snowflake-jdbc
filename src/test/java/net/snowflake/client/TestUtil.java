@@ -1,22 +1,25 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -48,12 +51,8 @@ public class TestUtil {
    * @param testCode the code that will run and throws exception
    */
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
-    try {
-      testCode.run();
-      Assert.fail();
-    } catch (SFException e) {
-      assertThat(e.getVendorCode(), is(errorCode));
-    }
+    SFException e = assertThrows(SFException.class, testCode::run);
+    assertThat(e.getVendorCode(), is(errorCode));
   }
 
   /** Functional interface used to run a piece of code which throws SFException */
@@ -66,13 +65,14 @@ public class TestUtil {
    * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
    * null.
    *
-   * <p>This is replicated from SnowflakeUtil.systemGetEnv, because the old driver doesn't have that
-   * function for the tests to use it. Replace this function call with SnowflakeUtil.systemGetEnv
-   * when it is available.
-   *
+   * @deprecated This method should be replaced by SnowflakeUtil.systemGetEnv.
+   *     <p>This is replicated from SnowflakeUtil.systemGetEnv, because the old driver doesn't have
+   *     that function for the tests to use it. Replace this function call with
+   *     SnowflakeUtil.systemGetEnv when it is available.
    * @param env the environment variable name.
    * @return the environment variable value if set, otherwise null.
    */
+  @Deprecated
   public static String systemGetEnv(String env) {
     try {
       return System.getenv(env);
@@ -87,8 +87,8 @@ public class TestUtil {
 
   public static void assertValidQueryId(String queryId) {
     assertNotNull(queryId);
-    assertTrue(
-        "Expecting " + queryId + " is a valid UUID", QUERY_ID_REGEX.matcher(queryId).matches());
+    MatcherAssert.assertThat(
+        "Expecting " + queryId + " is a valid UUID", queryId, matchesPattern(QUERY_ID_REGEX));
   }
 
   /**
@@ -126,5 +126,37 @@ public class TestUtil {
     } finally {
       statement.execute("DROP SCHEMA " + customSchema);
     }
+  }
+
+  public interface MethodRaisesSQLException {
+    void run() throws SQLException;
+  }
+
+  public static void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
+    SQLException ex = assertThrows(SQLException.class, f::run);
+    assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
+  }
+
+  /**
+   * Compares two string values both values are cleaned of whitespaces
+   *
+   * @param expected expected value
+   * @param actual actual value
+   */
+  public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
+    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
+  }
+
+  public static String randomTableName(String jiraId) {
+    return ("TEST_" + (jiraId != null ? jiraId : "") + "_" + UUID.randomUUID())
+        .replaceAll("-", "_");
+  }
+
+  public static List<Integer> randomIntList(int length, int modulo) {
+    return new Random()
+        .ints()
+        .limit(length)
+        .mapToObj(i -> Math.abs(i) % modulo)
+        .collect(Collectors.toList());
   }
 }

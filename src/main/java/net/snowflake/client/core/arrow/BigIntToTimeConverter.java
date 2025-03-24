@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.nio.ByteBuffer;
@@ -18,10 +15,16 @@ import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
+/** BigInt to Time type converter. */
 public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
   protected ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public BigIntToTimeConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIME.name(), fieldVector, columnIndex, context);
@@ -49,6 +52,15 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
     }
   }
 
+  /**
+   * Return the long value as a Time object.
+   *
+   * @param value long value to represent as Time
+   * @param scale the scale
+   * @param useSessionTimezone boolean indicating use of session timezone
+   * @return Time object representing the value
+   * @throws SFException invalid data conversion
+   */
   public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
     SFTime sfTime = SFTime.fromFractionalSeconds(value, scale);
     Time ts =

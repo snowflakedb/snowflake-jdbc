@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
@@ -8,11 +5,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.HashMap;
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
   public void testFeatureNotSupportedException() throws Throwable {
@@ -43,6 +40,8 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(connection::createSQLXML);
       expectFeatureNotSupportedException(
           () -> connection.createStruct("fakeType", new Object[] {}));
+      expectFeatureNotSupportedException(
+          () -> connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
     }
   }
 

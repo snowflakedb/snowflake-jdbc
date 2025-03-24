@@ -1,14 +1,9 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 /**
  * Interface used by JDBC driver to log information
  *
  * <p>Five levels are included in this interface, from high to low: ERROR WARN INFO DEBUG TRACE
- *
- * <p>Created by hyu on 11/17/16.
  */
 public interface SFLogger {
   /**

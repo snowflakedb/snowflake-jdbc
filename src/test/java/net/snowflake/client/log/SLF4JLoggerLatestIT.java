@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import ch.qos.logback.classic.Level;
@@ -11,16 +8,16 @@ import ch.qos.logback.core.AppenderBase;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
-@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** {@link SLF4JLogger} instance that will be tested in this class */
   private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerLatestIT.class);
@@ -65,7 +62,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** Level at which last message was logged using SLF4JLogger. */
   private Level lastLogMessageLevel = null;
 
-  @BeforeClass
+  @BeforeAll
   public static void oneTimeSetUp() {
     logLevelToRestore = internalLogger.getLevel();
     additivityToRestore = internalLogger.isAdditive();
@@ -85,7 +82,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     internalLogger.setAdditive(false);
   }
 
-  @AfterClass
+  @AfterAll
   public static void oneTimeTearDown() {
     // Restore original configuration
     internalLogger.setLevel(logLevelToRestore);
@@ -96,10 +93,9 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     appendersToRestore.forEach(internalLogger::addAppender);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     super.setUp();
-
     if (!testAppender.isStarted()) {
       testAppender.start();
     }
@@ -107,7 +103,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     internalLogger.addAppender(testAppender);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     internalLogger.detachAppender(testAppender);
   }

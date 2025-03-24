@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
@@ -122,7 +118,11 @@ public class HttpClientSettingsKey implements Serializable {
     return this.userAgentSuffix;
   }
 
-  /** Be careful of using this! Should only be called when password is later masked. */
+  /**
+   * Be careful of using this! Should only be called when password is later masked.
+   *
+   * @return proxy password
+   */
   @SnowflakeJdbcInternalApi
   public String getProxyPassword() {
     return this.proxyPassword;
@@ -149,5 +149,36 @@ public class HttpClientSettingsKey implements Serializable {
 
   public Boolean getGzipDisabled() {
     return gzipDisabled;
+  }
+
+  @Override
+  public String toString() {
+    return "HttpClientSettingsKey["
+        + "ocspMode="
+        + ocspMode
+        + ", useProxy="
+        + useProxy
+        + ", proxyHost='"
+        + proxyHost
+        + '\''
+        + ", proxyPort="
+        + proxyPort
+        + ", nonProxyHosts='"
+        + nonProxyHosts
+        + '\''
+        + ", proxyUser='"
+        + proxyUser
+        + '\''
+        + ", proxyPassword is "
+        + (proxyPassword.isEmpty() ? "not set" : "set")
+        + ", proxyProtocol='"
+        + proxyProtocol
+        + '\''
+        + ", userAgentSuffix='"
+        + userAgentSuffix
+        + '\''
+        + ", gzipDisabled="
+        + gzipDisabled
+        + ']';
   }
 }

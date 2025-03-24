@@ -1,16 +1,14 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
@@ -27,7 +25,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -43,10 +40,9 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
@@ -55,10 +51,14 @@ import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -66,15 +66,11 @@ import org.junit.experimental.categories.Category;
  * if the tests still is not applicable. If it is applicable, move tests to ResultSetIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetLatestIT extends ResultSet0IT {
-
-  public ResultSetLatestIT() {
-    this("json");
-  }
-
-  ResultSetLatestIT(String queryResultFormat) {
-    super(queryResultFormat);
+  private static void setQueryResultFormat(Statement stmt, String queryResultFormat)
+      throws SQLException {
+    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
   }
 
   private String createTableSql =
@@ -91,33 +87,35 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws Throwable
    */
-  @Test
-  public void testMemoryClearingAfterInterrupt() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testMemoryClearingAfterInterrupt(String queryResultFormat) throws Throwable {
+    try (Statement statement = createStatement(queryResultFormat)) {
       final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
-      try {
-        // Inject an InterruptedException into the SnowflakeChunkDownloader.terminate() function
-        SnowflakeChunkDownloader.setInjectedDownloaderException(new InterruptedException());
-        // 10000 rows should be enough to force result into multiple chunks
-        try (ResultSet resultSet =
-            statement.executeQuery(
-                "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
-          assertThat(
-              "hold memory usage for the resultSet before close",
-              SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
-          // Result closure should catch InterruptedException and throw a SQLException after its
-          // caught
-        }
-        fail("Exception should have been thrown");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
-        // Assert all memory was released
-        assertThat(
-            "closing statement didn't release memory allocated for result",
-            SnowflakeChunkDownloader.getCurrentMemoryUsage(),
-            equalTo(initialMemoryUsage));
-      }
+      // Inject an InterruptedException into the SnowflakeChunkDownloader.terminate() function
+      SnowflakeChunkDownloader.setInjectedDownloaderException(new InterruptedException());
+      // 10000 rows should be enough to force result into multiple chunks
+
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                try (ResultSet resultSet =
+                    statement.executeQuery(
+                        "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
+                  assertThat(
+                      "hold memory usage for the resultSet before close",
+                      SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
+                  // Result closure should catch InterruptedException and throw a SQLException after
+                  // its caught
+                }
+              });
+      assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
+      // Assert all memory was released
+      assertThat(
+          "closing statement didn't release memory allocated for result",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
+          equalTo(initialMemoryUsage));
       // Unset the exception injection so statement and connection can close without exceptions
       SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     }
@@ -128,12 +126,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * multiple statements concurrently uses a lot of memory. This checks that chunks download even
    * when there is not enough memory available for concurrent prefetching.
    */
-  @Test
-  public void testChunkDownloaderNoHang() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testChunkDownloaderNoHang(String queryResultFormat) throws SQLException {
     int stmtCount = 30;
     int rowCount = 170000;
-    try (Connection connection = getConnection();
-        Statement stmt = connection.createStatement()) {
+    try (Statement stmt = createStatement(queryResultFormat)) {
       List<ResultSet> rsList = new ArrayList<>();
       // Set memory limit to low number
       connection
@@ -165,12 +163,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   /** This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. */
-  @Test
-  public void testChunkDownloaderSetRetry() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testChunkDownloaderSetRetry(String queryResultFormat) throws SQLException {
     int stmtCount = 3;
     int rowCount = 170000;
-    try (Connection connection = getConnection();
-        Statement stmt = connection.createStatement()) {
+    try (Statement stmt = createStatement(queryResultFormat)) {
       connection
           .unwrap(SnowflakeConnectionV1.class)
           .getSFBaseSession()
@@ -214,62 +212,63 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws ExecutionException arises if error occurred when sending telemetry events
    * @throws InterruptedException arises if error occurred when sending telemetry events
    */
-  @Test
-  public void testMetadataAPIMetricCollection()
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testMetadataAPIMetricCollection(String queryResultFormat)
       throws SQLException, ExecutionException, InterruptedException {
-    try (Connection con = init()) {
-      Telemetry telemetry =
-          con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
-      DatabaseMetaData metadata = con.getMetaData();
-      // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned
-      // ResultSet
-      // is empty
-      metadata.getColumns("fakecatalog", "fakeschema", null, null);
-      LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
-      // No result set has been downloaded from server so no chunk downloader metrics have been
-      // collected
-      // Logs should contain 1 item: the data about the getColumns() parameters
-      assertEquals(logs.size(), 1);
-      // Assert the log is of type client_metadata_api_metrics
-      assertEquals(
-          logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-          TelemetryField.METADATA_METRICS.toString());
-      // Assert function name and params match and that query id exists
-      assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
-      TestUtil.assertValidQueryId(logs.get(0).getMessage().get("query_id").textValue());
-      JsonNode parameterValues = logs.get(0).getMessage().get("function_parameters");
-      assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
-      assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
-      assertNull(parameterValues.get("general_name_pattern").textValue());
-      assertNull(parameterValues.get("specific_name_pattern").textValue());
+    Statement stmt = createStatement(queryResultFormat);
+    stmt.close();
+    Telemetry telemetry =
+        connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+    DatabaseMetaData metadata = connection.getMetaData();
+    // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned
+    // ResultSet
+    // is empty
+    metadata.getColumns("fakecatalog", "fakeschema", null, null);
+    LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
+    // No result set has been downloaded from server so no chunk downloader metrics have been
+    // collected
+    // Logs should contain 1 item: the data about the getColumns() parameters
+    assertEquals(logs.size(), 1);
+    // Assert the log is of type client_metadata_api_metrics
+    assertEquals(
+        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.METADATA_METRICS.toString());
+    // Assert function name and params match and that query id exists
+    assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
+    TestUtil.assertValidQueryId(logs.get(0).getMessage().get("query_id").textValue());
+    JsonNode parameterValues = logs.get(0).getMessage().get("function_parameters");
+    assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
+    assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
+    assertNull(parameterValues.get("general_name_pattern").textValue());
+    assertNull(parameterValues.get("specific_name_pattern").textValue());
 
-      // send data to clear log for next test
-      telemetry.sendBatchAsync().get();
-      assertEquals(0, ((TelemetryClient) telemetry).logBuffer().size());
+    // send data to clear log for next test
+    telemetry.sendBatchAsync().get();
+    assertEquals(0, ((TelemetryClient) telemetry).logBuffer().size());
 
-      String catalog = con.getCatalog();
-      String schema = con.getSchema();
-      metadata.getColumns(catalog, schema, null, null);
-      logs = ((TelemetryClient) telemetry).logBuffer();
-      assertEquals(logs.size(), 2);
-      // first item in log buffer is metrics on time to consume first result set chunk
-      assertEquals(
-          logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-          TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
-      // second item in log buffer is metrics on getProcedureColumns() parameters
-      // Assert the log is of type client_metadata_api_metrics
-      assertEquals(
-          logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
-          TelemetryField.METADATA_METRICS.toString());
-      // Assert function name and params match and that query id exists
-      assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
-      TestUtil.assertValidQueryId(logs.get(1).getMessage().get("query_id").textValue());
-      parameterValues = logs.get(1).getMessage().get("function_parameters");
-      assertEquals(parameterValues.get("catalog").textValue(), catalog);
-      assertEquals(parameterValues.get("schema").textValue(), schema);
-      assertNull(parameterValues.get("general_name_pattern").textValue());
-      assertNull(parameterValues.get("specific_name_pattern").textValue());
-    }
+    String catalog = connection.getCatalog();
+    String schema = connection.getSchema();
+    metadata.getColumns(catalog, schema, null, null);
+    logs = ((TelemetryClient) telemetry).logBuffer();
+    assertEquals(logs.size(), 2);
+    // first item in log buffer is metrics on time to consume first result set chunk
+    assertEquals(
+        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
+    // second item in log buffer is metrics on getProcedureColumns() parameters
+    // Assert the log is of type client_metadata_api_metrics
+    assertEquals(
+        logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.METADATA_METRICS.toString());
+    // Assert function name and params match and that query id exists
+    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
+    TestUtil.assertValidQueryId(logs.get(1).getMessage().get("query_id").textValue());
+    parameterValues = logs.get(1).getMessage().get("function_parameters");
+    assertEquals(parameterValues.get("catalog").textValue(), catalog);
+    assertEquals(parameterValues.get("schema").textValue(), schema);
+    assertNull(parameterValues.get("general_name_pattern").textValue());
+    assertNull(parameterValues.get("specific_name_pattern").textValue());
   }
 
   /**
@@ -278,10 +277,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testGetCharacterStreamNull() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetCharacterStreamNull(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table JDBC_NULL_CHARSTREAM (col1 varchar(16))");
       statement.execute("insert into JDBC_NULL_CHARSTREAM values(NULL)");
       try (ResultSet rs = statement.executeQuery("select * from JDBC_NULL_CHARSTREAM")) {
@@ -296,10 +295,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException arises if any exception occurs
    */
-  @Test
-  public void testMultipleChunks() throws Exception {
-    try (Connection con = init();
-        Statement statement = con.createStatement();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testMultipleChunks(String queryResultFormat) throws Exception {
+    try (Statement statement = createStatement(queryResultFormat);
 
         // 10000 rows should be enough to force result into multiple chunks
         ResultSet resultSet =
@@ -311,7 +310,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
       assertTrue(cnt >= 0);
       Telemetry telemetry =
-          con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+          connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
       LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
 
       // there should be a log for each of the following fields
@@ -349,11 +348,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException arises if any exception occurs
    */
-  @Test
-  public void testResultSetMetadata() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testResultSetMetadata(String queryResultFormat) throws SQLException {
     final Map<String, String> params = getConnectionParameters();
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
@@ -401,10 +400,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testEmptyResultSet() throws SQLException {
-    try (Connection con = init();
-        Statement statement = con.createStatement();
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testEmptyResultSet(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat);
         // the only function that returns ResultSetV1.emptyResultSet()
         ResultSet rs = statement.getGeneratedKeys()) {
       assertFalse(rs.next());
@@ -511,9 +510,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws Exception arises if any exception occurs.
    */
-  @Test
-  public void testBytesCrossTypeTests() throws Exception {
-    try (ResultSet resultSet = numberCrossTesting()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testBytesCrossTypeTests(String queryResultFormat) throws Exception {
+    try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
@@ -528,12 +528,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
 
       for (int i = 7; i < 12; i++) {
-        try {
-          resultSet.getBytes(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getBytes(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
 
       byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
@@ -544,10 +542,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   // SNOW-204185
   // 30s for timeout. This test usually finishes in around 10s.
-  @Test(timeout = 30000)
-  public void testResultChunkDownloaderException() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @Timeout(30)
+  public void testResultChunkDownloaderException(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
 
       // The generated resultSet must be big enough for triggering result chunk downloader
       String query =
@@ -562,15 +561,15 @@ public class ResultSetLatestIT extends ResultSet0IT {
         SnowflakeChunkDownloader.setInjectedDownloaderException(
             new OutOfMemoryError("Fake OOM error for testing"));
         try (ResultSet resultSet = statement.executeQuery(query)) {
-          try {
-            // Normally this step won't cause too long. Because we will get exception once trying to
-            // get
-            // result from the first chunk downloader
-            while (resultSet.next()) {}
-            fail("Should not reach here. Last next() command is supposed to throw an exception");
-          } catch (SnowflakeSQLException ex) {
-            // pass, do nothing
-          }
+          // Normally this step won't cause too long. Because we will get exception once trying to
+          // get
+          // result from the first chunk downloader
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                while (resultSet.next()) {}
+              },
+              "Should not reach here. Last next() command is supposed to throw an exception");
         }
       } finally {
         SnowflakeChunkDownloader.setInjectedDownloaderException(null);
@@ -585,9 +584,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    */
   @Test
   public void testGetObjectWithBigInt() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
-      statement.execute("alter session set jdbc_query_result_format ='json'");
+    try (Statement statement = createStatement("json")) {
       // test with greatest possible number and greatest negative possible number
       String[] extremeNumbers = {
         "99999999999999999999999999999999999999", "-99999999999999999999999999999999999999"
@@ -616,10 +613,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testGetBigDecimalWithScale() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetBigDecimalWithScale(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table test_get(colA number(38,9))");
       try (PreparedStatement preparedStatement =
           connection.prepareStatement("insert into test_get values(?)")) {
@@ -643,11 +640,13 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetDataTypeWithTimestampTz() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetDataTypeWithTimestampTz(String queryResultFormat) throws Exception {
     try (Connection connection = getConnection()) {
       ResultSetMetaData resultSetMetaData = null;
       try (Statement statement = connection.createStatement()) {
+        setQueryResultFormat(statement, queryResultFormat);
         statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
         try (ResultSet resultSet = statement.executeQuery("select * from ts_test")) {
           resultSetMetaData = resultSet.getMetaData();
@@ -678,32 +677,31 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testGetEmptyOrNullClob() throws SQLException {
-    try (Connection connection = init()) {
-      Clob clob = connection.createClob();
-      clob.setString(1, "hello world");
-      Clob emptyClob = connection.createClob();
-      emptyClob.setString(1, "");
-      try (Statement statement = connection.createStatement()) {
-        statement.execute(
-            "create or replace table test_get_clob(colA varchar, colNull varchar, colEmpty text)");
-        try (PreparedStatement preparedStatement =
-            connection.prepareStatement("insert into test_get_clob values(?, ?, ?)")) {
-          preparedStatement.setClob(1, clob);
-          preparedStatement.setString(2, null);
-          preparedStatement.setClob(3, emptyClob);
-          preparedStatement.execute();
-        }
-        try (ResultSet resultSet = statement.executeQuery("select * from test_get_clob")) {
-          assertTrue(resultSet.next());
-          assertEquals("hello world", resultSet.getClob(1).toString());
-          assertEquals("hello world", resultSet.getClob("COLA").toString());
-          assertNull(resultSet.getClob(2));
-          assertNull(resultSet.getClob("COLNULL"));
-          assertEquals("", resultSet.getClob(3).toString());
-          assertEquals("", resultSet.getClob("COLEMPTY").toString());
-        }
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetEmptyOrNullClob(String queryResultFormat) throws SQLException {
+    Clob clob = connection.createClob();
+    clob.setString(1, "hello world");
+    Clob emptyClob = connection.createClob();
+    emptyClob.setString(1, "");
+    try (Statement statement = createStatement(queryResultFormat)) {
+      statement.execute(
+          "create or replace table test_get_clob(colA varchar, colNull varchar, colEmpty text)");
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement("insert into test_get_clob values(?, ?, ?)")) {
+        preparedStatement.setClob(1, clob);
+        preparedStatement.setString(2, null);
+        preparedStatement.setClob(3, emptyClob);
+        preparedStatement.execute();
+      }
+      try (ResultSet resultSet = statement.executeQuery("select * from test_get_clob")) {
+        assertTrue(resultSet.next());
+        assertEquals("hello world", resultSet.getClob(1).toString());
+        assertEquals("hello world", resultSet.getClob("COLA").toString());
+        assertNull(resultSet.getClob(2));
+        assertNull(resultSet.getClob("COLNULL"));
+        assertEquals("", resultSet.getClob(3).toString());
+        assertEquals("", resultSet.getClob("COLEMPTY").toString());
       }
     }
   }
@@ -714,37 +712,38 @@ public class ResultSetLatestIT extends ResultSet0IT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testSetNullClob() throws SQLException {
-    try (Connection connection = init()) {
-      Clob clob = null;
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("create or replace table test_set_clob(colNull varchar)");
-        try (PreparedStatement preparedStatement =
-            connection.prepareStatement("insert into test_set_clob values(?)")) {
-          preparedStatement.setClob(1, clob);
-          preparedStatement.execute();
-        }
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testSetNullClob(String queryResultFormat) throws SQLException {
+    Clob clob = null;
+    try (Statement statement = createStatement(queryResultFormat)) {
+      statement.execute("create or replace table test_set_clob(colNull varchar)");
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement("insert into test_set_clob values(?)")) {
+        preparedStatement.setClob(1, clob);
+        preparedStatement.execute();
+      }
 
-        try (ResultSet resultSet = statement.executeQuery("select * from test_set_clob")) {
-          assertTrue(resultSet.next());
-          assertNull(resultSet.getClob(1));
-          assertNull(resultSet.getClob("COLNULL"));
-        }
+      try (ResultSet resultSet = statement.executeQuery("select * from test_set_clob")) {
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getClob(1));
+        assertNull(resultSet.getClob("COLNULL"));
       }
     }
   }
 
-  @Test
-  public void testCallStatementType() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testCallStatementType(String queryResultFormat) throws SQLException {
     Properties props = new Properties();
     props.put("USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS", "true");
     try (Connection connection = getConnection(props);
         Statement statement = connection.createStatement()) {
+      setQueryResultFormat(statement, queryResultFormat);
       try {
         String sp =
             "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
-                + "RETURNS VARCHAR(16777216)\n"
+                + "RETURNS VARCHAR\n"
                 + "LANGUAGE SQL\n"
                 + "EXECUTE AS CALLER\n"
                 + "AS \n"
@@ -793,7 +792,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
           assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
           assertEquals(0, resultSetMetaData.getScale(1));
-          assertEquals(16777216, resultSetMetaData.getPrecision(1));
         }
       } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
@@ -807,25 +805,70 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * Test that new query error message function for checking async query error messages is not
    * implemented for synchronous queries *
    */
-  @Test
-  public void testNewFeaturesNotSupported() throws SQLException {
-    try (Connection con = init();
-        ResultSet rs = con.createStatement().executeQuery("select 1")) {
-      try {
-        rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
-      } catch (SQLFeatureNotSupportedException ex) {
-        // catch SQLFeatureNotSupportedException
-        assertEquals("This function is only supported for asynchronous queries.", ex.getMessage());
-      }
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testNewFeaturesNotSupportedExeceptions(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat);
+        ResultSet rs = statement.executeQuery("select 1")) {
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getStatus);
+      expectSnowflakeLoggedFeatureNotSupportedException(() -> rs.getArray(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getList(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getMap(1, String.class));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream("column1"));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream("column1", new FakeReader(), 5L));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream(1, new FakeReader(), 5L));
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testInvalidUnWrap(String queryResultFormat) throws SQLException {
+    try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
+      SQLException ex = assertThrows(SQLException.class, () -> rs.unwrap(SnowflakeUtil.class));
+      assertEquals(
+          ex.getMessage(),
+          "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
     }
   }
 
   @Test
   public void testGetObjectJsonResult() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement("json")) {
       try {
-        statement.execute("alter session set jdbc_query_result_format ='json'");
         statement.execute("create or replace table testObj (colA double, colB boolean)");
 
         try (PreparedStatement preparedStatement =
@@ -845,10 +888,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testMetadataIsCaseSensitive() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testMetadataIsCaseSensitive(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
 
       String sampleCreateTableWithAllColTypes =
           "CREATE or replace TABLE case_sensitive ("
@@ -897,14 +940,14 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testAutoIncrementJsonResult() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testAutoIncrementResult(String queryResultFormat) throws SQLException {
     Properties paramProperties = new Properties();
     paramProperties.put("ENABLE_FIX_759900", true);
-    try (Connection connection = init(paramProperties);
+    try (Connection connection = init(paramProperties, queryResultFormat);
         Statement statement = connection.createStatement()) {
-      statement.execute("alter session set jdbc_query_result_format ='json'");
 
       statement.execute(
           "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
@@ -921,34 +964,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testAutoIncrementArrowResult() throws SQLException {
-    Properties paramProperties = new Properties();
-    paramProperties.put("ENABLE_FIX_759900", true);
-    try (Connection connection = init(paramProperties);
-        Statement statement = connection.createStatement()) {
-      statement.execute("alter session set jdbc_query_result_format ='arrow'");
-
-      statement.execute(
-          "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
-      statement.execute("insert into auto_inc(name) values('test1')");
-
-      try (ResultSet resultSet = statement.executeQuery("select * from auto_inc")) {
-        assertTrue(resultSet.next());
-
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        assertTrue(metaData.isAutoIncrement(1));
-        assertFalse(metaData.isAutoIncrement(2));
-        assertTrue(metaData.isAutoIncrement(3));
-      }
-    }
-  }
-
-  @Test
-  public void testGranularTimeFunctionsInSessionTimezone() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGranularTimeFunctionsInSessionTimezone(String queryResultFormat)
+      throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       try {
         statement.execute("create or replace table testGranularTime(t time)");
         statement.execute("insert into testGranularTime values ('10:10:10')");
@@ -965,69 +985,81 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGranularTimeFunctionsInUTC() throws SQLException {
-    try (Connection connection = getConnection()) {
-      TimeZone origTz = TimeZone.getDefault();
-      try (Statement statement = connection.createStatement()) {
-        try {
-          TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
-          statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
-          statement.execute("create or replace table testGranularTime(t time)");
-          statement.execute("insert into testGranularTime values ('10:10:10')");
-          try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-            assertTrue(resultSet.next());
-            assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
-            assertEquals(02, resultSet.getTime(1).getHours());
-            assertEquals(10, resultSet.getTime(1).getMinutes());
-            assertEquals(10, resultSet.getTime(1).getSeconds());
-          }
-        } finally {
-          TimeZone.setDefault(origTz);
-          statement.execute("drop table if exists testGranularTime");
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testGranularTimeFunctionsInUTC(String queryResultFormat) throws SQLException {
+    TimeZone origTz = TimeZone.getDefault();
+    try (Statement statement = createStatement(queryResultFormat)) {
+      try {
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
+        statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+        statement.execute("create or replace table testGranularTime(t time)");
+        statement.execute("insert into testGranularTime values ('10:10:10')");
+        try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
+          assertTrue(resultSet.next());
+          assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
+          assertEquals(02, resultSet.getTime(1).getHours());
+          assertEquals(10, resultSet.getTime(1).getMinutes());
+          assertEquals(10, resultSet.getTime(1).getSeconds());
         }
+      } finally {
+        TimeZone.setDefault(origTz);
+        statement.execute("drop table if exists testGranularTime");
       }
     }
   }
 
   /** Added in > 3.14.5 */
-  @Test
-  public void testLargeStringRetrieval() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testLargeStringRetrieval(String queryResultFormat) throws SQLException {
+    String originalMaxJsonStringLength =
+        System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
+    System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
     String tableName = "maxJsonStringLength_table";
     int colLength = 16777216;
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
+      setQueryResultFormat(statement, queryResultFormat);
+      SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Integer maxVarcharSize =
+          (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
+      if (maxVarcharSize != null) {
+        colLength = maxVarcharSize;
+      }
       statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
       statement.execute(
           "insert into " + tableName + " select randstr(" + colLength + ", random())");
-      assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
       try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
         assertTrue(rs.next());
         assertEquals(colLength, rs.getString(1).length());
         assertFalse(rs.next());
       }
-    } catch (Exception e) {
-      fail("executeQuery should not fail");
+    } finally {
+      if (originalMaxJsonStringLength != null) {
+        System.setProperty(
+            ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, originalMaxJsonStringLength);
+      }
     }
   }
 
   private static void assertAllColumnsAreLongButBigIntIsBigDecimal(ResultSet rs)
       throws SQLException {
     while (rs.next()) {
-      assertEquals(java.lang.Long.class, rs.getObject(1).getClass());
-      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
-      assertEquals(java.lang.Long.class, rs.getObject(3).getClass());
-      assertEquals(java.lang.Long.class, rs.getObject(4).getClass());
+      assertEquals(Long.class, rs.getObject(1).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(Long.class, rs.getObject(3).getClass());
+      assertEquals(Long.class, rs.getObject(4).getClass());
     }
   }
 
   private static void assertAllColumnsAreBigDecimal(ResultSet rs) throws SQLException {
     while (rs.next()) {
-      assertEquals(java.math.BigDecimal.class, rs.getObject(1).getClass());
-      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
-      assertEquals(java.math.BigDecimal.class, rs.getObject(3).getClass());
-      assertEquals(java.math.BigDecimal.class, rs.getObject(4).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(1).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(3).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(4).getClass());
     }
   }
 
@@ -1102,10 +1134,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  @Test
-  public void testGetObjectWithType() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetObjectWithType(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute(
           " CREATE OR REPLACE TABLE test_all_types ("
               + "                  string VARCHAR, "
@@ -1141,7 +1173,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertResultValueAndType(statement, BigDecimal.valueOf(3.3), "bd", BigDecimal.class);
       assertResultValueAndType(statement, "FALSE", "bool", String.class);
       assertResultValueAndType(statement, Boolean.FALSE, "bool", Boolean.class);
-      assertResultValueAndType(statement, Long.valueOf(0), "bool", Long.class);
+      assertResultValueAndType(statement, 0L, "bool", Long.class);
       assertResultValueAsString(
           statement,
           new SnowflakeTimestampWithTimezone(

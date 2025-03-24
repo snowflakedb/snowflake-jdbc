@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.StmtUtil.eventHandler;
@@ -27,15 +23,9 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-/**
- * Snowflake ResultSet implementation
- *
- * <p>
- *
- * @author jhuang
- */
+/** Snowflake ResultSet implementation */
 public class SFResultSet extends SFJsonResultSet {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
   private int columnCount = 0;
 
@@ -129,7 +119,7 @@ public class SFResultSet extends SFJsonResultSet {
    * @param resultSetSerializable data returned in query response
    * @param telemetryClient telemetryClient
    * @param sortResult should sorting take place
-   * @throws SQLException
+   * @throws SQLException if exception is encountered
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
@@ -147,7 +137,7 @@ public class SFResultSet extends SFJsonResultSet {
    * @param session snowflake session
    * @param telemetryClient telemetryClient
    * @param sortResult should sorting take place
-   * @throws SQLException
+   * @throws SQLException if an exception is encountered.
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
@@ -191,6 +181,7 @@ public class SFResultSet extends SFJsonResultSet {
       // we don't support sort result when there are offline chunks
       if (chunkCount > 0) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(),
             SqlState.FEATURE_NOT_SUPPORTED);
@@ -242,6 +233,7 @@ public class SFResultSet extends SFJsonResultSet {
 
         if (nextChunk == null) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
@@ -260,7 +252,7 @@ public class SFResultSet extends SFJsonResultSet {
         return true;
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
     } else if (chunkCount > 0) {
       try {
@@ -269,7 +261,7 @@ public class SFResultSet extends SFJsonResultSet {
         logChunkDownloaderMetrics(metrics);
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
     }
 
@@ -309,7 +301,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
       return true;
     } else {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -319,7 +311,7 @@ public class SFResultSet extends SFJsonResultSet {
           || Boolean.TRUE
               .toString()
               .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
+        throw new SFException(queryId, ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result
@@ -330,7 +322,7 @@ public class SFResultSet extends SFJsonResultSet {
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException {
     if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount()) {
-      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
+      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
 
     final int internalColumnIndex = columnIndex - 1;
@@ -343,7 +335,7 @@ public class SFResultSet extends SFJsonResultSet {
     } else if (currentChunk != null) {
       retValue = currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
     } else {
-      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
+      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
     wasNull = retValue == null;
     return retValue;
@@ -422,7 +414,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
-          session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+          queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
     }
   }
 

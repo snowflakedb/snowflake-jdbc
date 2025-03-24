@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.OCSPErrorCode;
@@ -9,7 +5,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 public class SFOCSPException extends Throwable {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFOCSPException.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFOCSPException.class);
 
   private static final long serialVersionUID = 1L;
 
