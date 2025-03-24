@@ -67,18 +67,6 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
     }
   }
 
-  @Test
-  @DontRunOnGithubActions
-  public void testAsynchronousQuerySuccess() throws Exception {
-    testSuccess();
-  }
-
-  @Test
-  @DontRunOnGithubActions
-  public void testAsynchronousQueryFailure() throws Exception {
-    testFailure();
-  }
-
   /** Test that isValid() function returns false when session is expired */
   @Test
   @DontRunOnGithubActions

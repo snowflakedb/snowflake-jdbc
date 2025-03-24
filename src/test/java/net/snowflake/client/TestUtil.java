@@ -5,7 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -51,12 +51,8 @@ public class TestUtil {
    * @param testCode the code that will run and throws exception
    */
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
-    try {
-      testCode.run();
-      fail();
-    } catch (SFException e) {
-      assertThat(e.getVendorCode(), is(errorCode));
-    }
+    SFException e = assertThrows(SFException.class, testCode::run);
+    assertThat(e.getVendorCode(), is(errorCode));
   }
 
   /** Functional interface used to run a piece of code which throws SFException */
@@ -137,12 +133,8 @@ public class TestUtil {
   }
 
   public static void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
-    }
+    SQLException ex = assertThrows(SQLException.class, f::run);
+    assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
   }
 
   /**
