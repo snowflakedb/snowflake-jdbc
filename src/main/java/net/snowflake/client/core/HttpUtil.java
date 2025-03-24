@@ -731,7 +731,6 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
-   * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
    * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
    *     only retryTimeout will determine when to end the retries
@@ -743,7 +742,6 @@ public class HttpUtil {
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
-      int authTimeout,
       int socketTimeout,
       int retryCount,
       CloseableHttpClient httpClient)
@@ -752,7 +750,7 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
-        authTimeout,
+        0,
         socketTimeout,
         retryCount,
         0, // no inject socket timeout
