@@ -929,6 +929,7 @@ public abstract class SFBaseSession {
 
   public abstract int getNetworkTimeoutInMilli();
 
+  @Deprecated
   public abstract int getAuthTimeout();
 
   public abstract int getMaxHttpRetries();

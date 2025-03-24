@@ -104,6 +104,7 @@ public class SFSession extends SFBaseSession {
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
+  @Deprecated
   private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
   private final Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
