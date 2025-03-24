@@ -106,6 +106,26 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   @Test
   @RunOnLinuxOrMac
+  public void notThrowExceptionWhenCacheFolderIsNotAccessible() throws IOException {
+    try {
+      Files.setPosixFilePermissions(
+          cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("---------"));
+      FileCacheManager fcm =
+          FileCacheManager.builder()
+              .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
+              .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
+              .setBaseCacheFileName(CACHE_FILE_NAME)
+              .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+              .build();
+      assertDoesNotThrow(fcm::readCacheFile);
+    } finally {
+      Files.setPosixFilePermissions(
+          cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("rwx------"));
+    }
+  }
+
+  @Test
+  @RunOnLinuxOrMac
   public void throwWhenOverrideCacheFileHasDifferentOwnerThanCurrentUserTest() {
     try (MockedStatic<FileUtil> fileUtilMock =
         Mockito.mockStatic(FileUtil.class, Mockito.CALLS_REAL_METHODS)) {
