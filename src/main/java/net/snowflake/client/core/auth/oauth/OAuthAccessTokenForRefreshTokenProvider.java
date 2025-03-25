@@ -37,8 +37,8 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
   }
 
   @Override
-  public String getDPoPPublicKeyBase64() {
-    return dPoPUtil.getPublicKeyInBase64();
+  public String getDPoPPublicKey() {
+    return dPoPUtil.getPublicKey();
   }
 
   private TokenResponseDTO exchangeRefreshTokenForAccessToken(

@@ -36,8 +36,8 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
   }
 
   @Override
-  public String getDPoPPublicKeyBase64() {
-    return dpopUtil.getPublicKeyInBase64();
+  public String getDPoPPublicKey() {
+    return dpopUtil.getPublicKey();
   }
 
   private TokenResponseDTO exchangeClientCredentialsForAccessToken(

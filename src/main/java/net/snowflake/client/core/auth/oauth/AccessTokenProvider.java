@@ -9,5 +9,5 @@ public interface AccessTokenProvider {
 
   TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException;
 
-  String getDPoPPublicKeyBase64();
+  String getDPoPPublicKey();
 }

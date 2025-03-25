@@ -965,11 +965,7 @@ public class HttpUtil {
   }
 
   private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
-    StringWriter writer = new StringWriter();
-    try (InputStream ins = response.getEntity().getContent()) {
-      IOUtils.copy(ins, writer, "UTF-8");
-    }
-    String errorResponse = writer.toString();
+    String errorResponse = EntityUtils.toString(response.getEntity());
     if (!Strings.isNullOrEmpty(errorResponse)) {
       ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
       JsonNode rootNode = objectMapper.readTree(errorResponse);

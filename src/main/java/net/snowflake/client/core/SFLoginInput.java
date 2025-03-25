@@ -40,7 +40,7 @@ public class SFLoginInput {
   private String mfaToken;
   private String oauthAccessToken;
   private String oauthRefreshToken;
-  private String dpopPublicKeyBase64;
+  private String dpopPublicKey;
   private boolean dpopEnabled = false;
   private String serviceName;
   private OCSPMode ocspMode;
@@ -343,12 +343,12 @@ public class SFLoginInput {
   }
 
   @SnowflakeJdbcInternalApi
-  public String getDPoPPublicKeyBase64() {
-    return dpopPublicKeyBase64;
+  public String getDPoPPublicKey() {
+    return dpopPublicKey;
   }
 
-  SFLoginInput setDPoPPublicKeyBase64(String dpopPublicKeyBase64) {
-    this.dpopPublicKeyBase64 = dpopPublicKeyBase64;
+  SFLoginInput setDPoPPublicKey(String dpopPublicKey) {
+    this.dpopPublicKey = dpopPublicKey;
     return this;
   }
 

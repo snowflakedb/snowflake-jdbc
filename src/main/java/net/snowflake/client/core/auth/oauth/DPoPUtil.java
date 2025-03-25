@@ -12,7 +12,6 @@ import com.nimbusds.oauth2.sdk.dpop.JWKThumbprintConfirmation;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Base64;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -32,9 +31,8 @@ public class DPoPUtil {
     }
   }
 
-  public DPoPUtil(String jsonKeyBase64) throws SFException {
+  public DPoPUtil(String jsonKey) throws SFException {
     try {
-      String jsonKey = new String(Base64.getDecoder().decode(jsonKeyBase64));
       jwk = ECKey.parse(jsonKey);
     } catch (Exception e) {
       throw new SFException(
@@ -42,9 +40,8 @@ public class DPoPUtil {
     }
   }
 
-  String getPublicKeyInBase64() {
-    String jsonString = jwk.toJSONString();
-    return Base64.getEncoder().encodeToString(jsonString.getBytes());
+  String getPublicKey() {
+    return jwk.toJSONString();
   }
 
   JWKThumbprintConfirmation getThumbprint() throws SFException {
@@ -79,6 +76,10 @@ public class DPoPUtil {
     }
   }
 
+  /**
+   * Method needed for sake of DPoP proof JWT creation. URI claim (htu) does not support query
+   * parameters.
+   */
   private URI getUriWithoutQuery(URI uri) throws URISyntaxException {
     return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null);
   }

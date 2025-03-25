@@ -5,7 +5,9 @@ enum CachedCredentialType {
   MFA_TOKEN("MFATOKEN"),
   OAUTH_ACCESS_TOKEN("OAUTH_ACCESS_TOKEN"),
   OAUTH_REFRESH_TOKEN("OAUTH_REFRESH_TOKEN"),
-  DPOP_PUBLIC_KEY("DPOP_PUBLIC_KEY");
+  DPOP_BUNDLED_ACCESS_TOKEN(
+      "DPOP_BUNDLED_ACCESS_TOKEN"); // contains '.' separated, base64 encoded access token and DPoP
+                                    // public key
 
   private final String value;
 
