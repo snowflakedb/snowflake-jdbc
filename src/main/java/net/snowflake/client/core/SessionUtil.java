@@ -31,6 +31,13 @@ import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
+import net.snowflake.client.core.auth.wif.AWSAttestationService;
+import net.snowflake.client.core.auth.wif.AwsIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.AzureIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.GcpIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
+import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
@@ -243,6 +250,10 @@ public class SessionUtil {
         return AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN;
       } else if (loginInput
           .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.WORKLOAD_IDENTITY.name())) {
+        return AuthenticatorType.WORKLOAD_IDENTITY;
+      } else if (loginInput
+          .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.SNOWFLAKE_JWT.name())) {
         return AuthenticatorType.SNOWFLAKE_JWT;
       } else if (loginInput
@@ -327,6 +338,24 @@ public class SessionUtil {
       }
     }
 
+    if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
+      WorkloadIdentityAttestationProvider attestationProvider =
+          new WorkloadIdentityAttestationProvider(
+              new AwsIdentityAttestationCreator(new AWSAttestationService()),
+              new GcpIdentityAttestationCreator(),
+              new AzureIdentityAttestationCreator(),
+              new OidcIdentityAttestationCreator());
+      WorkloadIdentityAttestation attestation =
+          attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
+      if (attestation != null) {
+        loginInput.setWorkloadIdentityAttestation(attestation);
+      } else {
+        throw new SFException(
+            ErrorCode.WORKFLOW_IDENTITY_FLOW_ERROR,
+            "Unable to obtain workload identity attestation. Make sure that correct workload identity provider has been set and that Snowflake-JDBC driver runs on supported environment.");
+      }
+    }
+
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
     readCachedTokensIfPossible(loginInput);
@@ -352,7 +381,8 @@ public class SessionUtil {
   static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
     if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
-        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
+        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
+        || authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
       boolean experimentalAuthenticationMethodsEnabled =
           Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
       AssertUtil.assertTrue(
@@ -636,6 +666,15 @@ public class SessionUtil {
       if (authenticatorType == AuthenticatorType.OAUTH
           && loginInput.getOriginalAuthenticator() != null) {
         data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+      }
+
+      if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
+        data.put(
+            ClientAuthnParameter.TOKEN.name(),
+            loginInput.getWorkloadIdentityAttestation().getCredential());
+        data.put(
+            ClientAuthnParameter.PROVIDER.name(),
+            loginInput.getWorkloadIdentityAttestation().getProvider());
       }
 
       // map of client environment parameters, including connection parameters

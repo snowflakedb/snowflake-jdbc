@@ -1,0 +1,88 @@
+package net.snowflake.client.core.auth.wif;
+
+import com.amazonaws.DefaultRequest;
+import com.amazonaws.Request;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.http.HttpMethodName;
+import com.google.gson.JsonObject;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+@SnowflakeJdbcInternalApi
+public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
+
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
+
+  private static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
+  private static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
+
+  private final AWSAttestationService attestationService;
+
+  public AwsIdentityAttestationCreator(AWSAttestationService attestationService) {
+    this.attestationService = attestationService;
+  }
+
+  @Override
+  public WorkloadIdentityAttestation createAttestation() {
+    logger.debug("Creating AWS identity attestation...");
+    AWSCredentials awsCredentials = attestationService.getAWSCredentials();
+    if (awsCredentials == null) {
+      logger.debug("No AWS credentials were found.");
+      return null;
+    }
+    String region = attestationService.getAWSRegion();
+    if (region == null) {
+      logger.debug("No AWS region was found.");
+      return null;
+    }
+    String arn = attestationService.getArn();
+    if (arn == null) {
+      logger.debug("No Caller Identity was found.");
+      return null;
+    }
+
+    String stsHostname = String.format("sts.%s.amazonaws.com", region);
+    Request<Void> request = createStsRequest(stsHostname);
+    attestationService.signRequestWithSigV4(request, awsCredentials);
+
+    String credential = createBase64EncodedRequestCredential(request);
+    return new WorkloadIdentityAttestation(
+        WorkloadIdentityProviderType.AWS,
+        credential,
+        new HashMap<String, String>() {
+          {
+            put("arn", arn);
+          }
+        });
+  }
+
+  private Request<Void> createStsRequest(String hostname) {
+    Request<Void> request = new DefaultRequest<>("sts");
+    request.setHttpMethod(HttpMethodName.POST);
+    request.setEndpoint(
+        URI.create(
+            String.format("https://%s/?Action=GetCallerIdentity&Version=2011-06-15", hostname)));
+    request.addHeader("Host", hostname);
+    request.addHeader(SNOWFLAKE_AUDIENCE_HEADER_NAME, SNOWFLAKE_AUDIENCE);
+    return request;
+  }
+
+  private String createBase64EncodedRequestCredential(Request<Void> request) {
+    JsonObject assertionJson = new JsonObject();
+    JsonObject headers = new JsonObject();
+    request.getHeaders().forEach(headers::addProperty);
+    assertionJson.addProperty("url", request.getEndpoint().toString());
+    assertionJson.addProperty("method", request.getHttpMethod().toString());
+    assertionJson.add("headers", headers);
+
+    String assertionJsonString = assertionJson.toString();
+    Base64.Encoder encoder = Base64.getEncoder();
+    return encoder.encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
+  }
+}
