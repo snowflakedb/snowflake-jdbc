@@ -178,7 +178,12 @@ public class CredentialManager {
         host);
 
     if (base64EncodedCred != null && credType != CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN) {
-      cred = new String(Base64.getDecoder().decode(base64EncodedCred));
+      try {
+        cred = new String(Base64.getDecoder().decode(base64EncodedCred));
+      } catch (Exception e) { // handle legacy non-base64 encoded cache values (CredentialManager fails to decode)
+        deleteTemporaryCredential(host, username, credType);
+        return;
+      }
     }
     switch (credType) {
       case ID_TOKEN:

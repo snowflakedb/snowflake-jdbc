@@ -188,7 +188,6 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
             .scope(new Scope(scope))
             .state(state)
-            .dPoPJWKThumbprintConfirmation(new DPoPUtil().getThumbprint())
             .redirectionURI(redirectUri)
             .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
             .endpointURI(
