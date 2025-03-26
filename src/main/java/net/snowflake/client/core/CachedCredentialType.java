@@ -7,7 +7,7 @@ enum CachedCredentialType {
   OAUTH_REFRESH_TOKEN("OAUTH_REFRESH_TOKEN"),
   DPOP_BUNDLED_ACCESS_TOKEN(
       "DPOP_BUNDLED_ACCESS_TOKEN"); // contains '.' separated, base64 encoded access token and DPoP
-                                    // public key
+  // public key
 
   private final String value;
 

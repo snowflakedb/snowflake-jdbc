@@ -322,10 +322,8 @@ public class CredentialManager {
     }
 
     try {
-      if (credType
-          == CachedCredentialType
-              .DPOP_BUNDLED_ACCESS_TOKEN) { // DPOP_ACCESS_TOKEN is already preformatted and Base64
-                                            // encoded
+      if (credType == CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN) {
+        // DPOP_ACCESS_TOKEN is already preformatted and Base64 encoded
         secureStorageManager.setCredential(host, user, credType.getValue(), cred);
       } else {
         String base64EncodedCred =
