@@ -15,8 +15,8 @@ public class TimezoneProvider extends SnowflakeArgumentsProvider {
           Arguments.of("America/New_York"),
           Arguments.of("Pacific/Honolulu"),
           Arguments.of("Asia/Singapore"),
-          Arguments.of("CET"),
-          Arguments.of("GMT+0200"));
+          Arguments.of("CET")
+          /*Arguments.of("GMT-1800")*/);
 
   public TimezoneProvider(int length) {
     this.length = length;

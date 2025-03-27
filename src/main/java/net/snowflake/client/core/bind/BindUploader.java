@@ -101,6 +101,9 @@ public class BindUploader implements Closeable {
     if (o == null) {
       return null;
     }
+    System.out.println("LONG PRZY UPLODZIE: " + o);
+    System.out.println("DATA PRZY UPLODZIE: " + new java.sql.Date(Long.parseLong(o)));
+    System.out.println("FORMATOWANA DATA PRZY UPLODZIE: " + dateFormat.format(new java.sql.Date(Long.parseLong(o))));
     return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
   }
 
