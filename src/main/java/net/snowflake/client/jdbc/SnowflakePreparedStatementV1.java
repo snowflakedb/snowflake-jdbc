@@ -370,7 +370,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                   x.getTime()
                       + TimeZone.getDefault().getOffset(x.getTime())
                       - ResultUtil.msDiffJulianToGregorian(x)));
-
+      System.out.println("LONG PRZY BINDOWANIU: " + binding.getValue());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
