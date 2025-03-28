@@ -6,6 +6,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,8 @@ class CredentialManagerTest {
   public static final String SOME_REFRESH_TOKEN = "some-refresh-token";
   public static final String SOME_ID_TOKEN_FROM_CACHE = "some-id-token";
   public static final String SOME_MFA_TOKEN_FROM_CACHE = "some-mfa-token";
+  public static final String SOME_DPOP_PUBLIC_KEY =
+      "{\"kty\":\"EC\",\"d\":\"j5-J-nLE4J1I8ZWtArP8eQbxUbYMPmRvaEjEkHFlHds\",\"crv\":\"P-256\",\"x\":\"RL5cE-TC4Jr6CxtT4lEI2Yu6wT6LbwojPQsgHUg01F0\",\"y\":\"UAdLUSWTJ6czXaS3SfEFUZzKPcVVq4OZAD8e7Rp75y4\"}";
   public static final String SOME_USER = "some-user";
 
   public static final String ACCESS_TOKEN_FROM_CACHE = "access-token-from-cache";
@@ -55,6 +59,7 @@ class CredentialManagerTest {
 
   @Test
   public void shouldProperlyWriteTokensToCache() throws SFException {
+    Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
     CredentialManager.writeIdToken(loginInputSnowflakeOAuth, SOME_ID_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
@@ -62,14 +67,14 @@ class CredentialManagerTest {
             SNOWFLAKE_HOST,
             SOME_USER,
             CachedCredentialType.ID_TOKEN.getValue(),
-            SOME_ID_TOKEN_FROM_CACHE);
+            encoder.encodeToString(SOME_ID_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.writeMfaToken(loginInputSnowflakeOAuth, SOME_MFA_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
             SNOWFLAKE_HOST,
             SOME_USER,
             CachedCredentialType.MFA_TOKEN.getValue(),
-            SOME_MFA_TOKEN_FROM_CACHE);
+            encoder.encodeToString(SOME_MFA_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
 
     CredentialManager.writeOAuthAccessToken(loginInputSnowflakeOAuth);
     verify(mockSecureStorageManager, times(1))
@@ -77,14 +82,14 @@ class CredentialManagerTest {
             SNOWFLAKE_HOST,
             SOME_USER,
             CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(),
-            SOME_ACCESS_TOKEN);
+            encoder.encodeToString(SOME_ACCESS_TOKEN.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.writeOAuthRefreshToken(loginInputSnowflakeOAuth);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
             SNOWFLAKE_HOST,
             SOME_USER,
             CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(),
-            SOME_REFRESH_TOKEN);
+            encoder.encodeToString(SOME_REFRESH_TOKEN.getBytes(StandardCharsets.UTF_8)));
 
     SFLoginInput loginInputExternalOAuth = createLoginInputWithExternalOAuth();
     CredentialManager.writeOAuthAccessToken(loginInputExternalOAuth);
@@ -93,69 +98,93 @@ class CredentialManagerTest {
             EXTERNAL_OAUTH_HOST,
             SOME_USER,
             CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(),
-            SOME_ACCESS_TOKEN);
+            encoder.encodeToString(SOME_ACCESS_TOKEN.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.writeOAuthRefreshToken(loginInputExternalOAuth);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
             EXTERNAL_OAUTH_HOST,
             SOME_USER,
             CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(),
-            SOME_REFRESH_TOKEN);
+            encoder.encodeToString(SOME_REFRESH_TOKEN.getBytes(StandardCharsets.UTF_8)));
+
+    SFLoginInput loginInputDPoP = createLoginInputWithDPoPPublicKey();
+    String dpopBundledToken =
+        encoder.encodeToString(SOME_ACCESS_TOKEN.getBytes(StandardCharsets.UTF_8))
+            + "."
+            + encoder.encodeToString(SOME_DPOP_PUBLIC_KEY.getBytes(StandardCharsets.UTF_8));
+    CredentialManager.writeDPoPBundledAccessToken(loginInputDPoP);
+    verify(mockSecureStorageManager, times(1))
+        .setCredential(
+            SNOWFLAKE_HOST,
+            SOME_USER,
+            CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN.getValue(),
+            dpopBundledToken);
   }
 
   @Test
   public void shouldProperlyDeleteTokensFromCache() throws SFException {
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
-    CredentialManager.deleteIdTokenCache(
+    CredentialManager.deleteIdTokenCacheEntry(
         loginInputSnowflakeOAuth.getHostFromServerUrl(), loginInputSnowflakeOAuth.getUserName());
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.ID_TOKEN.getValue());
-    CredentialManager.deleteMfaTokenCache(
+    CredentialManager.deleteMfaTokenCacheEntry(
         loginInputSnowflakeOAuth.getHostFromServerUrl(), loginInputSnowflakeOAuth.getUserName());
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.MFA_TOKEN.getValue());
 
-    CredentialManager.deleteOAuthAccessTokenCache(loginInputSnowflakeOAuth);
+    CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInputSnowflakeOAuth);
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue());
-    CredentialManager.deleteOAuthRefreshTokenCache(loginInputSnowflakeOAuth);
+    CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInputSnowflakeOAuth);
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue());
 
     SFLoginInput loginInputExternalOAuth = createLoginInputWithExternalOAuth();
-    CredentialManager.deleteOAuthAccessTokenCache(loginInputExternalOAuth);
+    CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInputExternalOAuth);
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(
             EXTERNAL_OAUTH_HOST, SOME_USER, CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue());
-    CredentialManager.deleteOAuthRefreshTokenCache(loginInputExternalOAuth);
+    CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInputExternalOAuth);
     verify(mockSecureStorageManager, times(1))
         .deleteCredential(
             EXTERNAL_OAUTH_HOST, SOME_USER, CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue());
+
+    SFLoginInput loginInputDPoP = createLoginInputWithDPoPPublicKey();
+    CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInputDPoP);
+    verify(mockSecureStorageManager, times(1))
+        .deleteCredential(
+            SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN.getValue());
   }
 
   @Test
   public void shouldProperlyUpdateInputWithTokensFromCache() throws SFException {
+    Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
     when(mockSecureStorageManager.getCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.ID_TOKEN.getValue()))
-        .thenReturn(SOME_ID_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(SOME_ID_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedIdToken(loginInputSnowflakeOAuth);
     when(mockSecureStorageManager.getCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.MFA_TOKEN.getValue()))
-        .thenReturn(SOME_MFA_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(SOME_MFA_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedMfaToken(loginInputSnowflakeOAuth);
     assertEquals(SOME_ID_TOKEN_FROM_CACHE, loginInputSnowflakeOAuth.getIdToken());
     assertEquals(SOME_MFA_TOKEN_FROM_CACHE, loginInputSnowflakeOAuth.getMfaToken());
 
     when(mockSecureStorageManager.getCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue()))
-        .thenReturn(ACCESS_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(ACCESS_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedOAuthAccessToken(loginInputSnowflakeOAuth);
     when(mockSecureStorageManager.getCredential(
             SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue()))
-        .thenReturn(REFRESH_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(REFRESH_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedOAuthRefreshToken(loginInputSnowflakeOAuth);
     assertEquals(ACCESS_TOKEN_FROM_CACHE, loginInputSnowflakeOAuth.getOauthAccessToken());
     assertEquals(REFRESH_TOKEN_FROM_CACHE, loginInputSnowflakeOAuth.getOauthRefreshToken());
@@ -163,14 +192,30 @@ class CredentialManagerTest {
     SFLoginInput loginInputExternalOAuth = createLoginInputWithExternalOAuth();
     when(mockSecureStorageManager.getCredential(
             EXTERNAL_OAUTH_HOST, SOME_USER, CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue()))
-        .thenReturn(EXTERNAL_ACCESS_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(
+                EXTERNAL_ACCESS_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedOAuthAccessToken(loginInputExternalOAuth);
     when(mockSecureStorageManager.getCredential(
             EXTERNAL_OAUTH_HOST, SOME_USER, CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue()))
-        .thenReturn(EXTERNAL_REFRESH_TOKEN_FROM_CACHE);
+        .thenReturn(
+            encoder.encodeToString(
+                EXTERNAL_REFRESH_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedOAuthRefreshToken(loginInputExternalOAuth);
     assertEquals(EXTERNAL_ACCESS_TOKEN_FROM_CACHE, loginInputExternalOAuth.getOauthAccessToken());
     assertEquals(EXTERNAL_REFRESH_TOKEN_FROM_CACHE, loginInputExternalOAuth.getOauthRefreshToken());
+
+    SFLoginInput loginInputDPoP = createLoginInputWithDPoPPublicKey();
+    String dpopBundledToken =
+        encoder.encodeToString(SOME_ACCESS_TOKEN.getBytes(StandardCharsets.UTF_8))
+            + "."
+            + encoder.encodeToString(SOME_DPOP_PUBLIC_KEY.getBytes(StandardCharsets.UTF_8));
+    when(mockSecureStorageManager.getCredential(
+            SNOWFLAKE_HOST, SOME_USER, CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN.getValue()))
+        .thenReturn(dpopBundledToken);
+    CredentialManager.fillCachedDPoPBundledAccessToken(loginInputDPoP);
+    assertEquals(SOME_ACCESS_TOKEN, loginInputDPoP.getOauthAccessToken());
+    assertEquals(SOME_DPOP_PUBLIC_KEY, loginInputDPoP.getDPoPPublicKey());
   }
 
   private SFLoginInput createLoginInputWithExternalOAuth() {
@@ -186,6 +231,12 @@ class CredentialManagerTest {
     loginInput.setOauthLoginInput(new SFOauthLoginInput(null, null, null, null, null, null));
     loginInput.setServerUrl("https://some-account.us-west-2.aws.snowflakecomputing.com:443/");
 
+    return loginInput;
+  }
+
+  private SFLoginInput createLoginInputWithDPoPPublicKey() {
+    SFLoginInput loginInput = createLoginInputWithSnowflakeServer();
+    loginInput.setDPoPPublicKey(SOME_DPOP_PUBLIC_KEY);
     return loginInput;
   }
 

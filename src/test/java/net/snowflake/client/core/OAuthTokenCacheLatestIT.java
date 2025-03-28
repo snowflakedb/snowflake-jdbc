@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -22,13 +23,22 @@ import org.mockito.stubbing.Answer;
 @Tag(TestTags.CORE)
 public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
 
+  public static final String MOCK_DPOP_PUBLIC_KEY =
+      "{\"kty\":\"EC\",\"d\":\"j5-J-nLE4J1I8ZWtArP8eQbxUbYMPmRvaEjEkHFlHds\",\"crv\":\"P-256\",\"x\":\"RL5cE-TC4Jr6CxtT4lEI2Yu6wT6LbwojPQsgHUg01F0\",\"y\":\"UAdLUSWTJ6czXaS3SfEFUZzKPcVVq4OZAD8e7Rp75y4\"}";
+
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/token_caching";
   private static final String CACHING_TOKENS_AFTER_CONNECTING_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/caching_tokens_after_connecting.json";
+  private static final String CACHING_TOKENS_AND_DPOP_KEY_AFTER_CONNECTING_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/caching_tokens_and_dpop_key_after_connecting.json";
   private static final String REUSING_CACHED_ACCESS_TOKEN_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/reusing_cached_access_token_to_authenticate.json";
   private static final String REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/refreshing_expired_access_token.json";
+  private static final String REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS_DPOP =
+      SCENARIOS_BASE_DIR + "/refreshing_expired_access_token_dpop.json";
+  private static final String REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS_DPOP_NONCE_ERROR =
+      SCENARIOS_BASE_DIR + "/refreshing_expired_access_token_dpop_nonce_error.json";
   private static final String
       CACHING_REFRESHED_ACCESS_TOKEN_AND_NEW_REFRESH_TOKEN_SCENARIO_MAPPINGS =
           SCENARIOS_BASE_DIR + "/caching_refreshed_access_token_and_new_refresh_token.json";
@@ -45,6 +55,19 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginInput loginInput = createLoginInputStub();
       SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
       captureAndAssertSavedTokenValues(
+          credentialManagerMockedStatic, "access-token-123", "refresh-token-123");
+    }
+  }
+
+  @Test
+  public void shouldCacheAccessTokenAndDPoPKeyAfterConnecting()
+      throws SFException, SnowflakeSQLException {
+    importMappingFromResources(CACHING_TOKENS_AND_DPOP_KEY_AFTER_CONNECTING_SCENARIO_MAPPINGS);
+    try (MockedStatic<CredentialManager> credentialManagerMockedStatic =
+        mockStatic(CredentialManager.class)) {
+      SFLoginInput loginInput = createLoginInputStubWithDPoPEnabled();
+      SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
+      captureAndAssertSavedTokenValuesAndDPoPKey(
           credentialManagerMockedStatic, "access-token-123", "refresh-token-123");
     }
   }
@@ -76,12 +99,64 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), never());
+          () -> CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput), never());
 
       assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
+          credentialManagerMockedStatic,
+          "new-refreshed-access-token-123",
+          "some-refresh-token-123");
+    }
+  }
+
+  @Test
+  public void shouldRefreshExpiredAccessTokenWithDPoPAndConnectSuccessfully()
+      throws SFException, SnowflakeSQLException {
+    importMappingFromResources(REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS_DPOP);
+    try (MockedStatic<CredentialManager> credentialManagerMockedStatic =
+        mockStatic(CredentialManager.class)) {
+      mockLoadingTokensFromCache(credentialManagerMockedStatic, null, "some-refresh-token-123");
+      mockLoadingDPoPPublicKeyFromCache(credentialManagerMockedStatic, "expired-access-token-123");
+      SFLoginInput loginInput = createLoginInputStubWithDPoPEnabled();
+      SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
+
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput), times(1));
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput), never());
+
+      assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
+      captureAndAssertSavedTokenValuesAndDPoPKey(
+          credentialManagerMockedStatic,
+          "new-refreshed-access-token-123",
+          "some-refresh-token-123");
+    }
+  }
+
+  @Test
+  public void shouldRefreshExpiredAccessTokenWithDPoPNonceErrorAndConnectSuccessfully()
+      throws SFException, SnowflakeSQLException {
+    importMappingFromResources(REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS_DPOP_NONCE_ERROR);
+    try (MockedStatic<CredentialManager> credentialManagerMockedStatic =
+        mockStatic(CredentialManager.class)) {
+      mockLoadingTokensFromCache(credentialManagerMockedStatic, null, "some-refresh-token-123");
+      mockLoadingDPoPPublicKeyFromCache(credentialManagerMockedStatic, "expired-access-token-123");
+      SFLoginInput loginInput = createLoginInputStubWithDPoPEnabled();
+      SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
+
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput), times(1));
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput), never());
+
+      assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
+      captureAndAssertSavedTokenValuesAndDPoPKey(
           credentialManagerMockedStatic,
           "new-refreshed-access-token-123",
           "some-refresh-token-123");
@@ -102,7 +177,7 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
       assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic, "new-refreshed-access-token-123", "new-refresh-token-123");
@@ -121,9 +196,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), times(1));
+          () -> CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput), times(1));
       assertEquals("newly-obtained-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic,
@@ -144,9 +219,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
 
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthAccessTokenCache(loginInput), times(1));
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), times(1));
       credentialManagerMockedStatic.verify(
-          () -> CredentialManager.deleteOAuthRefreshTokenCache(loginInput), never());
+          () -> CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput), never());
       assertEquals("newly-obtained-access-token-123", loginOutput.getOauthAccessToken());
       captureAndAssertSavedTokenValues(
           credentialManagerMockedStatic, "newly-obtained-access-token-123", null);
@@ -178,6 +253,12 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
     return input;
   }
 
+  private SFLoginInput createLoginInputStubWithDPoPEnabled() {
+    SFLoginInput input = createLoginInputStub();
+    input.setDPoPEnabled(true);
+    return input;
+  }
+
   private static void mockLoadingTokensFromCache(
       MockedStatic<CredentialManager> credentialManagerMock,
       String oauthAccessToken,
@@ -200,6 +281,19 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
         .then(fillCachedOAuthRefreshTokenInvocation);
   }
 
+  private static void mockLoadingDPoPPublicKeyFromCache(
+      MockedStatic<CredentialManager> credentialManagerMock, String oauthAccessToken) {
+    Answer<Object> fillCachedDPoPPublicKeyInvocation =
+        invocation -> {
+          ((SFLoginInput) invocation.getArguments()[0]).setOauthAccessToken(oauthAccessToken);
+          ((SFLoginInput) invocation.getArguments()[0]).setDPoPPublicKey(MOCK_DPOP_PUBLIC_KEY);
+          return null;
+        };
+    credentialManagerMock
+        .when(() -> CredentialManager.fillCachedDPoPBundledAccessToken(any(SFLoginInput.class)))
+        .then(fillCachedDPoPPublicKeyInvocation);
+  }
+
   private static void captureAndAssertSavedTokenValues(
       MockedStatic<CredentialManager> credentialManagerMock,
       String expectedAccessToken,
@@ -220,5 +314,27 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       credentialManagerMock.verify(
           () -> CredentialManager.writeOAuthRefreshToken(any(SFLoginInput.class)), never());
     }
+  }
+
+  private static void captureAndAssertSavedTokenValuesAndDPoPKey(
+      MockedStatic<CredentialManager> credentialManagerMock,
+      String expectedAccessToken,
+      String expectedRefreshToken) {
+    if (expectedRefreshToken != null) {
+      ArgumentCaptor<SFLoginInput> refreshTokenInputCaptor =
+          ArgumentCaptor.forClass(SFLoginInput.class);
+      credentialManagerMock.verify(
+          () -> CredentialManager.writeOAuthRefreshToken(refreshTokenInputCaptor.capture()));
+      assertEquals(expectedRefreshToken, refreshTokenInputCaptor.getValue().getOauthRefreshToken());
+    }
+    ArgumentCaptor<SFLoginInput> dpopBundledAccessTokenInputCaptor =
+        ArgumentCaptor.forClass(SFLoginInput.class);
+    credentialManagerMock.verify(
+        () ->
+            CredentialManager.writeDPoPBundledAccessToken(
+                dpopBundledAccessTokenInputCaptor.capture()));
+    assertEquals(
+        expectedAccessToken, dpopBundledAccessTokenInputCaptor.getValue().getOauthAccessToken());
+    assertNotNull(dpopBundledAccessTokenInputCaptor.getValue().getDPoPPublicKey());
   }
 }

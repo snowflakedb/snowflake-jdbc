@@ -105,7 +105,7 @@ public class OAuthUtilTest {
     httpRequest.setAuthorization("Bearer some-token");
     httpRequest.setBody("{\"grant_type\":\"authorization_code\",\"code\":\"some-code\"}");
 
-    HttpRequestBase httpRequestBase = OAuthUtil.convertToBaseAuthorizationRequest(httpRequest);
+    HttpRequestBase httpRequestBase = OAuthUtil.convertToBaseRequest(httpRequest);
     Assertions.assertNotNull(httpRequestBase);
     Assertions.assertEquals(HttpPost.class, httpRequestBase.getClass());
     Assertions.assertEquals(

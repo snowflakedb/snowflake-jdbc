@@ -1,0 +1,76 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Successful OAuth client credentials flow with DPoP nonce error",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Got use_dpop_nonce error",
+      "request": {
+        "urlPathPattern": "/oauth/token-request.*",
+        "method": "POST",
+        "headers": {
+          "Authorization": {
+            "contains": "Basic"
+          },
+          "Content-Type": {
+            "contains": "application/x-www-form-urlencoded; charset=UTF-8"
+          },
+          "DPoP": {
+            "matches": ".*"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "contains": "grant_type=client_credentials&scope=session%3Arole%3AANALYST"
+          }
+        ]
+      },
+      "response": {
+        "status": 400,
+        "jsonBody": {
+          "error": "use_dpop_nonce"
+        },
+        "headers": {
+          "DPoP-Nonce": "some-nonce-value"
+        }
+      }
+    },
+    {
+      "scenarioName": "Successful OAuth client credentials flow with DPoP nonce error",
+      "requiredScenarioState": "Got use_dpop_nonce error",
+      "newScenarioState": "Acquired access token",
+      "request": {
+        "urlPathPattern": "/oauth/token-request.*",
+        "method": "POST",
+        "headers": {
+          "Authorization": {
+            "contains": "Basic"
+          },
+          "Content-Type": {
+            "contains": "application/x-www-form-urlencoded; charset=UTF-8"
+          },
+          "DPoP": {
+            "matches": ".*"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "contains": "grant_type=client_credentials&scope=session%3Arole%3AANALYST"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "access_token": "access-token-123",
+          "refresh_token": "123",
+          "token_type": "DPoP",
+          "username": "user",
+          "scope": "refresh_token session:role:ANALYST",
+          "expires_in": 600,
+          "refresh_token_expires_in": 86399,
+          "idpInitiated": false
+        }
+      }
+    }
+  ]
+}

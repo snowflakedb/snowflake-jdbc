@@ -8,4 +8,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 public interface AccessTokenProvider {
 
   TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException;
+
+  String getDPoPPublicKey();
 }

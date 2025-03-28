@@ -28,6 +28,7 @@ import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.auth.ClientAuthnDTO;
 import net.snowflake.client.core.auth.ClientAuthnParameter;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
+import net.snowflake.client.core.auth.oauth.DPoPUtil;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
@@ -329,7 +330,7 @@ public class SessionUtil {
 
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
-    readCachedTokensIfPossible(loginInput);
+    readCachedCredentialsIfPossible(loginInput);
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -403,6 +404,9 @@ public class SessionUtil {
     loginInput.setToken(tokenResponse.getAccessToken());
     loginInput.setOauthAccessToken(tokenResponse.getAccessToken());
     loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
+    if (loginInput.isDPoPEnabled() && accessTokenProvider.getDPoPPublicKey() != null) {
+      loginInput.setDPoPPublicKey(accessTokenProvider.getDPoPPublicKey());
+    }
   }
 
   private static void refreshOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
@@ -414,6 +418,9 @@ public class SessionUtil {
       loginInput.setToken(tokenResponse.getAccessToken());
       loginInput.setOauthAccessToken(tokenResponse.getAccessToken());
       loginInput.setAuthenticator(AuthenticatorType.OAUTH.name());
+      if (loginInput.isDPoPEnabled() && tokenRefresher.getDPoPPublicKey() != null) {
+        loginInput.setDPoPPublicKey(tokenRefresher.getDPoPPublicKey());
+      }
       if (tokenResponse.getRefreshToken() != null) {
         loginInput.setOauthRefreshToken(tokenResponse.getRefreshToken());
       }
@@ -421,7 +428,7 @@ public class SessionUtil {
       logger.debug(
           "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
           e);
-      CredentialManager.deleteOAuthRefreshTokenCache(loginInput);
+      CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput);
       loginInput.restoreOriginalAuthenticator();
       fetchOAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -437,12 +444,17 @@ public class SessionUtil {
     }
   }
 
-  private static void readCachedTokensIfPossible(SFLoginInput loginInput) throws SFException {
+  private static void readCachedCredentialsIfPossible(SFLoginInput loginInput) throws SFException {
     if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
-        CredentialManager.fillCachedOAuthAccessToken(loginInput);
         CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+        if (loginInput.isDPoPEnabled()) {
+          CredentialManager.fillCachedDPoPBundledAccessToken(loginInput);
+        }
+        if (loginInput.getOauthAccessToken() == null && loginInput.getDPoPPublicKey() == null) {
+          CredentialManager.fillCachedOAuthAccessToken(loginInput);
+        }
       }
 
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
@@ -768,6 +780,9 @@ public class SessionUtil {
 
       postRequest.addHeader("accept", "application/json");
       postRequest.addHeader("Accept-Encoding", "");
+      if (loginInput.isDPoPEnabled()) {
+        new DPoPUtil(loginInput.getDPoPPublicKey()).addDPoPProofHeaderToRequest(postRequest, null);
+      }
 
       /*
        * HttpClient should take authorization header from char[] instead of
@@ -894,13 +909,11 @@ public class SessionUtil {
 
         if (errorCode == Constants.OAUTH_ACCESS_TOKEN_INVALID_GS_CODE) {
           logger.debug("OAuth Access Token Invalid: {}", errorCode);
-          loginInput.setOauthAccessToken(null);
-          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+          clearAccessTokenCache(loginInput);
         }
 
         if (errorCode == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
-          loginInput.setOauthAccessToken(null);
-          CredentialManager.deleteOAuthAccessTokenCache(loginInput);
+          clearAccessTokenCache(loginInput);
 
           logger.debug("OAuth Access Token Expired: {}", errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
@@ -1047,11 +1060,15 @@ public class SessionUtil {
       if (consentCacheIdToken) {
         CredentialManager.writeIdToken(loginInput, ret.getIdToken());
       }
-      if (loginInput.getOauthAccessToken() != null) {
-        CredentialManager.writeOAuthAccessToken(loginInput);
-      }
       if (loginInput.getOauthRefreshToken() != null) {
         CredentialManager.writeOAuthRefreshToken(loginInput);
+      }
+      if (loginInput.getDPoPPublicKey() != null
+          && loginInput.getOauthAccessToken() != null
+          && loginInput.isDPoPEnabled()) {
+        CredentialManager.writeDPoPBundledAccessToken(loginInput);
+      } else if (loginInput.getOauthAccessToken() != null) {
+        CredentialManager.writeOAuthAccessToken(loginInput);
       }
     }
 
@@ -1067,6 +1084,13 @@ public class SessionUtil {
         authenticatorType,
         stopwatch.elapsedMillis());
     return ret;
+  }
+
+  private static void clearAccessTokenCache(SFLoginInput loginInput) throws SFException {
+    loginInput.setOauthAccessToken(null);
+    loginInput.setDPoPPublicKey(null);
+    CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput);
+    CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput);
   }
 
   private static void setServiceNameHeader(SFLoginInput loginInput, HttpPost postRequest) {
@@ -1090,7 +1114,7 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteIdTokenCache(String host, String user) {
-    CredentialManager.deleteIdTokenCache(host, user);
+    CredentialManager.deleteIdTokenCacheEntry(host, user);
   }
 
   /**
@@ -1101,7 +1125,7 @@ public class SessionUtil {
    */
   @SnowflakeJdbcInternalApi
   public static void deleteOAuthAccessTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthAccessTokenCache(host, user);
+    CredentialManager.deleteOAuthAccessTokenCacheEntry(host, user);
   }
 
   /**
@@ -1112,7 +1136,7 @@ public class SessionUtil {
    */
   @SnowflakeJdbcInternalApi
   public static void deleteOAuthRefreshTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthRefreshTokenCache(host, user);
+    CredentialManager.deleteOAuthRefreshTokenCacheEntry(host, user);
   }
 
   /**
@@ -1122,7 +1146,7 @@ public class SessionUtil {
    * @param user The user
    */
   public static void deleteMfaTokenCache(String host, String user) {
-    CredentialManager.deleteMfaTokenCache(host, user);
+    CredentialManager.deleteMfaTokenCacheEntry(host, user);
   }
 
   /**
