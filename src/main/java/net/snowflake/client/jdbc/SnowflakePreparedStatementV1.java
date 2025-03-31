@@ -371,6 +371,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                       + TimeZone.getDefault().getOffset(x.getTime())
                       - ResultUtil.msDiffJulianToGregorian(x)));
 
+      logger.info("date at binding: date={}", binding.getValue());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -390,6 +391,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               SnowflakeUtil.javaTypeToSFTypeString(Types.TIME, connection.getSFBaseSession()),
               String.valueOf(nanosSinceMidnight));
 
+      logger.info("time at binding: time={}", binding.getValue());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -715,6 +717,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSFBaseSession()),
               value);
+
+      logger.info("date at binding: date={}", binding.getValue());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
