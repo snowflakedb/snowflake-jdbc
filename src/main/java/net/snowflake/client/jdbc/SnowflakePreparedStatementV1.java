@@ -363,15 +363,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     if (x == null) {
       setNull(parameterIndex, Types.DATE);
     } else {
+      int offset = TimeZone.getDefault().getOffset(x.getTime());
+      long msDiffJulianToGregorian = ResultUtil.msDiffJulianToGregorian(x);
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSFBaseSession()),
               String.valueOf(
                   x.getTime()
-                      + TimeZone.getDefault().getOffset(x.getTime())
-                      - ResultUtil.msDiffJulianToGregorian(x)));
+                      + offset
+                      - msDiffJulianToGregorian));
 
-      logger.debug("date at binding: date={}", binding.getValue());
+      logger.debug("date at binding: bindingValue={}, inputDate={}, offset={}, msDiffJulianToGregorian={}", binding.getValue(), x, offset, msDiffJulianToGregorian);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -391,7 +393,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               SnowflakeUtil.javaTypeToSFTypeString(Types.TIME, connection.getSFBaseSession()),
               String.valueOf(nanosSinceMidnight));
 
-      logger.debug("time at binding: time={}", binding.getValue());
+      logger.debug("time at binding: inputTime= {}, bindingTime={}", x, binding.getValue());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -707,18 +709,20 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setNull(parameterIndex, Types.DATE);
     } else {
       // convert the date from to be in local time zone to be in UTC
+      int offset = cal.getTimeZone().getOffset(x.getTime());
+      long msDiffJulianToGregorian = ResultUtil.msDiffJulianToGregorian(x);
       String value =
           String.valueOf(
               x.getTime()
-                  + cal.getTimeZone().getOffset(x.getTime())
-                  - ResultUtil.msDiffJulianToGregorian(x));
+                  + offset
+                  - msDiffJulianToGregorian);
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSFBaseSession()),
               value);
 
-      logger.debug("date at binding: date={}", binding.getValue());
+      logger.debug("date at binding: bindingValue={}, inputDate={}, offset={}, msDiffJulianToGregorian={}", binding.getValue(), x, offset, msDiffJulianToGregorian);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
