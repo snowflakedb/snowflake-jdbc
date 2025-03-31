@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -569,13 +568,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // execute a query for 120s
       try (Statement statement = connection.createStatement()) {
         statement.setMaxRows(30);
-        try (ResultSet resultSet =
-            statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")) {}
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () ->
+                    statement
+                        .executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")
+                        .close());
+        assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
       }
-      fail("should raise an exception");
-    } catch (SQLException ex) {
-      // assert the sqlstate is what we expect (QUERY CANCELLED)
-      assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
     }
   }
 
@@ -1007,13 +1008,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             assertTrue(resultSet.next());
             assertNotNull(resultSet.getString(1));
             assertFalse(resultSet.next());
-            try {
-              resultSet.getString(1); // no more row
-              fail("must fail");
-            } catch (SQLException ex) {
-              assertEquals(
-                  (int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
-            }
+            SQLException ex = assertThrows(SQLException.class, () -> resultSet.getString(1));
+            assertEquals((int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
 
             Thread.sleep(100);
           }
@@ -1060,12 +1056,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       // execute a bad query
-      try (ResultSet resultSet = statement.executeQuery("SELECT * FROM nonexistence")) {
-        fail("SQL exception not raised");
-      } catch (SQLException ex1) {
-        // assert the sqlstate "42S02" which means BASE_TABLE_OR_VIEW_NOT_FOUND
-        assertEquals("42S02", ex1.getSQLState(), "sqlstate mismatch");
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> statement.executeQuery("SELECT * FROM nonexistence").close());
+      assertEquals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND, ex.getSQLState(), "sqlstate mismatch");
     }
   }
 
@@ -1896,29 +1891,22 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           // this test causes query count in GS not to be decremented because
           // the exception is thrown before registerQC. Discuss with Johnston
           // to resolve the issue before enabling the test.
-          try {
-            preparedStatement.setObject(1, "Null", Types.DOUBLE);
-            preparedStatement.addBatch();
-            preparedStatement.executeBatch();
-            fail("must fail in executeBatch()");
-          } catch (SnowflakeSQLException ex) {
-            assertEquals(2086, ex.getErrorCode());
-          }
+          preparedStatement.setObject(1, "Null", Types.DOUBLE);
+          preparedStatement.addBatch();
+          SnowflakeSQLException ex =
+              assertThrows(SnowflakeSQLException.class, preparedStatement::executeBatch);
+          assertEquals(2086, ex.getErrorCode());
 
           preparedStatement.clearBatch();
 
-          try {
-            preparedStatement.setString(1, "hello");
-            preparedStatement.addBatch();
+          preparedStatement.setString(1, "hello");
+          preparedStatement.addBatch();
 
-            preparedStatement.setDouble(1, 1.2);
-            preparedStatement.addBatch();
-            fail("must fail");
-          } catch (SnowflakeSQLException ex) {
-            assertEquals(
-                (int) ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
-                ex.getErrorCode());
-          }
+          preparedStatement.setDouble(1, 1.2);
+          ex = assertThrows(SnowflakeSQLException.class, preparedStatement::addBatch);
+          assertEquals(
+              (int) ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+              ex.getErrorCode());
         }
       } finally {
         regularStatement.execute("DROP TABLE testNullBind");
@@ -2037,11 +2025,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
 
       // execute DDLs
-      statement.executeQuery(null);
-
-      fail("expected exception, but no exception");
-
-    } catch (SnowflakeSQLException ex) {
+      SnowflakeSQLException ex =
+          assertThrows(SnowflakeSQLException.class, () -> statement.executeQuery(null));
       assertEquals((int) ErrorCode.INVALID_SQL.getMessageCode(), ex.getErrorCode());
     }
   }
@@ -2289,14 +2274,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           },
           5000);
 
-      // now run a query for 120 seconds
-      try (ResultSet resultSet =
-          statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")) {
-        fail("should be canceled");
-      } catch (SQLException ex) {
-        // assert the sqlstate is what we expect (QUERY CANCELLED)
-        assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  statement
+                      .executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")
+                      .close());
+      // assert the sqlstate is what we expect (QUERY CANCELLED)
+      assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
     }
   }
 
@@ -2546,11 +2532,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("create or replace view v as select * from t where a=?")) {
           preparedStatement.setInt(1, 1);
-          preparedStatement.execute();
-
-          // we shouldn't reach here
-          fail("Bind variable in view definition did not cause a user error");
-        } catch (SnowflakeSQLException e) {
+          SnowflakeSQLException e =
+              assertThrows(
+                  SnowflakeSQLException.class,
+                  preparedStatement::execute,
+                  "Bind variable in view definition did not cause a user error");
           assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
 
@@ -2559,9 +2545,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try (PreparedStatement preparedStatement =
             connection.prepareStatement(
                 "create or replace function f(n number) returns number as " + "'n + ?'")) {
-          preparedStatement.execute();
-          fail("Bind variable in scalar UDF definition did not cause a user " + "error");
-        } catch (SnowflakeSQLException e) {
+          SnowflakeSQLException e =
+              assertThrows(
+                  SnowflakeSQLException.class,
+                  preparedStatement::execute,
+                  "Bind variable in scalar UDF definition did not cause a user error");
           assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
 
@@ -2571,9 +2559,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             connection.prepareStatement(
                 "create or replace function tf(n number) returns table(b number) as"
                     + " 'select b from t where a=?'")) {
-          preparedStatement.execute();
-          fail("Bind variable in table UDF definition did not cause a user " + "error");
-        } catch (SnowflakeSQLException e) {
+          SnowflakeSQLException e =
+              assertThrows(
+                  SnowflakeSQLException.class,
+                  preparedStatement::execute,
+                  "Bind variable in table UDF definition did not cause a user error");
           assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
       } finally {

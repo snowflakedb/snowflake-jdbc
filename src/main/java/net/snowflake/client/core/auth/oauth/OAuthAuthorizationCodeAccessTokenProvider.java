@@ -2,7 +2,6 @@ package net.snowflake.client.core.auth.oauth;
 
 import static net.snowflake.client.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
@@ -13,6 +12,7 @@ import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
@@ -27,15 +27,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 @SnowflakeJdbcInternalApi
@@ -46,37 +47,44 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
 
   static final String DEFAULT_REDIRECT_HOST = "http://127.0.0.1";
   static final String DEFAULT_REDIRECT_URI_ENDPOINT = "/";
-  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private final AuthExternalBrowserHandlers browserHandler;
   private final StateProvider<String> stateProvider;
+  private final DPoPUtil dpopUtil;
   private final long browserAuthorizationTimeoutSeconds;
 
   public OAuthAuthorizationCodeAccessTokenProvider(
       AuthExternalBrowserHandlers browserHandler,
       StateProvider<String> stateProvider,
-      long browserAuthorizationTimeoutSeconds) {
+      long browserAuthorizationTimeoutSeconds)
+      throws SFException {
     this.browserHandler = browserHandler;
     this.stateProvider = stateProvider;
+    this.dpopUtil = new DPoPUtil();
     this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
   }
 
   @Override
   public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {
     try {
-      logger.debug("Starting OAuth authorization code authentication flow...");
+      logger.info("Starting OAuth authorization code authentication flow...");
       CodeVerifier pkceVerifier = new CodeVerifier();
       URI redirectUri = OAuthUtil.buildRedirectUri(loginInput.getOauthLoginInput());
       AuthorizationCode authorizationCode =
           requestAuthorizationCode(loginInput, pkceVerifier, redirectUri);
       return exchangeAuthorizationCodeForAccessToken(
-          loginInput, authorizationCode, pkceVerifier, redirectUri);
+          loginInput, authorizationCode, pkceVerifier, redirectUri, null, false);
     } catch (Exception e) {
       logger.error(
           "Error during OAuth authorization code flow. Verify configuration passed to driver and IdP (URLs, grant types, scope, etc.)",
           e);
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
     }
+  }
+
+  @Override
+  public String getDPoPPublicKey() {
+    return dpopUtil.getPublicKey();
   }
 
   private AuthorizationCode requestAuthorizationCode(
@@ -97,30 +105,24 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       SFLoginInput loginInput,
       AuthorizationCode authorizationCode,
       CodeVerifier pkceVerifier,
-      URI redirectUri)
+      URI redirectUri,
+      String dpopNonce,
+      boolean retried)
       throws SFException {
     try {
-      TokenRequest request =
-          buildTokenRequest(loginInput, authorizationCode, pkceVerifier, redirectUri);
-      URI requestUri = request.getEndpointURI();
-      logger.debug(
-          "Requesting OAuth access token from: {}",
-          requestUri.getAuthority() + requestUri.getPath());
-      String tokenResponse =
-          HttpUtil.executeGeneralRequest(
-              OAuthUtil.convertToBaseAuthorizationRequest(request.toHTTPRequest()),
-              loginInput.getLoginTimeout(),
-              loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeoutInMillis(),
-              0,
-              loginInput.getHttpClientSettingsKey());
-      TokenResponseDTO tokenResponseDTO =
-          objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
-      logger.debug(
-          "Received OAuth access token from: {}{}",
-          requestUri.getAuthority(),
-          requestUri.getPath());
-      return tokenResponseDTO;
+      HttpRequestBase request =
+          buildTokenRequest(loginInput, authorizationCode, pkceVerifier, redirectUri, dpopNonce);
+      return OAuthUtil.sendTokenRequest(request, loginInput);
+    } catch (SnowflakeUseDPoPNonceException e) {
+      logger.debug("Received \"use_dpop_nonce\" error from IdP while performing token request");
+      if (!retried) {
+        logger.debug("Retrying token request with DPoP nonce included...");
+        return exchangeAuthorizationCodeForAccessToken(
+            loginInput, authorizationCode, pkceVerifier, redirectUri, e.getNonce(), true);
+      } else {
+        logger.debug("Skipping DPoP nonce retry as it has been already retried");
+        throw e;
+      }
     } catch (Exception e) {
       logger.error("Error during making OAuth access token request", e);
       throw new SFException(e, ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR, e.getMessage());
@@ -176,27 +178,35 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         new InetSocketAddress(redirectUri.getHost(), redirectUri.getPort()), 0);
   }
 
-  private static AuthorizationRequest buildAuthorizationRequest(
-      SFLoginInput loginInput, CodeVerifier pkceVerifier, State state, URI redirectUri) {
+  private AuthorizationRequest buildAuthorizationRequest(
+      SFLoginInput loginInput, CodeVerifier pkceVerifier, State state, URI redirectUri)
+      throws SFException {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
     String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
-    return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
-        .scope(new Scope(scope))
-        .state(state)
-        .redirectionURI(redirectUri)
-        .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
-        .endpointURI(
-            OAuthUtil.getAuthorizationUrl(
-                loginInput.getOauthLoginInput(), loginInput.getServerUrl()))
-        .build();
+    AuthorizationRequest.Builder builder =
+        new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
+            .scope(new Scope(scope))
+            .state(state)
+            .redirectionURI(redirectUri)
+            .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
+            .endpointURI(
+                OAuthUtil.getAuthorizationUrl(
+                    loginInput.getOauthLoginInput(), loginInput.getServerUrl()));
+
+    if (loginInput.isDPoPEnabled()) {
+      builder.dPoPJWKThumbprintConfirmation(new DPoPUtil().getThumbprint());
+    }
+    return builder.build();
   }
 
-  private static TokenRequest buildTokenRequest(
+  private HttpRequestBase buildTokenRequest(
       SFLoginInput loginInput,
       AuthorizationCode authorizationCode,
       CodeVerifier pkceVerifier,
-      URI redirectUri) {
+      URI redirectUri,
+      String dpopNonce)
+      throws SFException {
     AuthorizationGrant codeGrant =
         new AuthorizationCodeGrant(authorizationCode, redirectUri, pkceVerifier);
     ClientAuthentication clientAuthentication =
@@ -205,10 +215,20 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
     Scope scope =
         new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
-    return new TokenRequest(
-        OAuthUtil.getTokenRequestUrl(loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
-        clientAuthentication,
-        codeGrant,
-        scope);
+    TokenRequest tokenRequest =
+        new TokenRequest(
+            OAuthUtil.getTokenRequestUrl(
+                loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
+            clientAuthentication,
+            codeGrant,
+            scope);
+    HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
+    HttpRequestBase convertedTokenRequest = OAuthUtil.convertToBaseRequest(tokenHttpRequest);
+
+    if (loginInput.isDPoPEnabled()) {
+      dpopUtil.addDPoPProofHeaderToRequest(convertedTokenRequest, dpopNonce);
+    }
+
+    return convertedTokenRequest;
   }
 }
