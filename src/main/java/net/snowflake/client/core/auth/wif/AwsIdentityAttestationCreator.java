@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
+import java.util.Collections;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -53,13 +53,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
     String credential = createBase64EncodedRequestCredential(request);
     return new WorkloadIdentityAttestation(
-        WorkloadIdentityProviderType.AWS,
-        credential,
-        new HashMap<String, String>() {
-          {
-            put("arn", arn);
-          }
-        });
+        WorkloadIdentityProviderType.AWS, credential, Collections.singletonMap("arn", arn));
   }
 
   private Request<Void> createStsRequest(String hostname) {
@@ -82,7 +76,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     assertionJson.add("headers", headers);
 
     String assertionJsonString = assertionJson.toString();
-    Base64.Encoder encoder = Base64.getEncoder();
-    return encoder.encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
+    return Base64.getEncoder().encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
   }
 }

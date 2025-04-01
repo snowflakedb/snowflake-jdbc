@@ -8,11 +8,19 @@ import com.amazonaws.regions.InstanceMetadataRegionProvider;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
+import java.util.Optional;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
 @SnowflakeJdbcInternalApi
 public class AWSAttestationService {
+
+  private static final AWS4Signer aws4Signer;
+
+  static {
+    aws4Signer = new AWS4Signer();
+    aws4Signer.setServiceName("sts");
+  }
 
   AWSCredentials getAWSCredentials() {
     return DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
@@ -31,16 +39,10 @@ public class AWSAttestationService {
     GetCallerIdentityResult callerIdentity =
         AWSSecurityTokenServiceClientBuilder.defaultClient()
             .getCallerIdentity(new GetCallerIdentityRequest());
-    if (callerIdentity != null) {
-      return callerIdentity.getArn();
-    } else {
-      return null;
-    }
+    return Optional.ofNullable(callerIdentity).map(GetCallerIdentityResult::getArn).orElse(null);
   }
 
   void signRequestWithSigV4(SignableRequest<Void> signableRequest, AWSCredentials awsCredentials) {
-    AWS4Signer sigV4Signer = new AWS4Signer();
-    sigV4Signer.setServiceName("sts");
-    sigV4Signer.sign(signableRequest, awsCredentials);
+    aws4Signer.sign(signableRequest, awsCredentials);
   }
 }
