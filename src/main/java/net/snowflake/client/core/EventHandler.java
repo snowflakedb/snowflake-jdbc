@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -27,7 +28,6 @@ import java.util.logging.LogRecord;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.joda.time.DateTime;
 
 public class EventHandler extends Handler {
   private static final SFLogger logger = SFLoggerFactory.getLogger(EventHandler.class);
@@ -98,7 +98,7 @@ public class EventHandler extends Handler {
   private final Map<String, AtomicInteger> incidentCounter;
 
   // Map
-  private final Map<String, DateTime> throttledIncidents;
+  private final Map<String, Instant> throttledIncidents;
 
   // Queue to buffer events while they are waiting to be flushed
   private final ArrayList<Event> eventBuffer;
