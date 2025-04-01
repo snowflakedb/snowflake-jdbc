@@ -15,9 +15,12 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 @SnowflakeJdbcInternalApi
 public class AWSAttestationService {
 
-  private static final AWS4Signer aws4Signer;
+  private static boolean regionInitialized = false;
+  private static String region;
 
-  static {
+  private final AWS4Signer aws4Signer;
+
+  public AWSAttestationService() {
     aws4Signer = new AWS4Signer();
     aws4Signer.setServiceName("sts");
   }
@@ -27,12 +30,12 @@ public class AWSAttestationService {
   }
 
   String getAWSRegion() {
-    String region = SnowflakeUtil.systemGetEnv("AWS_REGION");
-    if (region != null) {
-      return region;
-    } else {
-      return new InstanceMetadataRegionProvider().getRegion();
+    if (!regionInitialized) {
+      String envRegion = SnowflakeUtil.systemGetEnv("AWS_REGION");
+      region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
+      regionInitialized = true;
     }
+    return region;
   }
 
   String getArn() {
