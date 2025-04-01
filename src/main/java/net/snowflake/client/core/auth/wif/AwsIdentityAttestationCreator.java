@@ -4,11 +4,12 @@ import com.amazonaws.DefaultRequest;
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.http.HttpMethodName;
-import com.google.gson.JsonObject;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
+
+import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -68,12 +69,12 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   }
 
   private String createBase64EncodedRequestCredential(Request<Void> request) {
-    JsonObject assertionJson = new JsonObject();
-    JsonObject headers = new JsonObject();
-    request.getHeaders().forEach(headers::addProperty);
-    assertionJson.addProperty("url", request.getEndpoint().toString());
-    assertionJson.addProperty("method", request.getHttpMethod().toString());
-    assertionJson.add("headers", headers);
+    JSONObject assertionJson = new JSONObject();
+    JSONObject headers = new JSONObject();
+    headers.putAll(request.getHeaders());
+    assertionJson.put("url", request.getEndpoint().toString());
+    assertionJson.put("method", request.getHttpMethod().toString());
+    assertionJson.put("headers", headers);
 
     String assertionJsonString = assertionJson.toString();
     return Base64.getEncoder().encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
