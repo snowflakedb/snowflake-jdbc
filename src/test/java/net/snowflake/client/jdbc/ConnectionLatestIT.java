@@ -1653,6 +1653,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * Test production connectivity with disableOCSPChecksMode enabled. This test applies to driver
    * versions after 3.21.0
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testDisableOCSPChecksMode() throws SQLException {
 
