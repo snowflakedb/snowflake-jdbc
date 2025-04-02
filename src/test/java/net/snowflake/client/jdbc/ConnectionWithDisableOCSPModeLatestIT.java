@@ -12,6 +12,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFTrustManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
    * Test connectivity with disableOCSPChecksMode and insecure mode enabled. This test applies to
    * driver versions after 3.21.0
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testDisableOCSPChecksModeAndInsecureModeSet() throws SQLException {
 
@@ -50,6 +52,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
    * Test production connectivity with only disableOCSPChecksMode enabled. This test applies to
    * driver versions after 3.21.0
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testDisableOCSPChecksModeSet() throws SQLException {
     boolean disableOCSPChecks = true;
@@ -62,6 +65,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
    * Test production connectivity with only insecureMode enabled. This test applies to driver
    * versions after 3.21.0
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testInsecureModeSet() throws SQLException {
     boolean insecureMode = true;
@@ -74,6 +78,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
    * Test production connectivity with disableOCSPChecksMode enabled AND insecureMode disabled. This
    * test applies to driver versions after 3.21.0
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testDisableOCSPChecksModeAndInsecureModeMismatched() throws SQLException {
     boolean disableOCSPChecks = true;
