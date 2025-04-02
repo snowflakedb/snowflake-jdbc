@@ -10,11 +10,13 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import java.util.Optional;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
 @SnowflakeJdbcInternalApi
 public class AWSAttestationService {
 
+  private static final String SECURE_TOKEN_SERVICE_NAME = "sts";
   private static boolean regionInitialized = false;
   private static String region;
 
@@ -22,7 +24,7 @@ public class AWSAttestationService {
 
   public AWSAttestationService() {
     aws4Signer = new AWS4Signer();
-    aws4Signer.setServiceName("sts");
+    aws4Signer.setServiceName(SECURE_TOKEN_SERVICE_NAME);
   }
 
   AWSCredentials getAWSCredentials() {
@@ -31,7 +33,7 @@ public class AWSAttestationService {
 
   String getAWSRegion() {
     if (!regionInitialized) {
-      String envRegion = SnowflakeUtil.systemGetEnv("AWS_REGION");
+      String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
       region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
       regionInitialized = true;
     }
