@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc;
 import static java.util.Arrays.stream;
 import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
