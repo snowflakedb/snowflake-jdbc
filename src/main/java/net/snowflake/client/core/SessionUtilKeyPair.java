@@ -143,7 +143,7 @@ class SessionUtilKeyPair {
       throws SFException {
     if (!Strings.isNullOrEmpty(privateKeyBase64)) {
       logger.trace("Reading private key from base64 string");
-      return extractPrivateKeyFromBase64(privateKeyBase64, privateKeyPwd);
+      return extractPrivateKeyFromPem(privateKeyBase64, privateKeyPwd);
     }
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
       logger.trace("Reading private key from file");
@@ -174,26 +174,27 @@ class SessionUtilKeyPair {
     try {
       Path privKeyPath = Paths.get(privateKeyFile);
       FileUtil.logFileUsage(privKeyPath, "Extract private key from file", true);
-      byte[] bytes = Files.readAllBytes(privKeyPath);
-      return extractPrivateKeyFromBytes(bytes, privateKeyPwd);
+      String privateKeyContent =
+          new String(Files.readAllBytes(privKeyPath), StandardCharsets.UTF_8);
+      return extractPrivateKeyFromPem(privateKeyContent, privateKeyPwd);
     } catch (IOException ie) {
       logger.error("Could not read private key from file", ie);
       throw new SFException(ie, ErrorCode.INVALID_PARAMETER_VALUE, ie.getCause());
     }
   }
 
-  private PrivateKey extractPrivateKeyFromBytes(byte[] privateKeyBytes, String privateKeyPwd)
+  private PrivateKey extractPrivateKeyFromPem(String privateKeyContent, String privateKeyPwd)
       throws SFException {
     if (isBouncyCastleProviderEnabled) {
       try {
-        return extractPrivateKeyWithBouncyCastle(privateKeyBytes, privateKeyPwd);
+        return extractPrivateKeyWithBouncyCastle(privateKeyContent, privateKeyPwd);
       } catch (IOException | PKCSException | OperatorCreationException e) {
         logger.error("Could not extract private key using Bouncy Castle provider", e);
         throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getCause());
       }
     } else {
       try {
-        return extractPrivateKeyWithJdk(privateKeyBytes, privateKeyPwd);
+        return extractPrivateKeyWithJdk(privateKeyContent, privateKeyPwd);
       } catch (NoSuchAlgorithmException
           | InvalidKeySpecException
           | IOException
@@ -208,12 +209,6 @@ class SessionUtilKeyPair {
         throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getMessage());
       }
     }
-  }
-
-  private PrivateKey extractPrivateKeyFromBase64(String privateKeyBase64, String privateKeyPwd)
-      throws SFException {
-    byte[] decodedKey = Base64.decodeBase64(privateKeyBase64);
-    return extractPrivateKeyFromBytes(decodedKey, privateKeyPwd);
   }
 
   public String issueJwtToken() throws SFException {
@@ -272,12 +267,12 @@ class SessionUtilKeyPair {
     return jwtAuthTimeout;
   }
 
-  private PrivateKey extractPrivateKeyWithBouncyCastle(byte[] privateKeyBytes, String privateKeyPwd)
+  private PrivateKey extractPrivateKeyWithBouncyCastle(
+      String privateKeyContent, String privateKeyPwd)
       throws IOException, PKCSException, OperatorCreationException {
     logger.trace("Extracting private key using Bouncy Castle provider");
     PrivateKeyInfo privateKeyInfo = null;
-    PEMParser pemParser =
-        new PEMParser(new StringReader(new String(privateKeyBytes, StandardCharsets.UTF_8)));
+    PEMParser pemParser = new PEMParser(new StringReader(privateKeyContent));
     Object pemObject = pemParser.readObject();
     if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
       // Handle the case where the private key is encrypted.
@@ -303,10 +298,9 @@ class SessionUtilKeyPair {
     return converter.getPrivateKey(privateKeyInfo);
   }
 
-  private PrivateKey extractPrivateKeyWithJdk(byte[] privateKeyFileBytes, String privateKeyPwd)
+  private PrivateKey extractPrivateKeyWithJdk(String privateKeyContent, String privateKeyPwd)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
     logger.trace("Extracting private key using JDK");
-    String privateKeyContent = new String(privateKeyFileBytes, StandardCharsets.UTF_8);
     if (Strings.isNullOrEmpty(privateKeyPwd)) {
       // unencrypted private key file
       return generatePrivateKey(false, privateKeyContent, privateKeyPwd);
