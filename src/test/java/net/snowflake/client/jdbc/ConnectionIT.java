@@ -139,6 +139,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
    * password but correct url Expectation is receiving incorrect username or password response from
    * server
    */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @Test
   public void testProdConnectivity() throws SQLException {
     String[] deploymentUrls = {
@@ -566,6 +567,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /** Test production connectivity with insecure mode enabled. */
+  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void testInsecureMode(boolean insecureModeInProperties) {
