@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.io.Serializable;
 
 /**
@@ -35,14 +36,14 @@ public class HttpClientSettingsKey implements Serializable {
       Boolean gzipDisabled) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
-    this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
+    this.proxyHost = !isNullOrEmpty(host) ? host.trim() : "";
     this.proxyPort = port;
-    this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
-    this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
-    this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
-    this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+    this.nonProxyHosts = !isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
+    this.proxyUser = !isNullOrEmpty(user) ? user.trim() : "";
+    this.proxyPassword = !isNullOrEmpty(password) ? password.trim() : "";
+    this.proxyProtocol = !isNullOrEmpty(scheme) ? scheme.trim() : "http";
     this.gzipDisabled = gzipDisabled;
-    this.userAgentSuffix = !Strings.isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
+    this.userAgentSuffix = !isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -52,7 +53,7 @@ public class HttpClientSettingsKey implements Serializable {
 
   HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix, Boolean gzipDisabled) {
     this(mode);
-    this.userAgentSuffix = !Strings.isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
+    this.userAgentSuffix = !isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
     this.gzipDisabled = gzipDisabled;
   }
 

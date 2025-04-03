@@ -1,6 +1,7 @@
 package net.snowflake.client.core.auth.oauth;
 
-import com.amazonaws.util.StringUtils;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -61,19 +62,15 @@ public class OAuthAccessTokenProviderFactory {
       throws SFException {
     String authorizationEndpoint = loginInput.getOauthLoginInput().getAuthorizationUrl();
     String tokenEndpoint = loginInput.getOauthLoginInput().getTokenRequestUrl();
-    if ((!StringUtils.isNullOrEmpty(authorizationEndpoint)
-            && StringUtils.isNullOrEmpty(tokenEndpoint))
-        || (StringUtils.isNullOrEmpty(authorizationEndpoint)
-            && !StringUtils.isNullOrEmpty(tokenEndpoint))) {
+    if ((!isNullOrEmpty(authorizationEndpoint) && isNullOrEmpty(tokenEndpoint))
+        || (isNullOrEmpty(authorizationEndpoint) && !isNullOrEmpty(tokenEndpoint))) {
       throw new SFException(
           ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
           "For OAUTH_AUTHORIZATION_CODE authentication with external IdP, both oauthAuthorizationUrl and oauthTokenRequestUrl must be specified");
-    } else if (!StringUtils.isNullOrEmpty(authorizationEndpoint)
-        && !StringUtils.isNullOrEmpty(tokenEndpoint)) {
+    } else if (!isNullOrEmpty(authorizationEndpoint) && !isNullOrEmpty(tokenEndpoint)) {
       URI authorizationUrl = URI.create(authorizationEndpoint);
       URI tokenUrl = URI.create(tokenEndpoint);
-      if (StringUtils.isNullOrEmpty(authorizationUrl.getHost())
-          || StringUtils.isNullOrEmpty(tokenUrl.getHost())) {
+      if (isNullOrEmpty(authorizationUrl.getHost()) || isNullOrEmpty(tokenUrl.getHost())) {
         throw new SFException(
             ErrorCode.OAUTH_AUTHORIZATION_CODE_FLOW_ERROR,
             String.format(
