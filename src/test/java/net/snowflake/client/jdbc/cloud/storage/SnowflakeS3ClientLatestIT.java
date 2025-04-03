@@ -2,7 +2,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -162,12 +161,8 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
       SnowflakeS3Client spy = Mockito.spy(client);
 
       // Should retry one time, then throw error
-      try {
-        spy.handleStorageException(
-            new InterruptedException(), 0, "download", sfSession, command, null);
-      } catch (Exception e) {
-        fail("Should not have exception here");
-      }
+      spy.handleStorageException(
+          new InterruptedException(), 0, "download", sfSession, command, null);
       Mockito.verify(spy, Mockito.never()).renew(Mockito.anyMap());
       spy.handleStorageException(
           new InterruptedException(), 1, "download", sfSession, command, null);

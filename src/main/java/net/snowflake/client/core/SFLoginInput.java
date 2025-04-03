@@ -40,6 +40,8 @@ public class SFLoginInput {
   private String mfaToken;
   private String oauthAccessToken;
   private String oauthRefreshToken;
+  private String dpopPublicKey;
+  private boolean dpopEnabled = false;
   private String serviceName;
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
@@ -338,6 +340,27 @@ public class SFLoginInput {
   SFLoginInput setOauthRefreshToken(String oauthRefreshToken) {
     this.oauthRefreshToken = oauthRefreshToken;
     return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getDPoPPublicKey() {
+    return dpopPublicKey;
+  }
+
+  SFLoginInput setDPoPPublicKey(String dpopPublicKey) {
+    this.dpopPublicKey = dpopPublicKey;
+    return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public boolean isDPoPEnabled() {
+    return dpopEnabled;
+  }
+
+  // Currently only used for testing purpose
+  @SnowflakeJdbcInternalApi
+  public void setDPoPEnabled(boolean dpopEnabled) {
+    this.dpopEnabled = dpopEnabled;
   }
 
   Map<String, Object> getSessionParameters() {
