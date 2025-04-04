@@ -721,6 +721,8 @@ public class SFSession extends SFBaseSession {
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
         .setOauthLoginInput(oauthLoginInput)
+        .setWorkloadIdentityProvider(
+            (String) connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(

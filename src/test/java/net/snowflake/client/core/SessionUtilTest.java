@@ -1,8 +1,10 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mockStatic;
@@ -22,7 +24,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -255,37 +256,42 @@ public class SessionUtilTest {
       snowflakeUtilMockedStatic
           .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn(null);
-      Assertions.assertThrows(
+      assertThrows(
           SFException.class,
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      Assertions.assertThrows(
+      assertThrows(
           SFException.class,
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      Assertions.assertThrows(
+      assertThrows(
           SFException.class,
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+      assertThrows(
+          SFException.class,
+          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
 
       snowflakeUtilMockedStatic
           .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn("true");
-      Assertions.assertDoesNotThrow(
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      Assertions.assertDoesNotThrow(
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      Assertions.assertDoesNotThrow(
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
+      assertDoesNotThrow(
+          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
     }
   }
 
