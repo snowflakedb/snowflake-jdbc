@@ -261,7 +261,8 @@ public class SFLoginInput {
     return (int) socketTimeout.toMillis();
   }
 
-  SFLoginInput setSocketTimeout(Duration socketTimeout) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
   }
@@ -461,7 +462,8 @@ public class SFLoginInput {
     return httpClientKey;
   }
 
-  SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
     return this;
   }

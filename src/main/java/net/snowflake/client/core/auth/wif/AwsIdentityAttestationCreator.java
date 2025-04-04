@@ -19,9 +19,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
 
-  private static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
-  private static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
-
   private final AWSAttestationService attestationService;
 
   public AwsIdentityAttestationCreator(AWSAttestationService attestationService) {
@@ -63,7 +60,9 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
         URI.create(
             String.format("https://%s/?Action=GetCallerIdentity&Version=2011-06-15", hostname)));
     request.addHeader("Host", hostname);
-    request.addHeader(SNOWFLAKE_AUDIENCE_HEADER_NAME, SNOWFLAKE_AUDIENCE);
+    request.addHeader(
+        WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
+        WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE);
     return request;
   }
 

@@ -343,7 +343,7 @@ public class SessionUtil {
       WorkloadIdentityAttestationProvider attestationProvider =
           new WorkloadIdentityAttestationProvider(
               new AwsIdentityAttestationCreator(new AWSAttestationService()),
-              new GcpIdentityAttestationCreator(),
+              new GcpIdentityAttestationCreator(loginInput),
               new AzureIdentityAttestationCreator(),
               new OidcIdentityAttestationCreator());
       WorkloadIdentityAttestation attestation =

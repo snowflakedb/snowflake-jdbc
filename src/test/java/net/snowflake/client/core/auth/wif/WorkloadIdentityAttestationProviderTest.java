@@ -32,7 +32,7 @@ class WorkloadIdentityAttestationProviderTest {
     WorkloadIdentityAttestationProvider provider =
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(null),
-            new GcpIdentityAttestationCreator(),
+            new GcpIdentityAttestationCreator(null),
             new AzureIdentityAttestationCreator(),
             new OidcIdentityAttestationCreator());
     WorkloadIdentityAttestationCreator attestationCreator =
