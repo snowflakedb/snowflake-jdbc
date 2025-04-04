@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -73,7 +74,7 @@ public class SnowflakeConnectString implements Serializable {
         logger.debug("Connect strings must have a valid scheme: 'snowflake' or 'http' or 'https'");
         return INVALID_CONNECT_STRING;
       }
-      if (Strings.isNullOrEmpty(host)) {
+      if (isNullOrEmpty(host)) {
         logger.debug("Connect strings must have a valid host: found null or empty host");
         return INVALID_CONNECT_STRING;
       }
@@ -81,12 +82,12 @@ public class SnowflakeConnectString implements Serializable {
         port = 443;
       }
       String path = uri.getPath();
-      if (!Strings.isNullOrEmpty(path) && !"/".equals(path)) {
+      if (!isNullOrEmpty(path) && !"/".equals(path)) {
         logger.debug("Connect strings must have no path: expecting empty or null or '/'");
         return INVALID_CONNECT_STRING;
       }
       String account = null;
-      if (!Strings.isNullOrEmpty(queryData)) {
+      if (!isNullOrEmpty(queryData)) {
         String[] params = queryData.split("&");
         for (String p : params) {
           String[] keyVals = p.split("=");
@@ -137,7 +138,7 @@ public class SnowflakeConnectString implements Serializable {
         parameters.put("ACCOUNT", account);
       }
 
-      if (Strings.isNullOrEmpty(account)) {
+      if (isNullOrEmpty(account)) {
         logger.debug("Connect strings must contain account identifier");
         return INVALID_CONNECT_STRING;
       }
@@ -222,7 +223,7 @@ public class SnowflakeConnectString implements Serializable {
 
   public boolean isValid() {
     // invalid if host name is null or empty
-    return !Strings.isNullOrEmpty(host);
+    return !isNullOrEmpty(host);
   }
 
   public String getScheme() {

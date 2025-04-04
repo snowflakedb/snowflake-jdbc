@@ -1,11 +1,11 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.StmtUtil.mapper;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   @Override
   public synchronized SecureStorageStatus setCredential(
       String host, String user, String type, String token) {
-    if (Strings.isNullOrEmpty(token)) {
+    if (isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }

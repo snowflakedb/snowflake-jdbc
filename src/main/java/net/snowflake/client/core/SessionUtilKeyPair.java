@@ -1,8 +1,8 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
-import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -121,17 +121,17 @@ class SessionUtilKeyPair {
 
   private static void ensurePrivateKeyProvidedInOnlyOneProperty(
       PrivateKey privateKey, String privateKeyFile, String privateKeyBase64) throws SFException {
-    if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null) {
+    if (!isNullOrEmpty(privateKeyFile) && privateKey != null) {
       throw new SFException(
           ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
           "Cannot have both private key object and private key file.");
     }
-    if (!Strings.isNullOrEmpty(privateKeyBase64) && !Strings.isNullOrEmpty(privateKeyFile)) {
+    if (!isNullOrEmpty(privateKeyBase64) && !isNullOrEmpty(privateKeyFile)) {
       throw new SFException(
           ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
           "Cannot have both private key file and private key base64 string value.");
     }
-    if (!Strings.isNullOrEmpty(privateKeyBase64) && privateKey != null) {
+    if (!isNullOrEmpty(privateKeyBase64) && privateKey != null) {
       throw new SFException(
           ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
           "Cannot have both private key object and private key base64 string value.");
@@ -141,11 +141,11 @@ class SessionUtilKeyPair {
   private PrivateKey buildPrivateKey(
       PrivateKey privateKey, String privateKeyFile, String privateKeyBase64, String privateKeyPwd)
       throws SFException {
-    if (!Strings.isNullOrEmpty(privateKeyBase64)) {
+    if (!isNullOrEmpty(privateKeyBase64)) {
       logger.trace("Reading private key from base64 string");
       return extractPrivateKeyFromBase64(privateKeyBase64, privateKeyPwd);
     }
-    if (!Strings.isNullOrEmpty(privateKeyFile)) {
+    if (!isNullOrEmpty(privateKeyFile)) {
       logger.trace("Reading private key from file");
       return extractPrivateKeyFromFile(privateKeyFile, privateKeyPwd);
     }
@@ -307,7 +307,7 @@ class SessionUtilKeyPair {
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
     logger.trace("Extracting private key using JDK");
     String privateKeyContent = new String(privateKeyFileBytes, StandardCharsets.UTF_8);
-    if (Strings.isNullOrEmpty(privateKeyPwd)) {
+    if (isNullOrEmpty(privateKeyPwd)) {
       // unencrypted private key file
       return generatePrivateKey(false, privateKeyContent, privateKeyPwd);
     } else {

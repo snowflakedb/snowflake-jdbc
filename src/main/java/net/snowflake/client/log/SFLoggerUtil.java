@@ -1,8 +1,8 @@
 package net.snowflake.client.log;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.google.common.base.Strings;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.commons.logging.LogFactory;
 
@@ -45,7 +45,7 @@ public class SFLoggerUtil {
   @SnowflakeJdbcInternalApi
   public static <T> String isVariableProvided(T variable) {
     if (variable instanceof String) {
-      return (Strings.isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;
+      return (isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;
     }
     return variable == null ? NOT_PROVIDED_LOG : PROVIDED_LOG;
   }
