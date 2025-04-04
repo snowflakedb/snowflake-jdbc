@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -10,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -577,8 +577,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               Protocol.HTTP,
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())
-          && !Strings.isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
+      if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
+          && !isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
         Credentials credentials =
             new UsernamePasswordCredentials(
                 proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
@@ -1106,7 +1106,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         String urlEncodedOCSPReq = URLUtil.urlEncode(ocspReqDerBase64);
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
           URL ocspUrl = new URL(ocspUrlStr);
-          if (!Strings.isNullOrEmpty(ocspUrl.getPath())) {
+          if (!isNullOrEmpty(ocspUrl.getPath())) {
             path = ocspUrl.getPath();
           }
           if (ocspUrl.getPort() > 0) {

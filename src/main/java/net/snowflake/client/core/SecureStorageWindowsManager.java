@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -34,7 +35,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String token) {
-    if (Strings.isNullOrEmpty(token)) {
+    if (isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }

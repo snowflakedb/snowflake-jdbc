@@ -4,11 +4,11 @@ import static net.snowflake.client.core.QueryStatus.getStatusFromString;
 import static net.snowflake.client.core.QueryStatus.isAnError;
 import static net.snowflake.client.core.QueryStatus.isStillRunning;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -326,7 +326,7 @@ public class SFSession extends SFBaseSession {
     // if an error message has been provided, set appropriate error message.
     // This should override the default error message displayed when there is
     // an error with no code.
-    if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
+    if (!isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
     } else {
       result.setErrorMessage("No error reported");
@@ -875,7 +875,7 @@ public class SFSession extends SFBaseSession {
   boolean isOKTAAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
+    return !isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
   }
 
   /**
@@ -1040,7 +1040,7 @@ public class SFSession extends SFBaseSession {
 
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
-    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+    if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug(
           "Session {} start heartbeat, master token validity: {} s",
           getSessionId(),
@@ -1055,7 +1055,7 @@ public class SFSession extends SFBaseSession {
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
-    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+    if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug("Session {} stop heartbeat", getSessionId());
 
       HeartbeatBackground.getInstance().removeSession(this);
@@ -1298,12 +1298,12 @@ public class SFSession extends SFBaseSession {
         || isUsernamePasswordMFAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
-      if (Strings.isNullOrEmpty(userName)) {
+      if (isNullOrEmpty(userName)) {
         throw new SFException(ErrorCode.MISSING_USERNAME);
       }
 
       String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
-      if (Strings.isNullOrEmpty(password)) {
+      if (isNullOrEmpty(password)) {
 
         throw new SFException(ErrorCode.MISSING_PASSWORD);
       }
@@ -1335,13 +1335,13 @@ public class SFSession extends SFBaseSession {
     if (isSnowflakeAuthenticator() || isOKTAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
-      if (Strings.isNullOrEmpty(userName)) {
+      if (isNullOrEmpty(userName)) {
         missingProperties.add(
             addNewDriverProperty(SFSessionProperty.USER.getPropertyKey(), "username for account"));
       }
 
       String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
-      if (Strings.isNullOrEmpty(password)) {
+      if (isNullOrEmpty(password)) {
         missingProperties.add(
             addNewDriverProperty(
                 SFSessionProperty.PASSWORD.getPropertyKey(), "password for " + "account"));

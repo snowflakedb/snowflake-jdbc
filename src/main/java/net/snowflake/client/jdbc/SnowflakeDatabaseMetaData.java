@@ -14,11 +14,11 @@ import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_STREAMS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -1457,17 +1457,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   procedures or functions */
   private String getSecondResultSetCommand(
       String catalog, String schemaPattern, String name, String type) {
-    if (Strings.isNullOrEmpty(name)) {
+    if (isNullOrEmpty(name)) {
       return "";
     }
     String procedureCols = name.substring(name.indexOf("("), name.indexOf(" RETURN"));
     String quotedName = "\"" + name.substring(0, name.indexOf("(")) + "\"";
     String procedureName = quotedName + procedureCols;
     String showProcedureColCommand;
-    if (!Strings.isNullOrEmpty(catalog) && !Strings.isNullOrEmpty(schemaPattern)) {
+    if (!isNullOrEmpty(catalog) && !isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand =
           "desc " + type + " " + catalog + "." + schemaPattern + "." + procedureName;
-    } else if (!Strings.isNullOrEmpty(schemaPattern)) {
+    } else if (!isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand = "desc " + type + " " + schemaPattern + "." + procedureName;
     } else {
       showProcedureColCommand = "desc " + type + " " + procedureName;
@@ -3677,7 +3677,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       Statement statement, String sql, DBMetadataResultSetMetadata metadataType)
       throws SQLException {
     ResultSet resultSet;
-    if (Strings.isNullOrEmpty(sql)) {
+    if (isNullOrEmpty(sql)) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
     }
     try {
