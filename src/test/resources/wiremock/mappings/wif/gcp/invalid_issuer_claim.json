@@ -1,9 +1,6 @@
 {
   "mappings": [
     {
-      "scenarioName": "Successful WIF GCP flow",
-      "requiredScenarioState": "Started",
-      "newScenarioState": "Acquired access token",
       "request": {
         "urlPattern": "/computeMetadata/v1/instance/service-accounts/default/identity.*",
         "queryParameters": {
