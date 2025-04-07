@@ -648,8 +648,7 @@ public class SessionUtil {
         }
       } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == AuthenticatorType.OAUTH
-          || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
@@ -661,6 +660,9 @@ public class SessionUtil {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
         }
 
+      } else if (authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
+        data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
