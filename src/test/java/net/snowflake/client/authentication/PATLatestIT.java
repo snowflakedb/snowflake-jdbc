@@ -15,27 +15,26 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag(TestTags.AUTHENTICATION)
 public class PATLatestIT {
 
   AuthTestHelper authTestHelper;
-  Properties properties;
-  String token;
   String patName;
 
   @BeforeEach
   public void setUp() throws IOException {
     authTestHelper = new AuthTestHelper();
-    properties = getPATConnectionParameters();
   }
 
   @Test
   void shouldAuthenticateUsingPAT() {
     Properties properties = getPATConnectionParameters();
-    token = getPAT();
-    properties.put("token", token);
+    properties.put("token", getPAT());
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsNotThrown();
     removePAT();
@@ -52,8 +51,7 @@ public class PATLatestIT {
   @Test
   void shouldThrowErrorForMismatchedPATUsername() throws IOException {
     Properties properties = getPATConnectionParameters();
-    token = getPAT();
-    properties.put("token", token);
+    properties.put("token", getPAT());
     properties.put("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown("Programmatic access token is invalid.");

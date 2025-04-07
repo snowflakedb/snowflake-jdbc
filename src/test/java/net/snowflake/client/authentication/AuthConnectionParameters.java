@@ -106,7 +106,7 @@ public class AuthConnectionParameters {
     return properties;
   }
 
-  static Properties getOAuthSnowflakeClientCredentialParameters() {
+  static Properties getOAuthOktaClientCredentialParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
     properties.put(
