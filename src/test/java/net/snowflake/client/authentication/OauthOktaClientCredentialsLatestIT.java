@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
-public class OauthSnowflakeClientCredentialsLatestIT {
+public class OauthOktaClientCredentialsLatestIT {
   Properties properties = getOAuthSnowflakeClientCredentialParameters();
   String login = properties.getProperty("user");
   AuthTestHelper authTestHelper = new AuthTestHelper();
