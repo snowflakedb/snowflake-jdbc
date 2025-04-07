@@ -13,7 +13,8 @@ public class AuthConnectionParameters {
   static final String OKTA = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_NAME");
   static final String OAUTH_PASSWORD =
       systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
-  static final String SNOWFLAKE_INTERNAL_ROLE = systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE");
+  static final String SNOWFLAKE_INTERNAL_ROLE =
+      systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE");
 
   static Properties getBaseConnectionParameters() {
     Properties properties = new Properties();

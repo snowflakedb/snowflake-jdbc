@@ -1,7 +1,10 @@
 package net.snowflake.client.authentication;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static net.snowflake.client.authentication.AuthConnectionParameters.HOST;
+import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWFLAKE_INTERNAL_ROLE;
+import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWFLAKE_USER;
+import static net.snowflake.client.authentication.AuthConnectionParameters.getOktaConnectionParameters;
+import static net.snowflake.client.authentication.AuthConnectionParameters.getPATConnectionParameters;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -12,12 +15,8 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
-
-import static net.snowflake.client.authentication.AuthConnectionParameters.HOST;
-import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWFLAKE_INTERNAL_ROLE;
-import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWFLAKE_USER;
-import static net.snowflake.client.authentication.AuthConnectionParameters.getOktaConnectionParameters;
-import static net.snowflake.client.authentication.AuthConnectionParameters.getPATConnectionParameters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PATLatestIT {
 
