@@ -12,22 +12,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.joda.time.DateTime;
 
 public class EventHandler extends Handler {
   private static final SFLogger logger = SFLoggerFactory.getLogger(EventHandler.class);
@@ -94,12 +90,6 @@ public class EventHandler extends Handler {
   // Period of time (in ms) to wait before waking the QueueFlusher
   private final int flushPeriodMs;
 
-  // Map to keep track of incident signatures for throttling incidents
-  private final Map<String, AtomicInteger> incidentCounter;
-
-  // Map
-  private final Map<String, DateTime> throttledIncidents;
-
   // Queue to buffer events while they are waiting to be flushed
   private final ArrayList<Event> eventBuffer;
 
@@ -117,9 +107,6 @@ public class EventHandler extends Handler {
     logBuffer = new ArrayList<>();
 
     logDumpPathPrefix = EventUtil.getDumpPathPrefix();
-
-    incidentCounter = new HashMap<>();
-    throttledIncidents = new HashMap<>();
   }
 
   /**
