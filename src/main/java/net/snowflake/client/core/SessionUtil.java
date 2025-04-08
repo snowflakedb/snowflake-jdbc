@@ -31,7 +31,7 @@ import net.snowflake.client.core.auth.oauth.DPoPUtil;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
-import net.snowflake.client.core.auth.wif.AWSAttestationService;
+import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.core.auth.wif.AwsIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.AzureIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.GcpIdentityAttestationCreator;
@@ -339,14 +339,7 @@ public class SessionUtil {
     }
 
     if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
-      WorkloadIdentityAttestationProvider attestationProvider =
-          new WorkloadIdentityAttestationProvider(
-              new AwsIdentityAttestationCreator(new AWSAttestationService()),
-              new GcpIdentityAttestationCreator(loginInput),
-              new AzureIdentityAttestationCreator(),
-              new OidcIdentityAttestationCreator());
-      WorkloadIdentityAttestation attestation =
-          attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
+      WorkloadIdentityAttestation attestation = getWorkloadIdentityAttestation(loginInput);
       if (attestation != null) {
         loginInput.setWorkloadIdentityAttestation(attestation);
       } else {
@@ -376,6 +369,17 @@ public class SessionUtil {
       }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
+  }
+
+  private static WorkloadIdentityAttestation getWorkloadIdentityAttestation(SFLoginInput loginInput)
+      throws SFException {
+    WorkloadIdentityAttestationProvider attestationProvider =
+        new WorkloadIdentityAttestationProvider(
+            new AwsIdentityAttestationCreator(new AwsAttestationService()),
+            new GcpIdentityAttestationCreator(loginInput),
+            new AzureIdentityAttestationCreator(),
+            new OidcIdentityAttestationCreator(loginInput.getToken()));
+    return attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
   }
 
   static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {

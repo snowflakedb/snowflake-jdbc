@@ -18,7 +18,7 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldReturnNullWhenNoCredentialsFound() {
-    AWSAttestationService attestationServiceMock = Mockito.mock(AWSAttestationService.class);
+    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(null);
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
@@ -27,7 +27,7 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldReturnNullWhenNoRegion() {
-    AWSAttestationService attestationServiceMock = Mockito.mock(AWSAttestationService.class);
+    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials())
         .thenReturn(new BasicAWSCredentials("abc", "abc"));
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(null);
@@ -39,7 +39,7 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldReturnNullWhenNoCallerIdentity() {
-    AWSAttestationService attestationServiceMock = Mockito.mock(AWSAttestationService.class);
+    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials())
         .thenReturn(new BasicAWSCredentials("abc", "abc"));
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("eu-west-1");
@@ -53,7 +53,7 @@ public class AwsIdentityAttestationCreatorTest {
   @Test
   public void shouldReturnProperAttestationWithSignedRequestCredential()
       throws JsonProcessingException {
-    AWSAttestationService attestationServiceSpy = Mockito.spy(AWSAttestationService.class);
+    AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
     Mockito.doReturn(new BasicAWSCredentials("abc", "abc"))
         .when(attestationServiceSpy)
         .getAWSCredentials();

@@ -1,9 +1,7 @@
 package net.snowflake.client.core.auth.wif;
 
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Objects;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -45,37 +43,21 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
       return null;
     }
     // if the token has been returned, we can assume that we're on GCP environment
-    Map<String, Object> claims = extractClaims(token);
+    WorkloadIdentityUtil.JwtClaims claims = WorkloadIdentityUtil.extractAndVerifyClaims(token);
     if (claims == null) {
-      logger.error("Failed to parse JWT and extract claims");
+      logger.error("Could not extract and verify claims from token");
       return null;
     }
-    String issuer = (String) claims.get("iss");
-    if (issuer == null) {
-      logger.error("Missing issuer claim in GCP token");
-      return null;
-    }
-    String subject = (String) claims.get("sub");
-    if (subject == null) {
-      logger.error("Missing sub claim in GCP token");
-      return null;
-    }
-    if (!issuer.equals(EXPECTED_GCP_TOKEN_ISSUER)) {
-      logger.error("Unexpected GCP token issuer:" + issuer);
-      return null;
-    }
-    return new WorkloadIdentityAttestation(
-        WorkloadIdentityProviderType.GCP, token, Collections.singletonMap("sub", subject));
-  }
 
-  private Map<String, Object> extractClaims(String token) {
-    try {
-      JWT jwt = JWTParser.parse(token);
-      return jwt.getJWTClaimsSet().getClaims();
-    } catch (Exception e) {
-      logger.debug("Unable to extract JWT claims from token", e);
+    if (!Objects.requireNonNull(claims).getIssuer().equals(EXPECTED_GCP_TOKEN_ISSUER)) {
+      logger.error("Unexpected token issuer:" + claims.getIssuer());
       return null;
     }
+
+    return new WorkloadIdentityAttestation(
+        WorkloadIdentityProviderType.GCP,
+        token,
+        Collections.singletonMap("sub", claims.getSubject()));
   }
 
   private String fetchTokenFromMetadataService() {

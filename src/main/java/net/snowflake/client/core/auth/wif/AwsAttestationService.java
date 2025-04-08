@@ -14,7 +14,7 @@ import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
 @SnowflakeJdbcInternalApi
-public class AWSAttestationService {
+public class AwsAttestationService {
 
   private static final String SECURE_TOKEN_SERVICE_NAME = "sts";
   private static boolean regionInitialized = false;
@@ -22,7 +22,7 @@ public class AWSAttestationService {
 
   private final AWS4Signer aws4Signer;
 
-  public AWSAttestationService() {
+  public AwsAttestationService() {
     aws4Signer = new AWS4Signer();
     aws4Signer.setServiceName(SECURE_TOKEN_SERVICE_NAME);
   }

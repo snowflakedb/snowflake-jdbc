@@ -1,8 +1,6 @@
 package net.snowflake.client.core.auth.wif;
 
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -12,8 +10,24 @@ public class OidcIdentityAttestationCreator implements WorkloadIdentityAttestati
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(OidcIdentityAttestationCreator.class);
 
+  private final String token;
+
+  public OidcIdentityAttestationCreator(String token) {
+    this.token = token;
+  }
+
   @Override
-  public WorkloadIdentityAttestation createAttestation() throws SFException {
-    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "OIDC Workload Identity not supported");
+  public WorkloadIdentityAttestation createAttestation() {
+    if (token == null) {
+      logger.debug("No OIDC token was specified");
+      return null;
+    }
+    WorkloadIdentityUtil.JwtClaims claims = WorkloadIdentityUtil.extractAndVerifyClaims(token);
+    if (claims == null) {
+      logger.error("Could not extract and verify claims from token");
+      return null;
+    }
+    return new WorkloadIdentityAttestation(
+        WorkloadIdentityProviderType.OIDC, token, claims.toMap());
   }
 }
