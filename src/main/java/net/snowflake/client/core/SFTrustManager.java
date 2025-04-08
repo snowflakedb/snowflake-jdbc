@@ -166,7 +166,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** Default OCSP Cache server host name prefix */
   private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
   /** Default OCSP Cache server host name */
-  private static final String DEFAULT_OCSP_CACHE_HOST = DEFAULT_OCSP_CACHE_HOST_PREFIX + "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -329,7 +328,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
   }
 
-  private static void setOCSPResponseCacheServerURL(String topLevelDomain) {
+  static void setOCSPResponseCacheServerURL(String serverURL) {
     String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -345,8 +344,16 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           true);
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
-      SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
-          String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
+      String topLevelDomain = "com";
+      try {
+        URL url = new URL(serverURL);
+        topLevelDomain = url.getHost().substring(url.getHost().lastIndexOf(".") + 1);
+        SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
+            String.format(
+                "%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
+      } catch (Exception e) {
+        logger.debug("Exception while setting top level domain (for OCSP)", e);
+      }
     }
     logger.debug("Set OCSP response cache server to: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
   }
@@ -772,8 +779,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    String topLevelDomain = peerHost.substring(peerHost.lastIndexOf(".") + 1);
-    setOCSPResponseCacheServerURL(topLevelDomain);
     boolean isCached = isCached(pairIssuerSubjectList);
     if (useOCSPResponseCacheServer() && !isCached) {
       if (!ocspCacheServer.new_endpoint_enabled) {
@@ -1528,17 +1533,19 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       String ocspCacheServerUrl;
       if (host.toLowerCase().contains(".global.snowflakecomputing.")) {
         ocspCacheServerUrl =
-            String.format("https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
+            java.lang.String.format(
+                "https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
       } else if (host.toLowerCase().contains(".snowflakecomputing.")) {
         ocspCacheServerUrl =
-            String.format("https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
+            java.lang.String.format(
+                "https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
       } else {
         String topLevelDomain = host.substring(host.lastIndexOf(".") + 1);
         ocspCacheServerUrl =
-            String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
+            java.lang.String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
       }
-      SF_OCSP_RESPONSE_CACHE_SERVER = String.format("%s/%s", ocspCacheServerUrl, "fetch");
-      SF_OCSP_RESPONSE_RETRY_URL = String.format("%s/%s", ocspCacheServerUrl, "retry");
+      SF_OCSP_RESPONSE_CACHE_SERVER = java.lang.String.format("%s/%s", ocspCacheServerUrl, "fetch");
+      SF_OCSP_RESPONSE_RETRY_URL = java.lang.String.format("%s/%s", ocspCacheServerUrl, "retry");
     }
   }
 
@@ -1586,7 +1593,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
 
     public String toString() {
-      return String.format(
+      return java.lang.String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
           HexUtil.byteToHexString(nameHash),
           HexUtil.byteToHexString(keyHash),
@@ -1614,7 +1621,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         return messageDigest.digest(bytes);
       } catch (NoSuchAlgorithmException ex) {
         String errMsg =
-            String.format(
+            java.lang.String.format(
                 "Failed to instantiate the algorithm: %s. err=%s",
                 ALGORITHM_SHA1_NAME, ex.getMessage());
         logger.error(errMsg, false);
