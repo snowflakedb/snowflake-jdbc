@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.TimeMeasurement;
@@ -106,7 +107,7 @@ public class ExecTimeTelemetryData {
   }
 
   public void addRetryLocation(String location) {
-    if (Strings.isNullOrEmpty(this.retryLocations)) {
+    if (isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
     } else {
       this.retryLocations = this.retryLocations.concat(", ").concat(location);

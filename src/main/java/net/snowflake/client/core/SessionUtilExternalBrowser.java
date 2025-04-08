@@ -1,8 +1,9 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -364,9 +365,9 @@ public class SessionUtilExternalBrowser {
     if (userAgent != null) {
       logger.debug("{}", userAgent);
     }
-    if (Strings.isNullOrEmpty(targetLine)
-        || Strings.isNullOrEmpty(requestedHeaderLine)
-        || Strings.isNullOrEmpty(this.origin)) {
+    if (isNullOrEmpty(targetLine)
+        || isNullOrEmpty(requestedHeaderLine)
+        || isNullOrEmpty(this.origin)) {
       return false;
     }
     returnToBrowserForOptions(requestedHeaderLine, socket);

@@ -1,14 +1,13 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -475,7 +474,7 @@ public class SessionUtil {
   }
 
   private static void readCachedCredentialsIfPossible(SFLoginInput loginInput) throws SFException {
-    if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+    if (!isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
         CredentialManager.fillCachedOAuthRefreshToken(loginInput);
@@ -550,7 +549,7 @@ public class SessionUtil {
         loginInput.getLoginTimeout(),
         loginInput.getAuthTimeout(),
         loginInput.getOCSPMode(),
-        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
+        isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -649,8 +648,7 @@ public class SessionUtil {
         }
       } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == AuthenticatorType.OAUTH
-          || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
@@ -662,6 +660,9 @@ public class SessionUtil {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
         }
 
+      } else if (authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
+        data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
@@ -1133,14 +1134,14 @@ public class SessionUtil {
   }
 
   private static void setServiceNameHeader(SFLoginInput loginInput, HttpPost postRequest) {
-    if (!Strings.isNullOrEmpty(loginInput.getServiceName())) {
+    if (!isNullOrEmpty(loginInput.getServiceName())) {
       // service name is used to route a request to appropriate cluster.
       postRequest.setHeader(SF_HEADER_SERVICE_NAME, loginInput.getServiceName());
     }
   }
 
   private static String nullStringAsEmptyString(String value) {
-    if (Strings.isNullOrEmpty(value) || "null".equals(value)) {
+    if (isNullOrEmpty(value) || "null".equals(value)) {
       return "";
     }
     return value;
@@ -2064,7 +2065,7 @@ public class SessionUtil {
   private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
     String userName =
-        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+        isNullOrEmpty(loginInput.getOKTAUserName())
             ? loginInput.getUserName()
             : loginInput.getOKTAUserName();
     try {

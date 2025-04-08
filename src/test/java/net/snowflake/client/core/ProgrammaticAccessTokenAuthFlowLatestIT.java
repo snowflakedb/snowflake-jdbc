@@ -21,18 +21,9 @@ public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
   @Test
   public void successfulFlowScenarioPatAsToken() throws SFException, SnowflakeSQLException {
     importMappingFromResources(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
-    SFLoginInput loginInputWithPatAsToken = createLoginInputStub("MOCK_TOKEN", null);
+    SFLoginInput loginInputWithPatAsToken = createLoginInputStub();
     SFLoginOutput loginOutput =
         SessionUtil.newSession(loginInputWithPatAsToken, new HashMap<>(), "INFO");
-    assertSuccessfulLoginOutput(loginOutput);
-  }
-
-  @Test
-  public void successfulFlowScenarioPatAsPassword() throws SFException, SnowflakeSQLException {
-    importMappingFromResources(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
-    SFLoginInput loginInputWithPatAsPassword = createLoginInputStub(null, "MOCK_TOKEN");
-    SFLoginOutput loginOutput =
-        SessionUtil.newSession(loginInputWithPatAsPassword, new HashMap<>(), "INFO");
     assertSuccessfulLoginOutput(loginOutput);
   }
 
@@ -42,9 +33,7 @@ public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
     SnowflakeSQLException e =
         Assertions.assertThrows(
             SnowflakeSQLException.class,
-            () ->
-                SessionUtil.newSession(
-                    createLoginInputStub("MOCK_TOKEN", null), new HashMap<>(), "INFO"));
+            () -> SessionUtil.newSession(createLoginInputStub(), new HashMap<>(), "INFO"));
     Assertions.assertEquals("Programmatic access token is invalid.", e.getMessage());
   }
 
@@ -63,7 +52,7 @@ public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
     Assertions.assertEquals(4, loginOutput.getCommonParams().get("CLIENT_PREFETCH_THREADS"));
   }
 
-  private SFLoginInput createLoginInputStub(String token, String password) {
+  private SFLoginInput createLoginInputStub() {
     SFLoginInput input = new SFLoginInput();
     input.setAuthenticator(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN.name());
     input.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
@@ -71,8 +60,7 @@ public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
     input.setAccountName("MOCK_ACCOUNT_NAME");
     input.setAppId("MOCK_APP_ID");
     input.setAppVersion("MOCK_APP_VERSION");
-    input.setToken(token);
-    input.setPassword(password);
+    input.setToken("MOCK_TOKEN");
     input.setOCSPMode(OCSPMode.FAIL_OPEN);
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
     input.setLoginTimeout(1000);

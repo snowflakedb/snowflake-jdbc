@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -238,7 +239,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setPrivateKeyFile(String location, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
-    if (!Strings.isNullOrEmpty(password)) {
+    if (!isNullOrEmpty(password)) {
       this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }
@@ -246,7 +247,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setPrivateKeyBase64(String privateKeyBase64, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey(), privateKeyBase64);
-    if (!Strings.isNullOrEmpty(password)) {
+    if (!isNullOrEmpty(password)) {
       this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }

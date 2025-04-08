@@ -1,9 +1,9 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -593,8 +593,8 @@ public abstract class SFBaseSession {
             userAgentSuffix,
             gzipDisabled);
         // There are 2 possible parameters for non proxy hosts that can be combined into 1
-        String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
-        if (!Strings.isNullOrEmpty(noProxy)) {
+        String combinedNonProxyHosts = isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
+        if (!isNullOrEmpty(noProxy)) {
           combinedNonProxyHosts += combinedNonProxyHosts.length() == 0 ? "" : "|";
           combinedNonProxyHosts += noProxy;
         }
@@ -602,18 +602,18 @@ public abstract class SFBaseSession {
         // It is possible that a user can have both http and https proxies specified in the JVM
         // parameters. The default protocol is http.
         String proxyProtocol = "http";
-        if (!Strings.isNullOrEmpty(httpProxyProtocol)) {
+        if (!isNullOrEmpty(httpProxyProtocol)) {
           proxyProtocol = httpProxyProtocol;
-        } else if (!Strings.isNullOrEmpty(httpsProxyHost)
-            && !Strings.isNullOrEmpty(httpsProxyPort)
-            && Strings.isNullOrEmpty(httpProxyHost)
-            && Strings.isNullOrEmpty(httpProxyPort)) {
+        } else if (!isNullOrEmpty(httpsProxyHost)
+            && !isNullOrEmpty(httpsProxyPort)
+            && isNullOrEmpty(httpProxyHost)
+            && isNullOrEmpty(httpProxyPort)) {
           proxyProtocol = "https";
         }
 
         if (proxyProtocol.equals("https")
-            && !Strings.isNullOrEmpty(httpsProxyHost)
-            && !Strings.isNullOrEmpty(httpsProxyPort)) {
+            && !isNullOrEmpty(httpsProxyHost)
+            && !isNullOrEmpty(httpsProxyPort)) {
           logger.debug("Using https proxy configuration from JVM parameters");
           int proxyPort;
           try {
@@ -635,8 +635,8 @@ public abstract class SFBaseSession {
                   gzipDisabled);
           logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
-            && !Strings.isNullOrEmpty(httpProxyHost)
-            && !Strings.isNullOrEmpty(httpProxyPort)) {
+            && !isNullOrEmpty(httpProxyHost)
+            && !isNullOrEmpty(httpProxyPort)) {
           logger.debug("Using http proxy configuration from JVM parameters");
           int proxyPort;
           try {
@@ -703,10 +703,10 @@ public abstract class SFBaseSession {
   public void unsetInvalidProxyHostAndPort() {
     // If proxyHost and proxyPort are used without http or https unset them, so they are not used
     // later by the ProxySelector.
-    if (!Strings.isNullOrEmpty(systemGetProperty("proxyHost"))) {
+    if (!isNullOrEmpty(systemGetProperty("proxyHost"))) {
       System.clearProperty("proxyHost");
     }
-    if (!Strings.isNullOrEmpty(systemGetProperty("proxyPort"))) {
+    if (!isNullOrEmpty(systemGetProperty("proxyPort"))) {
       System.clearProperty("proxyPort");
     }
   }
@@ -1145,7 +1145,7 @@ public abstract class SFBaseSession {
   }
 
   public void setDatabase(String database) {
-    if (!Strings.isNullOrEmpty(database)) {
+    if (!isNullOrEmpty(database)) {
       this.database = database;
     }
   }
@@ -1155,7 +1155,7 @@ public abstract class SFBaseSession {
   }
 
   public void setSchema(String schema) {
-    if (!Strings.isNullOrEmpty(schema)) {
+    if (!isNullOrEmpty(schema)) {
       this.schema = schema;
     }
   }
@@ -1173,7 +1173,7 @@ public abstract class SFBaseSession {
   }
 
   public void setWarehouse(String warehouse) {
-    if (!Strings.isNullOrEmpty(warehouse)) {
+    if (!isNullOrEmpty(warehouse)) {
       this.warehouse = warehouse;
     }
   }

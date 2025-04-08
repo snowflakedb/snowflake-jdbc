@@ -1,8 +1,9 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.api.client.util.Strings;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
@@ -131,10 +132,10 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     oobValue.put("type", TelemetryField.SQL_EXCEPTION.toString());
     oobValue.put("DriverType", LoginInfoDTO.SF_JDBC_APP_ID);
     oobValue.put("DriverVersion", SnowflakeDriver.implementVersion);
-    if (!Strings.isNullOrEmpty(queryId)) {
+    if (!isNullOrEmpty(queryId)) {
       oobValue.put("QueryID", queryId);
     }
-    if (!Strings.isNullOrEmpty(SQLState)) {
+    if (!isNullOrEmpty(SQLState)) {
       oobValue.put("SQLState", SQLState);
     }
     if (vendorCode != NO_VENDOR_CODE) {
@@ -156,10 +157,10 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     ibValue.put("type", TelemetryField.SQL_EXCEPTION.toString());
     ibValue.put("DriverType", LoginInfoDTO.SF_JDBC_APP_ID);
     ibValue.put("DriverVersion", SnowflakeDriver.implementVersion);
-    if (!Strings.isNullOrEmpty(queryId)) {
+    if (!isNullOrEmpty(queryId)) {
       ibValue.put("QueryID", queryId);
     }
-    if (!Strings.isNullOrEmpty(SQLState)) {
+    if (!isNullOrEmpty(SQLState)) {
       ibValue.put("SQLState", SQLState);
     }
     if (vendorCode != NO_VENDOR_CODE) {
