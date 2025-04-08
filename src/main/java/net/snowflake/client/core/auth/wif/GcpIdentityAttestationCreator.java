@@ -1,19 +1,101 @@
 package net.snowflake.client.core.auth.wif;
 
-import net.snowflake.client.core.SFException;
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTParser;
+import java.util.Collections;
+import java.util.Map;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.client.methods.HttpGet;
 
 @SnowflakeJdbcInternalApi
 public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
 
+  private static final String METADATA_FLAVOR_HEADER_NAME = "Metadata-Flavor";
+  private static final String METADATA_FLAVOR = "Google";
+  private static final String EXPECTED_GCP_TOKEN_ISSUER = "https://accounts.google.com";
+  private static final String DEFAULT_GCP_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
+
+  private final String gcpMetadataServiceBaseUrl;
+
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(GcpIdentityAttestationCreator.class);
 
+  private final SFLoginInput loginInput;
+
+  public GcpIdentityAttestationCreator(SFLoginInput loginInput) {
+    this.loginInput = loginInput;
+    gcpMetadataServiceBaseUrl = DEFAULT_GCP_METADATA_SERVICE_BASE_URL;
+  }
+
+  /** Only for testing purpose */
+  GcpIdentityAttestationCreator(SFLoginInput loginInput, String gcpBaseUrl) {
+    this.loginInput = loginInput;
+    this.gcpMetadataServiceBaseUrl = gcpBaseUrl;
+  }
+
   @Override
-  public WorkloadIdentityAttestation createAttestation() throws SFException {
-    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "GCP Workload Identity not supported");
+  public WorkloadIdentityAttestation createAttestation() {
+    String token = fetchTokenFromMetadataService();
+    if (token == null) {
+      logger.debug("No GCP token was found.");
+      return null;
+    }
+    // if the token has been returned, we can assume that we're on GCP environment
+    Map<String, Object> claims = extractClaims(token);
+    if (claims == null) {
+      logger.error("Failed to parse JWT and extract claims");
+      return null;
+    }
+    String issuer = (String) claims.get("iss");
+    if (issuer == null) {
+      logger.error("Missing issuer claim in GCP token");
+      return null;
+    }
+    String subject = (String) claims.get("sub");
+    if (subject == null) {
+      logger.error("Missing sub claim in GCP token");
+      return null;
+    }
+    if (!issuer.equals(EXPECTED_GCP_TOKEN_ISSUER)) {
+      logger.error("Unexpected GCP token issuer:" + issuer);
+      return null;
+    }
+    return new WorkloadIdentityAttestation(
+        WorkloadIdentityProviderType.GCP, token, Collections.singletonMap("sub", subject));
+  }
+
+  private Map<String, Object> extractClaims(String token) {
+    try {
+      JWT jwt = JWTParser.parse(token);
+      return jwt.getJWTClaimsSet().getClaims();
+    } catch (Exception e) {
+      logger.debug("Unable to extract JWT claims from token", e);
+      return null;
+    }
+  }
+
+  private String fetchTokenFromMetadataService() {
+    String uri =
+        gcpMetadataServiceBaseUrl
+            + "/computeMetadata/v1/instance/service-accounts/default/identity?audience="
+            + WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE;
+    HttpGet tokenRequest = new HttpGet(uri);
+    tokenRequest.setHeader(METADATA_FLAVOR_HEADER_NAME, METADATA_FLAVOR);
+    try {
+      return HttpUtil.executeGeneralRequestOmitRequestGuid(
+          tokenRequest,
+          loginInput.getLoginTimeout(),
+          3, // 3s timeout
+          loginInput.getSocketTimeoutInMillis(),
+          0,
+          loginInput.getHttpClientSettingsKey());
+    } catch (Exception e) {
+      logger.debug("GCP metadata server request was not successful: " + e.getMessage());
+      return null;
+    }
   }
 }

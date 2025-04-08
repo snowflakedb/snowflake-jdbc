@@ -659,6 +659,32 @@ public class HttpUtil {
         null);
   }
 
+  @SnowflakeJdbcInternalApi
+  public static String executeGeneralRequestOmitRequestGuid(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      throws SnowflakeSQLException, IOException {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        0,
+        null,
+        false,
+        false,
+        false,
+        false,
+        getHttpClient(ocspAndProxyAndGzipKey),
+        new ExecTimeTelemetryData(),
+        null);
+  }
+
   /**
    * Executes an HTTP request for Snowflake.
    *
