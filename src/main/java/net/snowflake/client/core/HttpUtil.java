@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
@@ -8,7 +9,6 @@ import com.amazonaws.ClientConfiguration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
 import java.io.IOException;
@@ -403,8 +403,7 @@ public class HttpUtil {
                         key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
         httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-        if (!Strings.isNullOrEmpty(key.getProxyUser())
-            && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+        if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
           Credentials credentials =
               new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
@@ -992,7 +991,7 @@ public class HttpUtil {
 
   private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
     String errorResponse = EntityUtils.toString(response.getEntity());
-    if (!Strings.isNullOrEmpty(errorResponse)) {
+    if (!isNullOrEmpty(errorResponse)) {
       ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
       JsonNode rootNode = objectMapper.readTree(errorResponse);
       JsonNode errorNode = rootNode.get(ERROR_FIELD_NAME);

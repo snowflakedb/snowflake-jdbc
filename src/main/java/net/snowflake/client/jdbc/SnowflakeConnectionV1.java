@@ -2,8 +2,8 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -986,7 +986,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug(
         "Download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);
 
-    if (Strings.isNullOrEmpty(stageName)) {
+    if (isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(
           sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -994,7 +994,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           "stage name is null or empty");
     }
 
-    if (Strings.isNullOrEmpty(sourceFileName)) {
+    if (isNullOrEmpty(sourceFileName)) {
       throw new SnowflakeSQLLoggedException(
           sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
