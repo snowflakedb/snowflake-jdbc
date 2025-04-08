@@ -89,7 +89,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
       return HttpUtil.executeGeneralRequestOmitRequestGuid(
           tokenRequest,
           loginInput.getLoginTimeout(),
-          10, // 10s timeout
+          3, // 3s timeout
           loginInput.getSocketTimeoutInMillis(),
           0,
           loginInput.getHttpClientSettingsKey());
