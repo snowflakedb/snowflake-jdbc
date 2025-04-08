@@ -44,23 +44,24 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
       logger.debug("No GCP token was found.");
       return null;
     }
+    // if the token has been returned, we can assume that we're on GCP environment
     Map<String, Object> claims = extractClaims(token);
     if (claims == null) {
-      logger.debug("Failed to parse JWT and extract claims");
+      logger.error("Failed to parse JWT and extract claims");
       return null;
     }
     String issuer = (String) claims.get("iss");
     if (issuer == null) {
-      logger.debug("Missing issuer claim in GCP token");
+      logger.error("Missing issuer claim in GCP token");
       return null;
     }
     String subject = (String) claims.get("sub");
     if (subject == null) {
-      logger.debug("Missing sub claim in GCP token");
+      logger.error("Missing sub claim in GCP token");
       return null;
     }
     if (!issuer.equals(EXPECTED_GCP_TOKEN_ISSUER)) {
-      logger.debug("Unexpected GCP token issuer:" + issuer);
+      logger.error("Unexpected GCP token issuer:" + issuer);
       return null;
     }
     return new WorkloadIdentityAttestation(
@@ -85,10 +86,10 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
     HttpGet tokenRequest = new HttpGet(uri);
     tokenRequest.setHeader(METADATA_FLAVOR_HEADER_NAME, METADATA_FLAVOR);
     try {
-      return HttpUtil.executeGeneralRequest(
+      return HttpUtil.executeGeneralRequestOmitRequestGuid(
           tokenRequest,
           loginInput.getLoginTimeout(),
-          loginInput.getAuthTimeout(),
+          10, // 10s timeout
           loginInput.getSocketTimeoutInMillis(),
           0,
           loginInput.getHttpClientSettingsKey());
