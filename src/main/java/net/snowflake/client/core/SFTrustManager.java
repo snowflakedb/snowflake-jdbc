@@ -165,7 +165,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   /** Default OCSP Cache server host name prefix */
   private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
-  /** Default OCSP Cache server host name */
+  /** Default domain for OCSP cache host */
+  private static final String DEFAULT_OCSP_CACHE_HOST_DOMAIN = "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -344,16 +345,16 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           true);
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
-      String topLevelDomain = "com";
+      String topLevelDomain = DEFAULT_OCSP_CACHE_HOST_DOMAIN;
       try {
         URL url = new URL(serverURL);
-        topLevelDomain = url.getHost().substring(url.getHost().lastIndexOf(".") + 1);
-        SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
-            String.format(
-                "%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
+        int domainIndex = url.getHost().lastIndexOf(".") + 1;
+        topLevelDomain = url.getHost().substring(domainIndex);
       } catch (Exception e) {
         logger.debug("Exception while setting top level domain (for OCSP)", e);
       }
+      SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
+          String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
     }
     logger.debug("Set OCSP response cache server to: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
   }
@@ -1533,19 +1534,17 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       String ocspCacheServerUrl;
       if (host.toLowerCase().contains(".global.snowflakecomputing.")) {
         ocspCacheServerUrl =
-            java.lang.String.format(
-                "https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
+            String.format("https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
       } else if (host.toLowerCase().contains(".snowflakecomputing.")) {
         ocspCacheServerUrl =
-            java.lang.String.format(
-                "https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
+            String.format("https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
       } else {
         String topLevelDomain = host.substring(host.lastIndexOf(".") + 1);
         ocspCacheServerUrl =
-            java.lang.String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
+            String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
       }
-      SF_OCSP_RESPONSE_CACHE_SERVER = java.lang.String.format("%s/%s", ocspCacheServerUrl, "fetch");
-      SF_OCSP_RESPONSE_RETRY_URL = java.lang.String.format("%s/%s", ocspCacheServerUrl, "retry");
+      SF_OCSP_RESPONSE_CACHE_SERVER = String.format("%s/%s", ocspCacheServerUrl, "fetch");
+      SF_OCSP_RESPONSE_RETRY_URL = String.format("%s/%s", ocspCacheServerUrl, "retry");
     }
   }
 
@@ -1593,7 +1592,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
 
     public String toString() {
-      return java.lang.String.format(
+      return String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
           HexUtil.byteToHexString(nameHash),
           HexUtil.byteToHexString(keyHash),
@@ -1621,7 +1620,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         return messageDigest.digest(bytes);
       } catch (NoSuchAlgorithmException ex) {
         String errMsg =
-            java.lang.String.format(
+            String.format(
                 "Failed to instantiate the algorithm: %s. err=%s",
                 ALGORITHM_SHA1_NAME, ex.getMessage());
         logger.error(errMsg, false);
