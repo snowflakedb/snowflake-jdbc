@@ -89,8 +89,19 @@ public class BindUploader implements Closeable {
     cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     cal.clear();
 
-    logger.debug("calendar details: calendarTimeZone={}, timeInMillis={}, jvmTimeZone={}", cal.getTimeZone(), cal.getTimeInMillis(), TimeZone.getDefault());
-    logger.debug("session details: getFormatDateWithTimezone={}, getDefaultFormatDateWithTimezone={}, getGetDateUseNullTimezone={}, getUseSessionTimezone={}, getEnableReturnTimestampWithTimeZone={}, getArrayBindStageThreshold={}", session.getFormatDateWithTimezone(), session.getDefaultFormatDateWithTimezone(), session.getGetDateUseNullTimezone(), session.getUseSessionTimezone(), session.getEnableReturnTimestampWithTimeZone(), session.getArrayBindStageThreshold());
+    logger.debug(
+        "calendar details: calendarTimeZone={}, timeInMillis={}, jvmTimeZone={}",
+        cal.getTimeZone(),
+        cal.getTimeInMillis(),
+        TimeZone.getDefault());
+    logger.debug(
+        "session details: getFormatDateWithTimezone={}, getDefaultFormatDateWithTimezone={}, getGetDateUseNullTimezone={}, getUseSessionTimezone={}, getEnableReturnTimestampWithTimeZone={}, getArrayBindStageThreshold={}",
+        session.getFormatDateWithTimezone(),
+        session.getDefaultFormatDateWithTimezone(),
+        session.getGetDateUseNullTimezone(),
+        session.getUseSessionTimezone(),
+        session.getEnableReturnTimestampWithTimeZone(),
+        session.getArrayBindStageThreshold());
 
     this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
     this.timestampFormat.setCalendar(cal);
@@ -107,7 +118,8 @@ public class BindUploader implements Closeable {
     Long parsed = Long.parseLong(o);
     java.sql.Date date = new java.sql.Date(parsed);
     String formatted = dateFormat.format(date);
-    logger.debug("date before binding: timeInMillis={}, date={}, formatted={}", parsed, date, formatted);
+    logger.debug(
+        "date before binding: timeInMillis={}, date={}, formatted={}", parsed, date, formatted);
     return formatted;
   }
 

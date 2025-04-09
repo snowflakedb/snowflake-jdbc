@@ -5,17 +5,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.zone.ZoneRules;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.Properties;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.ResultUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +41,155 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
   TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
   Calendar tokyo = Calendar.getInstance(tokyoTz);
+
+  public static long[] removeLastN(long[] originalArray, int n) {
+    if (originalArray == null) {
+      return null; // Or throw IllegalArgumentException
+    }
+    if (n < 0) {
+      throw new IllegalArgumentException("Number of elements to remove cannot be negative.");
+    }
+
+    int originalLength = originalArray.length;
+
+    // Calculate the length of the new array
+    // If original length is less than or equal to n, the new array will be empty.
+    int newLength = Math.max(0, originalLength - n);
+
+    // Create a new array with the calculated length and copy elements
+    long[] newArray = Arrays.copyOf(originalArray, newLength);
+
+    return newArray;
+  }
+
+  @Test
+  public void testTimezone() throws NoSuchFieldException, IllegalAccessException {
+    TimeZone timeZone = TimeZone.getTimeZone("America/Chicago");
+    TimeZone.setDefault(timeZone);
+
+    // Bind uploader constructor
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    dateFormat.setCalendar(calendar);
+
+    Date date1 = generateDateWithCustomerCode(timeZone);
+
+    // SnowflakePreparedStatementV1 setDate
+    int offset = timeZone.getOffset(date1.getTime());
+    long msDiffJulianToGregorian = ResultUtil.msDiffJulianToGregorian(date1);
+    String value = String.valueOf(date1.getTime() + offset - msDiffJulianToGregorian);
+    Long parsed = Long.parseLong(value);
+    java.sql.Date date = new java.sql.Date(parsed);
+    String formattedWithDefaultTimeZone = dateFormat.format(date);
+
+    /// Overwrite transition field in time zone
+//    Class<?> timezoneClass = timeZone.getClass();
+//    Field transitionsField = timezoneClass.getDeclaredField("transitions");
+//    transitionsField.setAccessible(true);
+//    long[] transitions = (long[]) transitionsField.get(timeZone);
+//    long[] result = removeLastN(transitions, 361 - 253);
+//    transitionsField.set(timeZone, result);
+    /// End
+
+    Calendar calendar2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyy-MM-dd");
+    dateFormat2.setCalendar(calendar2);
+
+    Date date2 = generateDateWithCustomerCode(timeZone);
+
+    int offset2 = timeZone.getOffset(date2.getTime());
+    long msDiffJulianToGregorian2 = ResultUtil.msDiffJulianToGregorian(date2);
+    String value2 = String.valueOf(date2.getTime() + offset2 - msDiffJulianToGregorian2);
+    Long parsed2 = Long.parseLong(value2);
+    java.sql.Date date22 = new java.sql.Date(parsed2);
+    String formattedWithTruncatedTimeZone = dateFormat2.format(date22);
+
+    assertEquals(formattedWithDefaultTimeZone, formattedWithTruncatedTimeZone);
+  }
+
+  private static Date generateDateWithCustomerCode(TimeZone timeZone) {
+    Calendar cal = Calendar.getInstance(timeZone, Locale.US);
+    cal.clear();
+    cal.set(Calendar.ERA, GregorianCalendar.AD);
+    cal.set(Calendar.YEAR, 2016);
+    cal.set(Calendar.MONTH, 2 - 1);
+    cal.set(Calendar.DATE, 19);
+    Date date1 = new Date(cal.getTimeInMillis());
+    return date1;
+  }
+
+  @Test
+  public void testBinding() throws SQLException, NoSuchFieldException, IllegalAccessException {
+    TimeZone timeZone = TimeZone.getTimeZone("America/Chicago");
+    TimeZone.setDefault(timeZone);
+    Locale.setDefault(Locale.US);
+    Properties props = new Properties();
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("create or replace table stageinsertdates(ind int, d1 date )");
+        statement.execute("create or replace table regularinsertdates(ind int, d1 date)");
+        //        statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=false");
+        statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+        //        statement.execute("alter session set JDBC_QUERY_RESULT_FORMAT=false");
+
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.US);
+        // Then the calendar is set to a year, month, date value from a “DateDataWrapper ddw” which
+        // is just a class that holds the int year, month (1-based) and day values sent from the
+        // source:
+        cal.clear();
+        int year = 2016;
+        if (year <= 0) {
+          cal.set(Calendar.ERA, GregorianCalendar.BC);
+        } else {
+          cal.set(Calendar.ERA, GregorianCalendar.AD);
+        }
+        cal.set(Calendar.YEAR, Math.abs(year));
+        cal.set(Calendar.MONTH, 2 - 1);
+        cal.set(Calendar.DATE, 19);
+        Date date1 = new java.sql.Date(cal.getTimeInMillis());
+        System.out.println(cal.getTimeInMillis());
+        System.out.println(date1);
+
+        // insert using regular binging
+        executePrepStmtForNumRowsDates(connection, "regularinsertdates", date1, 3);
+
+        // insert using stage binding
+        //        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        executePrepStmtForNumRowsDates(connection, "stageinsertdates", date1, 65280 + 1);
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates");
+            ResultSet rs2 = statement.executeQuery("select * from regularinsertdates")) {
+          for (int i = 0; i < 3; i++) {
+            assertTrue(rs1.next());
+            assertTrue(rs2.next());
+
+            assertEquals(rs1.getInt(1), rs2.getInt(1));
+
+            assertEquals("X", rs1.getString(2));
+            assertEquals("X", rs1.getDate(2));
+            assertEquals("X", rs2.getString(2));
+            assertEquals("X", rs2.getDate(2));
+          }
+        }
+      } finally {
+        TimeZone.setDefault(origTz);
+      }
+    }
+  }
+
+  private void executePrepStmtForNumRowsDates(
+      Connection connection, String tableName, Date date1, int numRows) throws SQLException {
+    try (PreparedStatement prepStatement =
+        connection.prepareStatement("insert into " + tableName + " values (?,?)")) {
+      for (int i = 0; i < numRows; i++) {
+        prepStatement.setInt(1, 1);
+        prepStatement.setDate(2, date1);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+      prepStatement.getConnection().commit();
+    }
+  }
 
   @Test
   public void testBindTimestampTZ() throws SQLException {
