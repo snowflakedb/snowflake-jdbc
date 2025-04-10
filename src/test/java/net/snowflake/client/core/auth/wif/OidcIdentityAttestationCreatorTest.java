@@ -34,15 +34,15 @@ class OidcIdentityAttestationCreatorTest {
 
   /*
    * {
-   *     "iss": "https://accounts.google.com",
+   *     "iss": "https://oidc.eks.us-east-2.amazonaws.com/id/3B869BC5D12CEB5515358621D8085D58",
    *     "iat": 1743692017,
    *     "exp": 1775228014,
    *     "aud": "www.example.com",
-   *     "sub": "some-subject"
+   *     "sub": "system:serviceaccount:poc-namespace:oidc-sa"
    * }
    */
   private static final String VALID_TOKEN =
-      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJpYXQiOjE3NDM2OTIwMTcsImV4cCI6MTc3NTIyODAxNCwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoic29tZS1zdWJqZWN0In0.k7018udXQjw-sgVY8sTLTnNrnJoGwVpjE6HozZN-h0w";
+      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL29pZGMuZWtzLnVzLWVhc3QtMi5hbWF6b25hd3MuY29tL2lkLzNCODY5QkM1RDEyQ0VCNTUxNTM1ODYyMUQ4MDg1RDU4IiwiaWF0IjoxNzQ0Mjg3ODc4LCJleHAiOjE3NzU4MjM4NzgsImF1ZCI6Ind3dy5leGFtcGxlLmNvbSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpwb2MtbmFtZXNwYWNlOm9pZGMtc2EifQ.a8H6KRIF1XmM8lkqL6kR8ccInr7wAzQrbKd3ZHFgiEg";
 
   @Test
   public void shouldReturnProperAttestation() {
@@ -52,27 +52,30 @@ class OidcIdentityAttestationCreatorTest {
 
     Assertions.assertEquals(WorkloadIdentityProviderType.OIDC, attestation.getProvider());
     Assertions.assertEquals(VALID_TOKEN, attestation.getCredential());
-    assertEquals("some-subject", attestation.getUserIdentifiedComponents().get("sub"));
     assertEquals(
-        "https://accounts.google.com", attestation.getUserIdentifiedComponents().get("iss"));
+        "https://oidc.eks.us-east-2.amazonaws.com/id/3B869BC5D12CEB5515358621D8085D58",
+        attestation.getUserIdentifierComponents().get("iss"));
+    assertEquals(
+        "system:serviceaccount:poc-namespace:oidc-sa",
+        attestation.getUserIdentifierComponents().get("sub"));
   }
 
   @Test
   public void missingIssuerScenario() {
-    creatAttestationAndAssertNull(MISSING_ISSUER_TOKEN);
+    createAttestationAndAssertNull(MISSING_ISSUER_TOKEN);
   }
 
   @Test
   public void missingSubScenario() {
-    creatAttestationAndAssertNull(MISSING_SUB_TOKEN);
+    createAttestationAndAssertNull(MISSING_SUB_TOKEN);
   }
 
   @Test
   public void unparsableTokenScenario() {
-    creatAttestationAndAssertNull(UNPARSABLE_TOKEN);
+    createAttestationAndAssertNull(UNPARSABLE_TOKEN);
   }
 
-  private void creatAttestationAndAssertNull(String token) {
+  private void createAttestationAndAssertNull(String token) {
     OidcIdentityAttestationCreator attestationCreator = new OidcIdentityAttestationCreator(token);
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
     assertNull(attestation);

@@ -344,7 +344,7 @@ public class SessionUtil {
         loginInput.setWorkloadIdentityAttestation(attestation);
       } else {
         throw new SFException(
-            ErrorCode.WORKFLOW_IDENTITY_FLOW_ERROR,
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
             "Unable to obtain workload identity attestation. Make sure that correct workload identity provider has been set and that Snowflake-JDBC driver runs on supported environment.");
       }
     }

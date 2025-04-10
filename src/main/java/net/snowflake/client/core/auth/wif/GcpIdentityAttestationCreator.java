@@ -1,7 +1,6 @@
 package net.snowflake.client.core.auth.wif;
 
 import java.util.Collections;
-import java.util.Objects;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -43,14 +42,17 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
       return null;
     }
     // if the token has been returned, we can assume that we're on GCP environment
-    WorkloadIdentityUtil.JwtClaims claims = WorkloadIdentityUtil.extractAndVerifyClaims(token);
+    WorkloadIdentityUtil.SubjectAndIssuer claims = WorkloadIdentityUtil.extractClaims(token);
     if (claims == null) {
-      logger.error("Could not extract and verify claims from token");
+      logger.error("Could not extract claims from token");
       return null;
     }
 
-    if (!Objects.requireNonNull(claims).getIssuer().equals(EXPECTED_GCP_TOKEN_ISSUER)) {
-      logger.error("Unexpected token issuer:" + claims.getIssuer());
+    if (!EXPECTED_GCP_TOKEN_ISSUER.equalsIgnoreCase(claims.getIssuer())) {
+      logger.error(
+          "Unexpected token issuer: {}, should be {}",
+          claims.getIssuer(),
+          EXPECTED_GCP_TOKEN_ISSUER);
       return null;
     }
 

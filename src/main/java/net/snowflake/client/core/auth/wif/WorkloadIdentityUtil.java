@@ -14,8 +14,8 @@ class WorkloadIdentityUtil {
   static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
   static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
 
-  static JwtClaims extractAndVerifyClaims(String token) {
-    Map<String, Object> claims = extractClaims(token);
+  static SubjectAndIssuer extractClaims(String token) {
+    Map<String, Object> claims = extractClaimsMap(token);
     if (claims == null) {
       logger.error("Failed to parse JWT and extract claims");
       return null;
@@ -30,10 +30,10 @@ class WorkloadIdentityUtil {
       logger.error("Missing sub claim in JWT token");
       return null;
     }
-    return new JwtClaims(issuer, subject);
+    return new SubjectAndIssuer(subject, issuer);
   }
 
-  private static Map<String, Object> extractClaims(String token) {
+  private static Map<String, Object> extractClaimsMap(String token) {
     try {
       JWT jwt = JWTParser.parse(token);
       return jwt.getJWTClaimsSet().getClaims();
@@ -43,11 +43,11 @@ class WorkloadIdentityUtil {
     }
   }
 
-  static class JwtClaims {
-    private final String issuer;
+  static class SubjectAndIssuer {
     private final String subject;
+    private final String issuer;
 
-    JwtClaims(String issuer, String subject) {
+    SubjectAndIssuer(String subject, String issuer) {
       this.issuer = issuer;
       this.subject = subject;
     }
