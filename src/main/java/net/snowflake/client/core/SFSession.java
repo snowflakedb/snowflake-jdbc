@@ -109,7 +109,7 @@ public class SFSession extends SFBaseSession {
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
-  private int authTimeout = 0;
+  @Deprecated private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
   private Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
   private Duration httpClientSocketTimeout = HttpUtil.getSocketTimeout();
@@ -229,7 +229,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 get,
                 loginTimeout,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 maxHttpRetries,
                 getHttpClientKey());
@@ -1124,7 +1124,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 postRequest,
                 SF_HEARTBEAT_TIMEOUT,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 0,
                 getHttpClientKey());
