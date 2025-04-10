@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.core.SFTrustManager.setOCSPResponseCacheServerURL;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -1927,6 +1928,7 @@ public class SessionUtil {
    * @throws IOException If exception encountered
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
+    setOCSPResponseCacheServerURL(serverUrl);
     if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
