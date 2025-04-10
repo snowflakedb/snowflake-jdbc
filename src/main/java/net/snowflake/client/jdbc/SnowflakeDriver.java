@@ -48,6 +48,7 @@ public class SnowflakeDriver implements Driver {
       ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version");
 
   static {
+    DateDiagnosticTool.diagnose();
     try {
       DriverManager.registerDriver(INSTANCE = new SnowflakeDriver());
     } catch (SQLException ex) {
