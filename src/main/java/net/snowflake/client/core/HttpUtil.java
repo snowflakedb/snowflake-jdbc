@@ -1207,6 +1207,7 @@ public class HttpUtil {
           httpExecutingContext.isRetryHTTP403(),
           httpExecutingContext.isNoRetry());
     }
+    System.out.println("REQUEST: " + httpExecutingContext.getRequestInfoScrubbed());
 
     if (httpExecutingContext.isLoginRequest()) {
       logger.debug(
