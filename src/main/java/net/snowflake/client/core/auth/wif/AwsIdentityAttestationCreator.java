@@ -19,9 +19,9 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
 
-  private final AWSAttestationService attestationService;
+  private final AwsAttestationService attestationService;
 
-  public AwsIdentityAttestationCreator(AWSAttestationService attestationService) {
+  public AwsIdentityAttestationCreator(AwsAttestationService attestationService) {
     this.attestationService = attestationService;
   }
 

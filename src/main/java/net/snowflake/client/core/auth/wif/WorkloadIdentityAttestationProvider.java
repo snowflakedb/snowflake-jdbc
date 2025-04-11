@@ -1,6 +1,7 @@
 package net.snowflake.client.core.auth.wif;
 
 import com.google.common.base.Strings;
+import java.util.function.Supplier;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -49,30 +50,52 @@ public class WorkloadIdentityAttestationProvider {
       return oidcAttestationCreator;
     } else {
       throw new SFException(
-          ErrorCode.WORKFLOW_IDENTITY_FLOW_ERROR,
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
           "Unknown Workload Identity provider specified: " + identityProvider);
     }
   }
 
   private WorkloadIdentityAttestation createAutodetectAttestation() throws SFException {
-    WorkloadIdentityAttestation awsAttestation = awsAttestationCreator.createAttestation();
-    if (awsAttestation != null) {
-      return awsAttestation;
-    }
-    WorkloadIdentityAttestation gcpAttestation = gcpAttestationCreator.createAttestation();
-    if (gcpAttestation != null) {
-      return gcpAttestation;
-    }
-    WorkloadIdentityAttestation azureAttestation = azureAttestationCreator.createAttestation();
-    if (azureAttestation != null) {
-      return azureAttestation;
-    }
-    WorkloadIdentityAttestation oidcAttestation = oidcAttestationCreator.createAttestation();
+    WorkloadIdentityAttestation oidcAttestation =
+        getAttestationForAutodetect(
+            oidcAttestationCreator::createAttestation, WorkloadIdentityProviderType.OIDC);
     if (oidcAttestation != null) {
       return oidcAttestation;
     }
+    WorkloadIdentityAttestation awsAttestation =
+        getAttestationForAutodetect(
+            awsAttestationCreator::createAttestation, WorkloadIdentityProviderType.AWS);
+    if (awsAttestation != null) {
+      return awsAttestation;
+    }
+    WorkloadIdentityAttestation gcpAttestation =
+        getAttestationForAutodetect(
+            gcpAttestationCreator::createAttestation, WorkloadIdentityProviderType.GCP);
+    if (gcpAttestation != null) {
+      return gcpAttestation;
+    }
+    WorkloadIdentityAttestation azureAttestation =
+        getAttestationForAutodetect(
+            azureAttestationCreator::createAttestation, WorkloadIdentityProviderType.AZURE);
+    if (azureAttestation != null) {
+      return azureAttestation;
+    }
     throw new SFException(
-        ErrorCode.WORKFLOW_IDENTITY_FLOW_ERROR,
+        ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
         "Unable to autodetect Workload Identity. None of supported Workload Identity environments has been identified.");
+  }
+
+  /**
+   * Method needed in case of autodetect feature. Drivers has to keep on trying next WIF providers,
+   * even if exceptions are thrown
+   */
+  private WorkloadIdentityAttestation getAttestationForAutodetect(
+      Supplier<WorkloadIdentityAttestation> supplier, WorkloadIdentityProviderType providerType) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      logger.debug("Unable to create identity attestation for {}, error: {}", providerType, e);
+      return null;
+    }
   }
 }
