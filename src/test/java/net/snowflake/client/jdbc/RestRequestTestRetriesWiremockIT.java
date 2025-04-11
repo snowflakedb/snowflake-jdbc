@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static net.snowflake.client.core.HttpUtil.JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,25 +28,31 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   @BeforeEach
   public void setUp() throws IOException {
+    configureWiremock();
     resetWiremock();
   }
 
   @Test
-  public void testHttpClientFailedAfterDefaultThreeRetries() throws IOException {
-    importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
+  public void testRetryWhen503Code() throws IOException {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
+    Properties props = new Properties();
+    props.setProperty("maxHttpRetries", "3");
     //    WireMock.setScenarioState("malformed_response_retry", "MALFORMED_RETRY_3");
     SnowflakeSQLException thrown =
-        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest());
-    assertTrue(thrown.getMessage().contains("Bad chunk header"));
+            assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     WireMock.verify(4, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
+
+    assertTrue(thrown.getMessage().contains("JDBC driver encountered communication error. Message: HTTP status=503."));
   }
 
   @Test
   public void testHttpClientFailedAfterFiveRetries() throws IOException {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
-    System.setProperty(JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY, "5");
+    Properties props = new Properties();
+    props.setProperty("maxHttpRetries", "5");
+
     SnowflakeSQLException thrown =
-        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest());
+        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     assertTrue(thrown.getMessage().contains("Bad chunk header"));
     WireMock.verify(6, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
   }
@@ -56,14 +61,15 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   public void testHttpClientSuccessAfterFiveRetries() throws IOException {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
-      System.setProperty(JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY, "5");
+      Properties props = new Properties();
+      props.setProperty("maxHttpRetries", "5");
       WireMock.setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
-      executeServerRequest();
+      executeServerRequest(props);
       WireMock.verify(6, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
     } catch (SQLException e) {
       throw new RuntimeException(e);
     } finally {
-      System.clearProperty(JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY);
+      System.clearProperty("maxHttpRetries");
     }
   }
 
@@ -72,16 +78,17 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
       WireMock.setScenarioState("malformed_response_retry", "CORRECT");
-      executeServerRequest();
+      executeServerRequest(null);
       WireMock.verify(1, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static void executeServerRequest() throws SQLException {
-    Properties properties = new Properties();
+  private static void executeServerRequest(Properties properties) throws SQLException {
+    Properties props = properties != null ? properties : new Properties();
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
+    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
     Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();

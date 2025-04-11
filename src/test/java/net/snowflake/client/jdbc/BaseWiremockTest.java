@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.client.WireMock;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -133,6 +135,10 @@ public abstract class BaseWiremockTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected void configureWiremock() {
+    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
   }
 
   private static String getWiremockStandAlonePath() {
