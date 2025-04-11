@@ -15,6 +15,7 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -721,8 +722,17 @@ public class RestRequest {
         retryCount);
     return response;
   }
+  ;
 
-  static long getNewBackoffInMilli(
+  @SnowflakeJdbcInternalApi
+  public static void updateRetryParameters(
+      URIBuilder builder, int retryCount, String lastStatusCodeForRetry, long startTime) {
+    builder.setParameter("retryCount", String.valueOf(retryCount));
+    builder.setParameter("retryReason", lastStatusCodeForRetry);
+    builder.setParameter("clientStartTime", String.valueOf(startTime));
+  }
+
+  public static long getNewBackoffInMilli(
       long previousBackoffInMilli,
       boolean isLoginRequest,
       DecorrelatedJitterBackoff decorrelatedJitterBackoff,
@@ -738,8 +748,11 @@ public class RestRequest {
               decorrelatedJitterBackoff.chooseRandom(
                   jitteredBackoffInMilli + previousBackoffInMilli,
                   Math.pow(2, retryCount) + jitteredBackoffInMilli);
+      System.out.println("Login nexSleepTime" + backoffInMilli);
     } else {
+
       backoffInMilli = decorrelatedJitterBackoff.nextSleepTime(previousBackoffInMilli);
+      System.out.println("nexSleepTime" + backoffInMilli);
     }
 
     backoffInMilli = Math.min(maxBackoffInMilli, Math.max(previousBackoffInMilli, backoffInMilli));
@@ -759,11 +772,13 @@ public class RestRequest {
           retryTimeoutInMilliseconds,
           backoffInMilli);
     }
+    System.out.println("new bacoff" + backoffInMilli);
     return backoffInMilli;
   }
 
-  static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
-    return response != null
+  public static boolean isNonRetryableHTTPCode(
+      CloseableHttpResponse response, boolean retryHTTP403) {
+    return (response != null && response.getStatusLine().getStatusCode() != 200)
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
             response.getStatusLine().getStatusCode() >= 600)
@@ -775,7 +790,7 @@ public class RestRequest {
         (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
-  private static boolean isCertificateRevoked(Exception ex) {
+  public static boolean isCertificateRevoked(Exception ex) {
     if (ex == null) {
       return false;
     }
@@ -787,7 +802,7 @@ public class RestRequest {
     return cause.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED;
   }
 
-  private static Throwable getRootCause(Throwable ex) {
+  public static Throwable getRootCause(Throwable ex) {
     Throwable ex0 = ex;
     while (ex0.getCause() != null) {
       ex0 = ex0.getCause();
@@ -795,7 +810,7 @@ public class RestRequest {
     return ex0;
   }
 
-  private static void setRequestConfig(
+  public static void setRequestConfig(
       HttpRequestBase httpRequest,
       boolean withoutCookies,
       int injectSocketTimeout,
@@ -829,7 +844,7 @@ public class RestRequest {
     }
   }
 
-  private static void setRequestURI(
+  public static void setRequestURI(
       HttpRequestBase httpRequest,
       String requestIdStr,
       boolean includeRetryParameters,
