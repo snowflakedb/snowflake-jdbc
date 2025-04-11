@@ -90,6 +90,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     Properties props = properties != null ? properties : new Properties();
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
     System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
     Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();
