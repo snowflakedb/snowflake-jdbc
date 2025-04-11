@@ -26,6 +26,7 @@ import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.DateDiagnosticTool;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -76,6 +77,7 @@ public class BindUploader implements Closeable {
    * @param stageDir the stage path to upload to
    */
   private BindUploader(SFBaseSession session, String stageDir) {
+    DateDiagnosticTool.diagnose();
     this.session = session;
     this.stagePath = "@" + session.getSfConnectionHandler().getBindStageName() + "/" + stageDir;
     this.createStageSQL =
