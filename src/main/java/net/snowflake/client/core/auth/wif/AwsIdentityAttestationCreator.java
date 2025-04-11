@@ -20,9 +20,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
 
   private final AwsAttestationService attestationService;
-  private AWSCredentials awsCredentials;
-  private String region;
-  private String arn;
 
   public AwsIdentityAttestationCreator(AwsAttestationService attestationService) {
     this.attestationService = attestationService;
@@ -31,18 +28,18 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   @Override
   public WorkloadIdentityAttestation createAttestation() {
     logger.debug("Creating AWS identity attestation...");
-    this.awsCredentials = attestationService.getAWSCredentials();
-    if (this.awsCredentials == null) {
+    AWSCredentials awsCredentials = attestationService.getAWSCredentials();
+    if (awsCredentials == null) {
       logger.debug("No AWS credentials were found.");
       return null;
     }
-    this.region = attestationService.getAWSRegion();
-    if (this.region == null) {
+    String region = attestationService.getAWSRegion();
+    if (region == null) {
       logger.debug("No AWS region was found.");
       return null;
     }
-    this.arn = attestationService.getArn();
-    if (this.arn == null) {
+    String arn = attestationService.getArn();
+    if (arn == null) {
       logger.debug("No Caller Identity was found.");
       return null;
     }
@@ -66,7 +63,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     request.addHeader(
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE);
-    request.addHeader("X-Amz-Security-Token", "<TOKEN>");
     return request;
   }
 
@@ -80,17 +76,5 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
     String assertionJsonString = assertionJson.toString();
     return Base64.getEncoder().encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
-  }
-
-  AWSCredentials getAwsCredentials() {
-    return awsCredentials;
-  }
-
-  String getRegion() {
-    return region;
-  }
-
-  String getArn() {
-    return arn;
   }
 }

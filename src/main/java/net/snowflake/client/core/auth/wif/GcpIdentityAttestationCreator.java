@@ -42,7 +42,8 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
       return null;
     }
     // if the token has been returned, we can assume that we're on GCP environment
-    WorkloadIdentityUtil.SubjectAndIssuer claims = WorkloadIdentityUtil.extractClaims(token);
+    WorkloadIdentityUtil.SubjectAndIssuer claims =
+        WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
     if (claims == null) {
       logger.error("Could not extract claims from token");
       return null;

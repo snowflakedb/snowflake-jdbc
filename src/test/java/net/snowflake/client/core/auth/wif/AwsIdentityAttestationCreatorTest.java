@@ -21,12 +21,11 @@ public class AwsIdentityAttestationCreatorTest {
   public void shouldReturnNullWhenNoCredentialsFound() {
     AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(null);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
+    Mockito.when(attestationServiceMock.getArn()).thenReturn("arn:aws:attestation:abc");
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
     assertNull(attestationCreator.createAttestation());
-    assertNull(attestationCreator.getAwsCredentials());
-    assertNull(attestationCreator.getRegion());
-    assertNull(attestationCreator.getArn());
   }
 
   @Test
@@ -35,13 +34,11 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.when(attestationServiceMock.getAWSCredentials())
         .thenReturn(new BasicAWSCredentials("abc", "abc"));
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(null);
+    Mockito.when(attestationServiceMock.getArn()).thenReturn("arn:aws:attestation:abc");
 
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
     assertNull(attestationCreator.createAttestation());
-    assertNotNull(attestationCreator.getAwsCredentials());
-    assertNull(attestationCreator.getRegion());
-    assertNull(attestationCreator.getArn());
   }
 
   @Test
@@ -55,9 +52,6 @@ public class AwsIdentityAttestationCreatorTest {
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
     assertNull(attestationCreator.createAttestation());
-    assertNotNull(attestationCreator.getAwsCredentials());
-    assertNotNull(attestationCreator.getRegion());
-    assertNull(attestationCreator.getArn());
   }
 
   @Test

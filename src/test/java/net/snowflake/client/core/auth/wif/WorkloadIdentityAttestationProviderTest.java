@@ -1,5 +1,10 @@
 package net.snowflake.client.core.auth.wif;
 
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityProviderType.AWS;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityProviderType.AZURE;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityProviderType.GCP;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityProviderType.OIDC;
+
 import java.util.HashMap;
 import net.snowflake.client.core.SFException;
 import org.junit.jupiter.api.Assertions;
@@ -13,16 +18,13 @@ class WorkloadIdentityAttestationProviderTest {
     AwsIdentityAttestationCreator awsCreatorMock =
         Mockito.mock(AwsIdentityAttestationCreator.class);
     Mockito.when(awsCreatorMock.createAttestation())
-        .thenReturn(
-            new WorkloadIdentityAttestation(
-                WorkloadIdentityProviderType.AWS, "credential_abc", new HashMap<>()));
+        .thenReturn(new WorkloadIdentityAttestation(AWS, "credential_abc", new HashMap<>()));
     WorkloadIdentityAttestationProvider provider =
         new WorkloadIdentityAttestationProvider(awsCreatorMock, null, null, null);
 
-    WorkloadIdentityAttestation attestation =
-        provider.getAttestation(WorkloadIdentityProviderType.AWS.name());
+    WorkloadIdentityAttestation attestation = provider.getAttestation(AWS.name());
     Assertions.assertNotNull(attestation);
-    Assertions.assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
+    Assertions.assertEquals(AWS, attestation.getProvider());
     Assertions.assertEquals("credential_abc", attestation.getCredential());
     Assertions.assertEquals(new HashMap<>(), attestation.getUserIdentifierComponents());
   }
@@ -35,8 +37,7 @@ class WorkloadIdentityAttestationProviderTest {
             new GcpIdentityAttestationCreator(null),
             new AzureIdentityAttestationCreator(),
             new OidcIdentityAttestationCreator(null));
-    WorkloadIdentityAttestationCreator attestationCreator =
-        provider.getCreator(WorkloadIdentityProviderType.AWS.name());
+    WorkloadIdentityAttestationCreator attestationCreator = provider.getCreator(AWS.name());
     Assertions.assertInstanceOf(AwsIdentityAttestationCreator.class, attestationCreator);
 
     attestationCreator = provider.getCreator(WorkloadIdentityProviderType.AZURE.name());
@@ -54,46 +55,19 @@ class WorkloadIdentityAttestationProviderTest {
 
   @Test
   public void shouldAutodetectAwsProvider() throws SFException {
-    OidcIdentityAttestationCreator oidcIdentityAttestationCreator =
-        Mockito.mock(OidcIdentityAttestationCreator.class);
-    AwsIdentityAttestationCreator awsIdentityAttestationCreatorMock =
-        Mockito.mock(AwsIdentityAttestationCreator.class);
-    Mockito.when(oidcIdentityAttestationCreator.createAttestation()).thenReturn(null);
-    Mockito.when(awsIdentityAttestationCreatorMock.createAttestation())
-        .thenReturn(
-            new WorkloadIdentityAttestation(WorkloadIdentityProviderType.AWS, "aws_cred", null));
-    WorkloadIdentityAttestationProvider provider =
-        new WorkloadIdentityAttestationProvider(
-            awsIdentityAttestationCreatorMock, null, null, oidcIdentityAttestationCreator);
-
+    WorkloadIdentityAttestationProvider provider = createMockProvider(AWS);
     WorkloadIdentityAttestation attestation = provider.getAttestation(null);
+
     Assertions.assertNotNull(attestation);
-    Assertions.assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
+    Assertions.assertEquals(AWS, attestation.getProvider());
     Assertions.assertEquals("aws_cred", attestation.getCredential());
   }
 
   @Test
   public void shouldAutodetectGCPProvider() throws SFException {
-    OidcIdentityAttestationCreator oidcIdentityAttestationCreator =
-        Mockito.mock(OidcIdentityAttestationCreator.class);
-    AwsIdentityAttestationCreator awsIdentityAttestationCreatorMock =
-        Mockito.mock(AwsIdentityAttestationCreator.class);
-    GcpIdentityAttestationCreator gcpIdentityAttestationCreatorMock =
-        Mockito.mock(GcpIdentityAttestationCreator.class);
-    Mockito.when(oidcIdentityAttestationCreator.createAttestation()).thenReturn(null);
-    Mockito.when(awsIdentityAttestationCreatorMock.createAttestation()).thenReturn(null);
-    Mockito.when(gcpIdentityAttestationCreatorMock.createAttestation())
-        .thenReturn(
-            new WorkloadIdentityAttestation(WorkloadIdentityProviderType.GCP, "gcp_cred", null));
-
-    WorkloadIdentityAttestationProvider provider =
-        new WorkloadIdentityAttestationProvider(
-            awsIdentityAttestationCreatorMock,
-            gcpIdentityAttestationCreatorMock,
-            null,
-            oidcIdentityAttestationCreator);
-
+    WorkloadIdentityAttestationProvider provider = createMockProvider(GCP);
     WorkloadIdentityAttestation attestation = provider.getAttestation(null);
+
     Assertions.assertNotNull(attestation);
     Assertions.assertEquals(WorkloadIdentityProviderType.GCP, attestation.getProvider());
     Assertions.assertEquals("gcp_cred", attestation.getCredential());
@@ -101,29 +75,9 @@ class WorkloadIdentityAttestationProviderTest {
 
   @Test
   public void shouldAutodetectAzureProvider() throws SFException {
-    OidcIdentityAttestationCreator oidcIdentityAttestationCreator =
-        Mockito.mock(OidcIdentityAttestationCreator.class);
-    AwsIdentityAttestationCreator awsIdentityAttestationCreatorMock =
-        Mockito.mock(AwsIdentityAttestationCreator.class);
-    GcpIdentityAttestationCreator gcpIdentityAttestationCreatorMock =
-        Mockito.mock(GcpIdentityAttestationCreator.class);
-    AzureIdentityAttestationCreator azureIdentityAttestationCreatorMock =
-        Mockito.mock(AzureIdentityAttestationCreator.class);
-    Mockito.when(oidcIdentityAttestationCreator.createAttestation()).thenReturn(null);
-    Mockito.when(awsIdentityAttestationCreatorMock.createAttestation()).thenReturn(null);
-    Mockito.when(gcpIdentityAttestationCreatorMock.createAttestation()).thenReturn(null);
-    Mockito.when(azureIdentityAttestationCreatorMock.createAttestation())
-        .thenReturn(
-            new WorkloadIdentityAttestation(
-                WorkloadIdentityProviderType.AZURE, "azure_cred", null));
-    WorkloadIdentityAttestationProvider provider =
-        new WorkloadIdentityAttestationProvider(
-            awsIdentityAttestationCreatorMock,
-            gcpIdentityAttestationCreatorMock,
-            azureIdentityAttestationCreatorMock,
-            oidcIdentityAttestationCreator);
-
+    WorkloadIdentityAttestationProvider provider = createMockProvider(AZURE);
     WorkloadIdentityAttestation attestation = provider.getAttestation(null);
+
     Assertions.assertNotNull(attestation);
     Assertions.assertEquals(WorkloadIdentityProviderType.AZURE, attestation.getProvider());
     Assertions.assertEquals("azure_cred", attestation.getCredential());
@@ -131,17 +85,39 @@ class WorkloadIdentityAttestationProviderTest {
 
   @Test
   public void shouldAutodetectOidcProvider() throws SFException {
-    OidcIdentityAttestationCreator oidcIdentityAttestationCreator =
-        Mockito.mock(OidcIdentityAttestationCreator.class);
-    Mockito.when(oidcIdentityAttestationCreator.createAttestation())
-        .thenReturn(
-            new WorkloadIdentityAttestation(WorkloadIdentityProviderType.OIDC, "oidc_cred", null));
-    WorkloadIdentityAttestationProvider provider =
-        new WorkloadIdentityAttestationProvider(null, null, null, oidcIdentityAttestationCreator);
-
+    WorkloadIdentityAttestationProvider provider = createMockProvider(OIDC);
     WorkloadIdentityAttestation attestation = provider.getAttestation(null);
     Assertions.assertNotNull(attestation);
     Assertions.assertEquals(WorkloadIdentityProviderType.OIDC, attestation.getProvider());
     Assertions.assertEquals("oidc_cred", attestation.getCredential());
+  }
+
+  WorkloadIdentityAttestationProvider createMockProvider(
+      WorkloadIdentityProviderType actualPresentType) {
+    AwsIdentityAttestationCreator aws = Mockito.mock(AwsIdentityAttestationCreator.class);
+    Mockito.when(aws.createAttestation())
+        .thenReturn(
+            actualPresentType == AWS
+                ? new WorkloadIdentityAttestation(AWS, "aws_cred", new HashMap<>())
+                : null);
+    GcpIdentityAttestationCreator gcp = Mockito.mock(GcpIdentityAttestationCreator.class);
+    Mockito.when(gcp.createAttestation())
+        .thenReturn(
+            actualPresentType == GCP
+                ? new WorkloadIdentityAttestation(GCP, "gcp_cred", new HashMap<>())
+                : null);
+    OidcIdentityAttestationCreator oidc = Mockito.mock(OidcIdentityAttestationCreator.class);
+    Mockito.when(oidc.createAttestation())
+        .thenReturn(
+            actualPresentType == OIDC
+                ? new WorkloadIdentityAttestation(OIDC, "oidc_cred", new HashMap<>())
+                : null);
+    AzureIdentityAttestationCreator azure = Mockito.mock(AzureIdentityAttestationCreator.class);
+    Mockito.when(azure.createAttestation())
+        .thenReturn(
+            actualPresentType == AZURE
+                ? new WorkloadIdentityAttestation(AZURE, "azure_cred", new HashMap<>())
+                : null);
+    return new WorkloadIdentityAttestationProvider(aws, gcp, azure, oidc);
   }
 }

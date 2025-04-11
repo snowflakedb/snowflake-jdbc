@@ -14,7 +14,7 @@ class WorkloadIdentityUtil {
   static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
   static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
 
-  static SubjectAndIssuer extractClaims(String token) {
+  static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token) {
     Map<String, Object> claims = extractClaimsMap(token);
     if (claims == null) {
       logger.error("Failed to parse JWT and extract claims");

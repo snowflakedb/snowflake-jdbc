@@ -22,7 +22,8 @@ public class OidcIdentityAttestationCreator implements WorkloadIdentityAttestati
       logger.debug("No OIDC token was specified");
       return null;
     }
-    WorkloadIdentityUtil.SubjectAndIssuer claims = WorkloadIdentityUtil.extractClaims(token);
+    WorkloadIdentityUtil.SubjectAndIssuer claims =
+        WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
     if (claims == null) {
       logger.error("Could not extract claims from token");
       return null;
