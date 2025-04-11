@@ -14,7 +14,6 @@ public class RetryContext {
   private boolean includeRetryParameters;
   private boolean retryHTTP403;
 
-
   public RetryContext() {}
 
   public RetryContext setElapsedTimeInMillis(long elapsedTimeInMillis) {
@@ -46,7 +45,6 @@ public class RetryContext {
     this.includeRetryParameters = includeRetryParameters;
     return this;
   }
-
 
   public RetryContext setRetryHTTP403(boolean retryHTTP403) {
     this.retryHTTP403 = retryHTTP403;

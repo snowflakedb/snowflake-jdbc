@@ -721,8 +721,8 @@ public class RestRequest {
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis(),
         retryCount);
     return response;
-  };
-
+  }
+  ;
 
   @SnowflakeJdbcInternalApi
   public static void updateRetryParameters(
@@ -748,12 +748,11 @@ public class RestRequest {
               decorrelatedJitterBackoff.chooseRandom(
                   jitteredBackoffInMilli + previousBackoffInMilli,
                   Math.pow(2, retryCount) + jitteredBackoffInMilli);
-      System.out.println("Login nexSleepTime"+backoffInMilli);
+      System.out.println("Login nexSleepTime" + backoffInMilli);
     } else {
 
       backoffInMilli = decorrelatedJitterBackoff.nextSleepTime(previousBackoffInMilli);
-      System.out.println("nexSleepTime"+backoffInMilli);
-
+      System.out.println("nexSleepTime" + backoffInMilli);
     }
 
     backoffInMilli = Math.min(maxBackoffInMilli, Math.max(previousBackoffInMilli, backoffInMilli));
@@ -773,11 +772,12 @@ public class RestRequest {
           retryTimeoutInMilliseconds,
           backoffInMilli);
     }
-    System.out.println("new bacoff"+backoffInMilli);
+    System.out.println("new bacoff" + backoffInMilli);
     return backoffInMilli;
   }
 
-  public static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
+  public static boolean isNonRetryableHTTPCode(
+      CloseableHttpResponse response, boolean retryHTTP403) {
     return (response != null && response.getStatusLine().getStatusCode() != 200)
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -845,14 +845,14 @@ public class RestRequest {
   }
 
   public static void setRequestURI(
-          HttpRequestBase httpRequest,
-          String requestIdStr,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          int retryCount,
-          String lastStatusCodeForRetry,
-          long startTime,
-          String requestInfoScrubbed)
+      HttpRequestBase httpRequest,
+      String requestIdStr,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      int retryCount,
+      String lastStatusCodeForRetry,
+      long startTime,
+      String requestInfoScrubbed)
       throws URISyntaxException {
     /*
      * Add retryCount if the first request failed

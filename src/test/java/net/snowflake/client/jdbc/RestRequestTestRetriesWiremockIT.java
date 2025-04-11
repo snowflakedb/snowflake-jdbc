@@ -14,12 +14,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
 
 @Tag(TestTags.CORE)
 public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
@@ -39,10 +37,13 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     props.setProperty("maxHttpRetries", "3");
     //    WireMock.setScenarioState("malformed_response_retry", "MALFORMED_RETRY_3");
     SnowflakeSQLException thrown =
-            assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
+        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     WireMock.verify(4, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
 
-    assertTrue(thrown.getMessage().contains("JDBC driver encountered communication error. Message: HTTP status=503."));
+    assertTrue(
+        thrown
+            .getMessage()
+            .contains("JDBC driver encountered communication error. Message: HTTP status=503."));
   }
 
   @Test
