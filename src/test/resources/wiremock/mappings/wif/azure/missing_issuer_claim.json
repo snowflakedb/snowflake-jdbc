@@ -1,0 +1,29 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/metadata/identity/oauth2/token.*",
+        "queryParameters": {
+          "api-version": {
+            "equalTo": "2018-02-01"
+          },
+          "resource": {
+            "equalTo": "snowflake:entra:resource"
+          }
+        },
+        "method": "GET",
+        "headers": {
+          "Metadata": {
+            "equalTo": "True"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6ImFkMDlhNjIzM2RkMTc5YTZiOTgwYjM2YzVlNGE4M2Q1In0.eyJhdWQiOiJteV9jbGllbnRfYXBwIiwic3ViIjoibDNfcm9JU1FVMjIyYlVMUzl5aTJrMFhwcXBPaU16NUgzWkFDbzFHZVhBIiwiZXhwIjoxNzQ0MzgyODIyLCJpYXQiOjE3NDQzODI1MjJ9.0WnGiAz4di6p9NCILV2vMNox_OEobD5K4s5ld9bttQkQqw8MNSAc7uhuBsfHmEVOtMEXVGl58fwJ28sjeNVi7A"
+        }
+      }
+    }
+  ]
+}

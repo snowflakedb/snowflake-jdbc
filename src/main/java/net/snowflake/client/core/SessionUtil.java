@@ -33,6 +33,7 @@ import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.core.auth.wif.AwsIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.AzureAttestationService;
 import net.snowflake.client.core.auth.wif.AzureIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.GcpIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
@@ -377,7 +378,7 @@ public class SessionUtil {
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(new AwsAttestationService()),
             new GcpIdentityAttestationCreator(loginInput),
-            new AzureIdentityAttestationCreator(),
+            new AzureIdentityAttestationCreator(new AzureAttestationService(), loginInput),
             new OidcIdentityAttestationCreator(loginInput.getToken()));
     return attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
   }

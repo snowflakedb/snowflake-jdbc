@@ -1,0 +1,26 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/metadata/identity/oauth2/token.*",
+        "queryParameters": {
+          "api-version": {
+            "equalTo": "2018-02-01"
+          },
+          "resource": {
+            "equalTo": "snowflake:entra:resource"
+          }
+        },
+        "method": "GET",
+        "headers": {
+          "Metadata": {
+            "equalTo": "True"
+          }
+        }
+      },
+      "response": {
+        "status": 400
+      }
+    }
+  ]
+}

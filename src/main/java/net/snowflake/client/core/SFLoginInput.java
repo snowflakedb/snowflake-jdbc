@@ -62,6 +62,7 @@ public class SFLoginInput {
   // Workload Identity Federation
   private String workloadIdentityProvider;
   private WorkloadIdentityAttestation workloadIdentityAttestation;
+  private String snowflakeEntraResource;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -611,5 +612,14 @@ public class SFLoginInput {
 
   public WorkloadIdentityAttestation getWorkloadIdentityAttestation() {
     return workloadIdentityAttestation;
+  }
+
+  public String getSnowflakeEntraResource() {
+    return this.snowflakeEntraResource;
+  }
+
+  public SFLoginInput setSnowflakeEntraResource(String snowflakeEntraResource) {
+    this.snowflakeEntraResource = snowflakeEntraResource;
+    return this;
   }
 }

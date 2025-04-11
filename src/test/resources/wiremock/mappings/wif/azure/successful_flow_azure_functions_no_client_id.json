@@ -1,0 +1,29 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/metadata/identity/endpoint/from/env.*",
+        "queryParameters": {
+          "api-version": {
+            "equalTo": "2019-08-01"
+          },
+          "resource": {
+            "equalTo": "snowflake:entra:resource"
+          }
+        },
+        "method": "GET",
+        "headers": {
+          "X-IDENTITY-HEADER": {
+            "equalTo": "some-identity-header-from-env"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9mYTE1ZDY5Mi1lOWM3LTQ0NjAtYTc0My0yOWYyOTUyMjIyOS8iLCJpYXQiOjE3NDQzNzY1NTcsImV4cCI6MTc3NTkxMjU1NywiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoibDNfcm9JU1FVMjIyYlVMUzl5aTJrMFhwcXBPaU16NUgzWkFDbzFHZVhBIn0.dpi4exflydZ2mKQ5YA9WTSMH5VeBCBqkj6DK-gYw07E"
+        }
+      }
+    }
+  ]
+}
