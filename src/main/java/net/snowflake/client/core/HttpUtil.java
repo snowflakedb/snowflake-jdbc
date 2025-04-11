@@ -24,13 +24,16 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
@@ -1162,15 +1165,23 @@ public class HttpUtil {
       Exception savedEx,
       HttpExecutingContext httpExecutingContext)
       throws SnowflakeSQLException {
-    boolean skipRetrying = false;
-    skipRetrying = handleNoRetryFlag(httpExecutingContext, skipRetrying);
-    skipRetrying = handleCancelingSignal(httpExecutingContext, skipRetrying);
-    skipRetrying = handleElapsedTimeoutExceeded(httpExecutingContext, skipRetrying);
-    skipRetrying = handleMaxRetriesExceeded(httpExecutingContext, skipRetrying);
-    skipRetrying = handleCertificateRevoked(savedEx, httpExecutingContext, skipRetrying);
-    skipRetrying =
-        handleNoRetryiableHttpCode(response, savedEx, httpExecutingContext, skipRetrying);
+    List<Function<Boolean, Boolean>> conditions =
+        Arrays.asList(
+            skipRetrying -> handleNoRetryFlag(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleCancelingSignal(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleElapsedTimeoutExceeded(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleMaxRetriesExceeded(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleCertificateRevoked(savedEx, httpExecutingContext, skipRetrying),
+            skipRetrying ->
+                handleNoRetryiableHttpCode(response, savedEx, httpExecutingContext, skipRetrying));
+
+    // Process each condition using Stream
+    boolean skipRetrying =
+        conditions.stream().reduce(Function::andThen).orElse(Function.identity()).apply(false);
+
+    // Log telemetry
     logTelemetryEvent(request, response, savedEx, httpExecutingContext);
+
     return skipRetrying;
   }
 
@@ -1315,7 +1326,7 @@ public class HttpUtil {
             : networkComunnicationStapwatch.elapsedMillis(),
         httpExecutingContext.getRetryCount());
 
-    if (response != null && responseText == null)
+    if (response != null && responseText == null) {
       try {
         System.out.println("FINAL UNPACK RESPONSE: ");
         responseText =
@@ -1325,6 +1336,7 @@ public class HttpUtil {
         System.out.println("UNPACK RESPONSE ERROR: " + ex.getMessage());
         savedEx = ex;
       }
+    }
 
     System.out.println(" RESPONSE: " + responseText);
     System.out.println(" SAVED EX: " + savedEx);
