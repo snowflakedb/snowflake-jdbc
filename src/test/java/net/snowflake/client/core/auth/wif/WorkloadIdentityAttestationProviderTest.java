@@ -35,7 +35,7 @@ class WorkloadIdentityAttestationProviderTest {
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(null),
             new GcpIdentityAttestationCreator(null),
-            new AzureIdentityAttestationCreator(),
+            new AzureIdentityAttestationCreator(null, null),
             new OidcIdentityAttestationCreator(null));
     WorkloadIdentityAttestationCreator attestationCreator = provider.getCreator(AWS.name());
     Assertions.assertInstanceOf(AwsIdentityAttestationCreator.class, attestationCreator);

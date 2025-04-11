@@ -1,7 +1,9 @@
 package net.snowflake.client.core.auth.wif;
 
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.DEFAULT_METADATA_SERVICE_BASE_URL;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.performIdentityRequest;
+
 import java.util.Collections;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
@@ -25,7 +27,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   public GcpIdentityAttestationCreator(SFLoginInput loginInput) {
     this.loginInput = loginInput;
-    gcpMetadataServiceBaseUrl = DEFAULT_GCP_METADATA_SERVICE_BASE_URL;
+    gcpMetadataServiceBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
   }
 
   /** Only for testing purpose */
@@ -71,13 +73,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
     HttpGet tokenRequest = new HttpGet(uri);
     tokenRequest.setHeader(METADATA_FLAVOR_HEADER_NAME, METADATA_FLAVOR);
     try {
-      return HttpUtil.executeGeneralRequestOmitRequestGuid(
-          tokenRequest,
-          loginInput.getLoginTimeout(),
-          3, // 3s timeout
-          loginInput.getSocketTimeoutInMillis(),
-          0,
-          loginInput.getHttpClientSettingsKey());
+      return performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
       logger.debug("GCP metadata server request was not successful: " + e.getMessage());
       return null;
