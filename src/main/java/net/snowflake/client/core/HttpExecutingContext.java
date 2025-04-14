@@ -43,9 +43,11 @@ public class HttpExecutingContext {
   int injectSocketTimeout;
   boolean retryHTTP403;
   boolean shouldRetry;
+  boolean skipRetriesBecauseOf200; // todo create skip retry reason enum
   boolean withoutCookies;
   boolean includeRetryParameters;
   boolean includeRequestGuid;
+  boolean unpackResponse;
   AtomicBoolean canceling;
 
   public HttpExecutingContext(String requestIdStr, String requestInfoScrubbed) {
@@ -183,7 +185,6 @@ public class HttpExecutingContext {
   }
 
   public void incrementRetryCount() {
-    System.out.println("before INCREMENTED " + retryCount);
     this.retryCount++;
   }
 
@@ -228,11 +229,6 @@ public class HttpExecutingContext {
   }
 
   public boolean elapsedTimeExceeded() {
-    System.out.println(
-        "elapsedTimeExceeded:"
-            + (elapsedMilliForTransientIssues > getRetryTimeoutInMilliseconds()));
-    System.out.println("elapsedTimeExceeded:" + elapsedMilliForTransientIssues);
-    System.out.println("elapsedTimeExceeded:" + getRetryTimeoutInMilliseconds());
     return elapsedMilliForTransientIssues > getRetryTimeoutInMilliseconds();
   }
 
@@ -241,9 +237,6 @@ public class HttpExecutingContext {
   }
 
   public boolean maxRetriesExceeded() {
-    System.out.println("Exceeded maxRetries: " + (maxRetries > 0 && retryCount > maxRetries));
-    System.out.println("Exceeded maxRetries: " + retryCount);
-    System.out.println("Exceeded maxRetries: " + maxRetries);
     return maxRetries > 0 && retryCount >= maxRetries;
   }
 
@@ -293,7 +286,23 @@ public class HttpExecutingContext {
     return includeRetryParameters;
   }
 
+  public boolean isUnpackResponse() {
+    return unpackResponse;
+  }
+
+  public void setUnpackResponse(boolean unpackResponse) {
+    this.unpackResponse = unpackResponse;
+  }
+
   public void setIncludeRetryParameters(boolean includeRetryParameters) {
     this.includeRetryParameters = includeRetryParameters;
+  }
+
+  public boolean isSkipRetriesBecauseOf200() {
+    return skipRetriesBecauseOf200;
+  }
+
+  public void setSkipRetriesBecauseOf200(boolean skipRetriesBecauseOf200) {
+    this.skipRetriesBecauseOf200 = skipRetriesBecauseOf200;
   }
 }
