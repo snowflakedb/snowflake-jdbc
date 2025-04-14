@@ -40,12 +40,13 @@ public class AwsAttestationService {
       if (!regionInitialized) {
         String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
         region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
-        regionInitialized = true;
       }
       return region;
     } catch (Exception e) {
       logger.debug("Could not get AWS region", e);
       return null;
+    } finally {
+      regionInitialized = true;
     }
   }
 
