@@ -11,7 +11,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -63,6 +66,12 @@ public class RestRequestTest {
 
     CloseableHttpResponse successResponse = mock(CloseableHttpResponse.class);
     when(successResponse.getStatusLine()).thenReturn(successStatusLine);
+    InputStream inputStream = new ByteArrayInputStream("response body".getBytes());
+
+    // Create a mock entity and assign the stream to it
+    BasicHttpEntity mockEntity = new BasicHttpEntity();
+    mockEntity.setContent(inputStream);
+    when(successResponse.getEntity()).thenReturn(mockEntity);
 
     return successResponse;
   }
@@ -111,7 +120,7 @@ public class RestRequestTest {
     HttpUtil util = new HttpUtil();
     util.setRequestConfig(defaultRequestConfig);
 
-    RestRequest.execute(
+    HttpUtil.executeWitRetries(
         client,
         new HttpGet(uri),
         retryTimeout, // retry timeout
@@ -125,6 +134,7 @@ public class RestRequestTest {
         true,
         true,
         noRetry,
+        false,
         new ExecTimeTelemetryData());
   }
 
@@ -397,7 +407,12 @@ public class RestRequestTest {
                 }
               });
 
-      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, true);
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, true));
+      assertThat(ex.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();
