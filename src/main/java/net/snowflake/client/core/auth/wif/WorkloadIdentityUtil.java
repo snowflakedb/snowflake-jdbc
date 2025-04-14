@@ -11,10 +11,6 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
-import java.util.HashMap;
-import java.util.Map;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 class WorkloadIdentityUtil {
 
