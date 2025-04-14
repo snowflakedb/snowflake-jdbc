@@ -52,11 +52,11 @@ public class BindUploader implements Closeable {
 
   private int fileCount = 0;
 
-  private final DateFormat timestampFormat;
+  private final DateFormat utcTimestampFormat;
+  private final DateFormat localTimestampFormat;
   private final DateFormat dateFormat;
   private final SimpleDateFormat timeFormat;
   private final String createStageSQL;
-  private Calendar cal;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -86,15 +86,20 @@ public class BindUploader implements Closeable {
             + " field_optionally_enclosed_by='\"'"
             + ")";
 
-    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    cal.clear();
+    Calendar utcCalender = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    utcCalender.clear();
 
-    this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.timestampFormat.setCalendar(cal);
+    Calendar localCalendar = new GregorianCalendar(TimeZone.getDefault());
+    localCalendar.clear();
+
+    this.utcTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
+    this.utcTimestampFormat.setCalendar(utcCalender);
+    this.localTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
+    this.localTimestampFormat.setCalendar(localCalendar);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(cal);
+    this.dateFormat.setCalendar(utcCalender);
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(cal);
+    this.timeFormat.setCalendar(utcCalender);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
@@ -113,7 +118,7 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Time v1 = new Time(sec * 1000);
-    String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
+    String formatWithDate = utcTimestampFormat.format(v1) + String.format("%09d", nano);
     // Take out the Date portion of the formatted string. Only time data is needed.
     return formatWithDate.substring(11);
   }
@@ -159,16 +164,12 @@ public class BindUploader implements Closeable {
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
     if ("TIMESTAMP_LTZ".equals(type)) {
-      TimeZone tz = TimeZone.getDefault();
-      cal.setTimeZone(tz);
-      cal.clear();
-      timestampFormat.setCalendar(cal);
       offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
+      return localTimestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
     } else {
       offsetId = ZoneOffset.UTC;
+      return utcTimestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
     }
-
-    return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
 
   /**
