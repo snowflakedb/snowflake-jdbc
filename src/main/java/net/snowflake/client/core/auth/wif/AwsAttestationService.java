@@ -12,9 +12,13 @@ import java.util.Optional;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
-public class AWSAttestationService {
+public class AwsAttestationService {
+
+  public static final SFLogger logger = SFLoggerFactory.getLogger(AwsAttestationService.class);
 
   private static final String SECURE_TOKEN_SERVICE_NAME = "sts";
   private static boolean regionInitialized = false;
@@ -22,7 +26,7 @@ public class AWSAttestationService {
 
   private final AWS4Signer aws4Signer;
 
-  public AWSAttestationService() {
+  public AwsAttestationService() {
     aws4Signer = new AWS4Signer();
     aws4Signer.setServiceName(SECURE_TOKEN_SERVICE_NAME);
   }
@@ -32,12 +36,18 @@ public class AWSAttestationService {
   }
 
   String getAWSRegion() {
-    if (!regionInitialized) {
-      String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
-      region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
+    try {
+      if (!regionInitialized) {
+        String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
+        region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
+      }
+      return region;
+    } catch (Exception e) {
+      logger.debug("Could not get AWS region", e);
+      return null;
+    } finally {
       regionInitialized = true;
     }
-    return region;
   }
 
   String getArn() {
