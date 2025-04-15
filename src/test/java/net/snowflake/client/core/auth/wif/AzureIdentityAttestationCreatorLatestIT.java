@@ -48,6 +48,16 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
+   *     "iss": "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
+   * }
+   */
+  private static final String
+      SUCCESSFUL_FLOW_AZURE_FUNCTIONS_CUSTOM_ENTRA_RESOURCE_SCENARIO_MAPPINGS =
+          SCENARIOS_BASE_DIR + "/successful_flow_azure_functions_custom_entra_resource.json";
+
+  /*
+   * {
    *     "iss": "https://not.azure.sts.issuer.com",
    *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
@@ -104,7 +114,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
   }
 
-  // @Test // TODO: Confirm this scenario on actual VM environment
+  @Test
   public void successfulFlowAzureFunctionsNoClientIdScenario() {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_NO_CLIENT_ID_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
@@ -114,6 +124,22 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     Mockito.when(attestationServiceSpy.getIdentityHeader())
         .thenReturn("some-identity-header-from-env");
     Mockito.when(attestationServiceSpy.getClientId()).thenReturn(null);
+
+    executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
+  }
+
+  @Test
+  public void successfulFlowAzureFunctionsCustomEntraResourceScenario() {
+    importMappingFromResources(
+        SUCCESSFUL_FLOW_AZURE_FUNCTIONS_CUSTOM_ENTRA_RESOURCE_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput = createLoginInputStub();
+    loginInput.setWorkloadIdentityEntraResource("api://1111111-2222-3333-44444-55555555");
+    AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
+    Mockito.when(attestationServiceSpy.getIdentityEndpoint())
+        .thenReturn(getBaseUrl() + "metadata/identity/endpoint/from/env");
+    Mockito.when(attestationServiceSpy.getIdentityHeader())
+        .thenReturn("some-identity-header-from-env");
+    Mockito.when(attestationServiceSpy.getClientId()).thenReturn("managed-client-id-from-env");
 
     executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
   }
@@ -210,7 +236,6 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
-    loginInputStub.setWorkloadIdentityEntraResource("api://f4e4c08b-548a-41b8-a410-49b9eb33c527");
     return loginInputStub;
   }
 }
