@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.core.SFTrustManager.setOCSPResponseCacheServerURL;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -515,6 +516,13 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
+    try {
+      // Adjust OCSP cache server if it is private link
+      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
+    } catch (IOException ex) {
+      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
+    }
+
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     // build URL for login request
@@ -611,13 +619,6 @@ public class SessionUtil {
       logger.error("Exception when building URL", ex);
 
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URI syntax exception:1");
-    }
-
-    try {
-      // Adjust OCSP cache server if it is private link
-      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
-    } catch (IOException ex) {
-      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
     }
 
     HttpPost postRequest = null;
@@ -1932,6 +1933,7 @@ public class SessionUtil {
    * @throws IOException If exception encountered
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
+    setOCSPResponseCacheServerURL(serverUrl);
     if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
