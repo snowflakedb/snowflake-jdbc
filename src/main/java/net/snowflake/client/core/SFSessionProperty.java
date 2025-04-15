@@ -27,7 +27,7 @@ public enum SFSessionProperty {
   OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
   OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
   WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
-  SNOWFLAKE_ENTRA_RESOURCE("snowflakeEntryResource", false, String.class),
+  WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),

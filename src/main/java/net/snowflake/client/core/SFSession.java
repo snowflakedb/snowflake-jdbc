@@ -723,8 +723,9 @@ public class SFSession extends SFBaseSession {
         .setOauthLoginInput(oauthLoginInput)
         .setWorkloadIdentityProvider(
             (String) connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER))
-        .setSnowflakeEntraResource(
-            (String) connectionPropertiesMap.get(SFSessionProperty.SNOWFLAKE_ENTRA_RESOURCE))
+        .setWorkloadIdentityEntraResource(
+            (String)
+                connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_ENTRA_RESOURCE))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(

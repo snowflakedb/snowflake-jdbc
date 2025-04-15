@@ -8,7 +8,7 @@
             "equalTo": "2018-02-01"
           },
           "resource": {
-            "equalTo": "snowflake:entra:resource"
+            "equalTo": "api://f4e4c08b-548a-41b8-a410-49b9eb33c527"
           }
         },
         "method": "GET",

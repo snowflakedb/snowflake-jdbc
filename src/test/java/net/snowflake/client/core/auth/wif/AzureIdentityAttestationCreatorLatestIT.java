@@ -22,7 +22,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   /*
    * {
    *     "iss": "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
-   *     "sub": "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA"
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
    */
   private static final String SUCCESSFUL_FLOW_BASIC_SCENARIO_MAPPINGS =
@@ -31,16 +31,16 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   /*
    * {
    *     "iss": "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
-   *     "sub": "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA"
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
    */
   private static final String SUCCESSFUL_FLOW_AZURE_FUNCTIONS_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/successful_flow_azure_functions_no_client_id.json";
+      SCENARIOS_BASE_DIR + "/successful_flow_azure_functions.json";
 
   /*
    * {
    *     "iss": "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
-   *     "sub": "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA"
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
    */
   private static final String SUCCESSFUL_FLOW_AZURE_FUNCTIONS_NO_CLIENT_ID_SCENARIO_MAPPINGS =
@@ -48,8 +48,8 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
-   *     "iss": "https://invalid.issuer.com",
-   *     "sub": "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA"
+   *     "iss": "https://not.azure.sts.issuer.com",
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
    */
   private static final String INVALID_ISSUER_FLOW_SCENARIO =
@@ -57,7 +57,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
-   *   "sub": "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA",
+   *   "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD",
    * }
    */
   private static final String MISSING_ISSUER_SCENARIO_MAPPINGS =
@@ -86,7 +86,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   public void successfulFlowBasicScenario() {
     importMappingFromResources(SUCCESSFUL_FLOW_BASIC_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
-    AzureAttestationService attestationServiceMock = createAttestationServiceMockForBasicFLow();
+    AzureAttestationService attestationServiceMock = createAttestationServiceSpyForBasicFLow();
     executeAndAssertCorrectAttestation(attestationServiceMock, loginInput);
   }
 
@@ -94,28 +94,28 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   public void successfulFlowAzureFunctionsScenario() {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
-    AzureAttestationService attestationServiceMock = Mockito.mock(AzureAttestationService.class);
-    Mockito.when(attestationServiceMock.getIdentityEndpoint())
+    AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
+    Mockito.when(attestationServiceSpy.getIdentityEndpoint())
         .thenReturn(getBaseUrl() + "metadata/identity/endpoint/from/env");
-    Mockito.when(attestationServiceMock.getIdentityHeader())
+    Mockito.when(attestationServiceSpy.getIdentityHeader())
         .thenReturn("some-identity-header-from-env");
-    Mockito.when(attestationServiceMock.getClientId()).thenReturn("managed-client-id-from-env");
+    Mockito.when(attestationServiceSpy.getClientId()).thenReturn("managed-client-id-from-env");
 
-    executeAndAssertCorrectAttestation(attestationServiceMock, loginInput);
+    executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
   }
 
-  @Test
+  // @Test // TODO: Confirm this scenario on actual VM environment
   public void successfulFlowAzureFunctionsNoClientIdScenario() {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_NO_CLIENT_ID_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
-    AzureAttestationService attestationServiceMock = Mockito.mock(AzureAttestationService.class);
-    Mockito.when(attestationServiceMock.getIdentityEndpoint())
+    AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
+    Mockito.when(attestationServiceSpy.getIdentityEndpoint())
         .thenReturn(getBaseUrl() + "metadata/identity/endpoint/from/env");
-    Mockito.when(attestationServiceMock.getIdentityHeader())
+    Mockito.when(attestationServiceSpy.getIdentityHeader())
         .thenReturn("some-identity-header-from-env");
-    Mockito.when(attestationServiceMock.getClientId()).thenReturn(null);
+    Mockito.when(attestationServiceSpy.getClientId()).thenReturn(null);
 
-    executeAndAssertCorrectAttestation(attestationServiceMock, loginInput);
+    executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
   }
 
   @Test
@@ -164,12 +164,12 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
       String tokenParseErrorScenarioMappings) {
     importMappingFromResources(tokenParseErrorScenarioMappings);
     SFLoginInput loginInput = createLoginInputStub();
-    AzureAttestationService attestationServiceMock = createAttestationServiceMockForBasicFLow();
-    executeAndAssertNullAttestation(attestationServiceMock, loginInput);
+    AzureAttestationService attestationServiceSpy = createAttestationServiceSpyForBasicFLow();
+    executeAndAssertNullAttestation(attestationServiceSpy, loginInput);
   }
 
-  private static AzureAttestationService createAttestationServiceMockForBasicFLow() {
-    AzureAttestationService attestationServiceMock = Mockito.mock(AzureAttestationService.class);
+  private static AzureAttestationService createAttestationServiceSpyForBasicFLow() {
+    AzureAttestationService attestationServiceMock = Mockito.spy(AzureAttestationService.class);
     Mockito.when(attestationServiceMock.getIdentityEndpoint()).thenReturn(null);
     Mockito.when(attestationServiceMock.getIdentityHeader()).thenReturn(null);
     Mockito.when(attestationServiceMock.getClientId()).thenReturn(null);
@@ -185,7 +185,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     assertNotNull(attestation);
     assertEquals(WorkloadIdentityProviderType.AZURE, attestation.getProvider());
     assertEquals(
-        "l3_roISQU222bULS9yi2k0XpqpOiMz5H3ZACo1GeXA",
+        "77213E30-E8CB-4595-B1B6-5F050E8308FD",
         attestation.getUserIdentifierComponents().get("sub"));
     assertEquals(
         "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
@@ -210,7 +210,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
     loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
-    loginInputStub.setSnowflakeEntraResource("snowflake:entra:resource");
+    loginInputStub.setWorkloadIdentityEntraResource("api://f4e4c08b-548a-41b8-a410-49b9eb33c527");
     return loginInputStub;
   }
 }

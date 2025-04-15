@@ -12,7 +12,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
 
 @SnowflakeJdbcInternalApi
 public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
@@ -21,10 +20,13 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
       SFLoggerFactory.getLogger(AzureIdentityAttestationCreator.class);
   public static final ObjectMapper objectMapper = new ObjectMapper();
 
-  private static final String EXPECTED_GCP_TOKEN_ISSUER_PREFIX = "https://sts.windows.net/";
+  private static final String EXPECTED_AZURE_TOKEN_ISSUER_PREFIX = "https://sts.windows.net/";
+  private static final String DEFAULT_WORKLOAD_IDENTITY_ENTRA_RESOURCE =
+      "api://fd3f753b-eed3-462c-b6a7-a4b5bb650aad";
 
   private final AzureAttestationService azureAttestationService;
   private final SFLoginInput loginInput;
+  private final String workloadIdentityEntraResource;
   private final String azureMetadataServiceBaseUrl;
 
   public AzureIdentityAttestationCreator(
@@ -32,6 +34,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     this.azureAttestationService = azureAttestationService;
     this.azureMetadataServiceBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
     this.loginInput = loginInput;
+    this.workloadIdentityEntraResource = getEntraResource(loginInput);
   }
 
   /** Only for testing purpose */
@@ -42,6 +45,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     this.azureAttestationService = azureAttestationService;
     this.azureMetadataServiceBaseUrl = azureMetadataServiceBaseUrl;
     this.loginInput = loginInput;
+    this.workloadIdentityEntraResource = getEntraResource(loginInput);
   }
 
   @Override
@@ -49,16 +53,18 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     String identityEndpoint = azureAttestationService.getIdentityEndpoint();
     HttpGet request;
     if (Strings.isNullOrEmpty(identityEndpoint)) {
-      request = createBasicAzureIdentityRequest();
+      request = createAzureVMIdentityRequest();
     } else {
       String identityHeader = azureAttestationService.getIdentityHeader();
       if (Strings.isNullOrEmpty(identityHeader)) {
         logger.warn("Managed identity is not enabled on this Azure function.");
         return null;
       }
-      request = createAzureFunctionsIdentityRequest(identityEndpoint, identityHeader);
+      request =
+          createAzureFunctionsIdentityRequest(
+              identityEndpoint, identityHeader, azureAttestationService.getClientId());
     }
-    String tokenJson = fetchTokenFromMetadataService(request);
+    String tokenJson = azureAttestationService.fetchTokenFromMetadataService(request, loginInput);
     if (tokenJson == null) {
       logger.debug("Could not fetch Azure token.");
       return null;
@@ -72,12 +78,21 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     if (claims == null) {
       return null;
     }
-    if (!claims.getIssuer().startsWith(EXPECTED_GCP_TOKEN_ISSUER_PREFIX)) {
+    if (!claims.getIssuer().startsWith(EXPECTED_AZURE_TOKEN_ISSUER_PREFIX)) {
       logger.debug("Unexpected Azure token issuer: {}", claims.getIssuer());
       return null;
     }
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AZURE, token, claims.toMap());
+  }
+
+  private String getEntraResource(SFLoginInput loginInput) {
+    if (loginInput != null
+        && !Strings.isNullOrEmpty(loginInput.getWorkloadIdentityEntraResource())) {
+      return loginInput.getWorkloadIdentityEntraResource();
+    } else {
+      return DEFAULT_WORKLOAD_IDENTITY_ENTRA_RESOURCE;
+    }
   }
 
   private String extractTokenFromJson(String tokenJson) {
@@ -90,32 +105,20 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     }
   }
 
-  private String fetchTokenFromMetadataService(HttpRequestBase tokenRequest) {
-    try {
-      return WorkloadIdentityUtil.performIdentityRequest(tokenRequest, loginInput);
-    } catch (Exception e) {
-      logger.debug("Azure metadata server request was not successful.");
-      return null;
-    }
-  }
-
   private HttpGet createAzureFunctionsIdentityRequest(
-      String identityEndpoint, String identityHeader) {
-    String queryParams =
-        "api-version=2019-08-01&resource=" + loginInput.getSnowflakeEntraResource();
-    String managedIdentityClientId = azureAttestationService.getClientId();
+      String identityEndpoint, String identityHeader, String managedIdentityClientId) {
+    String queryParams = "api-version=2019-08-01&resource=" + workloadIdentityEntraResource;
     if (managedIdentityClientId != null) {
-      queryParams += "&client-id=" + managedIdentityClientId;
+      queryParams += "&client_id=" + managedIdentityClientId;
     }
     HttpGet request = new HttpGet(String.format("%s?%s", identityEndpoint, queryParams));
     request.addHeader("X-IDENTITY-HEADER", identityHeader);
     return request;
   }
 
-  private HttpGet createBasicAzureIdentityRequest() {
+  private HttpGet createAzureVMIdentityRequest() {
     String urlWithoutQueryString = azureMetadataServiceBaseUrl + "/metadata/identity/oauth2/token?";
-    String queryParams =
-        "api-version=2018-02-01&resource=" + loginInput.getSnowflakeEntraResource();
+    String queryParams = "api-version=2018-02-01&resource=" + workloadIdentityEntraResource;
     HttpGet request = new HttpGet(urlWithoutQueryString + queryParams);
     request.setHeader("Metadata", "True");
     return request;

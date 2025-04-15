@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-2      "request": {
+      "request": {
         "urlPattern": "/computeMetadata/v1/instance/service-accounts/default/identity.*",
         "queryParameters": {
           "audience": {

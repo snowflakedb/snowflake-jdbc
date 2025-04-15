@@ -8,7 +8,7 @@
             "equalTo": "2018-02-01"
           },
           "resource": {
-            "equalTo": "snowflake:entra:resource"
+            "equalTo": "api://f4e4c08b-548a-41b8-a410-49b9eb33c527"
           }
         },
         "method": "GET",
@@ -21,7 +21,7 @@
       "response": {
         "status": 200,
         "jsonBody": {
-          "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6ImFkMDlhNjIzM2RkMTc5YTZiOTgwYjM2YzVlNGE4M2Q1In0.eyJhdWQiOiJteV9jbGllbnRfYXBwIiwic3ViIjoibDNfcm9JU1FVMjIyYlVMUzl5aTJrMFhwcXBPaU16NUgzWkFDbzFHZVhBIiwiZXhwIjoxNzQ0MzgyODIyLCJpYXQiOjE3NDQzODI1MjJ9.0WnGiAz4di6p9NCILV2vMNox_OEobD5K4s5ld9bttQkQqw8MNSAc7uhuBsfHmEVOtMEXVGl58fwJ28sjeNVi7A"
+          "access_token": "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJFUzI1NiIsImtpZCI6Ijk0ZGI4N2NiMjdmNjdjZDA1Zjk5OTlkZjMwNjg1NmQ4In0.eyJhdWQiOiJhcGkxIiwic3ViIjoiNzcyMTNFMzAtRThDQi00NTk1LUIxQjYtNUYwNTBFODMwOEZEIiwiZXhwIjoxNzQ0NzE2MDUxLCJpYXQiOjE3NDQ3MTI0NTEsImp0aSI6Ijg3MTMzNzcwMDk0MTZmYmFhNDM0MmFkMjMxZGUwMDBkIn0.xv_rY9IUnnoC0SeBsoXbF2UZo5wmeYNuumLJuTa7cwq0P6OHa2R5DkrHVMu4Zgz3eipQ_O9wln66BQPr_VG1iQ"
         }
       }
     }
