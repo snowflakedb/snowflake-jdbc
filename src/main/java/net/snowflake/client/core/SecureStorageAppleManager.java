@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -23,7 +24,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
-    if (Strings.isNullOrEmpty(cred)) {
+    if (isNullOrEmpty(cred)) {
       logger.debug("No credential provided", false);
       return SecureStorageStatus.SUCCESS;
     }

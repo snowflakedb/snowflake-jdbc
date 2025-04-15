@@ -1,12 +1,14 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -42,6 +45,7 @@ import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -65,6 +69,10 @@ import org.apache.http.util.EntityUtils;
 /** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
+
+  static final String ERROR_FIELD_NAME = "error";
+  static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
+  static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
@@ -395,8 +403,7 @@ public class HttpUtil {
                         key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
         httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-        if (!Strings.isNullOrEmpty(key.getProxyUser())
-            && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+        if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
           Credentials credentials =
               new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
@@ -649,6 +656,32 @@ public class HttpUtil {
         socketTimeout,
         retryCount,
         ocspAndProxyAndGzipKey,
+        null);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static String executeGeneralRequestOmitRequestGuid(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      throws SnowflakeSQLException, IOException {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        0,
+        null,
+        false,
+        false,
+        false,
+        false,
+        getHttpClient(ocspAndProxyAndGzipKey),
+        new ExecTimeTelemetryData(),
         null);
   }
 
@@ -913,6 +946,12 @@ public class HttpUtil {
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
 
+        if (response != null
+            && response.getStatusLine().getStatusCode() == 400
+            && response.getEntity() != null) {
+          checkForDPoPNonceError(response);
+        }
+
         SnowflakeUtil.logResponseDetails(response, logger);
 
         if (response != null) {
@@ -948,6 +987,22 @@ public class HttpUtil {
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
     return theString;
+  }
+
+  private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
+    String errorResponse = EntityUtils.toString(response.getEntity());
+    if (!isNullOrEmpty(errorResponse)) {
+      ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
+      JsonNode rootNode = objectMapper.readTree(errorResponse);
+      JsonNode errorNode = rootNode.get(ERROR_FIELD_NAME);
+      if (errorNode != null
+          && errorNode.isValueNode()
+          && errorNode.isTextual()
+          && errorNode.textValue().equals(ERROR_USE_DPOP_NONCE)) {
+        throw new SnowflakeUseDPoPNonceException(
+            response.getFirstHeader(DPOP_NONCE_HEADER_NAME).getValue());
+      }
+    }
   }
 
   // This is a workaround for JDK-7036144.

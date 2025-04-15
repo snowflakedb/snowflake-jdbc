@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.base.Strings;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -365,8 +364,7 @@ public class SnowflakeUtil {
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
-      if (!extColTypeNameNode.isMissingNode()
-          && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+      if (!extColTypeNameNode.isMissingNode() && !isNullOrEmpty(extColTypeNameNode.asText())) {
         extColTypeName = extColTypeNameNode.asText();
       }
       ColumnTypeInfo columnTypeInfo =
@@ -753,8 +751,7 @@ public class SnowflakeUtil {
         String userAgentSuffix =
             info.getProperty(SFSessionProperty.USER_AGENT_SUFFIX.getPropertyKey());
         Boolean gzipDisabled =
-            Strings.isNullOrEmpty(
-                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()))
+            isNullOrEmpty(info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()))
                 ? false
                 : Boolean.valueOf(
                     info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()));
@@ -905,5 +902,9 @@ public class SnowflakeUtil {
   @SnowflakeJdbcInternalApi
   public static boolean isWindows() {
     return Constants.getOS() == Constants.OS.WINDOWS;
+  }
+
+  public static boolean isNullOrEmpty(String str) {
+    return str == null || str.isEmpty();
   }
 }
