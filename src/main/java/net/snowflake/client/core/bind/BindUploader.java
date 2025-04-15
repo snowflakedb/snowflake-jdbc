@@ -86,20 +86,20 @@ public class BindUploader implements Closeable {
             + " field_optionally_enclosed_by='\"'"
             + ")";
 
-    Calendar utcCalender = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    utcCalender.clear();
+    Calendar utcCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    utcCalendar.clear();
 
     Calendar localCalendar = new GregorianCalendar(TimeZone.getDefault());
     localCalendar.clear();
 
     this.utcTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.utcTimestampFormat.setCalendar(utcCalender);
+    this.utcTimestampFormat.setCalendar(utcCalendar);
     this.localTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
     this.localTimestampFormat.setCalendar(localCalendar);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(utcCalender);
+    this.dateFormat.setCalendar(utcCalendar);
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(utcCalender);
+    this.timeFormat.setCalendar(utcCalendar);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
