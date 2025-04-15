@@ -56,7 +56,7 @@ public enum AuthenticatorType {
   PROGRAMMATIC_ACCESS_TOKEN,
 
   /*
-   * Authenticator to support existing authentication by existing AWS/GCP/Azure workload identity
+   * Authenticator to support existing authentication by existing AWS/GCP/Azure/OIDC workload identity
    */
   WORKLOAD_IDENTITY
 }
