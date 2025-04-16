@@ -83,7 +83,7 @@ public class SFClientConfig {
 
     public CommonProps() {}
 
-    public void CommonProps(String logLevel, String logPath) {
+    public CommonProps(String logLevel, String logPath) {
       this.logLevel = logLevel;
       this.logPath = logPath;
     }

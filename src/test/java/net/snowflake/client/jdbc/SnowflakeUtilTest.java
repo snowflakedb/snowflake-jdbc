@@ -16,6 +16,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import net.snowflake.client.category.TestTags;
@@ -24,6 +25,7 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
@@ -194,5 +196,57 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     fieldNode.put("collation", collation);
     fieldNode.put("length", length);
     return fieldNode;
+  }
+
+  @Test
+  public void testFieldMetadataSetterMethods() {
+    FieldMetadata fieldMetadata = new FieldMetadata();
+
+    // Testing setName
+    fieldMetadata.setName("testName");
+    assertEquals("testName", fieldMetadata.getName());
+
+    // Testing setTypeName
+    fieldMetadata.setTypeName("VARCHAR");
+    assertEquals("VARCHAR", fieldMetadata.getTypeName());
+
+    // Testing setType
+    fieldMetadata.setType(42);
+    assertEquals(42, fieldMetadata.getType());
+
+    // Testing setNullable
+    fieldMetadata.setNullable(true);
+    assertTrue(fieldMetadata.isNullable());
+    fieldMetadata.setNullable(false);
+    assertFalse(fieldMetadata.isNullable());
+
+    // Testing setByteLength
+    fieldMetadata.setByteLength(255);
+    assertEquals(255, fieldMetadata.getByteLength());
+
+    // Testing setPrecision
+    fieldMetadata.setPrecision(10);
+    assertEquals(10, fieldMetadata.getPrecision());
+
+    // Testing setScale
+    fieldMetadata.setScale(5);
+    assertEquals(5, fieldMetadata.getScale());
+
+    // Testing setFixed
+    fieldMetadata.setFixed(true);
+    assertTrue(fieldMetadata.isFixed());
+    fieldMetadata.setFixed(false);
+    assertFalse(fieldMetadata.isFixed());
+
+    // Testing setBase
+    SnowflakeType mockBase = Mockito.mock(SnowflakeType.class);
+    fieldMetadata.setBase(mockBase);
+    assertEquals(mockBase, fieldMetadata.getBase());
+
+    // Testing setFields
+    List<FieldMetadata> fieldList = new ArrayList<>();
+    fieldList.add(new FieldMetadata());
+    fieldMetadata.setFields(fieldList);
+    assertEquals(fieldList, fieldMetadata.getFields());
   }
 }
