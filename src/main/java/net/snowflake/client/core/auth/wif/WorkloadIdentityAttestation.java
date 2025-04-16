@@ -33,10 +33,14 @@ public class WorkloadIdentityAttestation {
 
   @Override
   public String toString() {
-    return "WorkloadIdentityAttestation{" +
-            "provider=" + provider +
-            ", credential='" + credential + '\'' +
-            ", userIdentifierComponents=" + userIdentifierComponents +
-            '}';
+    return "WorkloadIdentityAttestation{"
+        + "provider="
+        + provider
+        + ", credential='"
+        + credential
+        + '\''
+        + ", userIdentifierComponents="
+        + userIdentifierComponents
+        + '}';
   }
 }
