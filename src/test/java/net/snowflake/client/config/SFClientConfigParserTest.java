@@ -145,7 +145,9 @@ public class SFClientConfigParserTest {
 
   @Test
   void testSFClientConfigConstructorAndAccessors() {
-    SFClientConfig.CommonProps props = new SFClientConfig.CommonProps("DEBUG", "/tmp/logs");
+    SFClientConfig.CommonProps props = new SFClientConfig.CommonProps();
+    props.setLogLevel("DEBUG");
+    props.setLogPath("/tmp/logs");
 
     SFClientConfig config = new SFClientConfig(props);
     config.setConfigFilePath("/etc/snowflake/config.json");
@@ -156,8 +158,9 @@ public class SFClientConfigParserTest {
 
   @Test
   void testCommonPropsConstructorAndAccessors() {
-    SFClientConfig.CommonProps props =
-        new SFClientConfig.CommonProps("DEBUG", "/var/logs/snowflake.log");
+    SFClientConfig.CommonProps props = new SFClientConfig.CommonProps();
+    props.setLogLevel("DEBUG");
+    props.setLogPath("/var/logs/snowflake.log");
 
     assertEquals("DEBUG", props.getLogLevel());
     assertEquals("/var/logs/snowflake.log", props.getLogPath());
@@ -165,9 +168,13 @@ public class SFClientConfigParserTest {
 
   @Test
   void testSFClientConfigEqualsAndHashCode() {
-    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps("INFO", "/tmp");
-    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps("INFO", "/tmp");
+    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps();
+    props1.setLogLevel("INFO");
+    props1.setLogPath("/tmp");
 
+    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps();
+    props2.setLogLevel("INFO");
+    props2.setLogPath("/tmp");
     SFClientConfig config1 = new SFClientConfig(props1);
     SFClientConfig config2 = new SFClientConfig(props2);
 
@@ -181,8 +188,12 @@ public class SFClientConfigParserTest {
 
   @Test
   void testCommonPropsEqualsAndHashCode() {
-    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps("WARN", "/opt/logs");
-    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps("WARN", "/opt/logs");
+    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps();
+    props1.setLogLevel("WARN");
+    props1.setLogPath("/opt/logs");
+    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps();
+    props2.setLogLevel("WARN");
+    props2.setLogPath("/opt/logs");
 
     assertEquals(props1, props2);
     assertEquals(props1.hashCode(), props2.hashCode());
