@@ -89,6 +89,9 @@ public class BindUploader implements Closeable {
     cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     cal.clear();
 
+    logger.debug("calendar details: calendarTimeZone={}, timeInMillis={}, jvmTimeZone={}", cal.getTimeZone(), cal.getTimeInMillis(), TimeZone.getDefault());
+    logger.debug("session details: getFormatDateWithTimezone={}, getDefaultFormatDateWithTimezone={}, getGetDateUseNullTimezone={}, getUseSessionTimezone={}, getEnableReturnTimestampWithTimeZone={}, getArrayBindStageThreshold={}", session.getFormatDateWithTimezone(), session.getDefaultFormatDateWithTimezone(), session.getGetDateUseNullTimezone(), session.getUseSessionTimezone(), session.getEnableReturnTimestampWithTimeZone(), session.getArrayBindStageThreshold());
+
     this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
     this.timestampFormat.setCalendar(cal);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -101,7 +104,11 @@ public class BindUploader implements Closeable {
     if (o == null) {
       return null;
     }
-    return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
+    Long parsed = Long.parseLong(o);
+    java.sql.Date date = new java.sql.Date(parsed);
+    String formatted = dateFormat.format(date);
+    logger.debug("date before binding: timeInMillis={}, date={}, formatted={}", parsed, date, formatted);
+    return formatted;
   }
 
   private synchronized String synchronizedTimeFormat(String o) {
@@ -114,6 +121,7 @@ public class BindUploader implements Closeable {
 
     Time v1 = new Time(sec * 1000);
     String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
+    logger.debug("time before binding: timeInNanos={}, formatted={}", o, formatWithDate);
     // Take out the Date portion of the formatted string. Only time data is needed.
     return formatWithDate.substring(11);
   }
