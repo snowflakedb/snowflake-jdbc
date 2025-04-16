@@ -7,6 +7,7 @@ import static net.snowflake.client.core.auth.wif.WorkloadIdentityProviderType.OI
 
 import java.util.HashMap;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFLoginInput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -35,7 +36,7 @@ class WorkloadIdentityAttestationProviderTest {
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(null),
             new GcpIdentityAttestationCreator(null),
-            new AzureIdentityAttestationCreator(),
+            new AzureIdentityAttestationCreator(null, new SFLoginInput()),
             new OidcIdentityAttestationCreator(null));
     WorkloadIdentityAttestationCreator attestationCreator = provider.getCreator(AWS.name());
     Assertions.assertInstanceOf(AwsIdentityAttestationCreator.class, attestationCreator);

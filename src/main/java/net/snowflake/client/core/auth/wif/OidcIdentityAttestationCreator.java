@@ -18,6 +18,7 @@ public class OidcIdentityAttestationCreator implements WorkloadIdentityAttestati
 
   @Override
   public WorkloadIdentityAttestation createAttestation() {
+    logger.debug("Creating OIDC identity attestation...");
     if (token == null) {
       logger.debug("No OIDC token was specified");
       return null;
