@@ -38,6 +38,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   @Override
   public WorkloadIdentityAttestation createAttestation() {
+    logger.debug("Creating GCP identity attestation...");
     String token = fetchTokenFromMetadataService();
     if (token == null) {
       logger.debug("No GCP token was found.");
@@ -75,7 +76,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
     try {
       return performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
-      logger.debug("GCP metadata server request was not successful: " + e.getMessage());
+      logger.debug("GCP metadata server request was not successful: {}" + e);
       return null;
     }
   }

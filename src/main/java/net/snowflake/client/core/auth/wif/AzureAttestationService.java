@@ -31,7 +31,7 @@ public class AzureAttestationService {
     try {
       return WorkloadIdentityUtil.performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
-      logger.debug("Azure metadata server request was not successful.");
+      logger.debug("Azure metadata server request was not successful: {}", e);
       return null;
     }
   }

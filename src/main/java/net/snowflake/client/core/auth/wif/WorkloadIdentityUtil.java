@@ -57,7 +57,7 @@ class WorkloadIdentityUtil {
       JWT jwt = JWTParser.parse(token);
       return jwt.getJWTClaimsSet().getClaims();
     } catch (Exception e) {
-      logger.debug("Unable to extract JWT claims from token", e);
+      logger.error("Unable to extract JWT claims from token: {}", e);
       return null;
     }
   }

@@ -30,4 +30,13 @@ public class WorkloadIdentityAttestation {
   public Map<String, String> getUserIdentifierComponents() {
     return userIdentifierComponents;
   }
+
+  @Override
+  public String toString() {
+    return "WorkloadIdentityAttestation{" +
+            "provider=" + provider +
+            ", credential='" + credential + '\'' +
+            ", userIdentifierComponents=" + userIdentifierComponents +
+            '}';
+  }
 }

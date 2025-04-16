@@ -50,6 +50,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
 
   @Override
   public WorkloadIdentityAttestation createAttestation() {
+    logger.debug("Creating Azure identity attestation...");
     String identityEndpoint = azureAttestationService.getIdentityEndpoint();
     HttpGet request;
     if (Strings.isNullOrEmpty(identityEndpoint)) {
@@ -71,15 +72,16 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     }
     String token = extractTokenFromJson(tokenJson);
     if (token == null) {
-      logger.debug("No access token found in Azure response.");
+      logger.error("No access token found in Azure response.");
       return null;
     }
     SubjectAndIssuer claims = extractClaimsWithoutVerifyingSignature(token);
     if (claims == null) {
+      logger.error("Could not extract claims from token");
       return null;
     }
     if (!claims.getIssuer().startsWith(EXPECTED_AZURE_TOKEN_ISSUER_PREFIX)) {
-      logger.debug("Unexpected Azure token issuer: {}", claims.getIssuer());
+      logger.error("Unexpected Azure token issuer: {}", claims.getIssuer());
       return null;
     }
     return new WorkloadIdentityAttestation(
@@ -87,8 +89,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
   }
 
   private String getEntraResource(SFLoginInput loginInput) {
-    if (loginInput != null
-        && !Strings.isNullOrEmpty(loginInput.getWorkloadIdentityEntraResource())) {
+    if (!Strings.isNullOrEmpty(loginInput.getWorkloadIdentityEntraResource())) {
       return loginInput.getWorkloadIdentityEntraResource();
     } else {
       return DEFAULT_WORKLOAD_IDENTITY_ENTRA_RESOURCE;
@@ -100,7 +101,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
       JsonNode jsonNode = objectMapper.readTree(tokenJson);
       return jsonNode.get("access_token").asText();
     } catch (Exception e) {
-      logger.debug("Unable to extract token from Azure metadata response: {}", e.getMessage());
+      logger.error("Unable to extract token from Azure metadata response: {}", e.getMessage());
       return null;
     }
   }
