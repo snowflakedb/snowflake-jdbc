@@ -6,11 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
@@ -283,6 +286,55 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       } finally {
         statement.execute("drop table if exists stageinsert");
         statement.execute("drop table if exists regularinsert");
+        TimeZone.setDefault(origTz);
+      }
+    }
+  }
+
+  /**
+   * Test that binding TIMESTAMP_LTZ does not affect other date time bindings time zones as a side
+   * effect
+   *
+   * <p>This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testTimestampLtzBindingNoLongerBreaksOtherDatetimeBindings() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"));
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsertdates(ind int, t1 timestamp_ltz, d1 date)");
+        Date date1 =
+            new java.sql.Date(
+                ZonedDateTime.of(2016, 2, 19, 0, 0, 0, 0, ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli());
+        Timestamp ts1 = new Timestamp(date1.getTime());
+        // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into stageinsertdates values (?,?, ?)")) {
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, ts1);
+          prepStatement.setDate(3, date1);
+          prepStatement.addBatch();
+          prepStatement.executeBatch();
+          prepStatement.getConnection().commit();
+        }
+
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates")) {
+          assertTrue(rs1.next());
+
+          assertEquals(1, rs1.getInt(1));
+          assertEquals(ts1, rs1.getTimestamp(2));
+          assertEquals(date1, rs1.getDate(3));
+        }
+      } finally {
         TimeZone.setDefault(origTz);
       }
     }
