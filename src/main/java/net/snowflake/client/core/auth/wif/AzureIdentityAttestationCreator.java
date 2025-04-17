@@ -85,13 +85,9 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
       logger.error("Could not extract claims from token");
       return null;
     }
-    boolean hasAllowedPrefix = false;
-    for (String prefix : ALLOWED_AZURE_TOKEN_ISSUER_PREFIXES) {
-      if (claims.getIssuer().startsWith(prefix)) {
-        hasAllowedPrefix = true;
-        break;
-      }
-    }
+    boolean hasAllowedPrefix =
+        ALLOWED_AZURE_TOKEN_ISSUER_PREFIXES.stream()
+            .anyMatch(prefix -> claims.getIssuer().startsWith(prefix));
     if (!hasAllowedPrefix) {
       logger.error("Unexpected Azure token issuer: {}", claims.getIssuer());
       return null;
