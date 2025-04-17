@@ -30,12 +30,30 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
+   *     "iss": "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/",
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
+   * }
+   */
+  private static final String SUCCESSFUL_FLOW_V2_ISSUER_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/successful_flow_v2_issuer.json";
+
+  /*
+   * {
    *     "iss": "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
    *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
    * }
    */
   private static final String SUCCESSFUL_FLOW_AZURE_FUNCTIONS_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/successful_flow_azure_functions.json";
+
+  /*
+   * {
+   *     "iss": "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/",
+   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
+   * }
+   */
+  private static final String SUCCESSFUL_FLOW_AZURE_FUNCTIONS_V2_ISSUER_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/successful_flow_azure_functions_v2_issuer.json";
 
   /*
    * {
@@ -101,6 +119,14 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
+  public void successfulFlowV2IssuerScenario() {
+    importMappingFromResources(SUCCESSFUL_FLOW_V2_ISSUER_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput = createLoginInputStub();
+    AzureAttestationService attestationServiceMock = createAttestationServiceSpyForBasicFLow();
+    executeAndAssertCorrectAttestationWithIssuer(attestationServiceMock, loginInput, "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
+  }
+
+  @Test
   public void successfulFlowAzureFunctionsScenario() {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
@@ -112,6 +138,20 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     Mockito.when(attestationServiceSpy.getClientId()).thenReturn("managed-client-id-from-env");
 
     executeAndAssertCorrectAttestation(attestationServiceSpy, loginInput);
+  }
+
+  @Test
+  public void successfulFlowAzureFunctionsWithV2IssuerScenario() {
+    importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_V2_ISSUER_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput = createLoginInputStub();
+    AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
+    Mockito.when(attestationServiceSpy.getIdentityEndpoint())
+        .thenReturn(getBaseUrl() + "metadata/identity/endpoint/from/env");
+    Mockito.when(attestationServiceSpy.getIdentityHeader())
+        .thenReturn("some-identity-header-from-env");
+    Mockito.when(attestationServiceSpy.getClientId()).thenReturn("managed-client-id-from-env");
+
+    executeAndAssertCorrectAttestationWithIssuer(attestationServiceSpy, loginInput, "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
   }
 
   @Test
@@ -204,6 +244,11 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   private void executeAndAssertCorrectAttestation(
       AzureAttestationService attestationServiceMock, SFLoginInput loginInput) {
+    executeAndAssertCorrectAttestationWithIssuer(attestationServiceMock, loginInput, "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/");
+  }
+
+  private void executeAndAssertCorrectAttestationWithIssuer(
+      AzureAttestationService attestationServiceMock, SFLoginInput loginInput, String expectedIssuer) {
     AzureIdentityAttestationCreator attestationCreator =
         new AzureIdentityAttestationCreator(attestationServiceMock, loginInput, getBaseUrl());
 
@@ -213,9 +258,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     assertEquals(
         "77213E30-E8CB-4595-B1B6-5F050E8308FD",
         attestation.getUserIdentifierComponents().get("sub"));
-    assertEquals(
-        "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/",
-        attestation.getUserIdentifierComponents().get("iss"));
+    assertEquals(expectedIssuer, attestation.getUserIdentifierComponents().get("iss"));
     assertNotNull(attestation.getCredential());
   }
 
