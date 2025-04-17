@@ -386,8 +386,6 @@ public class SessionUtil {
 
   static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
     if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
-        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
-        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
         || authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
       boolean experimentalAuthenticationMethodsEnabled =
           Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));

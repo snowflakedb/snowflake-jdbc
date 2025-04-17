@@ -256,13 +256,11 @@ public class SessionUtilTest {
       snowflakeUtilMockedStatic
           .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
           .thenReturn(null);
-      assertThrows(
-          SFException.class,
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      assertThrows(
-          SFException.class,
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
