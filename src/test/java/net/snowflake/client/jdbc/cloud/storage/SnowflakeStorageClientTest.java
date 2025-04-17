@@ -15,14 +15,14 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class SnowflakeStorageClientTest {
 
   private SnowflakeStorageClient storageClient;
 
-  @BeforeEach
+  @BeforeAll
   void setUp() {
     // Mock an implementation of the interface
     storageClient =

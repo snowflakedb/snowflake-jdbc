@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class TokenResponseDTOTest {
@@ -21,18 +20,11 @@ public class TokenResponseDTOTest {
           + "\"refresh_token_expires_in\":7200"
           + "}";
 
-  private TokenResponseDTO tokenResponseDTO;
-
-  @BeforeEach
-  public void setUp() {
-    // Setting up an example TokenResponseDTO
-    tokenResponseDTO =
-        new TokenResponseDTO(
-            "abc123", "refresh123", "bearer", "read write", "testUser", true, 3600, 7200);
-  }
-
   @Test
   public void testConstructorAndGetters() {
+    TokenResponseDTO tokenResponseDTO =
+        new TokenResponseDTO(
+            "abc123", "refresh123", "bearer", "read write", "testUser", true, 3600, 7200);
     // Assert that the constructor has correctly initialized the object
     assertEquals("abc123", tokenResponseDTO.getAccessToken());
     assertEquals("bearer", tokenResponseDTO.getTokenType());
