@@ -4,13 +4,12 @@ import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.DEFAULT_ME
 import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.SubjectAndIssuer;
 import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
@@ -25,9 +24,8 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
   public static final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final Set<String> ALLOWED_AZURE_TOKEN_ISSUER_PREFIXES =
-      new HashSet<>(Arrays.asList(
-        "https://sts.windows.net/",
-        "https://login.microsoftonline.com/"));
+      new HashSet<>(
+          Arrays.asList("https://sts.windows.net/", "https://login.microsoftonline.com/"));
   private static final String DEFAULT_WORKLOAD_IDENTITY_ENTRA_RESOURCE =
       "api://fd3f753b-eed3-462c-b6a7-a4b5bb650aad";
 

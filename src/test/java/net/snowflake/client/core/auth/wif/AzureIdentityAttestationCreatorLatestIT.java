@@ -123,7 +123,10 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     importMappingFromResources(SUCCESSFUL_FLOW_V2_ISSUER_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceMock = createAttestationServiceSpyForBasicFLow();
-    executeAndAssertCorrectAttestationWithIssuer(attestationServiceMock, loginInput, "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
+    executeAndAssertCorrectAttestationWithIssuer(
+        attestationServiceMock,
+        loginInput,
+        "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
   }
 
   @Test
@@ -151,7 +154,10 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
         .thenReturn("some-identity-header-from-env");
     Mockito.when(attestationServiceSpy.getClientId()).thenReturn("managed-client-id-from-env");
 
-    executeAndAssertCorrectAttestationWithIssuer(attestationServiceSpy, loginInput, "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
+    executeAndAssertCorrectAttestationWithIssuer(
+        attestationServiceSpy,
+        loginInput,
+        "https://login.microsoftonline.com/fa15d692-e9c7-4460-a743-29f29522229/");
   }
 
   @Test
@@ -244,11 +250,16 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   private void executeAndAssertCorrectAttestation(
       AzureAttestationService attestationServiceMock, SFLoginInput loginInput) {
-    executeAndAssertCorrectAttestationWithIssuer(attestationServiceMock, loginInput, "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/");
+    executeAndAssertCorrectAttestationWithIssuer(
+        attestationServiceMock,
+        loginInput,
+        "https://sts.windows.net/fa15d692-e9c7-4460-a743-29f29522229/");
   }
 
   private void executeAndAssertCorrectAttestationWithIssuer(
-      AzureAttestationService attestationServiceMock, SFLoginInput loginInput, String expectedIssuer) {
+      AzureAttestationService attestationServiceMock,
+      SFLoginInput loginInput,
+      String expectedIssuer) {
     AzureIdentityAttestationCreator attestationCreator =
         new AzureIdentityAttestationCreator(attestationServiceMock, loginInput, getBaseUrl());
 
