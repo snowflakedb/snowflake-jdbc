@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 
 class SnowflakeStorageClientTest {
 
-  private SnowflakeStorageClient storageClient;
+  private static SnowflakeStorageClient storageClient;
 
   @BeforeAll
-  void setUp() {
+  public static void setUp() {
     // Mock an implementation of the interface
     storageClient =
         new SnowflakeStorageClient() {
