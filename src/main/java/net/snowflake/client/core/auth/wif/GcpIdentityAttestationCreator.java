@@ -1,10 +1,9 @@
 package net.snowflake.client.core.auth.wif;
 
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.DEFAULT_METADATA_SERVICE_BASE_URL;
+import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.performIdentityRequest;
+
 import java.util.Collections;
-import java.util.Map;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
@@ -28,7 +27,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   public GcpIdentityAttestationCreator(SFLoginInput loginInput) {
     this.loginInput = loginInput;
-    gcpMetadataServiceBaseUrl = DEFAULT_GCP_METADATA_SERVICE_BASE_URL;
+    gcpMetadataServiceBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
   }
 
   /** Only for testing purpose */
@@ -39,43 +38,32 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   @Override
   public WorkloadIdentityAttestation createAttestation() {
+    logger.debug("Creating GCP identity attestation...");
     String token = fetchTokenFromMetadataService();
     if (token == null) {
       logger.debug("No GCP token was found.");
       return null;
     }
     // if the token has been returned, we can assume that we're on GCP environment
-    Map<String, Object> claims = extractClaims(token);
+    WorkloadIdentityUtil.SubjectAndIssuer claims =
+        WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
     if (claims == null) {
-      logger.error("Failed to parse JWT and extract claims");
+      logger.error("Could not extract claims from token");
       return null;
     }
-    String issuer = (String) claims.get("iss");
-    if (issuer == null) {
-      logger.error("Missing issuer claim in GCP token");
-      return null;
-    }
-    String subject = (String) claims.get("sub");
-    if (subject == null) {
-      logger.error("Missing sub claim in GCP token");
-      return null;
-    }
-    if (!issuer.equals(EXPECTED_GCP_TOKEN_ISSUER)) {
-      logger.error("Unexpected GCP token issuer:" + issuer);
-      return null;
-    }
-    return new WorkloadIdentityAttestation(
-        WorkloadIdentityProviderType.GCP, token, Collections.singletonMap("sub", subject));
-  }
 
-  private Map<String, Object> extractClaims(String token) {
-    try {
-      JWT jwt = JWTParser.parse(token);
-      return jwt.getJWTClaimsSet().getClaims();
-    } catch (Exception e) {
-      logger.debug("Unable to extract JWT claims from token", e);
+    if (!EXPECTED_GCP_TOKEN_ISSUER.equalsIgnoreCase(claims.getIssuer())) {
+      logger.error(
+          "Unexpected token issuer: {}, should be {}",
+          claims.getIssuer(),
+          EXPECTED_GCP_TOKEN_ISSUER);
       return null;
     }
+
+    return new WorkloadIdentityAttestation(
+        WorkloadIdentityProviderType.GCP,
+        token,
+        Collections.singletonMap("sub", claims.getSubject()));
   }
 
   private String fetchTokenFromMetadataService() {
@@ -86,15 +74,9 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
     HttpGet tokenRequest = new HttpGet(uri);
     tokenRequest.setHeader(METADATA_FLAVOR_HEADER_NAME, METADATA_FLAVOR);
     try {
-      return HttpUtil.executeGeneralRequestOmitRequestGuid(
-          tokenRequest,
-          loginInput.getLoginTimeout(),
-          3, // 3s timeout
-          loginInput.getSocketTimeoutInMillis(),
-          0,
-          loginInput.getHttpClientSettingsKey());
+      return performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
-      logger.debug("GCP metadata server request was not successful: " + e.getMessage());
+      logger.debug("GCP metadata server request was not successful: {}" + e);
       return null;
     }
   }

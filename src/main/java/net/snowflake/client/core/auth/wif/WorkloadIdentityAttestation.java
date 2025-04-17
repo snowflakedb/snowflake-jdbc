@@ -8,15 +8,15 @@ public class WorkloadIdentityAttestation {
 
   private final WorkloadIdentityProviderType provider;
   private final String credential;
-  private final Map<String, String> userIdentifiedComponents;
+  private final Map<String, String> userIdentifierComponents;
 
   WorkloadIdentityAttestation(
       WorkloadIdentityProviderType provider,
       String credential,
-      Map<String, String> userIdentifiedComponents) {
+      Map<String, String> userIdentifierComponents) {
     this.provider = provider;
     this.credential = credential;
-    this.userIdentifiedComponents = userIdentifiedComponents;
+    this.userIdentifierComponents = userIdentifierComponents;
   }
 
   public WorkloadIdentityProviderType getProvider() {
@@ -27,7 +27,20 @@ public class WorkloadIdentityAttestation {
     return credential;
   }
 
-  public Map<String, String> getUserIdentifiedComponents() {
-    return userIdentifiedComponents;
+  public Map<String, String> getUserIdentifierComponents() {
+    return userIdentifierComponents;
+  }
+
+  @Override
+  public String toString() {
+    return "WorkloadIdentityAttestation{"
+        + "provider="
+        + provider
+        + ", credential='"
+        + credential
+        + '\''
+        + ", userIdentifierComponents="
+        + userIdentifierComponents
+        + '}';
   }
 }

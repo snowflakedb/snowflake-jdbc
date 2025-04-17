@@ -81,41 +81,41 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
     assertNotNull(attestation);
     assertEquals(WorkloadIdentityProviderType.GCP, attestation.getProvider());
-    assertEquals("some-subject", attestation.getUserIdentifiedComponents().get("sub"));
+    assertEquals("some-subject", attestation.getUserIdentifierComponents().get("sub"));
     assertNotNull(attestation.getCredential());
   }
 
   @Test
   public void invalidIssuerScenario() {
     importMappingFromResources(INVALID_ISSUER_SCENARIO_MAPPINGS);
-    creatAttestationAndAssertNull();
+    createAttestationAndAssertNull();
   }
 
   @Test
   public void missingIssuerScenario() {
     importMappingFromResources(MISSING_ISSUER_SCENARIO_MAPPINGS);
-    creatAttestationAndAssertNull();
+    createAttestationAndAssertNull();
   }
 
   @Test
   public void missingSubScenario() {
     importMappingFromResources(MISSING_SUB_SCENARIO_MAPPINGS);
-    creatAttestationAndAssertNull();
+    createAttestationAndAssertNull();
   }
 
   @Test
   public void unparsableTokenScenario() {
     importMappingFromResources(TOKEN_PARSE_ERROR_SCENARIO_MAPPINGS);
-    creatAttestationAndAssertNull();
+    createAttestationAndAssertNull();
   }
 
   @Test
   public void httpErrorScenario() {
     importMappingFromResources(HTTP_ERROR_MAPPINGS);
-    creatAttestationAndAssertNull();
+    createAttestationAndAssertNull();
   }
 
-  private void creatAttestationAndAssertNull() {
+  private void createAttestationAndAssertNull() {
     SFLoginInput loginInput = createLoginInputStub();
     GcpIdentityAttestationCreator attestationCreator =
         new GcpIdentityAttestationCreator(loginInput, getBaseUrl());
