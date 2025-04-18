@@ -1,5 +1,8 @@
 package net.snowflake.client.core;
 
+import static com.google.common.base.Throwables.getRootCause;
+import static net.snowflake.client.jdbc.RestRequest.getNewBackoffInMilli;
+import static net.snowflake.client.jdbc.RestRequest.isNonRetryableHTTPCode;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -21,21 +24,32 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -45,7 +59,6 @@ import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -78,6 +91,8 @@ public class HttpUtil {
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   private static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS = 300000; // ms
+  static final int DEFAULT_MALFORMED_RESPONSE_MAX_RETRY_COUNT = 3; // ms
+  static final int DEFAULT_MALFORMED_RESPONSE_RETRY_DELAY = 500; // ms
   static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
@@ -86,6 +101,10 @@ public class HttpUtil {
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
+  //    public static final String JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY =
+  //            "net.snowflake.jdbc.default_malformed_response_max_retry_count";
+  //    public static final String JDBC_MALFORMED_RESPONSE_RETRY_DELAY =
+  //            "net.snowflake.jdbc.malformed_response_retry_delay";
 
   private static Duration connectionTimeout;
   private static Duration socketTimeout;
@@ -865,6 +884,709 @@ public class HttpUtil {
         retryContextManager);
   }
 
+  private static Exception handlingNotRetryableException(
+      Exception ex, HttpExecutingContext httpExecutingContext) throws SnowflakeSQLLoggedException {
+    Set<Class<?>> sslExceptions = new HashSet<>();
+    sslExceptions.add(SSLHandshakeException.class);
+    sslExceptions.add(SSLKeyException.class);
+    sslExceptions.add(SSLPeerUnverifiedException.class);
+    sslExceptions.add(SSLProtocolException.class);
+    Exception savedEx = null;
+    if (ex instanceof IllegalStateException) {
+      throw new SnowflakeSQLLoggedException(
+          null, ErrorCode.INVALID_STATE, ex, /* session= */ ex.getMessage());
+    } else if (isExceptionInGroup(ex, sslExceptions)) {
+      String formattedMsg =
+          ex.getMessage()
+              + "\n"
+              + "Verify that the hostnames and portnumbers in SYSTEM$ALLOWLIST are added to your firewall's allowed list.\n"
+              + "To troubleshoot your connection further, you can refer to this article:\n"
+              + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
+
+      throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
+    } else if (ex instanceof Exception) {
+      savedEx = ex;
+      // if the request took more than socket timeout log a warning
+      long currentMillis = System.currentTimeMillis();
+      if ((currentMillis - httpExecutingContext.getStartTimePerRequest())
+          > HttpUtil.getSocketTimeout().toMillis()) {
+        logger.warn(
+            "{}HTTP request took longer than socket timeout {} ms: {} ms",
+            httpExecutingContext.getRequestId(),
+            HttpUtil.getSocketTimeout().toMillis(),
+            (currentMillis - httpExecutingContext.getStartTimePerRequest()));
+      }
+      StringWriter sw = new StringWriter();
+      savedEx.printStackTrace(new PrintWriter(sw));
+      logger.debug(
+          "{}Exception encountered for: {}, {}, {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.getRequestInfoScrubbed(),
+          ex.getLocalizedMessage(),
+          (ArgSupplier) sw::toString);
+    }
+    return ex;
+  }
+
+  private static boolean isExceptionInGroup(Exception e, Set<Class<?>> group) {
+    for (Class<?> clazz : group) {
+      if (clazz.isInstance(e)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean handleCertificateRevoked(
+      Exception savedEx, HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    if (!skipRetrying && RestRequest.isCertificateRevoked(savedEx)) {
+      String msg = "Unknown reason";
+      Throwable rootCause = RestRequest.getRootCause(savedEx);
+      msg =
+          rootCause.getMessage() != null && !rootCause.getMessage().isEmpty()
+              ? rootCause.getMessage()
+              : msg;
+      logger.debug(
+          "{}Error response not retryable, " + msg + ", request: {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.getRequestInfoScrubbed());
+      EventUtil.triggerBasicEvent(
+          Event.EventType.NETWORK_ERROR,
+          msg + ", Request: " + httpExecutingContext.getRequestInfoScrubbed(),
+          false);
+
+      httpExecutingContext.setBreakRetryReason("certificate revoked error");
+      httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryVertificateRevoked");
+      httpExecutingContext.setShouldRetry(false);
+      return true;
+    }
+    return skipRetrying;
+  }
+
+  private static boolean handleNoRetryiableHttpCode(
+      HttpResponseContextDto dto, HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    CloseableHttpResponse response = dto.getHttpResponse();
+    if (!skipRetrying && isNonRetryableHTTPCode(response, httpExecutingContext.isRetryHTTP403())) {
+      String msg = "Unknown reason";
+      if (response != null) {
+        logger.debug(
+            "{}HTTP response code for request {}: {}",
+            httpExecutingContext.getRequestId(),
+            httpExecutingContext.getRequestInfoScrubbed(),
+            response.getStatusLine().getStatusCode());
+        msg =
+            "StatusCode: "
+                + response.getStatusLine().getStatusCode()
+                + ", Reason: "
+                + response.getStatusLine().getReasonPhrase();
+      } else if (dto.getSavedEx() != null) // may be null.
+      {
+        Throwable rootCause = RestRequest.getRootCause(dto.getSavedEx());
+        msg = rootCause.getMessage();
+      }
+
+      if (response == null || response.getStatusLine().getStatusCode() != 200) {
+        logger.debug(
+            "{}Error response not retryable, " + msg + ", request: {}",
+            httpExecutingContext.getRequestId(),
+            httpExecutingContext.getRequestInfoScrubbed());
+        EventUtil.triggerBasicEvent(
+            Event.EventType.NETWORK_ERROR,
+            msg + ", Request: " + httpExecutingContext.getRequestInfoScrubbed(),
+            false);
+      }
+      httpExecutingContext.setBreakRetryReason("status code does not need retry");
+      //            httpExecutingContext.resetRetryCount();
+      httpExecutingContext.setShouldRetry(false);
+      httpExecutingContext.setSkipRetriesBecauseOf200(
+          response.getStatusLine().getStatusCode() == 200);
+      return true;
+    }
+    if (response == null || response.getStatusLine().getStatusCode() != 200) {
+      logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
+
+      try {
+        if (response != null
+            && response.getStatusLine().getStatusCode() == 400
+            && response.getEntity() != null) {
+          checkForDPoPNonceError(response);
+        }
+
+        SnowflakeUtil.logResponseDetails(response, logger);
+
+        if (response != null) {
+          EntityUtils.consume(response.getEntity());
+        }
+
+        // We throw here exception if timeout was reached for login
+        dto.setSavedEx(
+            new SnowflakeSQLException(
+                SqlState.IO_ERROR,
+                ErrorCode.NETWORK_ERROR.getMessageCode(),
+                "HTTP status="
+                    + ((response != null)
+                        ? response.getStatusLine().getStatusCode()
+                        : "null response")));
+      } catch (IOException e) {
+        dto.setSavedEx(
+            new SnowflakeSQLException(
+                SqlState.IO_ERROR,
+                ErrorCode.NETWORK_ERROR.getMessageCode(),
+                "Exception details: " + e.getMessage()));
+      }
+    }
+    return skipRetrying;
+  }
+
+  private static void logTelemetryEvent(
+      HttpRequestBase request,
+      CloseableHttpResponse response,
+      Exception savedEx,
+      HttpExecutingContext httpExecutingContext) {
+    TelemetryService.getInstance()
+        .logHttpRequestTelemetryEvent(
+            httpExecutingContext.getBreakRetryEventNam(),
+            request,
+            httpExecutingContext.getInjectSocketTimeout(),
+            httpExecutingContext.getCanceling(),
+            httpExecutingContext.isWithoutCookies(),
+            httpExecutingContext.includeRetryParameters,
+            httpExecutingContext.isIncludeRequestGuid(),
+            response,
+            savedEx,
+            httpExecutingContext.getBreakRetryReason(),
+            httpExecutingContext.getRetryTimeout(),
+            httpExecutingContext.getRetryCount(),
+            SqlState.IO_ERROR,
+            ErrorCode.NETWORK_ERROR.getMessageCode());
+  }
+
+  private static boolean handleMaxRetriesExceeded(
+      HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    if (!skipRetrying && httpExecutingContext.maxRetriesExceeded()) {
+      logger.error(
+          "{}Stop retrying as max retries have been reached for request: {}! Max retry count: {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.getRequestInfoScrubbed(),
+          httpExecutingContext.getMaxRetries());
+
+      httpExecutingContext.setBreakRetryReason("max retries reached");
+      httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryLimitExceeded");
+      httpExecutingContext.setShouldRetry(false);
+      return true;
+    }
+    return skipRetrying;
+  }
+
+  private static boolean handleElapsedTimeoutExceeded(
+      HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    if (!skipRetrying && httpExecutingContext.getRetryTimeoutInMilliseconds() > 0) {
+      // Check for retry time-out.
+      // increment total elapsed due to transient issues
+      long elapsedMilliForLastCall =
+          System.currentTimeMillis() - httpExecutingContext.getStartTimePerRequest();
+      httpExecutingContext.increaseElapsedMilliForTransientIssues(elapsedMilliForLastCall);
+
+      // check if the total elapsed time for transient issues has exceeded
+      // the retry timeout and we retry at least the min, if so, we will not
+      // retry
+      if (httpExecutingContext.elapsedTimeExceeded() && httpExecutingContext.moreThanMinRetries()) {
+        logger.error(
+            "{}Stop retrying since elapsed time due to network "
+                + "issues has reached timeout. "
+                + "Elapsed: {} ms, timeout: {} ms",
+            httpExecutingContext.getRequestId(),
+            httpExecutingContext.getElapsedMilliForTransientIssues(),
+            httpExecutingContext.getRetryTimeoutInMilliseconds());
+
+        httpExecutingContext.setBreakRetryReason("retry timeout");
+        httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryTimeout");
+        httpExecutingContext.setShouldRetry(false);
+        return true;
+      }
+    }
+    return skipRetrying;
+  }
+
+  private static boolean handleCancelingSignal(
+      HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    if (!skipRetrying
+        && httpExecutingContext.getCanceling() != null
+        && httpExecutingContext.getCanceling().get()) {
+      logger.debug(
+          "{}Stop retrying since canceling is requested", httpExecutingContext.getRequestId());
+      httpExecutingContext.setBreakRetryReason("canceling is requested");
+      httpExecutingContext.setShouldRetry(false);
+      return true;
+    }
+    return skipRetrying;
+  }
+
+  private static boolean handleNoRetryFlag(
+      HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
+    if (!skipRetrying && httpExecutingContext.isNoRetry()) {
+      logger.debug(
+          "{}HTTP retry disabled for this request. noRetry: {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.isNoRetry());
+      httpExecutingContext.setBreakRetryReason("retry is disabled");
+      httpExecutingContext.resetRetryCount();
+      httpExecutingContext.setShouldRetry(false);
+      return true;
+    }
+    return skipRetrying;
+  }
+
+  private static boolean shouldSkipRetryWithLoggedReason(
+      HttpRequestBase request,
+      HttpResponseContextDto responseDto,
+      HttpExecutingContext httpExecutingContext) {
+    CloseableHttpResponse response = responseDto.getHttpResponse();
+    Exception savedEx = responseDto.getSavedEx();
+    List<Function<Boolean, Boolean>> conditions =
+        Arrays.asList(
+            skipRetrying -> handleNoRetryFlag(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleCancelingSignal(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleElapsedTimeoutExceeded(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleMaxRetriesExceeded(httpExecutingContext, skipRetrying),
+            skipRetrying -> handleCertificateRevoked(savedEx, httpExecutingContext, skipRetrying),
+            skipRetrying ->
+                handleNoRetryiableHttpCode(responseDto, httpExecutingContext, skipRetrying));
+
+    // Process each condition using Stream
+    boolean skipRetrying =
+        conditions.stream().reduce(Function::andThen).orElse(Function.identity()).apply(false);
+
+    // Log telemetry
+    logTelemetryEvent(request, response, savedEx, httpExecutingContext);
+
+    return skipRetrying;
+  }
+
+  public static HttpResponseContextDto executeWitRetries(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean unpackResponse,
+      ExecTimeTelemetryData execTimeTelemetryData)
+      throws SnowflakeSQLException {
+    return executeWitRetries(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        false,
+        unpackResponse,
+        execTimeTelemetryData);
+  }
+  ;
+
+  public static HttpResponseContextDto executeWitRetries(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean noRetry,
+      boolean unpackResponse,
+      ExecTimeTelemetryData execTimeTelemetryData)
+      throws SnowflakeSQLException {
+    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+    String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
+    context.setRetryTimeout(retryTimeout);
+    context.setAuthTimeout(authTimeout);
+    context.setOrigSocketTimeout(socketTimeout);
+    context.setMaxRetries(maxRetries);
+    context.setInjectSocketTimeout(injectSocketTimeout);
+    context.setCanceling(canceling);
+    context.setWithoutCookies(withoutCookies);
+    context.setIncludeRetryParameters(includeRetryParameters);
+    context.setIncludeRequestGuid(includeRequestGuid);
+    context.setRetryHTTP403(retryHTTP403);
+    context.setNoRetry(noRetry);
+    context.setUnpackResponse(unpackResponse);
+    return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
+  }
+
+  public static HttpResponseContextDto executeWitRetries(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      HttpExecutingContext httpExecutingContext,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryManager)
+      throws SnowflakeSQLException {
+    Stopwatch networkComunnicationStapwatch = null;
+    Stopwatch requestReponseStopWatch = null;
+    HttpResponseContextDto responseDto = new HttpResponseContextDto();
+
+    if (logger.isDebugEnabled()) {
+      networkComunnicationStapwatch = new Stopwatch();
+      networkComunnicationStapwatch.start();
+      logger.debug(
+          "{}Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {},"
+              + " inject socket timeout: {}, canceling: {}, without cookies: {}, include retry parameters: {},"
+              + " include request guid: {}, retry http 403: {}, no retry: {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.getRequestInfoScrubbed(),
+          httpExecutingContext.getRetryTimeoutInMilliseconds(),
+          httpExecutingContext.getOrigSocketTimeout(),
+          httpExecutingContext.getMaxRetries(),
+          httpExecutingContext.isInjectSocketTimeout(),
+          httpExecutingContext.getCanceling(),
+          httpExecutingContext.isWithoutCookies(),
+          httpExecutingContext.isIncludeRetryParameters(),
+          httpExecutingContext.isIncludeRequestGuid(),
+          httpExecutingContext.isRetryHTTP403(),
+          httpExecutingContext.isNoRetry());
+    }
+    if (httpExecutingContext.isLoginRequest()) {
+      logger.debug(
+          "{}Request is a login/auth request. Using new retry strategy",
+          httpExecutingContext.getRequestId());
+    }
+
+    RestRequest.setRequestConfig(
+        httpRequest,
+        httpExecutingContext.isWithoutCookies(),
+        httpExecutingContext.getInjectSocketTimeout(),
+        httpExecutingContext.getRequestId(),
+        httpExecutingContext.getAuthTimeoutInMilliseconds());
+
+    // try request till we get a good response or retry timeout
+    while (true) {
+      logger.debug(
+          "{}Retry count: {}, max retries: {}, retry timeout: {} s, backoff: {} ms. Attempting request: {}",
+          httpExecutingContext.getRequestId(),
+          httpExecutingContext.getRetryCount(),
+          httpExecutingContext.getMaxRetries(),
+          httpExecutingContext.getRetryTimeout(),
+          httpExecutingContext.getMinBackoffInMillis(),
+          httpExecutingContext.getRequestInfoScrubbed());
+      try {
+        // update start time
+        httpExecutingContext.setStartTimePerRequest(System.currentTimeMillis());
+
+        RestRequest.setRequestURI(
+            httpRequest,
+            httpExecutingContext.getRequestId(),
+            httpExecutingContext.isIncludeRetryParameters(),
+            httpExecutingContext.isIncludeRequestGuid(),
+            httpExecutingContext.getRetryCount(),
+            httpExecutingContext.getLastStatusCodeForRetry(),
+            httpExecutingContext.getStartTime(),
+            httpExecutingContext.getRequestInfoScrubbed());
+
+        execTimeData.setHttpClientStart();
+        CloseableHttpResponse response = httpClient.execute(httpRequest);
+        responseDto.setHttpResponse(response);
+        execTimeData.setHttpClientEnd();
+      } catch (Exception ex) {
+        responseDto.setSavedEx(handlingNotRetryableException(ex, httpExecutingContext));
+      } finally {
+        // Reset the socket timeout to its original value if it is not the
+        // very first iteration.
+        if (httpExecutingContext.getInjectSocketTimeout() != 0
+            && httpExecutingContext.getRetryCount() == 0) {
+          // test code path
+          httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
+                  httpExecutingContext.getOrigSocketTimeout(),
+                  httpExecutingContext.isWithoutCookies()));
+        }
+      }
+      boolean shouldSkipRetry =
+          shouldSkipRetryWithLoggedReason(httpRequest, responseDto, httpExecutingContext);
+      httpExecutingContext.setShouldRetry(!shouldSkipRetry);
+
+      if (httpExecutingContext.isUnpackResponse()
+          && responseDto.getHttpResponse() != null
+          && responseDto.getHttpResponse().getStatusLine().getStatusCode()
+              == 200) { // todo extract getter for statusCode
+        processHttpResponse(httpExecutingContext, execTimeData, responseDto);
+      }
+
+      if (!httpExecutingContext.isShouldRetry()) {
+        if (responseDto.getHttpResponse() == null) {
+          if (responseDto.getSavedEx() != null) {
+            logger.error(
+                "{}Returning null response. Cause: {}, request: {}",
+                httpExecutingContext.getRequestId(),
+                getRootCause(responseDto.getSavedEx()),
+                httpExecutingContext.getRequestInfoScrubbed());
+          } else {
+            logger.error(
+                "{}Returning null response for request: {}",
+                httpExecutingContext.getRequestId(),
+                httpExecutingContext.getRequestInfoScrubbed());
+          }
+        } else if (responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200) {
+          logger.error(
+              "{}Error response: HTTP Response code: {}, request: {}",
+              httpExecutingContext.getRequestId(),
+              responseDto.getHttpResponse().getStatusLine().getStatusCode(),
+              httpExecutingContext.getRequestInfoScrubbed());
+        } else if ((responseDto.getHttpResponse() == null
+            || responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200)) {
+          sendTelemetryEvent(
+              httpRequest,
+              httpExecutingContext,
+              responseDto.getHttpResponse(),
+              responseDto.getSavedEx());
+        }
+        break;
+      } else {
+        prepareRetry(httpRequest, httpExecutingContext, retryManager, responseDto);
+      }
+    }
+
+    logger.debug(
+        "{}Execution of request {} took {} ms with total of {} retries",
+        httpExecutingContext.getRequestId(),
+        httpExecutingContext.getRequestInfoScrubbed(),
+        networkComunnicationStapwatch == null
+            ? "n/a"
+            : networkComunnicationStapwatch.elapsedMillis(),
+        httpExecutingContext.getRetryCount());
+
+    httpExecutingContext.resetRetryCount();
+    if (logger.isDebugEnabled() && networkComunnicationStapwatch != null) {
+      networkComunnicationStapwatch.stop();
+    }
+    if (responseDto.getSavedEx() != null) {
+      throw new SnowflakeSQLException(
+          responseDto.getSavedEx(),
+          ErrorCode.NETWORK_ERROR,
+          "Exception encountered for HTTP request: " + responseDto.getSavedEx().getMessage());
+    }
+    return responseDto;
+  }
+
+  private static void processHttpResponse(
+      HttpExecutingContext httpExecutingContext,
+      ExecTimeTelemetryData execTimeData,
+      HttpResponseContextDto responseDto) {
+    CloseableHttpResponse response = responseDto.getHttpResponse();
+    try {
+      String responseText;
+      responseText =
+          verifyAndUnpackResponse(
+              response, httpExecutingContext.getRequestInfoScrubbed(), execTimeData);
+      httpExecutingContext.setShouldRetry(false);
+      responseDto.setUnpackedCloseableHttpResponse(responseText);
+    } catch (IOException | SnowflakeSQLException ex) {
+      boolean skipRetriesBecauseOf200 = httpExecutingContext.isSkipRetriesBecauseOf200();
+      boolean retryReasonDifferentThan200 =
+          !httpExecutingContext.isShouldRetry() && skipRetriesBecauseOf200;
+      httpExecutingContext.setShouldRetry(retryReasonDifferentThan200);
+      responseDto.setSavedEx(ex);
+    }
+  }
+
+  private static void prepareRetry(
+      HttpRequestBase httpRequest,
+      HttpExecutingContext httpExecutingContext,
+      RetryContextManager retryManager,
+      HttpResponseContextDto dto)
+      throws SnowflakeSQLException {
+    //        Potentially retryable error
+    logRequestResult(
+        dto.getHttpResponse(),
+        httpExecutingContext.getRequestId(),
+        httpExecutingContext.getRequestInfoScrubbed(),
+        dto.getSavedEx());
+
+    // get the elapsed time for the last request
+    // elapsed in millisecond for last call, used for calculating the
+    // remaining amount of time to sleep:
+    // (backoffInMilli - elapsedMilliForLastCall)
+    long elapsedMilliForLastCall =
+        System.currentTimeMillis() - httpExecutingContext.getStartTimePerRequest();
+
+    if (httpExecutingContext.socketOrConnectTimeoutReached())
+    /* socket timeout not reached */ {
+      /* connect timeout not reached */
+      // check if this is a login-request
+      if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+        throw new SnowflakeSQLException(
+            ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+            httpExecutingContext.getRetryCount(),
+            true,
+            httpExecutingContext.getElapsedMilliForTransientIssues() / 1000);
+      }
+    }
+
+    // sleep for backoff - elapsed amount of time
+    sleepForBackoffAndPrepareNext(elapsedMilliForLastCall, httpExecutingContext);
+
+    httpExecutingContext.incrementRetryCount();
+    httpExecutingContext.setLastStatusCodeForRetry(
+        dto.getHttpResponse() == null
+            ? "0"
+            : String.valueOf(dto.getHttpResponse().getStatusLine().getStatusCode()));
+    // If the request failed with any other retry-able error and auth timeout is reached
+    // increase the retry count and throw special exception to renew the token before retrying.
+
+    RetryContextManager.RetryHook retryManagerHook = null;
+    if (retryManager != null) {
+      retryManagerHook = retryManager.getRetryHook();
+      retryManager
+          .getRetryContext()
+          .setElapsedTimeInMillis(httpExecutingContext.getElapsedMilliForTransientIssues())
+          .setRetryTimeoutInMillis(httpExecutingContext.getRetryTimeoutInMilliseconds());
+    }
+
+    // Make sure that any authenticator specific info that needs to be
+    // updated gets updated before the next retry. Ex - OKTA OTT, JWT token
+    // Aim is to achieve this using RetryContextManager, but raising
+    // AUTHENTICATOR_REQUEST_TIMEOUT Exception is still supported as well. In both cases the
+    // retried request must be aware of the elapsed time not to exceed the timeout limit.
+    if (retryManagerHook == RetryContextManager.RetryHook.ALWAYS_BEFORE_RETRY) {
+      retryManager.executeRetryCallbacks(httpRequest);
+    }
+
+    if (httpExecutingContext.getAuthTimeout() > 0
+        && httpExecutingContext.getElapsedMilliForTransientIssues()
+            >= httpExecutingContext.getAuthTimeout()) {
+      throw new SnowflakeSQLException(
+          ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+          httpExecutingContext.getRetryCount(),
+          false,
+          httpExecutingContext.getElapsedMilliForTransientIssues() / 1000);
+    }
+
+    int numOfRetryToTriggerTelemetry =
+        TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
+    if (httpExecutingContext.getRetryCount() == numOfRetryToTriggerTelemetry) {
+      TelemetryService.getInstance()
+          .logHttpRequestTelemetryEvent(
+              String.format("HttpRequestRetry%dTimes", numOfRetryToTriggerTelemetry),
+              httpRequest,
+              httpExecutingContext.getInjectSocketTimeout(),
+              httpExecutingContext.getCanceling(),
+              httpExecutingContext.isWithoutCookies(),
+              httpExecutingContext.isIncludeRetryParameters(),
+              httpExecutingContext.isIncludeRequestGuid(),
+              dto.getHttpResponse(),
+              dto.getSavedEx(),
+              httpExecutingContext.getBreakRetryReason(),
+              httpExecutingContext.getRetryTimeout(),
+              httpExecutingContext.getRetryCount(),
+              SqlState.IO_ERROR,
+              ErrorCode.NETWORK_ERROR.getMessageCode());
+    }
+    dto.setSavedEx(null);
+    httpExecutingContext.setSkipRetriesBecauseOf200(false);
+
+    // release connection before retry
+    httpRequest.releaseConnection();
+  }
+
+  private static void sendTelemetryEvent(
+      HttpRequestBase httpRequest,
+      HttpExecutingContext httpExecutingContext,
+      CloseableHttpResponse response,
+      Exception savedEx) {
+    String eventName;
+    if (response == null) {
+      eventName = "NullResponseHttpError";
+    } else {
+      if (response.getStatusLine() == null) {
+        eventName = "NullResponseStatusLine";
+      } else {
+        eventName = String.format("HttpError%d", response.getStatusLine().getStatusCode());
+      }
+    }
+    TelemetryService.getInstance()
+        .logHttpRequestTelemetryEvent(
+            eventName,
+            httpRequest,
+            httpExecutingContext.getInjectSocketTimeout(),
+            httpExecutingContext.getCanceling(),
+            httpExecutingContext.isWithoutCookies(),
+            httpExecutingContext.isIncludeRetryParameters(),
+            httpExecutingContext.isIncludeRequestGuid(),
+            response,
+            savedEx,
+            httpExecutingContext.getBreakRetryReason(),
+            httpExecutingContext.getRetryTimeout(),
+            httpExecutingContext.getRetryCount(),
+            null,
+            0);
+  }
+
+  private static void sleepForBackoffAndPrepareNext(
+      long elapsedMilliForLastCall, HttpExecutingContext context) {
+    if (context.getMinBackoffInMillis() > elapsedMilliForLastCall) {
+      try {
+        logger.debug(
+            "{}Retry request {}: sleeping for {} ms",
+            context.getRequestId(),
+            context.getRequestInfoScrubbed(),
+            context.getBackoffInMillis());
+        Thread.sleep(context.getBackoffInMillis());
+      } catch (InterruptedException ex1) {
+        logger.debug(
+            "{}Backoff sleep before retrying login got interrupted", context.getRequestId());
+      }
+      context.increaseElapsedMilliForTransientIssues(context.getBackoffInMillis());
+      context.setBackoffInMillis(
+          getNewBackoffInMilli(
+              context.getBackoffInMillis(),
+              context.isLoginRequest(),
+              context.getBackoff(),
+              context.getRetryCount(),
+              context.getRetryTimeoutInMilliseconds(),
+              context.getElapsedMilliForTransientIssues()));
+    }
+  }
+
+  private static void logRequestResult(
+      CloseableHttpResponse response,
+      String requestIdStr,
+      String requestInfoScrubbed,
+      Exception savedEx) {
+    if (response != null) {
+      logger.debug(
+          "{}HTTP response not ok: status code: {}, request: {}",
+          requestIdStr,
+          response.getStatusLine().getStatusCode(),
+          requestInfoScrubbed);
+    } else if (savedEx != null) {
+      logger.debug(
+          "{}Null response for cause: {}, request: {}",
+          requestIdStr,
+          getRootCause(savedEx).getMessage(),
+          requestInfoScrubbed);
+    } else {
+      logger.debug("{}Null response for request: {}", requestIdStr, requestInfoScrubbed);
+    }
+  }
+
   /**
    * Helper to execute a request with retry and check and throw exception if response is not
    * success. This should be used only for small request has it execute the REST request and get
@@ -905,79 +1627,45 @@ public class HttpUtil {
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
-    // HttpRequest.toString() contains request URI. Scrub any credentials, if
-    // present, before logging
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    String responseText = "";
 
     logger.debug(
         "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
 
-    String theString;
-    StringWriter writer = null;
     CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
-    if (logger.isDebugEnabled()) {
-      stopwatch = new Stopwatch();
-      stopwatch.start();
-    }
-
     try {
-      response =
-          RestRequest.execute(
-              httpClient,
-              httpRequest,
-              retryTimeout,
-              authTimeout,
-              socketTimeout,
-              maxRetries,
-              injectSocketTimeout,
-              canceling,
-              withoutCookies,
-              includeRetryParameters,
-              includeRequestGuid,
-              retryOnHTTP403,
-              execTimeData,
-              retryContextManager);
-      if (logger.isDebugEnabled() && stopwatch != null) {
-        stopwatch.stop();
-      }
+      //            if (includeRetryParameters && retryCount > 0) {
+      //                URIBuilder uriBuilder = new URIBuilder(httpRequest.getURI());
+      //                RestRequest.updateRetryParameters(
+      //                        uriBuilder, retryCount, String.valueOf(NETWORK_ERROR),
+      // System.currentTimeMillis());
+      //                httpRequest.setURI(uriBuilder.build());
+      //            }
+      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+      HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
+      context.setRetryTimeout(retryTimeout);
+      context.setAuthTimeout(authTimeout);
+      context.setOrigSocketTimeout(socketTimeout);
+      context.setMaxRetries(maxRetries);
+      context.setInjectSocketTimeout(injectSocketTimeout);
+      context.setCanceling(canceling);
+      context.setWithoutCookies(withoutCookies);
+      context.setIncludeRetryParameters(includeRetryParameters);
+      context.setIncludeRequestGuid(includeRequestGuid);
+      context.setRetryHTTP403(retryOnHTTP403);
+      context.setUnpackResponse(true);
+      context.setNoRetry(false);
+      responseText =
+          executeWitRetries(httpClient, httpRequest, context, execTimeData, retryContextManager)
+              .getUnpackedCloseableHttpResponse();
 
-      if (response == null || response.getStatusLine().getStatusCode() != 200) {
-        logger.error("Error executing request: {}", requestInfoScrubbed);
-
-        if (response != null
-            && response.getStatusLine().getStatusCode() == 400
-            && response.getEntity() != null) {
-          checkForDPoPNonceError(response);
-        }
-
-        SnowflakeUtil.logResponseDetails(response, logger);
-
-        if (response != null) {
-          EntityUtils.consume(response.getEntity());
-        }
-
-        // We throw here exception if timeout was reached for login
-        throw new SnowflakeSQLException(
-            SqlState.IO_ERROR,
-            ErrorCode.NETWORK_ERROR.getMessageCode(),
-            "HTTP status="
-                + ((response != null)
-                    ? response.getStatusLine().getStatusCode()
-                    : "null response"));
-      }
-
-      execTimeData.setResponseIOStreamStart();
-      writer = new StringWriter();
-      try (InputStream ins = response.getEntity().getContent()) {
-        IOUtils.copy(ins, writer, "UTF-8");
-      }
-      theString = writer.toString();
-      execTimeData.setResponseIOStreamEnd();
-    } finally {
-      IOUtils.closeQuietly(writer);
-      IOUtils.closeQuietly(response);
+      //        } catch (URISyntaxException e) {
+      //            throw new RuntimeException(e);
+    } catch (SnowflakeSQLException e) {
+      throw e;
     }
 
     logger.debug(
@@ -986,10 +1674,52 @@ public class HttpUtil {
         requestInfoScrubbed,
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
-    return theString;
+    return responseText;
   }
 
-  private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
+  private static String verifyAndUnpackResponse(
+      CloseableHttpResponse response,
+      String requestInfoScrubbed,
+      ExecTimeTelemetryData execTimeData)
+      throws IOException, SnowflakeSQLException {
+    try (StringWriter writer = new StringWriter()) {
+      //      if (response == null || response.getStatusLine().getStatusCode() != 200) {
+      //        logger.error("Error executing request: {}", requestInfoScrubbed);
+      //
+      //        if (response != null
+      //            && response.getStatusLine().getStatusCode() == 400
+      //            && response.getEntity() != null) {
+      //          checkForDPoPNonceError(response);
+      //        }
+      //
+      //        SnowflakeUtil.logResponseDetails(response, logger);
+      //
+      //        if (response != null) {
+      //          EntityUtils.consume(response.getEntity());
+      //        }
+      //
+      //        // We throw here exception if timeout was reached for login
+      //        throw new SnowflakeSQLException(
+      //            SqlState.IO_ERROR,
+      //            ErrorCode.NETWORK_ERROR.getMessageCode(),
+      //            "HTTP status="
+      //                + ((response != null)
+      //                    ? response.getStatusLine().getStatusCode()
+      //                    : "null response"));
+      //      }
+      execTimeData.setResponseIOStreamStart();
+      try (InputStream ins = response.getEntity().getContent()) {
+        IOUtils.copy(ins, writer, "UTF-8");
+      }
+
+      execTimeData.setResponseIOStreamEnd();
+      return writer.toString();
+    } finally {
+      IOUtils.closeQuietly(response);
+    }
+  }
+
+  private static void checkForDPoPNonceError(CloseableHttpResponse response) throws IOException {
     String errorResponse = EntityUtils.toString(response.getEntity());
     if (!isNullOrEmpty(errorResponse)) {
       ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
