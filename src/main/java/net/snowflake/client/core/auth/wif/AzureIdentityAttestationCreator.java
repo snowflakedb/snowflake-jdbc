@@ -7,6 +7,9 @@ import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.extractCla
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
@@ -20,7 +23,9 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
       SFLoggerFactory.getLogger(AzureIdentityAttestationCreator.class);
   public static final ObjectMapper objectMapper = new ObjectMapper();
 
-  private static final String EXPECTED_AZURE_TOKEN_ISSUER_PREFIX = "https://sts.windows.net/";
+  private static final Set<String> ALLOWED_AZURE_TOKEN_ISSUER_PREFIXES =
+      new HashSet<>(
+          Arrays.asList("https://sts.windows.net/", "https://login.microsoftonline.com/"));
   private static final String DEFAULT_WORKLOAD_IDENTITY_ENTRA_RESOURCE =
       "api://fd3f753b-eed3-462c-b6a7-a4b5bb650aad";
 
@@ -80,7 +85,10 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
       logger.error("Could not extract claims from token");
       return null;
     }
-    if (!claims.getIssuer().startsWith(EXPECTED_AZURE_TOKEN_ISSUER_PREFIX)) {
+    boolean hasAllowedPrefix =
+        ALLOWED_AZURE_TOKEN_ISSUER_PREFIXES.stream()
+            .anyMatch(prefix -> claims.getIssuer().startsWith(prefix));
+    if (!hasAllowedPrefix) {
       logger.error("Unexpected Azure token issuer: {}", claims.getIssuer());
       return null;
     }
