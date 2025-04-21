@@ -5,16 +5,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,6 +77,8 @@ public class StreamLoader implements Loader, Runnable {
   private String _database;
 
   private List<String> _columns;
+
+  private Map<String, Integer> _vectorColumns = new HashMap<String, Integer>();
 
   private List<String> _keys;
 
@@ -596,6 +593,24 @@ public class StreamLoader implements Loader, Runnable {
       logger.error(ex.getMessage(), ex);
       abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
+  }
+
+  private void getTargetTableVectorColumns() {
+    try {
+      DatabaseMetaData dbmd = _processConn.getMetaData();
+      for (String col : _columns) {
+        try (ResultSet rs = metadata.getColumns(_database, _schema, _table, col)) {
+          // Check if column type is VECTOR, if true, add column name and size to vector column map.
+          if (rs.getString(6).equalsIgnoreCase("vector")) {
+            _vectorColumns.put(col, rs.getInt(7));
+          }
+        }
+      }
+  } catch (SQLException e) {
+      logger.error(e.getMessage(), e);
+      abort(new Loader.ConnectionError(Utils.getCause(e)));
+    }
+
   }
 
   @Override
