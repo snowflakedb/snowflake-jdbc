@@ -1,8 +1,6 @@
 package net.snowflake.client.loader;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +11,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -199,6 +198,68 @@ public class LoaderLatestIT extends LoaderBase {
         assertThat("The first id", rs.getInt(1), equalTo(0));
         assertThat("The first str", rs.getString(2), equalTo("foo_0"));
       }
+    }
+  }
+
+  @DontRunOnGithubActions
+  private void testVectorColumnInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format("CREATE OR REPLACE TABLE %s (vector_col VECTOR(FLOAT, 3))", tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      // insert null
+      loader.submitRow(new Object[] {10});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @DontRunOnGithubActions
+  private void testMultipleVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(FLOAT, 3), vec2 VECTOR(FLOAT, 3))",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      // insert null
+      loader.submitRow(new Object[] {10, 10});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
     }
   }
 }
