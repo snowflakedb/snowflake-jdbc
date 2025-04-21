@@ -175,6 +175,7 @@ public class StreamLoader implements Loader, Runnable {
             typeCheckedColumns.add((String) e);
           }
           _columns = typeCheckedColumns;
+          setVectorColumns();
         }
         break;
       case keys:
@@ -595,7 +596,7 @@ public class StreamLoader implements Loader, Runnable {
     }
   }
 
-  private void getTargetTableVectorColumns() {
+  public void setVectorColumns() {
     try {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
@@ -765,6 +766,10 @@ public class StreamLoader implements Loader, Runnable {
     return this._columns;
   }
 
+  Map<String, Integer> getVectorColumns() {
+    return this._vectorColumns;
+  }
+
   String getColumnsAsString() {
     // comma separate list of column names
     StringBuilder sb = new StringBuilder("\"");
@@ -918,5 +923,28 @@ public class StreamLoader implements Loader, Runnable {
 
   void setTestMode(boolean mode) {
     this._testMode = mode;
+  }
+
+  public String getStageColumnsAsString() {
+    // if there are no vector columns in the target table just select * is needed from the staging table.
+    if (_vectorColumns.isEmpty()) {
+      return "*";
+    }
+
+    StringBuilder sb = new StringBuilder("\"");
+    for (int i = 0; i < _columns.size(); i++) {
+      String colName = _columns.get(i);
+      if (_vectorColumns.containsKey(colName)) {
+        sb.append(colName + "::VECTOR(FLOAT, " + _vectorColumns.get(colName) + ")");
+      }
+      else {
+        sb.append(colName);
+        if (i > 0) {
+          sb.append("\",\"");
+        }
+      }
+    }
+    sb.append("\"");
+    return sb.toString();
   }
 }
