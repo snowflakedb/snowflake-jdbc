@@ -607,11 +607,10 @@ public class StreamLoader implements Loader, Runnable {
           }
         }
       }
-  } catch (SQLException e) {
+    } catch (SQLException e) {
       logger.error(e.getMessage(), e);
       abort(new Loader.ConnectionError(Utils.getCause(e)));
     }
-
   }
 
   @Override
@@ -926,7 +925,8 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   public String getStageColumnsAsString() {
-    // if there are no vector columns in the target table just select * is needed from the staging table.
+    // if there are no vector columns in the target table just select * is needed from the staging
+    // table.
     if (_vectorColumns.isEmpty()) {
       return "*";
     }
@@ -936,8 +936,7 @@ public class StreamLoader implements Loader, Runnable {
       String colName = _columns.get(i);
       if (_vectorColumns.containsKey(colName)) {
         sb.append(colName + "::VECTOR(FLOAT, " + _vectorColumns.get(colName) + ")");
-      }
-      else {
+      } else {
         sb.append(colName);
         if (i > 0) {
           sb.append("\",\"");
