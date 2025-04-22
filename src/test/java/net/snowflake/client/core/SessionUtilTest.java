@@ -264,8 +264,7 @@ public class SessionUtilTest {
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      assertThrows(
-          SFException.class,
+      assertDoesNotThrow(
           () ->
               SessionUtil.checkIfExperimentalAuthnEnabled(
                   AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
