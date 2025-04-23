@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
+public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
 

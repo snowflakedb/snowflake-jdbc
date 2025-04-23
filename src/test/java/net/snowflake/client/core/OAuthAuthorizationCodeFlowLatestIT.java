@@ -10,7 +10,7 @@ import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.StateProvider;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
-import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.jdbc.BaseWiremockIT;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
+public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockIT {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/authorization_code";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
