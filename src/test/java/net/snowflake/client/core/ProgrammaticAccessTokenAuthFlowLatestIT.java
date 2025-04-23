@@ -3,14 +3,14 @@ package net.snowflake.client.core;
 import java.util.HashMap;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
-import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.jdbc.BaseWiremockIT;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockTest {
+public class ProgrammaticAccessTokenAuthFlowLatestIT extends BaseWiremockIT {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/pat";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =

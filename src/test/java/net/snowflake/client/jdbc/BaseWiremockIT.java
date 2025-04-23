@@ -46,9 +46,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
-public abstract class BaseWiremockTest {
+public abstract class BaseWiremockIT {
 
-  protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockTest.class);
+  protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockIT.class);
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";
   protected static final String WIREMOCK_M2_PATH =
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
@@ -148,7 +148,7 @@ public abstract class BaseWiremockTest {
     await()
         .pollDelay(Duration.ofSeconds(1))
         .atMost(Duration.ofSeconds(3))
-        .until(BaseWiremockTest::isWiremockResponding);
+        .until(BaseWiremockIT::isWiremockResponding);
   }
 
   private static boolean isWiremockResponding() {
@@ -412,7 +412,7 @@ public abstract class BaseWiremockTest {
   }
 
   protected void importMappingFromResources(String relativePath) {
-    try (InputStream is = BaseWiremockTest.class.getResourceAsStream(relativePath)) {
+    try (InputStream is = BaseWiremockIT.class.getResourceAsStream(relativePath)) {
       String scenario = IOUtils.toString(Objects.requireNonNull(is), StandardCharsets.UTF_8.name());
       importMapping(scenario);
     } catch (Exception e) {
