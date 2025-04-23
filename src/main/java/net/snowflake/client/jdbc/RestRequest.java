@@ -73,12 +73,227 @@ public class RestRequest {
   static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
   static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
 
-  @SnowflakeJdbcInternalApi
-  public static void updateRetryParameters(
-      URIBuilder builder, int retryCount, String lastStatusCodeForRetry, long startTime) {
-    builder.setParameter("retryCount", String.valueOf(retryCount));
-    builder.setParameter("retryReason", lastStatusCodeForRetry);
-    builder.setParameter("clientStartTime", String.valueOf(startTime));
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeTelemetryData)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        false, // noRetry
+        execTimeTelemetryData,
+        null);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        noRetry,
+        execTimeData,
+        null);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        false, // noRetry
+        execTimeData,
+        retryContextManager);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param noRetry should we disable retry on non-successful http resp code
+   * @param execTimeData ExecTimeTelemetryData
+   * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
+   *     should be executed before and/or after the retry
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryManager)
+      throws SnowflakeSQLException {
+    return executeWitRetries(
+            httpClient,
+            httpRequest,
+            retryTimeout,
+            authTimeout,
+            socketTimeout,
+            maxRetries,
+            injectSocketTimeout,
+            canceling, // no canceling
+            withoutCookies, // no cookie
+            includeRetryParameters, // no retry
+            includeRequestGuid, // no request_guid
+            retryHTTP403, // retry on HTTP 403
+            noRetry,
+            new ExecTimeTelemetryData())
+        .getHttpResponse();
   }
 
   public static long getNewBackoffInMilli(
@@ -521,6 +736,14 @@ public class RestRequest {
       httpExecutingContext.setShouldRetry(retryReasonDifferentThan200);
       responseDto.setSavedEx(ex);
     }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void updateRetryParameters(
+      URIBuilder builder, int retryCount, String lastStatusCodeForRetry, long startTime) {
+    builder.setParameter("retryCount", String.valueOf(retryCount));
+    builder.setParameter("retryReason", lastStatusCodeForRetry);
+    builder.setParameter("clientStartTime", String.valueOf(startTime));
   }
 
   private static void prepareRetry(
