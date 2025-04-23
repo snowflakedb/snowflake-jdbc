@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ExecTimeTelemetryData;
-import net.snowflake.client.core.HttpUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -54,7 +53,7 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       HttpGet request =
           new HttpGet(String.format("http://%s:%d/endpoint", WIREMOCK_HOST, wiremockHttpPort));
-      HttpUtil.executeWitRetries(
+      RestRequest.executeWitRetries(
           httpClient,
           request,
           0,

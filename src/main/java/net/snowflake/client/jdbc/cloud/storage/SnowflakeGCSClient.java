@@ -53,6 +53,7 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -278,7 +279,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Get the file on storage using the presigned url
           HttpResponseContextDto responseDto =
-              HttpUtil.executeWitRetries(
+              RestRequest.executeWitRetries(
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
@@ -475,7 +476,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Put the file on storage using the presigned url
           HttpResponse response =
-              HttpUtil.executeWitRetries(
+              RestRequest.executeWitRetries(
                       httpClient,
                       httpRequest,
                       session.getNetworkTimeoutInMilli() / 1000, // retry timeout
@@ -957,7 +958,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       // Put the file on storage using the presigned url
       HttpResponse response =
-          HttpUtil.executeWitRetries(
+          RestRequest.executeWitRetries(
                   httpClient,
                   httpRequest,
                   networkTimeoutInMilli / 1000, // retry timeout
