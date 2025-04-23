@@ -151,6 +151,9 @@ public abstract class SFBaseSession {
 
   private boolean clearBatchOnlyAfterSuccessfulExecution = false;
 
+  /** Treat java.sql.Time as wall clock time without converting it to UTC */
+  private boolean treatTimeAsWallClockTime = false;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -1361,5 +1364,13 @@ public abstract class SFBaseSession {
   @SnowflakeJdbcInternalApi
   public boolean getClearBatchOnlyAfterSuccessfulExecution() {
     return this.clearBatchOnlyAfterSuccessfulExecution;
+  }
+
+  public boolean getTreatTimeAsWallClockTime() {
+    return treatTimeAsWallClockTime;
+  }
+
+  public void setTreatTimeAsWallClockTime(boolean treatTimeAsWallClockTime) {
+    this.treatTimeAsWallClockTime = treatTimeAsWallClockTime;
   }
 }

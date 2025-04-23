@@ -569,6 +569,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME:
+          if (propertyValue != null) {
+            setTreatTimeAsWallClockTime(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }

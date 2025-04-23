@@ -11,14 +11,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Properties;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.util.SFPair;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -337,6 +342,107 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       } finally {
         TimeZone.setDefault(origTz);
       }
+    }
+  }
+
+  /**
+   * This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testGregorianJulianConversions() throws SQLException {
+    List<SFPair<String, Date>> dates =
+        Arrays.asList(
+            SFPair.of("0001-01-01", Date.valueOf("0001-01-01")),
+            SFPair.of("0100-03-01", Date.valueOf("0100-03-01")),
+            SFPair.of("0400-02-29", Date.valueOf("0400-02-29")),
+            SFPair.of("0400-03-01", Date.valueOf("0400-03-01")),
+            SFPair.of("1582-10-15", Date.valueOf("1582-10-15")),
+            SFPair.of("1900-02-28", Date.valueOf("1900-02-28")),
+            SFPair.of("1900-03-01", Date.valueOf("1900-03-01")),
+            SFPair.of("1969-12-31", Date.valueOf("1969-12-31")),
+            SFPair.of("1970-01-01", Date.valueOf("1970-01-01")),
+            SFPair.of("2000-02-28", Date.valueOf("2000-02-28")),
+            SFPair.of("2000-02-29", Date.valueOf("2000-02-29")),
+            SFPair.of("2000-03-01", Date.valueOf("2000-03-01")),
+            SFPair.of("2023-10-26", Date.valueOf("2023-10-26")),
+            SFPair.of("2024-02-29", Date.valueOf("2024-02-29")));
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
+        for (int i = 0; i < dates.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setDate(2, dates.get(i).right);
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates")) {
+        for (int i = 0; i < dates.size(); i++) {
+          assertTrue(rs1.next());
+          assertEquals(i, rs1.getInt(1));
+          assertEquals(dates.get(i).left, rs1.getDate(2).toLocalDate().toString());
+        }
+      }
+    }
+  }
+
+  /**
+   * This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testInsertTimeColumnAsWallClockTimeRegardlessOfTimezone() throws SQLException {
+    List<String> times =
+        Arrays.asList(
+            "00:00:00", "11:59:59", "12:00:00", "12:34:56", "13:01:01", "15:30:00", "23:59:59");
+
+    Properties props = new Properties();
+    props.put("CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", true);
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table test_wall_clock_time(ind int, t1 time)");
+      statement.execute("alter session set TIMEZONE='America/Los_Angeles';");
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_wall_clock_time values (?,?)")) {
+        for (int i = 0; i < times.size(); i++) {
+          Time time = Time.valueOf(times.get(i));
+          prepStatement.setInt(1, i);
+          prepStatement.setTime(2, time);
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs = statement.executeQuery("select * from test_wall_clock_time")) {
+        for (int i = 0; i < times.size(); i++) {
+          assertTrue(rs.next());
+          assertEquals(i, rs.getInt(1));
+          // check if inserted time is wall clock time
+          assertEquals(times.get(i), rs.getString(2));
+        }
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
     }
   }
 
