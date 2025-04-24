@@ -360,6 +360,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             SFPair.of("0100-03-01", Date.valueOf("0100-03-01")),
             SFPair.of("0400-02-29", Date.valueOf("0400-02-29")),
             SFPair.of("0400-03-01", Date.valueOf("0400-03-01")),
+            SFPair.of("1400-03-01", Date.valueOf("1400-03-01")),
             SFPair.of("1582-10-15", Date.valueOf("1582-10-15")),
             SFPair.of("1900-02-28", Date.valueOf("1900-02-28")),
             SFPair.of("1900-03-01", Date.valueOf("1900-03-01")),
@@ -407,9 +408,17 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void testInsertTimeColumnAsWallClockTimeRegardlessOfTimezone() throws SQLException {
-    List<String> times =
+    TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
+
+    List<Time> times =
         Arrays.asList(
-            "00:00:00", "11:59:59", "12:00:00", "12:34:56", "13:01:01", "15:30:00", "23:59:59");
+            Time.valueOf("00:00:00"),
+            Time.valueOf("11:59:59"),
+            Time.valueOf("12:00:00"),
+            Time.valueOf("12:34:56"),
+            Time.valueOf("13:01:01"),
+            Time.valueOf("15:30:00"),
+            Time.valueOf("23:59:59"));
 
     Properties props = new Properties();
     props.put("CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", true);
@@ -418,14 +427,12 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       statement.execute("create or replace table test_wall_clock_time(ind int, t1 time)");
       statement.execute("alter session set TIMEZONE='America/Los_Angeles';");
       statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-      TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into test_wall_clock_time values (?,?)")) {
         for (int i = 0; i < times.size(); i++) {
-          Time time = Time.valueOf(times.get(i));
           prepStatement.setInt(1, i);
-          prepStatement.setTime(2, time);
+          prepStatement.setTime(2, times.get(i));
           prepStatement.addBatch();
         }
 
@@ -433,12 +440,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         prepStatement.getConnection().commit();
       }
 
-      try (ResultSet rs = statement.executeQuery("select * from test_wall_clock_time")) {
+      try (ResultSet rs =
+          statement.executeQuery("select * from test_wall_clock_time order by ind")) {
         for (int i = 0; i < times.size(); i++) {
           assertTrue(rs.next());
           assertEquals(i, rs.getInt(1));
+          assertEquals(times.get(i), rs.getTime(2));
           // check if inserted time is wall clock time
-          assertEquals(times.get(i), rs.getString(2));
+          assertEquals(times.get(i).toString(), rs.getString(2));
         }
       }
     } finally {
