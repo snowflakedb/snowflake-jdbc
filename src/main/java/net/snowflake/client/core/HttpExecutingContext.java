@@ -27,28 +27,28 @@ public class HttpExecutingContext {
   // when there are transient network/GS issues
   private long startTimePerRequest;
   // Used to indicate that this is a login/auth request and will be using the new retry strategy.
-  boolean isLoginRequest;
-  long elapsedMilliForTransientIssues;
-  long retryTimeout;
-  long authTimeout;
-  DecorrelatedJitterBackoff backoff;
-  long backoffInMillis;
-  int origSocketTimeout;
-  String breakRetryReason;
-  String breakRetryEventNam;
-  String lastStatusCodeForRetry;
-  int retryCount;
-  int maxRetries;
-  boolean noRetry;
-  int injectSocketTimeout;
-  boolean retryHTTP403;
-  boolean shouldRetry;
-  boolean skipRetriesBecauseOf200; // todo create skip retry reason enum
-  boolean withoutCookies;
-  boolean includeRetryParameters;
-  boolean includeRequestGuid;
-  boolean unpackResponse;
-  AtomicBoolean canceling;
+  private boolean isLoginRequest;
+  private long elapsedMilliForTransientIssues;
+  private long retryTimeout;
+  private long authTimeout;
+  private DecorrelatedJitterBackoff backoff;
+  private long backoffInMillis;
+  private int origSocketTimeout;
+  private String breakRetryReason;
+  private String breakRetryEventNam;
+  private String lastStatusCodeForRetry;
+  private int retryCount;
+  private int maxRetries;
+  private boolean noRetry;
+  private int injectSocketTimeout;
+  private boolean retryHTTP403;
+  private boolean shouldRetry;
+  private boolean skipRetriesBecauseOf200; // todo create skip retry reason enum
+  private boolean withoutCookies;
+  private boolean includeRetryParameters;
+  private boolean includeRequestGuid;
+  private boolean unpackResponse;
+  private AtomicBoolean canceling;
 
   public HttpExecutingContext(String requestIdStr, String requestInfoScrubbed) {
     this.requestId = requestIdStr;

@@ -313,10 +313,6 @@ public class AbstractDriverIT {
     properties.put("warehouse", params.get("warehouse"));
     properties.put("ssl", params.get("ssl"));
 
-    //    properties.put("useProxy", "true");
-    //    properties.put("proxyHost", "localhost");
-    //    properties.put("proxyPort", "8080");
-
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
 

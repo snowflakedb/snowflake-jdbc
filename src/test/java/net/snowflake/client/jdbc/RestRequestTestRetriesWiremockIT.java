@@ -31,11 +31,10 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
   }
 
   @Test
-  public void testRetryWhen503Code() throws IOException {
+  public void testRetryWhen503Code() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
     Properties props = new Properties();
     props.setProperty("maxHttpRetries", "3");
-    //    WireMock.setScenarioState("malformed_response_retry", "MALFORMED_RETRY_3");
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     WireMock.verify(4, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
@@ -47,7 +46,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
   }
 
   @Test
-  public void testHttpClientFailedAfterFiveRetries() throws IOException {
+  public void testHttpClientFailedAfterFiveRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     Properties props = new Properties();
     props.setProperty("maxHttpRetries", "5");
@@ -59,7 +58,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
   }
 
   @Test
-  public void testHttpClientSuccessAfterFiveRetries() throws IOException {
+  public void testHttpClientSuccessAfterFiveRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
       Properties props = new Properties();
@@ -75,7 +74,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
   }
 
   @Test
-  public void testHttpClientSuccessWithoutRetries() throws IOException {
+  public void testHttpClientSuccessWithoutRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
       WireMock.setScenarioState("malformed_response_retry", "CORRECT");
