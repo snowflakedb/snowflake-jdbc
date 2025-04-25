@@ -296,7 +296,7 @@ public class RestRequest {
         .getHttpResponse();
   }
 
-  public static long getNewBackoffInMilli(
+  static long getNewBackoffInMilli(
       long previousBackoffInMilli,
       boolean isLoginRequest,
       DecorrelatedJitterBackoff decorrelatedJitterBackoff,
@@ -337,8 +337,7 @@ public class RestRequest {
     return backoffInMilli;
   }
 
-  public static boolean isNonRetryableHTTPCode(
-      CloseableHttpResponse response, boolean retryHTTP403) {
+  static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
     return (response != null)
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -351,7 +350,7 @@ public class RestRequest {
         (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
-  public static boolean isCertificateRevoked(Exception ex) {
+  private static boolean isCertificateRevoked(Exception ex) {
     if (ex == null) {
       return false;
     }
@@ -363,7 +362,7 @@ public class RestRequest {
     return cause.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED;
   }
 
-  public static Throwable getRootCause(Throwable ex) {
+  private static Throwable getRootCause(Throwable ex) {
     Throwable ex0 = ex;
     while (ex0.getCause() != null) {
       ex0 = ex0.getCause();
@@ -371,7 +370,7 @@ public class RestRequest {
     return ex0;
   }
 
-  public static void setRequestConfig(
+  private static void setRequestConfig(
       HttpRequestBase httpRequest,
       boolean withoutCookies,
       int injectSocketTimeout,
@@ -405,7 +404,7 @@ public class RestRequest {
     }
   }
 
-  public static void setRequestURI(
+  private static void setRequestURI(
       HttpRequestBase httpRequest,
       String requestIdStr,
       boolean includeRetryParameters,
@@ -464,6 +463,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWitRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -520,6 +520,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWitRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -566,6 +567,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWitRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -738,8 +740,7 @@ public class RestRequest {
     }
   }
 
-  @SnowflakeJdbcInternalApi
-  public static void updateRetryParameters(
+  private static void updateRetryParameters(
       URIBuilder builder, int retryCount, String lastStatusCodeForRetry, long startTime) {
     builder.setParameter("retryCount", String.valueOf(retryCount));
     builder.setParameter("retryReason", lastStatusCodeForRetry);
