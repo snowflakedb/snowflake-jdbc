@@ -918,6 +918,7 @@ public class HttpUtil {
       context.setRetryHTTP403(retryOnHTTP403);
       context.setUnpackResponse(true);
       context.setNoRetry(false);
+      context.setLoginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest));
       responseText =
           RestRequest.executeWitRetries(
                   httpClient, httpRequest, context, execTimeData, retryContextManager)
