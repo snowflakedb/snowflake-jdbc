@@ -203,7 +203,7 @@ public class LoaderLatestIT extends LoaderBase {
     }
   }
 
-  @DontRunOnGithubActions
+  @Test
   private void testVectorColumnInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
@@ -222,8 +222,7 @@ public class LoaderLatestIT extends LoaderBase {
       TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
       loader.start();
 
-      // insert null
-      loader.submitRow(new Object[] {10});
+      loader.submitRow(new Object[] {"[12, 14.0, 100]"});
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
@@ -233,6 +232,7 @@ public class LoaderLatestIT extends LoaderBase {
     }
   }
 
+  @Test
   @DontRunOnGithubActions
   private void testMultipleVectorColumnsInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
@@ -254,8 +254,7 @@ public class LoaderLatestIT extends LoaderBase {
       TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
       loader.start();
 
-      // insert null
-      loader.submitRow(new Object[] {10, 10});
+      loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]"});
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
