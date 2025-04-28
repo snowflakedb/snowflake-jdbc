@@ -26,6 +26,7 @@ public enum SFSessionProperty {
   OAUTH_SCOPE("oauthScope", false, String.class),
   OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
   OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
+  OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS("oauthEnableSingleUseRefreshTokens", false, Boolean.class),
   WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
   WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
