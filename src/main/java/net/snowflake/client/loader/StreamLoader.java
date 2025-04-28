@@ -938,19 +938,20 @@ public class StreamLoader implements Loader, Runnable {
       return "*";
     }
 
-    StringBuilder sb = new StringBuilder("\"");
+    StringBuilder sb = new StringBuilder();
     for (int i = 0; i < _columns.size(); i++) {
       String colName = _columns.get(i);
       if (_vectorColumns.containsKey(colName)) {
         sb.append(colName + "::VECTOR(FLOAT, " + _vectorColumns.get(colName) + ")");
       } else {
+        sb.append("\"");
         sb.append(colName);
-        if (i > 0) {
-          sb.append("\",\"");
-        }
+        sb.append("\"");
+      }
+      if (i != _columns.size() - 1) {
+        sb.append(", ");
       }
     }
-    sb.append("\"");
     return sb.toString();
   }
 }
