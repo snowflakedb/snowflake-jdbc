@@ -569,6 +569,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME:
+          if (propertyValue != null) {
+            setTreatTimeAsWallClockTime(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -680,7 +686,10 @@ public class SFSession extends SFBaseSession {
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_AUTHORIZATION_URL),
             (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_TOKEN_REQUEST_URL),
-            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE));
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE),
+            getBooleanValue(
+                connectionPropertiesMap.get(
+                    SFSessionProperty.OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS)));
 
     loginInput
         .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
