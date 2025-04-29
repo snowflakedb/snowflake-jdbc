@@ -129,7 +129,10 @@ public enum SFSessionProperty {
   IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", false, Boolean.class),
 
   CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
-      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class);
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class),
+
+  CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME(
+      "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
