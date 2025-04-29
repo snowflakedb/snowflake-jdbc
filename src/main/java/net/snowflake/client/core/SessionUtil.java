@@ -354,6 +354,13 @@ public class SessionUtil {
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
     readCachedCredentialsIfPossible(loginInput);
+
+    try {
+      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
+    } catch (IOException ex) {
+      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
+    }
+
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -513,13 +520,6 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
-    try {
-      // Adjust OCSP cache server if it is private link
-      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
-    } catch (IOException ex) {
-      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
-    }
-
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     // build URL for login request
@@ -1923,8 +1923,7 @@ public class SessionUtil {
   }
 
   /**
-   * Reset OCSP cache server if the snowflake server URL is for private link. If the URL is not for
-   * private link, do nothing.
+   * Set OCSP cache server. If the URL is for private link sets it to special cache server.
    *
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    * @throws IOException If exception encountered
