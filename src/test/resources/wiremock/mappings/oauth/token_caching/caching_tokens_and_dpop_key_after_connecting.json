@@ -3,6 +3,22 @@
     {
       "scenarioName": "Successful writing access token and refresh token to empty cache",
       "requiredScenarioState": "Started",
+      "newScenarioState": "Authorized",
+      "request": {
+        "urlPathPattern": "/oauth/authorize.*",
+        "method": "GET"
+      },
+      "response": {
+        "transformers": ["response-template"],
+        "status": 302,
+        "headers": {
+          "Location": "{{request.query.redirect_uri}}?code=123&state={{request.query.state}}"
+        }
+      }
+    },
+    {
+      "scenarioName": "Successful writing access token and refresh token to empty cache",
+      "requiredScenarioState": "Authorized",
       "newScenarioState": "Acquired tokens",
       "request": {
         "urlPathPattern": "/oauth/token-request.*",
@@ -20,7 +36,7 @@
         },
         "bodyPatterns": [
           {
-            "contains": "grant_type=client_credentials&scope=session%3Arole%3AANALYST"
+            "contains": "grant_type=authorization_code&code=123"
           }
         ]
       },
@@ -76,7 +92,7 @@
                 "TOKEN": "access-token-123",
                 "LOGIN_NAME": "MOCK_USERNAME",
                 "AUTHENTICATOR": "OAUTH",
-                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS"
+                "OAUTH_TYPE": "OAUTH_AUTHORIZATION_CODE"
               }
             },
             "ignoreExtraElements" : true

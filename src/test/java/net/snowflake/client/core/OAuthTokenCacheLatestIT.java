@@ -230,8 +230,8 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
 
   private SFLoginInput createLoginInputStub() {
     SFLoginInput input = new SFLoginInput();
-    input.setAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
-    input.setOriginalAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+    input.setAuthenticator(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name());
+    input.setOriginalAuthenticator(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name());
     input.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
     input.setUserName("MOCK_USERNAME");
     input.setAccountName("MOCK_ACCOUNT_NAME");
@@ -239,7 +239,9 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
     input.setAppVersion("MOCK_APP_VERSION");
     input.setOCSPMode(OCSPMode.FAIL_OPEN);
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
-    input.setBrowserResponseTimeout(Duration.ofSeconds(20));
+    input.setBrowserResponseTimeout(Duration.ofSeconds(5));
+    input.setBrowserHandler(
+        new OAuthAuthorizationCodeFlowLatestIT.WiremockProxyRequestBrowserHandler());
     input.setLoginTimeout(1000);
     input.setSessionParameters(Collections.singletonMap("CLIENT_STORE_TEMPORARY_CREDENTIAL", true));
     input.setOauthLoginInput(
@@ -247,7 +249,7 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
             "123",
             "123",
             null,
-            null,
+            String.format("http://%s:%d/oauth/authorize", WIREMOCK_HOST, wiremockHttpPort),
             String.format("http://%s:%d/oauth/token-request", WIREMOCK_HOST, wiremockHttpPort),
             "session:role:ANALYST"));
     return input;
