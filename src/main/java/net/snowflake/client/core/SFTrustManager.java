@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -10,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -165,8 +165,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   /** Default OCSP Cache server host name prefix */
   private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
-  /** Default OCSP Cache server host name */
-  private static final String DEFAULT_OCSP_CACHE_HOST = DEFAULT_OCSP_CACHE_HOST_PREFIX + "com";
+  /** Default domain for OCSP cache host */
+  private static final String DEFAULT_OCSP_CACHE_HOST_DOMAIN = "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -329,7 +329,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
   }
 
-  private static void setOCSPResponseCacheServerURL(String topLevelDomain) {
+  static void setOCSPResponseCacheServerURL(String serverURL) {
     String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -345,6 +345,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           true);
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
+      String topLevelDomain = DEFAULT_OCSP_CACHE_HOST_DOMAIN;
+      try {
+        URL url = new URL(serverURL);
+        int domainIndex = url.getHost().lastIndexOf(".") + 1;
+        topLevelDomain = url.getHost().substring(domainIndex);
+      } catch (Exception e) {
+        logger.debug("Exception while setting top level domain (for OCSP)", e);
+      }
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
           String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
     }
@@ -577,8 +585,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               Protocol.HTTP,
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())
-          && !Strings.isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
+      if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
+          && !isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
         Credentials credentials =
             new UsernamePasswordCredentials(
                 proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
@@ -772,8 +780,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    String topLevelDomain = peerHost.substring(peerHost.lastIndexOf(".") + 1);
-    setOCSPResponseCacheServerURL(topLevelDomain);
     boolean isCached = isCached(pairIssuerSubjectList);
     if (useOCSPResponseCacheServer() && !isCached) {
       if (!ocspCacheServer.new_endpoint_enabled) {
@@ -1106,7 +1112,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         String urlEncodedOCSPReq = URLUtil.urlEncode(ocspReqDerBase64);
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
           URL ocspUrl = new URL(ocspUrlStr);
-          if (!Strings.isNullOrEmpty(ocspUrl.getPath())) {
+          if (!isNullOrEmpty(ocspUrl.getPath())) {
             path = ocspUrl.getPath();
           }
           if (ocspUrl.getPort() > 0) {

@@ -7,11 +7,14 @@ import java.util.Properties;
 public class AuthConnectionParameters {
 
   static final String SSO_USER = systemGetEnv("SNOWFLAKE_AUTH_TEST_BROWSER_USER");
+  static final String SNOWFLAKE_USER = systemGetEnv("SNOWFLAKE_AUTH_TEST_SNOWFLAKE_USER");
   static final String HOST = systemGetEnv("SNOWFLAKE_AUTH_TEST_HOST");
   static final String SSO_PASSWORD = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_PASS");
   static final String OKTA = systemGetEnv("SNOWFLAKE_AUTH_TEST_OKTA_NAME");
   static final String OAUTH_PASSWORD =
       systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
+  static final String SNOWFLAKE_INTERNAL_ROLE =
+      systemGetEnv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE");
 
   static Properties getBaseConnectionParameters() {
     Properties properties = new Properties();
@@ -103,7 +106,7 @@ public class AuthConnectionParameters {
     return properties;
   }
 
-  static Properties getOAuthSnowflakeClientCredentialParameters() {
+  static Properties getOAuthOktaClientCredentialParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_CLIENT_CREDENTIALS");
     properties.put(
@@ -113,6 +116,13 @@ public class AuthConnectionParameters {
     properties.put(
         "oauthTokenRequestUrl", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_TOKEN"));
     properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID"));
+    return properties;
+  }
+
+  static Properties getPATConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("user", SSO_USER);
+    properties.put("authenticator", "PROGRAMMATIC_ACCESS_TOKEN");
     return properties;
   }
 }

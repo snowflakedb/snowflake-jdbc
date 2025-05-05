@@ -215,13 +215,17 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
     Scope scope =
         new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
-    TokenRequest tokenRequest =
-        new TokenRequest(
-            OAuthUtil.getTokenRequestUrl(
-                loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
-            clientAuthentication,
-            codeGrant,
-            scope);
+    TokenRequest.Builder tokenRequestBuilder =
+        new TokenRequest.Builder(
+                OAuthUtil.getTokenRequestUrl(
+                    loginInput.getOauthLoginInput(), loginInput.getServerUrl()),
+                clientAuthentication,
+                codeGrant)
+            .scope(scope);
+    if (loginInput.getOauthLoginInput().getEnableSingleUseRefreshTokens()) {
+      tokenRequestBuilder.customParameter("enable_single_use_refresh_tokens", "true");
+    }
+    TokenRequest tokenRequest = tokenRequestBuilder.build();
     HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
     HttpRequestBase convertedTokenRequest = OAuthUtil.convertToBaseRequest(tokenHttpRequest);
 

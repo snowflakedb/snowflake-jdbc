@@ -1,6 +1,7 @@
 package net.snowflake.client.core.auth.oauth;
 
-import com.amazonaws.util.StringUtils;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.google.common.html.HtmlEscapers;
 import com.nimbusds.oauth2.sdk.id.State;
 import java.util.Map;
@@ -38,7 +39,7 @@ class AuthorizationCodeRedirectRequestHandler {
       response = "Authorization error: invalid authorization request redirection state";
     } else {
       String authorizationCode = urlParams.get("code");
-      if (!StringUtils.isNullOrEmpty(authorizationCode)) {
+      if (!isNullOrEmpty(authorizationCode)) {
         logger.debug("Received authorization code on redirect URI");
         response = "Authorization completed successfully.";
         authorizationCodeFuture.complete(authorizationCode);

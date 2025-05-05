@@ -1,14 +1,14 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.core.SFTrustManager.setOCSPResponseCacheServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -32,6 +32,14 @@ import net.snowflake.client.core.auth.oauth.DPoPUtil;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenForRefreshTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthAccessTokenProviderFactory;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
+import net.snowflake.client.core.auth.wif.AwsAttestationService;
+import net.snowflake.client.core.auth.wif.AwsIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.AzureAttestationService;
+import net.snowflake.client.core.auth.wif.AzureIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.GcpIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
+import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
+import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
@@ -244,6 +252,10 @@ public class SessionUtil {
         return AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN;
       } else if (loginInput
           .getAuthenticator()
+          .equalsIgnoreCase(AuthenticatorType.WORKLOAD_IDENTITY.name())) {
+        return AuthenticatorType.WORKLOAD_IDENTITY;
+      } else if (loginInput
+          .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.SNOWFLAKE_JWT.name())) {
         return AuthenticatorType.SNOWFLAKE_JWT;
       } else if (loginInput
@@ -328,9 +340,27 @@ public class SessionUtil {
       }
     }
 
+    if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
+      WorkloadIdentityAttestation attestation = getWorkloadIdentityAttestation(loginInput);
+      if (attestation != null) {
+        loginInput.setWorkloadIdentityAttestation(attestation);
+      } else {
+        throw new SFException(
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+            "Unable to obtain workload identity attestation. Make sure that correct workload identity provider has been set and that Snowflake-JDBC driver runs on supported environment.");
+      }
+    }
+
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
     readCachedCredentialsIfPossible(loginInput);
+
+    try {
+      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
+    } catch (IOException ex) {
+      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
+    }
+
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -350,10 +380,19 @@ public class SessionUtil {
     }
   }
 
+  private static WorkloadIdentityAttestation getWorkloadIdentityAttestation(SFLoginInput loginInput)
+      throws SFException {
+    WorkloadIdentityAttestationProvider attestationProvider =
+        new WorkloadIdentityAttestationProvider(
+            new AwsIdentityAttestationCreator(new AwsAttestationService()),
+            new GcpIdentityAttestationCreator(loginInput),
+            new AzureIdentityAttestationCreator(new AzureAttestationService(), loginInput),
+            new OidcIdentityAttestationCreator(loginInput.getToken()));
+    return attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
+  }
+
   static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
-    if (authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
-        || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
-        || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)) {
+    if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
       boolean experimentalAuthenticationMethodsEnabled =
           Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
       AssertUtil.assertTrue(
@@ -445,7 +484,7 @@ public class SessionUtil {
   }
 
   private static void readCachedCredentialsIfPossible(SFLoginInput loginInput) throws SFException {
-    if (!StringUtils.isNullOrEmpty(loginInput.getUserName())) {
+    if (!isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
         CredentialManager.fillCachedOAuthRefreshToken(loginInput);
@@ -520,7 +559,7 @@ public class SessionUtil {
         loginInput.getLoginTimeout(),
         loginInput.getAuthTimeout(),
         loginInput.getOCSPMode(),
-        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
+        isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -579,13 +618,6 @@ public class SessionUtil {
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URI syntax exception:1");
     }
 
-    try {
-      // Adjust OCSP cache server if it is private link
-      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
-    } catch (IOException ex) {
-      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
-    }
-
     HttpPost postRequest = null;
 
     try {
@@ -619,8 +651,7 @@ public class SessionUtil {
         }
       } else if (authenticatorType == AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == AuthenticatorType.OAUTH
-          || authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+      } else if (authenticatorType == AuthenticatorType.OAUTH) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
 
         // Fix for HikariCP refresh token issue:SNOW-533673.
@@ -632,6 +663,9 @@ public class SessionUtil {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
         }
 
+      } else if (authenticatorType == AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
+        data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
@@ -648,6 +682,15 @@ public class SessionUtil {
       if (authenticatorType == AuthenticatorType.OAUTH
           && loginInput.getOriginalAuthenticator() != null) {
         data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+      }
+
+      if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
+        data.put(
+            ClientAuthnParameter.TOKEN.name(),
+            loginInput.getWorkloadIdentityAttestation().getCredential());
+        data.put(
+            ClientAuthnParameter.PROVIDER.name(),
+            loginInput.getWorkloadIdentityAttestation().getProvider());
       }
 
       // map of client environment parameters, including connection parameters
@@ -1094,14 +1137,14 @@ public class SessionUtil {
   }
 
   private static void setServiceNameHeader(SFLoginInput loginInput, HttpPost postRequest) {
-    if (!Strings.isNullOrEmpty(loginInput.getServiceName())) {
+    if (!isNullOrEmpty(loginInput.getServiceName())) {
       // service name is used to route a request to appropriate cluster.
       postRequest.setHeader(SF_HEADER_SERVICE_NAME, loginInput.getServiceName());
     }
   }
 
   private static String nullStringAsEmptyString(String value) {
-    if (Strings.isNullOrEmpty(value) || "null".equals(value)) {
+    if (isNullOrEmpty(value) || "null".equals(value)) {
       return "";
     }
     return value;
@@ -1880,13 +1923,13 @@ public class SessionUtil {
   }
 
   /**
-   * Reset OCSP cache server if the snowflake server URL is for private link. If the URL is not for
-   * private link, do nothing.
+   * Set OCSP cache server. If the URL is for private link sets it to special cache server.
    *
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    * @throws IOException If exception encountered
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
+    setOCSPResponseCacheServerURL(serverUrl);
     if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
@@ -2025,7 +2068,7 @@ public class SessionUtil {
   private static void setFederatedFlowStep3PostRequestAuthData(
       HttpPost postRequest, SFLoginInput loginInput) throws SnowflakeSQLException {
     String userName =
-        Strings.isNullOrEmpty(loginInput.getOKTAUserName())
+        isNullOrEmpty(loginInput.getOKTAUserName())
             ? loginInput.getUserName()
             : loginInput.getOKTAUserName();
     try {

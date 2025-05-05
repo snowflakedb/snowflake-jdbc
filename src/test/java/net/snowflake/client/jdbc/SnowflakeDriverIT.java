@@ -2694,7 +2694,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           String destFolderCanonicalPath = destFolder.getCanonicalPath();
           String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-          statement.execute("alter session set ENABLE_UNENCRYPTED_INTERNAL_STAGES=true");
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute(
               "CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");

@@ -1,7 +1,7 @@
 package net.snowflake.client.core;
 
-import com.amazonaws.util.StringUtils;
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -149,7 +149,7 @@ public class CredentialManager {
   synchronized void fillCachedCredential(
       SFLoginInput loginInput, String host, String username, CachedCredentialType credType)
       throws SFException {
-    if (StringUtils.isNullOrEmpty(username)) {
+    if (isNullOrEmpty(username)) {
       logger.debug("Missing username; Cannot read from credential cache");
       return;
     }
@@ -210,7 +210,7 @@ public class CredentialManager {
 
   private void updateInputWithTokenAndPublicKey(String cred, SFLoginInput loginInput)
       throws SFException {
-    if (Strings.isNullOrEmpty(cred)) {
+    if (isNullOrEmpty(cred)) {
       String[] values = cred.split("\\.");
       if (values.length != 2) {
         throw new SFException(
@@ -313,11 +313,11 @@ public class CredentialManager {
   /** Store the temporary credential */
   synchronized void writeTemporaryCredential(
       String host, String user, String cred, CachedCredentialType credType) {
-    if (StringUtils.isNullOrEmpty(user)) {
+    if (isNullOrEmpty(user)) {
       logger.debug("Missing username; Cannot write to credential cache");
       return;
     }
-    if (Strings.isNullOrEmpty(cred)) {
+    if (isNullOrEmpty(cred)) {
       logger.debug("No {} is given.", credType);
       return; // no credential
     }
@@ -426,7 +426,7 @@ public class CredentialManager {
       logMissingJnaJarForSecureLocalStorage();
       return;
     }
-    if (StringUtils.isNullOrEmpty(user)) {
+    if (isNullOrEmpty(user)) {
       logger.debug("Missing username; Cannot delete from credential cache");
       return;
     }

@@ -53,5 +53,10 @@ public enum AuthenticatorType {
   /*
    * Authenticator to support PAT created in Snowflake
    */
-  PROGRAMMATIC_ACCESS_TOKEN
+  PROGRAMMATIC_ACCESS_TOKEN,
+
+  /*
+   * Authenticator to support existing authentication by existing AWS/GCP/Azure/OIDC workload identity
+   */
+  WORKLOAD_IDENTITY
 }

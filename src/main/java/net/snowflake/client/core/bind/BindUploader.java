@@ -13,8 +13,10 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -52,11 +54,11 @@ public class BindUploader implements Closeable {
 
   private int fileCount = 0;
 
-  private final DateFormat timestampFormat;
-  private final DateFormat dateFormat;
+  private final DateFormat utcTimestampFormat;
+  private final DateFormat localTimestampFormat;
+  private final DateTimeFormatter dateFormat;
   private final SimpleDateFormat timeFormat;
   private final String createStageSQL;
-  private Calendar cal;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -86,22 +88,29 @@ public class BindUploader implements Closeable {
             + " field_optionally_enclosed_by='\"'"
             + ")";
 
-    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    cal.clear();
+    Calendar utcCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    utcCalendar.clear();
 
-    this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.timestampFormat.setCalendar(cal);
-    this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(cal);
+    Calendar localCalendar = new GregorianCalendar(TimeZone.getDefault());
+    localCalendar.clear();
+
+    this.utcTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
+    this.utcTimestampFormat.setCalendar(utcCalendar);
+    this.localTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
+    this.localTimestampFormat.setCalendar(localCalendar);
+    this.dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(cal);
+    this.timeFormat.setCalendar(utcCalendar);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
     if (o == null) {
       return null;
     }
-    return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
+    long millis = Long.parseLong(o);
+    Instant instant = Instant.ofEpochMilli(millis);
+    LocalDate localDate = instant.atZone(ZoneOffset.UTC).toLocalDate();
+    return localDate.format(this.dateFormat);
   }
 
   private synchronized String synchronizedTimeFormat(String o) {
@@ -113,7 +122,7 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Time v1 = new Time(sec * 1000);
-    String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
+    String formatWithDate = utcTimestampFormat.format(v1) + String.format("%09d", nano);
     // Take out the Date portion of the formatted string. Only time data is needed.
     return formatWithDate.substring(11);
   }
@@ -159,16 +168,12 @@ public class BindUploader implements Closeable {
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
     if ("TIMESTAMP_LTZ".equals(type)) {
-      TimeZone tz = TimeZone.getDefault();
-      cal.setTimeZone(tz);
-      cal.clear();
-      timestampFormat.setCalendar(cal);
       offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
+      return localTimestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
     } else {
       offsetId = ZoneOffset.UTC;
+      return utcTimestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
     }
-
-    return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
 
   /**

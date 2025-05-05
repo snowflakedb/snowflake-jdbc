@@ -1,8 +1,8 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 
-import com.google.common.base.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -190,7 +190,7 @@ public class FileUtil {
   }
 
   private static String getContextStr(String context) {
-    return Strings.isNullOrEmpty(context) ? "" : context + ": ";
+    return isNullOrEmpty(context) ? "" : context + ": ";
   }
 
   public static boolean exists(File file) {

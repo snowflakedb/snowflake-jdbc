@@ -1,13 +1,13 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
 import java.io.File;
@@ -1175,7 +1175,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       JsonNode presignedUrlNode = jsonNode.path("data").path("stageInfo").path("presignedUrl");
       if (!presignedUrlNode.isMissingNode()) {
         String presignedUrl = presignedUrlNode.asText();
-        if (!Strings.isNullOrEmpty(presignedUrl)) {
+        if (!isNullOrEmpty(presignedUrl)) {
           stageInfo.setPresignedUrl(presignedUrl);
         }
       }
@@ -3061,7 +3061,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     } else {
       subType = mimeTypeStr.substring(slashIndex + 1, semiColonIndex);
     }
-    if (Strings.isNullOrEmpty(subType)) {
+    if (isNullOrEmpty(subType)) {
       return Optional.empty();
     }
     return FileCompressionType.lookupByMimeSubType(subType);

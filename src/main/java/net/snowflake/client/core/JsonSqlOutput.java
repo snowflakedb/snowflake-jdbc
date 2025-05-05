@@ -198,7 +198,13 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeTime(Time x) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
-          long nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
+          long nanosSinceMidnight;
+          if (session.getTreatTimeAsWallClockTime()) {
+            nanosSinceMidnight = x.toLocalTime().toNanoOfDay();
+          } else {
+            nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
+          }
+
           String result =
               ResultUtil.getSFTimeAsString(
                   SFTime.fromNanoseconds(nanosSinceMidnight),

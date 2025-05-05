@@ -26,6 +26,9 @@ public enum SFSessionProperty {
   OAUTH_SCOPE("oauthScope", false, String.class),
   OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
   OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
+  OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS("oauthEnableSingleUseRefreshTokens", false, Boolean.class),
+  WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
+  WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
@@ -126,7 +129,10 @@ public enum SFSessionProperty {
   IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", false, Boolean.class),
 
   CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
-      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class);
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class),
+
+  CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME(
+      "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
