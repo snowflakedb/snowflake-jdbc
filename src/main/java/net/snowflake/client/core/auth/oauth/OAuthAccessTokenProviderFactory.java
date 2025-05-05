@@ -40,6 +40,7 @@ public class OAuthAccessTokenProviderFactory {
       AuthenticatorType authenticatorType, SFLoginInput loginInput) throws SFException {
     switch (authenticatorType) {
       case OAUTH_AUTHORIZATION_CODE:
+        setupDefaultClientCredentialsIfNotSupplied(loginInput);
         assertContainsClientCredentials(loginInput, authenticatorType);
         validateHttpRedirectUriIfSpecified(loginInput);
         validateAuthorizationAndTokenEndpointsIfSpecified(loginInput);
@@ -55,6 +56,13 @@ public class OAuthAccessTokenProviderFactory {
         String message = "Unsupported authenticator type: " + authenticatorType;
         logger.error(message);
         throw new SFException(ErrorCode.INTERNAL_ERROR, message);
+    }
+  }
+
+  private void setupDefaultClientCredentialsIfNotSupplied(SFLoginInput loginInput) {
+    if (loginInput.getOauthLoginInput().getClientId() == null
+        && loginInput.getOauthLoginInput().getClientSecret() == null) {
+      loginInput.getOauthLoginInput().setLocalApplicationClientCredential();
     }
   }
 

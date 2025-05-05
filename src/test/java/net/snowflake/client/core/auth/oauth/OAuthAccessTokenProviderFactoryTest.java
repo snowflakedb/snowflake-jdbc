@@ -54,6 +54,19 @@ public class OAuthAccessTokenProviderFactoryTest {
   }
 
   @Test
+  public void shouldProperlyCreateAuthzCodeAccessTokenProviderWithDefaultClientCredentials()
+      throws SFException {
+    SFLoginInput loginInput = createLoginInputStub(null, null, null, null, null);
+    AccessTokenProvider provider =
+        providerFactory.createAccessTokenProvider(
+            AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
+    Assertions.assertNotNull(provider);
+    Assertions.assertInstanceOf(OAuthAuthorizationCodeAccessTokenProvider.class, provider);
+    Assertions.assertEquals("LOCAL_APPLICATION", loginInput.getOauthLoginInput().getClientId());
+    Assertions.assertEquals("LOCAL_APPLICATION", loginInput.getOauthLoginInput().getClientSecret());
+  }
+
+  @Test
   public void shouldProperlyCreateAuthzCodeAccessTokenProviderForExternalIdp() throws SFException {
     SFLoginInput loginInput =
         createLoginInputStub(
