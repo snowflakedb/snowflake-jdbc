@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -290,6 +292,24 @@ public class HttpUtil {
    */
   public static CloseableHttpClient buildHttpClient(
       @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
+    return buildHttpClient(key, ocspCacheFile, downloadUnCompressed, null);
+  }
+
+  /**
+   * Build an Http client using our set of default.
+   *
+   * @param key Key to HttpClient hashmap containing OCSP mode and proxy information, could be null
+   * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
+   *     used.
+   * @param downloadUnCompressed Whether the HTTP client should be built requesting no decompression
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object
+   */
+  public static CloseableHttpClient buildHttpClient(
+      @Nullable HttpClientSettingsKey key,
+      File ocspCacheFile,
+      boolean downloadUnCompressed,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
     logger.debug(
         "Building http client with client settings key: {}, ocsp cache file: {}, download uncompressed: {}",
         key != null ? key.toString() : null,
@@ -422,6 +442,12 @@ public class HttpUtil {
         logger.debug("Disabling content compression for http client");
         httpClientBuilder.disableContentCompression();
       }
+      if (httpHeadersCustomizers != null && !httpHeadersCustomizers.isEmpty()) {
+        logger.debug("Setting up http headers customizers");
+        httpClientBuilder.setRetryHandler(new AttributeEnhancingHttpRequestRetryHandler());
+        httpClientBuilder.addInterceptorLast(
+            new HeaderCustomizerHttpRequestInterceptor(httpHeadersCustomizers));
+      }
       return httpClientBuilder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
@@ -464,7 +490,7 @@ public class HttpUtil {
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient getHttpClient(HttpClientSettingsKey ocspAndProxyKey) {
-    return initHttpClient(ocspAndProxyKey, null);
+    return initHttpClient(ocspAndProxyKey, null, null);
   }
 
   /**
@@ -475,7 +501,31 @@ public class HttpUtil {
    */
   public static CloseableHttpClient getHttpClientWithoutDecompression(
       HttpClientSettingsKey ocspAndProxyKey) {
-    return initHttpClientWithoutDecompression(ocspAndProxyKey, null);
+    return initHttpClientWithoutDecompression(ocspAndProxyKey, null, null);
+  }
+
+  /**
+   * Gets HttpClient with insecureMode false
+   *
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient getHttpClient(
+      HttpClientSettingsKey ocspAndProxyKey, List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    return initHttpClient(ocspAndProxyKey, null, httpHeadersCustomizers);
+  }
+
+  /**
+   * Gets HttpClient with insecureMode false and disabling decompression
+   *
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient getHttpClientWithoutDecompression(
+      HttpClientSettingsKey ocspAndProxyKey, List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    return initHttpClientWithoutDecompression(ocspAndProxyKey, null, httpHeadersCustomizers);
   }
 
   /**
@@ -489,7 +539,7 @@ public class HttpUtil {
       HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
     return httpClientWithoutDecompression.computeIfAbsent(
-        key, k -> buildHttpClient(key, ocspCacheFile, true));
+        key, k -> buildHttpClient(key, ocspCacheFile, true, null));
   }
 
   /**
@@ -502,7 +552,42 @@ public class HttpUtil {
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
     return httpClient.computeIfAbsent(
-        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled(), null));
+  }
+
+  /**
+   * Accessor for the HTTP client singleton.
+   *
+   * @param key contains information needed to build specific HttpClient
+   * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient initHttpClientWithoutDecompression(
+      HttpClientSettingsKey key,
+      File ocspCacheFile,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    updateRoutePlanner(key);
+    return httpClientWithoutDecompression.computeIfAbsent(
+        key, k -> buildHttpClient(key, ocspCacheFile, true, httpHeadersCustomizers));
+  }
+
+  /**
+   * Accessor for the HTTP client singleton.
+   *
+   * @param key contains information needed to build specific HttpClient
+   * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient initHttpClient(
+      HttpClientSettingsKey key,
+      File ocspCacheFile,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    updateRoutePlanner(key);
+    return httpClient.computeIfAbsent(
+        key,
+        k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled(), httpHeadersCustomizers));
   }
 
   /**
@@ -622,7 +707,7 @@ public class HttpUtil {
         false, // no retry parameter
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
-        getHttpClient(ocspAndProxyKey),
+        getHttpClient(ocspAndProxyKey, null),
         new ExecTimeTelemetryData(),
         null);
   }
@@ -680,7 +765,7 @@ public class HttpUtil {
         false,
         false,
         false,
-        getHttpClient(ocspAndProxyAndGzipKey),
+        getHttpClient(ocspAndProxyAndGzipKey, null),
         new ExecTimeTelemetryData(),
         null);
   }
@@ -860,7 +945,7 @@ public class HttpUtil {
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        getHttpClient(ocspAndProxyKey),
+        getHttpClient(ocspAndProxyKey, null),
         execTimeData,
         retryContextManager);
   }
