@@ -71,6 +71,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           "alter session set jdbc_query_result_format = '"
               + format.sessionParameterTypeValue
               + "'");
+      stmt.execute("ALTER SESSION SET ENABLE_STRUCTURED_TYPES_IN_FDN_TABLES = TRUE");
       if (format == ResultSetFormatType.NATIVE_ARROW) {
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
         stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");

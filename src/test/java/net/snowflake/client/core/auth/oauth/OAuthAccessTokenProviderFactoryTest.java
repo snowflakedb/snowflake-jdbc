@@ -1,5 +1,6 @@
 package net.snowflake.client.core.auth.oauth;
 
+import java.time.Duration;
 import java.util.Arrays;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
@@ -15,7 +16,7 @@ import org.mockito.Mockito;
 public class OAuthAccessTokenProviderFactoryTest {
 
   private final OAuthAccessTokenProviderFactory providerFactory =
-      new OAuthAccessTokenProviderFactory(null, 30);
+      new OAuthAccessTokenProviderFactory();
 
   @Test
   public void shouldProperlyReturnIfAuthenticatorIsEligible() {
@@ -260,7 +261,7 @@ public class OAuthAccessTokenProviderFactoryTest {
       loggerFactoryMockedStatic
           .when(() -> SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class))
           .thenReturn(loggerMock);
-      new OAuthAccessTokenProviderFactory(null, 30)
+      new OAuthAccessTokenProviderFactory()
           .createAccessTokenProvider(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
       Mockito.verify(loggerMock)
           .warn(
@@ -278,6 +279,7 @@ public class OAuthAccessTokenProviderFactoryTest {
     loginInput.setOauthLoginInput(
         new SFOauthLoginInput(
             clientId, clientSecret, redirectUri, authorizationUrl, tokenUrl, null));
+    loginInput.setBrowserResponseTimeout(Duration.ofSeconds(20));
     return loginInput;
   }
 }

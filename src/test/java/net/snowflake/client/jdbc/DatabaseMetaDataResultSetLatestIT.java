@@ -44,6 +44,7 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
   public void testObjectColumn() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
+      statement.execute("ALTER SESSION SET ENABLE_STRUCTURED_TYPES_IN_FDN_TABLES = TRUE");
       statement.execute(
           "CREATE OR REPLACE TABLE TABLEWITHOBJECTCOLUMN ("
               + "    col OBJECT("

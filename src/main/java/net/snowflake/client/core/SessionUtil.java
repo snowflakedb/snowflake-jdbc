@@ -354,6 +354,13 @@ public class SessionUtil {
     convertSessionParameterStringValueToBooleanIfGiven(loginInput, CLIENT_REQUEST_MFA_TOKEN);
 
     readCachedCredentialsIfPossible(loginInput);
+
+    try {
+      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
+    } catch (IOException ex) {
+      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
+    }
+
     if (OAuthAccessTokenProviderFactory.isEligible(getAuthenticator(loginInput))) {
       obtainAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -425,9 +432,7 @@ public class SessionUtil {
   private static void fetchOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
       throws SFException {
     OAuthAccessTokenProviderFactory accessTokenProviderFactory =
-        new OAuthAccessTokenProviderFactory(
-            new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
-            loginInput.getBrowserResponseTimeout().getSeconds());
+        new OAuthAccessTokenProviderFactory();
     AccessTokenProvider accessTokenProvider =
         accessTokenProviderFactory.createAccessTokenProvider(
             getAuthenticator(loginInput), loginInput);
@@ -480,12 +485,14 @@ public class SessionUtil {
     if (!isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
-        CredentialManager.fillCachedOAuthRefreshToken(loginInput);
-        if (loginInput.isDPoPEnabled()) {
-          CredentialManager.fillCachedDPoPBundledAccessToken(loginInput);
-        }
-        if (loginInput.getOauthAccessToken() == null && loginInput.getDPoPPublicKey() == null) {
-          CredentialManager.fillCachedOAuthAccessToken(loginInput);
+        if (AuthenticatorType.OAUTH_AUTHORIZATION_CODE.equals(getAuthenticator(loginInput))) {
+          CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+          if (loginInput.isDPoPEnabled()) {
+            CredentialManager.fillCachedDPoPBundledAccessToken(loginInput);
+          }
+          if (loginInput.getOauthAccessToken() == null && loginInput.getDPoPPublicKey() == null) {
+            CredentialManager.fillCachedOAuthAccessToken(loginInput);
+          }
         }
       }
 
@@ -513,13 +520,6 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
-    try {
-      // Adjust OCSP cache server if it is private link
-      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
-    } catch (IOException ex) {
-      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
-    }
-
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     // build URL for login request
@@ -1103,15 +1103,19 @@ public class SessionUtil {
       if (consentCacheIdToken) {
         CredentialManager.writeIdToken(loginInput, ret.getIdToken());
       }
-      if (loginInput.getOauthRefreshToken() != null) {
-        CredentialManager.writeOAuthRefreshToken(loginInput);
-      }
-      if (loginInput.getDPoPPublicKey() != null
-          && loginInput.getOauthAccessToken() != null
-          && loginInput.isDPoPEnabled()) {
-        CredentialManager.writeDPoPBundledAccessToken(loginInput);
-      } else if (loginInput.getOauthAccessToken() != null) {
-        CredentialManager.writeOAuthAccessToken(loginInput);
+      if (AuthenticatorType.OAUTH_AUTHORIZATION_CODE
+          .name()
+          .equalsIgnoreCase(loginInput.getOriginalAuthenticator())) {
+        if (loginInput.getOauthRefreshToken() != null) {
+          CredentialManager.writeOAuthRefreshToken(loginInput);
+        }
+        if (loginInput.getDPoPPublicKey() != null
+            && loginInput.getOauthAccessToken() != null
+            && loginInput.isDPoPEnabled()) {
+          CredentialManager.writeDPoPBundledAccessToken(loginInput);
+        } else if (loginInput.getOauthAccessToken() != null) {
+          CredentialManager.writeOAuthAccessToken(loginInput);
+        }
       }
     }
 
@@ -1923,8 +1927,7 @@ public class SessionUtil {
   }
 
   /**
-   * Reset OCSP cache server if the snowflake server URL is for private link. If the URL is not for
-   * private link, do nothing.
+   * Set OCSP cache server. If the URL is for private link sets it to special cache server.
    *
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    * @throws IOException If exception encountered
