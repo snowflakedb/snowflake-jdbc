@@ -273,7 +273,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
+              HttpUtil.getHttpClientWithoutDecompression(
+                  session.getHttpClientKey(), session.getHttpHeadersCustomizers());
 
           // Get the file on storage using the presigned url
           HttpResponse response =
@@ -467,7 +468,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
+              HttpUtil.getHttpClientWithoutDecompression(
+                  session.getHttpClientKey(), session.getHttpHeadersCustomizers());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -946,7 +948,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       InputStreamEntity contentEntity = new InputStreamEntity(content, -1);
       httpRequest.setEntity(contentEntity);
 
-      CloseableHttpClient httpClient = HttpUtil.getHttpClient(ocspAndProxyKey);
+      CloseableHttpClient httpClient =
+          HttpUtil.getHttpClient(ocspAndProxyKey, session.getHttpHeadersCustomizers());
 
       // Put the file on storage using the presigned url
       HttpResponse response =

@@ -64,7 +64,7 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
   public void testParamsInRetryS3Url() throws Exception {
     HttpGet getRequest = new HttpGet(new URIBuilder(sfContext.getResultChunk().getUrl()).build());
     CloseableHttpClient httpClient =
-        HttpUtil.getHttpClient(sfContext.getChunkDownloader().getHttpClientSettingsKey());
+        HttpUtil.getHttpClient(sfContext.getChunkDownloader().getHttpClientSettingsKey(), null);
     for (Map.Entry<String, String> entry : sfContext.getChunkHeadersMap().entrySet()) {
       getRequest.addHeader(entry.getKey(), entry.getValue());
     }
