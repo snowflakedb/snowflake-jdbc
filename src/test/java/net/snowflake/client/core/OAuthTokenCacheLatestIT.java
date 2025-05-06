@@ -14,6 +14,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +30,8 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/token_caching";
   private static final String CACHING_TOKENS_AFTER_CONNECTING_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/caching_tokens_after_connecting.json";
+  private static final String NOT_CACHING_TOKENS_FOR_CLIENT_CREDENTIALS_FLOW =
+      SCENARIOS_BASE_DIR + "/not_caching_after_client_credentials_flow.json";
   private static final String CACHING_TOKENS_AND_DPOP_KEY_AFTER_CONNECTING_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/caching_tokens_and_dpop_key_after_connecting.json";
   private static final String REUSING_CACHED_ACCESS_TOKEN_SCENARIO_MAPPINGS =
@@ -84,6 +87,34 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
       SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
       assertEquals("reused-access-token-123", loginOutput.getOauthAccessToken());
       assertEquals("reused-refresh-token-123", loginOutput.getOauthRefreshToken());
+    }
+  }
+
+  @Test
+  public void shouldNotCacheTokensForClientCredentialsFlow()
+      throws SFException, SnowflakeSQLException {
+    importMappingFromResources(NOT_CACHING_TOKENS_FOR_CLIENT_CREDENTIALS_FLOW);
+    try (MockedStatic<CredentialManager> credentialManagerMockedStatic =
+        mockStatic(CredentialManager.class)) {
+      SFLoginInput loginInput = createLoginInputStub();
+      loginInput.setAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+      loginInput.setOriginalAuthenticator(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name());
+      SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
+
+      Assertions.assertNotNull(loginOutput);
+      Assertions.assertEquals("session token", loginOutput.getSessionToken());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.fillCachedOAuthAccessToken(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.fillCachedOAuthRefreshToken(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.fillCachedDPoPBundledAccessToken(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.writeOAuthAccessToken(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.writeOAuthRefreshToken(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.writeDPoPBundledAccessToken(loginInput), never());
     }
   }
 
