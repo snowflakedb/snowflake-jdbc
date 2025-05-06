@@ -10,7 +10,6 @@ import net.snowflake.client.core.AssertUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SFOauthLoginInput;
-import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -29,16 +28,6 @@ public class OAuthAccessTokenProviderFactory {
               AuthenticatorType.OAUTH_AUTHORIZATION_CODE,
               AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
 
-  private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
-  private final long browserAuthorizationTimeoutSeconds;
-
-  public OAuthAccessTokenProviderFactory(
-      SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler,
-      long browserAuthorizationTimeoutSeconds) {
-    this.browserHandler = browserHandler;
-    this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
-  }
-
   public AccessTokenProvider createAccessTokenProvider(
       AuthenticatorType authenticatorType, SFLoginInput loginInput) throws SFException {
     switch (authenticatorType) {
@@ -50,7 +39,9 @@ public class OAuthAccessTokenProviderFactory {
         validateHttpRedirectUriIfSpecified(loginInput);
         validateAuthorizationAndTokenEndpointsIfSpecified(loginInput);
         return new OAuthAuthorizationCodeAccessTokenProvider(
-            browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
+            loginInput.getBrowserHandler(),
+            new RandomStateProvider(),
+            loginInput.getBrowserResponseTimeout().getSeconds());
       case OAUTH_CLIENT_CREDENTIALS:
         assertContainsClientCredentials(loginInput, authenticatorType);
         AssertUtil.assertTrue(
