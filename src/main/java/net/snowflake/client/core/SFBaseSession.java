@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -139,12 +135,24 @@ public abstract class SFBaseSession {
   // we need to allow for it to maintain backwards compatibility.
   private boolean enablePatternSearch = true;
 
+  // Enables the use of exact schema searches for certain DatabaseMetaData methods
+  // that should use schema from context (CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true)
+  // value is false for backwards compatibility.
+  private boolean enableExactSchemaSearch = false;
+
   /** Disable lookup for default credentials by GCS library */
-  private boolean disableGcsDefaultCredentials = false;
+  private boolean disableGcsDefaultCredentials = true;
 
   private Map<String, Object> commonParameters;
 
   private boolean isJdbcArrowTreatDecimalAsInt = true;
+
+  private boolean implicitServerSideQueryTimeout = false;
+
+  private boolean clearBatchOnlyAfterSuccessfulExecution = false;
+
+  /** Treat java.sql.Time as wall clock time without converting it to UTC */
+  private boolean treatTimeAsWallClockTime = false;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -588,8 +596,8 @@ public abstract class SFBaseSession {
             userAgentSuffix,
             gzipDisabled);
         // There are 2 possible parameters for non proxy hosts that can be combined into 1
-        String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
-        if (!Strings.isNullOrEmpty(noProxy)) {
+        String combinedNonProxyHosts = isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
+        if (!isNullOrEmpty(noProxy)) {
           combinedNonProxyHosts += combinedNonProxyHosts.length() == 0 ? "" : "|";
           combinedNonProxyHosts += noProxy;
         }
@@ -597,18 +605,18 @@ public abstract class SFBaseSession {
         // It is possible that a user can have both http and https proxies specified in the JVM
         // parameters. The default protocol is http.
         String proxyProtocol = "http";
-        if (!Strings.isNullOrEmpty(httpProxyProtocol)) {
+        if (!isNullOrEmpty(httpProxyProtocol)) {
           proxyProtocol = httpProxyProtocol;
-        } else if (!Strings.isNullOrEmpty(httpsProxyHost)
-            && !Strings.isNullOrEmpty(httpsProxyPort)
-            && Strings.isNullOrEmpty(httpProxyHost)
-            && Strings.isNullOrEmpty(httpProxyPort)) {
+        } else if (!isNullOrEmpty(httpsProxyHost)
+            && !isNullOrEmpty(httpsProxyPort)
+            && isNullOrEmpty(httpProxyHost)
+            && isNullOrEmpty(httpProxyPort)) {
           proxyProtocol = "https";
         }
 
         if (proxyProtocol.equals("https")
-            && !Strings.isNullOrEmpty(httpsProxyHost)
-            && !Strings.isNullOrEmpty(httpsProxyPort)) {
+            && !isNullOrEmpty(httpsProxyHost)
+            && !isNullOrEmpty(httpsProxyPort)) {
           logger.debug("Using https proxy configuration from JVM parameters");
           int proxyPort;
           try {
@@ -630,8 +638,8 @@ public abstract class SFBaseSession {
                   gzipDisabled);
           logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
-            && !Strings.isNullOrEmpty(httpProxyHost)
-            && !Strings.isNullOrEmpty(httpProxyPort)) {
+            && !isNullOrEmpty(httpProxyHost)
+            && !isNullOrEmpty(httpProxyPort)) {
           logger.debug("Using http proxy configuration from JVM parameters");
           int proxyPort;
           try {
@@ -687,7 +695,7 @@ public abstract class SFBaseSession {
           key.getProxyUser(),
           key.getProxyPassword().isEmpty() ? "not set" : "set");
     } else {
-      logger.info(
+      logger.debug(
           "Driver OCSP mode: {}, gzip disabled: {} and no proxy",
           key.getOcspMode(),
           key.getGzipDisabled());
@@ -698,10 +706,10 @@ public abstract class SFBaseSession {
   public void unsetInvalidProxyHostAndPort() {
     // If proxyHost and proxyPort are used without http or https unset them, so they are not used
     // later by the ProxySelector.
-    if (!Strings.isNullOrEmpty(systemGetProperty("proxyHost"))) {
+    if (!isNullOrEmpty(systemGetProperty("proxyHost"))) {
       System.clearProperty("proxyHost");
     }
-    if (!Strings.isNullOrEmpty(systemGetProperty("proxyPort"))) {
+    if (!isNullOrEmpty(systemGetProperty("proxyPort"))) {
       System.clearProperty("proxyPort");
     }
   }
@@ -710,14 +718,32 @@ public abstract class SFBaseSession {
    * Get OCSP mode
    *
    * @return {@link OCSPMode}
+   * @throws SnowflakeSQLException
    */
-  public OCSPMode getOCSPMode() {
+  public OCSPMode getOCSPMode() throws SnowflakeSQLException {
     OCSPMode ret;
 
+    Boolean disableOCSPChecks =
+        (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
     if (insecureMode != null && insecureMode) {
+      logger.warn(
+          "The 'insecureMode' connection property is deprecated. Please use 'disableOCSPChecks' instead.");
+    }
+
+    if ((disableOCSPChecks != null && insecureMode != null)
+        && (disableOCSPChecks != insecureMode)) {
+      logger.error(
+          "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
+              + "Please unset insecureMode.");
+      throw new SnowflakeSQLException(
+          ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
+          "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
+    }
+    if ((disableOCSPChecks != null && disableOCSPChecks)
+        || (insecureMode != null && insecureMode)) {
       // skip OCSP checks
-      ret = OCSPMode.INSECURE;
+      ret = OCSPMode.DISABLE_OCSP_CHECKS;
     } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
         || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
       // fail open (by default, not set)
@@ -1069,6 +1095,14 @@ public abstract class SFBaseSession {
     this.enablePatternSearch = enablePatternSearch;
   }
 
+  public boolean getEnableExactSchemaSearch() {
+    return enableExactSchemaSearch;
+  }
+
+  void setEnableExactSchemaSearch(boolean enableExactSchemaSearch) {
+    this.enableExactSchemaSearch = enableExactSchemaSearch;
+  }
+
   public boolean getDisableGcsDefaultCredentials() {
     return disableGcsDefaultCredentials;
   }
@@ -1114,7 +1148,7 @@ public abstract class SFBaseSession {
   }
 
   public void setDatabase(String database) {
-    if (!Strings.isNullOrEmpty(database)) {
+    if (!isNullOrEmpty(database)) {
       this.database = database;
     }
   }
@@ -1124,7 +1158,7 @@ public abstract class SFBaseSession {
   }
 
   public void setSchema(String schema) {
-    if (!Strings.isNullOrEmpty(schema)) {
+    if (!isNullOrEmpty(schema)) {
       this.schema = schema;
     }
   }
@@ -1142,7 +1176,7 @@ public abstract class SFBaseSession {
   }
 
   public void setWarehouse(String warehouse) {
-    if (!Strings.isNullOrEmpty(warehouse)) {
+    if (!isNullOrEmpty(warehouse)) {
       this.warehouse = warehouse;
     }
   }
@@ -1313,5 +1347,30 @@ public abstract class SFBaseSession {
    */
   public boolean getEnableReturnTimestampWithTimeZone() {
     return enableReturnTimestampWithTimeZone;
+  }
+
+  boolean getImplicitServerSideQueryTimeout() {
+    return implicitServerSideQueryTimeout;
+  }
+
+  void setImplicitServerSideQueryTimeout(boolean value) {
+    this.implicitServerSideQueryTimeout = value;
+  }
+
+  void setClearBatchOnlyAfterSuccessfulExecution(boolean value) {
+    this.clearBatchOnlyAfterSuccessfulExecution = value;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public boolean getClearBatchOnlyAfterSuccessfulExecution() {
+    return this.clearBatchOnlyAfterSuccessfulExecution;
+  }
+
+  public boolean getTreatTimeAsWallClockTime() {
+    return treatTimeAsWallClockTime;
+  }
+
+  public void setTreatTimeAsWallClockTime(boolean treatTimeAsWallClockTime) {
+    this.treatTimeAsWallClockTime = treatTimeAsWallClockTime;
   }
 }

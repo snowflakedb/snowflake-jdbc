@@ -1,11 +1,7 @@
-/*
- * Copyright (c) 2012-2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,39 +58,17 @@ public class SnowflakeClobTest extends BaseJDBCTest {
   public void testInvalidPositionExceptions() {
     SnowflakeClob clob = new SnowflakeClob();
 
-    try {
-      clob.setString(0, "this should throw an exception");
-      fail();
-    } catch (Exception ex) {
-      assertTrue(ex instanceof SQLException);
-    }
+    assertThrows(SQLException.class, () -> clob.setString(0, "this should throw an exception"));
 
-    try {
-      clob.setString(0, "this should throw an exception", 0, 5);
-      fail();
-    } catch (Exception ex) {
-      assertTrue(ex instanceof SQLException);
-    }
+    assertThrows(
+        SQLException.class, () -> clob.setString(0, "this should throw an exception", 0, 5));
 
-    try {
-      clob.getSubString(0, 1);
-      fail();
-    } catch (Exception ex) {
-      assertTrue(ex instanceof SQLException);
-    }
+    assertThrows(SQLException.class, () -> clob.getSubString(0, 1));
 
-    try {
-      clob.position("this should throw an exception", 0);
-      fail();
-    } catch (Exception ex) {
-      assertTrue(ex instanceof SQLException);
-    }
+    assertThrows(SQLException.class, () -> clob.position("this should throw an exception", 0));
 
-    try {
-      clob.position(new SnowflakeClob("this should throw an exception"), 0);
-      fail();
-    } catch (Exception ex) {
-      assertTrue(ex instanceof SQLException);
-    }
+    assertThrows(
+        SQLException.class,
+        () -> clob.position(new SnowflakeClob("this should throw an exception"), 0));
   }
 }

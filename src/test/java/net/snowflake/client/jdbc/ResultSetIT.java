@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -12,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -182,12 +179,10 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(9126, resultSet.getShort(7));
 
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getShort(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getShort(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getShort() or else a
@@ -195,12 +190,10 @@ public class ResultSetIT extends ResultSet0IT {
       // These column types are varchar, char, and float.
 
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getShort(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getShort(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -225,24 +218,20 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(9126, resultSet.getInt(7));
 
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getInt(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getInt(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getInt() or else a
       // SQLException is thrown.
       // These column types are varchar, char, and float.
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getInt(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getInt(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -267,24 +256,20 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(9126, resultSet.getLong(7));
 
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getLong(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getLong(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getLong() or else a
       // SQLexception is thrown.
       // These column types are varchar, char, and float.
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getLong(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getLong(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -309,24 +294,20 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(9126, resultSet.getFloat(7), .1);
 
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getFloat(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getFloat(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getFloat() or else a
       // SQLexception is thrown.
       // These column types are varchar and char.
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getFloat(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getFloat(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -351,24 +332,20 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(9126, resultSet.getDouble(7), .1);
 
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getDouble(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getDouble(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getDouble() or else a
       // SQLexception is thrown.
       // These column types are varchar and char.
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getDouble(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(SQLException.class, () -> resultSet.getDouble(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -412,21 +389,19 @@ public class ResultSetIT extends ResultSet0IT {
       assertEquals(new BigDecimal(1), resultSet.getBigDecimal(6));
       assertEquals(new BigDecimal(9126), resultSet.getBigDecimal(7));
       for (int i = 8; i < 13; i++) {
-        try {
-          resultSet.getBigDecimal(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(
+                SQLException.class, () -> resultSet.getBigDecimal(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       for (int i = 5; i < 7; i++) {
-        try {
-          resultSet.getBigDecimal(i);
-          fail("Failing on " + i);
-        } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
-        }
+        int finalI = i;
+        SQLException ex =
+            assertThrows(
+                SQLException.class, () -> resultSet.getBigDecimal(finalI), "Failing on " + i);
+        assertEquals(200038, ex.getErrorCode());
       }
     }
   }
@@ -446,12 +421,9 @@ public class ResultSetIT extends ResultSet0IT {
           statement.execute("select * from test_dec order by 1");
           try (ResultSet resultSet = statement.getResultSet(); ) {
             assertTrue(resultSet.next());
-            try {
-              resultSet.getBigDecimal(2, 38);
-              fail();
-            } catch (SQLException ex) {
-              assertEquals(200032, ex.getErrorCode());
-            }
+            SQLException ex =
+                assertThrows(SQLException.class, () -> resultSet.getBigDecimal(2, 38));
+            assertEquals(200032, ex.getErrorCode());
           }
         }
       } finally {
@@ -725,22 +697,20 @@ public class ResultSetIT extends ResultSet0IT {
         assertTrue(resultSet.getBoolean(4));
         assertTrue(resultSet.getBoolean(5));
         for (int i = 6; i < 13; i++) {
-          try {
-            resultSet.getBoolean(i);
-            fail("Failing on " + i);
-          } catch (SQLException ex) {
-            assertEquals(200038, ex.getErrorCode());
-          }
+          int finalI = i;
+          SQLException ex =
+              assertThrows(
+                  SQLException.class, () -> resultSet.getBoolean(finalI), "Failing on " + i);
+          assertEquals(200038, ex.getErrorCode());
         }
 
         assertTrue(resultSet.next());
         for (int i = 1; i < 5; i++) {
-          try {
-            resultSet.getBoolean(i);
-            fail("Failing on " + i);
-          } catch (SQLException ex) {
-            assertEquals(200038, ex.getErrorCode());
-          }
+          int finalI = i;
+          SQLException ex =
+              assertThrows(
+                  SQLException.class, () -> resultSet.getBoolean(finalI), "Failing on " + i);
+          assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -845,12 +815,8 @@ public class ResultSetIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         assertEquals("1", resultSet.getString("TESTCOL"));
         assertEquals("1", resultSet.getString("TESTCOL"));
-        try {
-          resultSet.getString("testcol");
-          fail();
-        } catch (SQLException e) {
-          assertEquals("Column not found: testcol", e.getMessage());
-        }
+        SQLException e = assertThrows(SQLException.class, () -> resultSet.getString("testcol"));
+        assertEquals("Column not found: testcol", e.getMessage());
       }
       // try to do case-insensitive search
       statement.executeQuery(String.format("alter session set %s=true", parameterName));
@@ -875,18 +841,10 @@ public class ResultSetIT extends ResultSet0IT {
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
 
       assertTrue(resultSet.next());
-      try {
-        resultSet.getString(0);
-        fail();
-      } catch (SQLException e) {
-        assertEquals(200032, e.getErrorCode());
-      }
-      try {
-        resultSet.getString(2);
-        fail();
-      } catch (SQLException e) {
-        assertEquals(200032, e.getErrorCode());
-      }
+      SQLException e = assertThrows(SQLException.class, () -> resultSet.getString(0));
+      assertEquals(200032, e.getErrorCode());
+      e = assertThrows(SQLException.class, () -> resultSet.getString(2));
+      assertEquals(200032, e.getErrorCode());
     }
   }
 
@@ -1052,12 +1010,8 @@ public class ResultSetIT extends ResultSet0IT {
     try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
       assertTrue(rs.next());
       System.setProperty("snowflake.enable_incident_test2", "true");
-      try {
-        assertTrue(rs.next());
-        fail();
-      } catch (SQLException ex) {
-        assertEquals(200014, ex.getErrorCode());
-      }
+      SQLException ex = assertThrows(SQLException.class, rs::next);
+      assertEquals(200014, ex.getErrorCode());
       System.setProperty("snowflake.enable_incident_test2", "false");
     }
   }

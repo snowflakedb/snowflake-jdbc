@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -8,8 +5,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -376,12 +373,9 @@ public class SnowflakeDriverTest {
   @Test
   public void testInvalidNullConnect() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    try {
-      snowflakeDriver.connect(/* url= */ null, null);
-      fail();
-    } catch (SQLException ex) {
-      assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
-    }
+    SQLException ex =
+        assertThrows(SQLException.class, () -> snowflakeDriver.connect(null, null).close());
+    assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
   }
 
   @Test
@@ -428,12 +422,10 @@ public class SnowflakeDriverTest {
     Properties info = new Properties();
     String jdbcConnectString =
         "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_pwd=test_password&user=test_user";
-    try {
-      snowflakeDriver.connect(jdbcConnectString, info);
-      fail();
-    } catch (Exception ex) {
-      assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
-    }
+    Exception ex =
+        assertThrows(
+            Exception.class, () -> snowflakeDriver.connect(jdbcConnectString, info).close());
+    assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
   }
 
   @Test
@@ -445,14 +437,15 @@ public class SnowflakeDriverTest {
   }
 
   @Test
-  public void testConnectWithMissingAccountIdentifier() throws SQLException {
+  public void testConnectWithMissingAccountIdentifier() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    try {
-      snowflakeDriver.getPropertyInfo("jdbc:snowflake://localhost:443/?&ssl=on", new Properties());
-      fail();
-    } catch (SnowflakeSQLException ex) {
-      assertEquals(
-          "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
-    }
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                snowflakeDriver.getPropertyInfo(
+                    "jdbc:snowflake://localhost:443/?&ssl=on", new Properties()));
+    assertEquals(
+        "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
   }
 }

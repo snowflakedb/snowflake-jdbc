@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +11,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -87,13 +84,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
       case Types.STRUCT:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
-          return getSqlInput((String) obj, columnIndex);
+          return new StructObjectWrapper((String) obj, getSqlInput((String) obj, columnIndex));
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
       case Types.ARRAY:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
-          return getArray(columnIndex);
+          return new StructObjectWrapper((String) obj, getArray(columnIndex));
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
@@ -102,6 +99,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
+  @SnowflakeJdbcInternalApi
+  @Override
+  public Object getObjectWithoutString(int columnIndex) throws SFException {
+    return getObject(columnIndex);
+  }
   /**
    * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
    * instead.

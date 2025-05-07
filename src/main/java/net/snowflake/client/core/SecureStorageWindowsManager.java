@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -33,13 +30,13 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public static SecureStorageWindowsManager builder() {
-    logger.info("Using Windows Credential Manager as a token cache storage");
+    logger.debug("Using Windows Credential Manager as a token cache storage");
     return new SecureStorageWindowsManager();
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String token) {
-    if (Strings.isNullOrEmpty(token)) {
-      logger.info("No token provided", false);
+    if (isNullOrEmpty(token)) {
+      logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
@@ -47,7 +44,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     Memory credBlobMem = new Memory(credBlob.length);
     credBlobMem.write(0, credBlob, 0, credBlob.length);
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential();
     cred.Type = SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType();
@@ -63,20 +60,20 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     }
 
     if (!ret) {
-      logger.info(
+      logger.warn(
           String.format(
               "Failed to write to Windows Credential Manager. Error code = %d",
               Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
-    logger.info("Wrote to Windows Credential Manager successfully", false);
+    logger.debug("Wrote to Windows Credential Manager successfully", false);
 
     return SecureStorageStatus.SUCCESS;
   }
 
   public String getCredential(String host, String user, String type) {
     PointerByReference pCredential = new PointerByReference();
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     try {
       boolean ret = false;
@@ -90,7 +87,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
       }
 
       if (!ret) {
-        logger.info(
+        logger.warn(
             String.format(
                 "Failed to read target or could not find it in Windows Credential Manager. Error code = %d",
                 Native.getLastError()));
@@ -104,12 +101,12 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
 
       if (SecureStorageWindowsCredentialType.typeOf(cred.Type)
           != SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC) {
-        logger.info("Wrong type of credential. Expected: CRED_TYPE_GENERIC", false);
+        logger.warn("Wrong type of credential. Expected: CRED_TYPE_GENERIC", false);
         return null;
       }
 
       if (cred.CredentialBlobSize == 0) {
-        logger.info("Returned credential is empty", false);
+        logger.debug("Returned credential is empty", false);
         return null;
       }
 
@@ -127,7 +124,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     boolean ret = false;
     synchronized (advapi32Lib) {
@@ -137,7 +134,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     }
 
     if (!ret) {
-      logger.info(
+      logger.warn(
           String.format(
               "Failed to delete target in Windows Credential Manager. Error code = %d",
               Native.getLastError()));

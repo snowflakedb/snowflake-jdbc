@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
@@ -39,7 +35,6 @@ public abstract class SFBaseStatement {
   public void addProperty(String propertyName, Object propertyValue) throws SFException {
     statementParametersMap.put(propertyName, propertyValue);
 
-    // for query timeout, we implement it on client side for now
     if ("query_timeout".equalsIgnoreCase(propertyName)) {
       queryTimeout = (Integer) propertyValue;
     }

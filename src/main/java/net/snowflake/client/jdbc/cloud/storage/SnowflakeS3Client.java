@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -77,11 +73,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
-/**
- * Wrapper around AmazonS3Client.
- *
- * @author ffunke
- */
+/** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private static final String localFileSep = systemGetProperty("file.separator");
@@ -352,7 +344,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     TransferManager tx = null;
     int retryCount = 0;
@@ -387,7 +379,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         String iv = metaMap.get(AMZ_IV);
 
         myDownload.waitForCompletion();
-
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
@@ -473,7 +464,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     int retryCount = 0;

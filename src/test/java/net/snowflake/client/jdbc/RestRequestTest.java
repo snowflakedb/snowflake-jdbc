@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
@@ -10,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -356,12 +352,14 @@ public class RestRequestTest {
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
-    try {
-      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);
-    } catch (SnowflakeSQLException ex) {
-      assertThat(
-          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
-    }
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                execute(
+                    client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
+    assertThat(
+        ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
   }
 
   @Test
@@ -370,12 +368,14 @@ public class RestRequestTest {
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryLoginResponse());
 
-    try {
-      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);
-    } catch (SnowflakeSQLException ex) {
-      assertThat(
-          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
-    }
+    SnowflakeSQLException ex =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () ->
+                execute(
+                    client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false));
+    assertThat(
+        ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
   }
 
   @Test
@@ -392,12 +392,8 @@ public class RestRequestTest {
                 @Override
                 public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
                   callCount += 1;
-                  if (callCount <= 1) {
-                    return retryResponse(); // return a retryable resp on the first attempt
-                  } else {
-                    fail("No retry should happen when noRetry = true");
-                  }
-                  return successResponse();
+                  assertTrue(callCount <= 1);
+                  return retryResponse(); // return a retryable resp on the first attempt
                 }
               });
 
@@ -588,7 +584,7 @@ public class RestRequestTest {
   }
 
   @Test
-  public void testMaxRetriesWithSuccessfulResponse() throws IOException {
+  public void testMaxRetriesWithSuccessfulResponse() throws IOException, SnowflakeSQLException {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -611,8 +607,6 @@ public class RestRequestTest {
     try {
       TelemetryService.disable();
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 4);
-    } catch (SnowflakeSQLException e) {
-      fail("testMaxRetriesWithSuccessfulResponse");
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();

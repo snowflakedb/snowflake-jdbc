@@ -1,16 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import net.snowflake.common.core.SqlState;
 
-/**
- * Internal JDBC driver error codes
- *
- * @author jhuang
- */
+/** Internal JDBC driver error codes */
 public enum ErrorCode {
 
   /**
@@ -83,7 +75,15 @@ public enum ErrorCode {
   INVALID_OKTA_USERNAME(200060, SqlState.CONNECTION_EXCEPTION),
   GCP_SERVICE_ERROR(200061, SqlState.SYSTEM_ERROR),
   AUTHENTICATOR_REQUEST_TIMEOUT(200062, SqlState.CONNECTION_EXCEPTION),
-  INVALID_STRUCT_DATA(200063, SqlState.DATA_EXCEPTION);
+  INVALID_STRUCT_DATA(200063, SqlState.DATA_EXCEPTION),
+  DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH(200064, SqlState.INVALID_PARAMETER_VALUE),
+  TOO_MANY_FILES_TO_DOWNLOAD_AS_STREAM(200065, SqlState.DATA_EXCEPTION),
+  FILE_OPERATION_UPLOAD_ERROR(200066, SqlState.INTERNAL_ERROR),
+  FILE_OPERATION_DOWNLOAD_ERROR(200067, SqlState.INTERNAL_ERROR),
+  OAUTH_AUTHORIZATION_CODE_FLOW_ERROR(200068, SqlState.CONNECTION_EXCEPTION),
+  OAUTH_CLIENT_CREDENTIALS_FLOW_ERROR(200069, SqlState.CONNECTION_EXCEPTION),
+  OAUTH_REFRESH_TOKEN_FLOW_ERROR(200070, SqlState.CONNECTION_EXCEPTION),
+  WORKLOAD_IDENTITY_FLOW_ERROR(200071, SqlState.CONNECTION_EXCEPTION);
 
   public static final String errorMessageResource = "net.snowflake.client.jdbc.jdbc_error_messages";
 

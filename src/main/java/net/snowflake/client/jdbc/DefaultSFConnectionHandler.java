@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.IOException;
@@ -189,7 +190,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
       if (logLevel != null && logPattern != null) {
         try {
-          logger.info("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
+          logger.debug("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
           JDK14Logger.instantiateLogger(logLevel, logPattern);
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
@@ -278,7 +279,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
   }
 
   private void checkLogFolderPermissions(Path path) throws SnowflakeSQLLoggedException {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
+    if (!isWindows()) {
       try {
         Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
         if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
@@ -325,7 +326,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             properties.replace(property.getKey(), "900");
           }
         } catch (NumberFormatException ex) {
-          logger.info(
+          logger.warn(
               "Invalid data type for CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY: {}",
               property.getValue());
           continue;
@@ -337,6 +338,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       }
       sfSession.addSFSessionProperty(property.getKey(), property.getValue());
     }
+    sfSession.overrideConsoleHandlerWhenNecessary();
 
     // populate app id and version
     sfSession.addProperty(SFSessionProperty.APP_ID, appID);

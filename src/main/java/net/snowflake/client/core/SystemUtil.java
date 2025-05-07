@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -26,7 +22,7 @@ class SystemUtil {
       try {
         returnVal = Integer.parseInt(systemPropertyValue);
       } catch (NumberFormatException ex) {
-        logger.info(
+        logger.warn(
             "Failed to parse the system parameter {} with value {}",
             systemProperty,
             systemPropertyValue);

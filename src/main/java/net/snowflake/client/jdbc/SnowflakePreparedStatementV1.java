@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -386,13 +382,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     if (x == null) {
       setNull(parameterIndex, Types.TIME);
     } else {
-      // Convert to nanoseconds since midnight using the input time mod 24 hours.
-      long nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
+      String value;
+      if (connection.getSFBaseSession().getTreatTimeAsWallClockTime()) {
+        value = String.valueOf(x.toLocalTime().toNanoOfDay());
+      } else {
+        value = String.valueOf(SfTimestampUtil.getTimeInNanoseconds(x));
+      }
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(Types.TIME, connection.getSFBaseSession()),
-              String.valueOf(nanosSinceMidnight));
+              value);
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -1013,8 +1013,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           updateCounts.intArr = executeBatchInternal(false).intArr;
         }
       }
+      if (this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     } finally {
-      this.clearBatch();
+      if (!this.getSFBaseStatement()
+          .getSFBaseSession()
+          .getClearBatchOnlyAfterSuccessfulExecution()) {
+        clearBatch();
+      }
     }
 
     return updateCounts;

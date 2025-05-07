@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.category;
 
 public class TestTags {
@@ -14,4 +11,6 @@ public class TestTags {
   public static final String OTHERS = "others";
   public static final String RESULT_SET = "resultSet";
   public static final String STATEMENT = "statement";
+  public static final String AUTHENTICATION = "authentication";
+  public static final String TESTING = "testing";
 }

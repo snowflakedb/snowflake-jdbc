@@ -1,18 +1,14 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.QueryStatus.getStatusFromString;
 import static net.snowflake.client.core.QueryStatus.isAnError;
 import static net.snowflake.client.core.QueryStatus.isStillRunning;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -33,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.QueryStatusV2;
@@ -45,11 +42,11 @@ import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
@@ -85,6 +82,8 @@ public class SFSession extends SFBaseSession {
   private long masterTokenValidityInSeconds;
   private String idToken;
   private String mfaToken;
+  private String oauthAccessToken;
+  private String oauthRefreshToken;
   private String privateKeyFileLocation;
   private String privateKeyBase64;
   private String privateKeyPassword;
@@ -151,6 +150,9 @@ public class SFSession extends SFBaseSession {
    * <p>Default: 120
    */
   private Duration browserResponseTimeout = Duration.ofSeconds(120);
+
+  private boolean javaUtilLoggingConsoleOut = false;
+  private String javaUtilLoggingConsoleOutThreshold = null;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -237,7 +239,8 @@ public class SFSession extends SFBaseSession {
             queryID,
             this,
             e.getMessage(),
-            "No response or invalid response from GET request. Error: {}");
+            "No response or invalid response from GET request. Error: " + e.getMessage(),
+            e);
       }
 
       // Get response as JSON and parse it to get the query status
@@ -255,7 +258,7 @@ public class SFSession extends SFBaseSession {
             // If we fail to renew the session based on a re-authentication error, try to
             // re-authenticate the session first
             if (ex instanceof SnowflakeReauthenticationRequest
-                && this.isExternalbrowserAuthenticator()) {
+                && this.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
               try {
                 this.open();
               } catch (SFException e) {
@@ -323,7 +326,7 @@ public class SFSession extends SFBaseSession {
     // if an error message has been provided, set appropriate error message.
     // This should override the default error message displayed when there is
     // an error with no code.
-    if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
+    if (!isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
     } else {
       result.setErrorMessage("No error reported");
@@ -435,6 +438,16 @@ public class SFSession extends SFBaseSession {
             tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
           }
           break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT:
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOut = (Boolean) propertyValue;
+          }
+          break;
+        case JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD:
+          if (propertyValue != null) {
+            javaUtilLoggingConsoleOutThreshold = (String) propertyValue;
+          }
+          break;
 
         case DISABLE_SOCKS_PROXY:
           // note: if any session has this parameter, it will be used for all
@@ -495,6 +508,13 @@ public class SFSession extends SFBaseSession {
             setEnablePatternSearch(getBooleanValue(propertyValue));
           }
           break;
+
+        case ENABLE_EXACT_SCHEMA_SEARCH_ENABLED:
+          if (propertyValue != null) {
+            setEnableExactSchemaSearch(getBooleanValue(propertyValue));
+          }
+          break;
+
         case DISABLE_GCS_DEFAULT_CREDENTIALS:
           if (propertyValue != null) {
             setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
@@ -537,6 +557,24 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT:
+          if (propertyValue != null) {
+            setImplicitServerSideQueryTimeout(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION:
+          if (propertyValue != null) {
+            setClearBatchOnlyAfterSuccessfulExecution(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME:
+          if (propertyValue != null) {
+            setTreatTimeAsWallClockTime(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -553,6 +591,13 @@ public class SFSession extends SFBaseSession {
       if (sessionParametersMap.size() > MAX_SESSION_PARAMETERS) {
         throw new SFException(ErrorCode.TOO_MANY_SESSION_PARAMETERS, MAX_SESSION_PARAMETERS);
       }
+    }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void overrideConsoleHandlerWhenNecessary() {
+    if (javaUtilLoggingConsoleOut) {
+      JDK14Logger.useStdOutConsoleHandler(javaUtilLoggingConsoleOutThreshold);
     }
   }
 
@@ -634,6 +679,17 @@ public class SFSession extends SFBaseSession {
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
+    SFOauthLoginInput oauthLoginInput =
+        new SFOauthLoginInput(
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_ID),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_CLIENT_SECRET),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_REDIRECT_URI),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_AUTHORIZATION_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_TOKEN_REQUEST_URL),
+            (String) connectionPropertiesMap.get(SFSessionProperty.OAUTH_SCOPE),
+            getBooleanValue(
+                connectionPropertiesMap.get(
+                    SFSessionProperty.OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS)));
 
     loginInput
         .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
@@ -644,6 +700,8 @@ public class SFSession extends SFBaseSession {
         .setValidateDefaultParameters(
             connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
         .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+        .setOriginalAuthenticator(
+            (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
         .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
@@ -671,6 +729,12 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setOauthLoginInput(oauthLoginInput)
+        .setWorkloadIdentityProvider(
+            (String) connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER))
+        .setWorkloadIdentityEntraResource(
+            (String)
+                connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_ENTRA_RESOURCE))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -720,6 +784,8 @@ public class SFSession extends SFBaseSession {
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
     mfaToken = loginOutput.getMfaToken();
+    oauthAccessToken = loginOutput.getOauthAccessToken();
+    oauthRefreshToken = loginOutput.getOauthRefreshToken();
     setDatabaseVersion(loginOutput.getDatabaseVersion());
     setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
     setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
@@ -788,7 +854,7 @@ public class SFSession extends SFBaseSession {
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     stopwatch.stop();
-    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+    logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -804,18 +870,15 @@ public class SFSession extends SFBaseSession {
             && privateKey == null
             && privateKeyFileLocation == null
             && privateKeyBase64 == null)
-        || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
+        || AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
-  /**
-   * Returns true If authenticator is EXTERNALBROWSER.
-   *
-   * @return true if authenticator type is EXTERNALBROWSER
-   */
-  boolean isExternalbrowserAuthenticator() {
+  boolean isExternalbrowserOrOAuthFullFlowAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator)
+        || AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name().equalsIgnoreCase(authenticator)
+        || AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -826,7 +889,7 @@ public class SFSession extends SFBaseSession {
   boolean isOKTAAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
+    return !isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
   }
 
   /**
@@ -837,9 +900,7 @@ public class SFSession extends SFBaseSession {
   boolean isUsernamePasswordMFAAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
-        .name()
-        .equalsIgnoreCase(authenticator);
+    return AuthenticatorType.USERNAME_PASSWORD_MFA.name().equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -867,6 +928,8 @@ public class SFSession extends SFBaseSession {
         .setMasterToken(masterToken)
         .setIdToken(idToken)
         .setMfaToken(mfaToken)
+        .setOauthAccessToken(oauthAccessToken)
+        .setOauthRefreshToken(oauthRefreshToken)
         .setLoginTimeout(loginTimeout)
         .setRetryTimeout(retryTimeout)
         .setDatabaseName(getDatabase())
@@ -933,7 +996,7 @@ public class SFSession extends SFBaseSession {
     }
 
     stopwatch.stop();
-    logger.info(
+    logger.debug(
         "Session {} has been successfully closed in {} ms",
         getSessionId(),
         stopwatch.elapsedMillis());
@@ -991,7 +1054,7 @@ public class SFSession extends SFBaseSession {
 
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
-    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+    if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug(
           "Session {} start heartbeat, master token validity: {} s",
           getSessionId(),
@@ -1006,7 +1069,7 @@ public class SFSession extends SFBaseSession {
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
-    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+    if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug("Session {} stop heartbeat", getSessionId());
 
       HeartbeatBackground.getInstance().removeSession(this);
@@ -1206,6 +1269,11 @@ public class SFSession extends SFBaseSession {
     return idToken;
   }
 
+  @SnowflakeJdbcInternalApi
+  public String getAccessToken() {
+    return oauthAccessToken;
+  }
+
   public String getMfaToken() {
     return mfaToken;
   }
@@ -1244,12 +1312,12 @@ public class SFSession extends SFBaseSession {
         || isUsernamePasswordMFAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
-      if (Strings.isNullOrEmpty(userName)) {
+      if (isNullOrEmpty(userName)) {
         throw new SFException(ErrorCode.MISSING_USERNAME);
       }
 
       String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
-      if (Strings.isNullOrEmpty(password)) {
+      if (isNullOrEmpty(password)) {
 
         throw new SFException(ErrorCode.MISSING_PASSWORD);
       }
@@ -1281,13 +1349,13 @@ public class SFSession extends SFBaseSession {
     if (isSnowflakeAuthenticator() || isOKTAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
-      if (Strings.isNullOrEmpty(userName)) {
+      if (isNullOrEmpty(userName)) {
         missingProperties.add(
             addNewDriverProperty(SFSessionProperty.USER.getPropertyKey(), "username for account"));
       }
 
       String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
-      if (Strings.isNullOrEmpty(password)) {
+      if (isNullOrEmpty(password)) {
         missingProperties.add(
             addNewDriverProperty(
                 SFSessionProperty.PASSWORD.getPropertyKey(), "password for " + "account"));

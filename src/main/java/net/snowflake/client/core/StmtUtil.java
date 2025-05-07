@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -423,7 +420,7 @@ public class StmtUtil {
   }
 
   private static void setServiceNameHeader(StmtInput stmtInput, HttpRequestBase httpRequest) {
-    if (!Strings.isNullOrEmpty(stmtInput.serviceName)) {
+    if (!isNullOrEmpty(stmtInput.serviceName)) {
       httpRequest.setHeader(SessionUtil.SF_HEADER_SERVICE_NAME, stmtInput.serviceName);
     }
   }

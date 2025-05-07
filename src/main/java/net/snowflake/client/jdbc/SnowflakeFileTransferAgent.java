@@ -1,17 +1,13 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
 import java.io.File;
@@ -34,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -57,6 +54,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SnowflakeOrgInternalApi;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
@@ -68,6 +66,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
@@ -76,16 +75,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-/**
- * Class for uploading/downloading files
- *
- * @author jhuang
- */
+/** Class for uploading/downloading files */
 public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
-
-  static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
 
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
@@ -896,7 +889,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     parseCommand();
 
     if (stageInfo.getStageType() != StageInfo.StageType.LOCAL_FS) {
-      storageClient = storageFactory.createClient(stageInfo, parallel, null, session);
+      storageClient =
+          StorageClientFactory.getFactory().createClient(stageInfo, parallel, null, session);
     }
   }
 
@@ -1181,7 +1175,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       JsonNode presignedUrlNode = jsonNode.path("data").path("stageInfo").path("presignedUrl");
       if (!presignedUrlNode.isMissingNode()) {
         String presignedUrl = presignedUrlNode.asText();
-        if (!Strings.isNullOrEmpty(presignedUrl)) {
+        if (!isNullOrEmpty(presignedUrl)) {
           stageInfo.setPresignedUrl(presignedUrl);
         }
       }
@@ -1335,7 +1329,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
-    logger.debug("Response: {}", jsonNode.toString());
+
+    logger.debug("Response: {}", SecretDetector.maskSecrets(jsonNode.toString()));
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
@@ -1564,7 +1559,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         File dir = new File(localLocation);
         if (!dir.exists()) {
           boolean created = dir.mkdirs();
-
           if (created) {
             logger.debug("Directory created: {}", localLocation);
           } else {
@@ -1632,7 +1626,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                     fileMetadata,
                     (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
                         ? null
-                        : storageFactory.createClient(stageInfo, parallel, encMat, session),
+                        : StorageClientFactory.getFactory()
+                            .createClient(stageInfo, parallel, encMat, session),
                     session,
                     command,
                     sourceStream,
@@ -1666,7 +1661,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             queryID,
             ex.getCause(),
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode());
+            ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     } finally {
@@ -1695,6 +1690,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     remoteLocation remoteLocation = extractLocationAndPath(stageInfo.getLocation());
 
     // when downloading files as stream there should be only one file in source files
+    // let's fail fast when more than one file matches instead of fetching random one
+    if (sourceFiles.size() > 1) {
+      throw new SnowflakeSQLException(
+          queryID,
+          SqlState.NO_DATA,
+          ErrorCode.TOO_MANY_FILES_TO_DOWNLOAD_AS_STREAM.getMessageCode(),
+          session,
+          "There are more than one file matching "
+              + fileName
+              + ": "
+              + String.join(",", sourceFiles));
+    }
     String sourceLocation =
         sourceFiles.stream()
             .findFirst()
@@ -1721,7 +1728,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(sourceLocation);
     String presignedUrl = srcFileToPresignedUrl.get(sourceLocation);
 
-    return storageFactory
+    return StorageClientFactory.getFactory()
         .createClient(stageInfo, parallel, encMat, session)
         .downloadToStream(
             session,
@@ -1739,6 +1746,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     try {
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-file-download-worker-", 1);
 
+      List<Future<Void>> downloadFileFutures = new LinkedList<>();
       for (String srcFile : sourceFiles) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
 
@@ -1755,21 +1763,23 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(srcFile);
         String presignedUrl = srcFileToPresignedUrl.get(srcFile);
-        threadExecutor.submit(
-            getDownloadFileCallable(
-                stageInfo,
-                srcFile,
-                localLocation,
-                fileMetadataMap,
-                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
-                    ? null
-                    : storageFactory.createClient(stageInfo, parallel, encMat, session),
-                session,
-                command,
-                parallel,
-                encMat,
-                presignedUrl,
-                queryID));
+        downloadFileFutures.add(
+            threadExecutor.submit(
+                getDownloadFileCallable(
+                    stageInfo,
+                    srcFile,
+                    localLocation,
+                    fileMetadataMap,
+                    (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+                        ? null
+                        : StorageClientFactory.getFactory()
+                            .createClient(stageInfo, parallel, encMat, session),
+                    session,
+                    command,
+                    parallel,
+                    encMat,
+                    presignedUrl,
+                    queryID)));
 
         logger.debug("Submitted download job for: {}", srcFile);
       }
@@ -1779,9 +1789,20 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       try {
         // wait for all threads to complete without timeout
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        for (Future<Void> downloadFileFuture : downloadFileFutures) {
+          if (downloadFileFuture.isDone()) {
+            downloadFileFuture.get();
+          }
+        }
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+      } catch (ExecutionException ex) {
+        throw new SnowflakeSQLException(
+            queryID,
+            ex.getCause(),
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.FILE_OPERATION_DOWNLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with downloading");
     } finally {
@@ -1822,6 +1843,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor =
           SnowflakeUtil.createDefaultExecutorService("sf-file-upload-worker-", parallel);
 
+      List<Future<Void>> uploadFileFutures = new LinkedList<>();
       for (String srcFile : fileList) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
 
@@ -1849,23 +1871,24 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         int delay = session.getInjectWaitInPut();
         setUploadDelay(delay);
 
-        threadExecutor.submit(
-            getUploadFileCallable(
-                stageInfo,
-                srcFile,
-                fileMetadata,
-                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
-                    ? null
-                    : storageFactory.createClient(
-                        stageInfo, parallel, encryptionMaterial.get(0), session),
-                session,
-                command,
-                null,
-                false,
-                (parallel > 1 ? 1 : this.parallel),
-                srcFileObj,
-                encryptionMaterial.get(0),
-                queryID));
+        uploadFileFutures.add(
+            threadExecutor.submit(
+                getUploadFileCallable(
+                    stageInfo,
+                    srcFileObj.getPath(),
+                    fileMetadata,
+                    (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+                        ? null
+                        : StorageClientFactory.getFactory()
+                            .createClient(stageInfo, parallel, encryptionMaterial.get(0), session),
+                    session,
+                    command,
+                    null,
+                    false,
+                    (parallel > 1 ? 1 : this.parallel),
+                    srcFileObj,
+                    encryptionMaterial.get(0),
+                    queryID)));
 
         logger.debug("Submitted copy job for: {}", srcFile);
       }
@@ -1876,9 +1899,20 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       try {
         // wait for all threads to complete without timeout
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        for (Future<Void> uploadFileFuture : uploadFileFutures) {
+          if (uploadFileFuture.isDone()) {
+            uploadFileFuture.get();
+          }
+        }
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+      } catch (ExecutionException ex) {
+        throw new SnowflakeSQLException(
+            queryID,
+            ex.getCause(),
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.FILE_OPERATION_UPLOAD_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading");
 
@@ -2141,7 +2175,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         (ArgSupplier)
             () -> (encMat == null ? "NULL" : encMat.getSmkId() + "|" + encMat.getQueryId()));
 
-    StorageObjectMetadata meta = storageFactory.createStorageMetadataObj(stage.getStageType());
+    StorageObjectMetadata meta =
+        StorageClientFactory.getFactory().createStorageMetadataObj(stage.getStageType());
     meta.setContentLength(uploadSize);
     if (digest != null) {
       initialClient.addDigestMetadata(meta, digest);
@@ -2199,6 +2234,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param config Configuration to upload a file to cloud storage
    * @throws Exception if error occurs while data upload.
    */
+  @SnowflakeOrgInternalApi
   public static void uploadWithoutConnection(SnowflakeFileTransferConfig config) throws Exception {
     logger.trace("Entering uploadWithoutConnection...");
 
@@ -2278,7 +2314,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           uploadSize);
 
       SnowflakeStorageClient initialClient =
-          storageFactory.createClient(stageInfo, 1, encMat, /* session= */ null);
+          StorageClientFactory.getFactory().createClient(stageInfo, 1, encMat, /* session= */ null);
 
       // Normal flow will never hit here. This is only for testing purposes
       if (isInjectedFileTransferExceptionEnabled()) {
@@ -2338,7 +2374,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           break;
       }
     } catch (Exception ex) {
-      logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      if (!config.isSilentException()) {
+        logger.error("Exception encountered during file upload in uploadWithoutConnection", ex);
+      }
       throw ex;
     } finally {
       if (fileBackedOutputStream != null) {
@@ -2392,7 +2430,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         (ArgSupplier)
             () -> (encMat == null ? "NULL" : encMat.getSmkId() + "|" + encMat.getQueryId()));
 
-    StorageObjectMetadata meta = storageFactory.createStorageMetadataObj(stage.getStageType());
+    StorageObjectMetadata meta =
+        StorageClientFactory.getFactory().createStorageMetadataObj(stage.getStageType());
     meta.setContentLength(uploadSize);
     if (digest != null) {
       initialClient.addDigestMetadata(meta, digest);
@@ -3022,7 +3061,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     } else {
       subType = mimeTypeStr.substring(slashIndex + 1, semiColonIndex);
     }
-    if (Strings.isNullOrEmpty(subType)) {
+    if (isNullOrEmpty(subType)) {
       return Optional.empty();
     }
     return FileCompressionType.lookupByMimeSubType(subType);

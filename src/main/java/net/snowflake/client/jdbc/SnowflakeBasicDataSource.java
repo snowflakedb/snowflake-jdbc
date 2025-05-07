@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,7 +19,6 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/** Created by hyu on 5/11/17. */
 public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
@@ -94,12 +94,20 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public Connection getConnection(String username, String password) throws SQLException {
     if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(
         authenticator)) { // For OAuth, no username is required
+      if (username == null) {
+        throw new SnowflakeSQLException(
+            "Cannot create connection because username is missing in DataSource properties.");
+      }
       properties.put(SFSessionProperty.USER.getPropertyKey(), username);
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
     if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
         && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
+      if (password == null) {
+        throw new SnowflakeSQLException(
+            "Cannot create connection because password is missing in DataSource properties.");
+      }
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
 
@@ -231,7 +239,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setPrivateKeyFile(String location, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
-    if (!Strings.isNullOrEmpty(password)) {
+    if (!isNullOrEmpty(password)) {
       this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }
@@ -239,7 +247,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setPrivateKeyBase64(String privateKeyBase64, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey(), privateKeyBase64);
-    if (!Strings.isNullOrEmpty(password)) {
+    if (!isNullOrEmpty(password)) {
       this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }

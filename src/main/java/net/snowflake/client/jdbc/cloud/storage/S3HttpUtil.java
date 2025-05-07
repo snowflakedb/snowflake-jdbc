@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.google.common.base.Strings;
 import java.util.Properties;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpProtocol;
@@ -45,8 +42,7 @@ public class S3HttpUtil {
               + key.getProxyHttpProtocol()
               + ", non-proxy hosts: "
               + key.getNonProxyHosts();
-      if (!Strings.isNullOrEmpty(key.getProxyUser())
-          && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+      if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
         logMessage +=
             ", user: "
                 + key.getProxyUser()
@@ -100,7 +96,7 @@ public class S3HttpUtil {
         String proxyProtocol =
             proxyProperties.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
         Protocol protocolEnum =
-            (!Strings.isNullOrEmpty(proxyProtocol) && proxyProtocol.equalsIgnoreCase("https"))
+            (!isNullOrEmpty(proxyProtocol) && proxyProtocol.equalsIgnoreCase("https"))
                 ? Protocol.HTTPS
                 : Protocol.HTTP;
         clientConfig.setProxyHost(proxyHost);
@@ -116,7 +112,7 @@ public class S3HttpUtil {
                 + nonProxyHosts
                 + ", protocol: "
                 + proxyProtocol;
-        if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
+        if (!isNullOrEmpty(proxyUser) && !isNullOrEmpty(proxyPassword)) {
           logMessage += ", user: " + proxyUser + " with password provided";
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);

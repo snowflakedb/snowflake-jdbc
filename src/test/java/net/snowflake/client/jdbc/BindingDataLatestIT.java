@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -9,16 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Properties;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.util.SFPair;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +39,34 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
   TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
   Calendar tokyo = Calendar.getInstance(tokyoTz);
+
+  List<Time> times =
+      Arrays.asList(
+          Time.valueOf("00:00:00"),
+          Time.valueOf("11:59:59"),
+          Time.valueOf("12:00:00"),
+          Time.valueOf("12:34:56"),
+          Time.valueOf("13:01:01"),
+          Time.valueOf("15:30:00"),
+          Time.valueOf("23:59:59"));
+
+  List<SFPair<String, Date>> gregorianJulianDates =
+      Arrays.asList(
+          SFPair.of("0001-01-01", Date.valueOf("0001-01-01")),
+          SFPair.of("0100-03-01", Date.valueOf("0100-03-01")),
+          SFPair.of("0400-02-29", Date.valueOf("0400-02-29")),
+          SFPair.of("0400-03-01", Date.valueOf("0400-03-01")),
+          SFPair.of("1400-03-01", Date.valueOf("1400-03-01")),
+          SFPair.of("1582-10-15", Date.valueOf("1582-10-15")),
+          SFPair.of("1900-02-28", Date.valueOf("1900-02-28")),
+          SFPair.of("1900-03-01", Date.valueOf("1900-03-01")),
+          SFPair.of("1969-12-31", Date.valueOf("1969-12-31")),
+          SFPair.of("1970-01-01", Date.valueOf("1970-01-01")),
+          SFPair.of("2000-02-28", Date.valueOf("2000-02-28")),
+          SFPair.of("2000-02-29", Date.valueOf("2000-02-29")),
+          SFPair.of("2000-03-01", Date.valueOf("2000-03-01")),
+          SFPair.of("2023-10-26", Date.valueOf("2023-10-26")),
+          SFPair.of("2024-02-29", Date.valueOf("2024-02-29")));
 
   @Test
   public void testBindTimestampTZ() throws SQLException {
@@ -356,6 +389,245 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         statement.execute("drop table if exists regularinsert");
         TimeZone.setDefault(origTz);
       }
+    }
+  }
+
+  /**
+   * Test that binding TIMESTAMP_LTZ does not affect other date time bindings time zones as a side
+   * effect
+   *
+   * <p>This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testTimestampLtzBindingNoLongerBreaksOtherDatetimeBindings() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"));
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsertdates(ind int, t1 timestamp_ltz, d1 date)");
+        Date date1 =
+            new java.sql.Date(
+                ZonedDateTime.of(2016, 2, 19, 0, 0, 0, 0, ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli());
+        Timestamp ts1 = new Timestamp(date1.getTime());
+        // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into stageinsertdates values (?,?, ?)")) {
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, ts1);
+          prepStatement.setDate(3, date1);
+          prepStatement.addBatch();
+          prepStatement.executeBatch();
+          prepStatement.getConnection().commit();
+        }
+
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates")) {
+          assertTrue(rs1.next());
+
+          assertEquals(1, rs1.getInt(1));
+          assertEquals(ts1, rs1.getTimestamp(2));
+          assertEquals(date1, rs1.getDate(3));
+        }
+      } finally {
+        TimeZone.setDefault(origTz);
+      }
+    }
+  }
+
+  @Test
+  public void testGregorianJulianConversions() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setDate(2, gregorianJulianDates.get(i).right);
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates order by ind")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          assertTrue(rs1.next());
+          assertEquals(i, rs1.getInt(1));
+          assertEquals(gregorianJulianDates.get(i).left, rs1.getDate(2).toLocalDate().toString());
+        }
+      }
+    }
+  }
+
+  /**
+   * This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testGregorianJulianConversionsWithStageBindings() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setDate(2, gregorianJulianDates.get(i).right);
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates order by ind")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          assertTrue(rs1.next());
+          assertEquals(i, rs1.getInt(1));
+          assertEquals(gregorianJulianDates.get(i).left, rs1.getDate(2).toLocalDate().toString());
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testInsertTimeColumnAsWallClockTimeRegardlessOfTimezone() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
+
+    Properties props = new Properties();
+    props.put("CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", true);
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table test_wall_clock_time(ind int, t1 time)");
+      statement.execute("alter session set TIMEZONE='America/Los_Angeles';");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_wall_clock_time values (?,?)")) {
+        for (int i = 0; i < times.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setTime(2, times.get(i));
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs =
+          statement.executeQuery("select * from test_wall_clock_time order by ind")) {
+        for (int i = 0; i < times.size(); i++) {
+          assertTrue(rs.next());
+          assertEquals(i, rs.getInt(1));
+          assertEquals(times.get(i).toLocalTime(), rs.getTime(2).toLocalTime());
+          // check if inserted time is wall clock time
+          assertEquals(times.get(i).toString(), rs.getString(2));
+        }
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
+    }
+  }
+
+  /**
+   * This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testInsertTimeColumnAsWallClockTimeRegardlessOfTimezoneWithStageBinding()
+      throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
+
+    Properties props = new Properties();
+    props.put("CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", true);
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table test_wall_clock_time(ind int, t1 time)");
+      statement.execute("alter session set TIMEZONE='America/Los_Angeles';");
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_wall_clock_time values (?,?)")) {
+        for (int i = 0; i < times.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setTime(2, times.get(i));
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs =
+          statement.executeQuery("select * from test_wall_clock_time order by ind")) {
+        for (int i = 0; i < times.size(); i++) {
+          assertTrue(rs.next());
+          assertEquals(i, rs.getInt(1));
+          assertEquals(times.get(i).toLocalTime(), rs.getTime(2).toLocalTime());
+          // check if inserted time is wall clock time
+          assertEquals(times.get(i).toString(), rs.getString(2));
+        }
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
+    }
+  }
+
+  /***
+   * Verifies that without enabling CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME time column gets shifted to UTC on insert
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testInsertTimeColumnNotAsWallClockTimeAsUtc() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Honolulu"));
+
+    Properties props = new Properties();
+    props.put("CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false);
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table test_wall_clock_time(ind int, t1 time)");
+      statement.execute("alter session set TIMEZONE='America/Los_Angeles';");
+
+      String localTimeValue = "00:00:00";
+      String utcTimeValue = "10:00:00"; // 00:00 in Pacific/Honolulu is 10:00 UTC
+      Time localTime = Time.valueOf(localTimeValue);
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_wall_clock_time values (?,?)")) {
+        prepStatement.setInt(1, 0);
+        prepStatement.setTime(2, localTime);
+        prepStatement.addBatch();
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs =
+          statement.executeQuery("select * from test_wall_clock_time order by ind")) {
+        assertTrue(rs.next());
+        assertEquals(0, rs.getInt(1));
+        // check if time gets shifted to UTC time on insert
+        assertEquals(utcTimeValue, rs.getString(2));
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
     }
   }
 

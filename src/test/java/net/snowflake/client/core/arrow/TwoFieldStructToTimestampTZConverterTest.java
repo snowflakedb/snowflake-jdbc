@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.arrow;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -114,9 +110,11 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
       } else {
         epoch.setSafe(j, testEpochesInt64[i]);
         timeZoneIdx.setSafe(j, testTimeZoneIndices[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampTZConverter(structVector, 0, this);

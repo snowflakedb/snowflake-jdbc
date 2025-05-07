@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.sql.Date;
@@ -37,7 +34,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public boolean isNull(int index) {
-    return epochs.isNull(index);
+    return structVector.isNull(index) || epochs.isNull(index) || timeZoneIndices.isNull(index);
   }
 
   @Override
@@ -59,7 +56,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz);
+    return isNull(index) ? null : getTimestamp(index, tz);
   }
 
   private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
@@ -76,7 +73,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     Timestamp ts = getTimestamp(index, TimeZone.getDefault());
@@ -94,7 +91,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public boolean toBoolean(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return false;
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());
@@ -105,7 +102,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     throw new SFException(
@@ -114,7 +111,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
 
   @Override
   public short toShort(int rowIndex) throws SFException {
-    if (epochs.isNull(rowIndex)) {
+    if (isNull(rowIndex)) {
       return 0;
     }
     throw new SFException(

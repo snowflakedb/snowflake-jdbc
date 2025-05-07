@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +33,7 @@ public abstract class AbstractLoggerIT {
         "Value: {}",
         (ArgSupplier)
             () -> {
-              fail("Lambda expression evaluated even though message " + "is not logged");
+              fail("Lambda expression evaluated even though message is not logged");
               return 0;
             });
   }

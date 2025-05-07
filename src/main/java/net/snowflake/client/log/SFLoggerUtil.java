@@ -1,11 +1,8 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.log;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.google.common.base.Strings;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.commons.logging.LogFactory;
 
@@ -20,9 +17,19 @@ public class SFLoggerUtil {
       loggerImplementation = SFLoggerFactory.LoggerImpl.JDK14LOGGER;
     }
 
+    CommonsLoggingWrapperMode commonsLoggingWrapperMode = CommonsLoggingWrapperMode.detect();
+    if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.OFF) {
+      return;
+    }
+
     System.setProperty(
         "org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
     LogFactory logFactory = LogFactory.getFactory();
+    if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.ALL) {
+      logFactory.setAttribute(
+          "org.apache.commons.logging.Log", CommonsLoggingWrapper.class.getName());
+      return;
+    }
     switch (loggerImplementation) {
       case SLF4JLOGGER:
         logFactory.setAttribute(
@@ -38,7 +45,7 @@ public class SFLoggerUtil {
   @SnowflakeJdbcInternalApi
   public static <T> String isVariableProvided(T variable) {
     if (variable instanceof String) {
-      return (Strings.isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;
+      return (isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;
     }
     return variable == null ? NOT_PROVIDED_LOG : PROVIDED_LOG;
   }

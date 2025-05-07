@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -22,17 +19,17 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public static SecureStorageAppleManager builder() {
-    logger.info("Using Apple Keychain as a token cache storage");
+    logger.debug("Using Apple Keychain as a token cache storage");
     return new SecureStorageAppleManager();
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
-    if (Strings.isNullOrEmpty(cred)) {
-      logger.info("No credential provided", false);
+    if (isNullOrEmpty(cred)) {
+      logger.debug("No credential provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
     byte[] credBytes = cred.getBytes(StandardCharsets.UTF_8);
@@ -53,7 +50,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     }
 
     if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND) {
-      logger.info(
+      logger.warn(
           String.format(
               "Failed to check the existence of the item in keychain. Error code = %d",
               Native.getLastError()));
@@ -81,7 +78,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     }
 
     if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
-      logger.info(
+      logger.warn(
           String.format(
               "Failed to set/modify the item in keychain. Error code = %d", Native.getLastError()));
       return SecureStorageStatus.FAILURE;
@@ -92,7 +89,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public String getCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -115,14 +112,14 @@ public class SecureStorageAppleManager implements SecureStorageManager {
       }
 
       if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
-        logger.info(
+        logger.warn(
             String.format(
                 "Failed to find the item in keychain or item not exists. Error code = %d",
                 Native.getLastError()));
         return null;
       }
       if (dataLength[0] == 0 || data[0] == null) {
-        logger.info("Found empty item or no item is found", false);
+        logger.warn("Found empty item or no item is found", false);
         return null;
       }
 
@@ -141,7 +138,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -162,7 +159,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     }
 
     if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND) {
-      logger.info(
+      logger.warn(
           String.format(
               "Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
       return SecureStorageStatus.FAILURE;
@@ -174,7 +171,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
       }
 
       if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
-        logger.info(
+        logger.warn(
             String.format(
                 "Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
         return SecureStorageStatus.FAILURE;

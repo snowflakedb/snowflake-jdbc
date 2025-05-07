@@ -1,0 +1,52 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Always 429 in federated step 3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/session/authenticator-request",
+        "queryParameters": {
+          "request_guid": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "tokenUrl": "{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}/okta-stub/vanity-url/api/v1/authn",
+            "ssoUrl": "{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml",
+            "proofKey": null
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Always 429 in federated step 3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 429,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "message": "Too Many Requests"
+        }
+      }
+    }
+  ],
+  "importOptions": {
+    "duplicatePolicy": "IGNORE",
+    "deleteAllNotInImport": true
+  }
+}

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import java.sql.ResultSet;
@@ -58,4 +54,12 @@ public interface SnowflakeStatement {
    * @throws SQLException if an error is encountered
    */
   void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException;
+
+  /**
+   * Sets the query timeout when running an async query.
+   *
+   * @param seconds The number of seconds until timeout.
+   * @throws SQLException if an error is encountered
+   */
+  void setAsyncQueryTimeout(int seconds) throws SQLException;
 }

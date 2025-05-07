@@ -1,10 +1,11 @@
 package net.snowflake.client.config;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemGetEnvToBooleanValue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
-import com.google.common.base.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -18,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -117,7 +117,7 @@ public class SFConnectionConfigParser {
 
   private static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
+    if (!isWindows()) {
       PosixFileAttributeView posixFileAttributeView =
           Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
       if (!posixFileAttributeView.readAttributes().permissions().stream()
@@ -162,7 +162,7 @@ public class SFConnectionConfigParser {
     logger.debug("Host created using parameters from connection configuration file: {}", host);
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
-    if (Strings.isNullOrEmpty(port)) {
+    if (isNullOrEmpty(port)) {
       if ("https".equals(protocol)) {
         port = "443";
       } else {

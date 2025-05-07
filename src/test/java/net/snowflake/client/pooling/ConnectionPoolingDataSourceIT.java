@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.pooling;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -8,7 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -47,13 +44,9 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
         Statement statement = connection.createStatement()) {
       statement.execute("select 1");
 
-      try {
-        // should fire connection error events
-        connection.setCatalog("nonexistent_database");
-        fail();
-      } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(2043));
-      }
+      SQLException e =
+          assertThrows(SQLException.class, () -> connection.setCatalog("nonexistent_database"));
+      assertThat(e.getErrorCode(), is(2043));
 
       // should not close underlying physical connection
       // and fire connection closed events

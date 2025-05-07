@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import net.snowflake.client.jdbc.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -26,12 +22,13 @@ public class SFSessionPropertyTest {
     }
 
     for (String invalid : invalidApplicationName) {
-      try {
-        SFSessionProperty.checkPropertyValue(SFSessionProperty.APPLICATION, invalid);
-        fail();
-      } catch (SFException e) {
-        assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
-      }
+      SFException e =
+          assertThrows(
+              SFException.class,
+              () -> {
+                SFSessionProperty.checkPropertyValue(SFSessionProperty.APPLICATION, invalid);
+              });
+      assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
     }
   }
 
@@ -46,12 +43,14 @@ public class SFSessionPropertyTest {
 
   @Test
   public void testInvalidMaxRetries() {
-    try {
-      SFSessionProperty.checkPropertyValue(SFSessionProperty.MAX_HTTP_RETRIES, "invalidValue");
-      fail("testInvalidMaxRetries");
-    } catch (SFException e) {
-      assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
-    }
+    SFException e =
+        assertThrows(
+            SFException.class,
+            () -> {
+              SFSessionProperty.checkPropertyValue(
+                  SFSessionProperty.MAX_HTTP_RETRIES, "invalidValue");
+            });
+    assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
   }
 
   @Test
@@ -65,12 +64,14 @@ public class SFSessionPropertyTest {
 
   @Test
   public void testInvalidPutGetMaxRetries() {
-    try {
-      SFSessionProperty.checkPropertyValue(SFSessionProperty.PUT_GET_MAX_RETRIES, "invalidValue");
-      fail("testInvalidMaxRetries");
-    } catch (SFException e) {
-      assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
-    }
+    SFException e =
+        assertThrows(
+            SFException.class,
+            () -> {
+              SFSessionProperty.checkPropertyValue(
+                  SFSessionProperty.PUT_GET_MAX_RETRIES, "invalidValue");
+            });
+    assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
   }
 
   @Test

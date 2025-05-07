@@ -46,16 +46,6 @@ timestamps {
       '''.stripMargin()
     }
 
-    def commit_hash = "main" // default which we want to override
-    def bptp_tag = "bptp-built"
-    try {
-        def response = authenticatedGithubCall("https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/${bptp_tag}")
-        commit_hash = response.object.sha
-    } catch (Exception e) {
-      println("error when calling Github API: ${e.message}")
-      e.printStackTrace()
-    }
-
     jdkToParams = ['openjdk8': 'jdbc-centos7-openjdk8', 'openjdk11': 'jdbc-centos7-openjdk11', 'openjdk17': 'jdbc-centos7-openjdk17', 'openjdk21': 'jdbc-centos7-openjdk21'].collectEntries { jdk, image ->
       return [(jdk): [
         string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
@@ -66,7 +56,7 @@ timestamps {
         string(name: 'parent_build_number', value: env.BUILD_NUMBER),
         string(name: 'timeout_value', value: '420'),
         string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3)),
-        string(name: 'svn_revision', value: commit_hash)
+        string(name: 'svn_revision', value: 'bptp-stable')
       ]]
     }
 
@@ -89,36 +79,21 @@ timestamps {
     }
 
     jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
+    jobDefinitions.put('Test Authentication', {
+      withCredentials([
+        string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
+        string(credentialsId: 'a791118f-a1ea-46cd-b876-56da1b9bc71c', variable: 'NEXUS_PASSWORD')
+      ]) {
+        sh '''\
+      |#!/bin/bash
+      |set -e
+      |ci/test_authentication.sh
+    '''.stripMargin()
+      }
+    })
+
     stage('Test') {
       parallel (jobDefinitions)
-    }
-  }
-}
-
-// Generic github API function
-// url : API url to call get command
-def authenticatedGithubCall(url) {
-  withCredentials([
-        usernamePassword(credentialsId: 'jenkins-snowflakedb-github-app',
-          usernameVariable: 'GITHUB_USER',
-          passwordVariable: 'GITHUB_TOKEN'),
-      ]) {
-    try {
-      def encodedAuth = Base64.getEncoder().encodeToString(
-        "${GITHUB_USER}:${GITHUB_TOKEN}".getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      )
-      def authHeaderValue = "Basic ${encodedAuth}"
-      def connection = new URL(url).openConnection()
-      connection.setRequestProperty("Authorization", authHeaderValue)
-      if (connection.getResponseCode() >= 300) {
-        println("ERROR: Status fetch from ${url} returned ${connection.getResponseCode()}")
-        println(connection.getErrorStream().getText())
-        return null
-      }
-      return new groovy.json.JsonSlurperClassic().parseText(connection.getInputStream().getText())
-    } catch(Exception e) {
-      println("Exception fetching ${url}: ${e}")
-      return null
     }
   }
 }

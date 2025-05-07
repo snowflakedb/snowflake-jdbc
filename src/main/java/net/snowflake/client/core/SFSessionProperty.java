@@ -1,19 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import java.security.PrivateKey;
 import java.util.regex.Pattern;
 import net.snowflake.client.jdbc.ErrorCode;
 
-/**
- * session properties accepted for opening a new session.
- *
- * @author jhuang
- *     <p>Created on 11/3/15
- */
+/** session properties accepted for opening a new session. */
 public enum SFSessionProperty {
   SERVER_URL("serverURL", true, String.class),
   USER("user", false, String.class),
@@ -29,6 +20,15 @@ public enum SFSessionProperty {
   AUTHENTICATOR("authenticator", false, String.class),
   OKTA_USERNAME("oktausername", false, String.class),
   PRIVATE_KEY("privateKey", false, PrivateKey.class),
+  OAUTH_REDIRECT_URI("oauthRedirectUri", false, String.class),
+  OAUTH_CLIENT_ID("oauthClientID", false, String.class),
+  OAUTH_CLIENT_SECRET("oauthClientSecret", false, String.class),
+  OAUTH_SCOPE("oauthScope", false, String.class),
+  OAUTH_AUTHORIZATION_URL("oauthAuthorizationUrl", false, String.class),
+  OAUTH_TOKEN_REQUEST_URL("oauthTokenRequestUrl", false, String.class),
+  OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS("oauthEnableSingleUseRefreshTokens", false, Boolean.class),
+  WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
+  WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
@@ -37,7 +37,13 @@ public enum SFSessionProperty {
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
   OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
+  /**
+   * @deprecated Use {@link #DISABLE_OCSP_CHECKS} for clarity. This configuration option is used to
+   *     disable OCSP verification.
+   */
+  @Deprecated
   INSECURE_MODE("insecureMode", false, Boolean.class),
+  DISABLE_OCSP_CHECKS("disableOCSPChecks", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   STRINGS_QUOTED("stringsQuotedForColumnDef", false, Boolean.class),
   APPLICATION("application", false, String.class),
@@ -89,6 +95,7 @@ public enum SFSessionProperty {
   DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
+  ENABLE_EXACT_SCHEMA_SEARCH_ENABLED("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
@@ -112,7 +119,20 @@ public enum SFSessionProperty {
 
   HTTP_CLIENT_CONNECTION_TIMEOUT("HTTP_CLIENT_CONNECTION_TIMEOUT", false, Integer.class),
 
-  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class);
+  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class),
+
+  JAVA_LOGGING_CONSOLE_STD_OUT("JAVA_LOGGING_CONSOLE_STD_OUT", false, Boolean.class),
+
+  JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD(
+      "JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD", false, String.class),
+
+  IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", false, Boolean.class),
+
+  CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION(
+      "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class),
+
+  CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME(
+      "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

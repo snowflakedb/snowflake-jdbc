@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -31,17 +28,14 @@ import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
-/**
- * Handles encryption and decryption using AES CBC (for files) and ECB (for keys).
- *
- * @author ppaulus
- */
+/** Handles encryption and decryption using AES CBC (for files) and ECB (for keys). */
 public class EncryptionProvider {
   private static final String AES = "AES";
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
   private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
-  private static SecureRandom secRnd;
+  private static ThreadLocal<SecureRandom> secRnd =
+      new ThreadLocal<>().withInitial(SecureRandom::new);
 
   /**
    * Decrypt a InputStream
@@ -165,11 +159,11 @@ public class EncryptionProvider {
 
       // Create IV
       ivData = new byte[blockSize];
-      getSecRnd().nextBytes(ivData);
+      secRnd.get().nextBytes(ivData);
       final IvParameterSpec iv = new IvParameterSpec(ivData);
 
       // Create file key
-      getSecRnd().nextBytes(fileKeyBytes);
+      secRnd.get().nextBytes(fileKeyBytes);
       SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, keySize, AES);
 
       // Init cipher
@@ -198,19 +192,5 @@ public class EncryptionProvider {
     }
 
     return cis;
-  }
-
-  /*
-   * getSecRnd
-   * Gets a random number for encryption purposes.
-   */
-  private static synchronized SecureRandom getSecRnd()
-      throws NoSuchAlgorithmException, NoSuchProviderException {
-    if (secRnd == null) {
-      secRnd = SecureRandom.getInstance("SHA1PRNG");
-      byte[] bytes = new byte[10];
-      secRnd.nextBytes(bytes);
-    }
-    return secRnd;
   }
 }

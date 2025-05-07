@@ -1,13 +1,12 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,12 +17,16 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
+import net.snowflake.client.SystemPropertyOverrider;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -39,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Tag(TestTags.CORE)
 public class SFTrustManagerIT extends BaseJDBCTest {
@@ -99,6 +103,8 @@ public class SFTrustManagerIT extends BaseJDBCTest {
   public void testOcsp(String host) throws Throwable {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
+    // this initialization normally happens on first call
+    SFTrustManager.setOCSPResponseCacheServerURL(String.format("http://%s", host));
     HttpClient client =
         HttpUtil.buildHttpClient(
             new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
@@ -261,5 +267,58 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     ClassLoader classLoader = getClass().getClassLoader();
     URL url = classLoader.getResource(fileName);
     return url != null ? url.openStream() : null;
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "jdbc:snowflake://someaccount.snowflakecomputing.com:443,http://ocsp.snowflakecomputing.com/ocsp_response_cache.json",
+    "jdbc:snowflake://someaccount.snowflakecomputing.cn:443,http://ocsp.snowflakecomputing.cn/ocsp_response_cache.json",
+  })
+  void testOCSPCacheServerUrlWithoutProxy(String sfHost, String ocspHost) throws Exception {
+    Properties props = new Properties();
+    props.setProperty(SFSessionProperty.USER.getPropertyKey(), "testUser");
+    props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "testPassword");
+    props.setProperty(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey(), "1");
+    try {
+      new SnowflakeConnectionV1(sfHost, props);
+    } catch (Exception e) {
+      // do nothing, we don't want to connect, just check the value below
+    }
+    assertEquals(SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE, ocspHost);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "jdbc:snowflake://someaccount.snowflakecomputing.com:443,http://ocsp.snowflakecomputing.com/ocsp_response_cache.json",
+    "jdbc:snowflake://someaccount.snowflakecomputing.cn:443,http://ocsp.snowflakecomputing.cn/ocsp_response_cache.json",
+  })
+  void testOCSPCacheServerUrlWithProxy(String sfHost, String ocspHost) {
+    SystemPropertyOverrider useProxyOverrider =
+        new SystemPropertyOverrider("http.useProxy", "true");
+    SystemPropertyOverrider proxyHostOverrider =
+        new SystemPropertyOverrider("http.proxyHost", "localhost");
+    SystemPropertyOverrider proxyPortOverrider =
+        new SystemPropertyOverrider("http.proxyPort", "8080");
+    try {
+      Properties props = new Properties();
+      props.setProperty(SFSessionProperty.USER.getPropertyKey(), "testUser");
+      props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "testPassword");
+      props.setProperty(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey(), "1");
+      try {
+        new SnowflakeConnectionV1(sfHost, props);
+      } catch (Exception e) {
+        // do nothing, we don't want to connect, just check the value below
+      }
+      assertEquals(SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE, ocspHost);
+    } finally {
+      Arrays.asList(useProxyOverrider, proxyHostOverrider, proxyPortOverrider)
+          .forEach(SystemPropertyOverrider::rollback);
+    }
+  }
+
+  @BeforeEach
+  @AfterEach
+  void cleanup() {
+    SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = null;
   }
 }

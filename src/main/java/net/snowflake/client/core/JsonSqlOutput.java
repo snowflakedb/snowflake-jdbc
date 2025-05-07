@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.FieldSchemaCreator.buildSchemaTypeAndNameOnly;
@@ -201,7 +198,13 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeTime(Time x) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
-          long nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
+          long nanosSinceMidnight;
+          if (session.getTreatTimeAsWallClockTime()) {
+            nanosSinceMidnight = x.toLocalTime().toNanoOfDay();
+          } else {
+            nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
+          }
+
           String result =
               ResultUtil.getSFTimeAsString(
                   SFTime.fromNanoseconds(nanosSinceMidnight),

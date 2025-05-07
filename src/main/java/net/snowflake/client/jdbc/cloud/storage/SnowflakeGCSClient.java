@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -8,6 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemPropertyToBoo
 import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isBlank;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -27,7 +25,6 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
-import com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -77,11 +74,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
-/**
- * Encapsulates the GCS Storage client and all GCS operations and logic
- *
- * @author ppaulus
- */
+/** Encapsulates the GCS Storage client and all GCS operations and logic */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @SnowflakeJdbcInternalApi
   public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
@@ -259,7 +252,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String queryId)
       throws SnowflakeSQLException {
     String localFilePath = localLocation + localFileSep + destFileName;
-    logger.info(
+    logger.debug(
         "Staring download of file from GCS stage path: {} to {}", stageFilePath, localFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
@@ -270,7 +263,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         String key = null;
         String iv = null;
         long downloadMillis = 0;
-        if (!Strings.isNullOrEmpty(presignedUrl)) {
+        if (!isNullOrEmpty(presignedUrl)) {
           logger.debug("Starting download with presigned URL", false);
           URIBuilder uriBuilder = new URIBuilder(presignedUrl);
 
@@ -369,8 +362,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
         }
 
-        if (!Strings.isNullOrEmpty(iv)
-            && !Strings.isNullOrEmpty(key)
+        if (!isNullOrEmpty(iv)
+            && !isNullOrEmpty(key)
             && this.isEncrypting()
             && this.getEncryptionKeySize() <= 256) {
           if (key == null || iv == null) {
@@ -453,7 +446,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.info("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
+    logger.debug("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
@@ -464,7 +457,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         String key = null;
         String iv = null;
 
-        if (!Strings.isNullOrEmpty(presignedUrl)) {
+        if (!isNullOrEmpty(presignedUrl)) {
           logger.debug("Starting download with presigned URL", false);
           URIBuilder uriBuilder = new URIBuilder(presignedUrl);
 
@@ -662,7 +655,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    if (Strings.isNullOrEmpty(presignedUrl) || "null".equalsIgnoreCase(presignedUrl)) {
+    if (isNullOrEmpty(presignedUrl) || "null".equalsIgnoreCase(presignedUrl)) {
       logger.debug("Starting upload with downscoped token");
       uploadWithDownScopedToken(
           remoteStorageLocation,
@@ -765,7 +758,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    if (!Strings.isNullOrEmpty(presignedUrl)) {
+    if (!isNullOrEmpty(presignedUrl)) {
       logger.debug("Starting upload with downscope token", false);
       uploadWithPresignedUrl(
           session.getNetworkTimeoutInMilli(),
@@ -1008,7 +1001,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @return Just the object path
    */
   private String scrubPresignedUrl(String presignedUrl) {
-    if (Strings.isNullOrEmpty(presignedUrl)) {
+    if (isNullOrEmpty(presignedUrl)) {
       return "";
     }
     int indexOfQueryString = presignedUrl.lastIndexOf("?");
@@ -1314,7 +1307,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (accessToken != null) {
         // We are authenticated with an oauth access token.
         StorageOptions.Builder builder = StorageOptions.newBuilder();
-        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+        overrideHost(stage, builder);
 
         if (areDisabledGcsDefaultCredentials(session)) {
           logger.debug(
@@ -1335,7 +1328,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         // Use anonymous authentication.
         HttpStorageOptions.Builder builder =
             HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
-        stage.gcsCustomEndpoint().ifPresent(builder::setHost);
+        overrideHost(stage, builder);
         this.gcsClient = builder.build().getService();
       }
 
@@ -1357,10 +1350,22 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
   }
 
+  private static void overrideHost(StageInfo stage, StorageOptions.Builder builder) {
+    stage
+        .gcsCustomEndpoint()
+        .ifPresent(
+            host -> {
+              if (host.startsWith("https://")) {
+                builder.setHost(host);
+              } else {
+                builder.setHost("https://" + host);
+              }
+            });
+  }
+
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
-        || convertSystemPropertyToBooleanValue(
-            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
+        || convertSystemPropertyToBooleanValue(DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, true);
   }
 
   private static boolean isSuccessStatusCode(int code) {

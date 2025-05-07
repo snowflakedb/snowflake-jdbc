@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.pooling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -8,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -82,12 +78,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       assertTrue(logicalConnection.isValid(10));
-      try {
-        assertTrue(logicalConnection.isValid(-10));
-        fail("must fail");
-      } catch (SQLException ex) {
-        // nop, no specific error code is provided.
-      }
+      assertThrows(SQLException.class, () -> logicalConnection.isValid(-10));
     }
     pooledConnection.close();
   }
@@ -145,18 +136,10 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       boolean canUnwrap = logicalConnection.isWrapperFor(SnowflakeConnectionV1.class);
       assertTrue(canUnwrap);
-      if (canUnwrap) {
-        SnowflakeConnectionV1 sfconnection = logicalConnection.unwrap(SnowflakeConnectionV1.class);
-        sfconnection.createStatement();
-      } else {
-        fail("should be able to unwrap");
-      }
-      try {
-        logicalConnection.unwrap(SnowflakeDriver.class);
-        fail("should fail to cast");
-      } catch (SQLException ex) {
-        // nop
-      }
+      SnowflakeConnectionV1 sfconnection = logicalConnection.unwrap(SnowflakeConnectionV1.class);
+      sfconnection.createStatement();
+
+      assertThrows(SQLException.class, () -> logicalConnection.unwrap(SnowflakeDriver.class));
     }
   }
 

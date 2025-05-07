@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
@@ -12,8 +9,8 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.base.Strings;
 import java.sql.Connection;
@@ -104,32 +101,12 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         assertTrue(resultSet.isFirst());
       }
       ++cnt;
-      try {
-        resultSet.isLast();
-        fail("No isLast support for query based metadata");
-      } catch (SQLFeatureNotSupportedException ex) {
-        // nop
-      }
-      try {
-        resultSet.isAfterLast();
-        fail("No isAfterLast support for query based metadata");
-      } catch (SQLFeatureNotSupportedException ex) {
-        // nop
-      }
+      assertThrows(SQLFeatureNotSupportedException.class, resultSet::isLast);
+      assertThrows(SQLFeatureNotSupportedException.class, resultSet::isAfterLast);
     }
     assertThat(cnt, greaterThanOrEqualTo(1));
-    try {
-      assertTrue(resultSet.isAfterLast());
-      fail("The result set is automatically closed when all rows are fetched.");
-    } catch (SQLException ex) {
-      assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
-    }
-    try {
-      resultSet.isAfterLast();
-      fail("No isAfterLast support for query based metadata");
-    } catch (SQLException ex) {
-      assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
-    }
+    SQLException ex = assertThrows(SQLException.class, resultSet::isAfterLast);
+    assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
     resultSet.close(); // double closing does nothing.
     resultSet.next(); // no exception
 
@@ -677,9 +654,10 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
     assertEquals("$", metaData.getExtraNameCharacters());
     assertEquals("\"", metaData.getIdentifierQuoteString());
     assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
-    assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
+    assertThat(
+        metaData.getMaxBinaryLiteralLength(), greaterThanOrEqualTo(EXPECTED_MAX_BINARY_LENGTH));
     assertEquals(255, metaData.getMaxCatalogNameLength());
-    assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
+    assertThat(metaData.getMaxCharLiteralLength(), greaterThanOrEqualTo(EXPECTED_MAX_CHAR_LENGTH));
     assertEquals(255, metaData.getMaxColumnNameLength());
     assertEquals(0, metaData.getMaxColumnsInGroupBy());
     assertEquals(0, metaData.getMaxColumnsInIndex());

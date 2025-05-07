@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.api.client.util.Strings;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
@@ -20,6 +17,7 @@ import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -31,16 +29,22 @@ import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 
 /**
- * @author mknister
- *     <p>This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB
- *     telemetry data for sql exceptions. Not all sql exceptions require OOB telemetry logging so
- *     the exceptions in this class should only be thrown if there is a need for logging the
- *     exception with OOB telemetry.
+ * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB
+ * telemetry data for sql exceptions. Not all sql exceptions require OOB telemetry logging so the
+ * exceptions in this class should only be thrown if there is a need for logging the exception with
+ * OOB telemetry.
  */
 public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeSQLLoggedException.class);
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+  private static final int NO_VENDOR_CODE = -1;
+
+  public SnowflakeSQLLoggedException(
+      String queryID, SFSession session, String sqlState, String message, Exception cause) {
+    super(queryID, cause, sqlState, NO_VENDOR_CODE, message);
+    sendTelemetryData(queryID, sqlState, NO_VENDOR_CODE, session, this);
+  }
 
   /**
    * Function to create a TelemetryEvent log from the JSONObject and exception and send it via OOB
@@ -128,13 +132,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     oobValue.put("type", TelemetryField.SQL_EXCEPTION.toString());
     oobValue.put("DriverType", LoginInfoDTO.SF_JDBC_APP_ID);
     oobValue.put("DriverVersion", SnowflakeDriver.implementVersion);
-    if (!Strings.isNullOrEmpty(queryId)) {
+    if (!isNullOrEmpty(queryId)) {
       oobValue.put("QueryID", queryId);
     }
-    if (!Strings.isNullOrEmpty(SQLState)) {
+    if (!isNullOrEmpty(SQLState)) {
       oobValue.put("SQLState", SQLState);
     }
-    if (vendorCode != -1) {
+    if (vendorCode != NO_VENDOR_CODE) {
       oobValue.put("ErrorNumber", vendorCode);
     }
     return oobValue;
@@ -153,13 +157,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     ibValue.put("type", TelemetryField.SQL_EXCEPTION.toString());
     ibValue.put("DriverType", LoginInfoDTO.SF_JDBC_APP_ID);
     ibValue.put("DriverVersion", SnowflakeDriver.implementVersion);
-    if (!Strings.isNullOrEmpty(queryId)) {
+    if (!isNullOrEmpty(queryId)) {
       ibValue.put("QueryID", queryId);
     }
-    if (!Strings.isNullOrEmpty(SQLState)) {
+    if (!isNullOrEmpty(SQLState)) {
       ibValue.put("SQLState", SQLState);
     }
-    if (vendorCode != -1) {
+    if (vendorCode != NO_VENDOR_CODE) {
       ibValue.put("ErrorNumber", vendorCode);
     }
     return ibValue;
@@ -281,7 +285,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, String SQLState, String reason) {
     super(reason, SQLState);
-    sendTelemetryData(queryId, SQLState, -1, session, this);
+    sendTelemetryData(queryId, SQLState, NO_VENDOR_CODE, session, this);
   }
 
   /**
@@ -374,7 +378,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, ErrorCode errorCode, Object... params) {
     super(queryId, errorCode, params);
-    sendTelemetryData(queryId, null, -1, session, this);
+    sendTelemetryData(queryId, null, NO_VENDOR_CODE, session, this);
   }
 
   /**
@@ -383,7 +387,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    */
   public SnowflakeSQLLoggedException(SFBaseSession session, SFException e) {
     super(e);
-    sendTelemetryData(null, null, -1, session, this);
+    sendTelemetryData(null, null, NO_VENDOR_CODE, session, this);
   }
 
   /**
@@ -405,6 +409,6 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    */
   public SnowflakeSQLLoggedException(String queryId, SFBaseSession session, String reason) {
     super(queryId, reason, null);
-    sendTelemetryData(queryId, null, -1, session, this);
+    sendTelemetryData(queryId, null, NO_VENDOR_CODE, session, this);
   }
 }
