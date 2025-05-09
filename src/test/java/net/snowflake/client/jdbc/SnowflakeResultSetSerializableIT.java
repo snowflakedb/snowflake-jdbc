@@ -20,10 +20,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
+import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -34,9 +37,11 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 /** SnowflakeResultSetSerializable tests */
 @Tag(TestTags.RESULT_SET)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
+  private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());
+
   @TempDir private File tmpFolder;
 
-  private static boolean developPrint = false;
+  private static boolean developPrint = true;
 
   // sfFullURL is used to support private link URL.
   // This test case is not for private link env, so just use a valid URL for testing purpose.
@@ -240,8 +245,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
+    StopWatch stopwatch = new StopWatch();
+    stopwatch.start();
     try (Connection connection = init(queryResultFormat)) {
       Statement statement = connection.createStatement();
+      logger.severe(stopwatch.getTime(TimeUnit.SECONDS) + " ms: testBasicTableHarness start");
 
       if (developPrint) {
         System.out.println(
@@ -261,6 +269,9 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         statement.execute(
             "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
+        logger.severe(
+            stopwatch.getTime(TimeUnit.SECONDS)
+                + " ms: testBasicTableHarness before insert into table_basic");
         if (rowCount > 0) {
           statement.execute(
               "insert into table_basic select "
@@ -269,6 +280,9 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
                   + rowCount
                   + "))");
         }
+        logger.severe(
+            stopwatch.getTime(TimeUnit.SECONDS)
+                + " ms: testBasicTableHarness after insert into table_basic");
       }
 
       String sqlSelect = "select * from table_basic " + whereClause;
@@ -277,14 +291,28 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
               ? statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect)
               : statement.executeQuery(sqlSelect)) {
 
+        logger.severe(
+            stopwatch.getTime(TimeUnit.SECONDS) + " ms: testBasicTableHarness after select query");
         fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
+        logger.severe(
+            stopwatch.getTime(TimeUnit.SECONDS)
+                + " ms: testBasicTableHarness after serializeResultSet");
 
         originalResultCSVString = generateCSVResult(rs);
+        logger.severe(
+            stopwatch.getTime(TimeUnit.SECONDS)
+                + " ms: testBasicTableHarness after generateCSVResult");
       }
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
+    logger.severe(
+        stopwatch.getTime(TimeUnit.SECONDS)
+            + " ms: testBasicTableHarness after deserializeResultSet");
     assertEquals(chunkResultString, originalResultCSVString);
+    logger.severe(
+        stopwatch.getTime(TimeUnit.SECONDS)
+            + " ms: testBasicTableHarness after deserializeResultSet");
   }
 
   @ParameterizedTest
