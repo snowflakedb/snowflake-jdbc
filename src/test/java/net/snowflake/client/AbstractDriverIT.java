@@ -1,6 +1,8 @@
 package net.snowflake.client;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.base.Strings;
 import java.net.URISyntaxException;
@@ -388,6 +390,18 @@ public class AbstractDriverIT {
       }
     } else {
       throw new RuntimeException("No file is found: " + fileName);
+    }
+  }
+
+  public static void connectAndVerifySimpleQuery(Properties props) throws SQLException {
+    try (Connection con =
+            DriverManager.getConnection(
+                String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port")),
+                props);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      assertTrue(rs.next());
+      assertEquals(1, rs.getInt(1));
     }
   }
 
