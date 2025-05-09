@@ -50,6 +50,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import net.snowflake.client.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
@@ -57,6 +58,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -227,6 +229,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
+
+    if (session instanceof SFSession) {
+      List<HttpHeadersCustomizer> headersCustomizers =
+          ((SFSession) session).getHttpHeadersCustomizers();
+      if (headersCustomizers != null && !headersCustomizers.isEmpty()) {
+        amazonS3Builder.withRequestHandlers(
+            new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
+      }
+    }
+
     amazonClient = (AmazonS3) amazonS3Builder.build();
   }
 
