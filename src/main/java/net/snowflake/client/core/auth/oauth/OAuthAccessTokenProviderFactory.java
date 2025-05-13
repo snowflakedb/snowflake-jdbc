@@ -9,7 +9,7 @@ import java.util.Set;
 import net.snowflake.client.core.AssertUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
-import net.snowflake.client.core.SessionUtilExternalBrowser;
+import net.snowflake.client.core.SFOauthLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -19,6 +19,8 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class OAuthAccessTokenProviderFactory {
 
+  private static final String SNOWFLAKE_DOMAIN = "snowflakecomputing.com";
+
   private final SFLogger logger = SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class);
   private static final Set<AuthenticatorType> ELIGIBLE_AUTH_TYPES =
       new HashSet<>(
@@ -26,25 +28,20 @@ public class OAuthAccessTokenProviderFactory {
               AuthenticatorType.OAUTH_AUTHORIZATION_CODE,
               AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
 
-  private final SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler;
-  private final long browserAuthorizationTimeoutSeconds;
-
-  public OAuthAccessTokenProviderFactory(
-      SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler,
-      long browserAuthorizationTimeoutSeconds) {
-    this.browserHandler = browserHandler;
-    this.browserAuthorizationTimeoutSeconds = browserAuthorizationTimeoutSeconds;
-  }
-
   public AccessTokenProvider createAccessTokenProvider(
       AuthenticatorType authenticatorType, SFLoginInput loginInput) throws SFException {
     switch (authenticatorType) {
       case OAUTH_AUTHORIZATION_CODE:
+        if (isEligibleForDefaultClientCredentials(loginInput.getOauthLoginInput())) {
+          loginInput.getOauthLoginInput().setLocalApplicationClientCredential();
+        }
         assertContainsClientCredentials(loginInput, authenticatorType);
         validateHttpRedirectUriIfSpecified(loginInput);
         validateAuthorizationAndTokenEndpointsIfSpecified(loginInput);
         return new OAuthAuthorizationCodeAccessTokenProvider(
-            browserHandler, new RandomStateProvider(), browserAuthorizationTimeoutSeconds);
+            loginInput.getBrowserHandler(),
+            new RandomStateProvider(),
+            loginInput.getBrowserResponseTimeout().getSeconds());
       case OAUTH_CLIENT_CREDENTIALS:
         assertContainsClientCredentials(loginInput, authenticatorType);
         AssertUtil.assertTrue(
@@ -56,6 +53,21 @@ public class OAuthAccessTokenProviderFactory {
         logger.error(message);
         throw new SFException(ErrorCode.INTERNAL_ERROR, message);
     }
+  }
+
+  static boolean isEligibleForDefaultClientCredentials(SFOauthLoginInput oauthLoginInput) {
+    return areClientCredentialsNotSupplied(oauthLoginInput) && isSnowflakeAsIdP(oauthLoginInput);
+  }
+
+  private static boolean areClientCredentialsNotSupplied(SFOauthLoginInput oauthLoginInput) {
+    return (oauthLoginInput.getClientId() == null && oauthLoginInput.getClientSecret() == null);
+  }
+
+  private static boolean isSnowflakeAsIdP(SFOauthLoginInput oauthLoginInput) {
+    return ((oauthLoginInput.getAuthorizationUrl() == null
+            || oauthLoginInput.getAuthorizationUrl().contains(SNOWFLAKE_DOMAIN))
+        && (oauthLoginInput.getTokenRequestUrl() == null
+            || oauthLoginInput.getTokenRequestUrl().contains(SNOWFLAKE_DOMAIN)));
   }
 
   private void validateAuthorizationAndTokenEndpointsIfSpecified(SFLoginInput loginInput)
@@ -86,7 +98,8 @@ public class OAuthAccessTokenProviderFactory {
     }
   }
 
-  private void validateHttpRedirectUriIfSpecified(SFLoginInput loginInput) throws SFException {
+  private static void validateHttpRedirectUriIfSpecified(SFLoginInput loginInput)
+      throws SFException {
     String redirectUri = loginInput.getOauthLoginInput().getRedirectUri();
     if (redirectUri != null) {
       AssertUtil.assertTrue(
@@ -103,7 +116,7 @@ public class OAuthAccessTokenProviderFactory {
     return ELIGIBLE_AUTH_TYPES;
   }
 
-  private void assertContainsClientCredentials(
+  private static void assertContainsClientCredentials(
       SFLoginInput loginInput, AuthenticatorType authenticatorType) throws SFException {
     AssertUtil.assertTrue(
         loginInput.getOauthLoginInput().getClientId() != null,

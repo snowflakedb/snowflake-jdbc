@@ -3,8 +3,10 @@ package net.snowflake.client.core;
 @SnowflakeJdbcInternalApi
 public class SFOauthLoginInput {
 
-  private final String clientId;
-  private final String clientSecret;
+  private static final String LOCAL_APPLICATION_CLIENT_CREDENTIAL = "LOCAL_APPLICATION";
+
+  private String clientId;
+  private String clientSecret;
   private final String redirectUri;
   private final String authorizationUrl;
   private final String tokenRequestUrl;
@@ -64,5 +66,10 @@ public class SFOauthLoginInput {
 
   public boolean getEnableSingleUseRefreshTokens() {
     return enableSingleUseRefreshTokens;
+  }
+
+  public void setLocalApplicationClientCredential() {
+    this.clientId = LOCAL_APPLICATION_CLIENT_CREDENTIAL;
+    this.clientSecret = LOCAL_APPLICATION_CLIENT_CREDENTIAL;
   }
 }

@@ -35,7 +35,7 @@
                 "TOKEN": "expired-access-token-123",
                 "LOGIN_NAME": "MOCK_USERNAME",
                 "AUTHENTICATOR": "OAUTH",
-                "OAUTH_TYPE": "OAUTH_CLIENT_CREDENTIALS"
+                "OAUTH_TYPE": "OAUTH_AUTHORIZATION_CODE"
               }
             },
             "ignoreExtraElements": true
@@ -88,7 +88,23 @@
     {
       "scenarioName": "Restarting full flow on access token refreshing error",
       "requiredScenarioState": "Refreshing token error",
-      "newScenarioState": "Acquired new access token via Client Credentials flow",
+      "newScenarioState": "Started full flow and authorized",
+      "request": {
+        "urlPathPattern": "/oauth/authorize.*",
+        "method": "GET"
+      },
+      "response": {
+        "transformers": ["response-template"],
+        "status": 302,
+        "headers": {
+          "Location": "{{request.query.redirect_uri}}?code=123&state={{request.query.state}}"
+        }
+      }
+    },
+    {
+      "scenarioName": "Restarting full flow on access token refreshing error",
+      "requiredScenarioState": "Started full flow and authorized",
+      "newScenarioState": "Acquired new access token",
       "request": {
         "urlPathPattern": "/oauth/token-request.*",
         "method": "POST",
@@ -102,7 +118,7 @@
         },
         "bodyPatterns": [
           {
-            "contains": "grant_type=client_credentials&scope=session%3Arole%3AANALYST"
+            "contains": "grant_type=authorization_code&code=123"
           }
         ]
       },
@@ -122,7 +138,7 @@
     },
     {
       "scenarioName": "Restarting full flow on access token refreshing error",
-      "requiredScenarioState": "Acquired new access token via Client Credentials flow",
+      "requiredScenarioState": "Acquired new access token",
       "newScenarioState": "Established session with newly acquired access token",
       "request": {
         "urlPathPattern": "/session/v1/login-request.*",
