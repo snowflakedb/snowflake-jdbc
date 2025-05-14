@@ -148,6 +148,9 @@ public class SecretDetector {
   }
 
   private static String filterAWSKeys(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         AWS_KEY_PATTERN.matcher(text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
@@ -158,6 +161,9 @@ public class SecretDetector {
   }
 
   private static String filterSASTokens(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         SAS_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -169,6 +175,9 @@ public class SecretDetector {
   }
 
   private static String filterPassword(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         PASSWORD_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -180,6 +189,9 @@ public class SecretDetector {
   }
 
   private static String filterConnectionTokens(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         CONNECTION_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -219,6 +231,9 @@ public class SecretDetector {
    * @return Masked string
    */
   public static String maskSecrets(String text) {
+    if (text == null) {
+      return null;
+    }
     return filterAccessTokens(
         filterConnectionTokens(
             filterPassword(
@@ -234,6 +249,9 @@ public class SecretDetector {
    */
   @SnowflakeJdbcInternalApi
   public static String filterOAuthTokens(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         OAUTH_JSON_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -291,6 +309,9 @@ public class SecretDetector {
    * @return Return filtered message
    */
   public static String filterEncryptionMaterial(String message) {
+    if (message == null) {
+      return null;
+    }
     Matcher matcher =
         ENCRYPTION_MATERIAL_PATTERN.matcher(
             message.length() <= MAX_LENGTH ? message : message.substring(0, MAX_LENGTH));

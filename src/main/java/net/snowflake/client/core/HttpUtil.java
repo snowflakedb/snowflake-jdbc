@@ -6,8 +6,6 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -33,8 +31,6 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -42,10 +38,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -64,20 +57,17 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
-import org.apache.http.util.EntityUtils;
 
 /** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
-  static final String ERROR_FIELD_NAME = "error";
-  static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
-  static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
-
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   private static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS = 300000; // ms
+  static final int DEFAULT_MALFORMED_RESPONSE_MAX_RETRY_COUNT = 3; // ms
+  static final int DEFAULT_MALFORMED_RESPONSE_RETRY_DELAY = 500; // ms
   static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
@@ -86,7 +76,6 @@ public class HttpUtil {
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
-
   private static Duration connectionTimeout;
   private static Duration socketTimeout;
 
@@ -905,79 +894,40 @@ public class HttpUtil {
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
-    // HttpRequest.toString() contains request URI. Scrub any credentials, if
-    // present, before logging
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    String responseText = "";
 
     logger.debug(
         "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
 
-    String theString;
-    StringWriter writer = null;
     CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
-    if (logger.isDebugEnabled()) {
-      stopwatch = new Stopwatch();
-      stopwatch.start();
-    }
-
     try {
-      response =
-          RestRequest.execute(
-              httpClient,
-              httpRequest,
-              retryTimeout,
-              authTimeout,
-              socketTimeout,
-              maxRetries,
-              injectSocketTimeout,
-              canceling,
-              withoutCookies,
-              includeRetryParameters,
-              includeRequestGuid,
-              retryOnHTTP403,
-              execTimeData,
-              retryContextManager);
-      if (logger.isDebugEnabled() && stopwatch != null) {
-        stopwatch.stop();
-      }
+      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+      HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
+      context.setRetryTimeout(retryTimeout);
+      context.setAuthTimeout(authTimeout);
+      context.setOrigSocketTimeout(socketTimeout);
+      context.setMaxRetries(maxRetries);
+      context.setInjectSocketTimeout(injectSocketTimeout);
+      context.setCanceling(canceling);
+      context.setWithoutCookies(withoutCookies);
+      context.setIncludeRetryParameters(includeRetryParameters);
+      context.setIncludeRequestGuid(includeRequestGuid);
+      context.setRetryHTTP403(retryOnHTTP403);
+      context.setUnpackResponse(true);
+      context.setNoRetry(false);
+      context.setLoginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest));
+      responseText =
+          RestRequest.executeWitRetries(
+                  httpClient, httpRequest, context, execTimeData, retryContextManager)
+              .getUnpackedCloseableHttpResponse();
 
-      if (response == null || response.getStatusLine().getStatusCode() != 200) {
-        logger.error("Error executing request: {}", requestInfoScrubbed);
-
-        if (response != null
-            && response.getStatusLine().getStatusCode() == 400
-            && response.getEntity() != null) {
-          checkForDPoPNonceError(response);
-        }
-
-        SnowflakeUtil.logResponseDetails(response, logger);
-
-        if (response != null) {
-          EntityUtils.consume(response.getEntity());
-        }
-
-        // We throw here exception if timeout was reached for login
-        throw new SnowflakeSQLException(
-            SqlState.IO_ERROR,
-            ErrorCode.NETWORK_ERROR.getMessageCode(),
-            "HTTP status="
-                + ((response != null)
-                    ? response.getStatusLine().getStatusCode()
-                    : "null response"));
-      }
-
-      execTimeData.setResponseIOStreamStart();
-      writer = new StringWriter();
-      try (InputStream ins = response.getEntity().getContent()) {
-        IOUtils.copy(ins, writer, "UTF-8");
-      }
-      theString = writer.toString();
-      execTimeData.setResponseIOStreamEnd();
-    } finally {
-      IOUtils.closeQuietly(writer);
-      IOUtils.closeQuietly(response);
+      //        } catch (URISyntaxException e) {
+      //            throw new RuntimeException(e);
+    } catch (SnowflakeSQLException e) {
+      throw e;
     }
 
     logger.debug(
@@ -986,23 +936,7 @@ public class HttpUtil {
         requestInfoScrubbed,
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
-    return theString;
-  }
-
-  private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
-    String errorResponse = EntityUtils.toString(response.getEntity());
-    if (!isNullOrEmpty(errorResponse)) {
-      ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-      JsonNode rootNode = objectMapper.readTree(errorResponse);
-      JsonNode errorNode = rootNode.get(ERROR_FIELD_NAME);
-      if (errorNode != null
-          && errorNode.isValueNode()
-          && errorNode.isTextual()
-          && errorNode.textValue().equals(ERROR_USE_DPOP_NONCE)) {
-        throw new SnowflakeUseDPoPNonceException(
-            response.getFirstHeader(DPOP_NONCE_HEADER_NAME).getValue());
-      }
-    }
+    return responseText;
   }
 
   // This is a workaround for JDK-7036144.

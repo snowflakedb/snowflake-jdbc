@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.OTHERS)
-public class RestRequestWiremockLatestIT extends BaseWiremockTest {
+public class RestRequestWiremockLatestIT extends BaseWiremockIT {
 
   String connectionResetByPeerScenario =
       "{\n"
@@ -53,7 +53,7 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       HttpGet request =
           new HttpGet(String.format("http://%s:%d/endpoint", WIREMOCK_HOST, wiremockHttpPort));
-      RestRequest.execute(
+      RestRequest.executeWitRetries(
           httpClient,
           request,
           0,
@@ -62,6 +62,7 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
           0,
           0,
           new AtomicBoolean(false),
+          false,
           false,
           false,
           false,
