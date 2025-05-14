@@ -1310,6 +1310,7 @@ public abstract class SFBaseSession {
   /**
    * @return auth timeout in seconds
    */
+  @Deprecated
   public abstract int getAuthTimeout();
 
   /**
