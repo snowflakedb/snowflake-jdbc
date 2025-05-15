@@ -182,7 +182,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getShort(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getShort() or else a
@@ -193,7 +193,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getShort(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -221,7 +221,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getInt(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getInt() or else a
@@ -231,7 +231,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getInt(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -259,7 +259,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getLong(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getLong() or else a
@@ -269,7 +269,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getLong(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -297,7 +297,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getFloat(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getFloat() or else a
@@ -307,7 +307,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getFloat(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -335,7 +335,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getDouble(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getDouble() or else a
@@ -345,7 +345,7 @@ public class ResultSetIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getDouble(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -393,7 +393,7 @@ public class ResultSetIT extends ResultSet0IT {
         SQLException ex =
             assertThrows(
                 SQLException.class, () -> resultSet.getBigDecimal(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
       assertTrue(resultSet.next());
       for (int i = 5; i < 7; i++) {
@@ -401,7 +401,7 @@ public class ResultSetIT extends ResultSet0IT {
         SQLException ex =
             assertThrows(
                 SQLException.class, () -> resultSet.getBigDecimal(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -423,7 +423,7 @@ public class ResultSetIT extends ResultSet0IT {
             assertTrue(resultSet.next());
             SQLException ex =
                 assertThrows(SQLException.class, () -> resultSet.getBigDecimal(2, 38));
-            assertEquals(200032, ex.getErrorCode());
+            assertEquals(ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
           }
         }
       } finally {
@@ -701,7 +701,7 @@ public class ResultSetIT extends ResultSet0IT {
           SQLException ex =
               assertThrows(
                   SQLException.class, () -> resultSet.getBoolean(finalI), "Failing on " + i);
-          assertEquals(200038, ex.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
         }
 
         assertTrue(resultSet.next());
@@ -710,7 +710,7 @@ public class ResultSetIT extends ResultSet0IT {
           SQLException ex =
               assertThrows(
                   SQLException.class, () -> resultSet.getBoolean(finalI), "Failing on " + i);
-          assertEquals(200038, ex.getErrorCode());
+          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
         }
       }
     }
@@ -842,9 +842,9 @@ public class ResultSetIT extends ResultSet0IT {
 
       assertTrue(resultSet.next());
       SQLException e = assertThrows(SQLException.class, () -> resultSet.getString(0));
-      assertEquals(200032, e.getErrorCode());
+      assertEquals(ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), e.getErrorCode());
       e = assertThrows(SQLException.class, () -> resultSet.getString(2));
-      assertEquals(200032, e.getErrorCode());
+      assertEquals(ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), e.getErrorCode());
     }
   }
 
