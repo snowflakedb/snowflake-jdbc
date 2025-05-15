@@ -25,6 +25,8 @@ Snowflake provides a JDBC type 4 driver that supports core functionality, allowi
 - snowflake-jdbc-fips (FIPS compliant fat-jar): |maven-snowflake-jdbc-fips|
 - snowflake-jdbc-thin (thin-jar): |maven-snowflake-jdbc-thin|
 
+For debug
+
 Prerequisites
 =============
 
