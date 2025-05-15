@@ -204,6 +204,7 @@ public class LoaderLatestIT extends LoaderBase {
   }
 
   @Test
+  @DontRunOnGithubActions
   private void testVectorColumnInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
