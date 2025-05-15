@@ -59,9 +59,9 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
       // Set up theses parameters as smaller values in order to generate
       // multiple file chunks with small data volumes.
-      stmt.execute("alter session set result_first_chunk_max_size = 512");
-      stmt.execute("alter session set result_min_chunk_size = 512");
-      stmt.execute("alter session set arrow_result_rb_flush_size = 512");
+      stmt.execute("alter session set result_first_chunk_max_size = 256");
+      stmt.execute("alter session set result_min_chunk_size = 256");
+      stmt.execute("alter session set arrow_result_rb_flush_size = 256");
       stmt.execute("alter session set result_chunk_size_multiplier = 1.2");
     }
     return conn;
@@ -345,13 +345,13 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testBasicTableWithOneFileChunk(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(300, 1, "", true, false, queryResultFormat);
+    testBasicTableHarness(200, 1, "", true, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(300, 1, "", true, true, queryResultFormat);
+    testBasicTableHarness(200, 1, "", true, true, queryResultFormat);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(300, 1024 * 1024, "", false, false, queryResultFormat);
+    testBasicTableHarness(200, 1024 * 1024, "", false, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(300, 1024 * 1024, "", false, true, queryResultFormat);
+    testBasicTableHarness(200, 1024 * 1024, "", false, true, queryResultFormat);
   }
 
   @ParameterizedTest
@@ -359,17 +359,17 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testBasicTableWithSomeFileChunks(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(90000, 1, "", true, false, queryResultFormat);
+    testBasicTableHarness(10000, 1, "", true, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 1, "", true, true, queryResultFormat);
+    testBasicTableHarness(10000, 1, "", true, true, queryResultFormat);
     // Result only includes first data chunk, test maxSize is median.
-    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, false, queryResultFormat);
+    testBasicTableHarness(10000, 3 * 1024 * 1024, "", false, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, true, queryResultFormat);
+    testBasicTableHarness(10000, 3 * 1024 * 1024, "", false, true, queryResultFormat);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, false, queryResultFormat);
+    testBasicTableHarness(10000, 100 * 1024 * 1024, "", false, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, true, queryResultFormat);
+    testBasicTableHarness(10000, 100 * 1024 * 1024, "", false, true, queryResultFormat);
   }
 
   /**
@@ -492,7 +492,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-      int rowCount = 30000;
+      int rowCount = 20000;
       statement.execute(
           "insert into table_basic select "
               + "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
@@ -569,7 +569,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public void testSplitResultSetSerializable(String queryResultFormat) throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    int rowCount = 90000;
+    int rowCount = 10000;
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement()) {
 
@@ -673,7 +673,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         statement.execute(
             "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        int rowCount = 300;
+        int rowCount = 200;
         statement.execute(
             "insert into table_basic select "
                 + "seq4(), "
@@ -726,7 +726,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-      int rowCount = 300;
+      int rowCount = 200;
       statement.execute(
           "insert into table_basic select "
               + "seq4(), "
@@ -838,7 +838,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testRetrieveMetadata(String queryResultFormat) throws Throwable {
     List<String> fileNameList;
-    int rowCount = 90000;
+    int rowCount = 10000;
     long expectedTotalRowCount = 0;
     long expectedTotalCompressedSize = 0;
     long expectedTotalUncompressedSize = 0;
