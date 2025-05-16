@@ -1011,7 +1011,7 @@ public class ResultSetIT extends ResultSet0IT {
       assertTrue(rs.next());
       System.setProperty("snowflake.enable_incident_test2", "true");
       SQLException ex = assertThrows(SQLException.class, rs::next);
-      assertEquals(200014, ex.getErrorCode());
+      assertEquals(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED.getMessageCode(), ex.getErrorCode());
       System.setProperty("snowflake.enable_incident_test2", "false");
     }
   }
