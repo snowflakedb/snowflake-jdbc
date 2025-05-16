@@ -79,7 +79,7 @@ public class FileUploaderExpandFileNamesTest {
         assertThrows(
             SnowflakeSQLException.class,
             () -> SnowflakeFileTransferAgent.expandFileNames(locations, null));
-    assertEquals(ErrorCode.FILE_NOT_FOUND.getMessageCode(), err.getErrorCode());
+    assertEquals(ErrorCode.FAIL_LIST_FILES.getMessageCode(), err.getErrorCode());
     assertEquals(SqlState.DATA_EXCEPTION, err.getSQLState());
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
