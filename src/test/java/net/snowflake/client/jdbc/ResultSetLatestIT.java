@@ -531,7 +531,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         int finalI = i;
         SQLException ex =
             assertThrows(SQLException.class, () -> resultSet.getBytes(finalI), "Failing on " + i);
-        assertEquals(200038, ex.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), ex.getErrorCode());
       }
 
       byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();

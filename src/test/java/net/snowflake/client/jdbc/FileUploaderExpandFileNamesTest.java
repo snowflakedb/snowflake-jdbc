@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -78,8 +79,8 @@ public class FileUploaderExpandFileNamesTest {
         assertThrows(
             SnowflakeSQLException.class,
             () -> SnowflakeFileTransferAgent.expandFileNames(locations, null));
-    assertEquals(200007, err.getErrorCode());
-    assertEquals("22000", err.getSQLState());
+    assertEquals(ErrorCode.FAIL_LIST_FILES.getMessageCode(), err.getErrorCode());
+    assertEquals(SqlState.DATA_EXCEPTION, err.getSQLState());
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 

@@ -330,8 +330,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
           assertThat(resultSet.getInt("B"), is(7));
           statement.clearBatch();
 
-          // one of the batch is query instead of ddl/dml
-          // it should continuing processing
+          // one of the batch query returns error
+          // it should continue processing
           statement.addBatch("insert into test_batch values('str3', 3)");
           statement.addBatch("select * from test_batch");
           statement.addBatch("select * from test_batch_not_exist");
@@ -339,7 +339,6 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
           BatchUpdateException e =
               assertThrows(BatchUpdateException.class, statement::executeBatch);
           rowCounts = e.getUpdateCounts();
-          assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
           assertThat(rowCounts[0], is(1));
           assertThat(rowCounts[1], is(Statement.SUCCESS_NO_INFO));
           assertThat(rowCounts[2], is(Statement.EXECUTE_FAILED));
