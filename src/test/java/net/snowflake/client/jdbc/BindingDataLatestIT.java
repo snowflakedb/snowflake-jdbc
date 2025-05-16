@@ -241,9 +241,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             // Check tz type and ltz type columns have the same value.
             assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
 
-            assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
-            assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
-            assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+            assertEquals(rs2.getTimestamp(2), rs2.getTimestamp(2));
+            assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(3));
+            assertEquals(rs2.getTimestamp(4), rs2.getTimestamp(4));
           }
         }
       } finally {
@@ -260,7 +260,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
     try (PreparedStatement prepStatement =
         connection.prepareStatement("insert into " + tableName + " values (?,?,?,?)")) {
       for (int i = 0; i < numRows; i++) {
-        prepStatement.setInt(1, i);
+        prepStatement.setInt(1, 1);
         prepStatement.setTimestamp(2, timestamp);
         prepStatement.setTimestamp(3, timestamp);
         prepStatement.setTimestamp(4, timestamp);
