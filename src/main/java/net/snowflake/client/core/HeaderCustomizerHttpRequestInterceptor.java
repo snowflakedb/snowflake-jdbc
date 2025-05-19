@@ -71,18 +71,17 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     // convert header names to lower case for case in-sensitive lookup
     Set<String> protectedHeaders =
         currentHeaders.keySet().stream().map(String::toLowerCase).collect(Collectors.toSet());
-    Object executionCount =
-        httpContext.getAttribute(
+    Integer executionCount =
+        (Integer) httpContext.getAttribute(
             AttributeEnhancingHttpRequestRetryHandler.EXECUTION_COUNT_ATTRIBUTE);
-    // If count is null or 0, it's the first attempt. Otherwise, it's a retry.
-    boolean isRetry = (executionCount != null && (Integer) executionCount > 0);
+    boolean isRetry = (executionCount == null || executionCount > 0);
 
     for (HttpHeadersCustomizer customizer : this.headersCustomizers) {
       if (customizer.applies(httpMethod, uri, currentHeaders)) {
         if (customizer.invokeOnce() && isRetry) {
           logger.debug(
               "{} customizer should only run on the first attempt and this is a {} retry. Skipping.",
-              customizer.getClass(),
+              customizer.getClass().getCanonicalName(),
               executionCount);
           continue;
         }
@@ -157,18 +156,22 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
       Set<String> protectedHeaders, Set<String> newHeaders, HttpHeadersCustomizer customizer) {
     for (String headerName : newHeaders) {
       if (headerName != null && protectedHeaders.contains(headerName.toLowerCase())) {
+        String customizerName = customizer.getClass().getCanonicalName();
         logger.debug(
             "Customizer {} attempted to override existing driver header: {}",
-            customizer.getClass().getName(),
+            customizerName,
             headerName);
-        throw new DriverHeaderOverridingNotAllowedException(headerName);
+        throw new DriverHeaderOverridingNotAllowedException(headerName, customizerName);
       }
     }
   }
 
   public static class DriverHeaderOverridingNotAllowedException extends RuntimeException {
-    public DriverHeaderOverridingNotAllowedException(String header) {
-      super(String.format("Driver headers overriding not allowed. Tried for header: %s", header));
+    public DriverHeaderOverridingNotAllowedException(String header, String customizerName) {
+      super(
+          String.format(
+              "Driver headers overriding not allowed. Tried for header: %s in customizer: {}",
+              header, customizerName));
     }
   }
 }
