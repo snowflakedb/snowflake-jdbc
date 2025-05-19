@@ -55,6 +55,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
           // this host generates many "SSLHandshake Certificate Revocation
           // check failed. Could not retrieve OCSP Response." when running in parallel CI builds
           // Arguments.of("storage.googleapis.com"),
+          // test
           Arguments.of("ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch"),
           Arguments.of("sfcsupport.snowflakecomputing.com"),
           Arguments.of("sfcsupport.us-east-1.snowflakecomputing.com"),
