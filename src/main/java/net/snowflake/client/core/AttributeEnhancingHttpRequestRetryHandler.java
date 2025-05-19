@@ -10,14 +10,13 @@ import org.apache.http.protocol.HttpContext;
  *
  * <p>The execution count is stored using the key defined by {@link #EXECUTION_COUNT_ATTRIBUTE}.
  */
-public class AttributeEnhancingHttpRequestRetryHandler extends DefaultHttpRequestRetryHandler {
+class AttributeEnhancingHttpRequestRetryHandler extends DefaultHttpRequestRetryHandler {
   /**
    * The key used to store the current execution count (attempt number) in the {@link HttpContext}.
    * Interceptors can use this key to retrieve the count. The value stored will be an {@link
    * Integer}.
    */
-  public static final String EXECUTION_COUNT_ATTRIBUTE =
-      "net.snowflake.client.core.execution-count";
+  static final String EXECUTION_COUNT_ATTRIBUTE = "net.snowflake.client.core.execution-count";
 
   @Override
   public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
