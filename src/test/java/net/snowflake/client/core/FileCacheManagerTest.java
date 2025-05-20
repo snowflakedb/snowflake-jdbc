@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.Collectors;
@@ -106,7 +107,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   @Test
   @RunOnLinuxOrMac
-  public void notThrowExceptionWhenCacheFolderIsNotAccessible() throws IOException {
+  public void notThrowExceptionWhenCacheFolderIsNotAccessibleWhenReadFromCache() throws IOException {
     try {
       Files.setPosixFilePermissions(
           cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("---------"));
@@ -121,6 +122,31 @@ class FileCacheManagerTest extends BaseJDBCTest {
     } finally {
       Files.setPosixFilePermissions(
           cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("rwx------"));
+    }
+  }
+
+  @Test
+  @RunOnLinuxOrMac
+  public void notThrowExceptionWhenCacheFolderIsNotAccessibleWhenWriteToCache() throws IOException {
+    String tmpDirPath = System.getProperty("java.io.tmpdir");
+    String cacheDirPath = tmpDirPath + File.separator + "snowflake-cache-dir-noaccess";
+    System.setProperty("FILE_CACHE_MANAGER_CACHE_PATH", cacheDirPath);
+    try {
+      Files.createDirectory(
+              Paths.get(cacheDirPath),
+              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("---------")));
+
+      FileCacheManager fcm =
+              FileCacheManager.builder()
+                      .setOnlyOwnerPermissions(false)
+                      .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_CACHE_PATH")
+                      .setCacheDirectoryEnvironmentVariable("NONEXISTENT")
+                      .setBaseCacheFileName("cache-file")
+                      .build();
+      assertDoesNotThrow(() -> fcm.writeCacheFile(mapper.createObjectNode()));
+    } finally {
+      Files.deleteIfExists(Paths.get(cacheDirPath));
+      System.clearProperty("FILE_CACHE_MANAGER_CACHE_PATH");
     }
   }
 
