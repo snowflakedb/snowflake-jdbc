@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.Collectors;
@@ -107,7 +106,8 @@ class FileCacheManagerTest extends BaseJDBCTest {
 
   @Test
   @RunOnLinuxOrMac
-  public void notThrowExceptionWhenCacheFolderIsNotAccessibleWhenReadFromCache() throws IOException {
+  public void notThrowExceptionWhenCacheFolderIsNotAccessibleWhenReadFromCache()
+      throws IOException {
     try {
       Files.setPosixFilePermissions(
           cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("---------"));
@@ -133,16 +133,16 @@ class FileCacheManagerTest extends BaseJDBCTest {
     System.setProperty("FILE_CACHE_MANAGER_CACHE_PATH", cacheDirPath);
     try {
       Files.createDirectory(
-              Paths.get(cacheDirPath),
-              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("---------")));
+          Paths.get(cacheDirPath),
+          PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("---------")));
 
       FileCacheManager fcm =
-              FileCacheManager.builder()
-                      .setOnlyOwnerPermissions(false)
-                      .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_CACHE_PATH")
-                      .setCacheDirectoryEnvironmentVariable("NONEXISTENT")
-                      .setBaseCacheFileName("cache-file")
-                      .build();
+          FileCacheManager.builder()
+              .setOnlyOwnerPermissions(false)
+              .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_CACHE_PATH")
+              .setCacheDirectoryEnvironmentVariable("NONEXISTENT")
+              .setBaseCacheFileName("cache-file")
+              .build();
       assertDoesNotThrow(() -> fcm.writeCacheFile(mapper.createObjectNode()));
     } finally {
       Files.deleteIfExists(Paths.get(cacheDirPath));
