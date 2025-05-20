@@ -72,8 +72,9 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     Set<String> protectedHeaders =
         currentHeaders.keySet().stream().map(String::toLowerCase).collect(Collectors.toSet());
     Integer executionCount =
-        (Integer) httpContext.getAttribute(
-            AttributeEnhancingHttpRequestRetryHandler.EXECUTION_COUNT_ATTRIBUTE);
+        (Integer)
+            httpContext.getAttribute(
+                AttributeEnhancingHttpRequestRetryHandler.EXECUTION_COUNT_ATTRIBUTE);
     boolean isRetry = (executionCount == null || executionCount > 0);
 
     for (HttpHeadersCustomizer customizer : this.headersCustomizers) {
@@ -118,6 +119,10 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
 
         throwIfExistingHeadersAreModified(protectedHeaders, newHeaders.keySet(), customizer);
 
+        logger.debug(
+            "Customizer {} is adding headers {}",
+            customizer.getClass().getCanonicalName(),
+            newHeaders.keySet());
         for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
           for (String value : entry.getValue()) {
             request.addHeader(entry.getKey(), value);
@@ -170,7 +175,7 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     public DriverHeaderOverridingNotAllowedException(String header, String customizerName) {
       super(
           String.format(
-              "Driver headers overriding not allowed. Tried for header: %s in customizer: {}",
+              "Driver headers overriding not allowed. Tried for header: %s in customizer: %s",
               header, customizerName));
     }
   }
