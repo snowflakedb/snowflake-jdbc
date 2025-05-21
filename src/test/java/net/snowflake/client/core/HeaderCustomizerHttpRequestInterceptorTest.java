@@ -2,8 +2,6 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.core.AttributeEnhancingHttpRequestRetryHandler.EXECUTION_COUNT_ATTRIBUTE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -15,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.amazonaws.Request;
 import com.amazonaws.http.HttpMethodName;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import org.apache.http.Header;
+import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.RequestLine;
 import org.apache.http.message.BasicHeader;
@@ -148,7 +148,8 @@ class HeaderCustomizerHttpRequestInterceptorTest {
   }
 
   @Test
-  void testApacheInterceptorThrowsExceptionWhenCustomizerOverridesHeader() {
+  void testApacheInterceptorDoesNotAllowCustomizerToOverrideHeader()
+      throws HttpException, IOException {
     // Simulate driver adding User-Agent initially
     Header[] initialHeaders = {new BasicHeader("User-Agent", "SnowflakeDriver/1.0")};
     when(mockHttpRequest.getAllHeaders()).thenReturn(initialHeaders);
@@ -163,14 +164,11 @@ class HeaderCustomizerHttpRequestInterceptorTest {
 
     httpContext.setAttribute(EXECUTION_COUNT_ATTRIBUTE, 0);
 
-    HeaderCustomizerHttpRequestInterceptor.DriverHeaderOverridingNotAllowedException exception =
-        assertThrows(
-            HeaderCustomizerHttpRequestInterceptor.DriverHeaderOverridingNotAllowedException.class,
-            () -> interceptor.process(mockHttpRequest, httpContext));
+    interceptor.process(mockHttpRequest, httpContext);
 
-    assertTrue(exception.getMessage().contains("User-Agent"));
-    verify(mockHttpRequest, never())
-        .addHeader(eq("User-Agent"), anyString()); // Verify override wasn't added
+    // Verify the original map wasn't modified with the bad header
+    assertEquals(initialHeaders, mockHttpRequest.getAllHeaders());
+    verify(mockHttpRequest, never()).addHeader(eq("User-Agent"), anyString());
   }
 
   @Test
@@ -239,7 +237,7 @@ class HeaderCustomizerHttpRequestInterceptorTest {
   }
 
   @Test
-  void testAWSInterceptorThrowsExceptionWhenCustomizerOverridesHeader() {
+  void testAWSInterceptorDoesNotAllowCustomizerToOverrideHeader() {
     // Simulate driver adding User-Agent initially
     Map<String, String> initialAwsHeaders = new HashMap<>();
     initialAwsHeaders.put("User-Agent", "SnowflakeAWSClient/1.0");
@@ -252,14 +250,11 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     customizersList.add(mockCustomizer1);
     interceptor = new HeaderCustomizerHttpRequestInterceptor(customizersList);
 
-    HeaderCustomizerHttpRequestInterceptor.DriverHeaderOverridingNotAllowedException exception =
-        assertThrows(
-            HeaderCustomizerHttpRequestInterceptor.DriverHeaderOverridingNotAllowedException.class,
-            () -> interceptor.beforeRequest(mockAwsRequest));
+    interceptor.beforeRequest(mockAwsRequest);
 
-    assertTrue(exception.getMessage().contains("User-Agent"));
     // Verify the original map wasn't modified with the bad header
     assertEquals("SnowflakeAWSClient/1.0", mockAwsRequest.getHeaders().get("User-Agent"));
+    verify(mockHttpRequest, never()).addHeader(eq("User-Agent"), anyString());
   }
 
   @Test
