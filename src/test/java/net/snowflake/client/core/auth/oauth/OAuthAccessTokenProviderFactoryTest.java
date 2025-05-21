@@ -1,5 +1,6 @@
 package net.snowflake.client.core.auth.oauth;
 
+import java.time.Duration;
 import java.util.Arrays;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
@@ -15,7 +16,7 @@ import org.mockito.Mockito;
 public class OAuthAccessTokenProviderFactoryTest {
 
   private final OAuthAccessTokenProviderFactory providerFactory =
-      new OAuthAccessTokenProviderFactory(null, 30);
+      new OAuthAccessTokenProviderFactory();
 
   @Test
   public void shouldProperlyReturnIfAuthenticatorIsEligible() {
@@ -51,6 +52,19 @@ public class OAuthAccessTokenProviderFactoryTest {
             AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
     Assertions.assertNotNull(provider);
     Assertions.assertInstanceOf(OAuthAuthorizationCodeAccessTokenProvider.class, provider);
+  }
+
+  @Test
+  public void shouldProperlyCreateAuthzCodeAccessTokenProviderWithDefaultClientCredentials()
+      throws SFException {
+    SFLoginInput loginInput = createLoginInputStub(null, null, null, null, null);
+    AccessTokenProvider provider =
+        providerFactory.createAccessTokenProvider(
+            AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
+    Assertions.assertNotNull(provider);
+    Assertions.assertInstanceOf(OAuthAuthorizationCodeAccessTokenProvider.class, provider);
+    Assertions.assertEquals("LOCAL_APPLICATION", loginInput.getOauthLoginInput().getClientId());
+    Assertions.assertEquals("LOCAL_APPLICATION", loginInput.getOauthLoginInput().getClientSecret());
   }
 
   @Test
@@ -260,12 +274,50 @@ public class OAuthAccessTokenProviderFactoryTest {
       loggerFactoryMockedStatic
           .when(() -> SFLoggerFactory.getLogger(OAuthAccessTokenProviderFactory.class))
           .thenReturn(loggerMock);
-      new OAuthAccessTokenProviderFactory(null, 30)
+      new OAuthAccessTokenProviderFactory()
           .createAccessTokenProvider(AuthenticatorType.OAUTH_AUTHORIZATION_CODE, loginInput);
       Mockito.verify(loggerMock)
           .warn(
               "Both oauthAuthorizationUrl and oauthTokenRequestUrl should belong to the same host; oauthAuthorizationUrl=https://malicious.ext.idp.com/authz-url oauthTokenRequestUrl=https://some.ext.idp.com/token-url");
     }
+  }
+
+  @Test
+  public void shouldProperlyCheckIfIsEligibleForDefaultClientCredentials() {
+    SFOauthLoginInput oauthLoginInput = createOauthLoginInputStub(null, null, null, null, null);
+    Assertions.assertTrue(
+        OAuthAccessTokenProviderFactory.isEligibleForDefaultClientCredentials(oauthLoginInput));
+
+    oauthLoginInput =
+        createOauthLoginInputStub("some-client-id", "some-client-secret", null, null, null);
+    Assertions.assertFalse(
+        OAuthAccessTokenProviderFactory.isEligibleForDefaultClientCredentials(oauthLoginInput));
+
+    oauthLoginInput =
+        createOauthLoginInputStub(
+            null, null, null, "some.host.snowflakecomputing.com/oauth/authorize", null);
+    Assertions.assertTrue(
+        OAuthAccessTokenProviderFactory.isEligibleForDefaultClientCredentials(oauthLoginInput));
+
+    oauthLoginInput =
+        createOauthLoginInputStub(
+            null,
+            null,
+            null,
+            "some.host.snowflakecomputing.com/oauth/authorize",
+            "some.host.snowflakecomputing.com/oauth/token");
+    Assertions.assertTrue(
+        OAuthAccessTokenProviderFactory.isEligibleForDefaultClientCredentials(oauthLoginInput));
+
+    oauthLoginInput =
+        createOauthLoginInputStub(
+            "some-client-id",
+            null,
+            null,
+            "some.host.snowflakecomputing.com/oauth/authorize",
+            "some.host.snowflakecomputing.com/oauth/token");
+    Assertions.assertFalse(
+        OAuthAccessTokenProviderFactory.isEligibleForDefaultClientCredentials(oauthLoginInput));
   }
 
   private SFLoginInput createLoginInputStub(
@@ -276,8 +328,18 @@ public class OAuthAccessTokenProviderFactoryTest {
       String redirectUri) {
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setOauthLoginInput(
-        new SFOauthLoginInput(
-            clientId, clientSecret, redirectUri, authorizationUrl, tokenUrl, null));
+        createOauthLoginInputStub(clientId, clientSecret, redirectUri, authorizationUrl, tokenUrl));
+    loginInput.setBrowserResponseTimeout(Duration.ofSeconds(20));
     return loginInput;
+  }
+
+  private SFOauthLoginInput createOauthLoginInputStub(
+      String clientId,
+      String clientSecret,
+      String redirectUri,
+      String authorizationUrl,
+      String tokenUrl) {
+    return new SFOauthLoginInput(
+        clientId, clientSecret, redirectUri, authorizationUrl, tokenUrl, null);
   }
 }

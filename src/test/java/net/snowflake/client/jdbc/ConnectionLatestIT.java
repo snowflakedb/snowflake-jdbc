@@ -1648,30 +1648,4 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
-
-  /**
-   * Test production connectivity with disableOCSPChecksMode enabled. This test applies to driver
-   * versions after 3.21.0
-   */
-  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
-  @Test
-  public void testDisableOCSPChecksMode() throws SQLException {
-
-    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    properties.put("disableOCSPChecks", true);
-    SQLException thrown =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(deploymentUrl, properties);
-            });
-
-    assertThat(
-        thrown.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-  }
 }

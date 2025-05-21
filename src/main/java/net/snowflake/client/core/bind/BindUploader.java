@@ -13,8 +13,10 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -54,7 +56,7 @@ public class BindUploader implements Closeable {
 
   private final DateFormat utcTimestampFormat;
   private final DateFormat localTimestampFormat;
-  private final DateFormat dateFormat;
+  private final DateTimeFormatter dateFormat;
   private final SimpleDateFormat timeFormat;
   private final String createStageSQL;
 
@@ -96,8 +98,7 @@ public class BindUploader implements Closeable {
     this.utcTimestampFormat.setCalendar(utcCalendar);
     this.localTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
     this.localTimestampFormat.setCalendar(localCalendar);
-    this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(utcCalendar);
+    this.dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
     this.timeFormat.setCalendar(utcCalendar);
   }
@@ -106,7 +107,10 @@ public class BindUploader implements Closeable {
     if (o == null) {
       return null;
     }
-    return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
+    long millis = Long.parseLong(o);
+    Instant instant = Instant.ofEpochMilli(millis);
+    LocalDate localDate = instant.atZone(ZoneOffset.UTC).toLocalDate();
+    return localDate.format(this.dateFormat);
   }
 
   private synchronized String synchronizedTimeFormat(String o) {
