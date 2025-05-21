@@ -4,6 +4,7 @@ import com.amazonaws.DefaultRequest;
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.http.HttpMethodName;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -18,6 +19,8 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
+  public static final String API_VERSION = "2011-06-15";
+  public static final String GET_CALLER_IDENTITY_ACTION = "GetCallerIdentity";
 
   private final AwsAttestationService attestationService;
 
@@ -58,7 +61,13 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     request.setHttpMethod(HttpMethodName.POST);
     request.setEndpoint(
         URI.create(
-            String.format("https://%s?Action=GetCallerIdentity&Version=2011-06-15", hostname)));
+            String.format(
+                "https://%s?Action=%s&Version=%s",
+                hostname, GET_CALLER_IDENTITY_ACTION, API_VERSION)));
+    request.addParameter("Action", GET_CALLER_IDENTITY_ACTION);
+    request.addParameter("Version", API_VERSION);
+    request.setContent(
+        new ByteArrayInputStream(new byte[0])); // needed to properly sign the request
     request.addHeader("Host", hostname);
     request.addHeader(
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
