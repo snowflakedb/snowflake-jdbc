@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpResponseContextDto;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
@@ -276,8 +277,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
 
           // Get the file on storage using the presigned url
-          HttpResponse response =
-              RestRequest.execute(
+          HttpResponseContextDto responseDto =
+              RestRequest.executeWitRetries(
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
@@ -290,7 +291,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no retry
                   false, // no request_guid
                   true, // retry on HTTP 403
+                  false,
                   new ExecTimeTelemetryData());
+          HttpResponse response = responseDto.getHttpResponse();
 
           logger.debug(
               "Call returned for URL: {}",
@@ -471,20 +474,22 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Put the file on storage using the presigned url
           HttpResponse response =
-              RestRequest.execute(
-                  httpClient,
-                  httpRequest,
-                  session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                  session.getAuthTimeout(),
-                  session.getHttpClientSocketTimeout(),
-                  getMaxRetries(),
-                  0, // no socket timeout injection
-                  null, // no canceling
-                  false, // no cookie
-                  false, // no retry
-                  false, // no request_guid
-                  true, // retry on HTTP 403
-                  new ExecTimeTelemetryData());
+              RestRequest.executeWitRetries(
+                      httpClient,
+                      httpRequest,
+                      session.getNetworkTimeoutInMilli() / 1000, // retry timeout
+                      session.getAuthTimeout(),
+                      session.getHttpClientSocketTimeout(),
+                      getMaxRetries(),
+                      0, // no socket timeout injection
+                      null, // no canceling
+                      false, // no cookie
+                      false, // no retry
+                      false, // no request_guid
+                      true, // retry on HTTP 403
+                      false,
+                      new ExecTimeTelemetryData())
+                  .getHttpResponse();
 
           logger.debug(
               "Call returned for URL: {}",
@@ -950,21 +955,22 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       // Put the file on storage using the presigned url
       HttpResponse response =
-          RestRequest.execute(
-              httpClient,
-              httpRequest,
-              networkTimeoutInMilli / 1000, // retry timeout
-              authTimeout, // auth timeout
-              httpClientSocketTimeout, // socket timeout in ms
-              getMaxRetries(),
-              0, // no socket timeout injection
-              null, // no canceling
-              false, // no cookie
-              false, // no url retry query parameters
-              false, // no request_guid
-              true, // retry on HTTP 403
-              true, // disable retry
-              new ExecTimeTelemetryData());
+          RestRequest.executeWitRetries(
+                  httpClient,
+                  httpRequest,
+                  networkTimeoutInMilli / 1000, // retry timeout
+                  authTimeout, // auth timeout
+                  httpClientSocketTimeout, // socket timeout in ms
+                  getMaxRetries(),
+                  0, // no socket timeout injection
+                  null, // no canceling
+                  false, // no cookie
+                  false, // no url retry query parameters
+                  false, // no request_guid
+                  true, // retry on HTTP 403
+                  true, // disable retry
+                  new ExecTimeTelemetryData())
+              .getHttpResponse();
 
       logger.debug(
           "Call returned for URL: {}",
