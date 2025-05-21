@@ -51,6 +51,7 @@ import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
@@ -1630,5 +1631,30 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         e.getMessage()
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+  }
+
+  /** Added after version 3.22.0 */
+  @Test
+  public void testRecoverFromClosedHttpConnectionManager() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      HttpUtil.httpClient
+          .values()
+          .forEach(
+              closeableHttpClient -> {
+                try {
+                  closeableHttpClient.close();
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      // next line to override single static HttpUtil.connectionManager
+      HttpUtil.getHttpClient(new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS));
+      try (ResultSet resultSet = statement.executeQuery("Select 1")) {
+        assertTrue(resultSet.next());
+        assertEquals(1, resultSet.getInt(1));
+        assertFalse(resultSet.next());
+      }
+    }
   }
 }
