@@ -291,7 +291,8 @@ class FileCacheManager {
     logger.debug("Writing cache file. File: {}", cacheFile);
     try {
       if (input == null || !FileUtil.exists(cacheFile)) {
-        logger.debug("Cache file doesn't exist or input is null. Ignoring write. File: {}", cacheFile);
+        logger.debug(
+            "Cache file doesn't exist or input is null. Ignoring write. File: {}", cacheFile);
         return;
       }
       try (Writer writer =
