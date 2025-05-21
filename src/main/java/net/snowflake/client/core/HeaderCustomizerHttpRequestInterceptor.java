@@ -19,8 +19,9 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
 
 /**
- * Implements Apache HttpClient's {@link HttpRequestInterceptor} to provide a mechanism for adding
- * custom HTTP headers to outgoing requests made by the Snowflake JDBC driver.
+ * Implements Apache HttpClient's {@link HttpRequestInterceptor} and {@link RequestHandler2} to
+ * provide a mechanism for adding custom HTTP headers to outgoing requests made by the Snowflake
+ * JDBC driver.
  *
  * <p>This class iterates through a list of user-provided {@link HttpHeadersCustomizer}
  * implementations. For each customizer, it checks if it applies to the current request. If it does,
@@ -34,6 +35,7 @@ import org.apache.http.protocol.HttpContext;
  *
  * @see HttpHeadersCustomizer
  */
+@SnowflakeJdbcInternalApi
 public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     implements HttpRequestInterceptor {
   private static final SFLogger logger =
@@ -56,8 +58,6 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
    *
    * @param httpRequest The HTTP request to process.
    * @param httpContext The context for the HTTP request execution, used to retrieve retry count.
-   * @throws DriverHeaderOverridingNotAllowedException If a customizer attempts to override a
-   *     driver-set header.
    */
   @Override
   public void process(HttpRequest httpRequest, HttpContext httpContext)
@@ -81,24 +81,40 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
       if (customizer.applies(httpMethod, uri, currentHeaders)) {
         if (customizer.invokeOnce() && isRetry) {
           logger.debug(
-              "{} customizer should only run on the first attempt and this is a {} retry. Skipping.",
+              "Customizer {} should only run on the first attempt and this is a {} retry. Skipping.",
               customizer.getClass().getCanonicalName(),
               executionCount);
           continue;
         }
         Map<String, List<String>> newHeaders = customizer.newHeaders();
 
-        throwIfExistingHeadersAreModified(protectedHeaders, newHeaders.keySet(), customizer);
-
+        logger.debug(
+            "Customizer {} is adding headers {}",
+            customizer.getClass().getCanonicalName(),
+            newHeaders.keySet());
         for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-          for (String value : entry.getValue()) {
-            httpRequest.addHeader(entry.getKey(), value);
+          if (isTryingToOverrideDriverHeader(entry, protectedHeaders)) {
+            logger.debug(
+                "Customizer {} attempted to override existing driver header {} which is not allowed. Skipping.",
+                customizer.getClass().getCanonicalName(),
+                entry.getKey());
+          } else {
+            for (String value : entry.getValue()) {
+              httpRequest.addHeader(entry.getKey(), value);
+            }
           }
         }
       }
     }
   }
 
+  /**
+   * Processes an AWS HTTP {@link Request} before it is sent. It iterates through registered {@link
+   * HttpHeadersCustomizer}s, checks applicability, retrieves new headers, verifies against
+   * overriding driver headers, and adds them to the request. Ignores the {@code invokeOnce()} flag.
+   *
+   * @param request The AWS request to process.
+   */
   @Override
   public void beforeRequest(Request<?> request) {
     super.beforeRequest(request);
@@ -117,19 +133,29 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
       if (customizer.applies(httpMethod, uri, currentHeaders)) {
         Map<String, List<String>> newHeaders = customizer.newHeaders();
 
-        throwIfExistingHeadersAreModified(protectedHeaders, newHeaders.keySet(), customizer);
-
         logger.debug(
             "Customizer {} is adding headers {}",
             customizer.getClass().getCanonicalName(),
             newHeaders.keySet());
         for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-          for (String value : entry.getValue()) {
-            request.addHeader(entry.getKey(), value);
+          if (isTryingToOverrideDriverHeader(entry, protectedHeaders)) {
+            logger.debug(
+                "Customizer {} attempted to override existing driver header {} which is not allowed. Skipping.",
+                customizer.getClass().getCanonicalName(),
+                entry.getKey());
+          } else {
+            for (String value : entry.getValue()) {
+              request.addHeader(entry.getKey(), value);
+            }
           }
         }
       }
     }
+  }
+
+  private static boolean isTryingToOverrideDriverHeader(
+      Map.Entry<String, List<String>> entry, Set<String> protectedHeaders) {
+    return protectedHeaders.contains(entry.getKey().toLowerCase());
   }
 
   private static Map<String, List<String>> extractHeaders(HttpRequest request) {
@@ -146,37 +172,5 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
       headerMap.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(entry.getValue());
     }
     return headerMap;
-  }
-
-  /**
-   * Checks if any header names from the customizer's new headers attempt to override existing
-   * driver-set headers. Compares header names case-insensitively.
-   *
-   * @param protectedHeaders A set of lowercase header names initially present on the request.
-   * @param newHeaders A set of header names provided by the customizer.
-   * @param customizer The customizer attempting to add headers, for logging/exception messages.
-   * @throws DriverHeaderOverridingNotAllowedException If an override is detected.
-   */
-  private static void throwIfExistingHeadersAreModified(
-      Set<String> protectedHeaders, Set<String> newHeaders, HttpHeadersCustomizer customizer) {
-    for (String headerName : newHeaders) {
-      if (headerName != null && protectedHeaders.contains(headerName.toLowerCase())) {
-        String customizerName = customizer.getClass().getCanonicalName();
-        logger.debug(
-            "Customizer {} attempted to override existing driver header: {}",
-            customizerName,
-            headerName);
-        throw new DriverHeaderOverridingNotAllowedException(headerName, customizerName);
-      }
-    }
-  }
-
-  public static class DriverHeaderOverridingNotAllowedException extends RuntimeException {
-    public DriverHeaderOverridingNotAllowedException(String header, String customizerName) {
-      super(
-          String.format(
-              "Driver headers overriding not allowed. Tried for header: %s in customizer: %s",
-              header, customizerName));
-    }
   }
 }
