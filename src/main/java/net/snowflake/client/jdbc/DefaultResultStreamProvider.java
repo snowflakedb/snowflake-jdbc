@@ -127,7 +127,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             httpClient,
             httpRequest,
             context.getNetworkTimeoutInMilli() / 1000, // retry timeout
-            context.getAuthTimeout(),
+            0,
             context.getSocketTimeout(),
             0,
             0, // no socket timeout injection
