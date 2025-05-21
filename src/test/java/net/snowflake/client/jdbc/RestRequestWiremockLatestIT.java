@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.OTHERS)
-public class RestRequestWiremockLatestIT extends BaseWiremockIT {
+public class RestRequestWiremockLatestIT extends BaseWiremockTest {
 
   String connectionResetByPeerScenario =
       "{\n"

@@ -20,13 +20,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class RestRequestTestRetriesWiremockIT extends BaseWiremockIT {
+public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
 
   @BeforeEach
   public void setUp() throws IOException {
-    configureWiremock();
+    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
     resetWiremock();
   }
 

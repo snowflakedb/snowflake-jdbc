@@ -9,12 +9,12 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFLoginInput;
-import net.snowflake.client.jdbc.BaseWiremockIT;
+import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.AUTHENTICATION)
-class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockIT {
+class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/wif/gcp";
 
