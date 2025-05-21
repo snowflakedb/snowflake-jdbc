@@ -77,7 +77,7 @@ public class AwsIdentityAttestationCreatorTest {
     Map<String, Object> credentialMap = new ObjectMapper().readValue(json, HashMap.class);
     assertEquals(3, credentialMap.size());
     assertEquals(
-        "https://sts.eu-west-1.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15",
+        "https://sts.eu-west-1.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
         credentialMap.get("url"));
     assertEquals("POST", credentialMap.get("method"));
     assertNotNull(credentialMap.get("headers"));
