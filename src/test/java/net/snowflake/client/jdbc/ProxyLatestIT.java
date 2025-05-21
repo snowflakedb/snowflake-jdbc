@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.OTHERS)
-public class ProxyLatestIT extends BaseWiremockIT {
+public class ProxyLatestIT extends BaseWiremockTest {
 
   @AfterEach
   public void tearDown() {

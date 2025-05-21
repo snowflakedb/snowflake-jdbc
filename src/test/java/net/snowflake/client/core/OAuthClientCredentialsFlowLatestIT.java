@@ -6,13 +6,13 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.oauth.AccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.OAuthClientCredentialsAccessTokenProvider;
 import net.snowflake.client.core.auth.oauth.TokenResponseDTO;
-import net.snowflake.client.jdbc.BaseWiremockIT;
+import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockIT {
+public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/client_credentials";
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
