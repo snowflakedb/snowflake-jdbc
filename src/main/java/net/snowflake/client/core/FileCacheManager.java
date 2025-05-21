@@ -265,7 +265,7 @@ class FileCacheManager {
   synchronized JsonNode readCacheFile() {
     try {
       if (!FileUtil.exists(cacheFile)) {
-        logger.debug("Cache file doesn't exist. Ignoring read.");
+        logger.debug("Cache file doesn't exist. Ignoring read. File: {}", cacheFile);
         return null;
       }
 
@@ -291,7 +291,7 @@ class FileCacheManager {
     logger.debug("Writing cache file. File: {}", cacheFile);
     try {
       if (input == null || !FileUtil.exists(cacheFile)) {
-        logger.debug("Cache file doesn't exist. Ignoring write.");
+        logger.debug("Cache file doesn't exist or input is null. Ignoring write. File: {}", cacheFile);
         return;
       }
       try (Writer writer =
