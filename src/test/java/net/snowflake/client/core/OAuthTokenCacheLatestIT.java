@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
-import net.snowflake.client.jdbc.BaseWiremockIT;
+import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -22,7 +22,7 @@ import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
 
 @Tag(TestTags.CORE)
-public class OAuthTokenCacheLatestIT extends BaseWiremockIT {
+public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
 
   public static final String MOCK_DPOP_PUBLIC_KEY =
       "{\"kty\":\"EC\",\"d\":\"j5-J-nLE4J1I8ZWtArP8eQbxUbYMPmRvaEjEkHFlHds\",\"crv\":\"P-256\",\"x\":\"RL5cE-TC4Jr6CxtT4lEI2Yu6wT6LbwojPQsgHUg01F0\",\"y\":\"UAdLUSWTJ6czXaS3SfEFUZzKPcVVq4OZAD8e7Rp75y4\"}"; // pragma: allowlist secret
