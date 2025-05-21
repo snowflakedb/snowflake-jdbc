@@ -39,7 +39,6 @@ public class HttpUtilLatestIT {
     assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
     assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
   }
-
   /** Added in > 3.14.5 */
   @Test
   @Timeout(1)

@@ -4,8 +4,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;
@@ -127,5 +130,18 @@ public class SnowflakeBasicDataSourceTest {
     assertEquals(
         "Cannot create connection because password is missing in DataSource properties.",
         e.getMessage());
+  }
+
+  @Test
+  public void testSetsHttpHeadersCustomizers() {
+    List<HttpHeadersCustomizer> customizers =
+        Collections.singletonList(mock(HttpHeadersCustomizer.class));
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+
+    ds.setHttpHeadersCustomizers(customizers);
+
+    Properties properties = ds.getProperties();
+    assertEquals(
+        customizers, properties.get(HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY));
   }
 }
