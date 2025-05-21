@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.base.Strings;
+import net.snowflake.client.core.auth.AuthenticatorType;
+
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -322,6 +324,8 @@ public class AbstractDriverIT {
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
+    properties.put("authenticator", AuthenticatorType.WORKLOAD_IDENTITY.name());
+    properties.put("workloadIdentityProvider", "AWS");
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));

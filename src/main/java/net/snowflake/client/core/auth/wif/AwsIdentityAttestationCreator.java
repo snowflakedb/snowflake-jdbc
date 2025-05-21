@@ -58,7 +58,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     request.setHttpMethod(HttpMethodName.POST);
     request.setEndpoint(
         URI.create(
-            String.format("https://%s/?Action=GetCallerIdentity&Version=2011-06-15", hostname)));
+            String.format("https://%s?Action=GetCallerIdentity&Version=2011-06-15", hostname)));
     request.addHeader("Host", hostname);
     request.addHeader(
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
