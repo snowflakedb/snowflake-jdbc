@@ -416,7 +416,8 @@ public class SessionUtil {
     return !authenticator.equals(AuthenticatorType.OAUTH)
         && !authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
         && !authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
-        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
+        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
+        && !authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY);
   }
 
   private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
@@ -432,9 +433,7 @@ public class SessionUtil {
   private static void fetchOAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
       throws SFException {
     OAuthAccessTokenProviderFactory accessTokenProviderFactory =
-        new OAuthAccessTokenProviderFactory(
-            new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers(),
-            loginInput.getBrowserResponseTimeout().getSeconds());
+        new OAuthAccessTokenProviderFactory();
     AccessTokenProvider accessTokenProvider =
         accessTokenProviderFactory.createAccessTokenProvider(
             getAuthenticator(loginInput), loginInput);
@@ -487,12 +486,14 @@ public class SessionUtil {
     if (!isNullOrEmpty(loginInput.getUserName())) {
       if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
         CredentialManager.fillCachedIdToken(loginInput);
-        CredentialManager.fillCachedOAuthRefreshToken(loginInput);
-        if (loginInput.isDPoPEnabled()) {
-          CredentialManager.fillCachedDPoPBundledAccessToken(loginInput);
-        }
-        if (loginInput.getOauthAccessToken() == null && loginInput.getDPoPPublicKey() == null) {
-          CredentialManager.fillCachedOAuthAccessToken(loginInput);
+        if (AuthenticatorType.OAUTH_AUTHORIZATION_CODE.equals(getAuthenticator(loginInput))) {
+          CredentialManager.fillCachedOAuthRefreshToken(loginInput);
+          if (loginInput.isDPoPEnabled()) {
+            CredentialManager.fillCachedDPoPBundledAccessToken(loginInput);
+          }
+          if (loginInput.getOauthAccessToken() == null && loginInput.getDPoPPublicKey() == null) {
+            CredentialManager.fillCachedOAuthAccessToken(loginInput);
+          }
         }
       }
 
@@ -685,6 +686,7 @@ public class SessionUtil {
       }
 
       if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(
             ClientAuthnParameter.TOKEN.name(),
             loginInput.getWorkloadIdentityAttestation().getCredential());
@@ -1103,15 +1105,19 @@ public class SessionUtil {
       if (consentCacheIdToken) {
         CredentialManager.writeIdToken(loginInput, ret.getIdToken());
       }
-      if (loginInput.getOauthRefreshToken() != null) {
-        CredentialManager.writeOAuthRefreshToken(loginInput);
-      }
-      if (loginInput.getDPoPPublicKey() != null
-          && loginInput.getOauthAccessToken() != null
-          && loginInput.isDPoPEnabled()) {
-        CredentialManager.writeDPoPBundledAccessToken(loginInput);
-      } else if (loginInput.getOauthAccessToken() != null) {
-        CredentialManager.writeOAuthAccessToken(loginInput);
+      if (AuthenticatorType.OAUTH_AUTHORIZATION_CODE
+          .name()
+          .equalsIgnoreCase(loginInput.getOriginalAuthenticator())) {
+        if (loginInput.getOauthRefreshToken() != null) {
+          CredentialManager.writeOAuthRefreshToken(loginInput);
+        }
+        if (loginInput.getDPoPPublicKey() != null
+            && loginInput.getOauthAccessToken() != null
+            && loginInput.isDPoPEnabled()) {
+          CredentialManager.writeDPoPBundledAccessToken(loginInput);
+        } else if (loginInput.getOauthAccessToken() != null) {
+          CredentialManager.writeOAuthAccessToken(loginInput);
+        }
       }
     }
 

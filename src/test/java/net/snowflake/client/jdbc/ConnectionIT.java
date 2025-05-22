@@ -2,7 +2,6 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.AssumptionUtils.assumeRunningOnGithubActions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,17 +50,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /** Connection integration tests */
 @Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
-  public static final int INVALID_CONNECTION_INFO_CODE = 390100;
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
-  public static final int BAD_REQUEST_GS_CODE = 390400;
-  public static final int NETWORK_ERROR_CODE = 200015;
 
   public static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
 
@@ -132,38 +127,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     long endLoginTime = System.currentTimeMillis();
 
     assertTrue(endLoginTime - startLoginTime < 30000);
-  }
-
-  /**
-   * Test production connectivity in case cipher suites or tls protocol change Use fake username and
-   * password but correct url Expectation is receiving incorrect username or password response from
-   * server
-   */
-  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
-  @Test
-  public void testProdConnectivity() throws SQLException {
-    String[] deploymentUrls = {
-      "jdbc:snowflake://sfcsupport.snowflakecomputing.com",
-      "jdbc:snowflake://sfcsupportva.us-east-1.snowflakecomputing.com",
-      "jdbc:snowflake://sfcsupporteu.eu-central-1.snowflakecomputing.com"
-    };
-
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-
-    for (String url : deploymentUrls) {
-      SQLException e =
-          assertThrows(
-              SQLException.class,
-              () -> {
-                DriverManager.getConnection(url, properties);
-              });
-      assertThat(
-          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
-    }
   }
 
   @Test
@@ -263,7 +226,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
               connection.setClientInfo(clientInfo);
             });
     assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-    assertEquals(200047, e.getErrorCode());
+    assertEquals(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), e.getErrorCode());
     assertEquals(2, e.getFailedProperties().size());
 
     e =
@@ -273,7 +236,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
               connection.setClientInfo("ApplicationName", "valueA");
             });
     assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-    assertEquals(200047, e.getErrorCode());
+    assertEquals(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), e.getErrorCode());
     assertEquals(1, e.getFailedProperties().size());
   }
 
@@ -452,13 +415,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     PublicKey publicKey2 = keyPair.getPublic();
     PrivateKey privateKey2 = keyPair.getPrivate();
     properties.put("privateKey", privateKey2);
-    SQLException e =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(uri, properties);
-            });
-    assertEquals(390144, e.getErrorCode());
+    connectExpectingInvalidJWTError(uri, properties);
 
     // test multiple key pair
     try (Connection connection = getConnection();
@@ -564,33 +521,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
       }
     }
-  }
-
-  /** Test production connectivity with insecure mode enabled. */
-  @Disabled("Disable due to changed error response in backend. Follow up: SNOW-2021007")
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testInsecureMode(boolean insecureModeInProperties) {
-    String deploymentUrl;
-
-    Properties properties = new Properties();
-
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepwd");
-    properties.put("account", "fakeaccount");
-    if (insecureModeInProperties) {
-      properties.put("insecureMode", true);
-      deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
-    } else {
-      deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
-    }
-    SQLException e =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(deploymentUrl, properties);
-            });
-    assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
   }
 
   /** Verify the passed memory parameters are set in the session */
@@ -988,6 +918,13 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = con.createStatement()) {
       statement.execute("select 1");
     }
+  }
+
+  private void connectExpectingInvalidJWTError(String fullUri, Properties properties) {
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(fullUri, properties).close());
+    assertEquals(390144, e.getErrorCode());
   }
 
   private class ConcurrentConnections implements Runnable {

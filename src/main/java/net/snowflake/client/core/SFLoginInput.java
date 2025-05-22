@@ -68,6 +68,8 @@ public class SFLoginInput {
   private int redirectUriPort = -1;
   private String clientId;
   private String clientSecret;
+  private SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler =
+      new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers();
 
   private Duration browserResponseTimeout;
 
@@ -77,11 +79,13 @@ public class SFLoginInput {
   @SnowflakeJdbcInternalApi
   public SFLoginInput() {}
 
-  Duration getBrowserResponseTimeout() {
+  @SnowflakeJdbcInternalApi
+  public Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
   }
 
-  SFLoginInput setBrowserResponseTimeout(Duration browserResponseTimeout) {
+  @SnowflakeJdbcInternalApi
+  public SFLoginInput setBrowserResponseTimeout(Duration browserResponseTimeout) {
     this.browserResponseTimeout = browserResponseTimeout;
     return this;
   }
@@ -621,5 +625,16 @@ public class SFLoginInput {
   public SFLoginInput setWorkloadIdentityEntraResource(String workloadIdentityEntraResource) {
     this.workloadIdentityEntraResource = workloadIdentityEntraResource;
     return this;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public SessionUtilExternalBrowser.AuthExternalBrowserHandlers getBrowserHandler() {
+    return browserHandler;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setBrowserHandler(
+      SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler) {
+    this.browserHandler = browserHandler;
   }
 }
