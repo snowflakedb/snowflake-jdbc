@@ -11,6 +11,7 @@ import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
@@ -420,5 +421,10 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setBrowserResponseTimeout(int seconds) {
     this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
     this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
+  }
+
+  public void setHttpHeadersCustomizers(List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    this.properties.put(
+        HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY, httpHeadersCustomizers);
   }
 }
