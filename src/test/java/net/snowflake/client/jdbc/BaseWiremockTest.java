@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
+//import com.github.tomakehurst.wiremock.client.WireMock;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -71,7 +71,7 @@ public abstract class BaseWiremockTest {
     // github actions mac image. Ticket to enable when fixed: SNOW-1555950
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
     startWiremockStandAlone();
-    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
+//    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
   }
 
   @AfterEach
