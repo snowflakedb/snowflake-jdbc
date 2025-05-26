@@ -1062,7 +1062,7 @@ public class RestRequest {
       return true;
     }
 
-//    todo moove this part of code
+    //    todo move this part of code
     if (response == null || response.getStatusLine().getStatusCode() != 200) {
       logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
 
