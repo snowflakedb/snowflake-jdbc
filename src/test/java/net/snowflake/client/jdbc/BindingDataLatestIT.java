@@ -26,6 +26,8 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.util.SFPair;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Binding Data integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -374,10 +376,96 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testGregorianJulianConversions() throws SQLException {
+  public void testGregorianJulianDateConversions() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setDate(2, gregorianJulianDates.get(i).right);
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates order by ind")) {
+        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+          assertTrue(rs1.next());
+          assertEquals(i, rs1.getInt(1));
+          assertEquals(gregorianJulianDates.get(i).left, rs1.getDate(2).toLocalDate().toString());
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"TIMESTAMP_LTZ", "TIMESTAMP_NTZ"})
+  public void testGregorianJulianTimestampConversions(String timestampType) throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    List<Timestamp> gregorianJulianTimestamps =
+        Arrays.asList(
+            Timestamp.valueOf("0001-01-01 00:00:00"),
+            Timestamp.valueOf("0100-03-01 00:00:00"),
+            Timestamp.valueOf("0400-02-29 00:00:00"),
+            Timestamp.valueOf("0400-03-01 00:00:00"),
+            Timestamp.valueOf("1582-10-15 00:00:00"),
+            Timestamp.valueOf("1900-02-28 00:00:00"),
+            Timestamp.valueOf("1900-03-01 00:00:00"),
+            Timestamp.valueOf("1969-12-31 00:00:00"),
+            Timestamp.valueOf("1970-01-01 00:00:00"),
+            Timestamp.valueOf("2000-02-28 00:00:00"),
+            Timestamp.valueOf("2000-02-29 00:00:00"),
+            Timestamp.valueOf("2000-03-01 00:00:00"),
+            Timestamp.valueOf("2023-10-26 00:00:00"),
+            Timestamp.valueOf("2024-02-29 00:00:00"));
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table stageinsertdates(ind int, d1 " + timestampType + ")");
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=" + timestampType);
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
+        for (int i = 0; i < gregorianJulianTimestamps.size(); i++) {
+          prepStatement.setInt(1, i);
+          prepStatement.setTimestamp(2, gregorianJulianTimestamps.get(i));
+          prepStatement.addBatch();
+        }
+
+        prepStatement.executeBatch();
+        prepStatement.getConnection().commit();
+      }
+
+      try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates order by ind")) {
+        for (int i = 0; i < gregorianJulianTimestamps.size(); i++) {
+          assertTrue(rs1.next());
+          assertEquals(i, rs1.getInt(1));
+          assertEquals(gregorianJulianTimestamps.get(i), rs1.getTimestamp(2));
+        }
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
+    }
+  }
+
+  /**
+   * This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @DontRunOnGithubActions
+  public void testGregorianJulianDateConversionsWithStageBindings() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
@@ -407,19 +495,40 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    *
    * @throws SQLException
    */
-  @Test
+  @ParameterizedTest
+  @ValueSource(strings = {"TIMESTAMP_LTZ", "TIMESTAMP_NTZ"})
   @DontRunOnGithubActions
-  public void testGregorianJulianConversionsWithStageBindings() throws SQLException {
+  public void testGregorianJulianTimestampConversionsWithStageBindings(String timestampType)
+      throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    List<Timestamp> gregorianJulianTimestamps =
+        Arrays.asList(
+            Timestamp.valueOf("0001-01-01 00:00:00"),
+            Timestamp.valueOf("0100-03-01 00:00:00"),
+            Timestamp.valueOf("0400-02-29 00:00:00"),
+            Timestamp.valueOf("0400-03-01 00:00:00"),
+            Timestamp.valueOf("1582-10-15 00:00:00"),
+            Timestamp.valueOf("1900-02-28 00:00:00"),
+            Timestamp.valueOf("1900-03-01 00:00:00"),
+            Timestamp.valueOf("1969-12-31 00:00:00"),
+            Timestamp.valueOf("1970-01-01 00:00:00"),
+            Timestamp.valueOf("2000-02-28 00:00:00"),
+            Timestamp.valueOf("2000-02-29 00:00:00"),
+            Timestamp.valueOf("2000-03-01 00:00:00"),
+            Timestamp.valueOf("2023-10-26 00:00:00"),
+            Timestamp.valueOf("2024-02-29 00:00:00"));
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute("create or replace table stageinsertdates(ind int, d1 date)");
+      statement.execute(
+          "create or replace table stageinsertdates(ind int, d1 " + timestampType + ")");
       statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=" + timestampType);
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsertdates values (?,?)")) {
-        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+        for (int i = 0; i < gregorianJulianTimestamps.size(); i++) {
           prepStatement.setInt(1, i);
-          prepStatement.setDate(2, gregorianJulianDates.get(i).right);
+          prepStatement.setTimestamp(2, gregorianJulianTimestamps.get(i));
           prepStatement.addBatch();
         }
 
@@ -428,12 +537,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       }
 
       try (ResultSet rs1 = statement.executeQuery("select * from stageinsertdates order by ind")) {
-        for (int i = 0; i < gregorianJulianDates.size(); i++) {
+        for (int i = 0; i < gregorianJulianTimestamps.size(); i++) {
           assertTrue(rs1.next());
           assertEquals(i, rs1.getInt(1));
-          assertEquals(gregorianJulianDates.get(i).left, rs1.getDate(2).toLocalDate().toString());
+          assertEquals(gregorianJulianTimestamps.get(i), rs1.getTimestamp(2));
         }
       }
+    } finally {
+      TimeZone.setDefault(origTz);
     }
   }
 

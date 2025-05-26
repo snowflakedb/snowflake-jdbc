@@ -15,6 +15,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -42,7 +43,7 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
               () ->
                   SnowflakeAzureClient.createSnowflakeAzureClient(
                       sfAgent.getStageInfo(), content, sfSession));
-      assertEquals(200001, ex.getErrorCode());
+      assertEquals(ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
     }
   }
 

@@ -55,11 +55,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
-  public static final int INVALID_CONNECTION_INFO_CODE = 390100;
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
-  public static final int BAD_REQUEST_GS_CODE = 390400;
-  public static final int NETWORK_ERROR_CODE = 200015;
 
   public static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
 
@@ -229,7 +226,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
               connection.setClientInfo(clientInfo);
             });
     assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-    assertEquals(200047, e.getErrorCode());
+    assertEquals(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), e.getErrorCode());
     assertEquals(2, e.getFailedProperties().size());
 
     e =
@@ -239,7 +236,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
               connection.setClientInfo("ApplicationName", "valueA");
             });
     assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-    assertEquals(200047, e.getErrorCode());
+    assertEquals(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), e.getErrorCode());
     assertEquals(1, e.getFailedProperties().size());
   }
 
@@ -418,13 +415,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     PublicKey publicKey2 = keyPair.getPublic();
     PrivateKey privateKey2 = keyPair.getPrivate();
     properties.put("privateKey", privateKey2);
-    SQLException e =
-        assertThrows(
-            SQLException.class,
-            () -> {
-              DriverManager.getConnection(uri, properties);
-            });
-    assertEquals(390144, e.getErrorCode());
+    connectExpectingInvalidJWTError(uri, properties);
 
     // test multiple key pair
     try (Connection connection = getConnection();
@@ -927,6 +918,13 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = con.createStatement()) {
       statement.execute("select 1");
     }
+  }
+
+  private void connectExpectingInvalidJWTError(String fullUri, Properties properties) {
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(fullUri, properties).close());
+    assertEquals(390144, e.getErrorCode());
   }
 
   private class ConcurrentConnections implements Runnable {

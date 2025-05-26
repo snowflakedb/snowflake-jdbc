@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -99,7 +100,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
           // first statement
           SQLException e =
               assertThrows(SQLException.class, () -> preparedStatement.executeUpdate());
-          assertThat(e.getErrorCode(), is(100132));
+          assertThat(e.getMessage(), containsString("Bind variable ? not set"));
         }
       } finally {
         statement.execute("drop table if exists test_multi_bind");
