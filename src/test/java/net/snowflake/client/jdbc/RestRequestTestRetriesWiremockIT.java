@@ -24,11 +24,11 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
 
-  @BeforeEach
-  public void setUp() throws IOException {
-    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
-    resetWiremock();
-  }
+//  @BeforeEach
+//  public void setUp() throws IOException {
+//    WireMock.configureFor(WIREMOCK_HOST, wiremockHttpPort);
+//    resetWiremock();
+//  }
 
   @Test
   public void testRetryWhen503Code() {
