@@ -3,14 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.setScenarioState;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.client.WireMock.setScenarioState;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
