@@ -1,8 +1,10 @@
 package net.snowflake.client.core;
 
 import java.security.PrivateKey;
+import java.util.List;
 import java.util.regex.Pattern;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 
 /** session properties accepted for opening a new session. */
 public enum SFSessionProperty {
@@ -132,7 +134,10 @@ public enum SFSessionProperty {
       "CLEAR_BATCH_ONLY_AFTER_SUCCESSFUL_EXECUTION", false, Boolean.class),
 
   CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME(
-      "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class);
+      "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class),
+
+  HTTP_HEADER_CUSTOMIZERS(
+      HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY, false, List.class);
 
   // property key in string
   private String propertyKey;
