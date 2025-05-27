@@ -333,13 +333,9 @@ public class SessionUtil {
       }
     }
 
-    if (authenticator.equals(AuthenticatorType.USERNAME_PASSWORD_MFA)) {
-      if ((Constants.getOS() == Constants.OS.MAC
-              || Constants.getOS() == Constants.OS.WINDOWS
-              || Constants.getOS() == Constants.OS.LINUX)
-          && loginInput.isEnableClientRequestMfaToken()) {
-        loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
-      }
+    if (authenticator.equals(AuthenticatorType.USERNAME_PASSWORD_MFA)
+        && loginInput.isEnableClientRequestMfaToken()) {
+      loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
     }
 
     if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
