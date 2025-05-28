@@ -1,6 +1,6 @@
 package net.snowflake.client.core.auth.wif;
 
-import com.amazonaws.SignableRequest;
+import com.amazonaws.Request;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -20,7 +20,6 @@ public class AwsAttestationService {
 
   public static final SFLogger logger = SFLoggerFactory.getLogger(AwsAttestationService.class);
 
-  private static final String SECURE_TOKEN_SERVICE_NAME = "sts";
   private static boolean regionInitialized = false;
   private static String region;
 
@@ -28,7 +27,7 @@ public class AwsAttestationService {
 
   public AwsAttestationService() {
     aws4Signer = new AWS4Signer();
-    aws4Signer.setServiceName(SECURE_TOKEN_SERVICE_NAME);
+    aws4Signer.setRegionName(getAWSRegion());
   }
 
   AWSCredentials getAWSCredentials() {
@@ -57,7 +56,8 @@ public class AwsAttestationService {
     return Optional.ofNullable(callerIdentity).map(GetCallerIdentityResult::getArn).orElse(null);
   }
 
-  void signRequestWithSigV4(SignableRequest<Void> signableRequest, AWSCredentials awsCredentials) {
+  void signRequestWithSigV4(Request<Void> signableRequest, AWSCredentials awsCredentials) {
+    aws4Signer.setServiceName(signableRequest.getServiceName());
     aws4Signer.sign(signableRequest, awsCredentials);
   }
 }
