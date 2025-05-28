@@ -90,7 +90,8 @@ public class SFClientConfigParser {
 
         return clientConfig;
       } catch (IOException e) {
-        String customErrorMessage = "Error while reading config file: " + derivedConfigFilePath;
+        String customErrorMessage =
+            "Error while reading config file at location: " + derivedConfigFilePath;
         throw new IOException(customErrorMessage, e);
       }
     }
