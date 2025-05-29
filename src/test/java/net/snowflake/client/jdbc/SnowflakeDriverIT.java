@@ -1888,22 +1888,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           preparedStatement.clearBatch();
 
-          // this test causes query count in GS not to be decremented because
-          // the exception is thrown before registerQC. Discuss with Johnston
-          // to resolve the issue before enabling the test.
-          preparedStatement.setObject(1, "Null", Types.DOUBLE);
-          preparedStatement.addBatch();
-          SnowflakeSQLException ex =
-              assertThrows(SnowflakeSQLException.class, preparedStatement::executeBatch);
-          assertEquals(2086, ex.getErrorCode());
-
-          preparedStatement.clearBatch();
-
           preparedStatement.setString(1, "hello");
           preparedStatement.addBatch();
-
           preparedStatement.setDouble(1, 1.2);
-          ex = assertThrows(SnowflakeSQLException.class, preparedStatement::addBatch);
+          SnowflakeSQLException ex =
+              assertThrows(SnowflakeSQLException.class, preparedStatement::addBatch);
           assertEquals(
               (int) ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
               ex.getErrorCode());
