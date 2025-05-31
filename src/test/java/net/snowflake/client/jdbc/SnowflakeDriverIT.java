@@ -2568,9 +2568,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   public void testSnow31104() throws Throwable {
 
-    Properties paramProperties = new Properties();
-    paramProperties.put("TYPESYSTEM_WIDEN_CONSTANTS_EXACTLY", Boolean.TRUE.toString());
-    try (Connection connection = getConnection(paramProperties);
+    try (Connection connection = getConnection();
         Statement regularStatement = connection.createStatement()) {
       // Repeat a couple of test cases from snow-31104.sql
       // We don't need to repeat all of them; we just need to verify
