@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -268,10 +267,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
     this.ocspMode = key.getOcspMode();
     this.proxySettingsKey = key;
-    this.trustManager = getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+    this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     checkNewOCSPEndpointAvailability();
 
