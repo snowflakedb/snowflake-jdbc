@@ -200,6 +200,12 @@
       <type>jar</type>
     </dependency>
     <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock</artifactId>
+      <version>3.13.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
@@ -404,7 +410,8 @@
             <!-- structured types tests -->
             <exclude>**/structuredtypes/sqldata/*.java</exclude>
             <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
-            <exclude>**/*LatestIT.java</exclude>
+            <exclude>**/*LatestIT.java</exclude>            <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
+            <exclude>**/*WiremockIT.java</exclude>
             <!-- Unit Tests -->
             <exclude>**/*Test.java</exclude>
             <!-- Manual Tests -->
