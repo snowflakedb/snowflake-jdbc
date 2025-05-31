@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -199,6 +200,68 @@ public class LoaderLatestIT extends LoaderBase {
         assertThat("The first id", rs.getInt(1), equalTo(0));
         assertThat("The first str", rs.getString(2), equalTo("foo_0"));
       }
+    }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  private void testVectorColumnInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format("CREATE OR REPLACE TABLE %s (vector_col VECTOR(FLOAT, 3))", tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14.0, 100]"});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  private void testMultipleVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(FLOAT, 3), vec2 VECTOR(FLOAT, 3))",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]"});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
     }
   }
 }
