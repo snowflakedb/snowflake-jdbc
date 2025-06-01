@@ -4,12 +4,14 @@ on:
     push:
         branches:
             - master
+            - release_3_17_1_hotfix
         tags:
             - v*
     pull_request:
         branches:
             - master
             - prep-**
+            - release_3_17_1_hotfix
     workflow_dispatch:
         inputs:
           logLevel:
@@ -27,7 +29,7 @@ concurrency:
 jobs:
     build:
         name: Build
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
             - name: Build
