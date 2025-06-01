@@ -4,12 +4,14 @@ on:
     push:
         branches:
             - master
+            - release_3_22_1_hotfix
         tags:
             - v*
     pull_request:
         branches:
             - master
             - prep-**
+            - release_3_22_1_hotfix
     workflow_dispatch:
         inputs:
           logLevel:
