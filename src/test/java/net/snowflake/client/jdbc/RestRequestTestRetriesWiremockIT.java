@@ -3,11 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.setScenarioState;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,7 +24,6 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   @BeforeEach
   public void setUp() throws IOException {
-    configureFor(WIREMOCK_HOST, wiremockHttpPort);
     resetWiremock();
   }
 
@@ -39,7 +34,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     props.setProperty("maxHttpRetries", "3");
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
-    verify(4, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
+    verifyCount(4, "/queries/v1/query-request.*");
 
     assertTrue(
         thrown
@@ -56,7 +51,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     assertTrue(thrown.getMessage().contains("Bad chunk header"));
-    verify(6, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
+    verifyCount(6, "/queries/v1/query-request.*");
   }
 
   @Test
@@ -64,10 +59,10 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
       Properties props = new Properties();
-      props.setProperty("maxHttpRetries", "5");
-      setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
+      props.setProperty("maxHttpRetries", "7");
+//      setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
       executeServerRequest(props);
-      verify(6, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
+      verifyCount(7, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
     } finally {
@@ -77,11 +72,10 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   @Test
   public void testHttpClientSuccessWithoutRetries() {
-    importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/correct_response.json");
     try {
-      setScenarioState("malformed_response_retry", "CORRECT");
       executeServerRequest(null);
-      verify(1, postRequestedFor(urlMatching("/queries/v1/query-request.*")));
+      verifyCount(1, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
