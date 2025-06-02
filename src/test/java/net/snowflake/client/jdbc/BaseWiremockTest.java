@@ -9,6 +9,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
@@ -412,6 +413,56 @@ public abstract class BaseWiremockTest {
       importMapping(scenario);
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Sets the state of a WireMock scenario using the HTTP API.
+   *
+   * @param scenarioName The name of the scenario to modify
+   * @param state The new state to set
+   */
+//  protected void setScenarioState(String scenarioName, String state) {
+//    String requestBody = String.format(
+//        "{\"scenarioName\": \"%s\", \"state\": \"%s\"}",
+//        scenarioName,
+//        state);
+//
+//    HttpPost postRequest = createWiremockPostRequest(requestBody, "/__admin/scenarios/reset");
+//    try (CloseableHttpClient client = HttpClients.createDefault();
+//         CloseableHttpResponse response = client.execute(postRequest)) {
+//      int statusCode = response.getStatusLine().getStatusCode();
+//      if (statusCode != 200) {
+//        throw new RuntimeException(
+//            String.format("Failed to set scenario state. Status code: %d", statusCode));
+//      }
+//    } catch (Exception e) {
+//      throw new RuntimeException("Failed to set scenario state in WireMock", e);
+//    }
+//  }
+
+  /**
+   * Verifies the count of requests matching a given URL pattern.
+   *
+   * @param expectedCount The expected number of requests
+   * @param urlPattern The URL pattern to match against (supports regex)
+   */
+  protected void verifyCount(int expectedCount, String urlPattern) {
+    String url = String.format("http://%s:%d/__admin/requests/count", WIREMOCK_HOST, getAdminPort());
+    String requestBody = String.format("{\"method\": \"POST\", \"urlPattern\": \"%s\"}", urlPattern);
+    
+    HttpPost postRequest = createWiremockPostRequest(requestBody, "/__admin/requests/count");
+    try (CloseableHttpClient client = HttpClients.createDefault();
+         CloseableHttpResponse response = client.execute(postRequest)) {
+      String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+      ObjectMapper mapper = new ObjectMapper();
+      Map<String, String> countResponse = mapper.readValue(json, new TypeReference<Map<String, String>>() {});
+      int actualCount = Integer.parseInt(countResponse.get("count"));
+      assertEquals(expectedCount, actualCount, 
+          String.format("Expected %d requests matching pattern '%s', but found %d", 
+              expectedCount, urlPattern, actualCount));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to verify request count from WireMock", e);
     }
   }
 }
