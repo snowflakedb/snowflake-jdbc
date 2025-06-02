@@ -47,7 +47,7 @@ timestamps {
     }
 
     def commit_hash = "main" // default which we want to override
-    def bptp_tag = "bptp-built"
+    def bptp_tag = "bptp-stable"
     try {
         def response = authenticatedGithubCall("https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/${bptp_tag}")
         commit_hash = response.object.sha
