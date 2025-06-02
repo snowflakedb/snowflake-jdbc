@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.setScenarioState;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,7 +59,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     try {
       Properties props = new Properties();
       props.setProperty("maxHttpRetries", "7");
-//      setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
+      //      setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
       executeServerRequest(props);
       verifyCount(7, "/queries/v1/query-request.*");
     } catch (SQLException e) {
