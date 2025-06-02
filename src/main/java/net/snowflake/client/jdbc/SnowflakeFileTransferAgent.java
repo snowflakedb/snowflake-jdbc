@@ -1182,6 +1182,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     setupUseRegionalUrl(jsonNode, stageInfo);
+    setupUseVirtualUrl(jsonNode, stageInfo);
 
     if (stageInfo.getStageType() == StageInfo.StageType.S3) {
       if (session == null) {
@@ -1213,6 +1214,17 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     if (!useRegionalURLNode.isMissingNode()) {
       boolean useRegionalURL = useRegionalURLNode.asBoolean(false);
       stageInfo.setUseRegionalUrl(useRegionalURL);
+    }
+  }
+
+  private static void setupUseVirtualUrl(JsonNode jsonNode, StageInfo stageInfo) {
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS) {
+      return;
+    }
+    JsonNode useVirtualURLNode = jsonNode.path("data").path("stageInfo").path("useVirtualUrl");
+    if (!useVirtualURLNode.isMissingNode()) {
+      boolean useVirtualURL = useVirtualURLNode.asBoolean(false);
+      stageInfo.setUseVirtualUrl(useVirtualURL);
     }
   }
 
