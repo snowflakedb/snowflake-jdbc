@@ -685,6 +685,13 @@ public class RestRequest {
               httpExecutingContext.getRequestId(),
               responseDto.getHttpResponse().getStatusLine().getStatusCode(),
               httpExecutingContext.getRequestInfoScrubbed());
+          responseDto.setSavedEx( new SnowflakeSQLException(
+                  SqlState.IO_ERROR,
+                  ErrorCode.NETWORK_ERROR.getMessageCode(),
+                  "HTTP status="
+                          + ((responseDto.getHttpResponse() != null)
+                          ? responseDto.getHttpResponse().getStatusLine().getStatusCode()
+                          : "null response")));
         } else if ((responseDto.getHttpResponse() == null
             || responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200)) {
           sendTelemetryEvent(
@@ -1059,35 +1066,35 @@ public class RestRequest {
       httpExecutingContext.setShouldRetry(false);
       httpExecutingContext.setSkipRetriesBecauseOf200(
           response.getStatusLine().getStatusCode() == 200);
-      return true;
-    }
 
-    //    todo move this part of code
-    if (response == null || response.getStatusLine().getStatusCode() != 200) {
       logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
 
       try {
-        if (response != null
-            && response.getStatusLine().getStatusCode() == 400
-            && response.getEntity() != null) {
-          checkForDPoPNonceError(response);
+        if (response == null || response.getStatusLine().getStatusCode() != 200) {
+          logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
+
+          if (response != null
+                  && response.getStatusLine().getStatusCode() == 400
+                  && response.getEntity() != null) {
+            checkForDPoPNonceError(response);
+          }
+
+          SnowflakeUtil.logResponseDetails(response, logger);
+
+          if (response != null) {
+            EntityUtils.consume(response.getEntity());
+          }
+
+//           We throw here exception if timeout was reached for login
+          dto.setSavedEx(
+                  new SnowflakeSQLException(
+                          SqlState.IO_ERROR,
+                          ErrorCode.NETWORK_ERROR.getMessageCode(),
+                          "HTTP status="
+                                  + ((response != null)
+                                  ? response.getStatusLine().getStatusCode()
+                                  : "null response")));
         }
-
-        SnowflakeUtil.logResponseDetails(response, logger);
-
-        if (response != null) {
-          EntityUtils.consume(response.getEntity());
-        }
-
-        // We throw here exception if timeout was reached for login
-        dto.setSavedEx(
-            new SnowflakeSQLException(
-                SqlState.IO_ERROR,
-                ErrorCode.NETWORK_ERROR.getMessageCode(),
-                "HTTP status="
-                    + ((response != null)
-                        ? response.getStatusLine().getStatusCode()
-                        : "null response")));
       } catch (IOException e) {
         dto.setSavedEx(
             new SnowflakeSQLException(
