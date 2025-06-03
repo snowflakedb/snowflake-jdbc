@@ -7,12 +7,12 @@ import net.snowflake.client.util.DecorrelatedJitterBackoff;
 public class HttpExecutingContext {
 
   // min backoff in milli before we retry due to transient issues
-  private static final long minBackoff = 1000;
+  private static final long minBackoffMillis = 1000;
 
   // max backoff in milli before we retry due to transient issues
   // we double the backoff after each retry till we reach the max backoff
   //    private static final long maxBackoff= 16000;
-  private static final long maxBackoff = 16;
+  private static final long maxBackoffMillis = 16000;
 
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
@@ -57,7 +57,7 @@ public class HttpExecutingContext {
     this.startTimePerRequest = startTime;
     this.backoff = new DecorrelatedJitterBackoff(getMinBackoffInMillis(), getMaxBackoffInMilli());
     ;
-    this.backoffInMillis = minBackoff;
+    this.backoffInMillis = minBackoffMillis;
   }
 
   public String getRequestId() {
@@ -105,7 +105,7 @@ public class HttpExecutingContext {
   }
 
   public long getMinBackoffInMillis() {
-    return minBackoff;
+    return minBackoffMillis;
   }
 
   public long getBackoffInMillis() {
@@ -117,7 +117,7 @@ public class HttpExecutingContext {
   }
 
   public long getMaxBackoffInMilli() {
-    return maxBackoff;
+    return maxBackoffMillis;
   }
 
   public long getAuthTimeout() {
