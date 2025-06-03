@@ -1,14 +1,11 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.jdbc.ErrorCode.NETWORK_ERROR;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -19,7 +16,6 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
-import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
@@ -37,8 +33,6 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -46,10 +40,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -57,7 +48,6 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -69,15 +59,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
-import org.apache.http.util.EntityUtils;
 
 /** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
-
-  static final String ERROR_FIELD_NAME = "error";
-  static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
-  static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
@@ -93,11 +78,6 @@ public class HttpUtil {
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
-  public static final String JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY =
-      "net.snowflake.jdbc.default_malformed_response_max_retry_count";
-  public static final String JDBC_MALFORMED_RESPONSE_RETRY_DELAY =
-      "net.snowflake.jdbc.malformed_response_retry_delay";
-
   private static Duration connectionTimeout;
   private static Duration socketTimeout;
 
@@ -999,149 +979,49 @@ public class HttpUtil {
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
-    // HttpRequest.toString() contains request URI. Scrub any credentials, if
-    // present, before logging
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-    final int malformedResponseMaxRetryCount =
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_MALFORMED_RESPONSE_MAX_RETRY_COUNT_PROPERTY,
-            DEFAULT_MALFORMED_RESPONSE_MAX_RETRY_COUNT);
-    final int malformedResponseRetryDelay =
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_MALFORMED_RESPONSE_RETRY_DELAY, DEFAULT_MALFORMED_RESPONSE_RETRY_DELAY);
-    int retryCount = 0;
     String responseText = "";
 
-    while (retryCount <= malformedResponseMaxRetryCount) {
-      logger.debug(
-          "Pool: {} Executing: {}",
-          (ArgSupplier) HttpUtil::getHttpClientStats,
-          requestInfoScrubbed);
+    logger.debug(
+        "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
 
-      StringWriter writer = null;
-      CloseableHttpResponse response = null;
-      Stopwatch stopwatch = null;
-
-      if (logger.isDebugEnabled()) {
-        stopwatch = new Stopwatch();
-        stopwatch.start();
-      }
+    CloseableHttpResponse response = null;
+    Stopwatch stopwatch = null;
 
     try {
-    try {
-        if (includeRetryParameters && retryCount > 0) {
-            URIBuilder uriBuilder = new URIBuilder(httpRequest.getURI());
-            RestRequest.updateRetryParameters(
-                    uriBuilder, retryCount, String.valueOf(NETWORK_ERROR), System.currentTimeMillis());
-            httpRequest.setURI(uriBuilder.build());
-        }
-      response =
-          RestRequest.execute(
-              httpClient,
-              httpRequest,
-              retryTimeout,
-              authTimeout,
-              socketTimeout,
-              maxRetries,
-              injectSocketTimeout,
-              canceling,
-              withoutCookies,
-              includeRetryParameters,
-              includeRequestGuid,
-              retryOnHTTP403,
-              execTimeData,
-              retryContextManager);
-      if (logger.isDebugEnabled() && stopwatch != null) {
-        stopwatch.stop();
-      }
+      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+      HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
+      context.setRetryTimeout(retryTimeout);
+      context.setAuthTimeout(authTimeout);
+      context.setOrigSocketTimeout(socketTimeout);
+      context.setMaxRetries(maxRetries);
+      context.setInjectSocketTimeout(injectSocketTimeout);
+      context.setCanceling(canceling);
+      context.setWithoutCookies(withoutCookies);
+      context.setIncludeRetryParameters(includeRetryParameters);
+      context.setIncludeRequestGuid(includeRequestGuid);
+      context.setRetryHTTP403(retryOnHTTP403);
+      context.setUnpackResponse(true);
+      context.setNoRetry(false);
+      context.setLoginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest));
+      responseText =
+          RestRequest.executeWitRetries(
+                  httpClient, httpRequest, context, execTimeData, retryContextManager)
+              .getUnpackedCloseableHttpResponse();
 
-          if (response == null || response.getStatusLine().getStatusCode() != 200) {
-            logger.error("Error executing request: {}", requestInfoScrubbed);
-
-        if (response != null
-            && response.getStatusLine().getStatusCode() == 400
-            && response.getEntity() != null) {
-          checkForDPoPNonceError(response);
-        }
-
-        SnowflakeUtil.logResponseDetails(response, logger);
-            SnowflakeUtil.logResponseDetails(response, logger);
-
-            if (response != null) {
-              EntityUtils.consume(response.getEntity());
-            }
-
-        // We throw here exception if timeout was reached for login
-        throw new SnowflakeSQLException(
-            SqlState.IO_ERROR,
-            ErrorCode.NETWORK_ERROR.getMessageCode(),
-            "HTTP status="
-                + ((response != null)
-                    ? response.getStatusLine().getStatusCode()
-                    : "null response"));
-      }
-
-          execTimeData.setResponseIOStreamStart();
-          writer = new StringWriter();
-          try (InputStream ins = response.getEntity().getContent()) {
-            IOUtils.copy(ins, writer, "UTF-8");
-          }
-          responseText = writer.toString();
-          execTimeData.setResponseIOStreamEnd();
-        } catch (URISyntaxException e) {
-          throw new RuntimeException(e);
-        } finally {
-          IOUtils.closeQuietly(writer);
-          IOUtils.closeQuietly(response);
-        }
-
-        logger.debug(
-            "Pool: {} Request returned for: {} took {} ms",
-            (ArgSupplier) HttpUtil::getHttpClientStats,
-            requestInfoScrubbed,
-            stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
-
-        break;
-
-      } catch (IOException e) {
-        logger.warn(
-            "Thrown IOException. Message {}. Retry {} . Message {}", e.getMessage(), retryCount);
-        retryCount++;
-        if (retryCount > malformedResponseMaxRetryCount) {
-          String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-          logger.error(
-              "{}Stop retrying MALFORMED_RESPONSE_ERROR as max retries have been reached for request: {}! Max retry count: {}. Exception message: {}",
-              requestIdStr,
-              requestInfoScrubbed,
-              malformedResponseMaxRetryCount,
-              e.getMessage());
-          throw e;
-        } else {
-          try {
-            Thread.sleep(malformedResponseRetryDelay);
-          } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
-          }
-        }
-      }
+      //        } catch (URISyntaxException e) {
+      //            throw new RuntimeException(e);
+    } catch (SnowflakeSQLException e) {
+      throw e;
     }
+
+    logger.debug(
+        "Pool: {} Request returned for: {} took {} ms",
+        (ArgSupplier) HttpUtil::getHttpClientStats,
+        requestInfoScrubbed,
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
+
     return responseText;
-  }
-
-  private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
-    String errorResponse = EntityUtils.toString(response.getEntity());
-    if (!isNullOrEmpty(errorResponse)) {
-      ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-      JsonNode rootNode = objectMapper.readTree(errorResponse);
-      JsonNode errorNode = rootNode.get(ERROR_FIELD_NAME);
-      if (errorNode != null
-          && errorNode.isValueNode()
-          && errorNode.isTextual()
-          && errorNode.textValue().equals(ERROR_USE_DPOP_NONCE)) {
-        throw new SnowflakeUseDPoPNonceException(
-            response.getFirstHeader(DPOP_NONCE_HEADER_NAME).getValue());
-      }
-    }
   }
 
   // This is a workaround for JDK-7036144.
