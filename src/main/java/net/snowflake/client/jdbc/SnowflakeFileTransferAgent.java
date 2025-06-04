@@ -1559,10 +1559,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       if (commandType == CommandType.DOWNLOAD) {
         File dir = new File(localLocation);
         if (!dir.exists()) {
-          boolean created =
-              SnowflakeUtil.isWindows()
-                  ? dir.mkdirs()
-                  : createOwnerOnlyPermissionDir(localLocation);
+          boolean created = false;
+          if (session.isOwnerOnlyStageFilePermissionsEnabled()) {
+            created =
+                    SnowflakeUtil.isWindows()
+                            ? dir.mkdirs()
+                            : createOwnerOnlyPermissionDir(localLocation);
+          } else {
+            created = dir.mkdirs();
+          }
           if (created) {
             logger.debug("Directory created: {}", localLocation);
           } else {
