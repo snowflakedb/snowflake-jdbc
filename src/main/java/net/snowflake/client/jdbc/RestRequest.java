@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static com.google.common.base.Throwables.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,10 +24,12 @@ import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpExecutingContext;
+import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpResponseContextDto;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFOCSPException;
+import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
@@ -538,22 +539,24 @@ public class RestRequest {
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
-    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-    String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-    HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
-    context.setRetryTimeout(retryTimeout);
-    context.setAuthTimeout(authTimeout);
-    context.setOrigSocketTimeout(socketTimeout);
-    context.setMaxRetries(maxRetries);
-    context.setInjectSocketTimeout(injectSocketTimeout);
-    context.setCanceling(canceling);
-    context.setWithoutCookies(withoutCookies);
-    context.setIncludeRetryParameters(includeRetryParameters);
-    context.setIncludeRequestGuid(includeRequestGuid);
-    context.setRetryHTTP403(retryHTTP403);
-    context.setNoRetry(noRetry);
-    context.setUnpackResponse(unpackResponse);
-    return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
+      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+      String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+      HttpExecutingContext context = HttpExecutingContextBuilder.withRequest(requestIdStr, requestInfoScrubbed)
+          .retryTimeout(retryTimeout)
+          .authTimeout(authTimeout)
+          .origSocketTimeout(socketTimeout)
+          .maxRetries(maxRetries)
+          .injectSocketTimeout(injectSocketTimeout)
+          .canceling(canceling)
+          .withoutCookies(withoutCookies)
+          .includeRetryParameters(includeRetryParameters)
+          .includeRequestGuid(includeRequestGuid)
+          .retryHTTP403(retryHTTP403)
+          .noRetry(noRetry)
+          .unpackResponse(unpackResponse)
+          .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+          .build();
+      return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
   }
 
   /**
@@ -685,11 +688,12 @@ public class RestRequest {
               httpExecutingContext.getRequestId(),
               responseDto.getHttpResponse().getStatusLine().getStatusCode(),
               httpExecutingContext.getRequestInfoScrubbed());
-          responseDto.setSavedEx( new SnowflakeSQLException(
+          responseDto.setSavedEx(
+              new SnowflakeSQLException(
                   SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode(),
                   "HTTP status="
-                          + ((responseDto.getHttpResponse() != null)
+                      + ((responseDto.getHttpResponse() != null)
                           ? responseDto.getHttpResponse().getStatusLine().getStatusCode()
                           : "null response")));
         } else if ((responseDto.getHttpResponse() == null
@@ -1064,6 +1068,7 @@ public class RestRequest {
       httpExecutingContext.setBreakRetryReason("status code does not need retry");
       //            httpExecutingContext.resetRetryCount();
       httpExecutingContext.setShouldRetry(false);
+      skipRetrying = true;
       httpExecutingContext.setSkipRetriesBecauseOf200(
           response.getStatusLine().getStatusCode() == 200);
 
@@ -1071,11 +1076,12 @@ public class RestRequest {
 
       try {
         if (response == null || response.getStatusLine().getStatusCode() != 200) {
-          logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
+          logger.error(
+              "Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
 
           if (response != null
-                  && response.getStatusLine().getStatusCode() == 400
-                  && response.getEntity() != null) {
+              && response.getStatusLine().getStatusCode() == 400
+              && response.getEntity() != null) {
             checkForDPoPNonceError(response);
           }
 
@@ -1085,15 +1091,15 @@ public class RestRequest {
             EntityUtils.consume(response.getEntity());
           }
 
-//           We throw here exception if timeout was reached for login
+          //           We throw here exception if timeout was reached for login
           dto.setSavedEx(
-                  new SnowflakeSQLException(
-                          SqlState.IO_ERROR,
-                          ErrorCode.NETWORK_ERROR.getMessageCode(),
-                          "HTTP status="
-                                  + ((response != null)
-                                  ? response.getStatusLine().getStatusCode()
-                                  : "null response")));
+              new SnowflakeSQLException(
+                  SqlState.IO_ERROR,
+                  ErrorCode.NETWORK_ERROR.getMessageCode(),
+                  "HTTP status="
+                      + ((response != null)
+                          ? response.getStatusLine().getStatusCode()
+                          : "null response")));
         }
       } catch (IOException e) {
         dto.setSavedEx(
