@@ -986,26 +986,27 @@ public class HttpUtil {
     CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
-      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-      HttpExecutingContext context = HttpExecutingContextBuilder.forSimpleRequest(requestIdStr, requestInfoScrubbed)
-          .retryTimeout(retryTimeout)
-          .authTimeout(authTimeout)
-          .origSocketTimeout(socketTimeout)
-          .maxRetries(maxRetries)
-          .injectSocketTimeout(injectSocketTimeout)
-          .canceling(canceling)
-          .withoutCookies(withoutCookies)
-          .includeRetryParameters(includeRetryParameters)
-          .includeRequestGuid(includeRequestGuid)
-          .retryHTTP403(retryOnHTTP403)
-          .unpackResponse(true)
-          .noRetry(false)
-          .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
-          .build();
-      responseText =
-          RestRequest.executeWitRetries(
-                  httpClient, httpRequest, context, execTimeData, retryContextManager)
-              .getUnpackedCloseableHttpResponse();
+    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+    HttpExecutingContext context =
+        HttpExecutingContextBuilder.forSimpleRequest(requestIdStr, requestInfoScrubbed)
+            .retryTimeout(retryTimeout)
+            .authTimeout(authTimeout)
+            .origSocketTimeout(socketTimeout)
+            .maxRetries(maxRetries)
+            .injectSocketTimeout(injectSocketTimeout)
+            .canceling(canceling)
+            .withoutCookies(withoutCookies)
+            .includeRetryParameters(includeRetryParameters)
+            .includeRequestGuid(includeRequestGuid)
+            .retryHTTP403(retryOnHTTP403)
+            .unpackResponse(true)
+            .noRetry(false)
+            .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+            .build();
+    responseText =
+        RestRequest.executeWitRetries(
+                httpClient, httpRequest, context, execTimeData, retryContextManager)
+            .getUnpackedCloseableHttpResponse();
 
     logger.debug(
         "Pool: {} Request returned for: {} took {} ms",

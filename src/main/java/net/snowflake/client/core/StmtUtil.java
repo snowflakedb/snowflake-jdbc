@@ -617,16 +617,17 @@ public class StmtUtil {
               + "\"");
 
       setServiceNameHeader(stmtInput, httpRequest);
-////
-//      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-//      String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-//      HttpExecutingContext context = HttpExecutingContextBuilder.forQuery(requestIdStr, requestInfoScrubbed)
-//          .retryTimeout(stmtInput.networkTimeoutInMillis / 1000)
-//          .socketTimeout(stmtInput.socketTimeout)
-//          .maxRetries(stmtInput.maxRetries)
-//          .canceling(stmtInput.canceling)
-//          .httpClientSettingsKey(stmtInput.httpClientSettingsKey)
-//          .build();
+      ////
+      //      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+      //      String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+      //      HttpExecutingContext context = HttpExecutingContextBuilder.forQuery(requestIdStr,
+      // requestInfoScrubbed)
+      //          .retryTimeout(stmtInput.networkTimeoutInMillis / 1000)
+      //          .socketTimeout(stmtInput.socketTimeout)
+      //          .maxRetries(stmtInput.maxRetries)
+      //          .canceling(stmtInput.canceling)
+      //          .httpClientSettingsKey(stmtInput.httpClientSettingsKey)
+      //          .build();
 
       return HttpUtil.executeRequest(
           httpRequest,
