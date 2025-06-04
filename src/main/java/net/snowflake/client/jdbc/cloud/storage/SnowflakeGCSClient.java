@@ -308,6 +308,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.flush();
               outStream.close();
               bodyStream.close();
+              SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile);
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
                     createCaseInsensitiveMap(response.getAllHeaders());
@@ -345,6 +346,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Starting download without presigned URL", false);
           blob.downloadTo(
               localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
+          SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile);
           stopwatch.stop();
           downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);
