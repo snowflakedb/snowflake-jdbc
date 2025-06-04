@@ -68,8 +68,6 @@ public class HttpUtil {
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   private static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS = 300000; // ms
-  static final int DEFAULT_MALFORMED_RESPONSE_MAX_RETRY_COUNT = 3; // ms
-  static final int DEFAULT_MALFORMED_RESPONSE_RETRY_DELAY = 500; // ms
   static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
@@ -988,32 +986,26 @@ public class HttpUtil {
     CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
-    try {
       String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-      HttpExecutingContext context = new HttpExecutingContext(requestIdStr, requestInfoScrubbed);
-      context.setRetryTimeout(retryTimeout);
-      context.setAuthTimeout(authTimeout);
-      context.setOrigSocketTimeout(socketTimeout);
-      context.setMaxRetries(maxRetries);
-      context.setInjectSocketTimeout(injectSocketTimeout);
-      context.setCanceling(canceling);
-      context.setWithoutCookies(withoutCookies);
-      context.setIncludeRetryParameters(includeRetryParameters);
-      context.setIncludeRequestGuid(includeRequestGuid);
-      context.setRetryHTTP403(retryOnHTTP403);
-      context.setUnpackResponse(true);
-      context.setNoRetry(false);
-      context.setLoginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest));
+      HttpExecutingContext context = HttpExecutingContextBuilder.forSimpleRequest(requestIdStr, requestInfoScrubbed)
+          .retryTimeout(retryTimeout)
+          .authTimeout(authTimeout)
+          .origSocketTimeout(socketTimeout)
+          .maxRetries(maxRetries)
+          .injectSocketTimeout(injectSocketTimeout)
+          .canceling(canceling)
+          .withoutCookies(withoutCookies)
+          .includeRetryParameters(includeRetryParameters)
+          .includeRequestGuid(includeRequestGuid)
+          .retryHTTP403(retryOnHTTP403)
+          .unpackResponse(true)
+          .noRetry(false)
+          .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+          .build();
       responseText =
           RestRequest.executeWitRetries(
                   httpClient, httpRequest, context, execTimeData, retryContextManager)
               .getUnpackedCloseableHttpResponse();
-
-      //        } catch (URISyntaxException e) {
-      //            throw new RuntimeException(e);
-    } catch (SnowflakeSQLException e) {
-      throw e;
-    }
 
     logger.debug(
         "Pool: {} Request returned for: {} took {} ms",
