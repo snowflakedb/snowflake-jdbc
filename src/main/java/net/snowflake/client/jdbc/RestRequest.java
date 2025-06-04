@@ -539,24 +539,25 @@ public class RestRequest {
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
-      String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-      String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-      HttpExecutingContext context = HttpExecutingContextBuilder.withRequest(requestIdStr, requestInfoScrubbed)
-          .retryTimeout(retryTimeout)
-          .authTimeout(authTimeout)
-          .origSocketTimeout(socketTimeout)
-          .maxRetries(maxRetries)
-          .injectSocketTimeout(injectSocketTimeout)
-          .canceling(canceling)
-          .withoutCookies(withoutCookies)
-          .includeRetryParameters(includeRetryParameters)
-          .includeRequestGuid(includeRequestGuid)
-          .retryHTTP403(retryHTTP403)
-          .noRetry(noRetry)
-          .unpackResponse(unpackResponse)
-          .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
-          .build();
-      return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
+    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+    String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    HttpExecutingContext context =
+        HttpExecutingContextBuilder.withRequest(requestIdStr, requestInfoScrubbed)
+            .retryTimeout(retryTimeout)
+            .authTimeout(authTimeout)
+            .origSocketTimeout(socketTimeout)
+            .maxRetries(maxRetries)
+            .injectSocketTimeout(injectSocketTimeout)
+            .canceling(canceling)
+            .withoutCookies(withoutCookies)
+            .includeRetryParameters(includeRetryParameters)
+            .includeRequestGuid(includeRequestGuid)
+            .retryHTTP403(retryHTTP403)
+            .noRetry(noRetry)
+            .unpackResponse(unpackResponse)
+            .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+            .build();
+    return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
   }
 
   /**
