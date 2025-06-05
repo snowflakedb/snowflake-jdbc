@@ -1225,6 +1225,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     if (!useVirtualURLNode.isMissingNode()) {
       boolean useVirtualURL = useVirtualURLNode.asBoolean(false);
       stageInfo.setUseVirtualUrl(useVirtualURL);
+    } else {
+      logger.debug("useVirtualUrl property missing from stage info");
     }
   }
 

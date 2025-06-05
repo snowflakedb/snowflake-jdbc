@@ -7,7 +7,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.util.SFPair;
 
-public interface GCSAccessStrategy {
+interface GCSAccessStrategy {
   StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix);
 
   StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix);
