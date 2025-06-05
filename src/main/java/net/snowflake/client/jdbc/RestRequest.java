@@ -1067,9 +1067,7 @@ public class RestRequest {
             false);
       }
       httpExecutingContext.setBreakRetryReason("status code does not need retry");
-      //            httpExecutingContext.resetRetryCount();
       httpExecutingContext.setShouldRetry(false);
-      skipRetrying = true;
       httpExecutingContext.setSkipRetriesBecauseOf200(
           response.getStatusLine().getStatusCode() == 200);
 
@@ -1109,6 +1107,7 @@ public class RestRequest {
                 ErrorCode.NETWORK_ERROR.getMessageCode(),
                 "Exception details: " + e.getMessage()));
       }
+      return true;
     }
     return skipRetrying;
   }
