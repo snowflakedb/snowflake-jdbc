@@ -7,19 +7,29 @@ import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.NoCredentials;
-import com.google.cloud.storage.*;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpStorageOptions;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.StorageOptions;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.util.Map;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 
-public class GCSDefaultAccessStrategy implements GCSAccessStrategy {
+class GCSDefaultAccessStrategy implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSDefaultAccessStrategy.class);
   private Storage gcsClient = null;
 
