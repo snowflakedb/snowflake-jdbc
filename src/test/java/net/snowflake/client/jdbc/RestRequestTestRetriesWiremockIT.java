@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,45 @@ import org.junit.jupiter.api.Test;
 public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
+  private static String originalHost;
+  private static String originalPort;
+  private static String originalProtocol;
+
+  @BeforeAll
+  public static void setupEnv() throws IOException {
+    // Store original values
+    originalHost = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
+    originalPort = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
+    originalProtocol = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
+
+    // Set wiremock values
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
+    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
+  }
+
+  @AfterAll
+  public static void restoreEnv() {
+    // Restore original values if they existed
+    if (originalHost != null) {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", originalHost);
+    } else {
+      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_HOST");
+    }
+    
+    if (originalPort != null) {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", originalPort);
+    } else {
+      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PORT");
+    }
+
+    if (originalPort != null) {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", originalProtocol);
+    } else {
+      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PROTOCOL");
+    }
+  }
 
   @BeforeEach
   public void setUp() throws IOException {
@@ -81,11 +122,6 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   }
 
   private static void executeServerRequest(Properties properties) throws SQLException {
-    Properties props = properties != null ? properties : new Properties();
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
-    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
     Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();
     stmt.executeQuery("SELECT 1");
