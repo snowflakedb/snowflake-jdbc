@@ -59,7 +59,6 @@ public class HttpExecutingContext {
     this.startTime = System.currentTimeMillis();
     this.startTimePerRequest = startTime;
     this.backoff = new DecorrelatedJitterBackoff(getMinBackoffInMillis(), getMaxBackoffInMilli());
-    ;
     this.backoffInMillis = minBackoffMillis;
   }
 
@@ -89,10 +88,6 @@ public class HttpExecutingContext {
 
   public long getElapsedMilliForTransientIssues() {
     return elapsedMilliForTransientIssues;
-  }
-
-  public void setElapsedMilliForTransientIssues(long elapsedMilliForTransientIssues) {
-    this.elapsedMilliForTransientIssues = elapsedMilliForTransientIssues;
   }
 
   public long getRetryTimeoutInMilliseconds() {

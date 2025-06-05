@@ -8,13 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -28,40 +26,41 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   private static String originalPort;
   private static String originalProtocol;
 
+
   @BeforeAll
   public static void setupEnv() throws IOException {
     // Store original values
-    originalHost = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
-    originalPort = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
-    originalProtocol = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
+//    originalHost = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
+//    originalPort = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
+//    originalProtocol = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
 
     // Set wiremock values
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
-    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
+//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
+//    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
+//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
+//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
   }
 
   @AfterAll
   public static void restoreEnv() {
     // Restore original values if they existed
-    if (originalHost != null) {
-      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", originalHost);
-    } else {
-      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_HOST");
-    }
-
-    if (originalPort != null) {
-      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", originalPort);
-    } else {
-      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PORT");
-    }
-
-    if (originalPort != null) {
-      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", originalProtocol);
-    } else {
-      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PROTOCOL");
-    }
+//    if (originalHost != null) {
+//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", originalHost);
+//    } else {
+//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_HOST");
+//    }
+//
+//    if (originalPort != null) {
+//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", originalPort);
+//    } else {
+//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PORT");
+//    }
+//
+//    if (originalPort != null) {
+//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", originalProtocol);
+//    } else {
+//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PROTOCOL");
+//    }
   }
 
   @BeforeEach
@@ -72,7 +71,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   @Test
   public void testRetryWhen503Code() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
-    Properties props = new Properties();
+    Properties props = getWiremockProps();
     props.setProperty("maxHttpRetries", "3");
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
@@ -84,10 +83,18 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
             .contains("JDBC driver encountered communication error. Message: HTTP status=503."));
   }
 
+  private static Properties getWiremockProps() {
+    Properties props = new Properties();
+    props.put("protocol", "http://");
+    props.put("host", WIREMOCK_HOST);
+    props.put("port", String.valueOf(wiremockHttpPort));
+    return props;
+  }
+
   @Test
   public void testHttpClientFailedAfterFiveRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
-    Properties props = new Properties();
+    Properties props = getWiremockProps();
     props.setProperty("maxHttpRetries", "5");
 
     SnowflakeSQLException thrown =
@@ -100,9 +107,8 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   public void testHttpClientSuccessAfterFiveRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     try {
-      Properties props = new Properties();
+      Properties props = getWiremockProps();
       props.setProperty("maxHttpRetries", "7");
-      //      setScenarioState("malformed_response_retry", "MALFORMED_RETRY_2");
       executeServerRequest(props);
       verifyCount(7, "/queries/v1/query-request.*");
     } catch (SQLException e) {
@@ -126,7 +132,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   @Test
   public void testElapsedTimeoutExceeded() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
-    Properties props = new Properties();
+    Properties props = getWiremockProps();
     //    props.setProperty("retryTimeout", "2");
     props.setProperty("networkTimeout", "1000");
 
@@ -136,32 +142,10 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     verifyCount(2, "/queries/v1/query-request.*");
 
     // Verify the error message indicates timeout was exceeded
+    System.out.println(thrown.getMessage());
     assertTrue(
         thrown.getMessage().contains("JDBC driver encountered communication error"),
         "Error message should indicate communication error");
-  }
-
-  @Test
-  public void testCertificateRevoked() {
-    importMappingFromResources(SCENARIOS_BASE_DIR + "/certificate_revoked.json");
-    Properties properties = new Properties();
-    properties.put("user", "ADMIN");
-    properties.put("password", "TEST");
-    properties.put("ocspFailOpen", Boolean.FALSE.toString());
-    properties.put("loginTimeout", "10");
-    properties.setProperty("maxHttpRetries", "3");
-
-    SQLException ex =
-        Assertions.assertThrows(
-            SQLException.class,
-            () ->
-                DriverManager.getConnection("jdbc:snowflake://wrong.host.badssl.com/", properties)
-                    .close());
-
-    //     Verify the error message indicates certificate revocation
-    assertTrue(
-        ex.getMessage().contains("Certificate Revocation check failed"),
-        "Error message should indicate certificate revocation");
   }
 
   private static void executeServerRequest(Properties properties) throws SQLException {

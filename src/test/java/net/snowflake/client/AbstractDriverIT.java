@@ -326,7 +326,10 @@ public class AbstractDriverIT {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
-    return DriverManager.getConnection(params.get("uri"), properties);
+    String uri = properties.getProperty("host") != null && properties.getProperty("port") != null
+            ? String.format("jdbc:snowflake://%s%s:%s", properties.getProperty("protocol"), properties.getProperty("host"), properties.getProperty("port"))
+            : params.get("uri");
+    return DriverManager.getConnection(uri, properties);
   }
 
   /**

@@ -106,7 +106,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    //    assertNull(ex.getCause());
   }
 
   /**
