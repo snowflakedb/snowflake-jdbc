@@ -415,32 +415,7 @@ public abstract class BaseWiremockTest {
       throw new RuntimeException(e);
     }
   }
-
-  /**
-   * Sets the state of a WireMock scenario using the HTTP API.
-   *
-   * @param scenarioName The name of the scenario to modify
-   * @param state The new state to set
-   */
-  //  protected void setScenarioState(String scenarioName, String state) {
-  //    String requestBody = String.format(
-  //        "{\"scenarioName\": \"%s\", \"state\": \"%s\"}",
-  //        scenarioName,
-  //        state);
-  //
-  //    HttpPost postRequest = createWiremockPostRequest(requestBody, "/__admin/scenarios/reset");
-  //    try (CloseableHttpClient client = HttpClients.createDefault();
-  //         CloseableHttpResponse response = client.execute(postRequest)) {
-  //      int statusCode = response.getStatusLine().getStatusCode();
-  //      if (statusCode != 200) {
-  //        throw new RuntimeException(
-  //            String.format("Failed to set scenario state. Status code: %d", statusCode));
-  //      }
-  //    } catch (Exception e) {
-  //      throw new RuntimeException("Failed to set scenario state in WireMock", e);
-  //    }
-  //  }
-
+  
   /**
    * Verifies the count of requests matching a given URL pattern.
    *
