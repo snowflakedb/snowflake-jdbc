@@ -122,7 +122,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   public void testHttpClientSuccessWithoutRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/correct_response.json");
     try {
-      executeServerRequest(null);
+      executeServerRequest(getWiremockProps());
       verifyCount(1, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
