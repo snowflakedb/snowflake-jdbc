@@ -17,6 +17,9 @@ public class HttpExecutingContext {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
+  // retry at least once even if timeout limit has been reached
+  private static final int DEFAULT_RETRY_TIMEOUT = 300;
+
   private final String requestId;
   private final String requestInfoScrubbed;
   private final long startTime;

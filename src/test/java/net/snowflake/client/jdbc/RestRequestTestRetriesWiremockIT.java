@@ -8,11 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -48,7 +50,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     } else {
       SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_HOST");
     }
-    
+
     if (originalPort != null) {
       SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", originalPort);
     } else {
@@ -119,6 +121,47 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Test
+  public void testElapsedTimeoutExceeded() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
+    Properties props = new Properties();
+    //    props.setProperty("retryTimeout", "2");
+    props.setProperty("networkTimeout", "1000");
+
+    SnowflakeSQLException thrown =
+        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
+
+    verifyCount(2, "/queries/v1/query-request.*");
+
+    // Verify the error message indicates timeout was exceeded
+    assertTrue(
+        thrown.getMessage().contains("JDBC driver encountered communication error"),
+        "Error message should indicate communication error");
+  }
+
+  @Test
+  public void testCertificateRevoked() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/certificate_revoked.json");
+    Properties properties = new Properties();
+    properties.put("user", "ADMIN");
+    properties.put("password", "TEST");
+    properties.put("ocspFailOpen", Boolean.FALSE.toString());
+    properties.put("loginTimeout", "10");
+    properties.setProperty("maxHttpRetries", "3");
+
+    SQLException ex =
+        Assertions.assertThrows(
+            SQLException.class,
+            () ->
+                DriverManager.getConnection("jdbc:snowflake://wrong.host.badssl.com/", properties)
+                    .close());
+
+    //     Verify the error message indicates certificate revocation
+    assertTrue(
+        ex.getMessage().contains("Certificate Revocation check failed"),
+        "Error message should indicate certificate revocation");
   }
 
   private static void executeServerRequest(Properties properties) throws SQLException {
