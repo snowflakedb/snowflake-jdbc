@@ -8,6 +8,7 @@ public class RetryContext {
   static final int SECONDS_TO_MILLIS_FACTOR = 1000;
   private long elapsedTimeInMillis;
   private long retryTimeoutInMillis;
+  private long retryCount;
 
   public RetryContext() {}
 
@@ -21,11 +22,20 @@ public class RetryContext {
     return this;
   }
 
+  public RetryContext setRetryCount(long retryCount) {
+    this.retryCount = retryCount;
+    return this;
+  }
+
   private long getRemainingRetryTimeoutInMillis() {
     return retryTimeoutInMillis - elapsedTimeInMillis;
   }
 
   public long getRemainingRetryTimeoutInSeconds() {
     return (getRemainingRetryTimeoutInMillis()) / SECONDS_TO_MILLIS_FACTOR;
+  }
+
+  public long getRetryCount() {
+    return retryCount;
   }
 }
