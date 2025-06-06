@@ -12,8 +12,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,43 +23,6 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   private static String originalHost;
   private static String originalPort;
   private static String originalProtocol;
-
-
-  @BeforeAll
-  public static void setupEnv() throws IOException {
-    // Store original values
-//    originalHost = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
-//    originalPort = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
-//    originalProtocol = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
-
-    // Set wiremock values
-//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", WIREMOCK_HOST);
-//    System.setProperty("JAVA_LOGGING_CONSOLE_STD_OUT", "true");
-//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", "http");
-//    SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", String.valueOf(wiremockHttpPort));
-  }
-
-  @AfterAll
-  public static void restoreEnv() {
-    // Restore original values if they existed
-//    if (originalHost != null) {
-//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_HOST", originalHost);
-//    } else {
-//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_HOST");
-//    }
-//
-//    if (originalPort != null) {
-//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PORT", originalPort);
-//    } else {
-//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PORT");
-//    }
-//
-//    if (originalPort != null) {
-//      SnowflakeUtil.systemSetEnv("SNOWFLAKE_TEST_PROTOCOL", originalProtocol);
-//    } else {
-//      SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_TEST_PROTOCOL");
-//    }
-  }
 
   @BeforeEach
   public void setUp() throws IOException {
@@ -134,6 +95,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
     Properties props = getWiremockProps();
     //    props.setProperty("retryTimeout", "2");
+    props.setProperty("maxHttpRetries", "7");
     props.setProperty("networkTimeout", "1000");
 
     SnowflakeSQLException thrown =
@@ -142,7 +104,6 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     verifyCount(2, "/queries/v1/query-request.*");
 
     // Verify the error message indicates timeout was exceeded
-    System.out.println(thrown.getMessage());
     assertTrue(
         thrown.getMessage().contains("JDBC driver encountered communication error"),
         "Error message should indicate communication error");

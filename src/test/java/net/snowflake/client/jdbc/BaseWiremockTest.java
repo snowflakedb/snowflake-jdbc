@@ -415,7 +415,7 @@ public abstract class BaseWiremockTest {
       throw new RuntimeException(e);
     }
   }
-  
+
   /**
    * Verifies the count of requests matching a given URL pattern.
    *
