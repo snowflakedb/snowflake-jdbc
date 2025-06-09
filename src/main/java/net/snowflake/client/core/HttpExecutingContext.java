@@ -31,6 +31,7 @@ public class HttpExecutingContext {
   private long startTimePerRequest;
   // Used to indicate that this is a login/auth request and will be using the new retry strategy.
   private boolean isLoginRequest;
+  //  Tracks the total time spent handling transient network issues and retries during HTTP requests
   private long elapsedMilliForTransientIssues;
   private long retryTimeout;
   private long authTimeout;
@@ -38,7 +39,7 @@ public class HttpExecutingContext {
   private long backoffInMillis;
   private int origSocketTimeout;
   private String breakRetryReason;
-  private String breakRetryEventNam;
+  private String breakRetryEventName;
   private String lastStatusCodeForRetry;
   private int retryCount;
   private int maxRetries;
@@ -154,12 +155,12 @@ public class HttpExecutingContext {
     this.breakRetryReason = breakRetryReason;
   }
 
-  public String getBreakRetryEventNam() {
-    return breakRetryEventNam;
+  public String getBreakRetryEventName() {
+    return breakRetryEventName;
   }
 
-  public void setBreakRetryEventNam(String breakRetryEventNam) {
-    this.breakRetryEventNam = breakRetryEventNam;
+  public void setBreakRetryEventName(String breakRetryEventName) {
+    this.breakRetryEventName = breakRetryEventName;
   }
 
   public String getLastStatusCodeForRetry() {

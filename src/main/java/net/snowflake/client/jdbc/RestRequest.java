@@ -1027,7 +1027,7 @@ public class RestRequest {
           false);
 
       httpExecutingContext.setBreakRetryReason("certificate revoked error");
-      httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryVertificateRevoked");
+      httpExecutingContext.setBreakRetryEventName("HttpRequestRetryVertificateRevoked");
       httpExecutingContext.setShouldRetry(false);
       return true;
     }
@@ -1119,7 +1119,7 @@ public class RestRequest {
       HttpExecutingContext httpExecutingContext) {
     TelemetryService.getInstance()
         .logHttpRequestTelemetryEvent(
-            httpExecutingContext.getBreakRetryEventNam(),
+            httpExecutingContext.getBreakRetryEventName(),
             request,
             httpExecutingContext.getInjectSocketTimeout(),
             httpExecutingContext.getCanceling(),
@@ -1145,7 +1145,7 @@ public class RestRequest {
           httpExecutingContext.getMaxRetries());
 
       httpExecutingContext.setBreakRetryReason("max retries reached");
-      httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryLimitExceeded");
+      httpExecutingContext.setBreakRetryEventName("HttpRequestRetryLimitExceeded");
       httpExecutingContext.setShouldRetry(false);
       return true;
     }
@@ -1174,7 +1174,7 @@ public class RestRequest {
             httpExecutingContext.getRetryTimeoutInMilliseconds());
 
         httpExecutingContext.setBreakRetryReason("retry timeout");
-        httpExecutingContext.setBreakRetryEventNam("HttpRequestRetryTimeout");
+        httpExecutingContext.setBreakRetryEventName("HttpRequestRetryTimeout");
         httpExecutingContext.setShouldRetry(false);
         return true;
       }

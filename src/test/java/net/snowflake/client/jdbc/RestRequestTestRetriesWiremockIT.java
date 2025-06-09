@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.CORE)
 public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
-  private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings";
+  private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings/restrequest";
   private static String originalHost;
   private static String originalPort;
   private static String originalProtocol;
@@ -96,7 +96,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     Properties props = getWiremockProps();
     //    props.setProperty("retryTimeout", "2");
     props.setProperty("maxHttpRetries", "7");
-    props.setProperty("networkTimeout", "1000");
+    props.setProperty("networkTimeout", "1300");
 
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
