@@ -326,6 +326,7 @@ public class AbstractDriverIT {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
+    properties.put("account", "sfcsupport-waleed_va2");
     return DriverManager.getConnection(params.get("uri"), properties);
   }
 
