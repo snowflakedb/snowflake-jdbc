@@ -85,7 +85,10 @@ public class StreamLoader implements Loader, Runnable {
 
   private List<String> _columns;
 
-  private Map<String, Integer> _vectorColumns = new HashMap<String, Integer>();
+  private Map<String, Integer> _vectorColumnsNameAndSize = new HashMap<String, Integer>();
+
+  // Set vector type to float by default.
+  private String _vectorType = "float";
 
   private List<String> _keys;
 
@@ -603,14 +606,17 @@ public class StreamLoader implements Loader, Runnable {
     }
   }
 
+  public void setVectorColumnType(String vectorType) {
+    this._vectorType = vectorType;
+  }
+
   public void setVectorColumns() {
     try {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
         try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
-          // Check if column type is VECTOR, if true, add column name and size to vector column map.
-          if (rs.getString(6).equalsIgnoreCase("vector")) {
-            _vectorColumns.put(col, rs.getInt(7));
+          if (isColumnTypeVector(rs.getString(6))) {
+            _vectorColumnsNameAndSize.put(col, rs.getInt(7));
           }
         }
       }
@@ -618,6 +624,13 @@ public class StreamLoader implements Loader, Runnable {
       logger.error(e.getMessage(), e);
       abort(new Loader.ConnectionError(Utils.getCause(e)));
     }
+  }
+
+  private boolean isColumnTypeVector(String col) {
+    if (col.equalsIgnoreCase("vector")) {
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -773,7 +786,7 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   Map<String, Integer> getVectorColumns() {
-    return this._vectorColumns;
+    return this._vectorColumnsNameAndSize;
   }
 
   String getColumnsAsString() {
@@ -934,15 +947,21 @@ public class StreamLoader implements Loader, Runnable {
   public String getStageColumnsAsString() {
     // if there are no vector columns in the target table just select * is needed from the staging
     // table.
-    if (_vectorColumns.isEmpty()) {
+    if (_vectorColumnsNameAndSize.isEmpty()) {
       return "*";
     }
 
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < _columns.size(); i++) {
       String colName = _columns.get(i);
-      if (_vectorColumns.containsKey(colName)) {
-        sb.append(colName + "::VECTOR(FLOAT, " + _vectorColumns.get(colName) + ")");
+      if (_vectorColumnsNameAndSize.containsKey(colName)) {
+        sb.append(
+            colName
+                + "::VECTOR("
+                + _vectorType
+                + ", "
+                + _vectorColumnsNameAndSize.get(colName)
+                + ")");
       } else {
         sb.append("\"");
         sb.append(colName);
