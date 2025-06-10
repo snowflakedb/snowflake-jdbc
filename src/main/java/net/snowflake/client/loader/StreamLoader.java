@@ -607,7 +607,7 @@ public class StreamLoader implements Loader, Runnable {
     try {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
-        try (ResultSet rs = metadata.getColumns(_database, _schema, _table, col)) {
+        try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
           // Check if column type is VECTOR, if true, add column name and size to vector column map.
           if (rs.getString(6).equalsIgnoreCase("vector")) {
             _vectorColumns.put(col, rs.getInt(7));
