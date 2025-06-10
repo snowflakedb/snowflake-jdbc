@@ -615,6 +615,7 @@ public class StreamLoader implements Loader, Runnable {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
         try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
+          rs.next();
           if (isColumnTypeVector(rs.getString(6))) {
             _vectorColumnsNameAndSize.put(col, rs.getInt(7));
           }
