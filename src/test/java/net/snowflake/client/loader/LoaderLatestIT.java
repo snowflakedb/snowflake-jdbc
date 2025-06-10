@@ -13,7 +13,6 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -204,7 +203,6 @@ public class LoaderLatestIT extends LoaderBase {
   }
 
   @Test
-  @DontRunOnGithubActions
   private void testVectorColumnInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
@@ -235,7 +233,6 @@ public class LoaderLatestIT extends LoaderBase {
   }
 
   @Test
-  @DontRunOnGithubActions
   private void testMultipleVectorColumnsInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
@@ -267,7 +264,6 @@ public class LoaderLatestIT extends LoaderBase {
   }
 
   @Test
-  @DontRunOnGithubActions
   private void testMultipleTypesWithVectorColumnsInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
