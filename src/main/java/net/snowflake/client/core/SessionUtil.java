@@ -333,11 +333,9 @@ public class SessionUtil {
       }
     }
 
-    if (authenticator.equals(AuthenticatorType.USERNAME_PASSWORD_MFA)) {
-      if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
-          && loginInput.isEnableClientRequestMfaToken()) {
-        loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
-      }
+    if (authenticator.equals(AuthenticatorType.USERNAME_PASSWORD_MFA)
+        && loginInput.isEnableClientRequestMfaToken()) {
+      loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
     }
 
     if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
@@ -416,7 +414,8 @@ public class SessionUtil {
     return !authenticator.equals(AuthenticatorType.OAUTH)
         && !authenticator.equals(AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN)
         && !authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
-        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
+        && !authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS)
+        && !authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY);
   }
 
   private static void obtainAuthAccessTokenAndUpdateInput(SFLoginInput loginInput)
@@ -685,6 +684,7 @@ public class SessionUtil {
       }
 
       if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(
             ClientAuthnParameter.TOKEN.name(),
             loginInput.getWorkloadIdentityAttestation().getCredential());

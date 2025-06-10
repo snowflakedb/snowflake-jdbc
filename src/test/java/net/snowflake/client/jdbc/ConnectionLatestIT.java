@@ -1,9 +1,6 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.NETWORK_ERROR_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -11,7 +8,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -599,21 +595,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
               DriverManager.getConnection(wrongUri, properties);
             });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
     if (TelemetryService.getInstance()
             .getServerDeploymentName()
             .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
         || TelemetryService.getInstance()
             .getServerDeploymentName()
             .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
-      // a connection error response (wrong user and password)
-      // with status code 200 is returned in RT
-      assertThat(
-          "Communication error",
-          e.getErrorCode(),
-          anyOf(
-              equalTo(INVALID_CONNECTION_INFO_CODE),
-              equalTo(BAD_REQUEST_GS_CODE),
-              equalTo(NETWORK_ERROR_CODE)));
 
       // since it returns normal response,
       // the telemetry does not create new event
@@ -625,12 +614,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             equalTo(count));
       }
     } else {
-      // in qa1 and others, 404 http status code should be returned
-      assertThat(
-          "Communication error",
-          e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(
             "Telemetry event has not been reported successfully. Error: "
@@ -848,7 +831,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
       uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
-      connectExpectingError390144(uri, properties);
+      connectExpectingInvalidJWTError(uri, properties);
 
       // test with invalid private key
       privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
@@ -877,7 +860,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         + password;
   }
 
-  private static void connectExpectingError390144(String fullUri, Properties properties) {
+  private static void connectExpectingInvalidJWTError(String fullUri, Properties properties) {
     SQLException e =
         assertThrows(
             SQLException.class, () -> DriverManager.getConnection(fullUri, properties).close());
@@ -963,7 +946,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
       uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
-      connectExpectingError390144(uri, properties);
+      connectExpectingInvalidJWTError(uri, properties);
 
       // test with invalid private key
       privateKeyBase64 = readPrivateKeyFileToBase64Content("invalid_private_key.pem");

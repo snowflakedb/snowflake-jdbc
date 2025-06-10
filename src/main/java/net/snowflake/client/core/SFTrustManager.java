@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -266,10 +265,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
     this.ocspMode = key.getOcspMode();
     this.proxySettingsKey = key;
-    this.trustManager = getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+    this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     checkNewOCSPEndpointAvailability();
 
@@ -1451,6 +1450,15 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         continue; // skipping ROOT CA
       }
       if (i < len - 1) {
+        // Check if the root certificate has been found and stop going down the chain.
+        Certificate issuer = ROOT_CA.get(bcCert.getIssuer().hashCode());
+        if (issuer != null) {
+          logger.debug(
+              "A trusted root certificate found: %s, stopping chain traversal here",
+              bcCert.getIssuer().toString());
+          pairIssuerSubject.add(SFPair.of(issuer, bcChain.get(i)));
+          break;
+        }
         pairIssuerSubject.add(SFPair.of(bcChain.get(i + 1), bcChain.get(i)));
       } else {
         // no root CA certificate is attached in the certificate chain, so
