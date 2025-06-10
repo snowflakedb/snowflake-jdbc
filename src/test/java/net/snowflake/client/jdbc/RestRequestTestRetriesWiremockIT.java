@@ -94,7 +94,6 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   public void testElapsedTimeoutExceeded() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
     Properties props = getWiremockProps();
-    //    props.setProperty("retryTimeout", "2");
     props.setProperty("maxHttpRetries", "7");
     props.setProperty("networkTimeout", "1300");
 
@@ -104,6 +103,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     verifyCount(2, "/queries/v1/query-request.*");
 
     // Verify the error message indicates timeout was exceeded
+    System.out.println("ERROR MESSAGE : "+thrown.getMessage());
     assertTrue(
         thrown.getMessage().contains("JDBC driver encountered communication error"),
         "Error message should indicate communication error");
