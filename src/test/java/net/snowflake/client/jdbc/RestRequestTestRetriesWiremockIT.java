@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.util.Stopwatch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     props.setProperty("maxHttpRetries", "3");
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
-    verifyCount(4, "/queries/v1/query-request.*");
+    verifyRequestCount(4, "/queries/v1/query-request.*");
 
     assertTrue(
         thrown
@@ -61,7 +62,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     assertTrue(thrown.getMessage().contains("Bad chunk header"));
-    verifyCount(6, "/queries/v1/query-request.*");
+    verifyRequestCount(6, "/queries/v1/query-request.*");
   }
 
   @Test
@@ -71,7 +72,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
       Properties props = getWiremockProps();
       props.setProperty("maxHttpRetries", "7");
       executeServerRequest(props);
-      verifyCount(7, "/queries/v1/query-request.*");
+      verifyRequestCount(7, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
     } finally {
@@ -84,7 +85,7 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/correct_response.json");
     try {
       executeServerRequest(getWiremockProps());
-      verifyCount(1, "/queries/v1/query-request.*");
+      verifyRequestCount(1, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -92,18 +93,19 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   @Test
   public void testElapsedTimeoutExceeded() {
-    importMappingFromResources(SCENARIOS_BASE_DIR + "/response503.json");
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     Properties props = getWiremockProps();
     props.setProperty("maxHttpRetries", "7");
-    props.setProperty("networkTimeout", "1300");
-
+    props.setProperty("networkTimeout", "1000");
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     SnowflakeSQLException thrown =
         assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
-
-    verifyCount(2, "/queries/v1/query-request.*");
+    stopwatch.stop();
+    assertTrue(stopwatch.elapsedMillis() > 1000);
+    assertTrue(stopwatch.elapsedMillis() < 3000);
 
     // Verify the error message indicates timeout was exceeded
-    System.out.println("ERROR MESSAGE : "+thrown.getMessage());
     assertTrue(
         thrown.getMessage().contains("JDBC driver encountered communication error"),
         "Error message should indicate communication error");

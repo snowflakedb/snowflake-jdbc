@@ -422,9 +422,7 @@ public abstract class BaseWiremockTest {
    * @param expectedCount The expected number of requests
    * @param urlPattern The URL pattern to match against (supports regex)
    */
-  protected void verifyCount(int expectedCount, String urlPattern) {
-    String url =
-        String.format("http://%s:%d/__admin/requests/count", WIREMOCK_HOST, getAdminPort());
+  protected void verifyRequestCount(int expectedCount, String urlPattern) {
     String requestBody =
         String.format("{\"method\": \"POST\", \"urlPattern\": \"%s\"}", urlPattern);
 

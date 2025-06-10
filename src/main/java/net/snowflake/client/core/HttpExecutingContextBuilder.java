@@ -110,10 +110,6 @@ public class HttpExecutingContextBuilder {
   public static HttpExecutingContextBuilder withRequest(
       String requestId, String requestInfoScrubbed) {
     return new HttpExecutingContextBuilder(requestId, requestInfoScrubbed);
-    //            .retryTimeout(300) // 5 minutes default retry timeout
-    //            .maxRetries(5)     // Default max retries
-    //            .includeRetryParameters(true)
-    //            .includeRequestGuid(true);
   }
 
   /**

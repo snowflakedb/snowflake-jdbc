@@ -74,6 +74,14 @@ public class RestRequest {
   static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
   static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
 
+  static final Set<Class<?>> sslExceptions =
+      new HashSet<>(
+          Arrays.asList(
+              SSLHandshakeException.class,
+              SSLKeyException.class,
+              SSLPeerUnverifiedException.class,
+              SSLProtocolException.class));
+
   /**
    * Execute an HTTP request with retry logic.
    *
@@ -957,11 +965,6 @@ public class RestRequest {
 
   private static Exception handlingNotRetryableException(
       Exception ex, HttpExecutingContext httpExecutingContext) throws SnowflakeSQLLoggedException {
-    Set<Class<?>> sslExceptions = new HashSet<>();
-    sslExceptions.add(SSLHandshakeException.class);
-    sslExceptions.add(SSLKeyException.class);
-    sslExceptions.add(SSLPeerUnverifiedException.class);
-    sslExceptions.add(SSLProtocolException.class);
     Exception savedEx = null;
     if (ex instanceof IllegalStateException) {
       throw new SnowflakeSQLLoggedException(
