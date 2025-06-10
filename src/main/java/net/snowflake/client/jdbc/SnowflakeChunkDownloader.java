@@ -463,6 +463,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       try {
         waitingTime *= WAITING_SECS_MULTIPLIER;
         waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS : waitingTime;
+        System.out.println("BASE: "+ 0 + "WAITING_JITTER_RATIO: "+WAITING_JITTER_RATIO + "waitingTime: "+waitingTime);
         long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime / WAITING_JITTER_RATIO);
         waitingTime += jitter;
         getPrefetchMemRetry++;
