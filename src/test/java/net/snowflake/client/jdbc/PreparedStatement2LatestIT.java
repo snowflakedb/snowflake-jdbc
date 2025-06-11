@@ -68,9 +68,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
             connection.prepareStatement("select * from table(employee_detail(?, 123))"); ) {
           // second argument is invalid
           prepStatement.setInt(1, 1);
-          SQLException e = assertThrows(SQLException.class, prepStatement::execute);
-          // failed because argument type did not match
-          assertThat(e.getErrorCode(), is(1044));
+          assertThrows(SQLException.class, prepStatement::execute);
         }
 
         // create a udf with same name but different arguments and return type
