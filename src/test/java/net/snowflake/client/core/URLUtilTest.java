@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.UnsupportedEncodingException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 public class URLUtilTest {
 
@@ -40,20 +44,18 @@ public class URLUtilTest {
     assertFalse(URLUtil.isValidURL(null));
   }
 
-  @Test
-  void testUrlEncode_ValidString() throws UnsupportedEncodingException {
-    String input = "hello world!";
-    String expected = "hello+world%21"; // URLEncoder replaces spaces with '+'
+  @ParameterizedTest
+  @CsvSource({"'hello world!', hello+world%21", "'', ''"})
+  @DisplayName("URL encoding valid and empty strings")
+  void testUrlEncode_ValidInputs(String input, String expected)
+      throws UnsupportedEncodingException {
     assertEquals(expected, URLUtil.urlEncode(input));
   }
 
-  @Test
-  void testUrlEncode_EmptyString() throws UnsupportedEncodingException {
-    assertEquals("", URLUtil.urlEncode(""));
-  }
-
-  @Test
-  void testUrlEncode_NullString() {
-    assertThrows(NullPointerException.class, () -> URLUtil.urlEncode(null));
+  @ParameterizedTest
+  @NullSource
+  @DisplayName("URL encoding null should throw NullPointerException")
+  void testUrlEncode_NullInput(String input) {
+    assertThrows(NullPointerException.class, () -> URLUtil.urlEncode(input));
   }
 }
