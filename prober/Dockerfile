@@ -17,6 +17,7 @@ RUN apt-get update && \
     curl \
     zip \
     unzip \
+    jq \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,34 +25,22 @@ ENV SDKMAN_DIR="/root/.sdkman"
 
 RUN curl -s "https://get.sdkman.io?rcupdate=false&ci=false" | bash
 
-# Ensure the Java versions are valid SDKMAN identifiers.
-ARG JAVA_VERSIONS="11.0.22-tem 17.0.10-tem"
-# Ensure these Snowflake JDBC versions exist on Maven Central.
-ARG SNOWFLAKE_JDBC_VERSIONS="3.23.2 3.24.2"
-
-# Install Java versions
-RUN \
-  SAVED_IFS=$IFS; \
-  IFS=' '; \
-  for java_version_full in $JAVA_VERSIONS; do \
-    bash -c "source ${SDKMAN_DIR}/bin/sdkman-init.sh && \
-        sdk install java ${java_version_full}"; \
-  done; \
-  IFS=$SAVED_IFS;
-
-# Download specified Snowflake JDBC driver versions from Maven Central
+ARG MATRIX_VERSION='{"11.0.27-tem": ["3.24.2", "3.20.0", "3.22.0", "3.13.6", "3.15.0", "3.18.0", "3.16.1", "3.23.2", "3.14.1", "3.14.4", "3.13.30"], "21.0.7-tem": ["3.24.2", "3.20.0", "3.22.0", "3.13.6", "3.15.0", "3.18.0", "3.16.1", "3.23.2", "3.14.1", "3.14.4", "3.13.30"]}'
 ENV DRIVERS_DIR="/opt/jdbc_drivers"
-RUN mkdir -p ${DRIVERS_DIR}
 
 RUN \
-  SAVED_IFS=$IFS; \
-  IFS=' '; \
-  for jdbc_version in $SNOWFLAKE_JDBC_VERSIONS; do \
-    DRIVER_URL="https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar"; \
-    curl -fSL -o "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVER_URL}" && \
-    mv "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar"; \
-  done; \
-  IFS=$SAVED_IFS;
+    set -ex && \
+    mkdir -p ${DRIVERS_DIR} && \
+    \
+    for java_version_full in $(echo "${MATRIX_VERSION}" | jq -r 'keys_unsorted[]'); do \
+      bash -c "source ${SDKMAN_DIR}/bin/sdkman-init.sh && sdk install java ${java_version_full}"; \
+    done && \
+    \
+    for jdbc_version in $(echo "${MATRIX_VERSION}" | jq -r '.[][]' | sort -u); do \
+      DRIVER_URL="https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar" && \
+      curl -fSL -o "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVER_URL}" && \
+      mv "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar"; \
+    done
 
 WORKDIR /app
 
@@ -60,6 +49,22 @@ RUN mkdir -p com/snowflake/client/jdbc/prober
 
 # Copy the Prober.java source code into the correct package structure
 COPY /src/main/java/com/snowflake/client/jdbc/prober/Prober.java com/snowflake/client/jdbc/prober/Prober.java
+
+RUN \
+    set -ex && \
+    # Find the first available Java version to use as the compiler
+    COMPILE_JAVA_VERSION=$(echo "${MATRIX_VERSION}" | jq -r 'keys_unsorted[0]') && \
+    \
+    # Select the first JDBC version from the first Java version's array
+    COMPILE_JDBC_VERSION=$(echo "${MATRIX_VERSION}" | jq -r --arg jv "${COMPILE_JAVA_VERSION}" '.[$jv][0]') && \
+    COMPILE_JDBC_JAR_PATH="${DRIVERS_DIR}/snowflake-jdbc-${COMPILE_JDBC_VERSION}.jar" && \
+    \
+    COMPILE_COMMAND="source \"${SDKMAN_DIR}/bin/sdkman-init.sh\" >/dev/null 2>&1 && \
+                     sdk use java \"${COMPILE_JAVA_VERSION}\" >/dev/null 2>&1 && \
+                     cd \"${PROBER_APP_DIR}\" && \
+                     javac -cp \".:${COMPILE_JDBC_JAR_PATH}\" com/snowflake/client/jdbc/prober/Prober.java" && \
+    \
+    bash -c "${COMPILE_COMMAND}"
 
 # Copy the entrypoint script into the image and make it executable
 COPY entrypoint.sh /entrypoint.sh
