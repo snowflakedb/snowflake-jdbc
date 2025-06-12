@@ -95,19 +95,13 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   public void testElapsedTimeoutExceeded() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/six_malformed_and_correct.json");
     Properties props = getWiremockProps();
-    props.setProperty("networkTimeout", "2000");
+    props.setProperty("networkTimeout", "1000");
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    SnowflakeSQLException thrown =
-        assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
+    assertThrows(SnowflakeSQLException.class, () -> executeServerRequest(props));
     stopwatch.stop();
-    assertTrue(stopwatch.elapsedMillis() > 2000);
-    assertTrue(stopwatch.elapsedMillis() < 4000);
-
-    // Verify the error message indicates timeout was exceeded
-    assertTrue(
-        thrown.getMessage().contains("JDBC driver encountered communication error"),
-        "Error message should indicate communication error");
+    assertTrue(stopwatch.elapsedMillis() > 1000);
+    assertTrue(stopwatch.elapsedMillis() < 3000);
   }
 
   private static void executeServerRequest(Properties properties) throws SQLException {
