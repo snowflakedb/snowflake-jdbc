@@ -120,7 +120,7 @@ public class RestRequestTest {
     HttpUtil util = new HttpUtil();
     util.setRequestConfig(defaultRequestConfig);
 
-    RestRequest.executeWitRetries(
+    RestRequest.executeWithRetries(
         client,
         new HttpGet(uri),
         retryTimeout, // retry timeout

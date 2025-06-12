@@ -279,7 +279,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Get the file on storage using the presigned url
           HttpResponseContextDto responseDto =
-              RestRequest.executeWitRetries(
+              RestRequest.executeWithRetries(
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
@@ -476,7 +476,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Put the file on storage using the presigned url
           HttpResponse response =
-              RestRequest.executeWitRetries(
+              RestRequest.executeWithRetries(
                       httpClient,
                       httpRequest,
                       session.getNetworkTimeoutInMilli() / 1000, // retry timeout
@@ -958,7 +958,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       // Put the file on storage using the presigned url
       HttpResponse response =
-          RestRequest.executeWitRetries(
+          RestRequest.executeWithRetries(
                   httpClient,
                   httpRequest,
                   networkTimeoutInMilli / 1000, // retry timeout

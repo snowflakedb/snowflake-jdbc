@@ -1004,7 +1004,7 @@ public class HttpUtil {
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .build();
     responseText =
-        RestRequest.executeWitRetries(
+        RestRequest.executeWithRetries(
                 httpClient, httpRequest, context, execTimeData, retryContextManager)
             .getUnpackedCloseableHttpResponse();
 

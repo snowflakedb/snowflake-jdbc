@@ -132,7 +132,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     // fetch the result chunk
     HttpResponse response =
-        RestRequest.executeWitRetries(
+        RestRequest.executeWithRetries(
                 httpClient,
                 httpRequest,
                 context.getNetworkTimeoutInMilli() / 1000, // retry timeout

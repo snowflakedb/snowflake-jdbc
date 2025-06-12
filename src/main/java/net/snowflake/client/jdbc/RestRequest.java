@@ -287,7 +287,7 @@ public class RestRequest {
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryManager)
       throws SnowflakeSQLException {
-    return executeWitRetries(
+    return executeWithRetries(
             httpClient,
             httpRequest,
             retryTimeout,
@@ -473,7 +473,7 @@ public class RestRequest {
    *     State Exception i.e. connection is already shutdown etc
    */
   @SnowflakeJdbcInternalApi
-  public static HttpResponseContextDto executeWitRetries(
+  public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
@@ -489,7 +489,7 @@ public class RestRequest {
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
-    return executeWitRetries(
+    return executeWithRetries(
         httpClient,
         httpRequest,
         retryTimeout,
@@ -530,7 +530,7 @@ public class RestRequest {
    *     State Exception i.e. connection is already shutdown etc
    */
   @SnowflakeJdbcInternalApi
-  public static HttpResponseContextDto executeWitRetries(
+  public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
@@ -565,7 +565,7 @@ public class RestRequest {
             .unpackResponse(unpackResponse)
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .build();
-    return executeWitRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
+    return executeWithRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
   }
 
   /**
@@ -580,7 +580,7 @@ public class RestRequest {
    *     State Exception i.e. connection is already shutdown etc
    */
   @SnowflakeJdbcInternalApi
-  public static HttpResponseContextDto executeWitRetries(
+  public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       HttpExecutingContext httpExecutingContext,
@@ -1037,7 +1037,7 @@ public class RestRequest {
     return skipRetrying;
   }
 
-  private static boolean handleNoRetryiableHttpCode(
+  private static boolean handleNonRetryableHttpCode(
       HttpResponseContextDto dto, HttpExecutingContext httpExecutingContext, boolean skipRetrying) {
     CloseableHttpResponse response = dto.getHttpResponse();
     if (!skipRetrying && isNonRetryableHTTPCode(response, httpExecutingContext.isRetryHTTP403())) {
@@ -1228,7 +1228,7 @@ public class RestRequest {
             skipRetrying -> handleMaxRetriesExceeded(httpExecutingContext, skipRetrying),
             skipRetrying -> handleCertificateRevoked(savedEx, httpExecutingContext, skipRetrying),
             skipRetrying ->
-                handleNoRetryiableHttpCode(responseDto, httpExecutingContext, skipRetrying));
+                handleNonRetryableHttpCode(responseDto, httpExecutingContext, skipRetrying));
 
     // Process each condition using Stream
     boolean skipRetrying =
