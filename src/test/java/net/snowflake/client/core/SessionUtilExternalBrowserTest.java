@@ -1,6 +1,8 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +27,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.internal.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.hamcrest.MatcherAssert;
@@ -166,6 +170,25 @@ public class SessionUtilExternalBrowserTest {
       sub.authenticate();
       MatcherAssert.assertThat(
           "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+
+      sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
+      Mockito.when(loginInput.getDisableConsoleLogin()).thenReturn(false);
+      sub.authenticate();
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+
+      sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
+      Mockito.when(loginInput.getDisableConsoleLogin())
+          .thenAnswer(
+              invocation -> {
+                throw new SocketTimeoutException("Test exception");
+              });
+      try {
+        sub.authenticate();
+        fail("should have failed with an exception.");
+      } catch (SFException ex) {
+        assertTrue(ex.getMessage().contains("External browser authentication failed"));
+      }
     }
   }
 
@@ -285,5 +308,44 @@ public class SessionUtilExternalBrowserTest {
               ds.getConnection();
             });
     assertTrue(e.getMessage().contains("External browser authentication failed"));
+  }
+
+  @Test
+  public void testSessionUtilExternalBrowserWithConsoleLogin() throws Throwable {
+    SFLoginInput loginInput = mock(SFLoginInput.class);
+    when(loginInput.getServerUrl()).thenReturn("https://testaccount.snowflakecomputing.com/");
+    when(loginInput.getAuthenticator())
+        .thenReturn(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+    when(loginInput.getAccountName()).thenReturn("testaccount");
+    when(loginInput.getUserName()).thenReturn("testuser");
+    when(loginInput.getDisableConsoleLogin()).thenReturn(false);
+
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"success\":\"true\",\"data\":{\"proofKey\":\""
+                  + MOCK_PROOF_KEY
+                  + "\","
+                  + " \"ssoUrl\":\""
+                  + MOCK_SSO_URL
+                  + "\"}}");
+
+      SessionUtilExternalBrowser sub = FakeSessionUtilExternalBrowser.createInstance(loginInput);
+      sub.authenticate();
+      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+
+      sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, true);
+      sub.authenticate();
+      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+    }
   }
 }
