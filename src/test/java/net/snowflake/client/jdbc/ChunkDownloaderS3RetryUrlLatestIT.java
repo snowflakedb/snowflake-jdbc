@@ -68,7 +68,7 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
     for (Map.Entry<String, String> entry : sfContext.getChunkHeadersMap().entrySet()) {
       getRequest.addHeader(entry.getKey(), entry.getValue());
     }
-    RestRequest.execute(
+    RestRequest.executeWithRetries(
         httpClient,
         getRequest,
         sfContext.getNetworkTimeoutInMilli() / 1000,
@@ -81,6 +81,7 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
         false, // include retry parameters
         false, // include request GUID
         true,
+        false,
         new ExecTimeTelemetryData()); // retry HTTP 403
 
     assertFalse(getRequest.containsHeader("retryCount"));

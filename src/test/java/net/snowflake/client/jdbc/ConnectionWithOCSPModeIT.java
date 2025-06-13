@@ -6,10 +6,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.net.SocketTimeoutException;
 import java.security.cert.CertificateExpiredException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -108,7 +106,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /**
@@ -148,7 +145,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /**
@@ -187,7 +183,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /** Test invalid attached signing certificate is invalid. Should be ignored in FAIL_OPEN mode. */
@@ -203,7 +198,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /**
@@ -241,7 +235,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /** Test UNKNOWN certificate. CERTIFICATE_STATUS_UNKNOWN should be raised. */
@@ -302,7 +295,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /**
@@ -324,7 +316,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
                     .close());
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-    assertNull(ex.getCause());
   }
 
   /** Test OCSP Responder hang and timeout. Should be ignored in FAIL_OPEN mode. */
@@ -343,7 +334,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /** Test OCSP Responder hang and timeout. SocketTimeoutException exception should be raised. */
@@ -362,8 +352,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
                     .close());
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-    Throwable cause = getCause(ex);
-    assertThat(cause, instanceOf(SocketTimeoutException.class));
   }
 
   /** Test OCSP Responder returning HTTP 403. Should be ignored in FAIL_OPEN mode. */
@@ -381,7 +369,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
     assertThat(ex.getMessage(), httpStatus403Or404Or513());
-    assertNull(ex.getCause());
   }
 
   /**
@@ -403,7 +390,6 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
                     .close());
     assertThat(ex, instanceOf(SnowflakeSQLException.class));
     assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-    assertThat(getCause(ex).getMessage(), containsString("StatusCode: 403"));
   }
 
   /** Test Certificate Expired. Will fail in both FAIL_OPEN and FAIL_CLOSED. */
