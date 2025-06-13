@@ -9,6 +9,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
@@ -412,6 +413,35 @@ public abstract class BaseWiremockTest {
       importMapping(scenario);
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Verifies the count of requests matching a given URL pattern.
+   *
+   * @param expectedCount The expected number of requests
+   * @param urlPattern The URL pattern to match against (supports regex)
+   */
+  protected void verifyRequestCount(int expectedCount, String urlPattern) {
+    String requestBody =
+        String.format("{\"method\": \"POST\", \"urlPattern\": \"%s\"}", urlPattern);
+
+    HttpPost postRequest = createWiremockPostRequest(requestBody, "/__admin/requests/count");
+    try (CloseableHttpClient client = HttpClients.createDefault();
+        CloseableHttpResponse response = client.execute(postRequest)) {
+      String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+      ObjectMapper mapper = new ObjectMapper();
+      Map<String, String> countResponse =
+          mapper.readValue(json, new TypeReference<Map<String, String>>() {});
+      int actualCount = Integer.parseInt(countResponse.get("count"));
+      assertEquals(
+          expectedCount,
+          actualCount,
+          String.format(
+              "Expected %d requests matching pattern '%s', but found %d",
+              expectedCount, urlPattern, actualCount));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to verify request count from WireMock", e);
     }
   }
 }
