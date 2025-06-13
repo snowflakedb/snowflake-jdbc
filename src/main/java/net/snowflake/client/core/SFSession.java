@@ -615,6 +615,7 @@ public class SFSession extends SFBaseSession {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
+    // just a comment
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     performSanityCheckOnProperties();
