@@ -624,7 +624,8 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {}, private key file: {}, private key pwd is {},"
+            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {},"
+            + " private key file: {}, private key base 64: {}, private key pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}, browser response timeout: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
