@@ -58,8 +58,23 @@ public class Prober {
       fetchAndVerifyRows(statement);
       downloadFile(sfConnection);
       compareFetchedDataAndFile(statement, csv);
+
+      cleanupStageAndTable(statement);
     } catch (SQLException e) {
       System.err.println(e.getMessage());
+    }
+  }
+
+  private static void cleanupStageAndTable(Statement statement) {
+    try {
+      statement.executeQuery("DROP STAGE IF EXISTS " + stageName);
+    } catch (SQLException e) {
+      System.err.println("Error dropping stage: " + e.getMessage());
+    }
+    try {
+      statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
+    } catch (SQLException e) {
+      System.err.println("Error dropping table: " + e.getMessage());
     }
   }
 
@@ -162,7 +177,7 @@ public class Prober {
       success = false;
       System.err.println(e.getMessage());
     }
-    System.out.println("{\"success_login\": " + success + "}");
+    System.out.println("cloudprober_driver_jdbc_perform_login{{java_version=" + properties.getProperty("java_version") + ", driver_version=" + properties.getProperty("driver_version") + "} " + (success ? 0 : 1) + "}");
   }
 
   private static void disableLogging() throws IOException {
