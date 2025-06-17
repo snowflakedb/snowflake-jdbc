@@ -8,12 +8,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +60,7 @@ public class Prober {
     PUT_FETCH_GET
   }
 
-  public static void main(String[] args) throws IOException, SQLException {
-    disableLogging();
+  public static void main(String[] args) throws Exception {
     Map<String, String> arguments = parseArguments(args);
 
     String url = "jdbc:snowflake://" + arguments.get("account") + "." + arguments.get("host");
@@ -61,11 +68,13 @@ public class Prober {
     for (Map.Entry<String, String> entry : arguments.entrySet()) {
       props.setProperty(entry.getKey(), entry.getValue());
     }
+    setPrivateKey(props);
+    setupLogging(props);
 
     javaVersion = props.getProperty("java_version");
     driverVersion = props.getProperty("driver_version");
 
-    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))){
+    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
       testLogin(url, props);
     }
     if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
@@ -271,8 +280,9 @@ public class Prober {
     }
   }
 
-  private static void disableLogging() throws IOException {
-    String loggingPropertiesString = ".level=OFF";
+  private static void setupLogging(Properties properties) throws IOException {
+    String loggingPropertiesString = "handlers=java.util.logging.ConsoleHandler\n.level=" + properties.getProperty("log_level");
+    properties.put("JAVA_LOGGING_CONSOLE_STD_OUT", "false");
     try (InputStream propertiesStream = new ByteArrayInputStream(
         loggingPropertiesString.getBytes(StandardCharsets.UTF_8)
     )) {
@@ -281,7 +291,7 @@ public class Prober {
   }
 
   private static void logMetric(String metricName, Status status) {
-    System.out.println(metricName + "{{java_version=" + javaVersion + ", driver_version=" + driverVersion + "} " + status.getCode() + "}");
+    System.out.println(metricName + "{java_version=\"" + javaVersion + "\", driver_version=\"" + driverVersion + "\"} " + status.getCode());
   }
 
   private static Map<String, String> parseArguments(String[] args) {
@@ -340,5 +350,18 @@ public class Prober {
     }
     builder.setCharAt(0, Character.toUpperCase(builder.charAt(0)));
     return builder.toString();
+  }
+
+  private static void setPrivateKey(Properties props) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    String keyStr = new String(Files.readAllBytes(Paths.get(props.getProperty("private_key_file")))).trim();
+    byte[] keyBytes = Base64.getUrlDecoder().decode(keyStr);
+
+    // Convert the DER bytes to a private key object
+    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) keyFactory.generatePrivate(keySpec);
+    props.put("privateKey", privateKey);
+    // Remove the path from properties so the driver does not try to read it
+    props.remove("private_key_file");
   }
 }
