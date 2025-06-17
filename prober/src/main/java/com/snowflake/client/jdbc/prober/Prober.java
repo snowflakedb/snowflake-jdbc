@@ -47,6 +47,11 @@ public class Prober {
     }
   }
 
+  enum Scope {
+    LOGIN,
+    PUT_FETCH_GET
+  }
+
   public static void main(String[] args) throws IOException, SQLException {
     disableLogging();
     Map<String, String> arguments = parseArguments(args);
@@ -60,8 +65,12 @@ public class Prober {
     javaVersion = props.getProperty("java_version");
     driverVersion = props.getProperty("driver_version");
 
-    testLogin(url, props);
-    testPutFetchGet(url, props);
+    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))){
+      testLogin(url, props);
+    }
+    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
+      testPutFetchGet(url, props);
+    }
   }
 
   private static void testLogin(String url, Properties properties) {
