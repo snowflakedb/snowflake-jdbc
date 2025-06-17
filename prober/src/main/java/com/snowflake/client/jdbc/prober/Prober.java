@@ -26,9 +26,31 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static final String stageName = "test_stage";
-  private static final String stageFilePath = "test_file.txt";
-  private static final String tableName = "test_table";
+  private static final String stageName = "test_stage_" + generateRandomString(10);
+  private static final String stageFilePath = "test_file_" + generateRandomString(10) + ".txt";
+  private static final String tableName = "test_table" + generateRandomString(10);
+  private static String javaVersion;
+  private static String driverVersion;
+
+  enum Status {
+    SUCCESS(0),
+    FAILURE(1);
+
+    private final int code;
+
+    Status(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return code;
+    }
+  }
+
+  enum Scope {
+    LOGIN,
+    PUT_FETCH_GET
+  }
 
   public static void main(String[] args) throws IOException, SQLException {
     disableLogging();
@@ -40,113 +62,14 @@ public class Prober {
       props.setProperty(entry.getKey(), entry.getValue());
     }
 
-    testLogin(url, props);
-    testPutFetchGet(url, props);
-  }
+    javaVersion = props.getProperty("java_version");
+    driverVersion = props.getProperty("driver_version");
 
-  private static void testPutFetchGet(String url, Properties properties) {
-    try (Connection connection = DriverManager.getConnection(url, properties);
-         Statement statement = connection.createStatement()) {
-      SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
-      List<String> csv = generateCsv(1000);
-      String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
-      createDataStage(statement);
-      createDataTable(statement);
-
-      uploadFile(sfConnection, csvFile);
-      loadFileIntoTable(statement);
-      fetchAndVerifyRows(statement);
-      downloadFile(sfConnection);
-      compareFetchedDataAndFile(statement, csv);
-    } catch (SQLException e) {
-      System.err.println(e.getMessage());
+    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))){
+      testLogin(url, props);
     }
-  }
-
-  private static void compareFetchedDataAndFile(Statement statement, List<String> csv) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id");
-    for (int i = 1; i < csv.size(); i++) {
-      String csvRow = csv.get(i);
-      String[] csvValues = csvRow.split(",", 3);
-      int listId = Integer.parseInt(csvValues[0]);
-      String listName = csvValues[1];
-      String listEmail = csvValues[2];
-
-      if (!resultSet.next()) {
-        System.out.println("{\"data_integrity_check\": false}");
-        return;
-      }
-      int dbId = resultSet.getInt(1);
-      String dbName = resultSet.getString(2);
-      String dbEmail = resultSet.getString(3);
-
-      boolean idMatch = (dbId == listId);
-      boolean nameMatch = dbName.equals(listName);
-      boolean emailMatch = dbEmail.equals(listEmail);
-      if (!(idMatch && nameMatch && emailMatch)) {
-        System.out.println("{\"data_integrity_check\": false}");
-        return;
-      }
-    }
-    System.out.println("{\"data_integrity_check\": true}");
-  }
-
-  private static String downloadFile(SnowflakeConnection sfConnection) throws SQLException {
-    InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
-    List<String> lines = reader.lines().collect(Collectors.toList());
-    if (lines.size() == 1001) {
-      System.out.println("{\"GET_operation\": true}");
-    } else {
-      System.out.println("{\"GET_operation\": false}");
-    }
-    return lines.stream().collect(Collectors.joining(System.lineSeparator()));
-  }
-
-  private static void fetchAndVerifyRows(Statement statement) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
-    if (resultSet.next()) {
-      int rowCount = resultSet.getInt(1);
-      boolean success = rowCount == 1000;
-      System.out.println("{\"data_transferred_completely\": " + success + "}");
-    } else {
-      System.out.println("{\"data_transferred_completely\": false}");
-    }
-  }
-
-  private static void loadFileIntoTable(Statement statement) throws SQLException {
-    try {
-      statement.executeQuery("copy into " + tableName + " from @" + stageName + "/" + stageFilePath + " FILE_FORMAT = (TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '\"' SKIP_HEADER = 1);");
-      System.out.println("{\"copied_data_from_stage_into_table\": true}");
-    } catch (SQLException e) {
-      System.err.println("Error during copy into table: " + e.getMessage());
-      System.out.println("{\"copied_data_from_stage_into_table\": false}");
-    }
-  }
-
-  private static void uploadFile(SnowflakeConnection sfConnection, String fileContent) throws SQLException {
-    try {
-      sfConnection.uploadStream("@" + stageName, "", new ByteArrayInputStream(fileContent.getBytes()), stageFilePath, false);
-      System.out.println("{\"PUT_operation\": true}");
-    } catch (SQLException e) {
-      System.err.println("Error during file upload: " + e.getMessage());
-      System.out.println("{\"PUT_operation\": false}");
-    }
-  }
-
-  private static void createDataTable(Statement statement) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("CREATE OR REPLACE TABLE " + tableName + " (id int, name text, email text)");
-    if (resultSet.next()) {
-      boolean result = resultSet.getString(1).equals("Table " + tableName.toUpperCase() + " successfully created.");
-      System.out.println("{\"created_table\": " + result + "}");
-    }
-  }
-
-  private static void createDataStage(Statement statement) throws SQLException {
-    ResultSet createStageResult = statement.executeQuery("CREATE OR REPLACE TEMP STAGE " + stageName);
-    if (createStageResult.next()) {
-      boolean success = createStageResult.getString(1).equals("Stage area " + stageName.toUpperCase() + " successfully created.");
-      System.out.println("{\"created_stage\": " + success + "}");
+    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
+      testPutFetchGet(url, props);
     }
   }
 
@@ -161,8 +84,191 @@ public class Prober {
     } catch (SQLException e) {
       success = false;
       System.err.println(e.getMessage());
+      logMetric("cloudprober_driver_jdbc_perform_login", Status.FAILURE);
+      System.exit(1);
     }
-    System.out.println("{\"success_login\": " + success + "}");
+    logMetric("cloudprober_driver_jdbc_perform_login", success ? Status.SUCCESS : Status.FAILURE);
+  }
+
+  private static void testPutFetchGet(String url, Properties properties) {
+    try (Connection connection = DriverManager.getConnection(url, properties);
+         Statement statement = connection.createStatement()) {
+      SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
+      List<String> csv = generateCsv(1000);
+      String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
+      createWarehouse(statement, properties);
+      createDatabase(statement, properties);
+      createSchema(statement, properties);
+      createDataTable(statement);
+      createDataStage(statement);
+
+      uploadFile(sfConnection, csvFile);
+      loadFileIntoTable(statement);
+      fetchAndVerifyRows(statement);
+      downloadFile(sfConnection);
+      compareFetchedDataAndFile(statement, csv);
+
+      cleanupResources(statement);
+    } catch (SQLException e) {
+      System.err.println(e.getMessage());
+      System.exit(1);
+    }
+  }
+
+  private static void createDatabase(Statement statement, Properties properties) throws SQLException {
+    try {
+      String databaseName = properties.getProperty("database", "test_db");
+      statement.executeQuery("CREATE DATABASE IF NOT EXISTS " + databaseName);
+      statement.executeQuery("USE database " + databaseName);
+      logMetric("cloudprober_driver_java_create_database", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error creating database: " + e.getMessage());
+      logMetric("cloudprober_driver_java_create_database", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void createSchema(Statement statement, Properties properties) throws SQLException {
+    try {
+      String schemaName = properties.getProperty("schema", "test_schema");
+      statement.executeQuery("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+      statement.executeQuery("USE SCHEMA " + schemaName);
+      logMetric("cloudprober_driver_java_create_schema", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error creating schema: " + e.getMessage());
+      logMetric("cloudprober_driver_java_create_schema", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void createWarehouse(Statement statement, Properties properties) throws SQLException {
+    try {
+      String warehouseName = properties.getProperty("warehouse", "test_wh");
+      statement.executeQuery("CREATE WAREHOUSE IF NOT EXISTS " + warehouseName + " WAREHOUSE_SIZE='X-SMALL';");
+      statement.executeQuery("USE WAREHOUSE " + warehouseName);
+      logMetric("cloudprober_driver_java_create_warehouse", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error creating warehouse: " + e.getMessage());
+      logMetric("cloudprober_driver_java_create_warehouse", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void cleanupResources(Statement statement) {
+    try {
+      statement.executeQuery("REMOVE @" + stageName);
+      statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
+      logMetric("cloudprober_driver_java_cleanup_resources", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error during cleanup: " + e.getMessage());
+      logMetric("cloudprober_driver_java_cleanup_resources", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void compareFetchedDataAndFile(Statement statement, List<String> csv) throws SQLException {
+    ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id");
+    for (int i = 1; i < csv.size(); i++) {
+      String csvRow = csv.get(i);
+      String[] csvValues = csvRow.split(",", 3);
+      int listId = Integer.parseInt(csvValues[0]);
+      String listName = csvValues[1];
+      String listEmail = csvValues[2];
+
+      if (!resultSet.next()) {
+        logMetric("cloudprober_driver_java_data_integrity", Status.FAILURE);
+        return;
+      }
+      int dbId = resultSet.getInt(1);
+      String dbName = resultSet.getString(2);
+      String dbEmail = resultSet.getString(3);
+
+      boolean idMatch = (dbId == listId);
+      boolean nameMatch = dbName.equals(listName);
+      boolean emailMatch = dbEmail.equals(listEmail);
+      if (!(idMatch && nameMatch && emailMatch)) {
+        logMetric("cloudprober_driver_java_data_integrity", Status.FAILURE);
+        return;
+      }
+    }
+    logMetric("cloudprober_driver_java_data_integrity", Status.SUCCESS);
+  }
+
+  private static String downloadFile(SnowflakeConnection sfConnection) throws SQLException {
+    InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
+    BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
+    List<String> lines = reader.lines().collect(Collectors.toList());
+    if (lines.size() == 1001) {
+      logMetric("cloudprober_driver_java_perform_get", Status.SUCCESS);
+    } else {
+      logMetric("cloudprober_driver_java_perform_get", Status.FAILURE);
+    }
+    return lines.stream().collect(Collectors.joining(System.lineSeparator()));
+  }
+
+  private static void fetchAndVerifyRows(Statement statement) throws SQLException {
+    ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
+    if (resultSet.next()) {
+      int rowCount = resultSet.getInt(1);
+      boolean success = rowCount == 1000;
+      logMetric("cloudprober_driver_java_data_transferred_completely", success ? Status.SUCCESS : Status.FAILURE);
+    } else {
+      logMetric("cloudprober_driver_java_data_transferred_completely", Status.FAILURE);
+    }
+  }
+
+  private static void loadFileIntoTable(Statement statement) throws SQLException {
+    try {
+      statement.executeQuery("copy into " + tableName + " from @" + stageName + "/" + stageFilePath + " FILE_FORMAT = (TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '\"' SKIP_HEADER = 1);");
+      logMetric("cloudprober_driver_java_copy_data_from_stage_into_table", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error during copy into table: " + e.getMessage());
+      logMetric("cloudprober_driver_java_copy_data_from_stage_into_table", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void uploadFile(SnowflakeConnection sfConnection, String fileContent) throws SQLException {
+    try {
+      sfConnection.uploadStream("@" + stageName, "", new ByteArrayInputStream(fileContent.getBytes()), stageFilePath, false);
+      logMetric("cloudprober_driver_java_perform_put", Status.SUCCESS);
+    } catch (SQLException e) {
+      System.err.println("Error during file upload: " + e.getMessage());
+      logMetric("cloudprober_driver_java_perform_put", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void createDataTable(Statement statement) throws SQLException {
+    try {
+      ResultSet resultSet = statement.executeQuery("CREATE OR REPLACE TABLE " + tableName + " (id int, name text, email text)");
+      if (resultSet.next()) {
+        boolean result = resultSet.getString(1).equals("Table " + tableName.toUpperCase() + " successfully created.");
+        logMetric("cloudprober_driver_java_create_table", result ? Status.SUCCESS : Status.FAILURE);
+      } else {
+        logMetric("cloudprober_driver_java_create_table", Status.FAILURE);
+      }
+    } catch (SQLException e) {
+      System.err.println(e.getMessage());
+      logMetric("cloudprober_driver_java_create_table", Status.FAILURE);
+      System.exit(1);
+    }
+  }
+
+  private static void createDataStage(Statement statement) throws SQLException {
+    try {
+      ResultSet createStageResult = statement.executeQuery("CREATE OR REPLACE STAGE " + stageName);
+      if (createStageResult.next()) {
+        boolean result = createStageResult.getString(1).equals("Stage area " + stageName.toUpperCase() + " successfully created.");
+        logMetric("cloudprober_driver_java_create_stage", result ? Status.SUCCESS : Status.FAILURE);
+      } else {
+        logMetric("cloudprober_driver_java_create_stage", Status.FAILURE);
+      }
+    } catch (SQLException e) {
+      System.err.println(e.getMessage());
+      logMetric("cloudprober_driver_java_create_stage", Status.FAILURE);
+      System.exit(1);
+    }
   }
 
   private static void disableLogging() throws IOException {
@@ -172,6 +278,10 @@ public class Prober {
     )) {
       LogManager.getLogManager().readConfiguration(propertiesStream);
     }
+  }
+
+  private static void logMetric(String metricName, Status status) {
+    System.out.println(metricName + "{{java_version=" + javaVersion + ", driver_version=" + driverVersion + "} " + status.getCode() + "}");
   }
 
   private static Map<String, String> parseArguments(String[] args) {
