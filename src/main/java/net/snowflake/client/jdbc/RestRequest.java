@@ -370,14 +370,16 @@ public class RestRequest {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
 
-        String formattedMsg =
-            ex.getMessage()
-                + "\n"
-                + "Verify that the hostnames and portnumbers in SYSTEM$ALLOWLIST are added to your firewall's allowed list.\n"
-                + "To troubleshoot your connection further, you can refer to this article:\n"
-                + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
+        if (!ex.getMessage().contains("Received fatal alert: protocol_version")) { // check if issue is related to Azure PLS TLS negotiation failures, in which case a retry helps (SNOW-2150190)
+          String formattedMsg =
+                  ex.getMessage()
+                          + "\n"
+                          + "Verify that the hostnames and portnumbers in SYSTEM$ALLOWLIST are added to your firewall's allowed list.\n"
+                          + "To troubleshoot your connection further, you can refer to this article:\n"
+                          + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
 
-        throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
+          throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
+        }
 
       } catch (Exception ex) {
 
