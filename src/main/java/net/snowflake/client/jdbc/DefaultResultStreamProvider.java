@@ -132,21 +132,23 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     // fetch the result chunk
     HttpResponse response =
-        RestRequest.execute(
-            httpClient,
-            httpRequest,
-            context.getNetworkTimeoutInMilli() / 1000, // retry timeout
-            context.getAuthTimeout(),
-            context.getSocketTimeout(),
-            0,
-            0, // no socket timeout injection
-            null, // no canceling
-            false, // no cookie
-            false, // no retry parameters in url
-            false, // no request_guid
-            true, // retry on HTTP403 for AWS S3
-            true, // no retry on http request
-            new ExecTimeTelemetryData());
+        RestRequest.executeWithRetries(
+                httpClient,
+                httpRequest,
+                context.getNetworkTimeoutInMilli() / 1000, // retry timeout
+                context.getAuthTimeout(),
+                context.getSocketTimeout(),
+                0,
+                0, // no socket timeout injection
+                null, // no canceling
+                false, // no cookie
+                false, // no retry parameters in url
+                false, // no request_guid
+                true, // retry on HTTP403 for AWS S3
+                true, // no retry on http request
+                false,
+                new ExecTimeTelemetryData())
+            .getHttpResponse();
 
     logger.debug(
         "Thread {} Call chunk#{} returned for URL: {}, response: {}",
