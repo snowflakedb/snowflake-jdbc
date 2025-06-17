@@ -1752,7 +1752,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             metaData.getProcedureColumns(connection.getCatalog(), null, "PROCTEST", "%")) {
           res.next();
           assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
-          assertEquals("id", res.getString("COLUMN_NAME"));
+          assertEquals("\"id\"", res.getString("COLUMN_NAME"));
           assertEquals(
               DatabaseMetaData.procedureColumnResult,
               res.getInt("COLUMN_TYPE")); // procedureColumnResult
@@ -1760,13 +1760,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals("NUMBER", res.getString("TYPE_NAME"));
           assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
           res.next();
-          assertEquals("name", res.getString("COLUMN_NAME"));
+          assertEquals("\"name\"", res.getString("COLUMN_NAME"));
           assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", res.getString("TYPE_NAME"));
           assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
           res.next();
-          assertEquals("address", res.getString("COLUMN_NAME"));
+          assertEquals("\"address\"", res.getString("COLUMN_NAME"));
           assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", res.getString("TYPE_NAME"));
