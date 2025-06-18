@@ -1,10 +1,15 @@
 package net.snowflake.client.core;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -35,6 +40,8 @@ import java.nio.file.Path;
 @org.junit.jupiter.api.Tag("CORE")
 public class CertificateChainTrustValidationTestLatestIT {
 
+    private static final SFLogger logger = SFLoggerFactory.getLogger(CertificateChainTrustValidationTestLatestIT.class);
+
     private static final String CERT_RESOURCE_PATH = "ssl-tests/certs/";
     private static final String TRUST_STORE_FILE_NAME = "truststore.jks";
     private static final String TRUST_STORE_PASSWORD = "changeit";
@@ -58,7 +65,7 @@ public class CertificateChainTrustValidationTestLatestIT {
 
     @BeforeAll
     static void setUpAll() throws Exception {
-        System.out.println("--- Test Setup Started ---");
+        logger.debug("--- Test Setup Started ---");
 
         // Store original JVM properties
         originalTrustStore = System.getProperty("javax.net.ssl.trustStore");
@@ -69,11 +76,11 @@ public class CertificateChainTrustValidationTestLatestIT {
         System.setProperty("javax.net.ssl.trustStore", trustStorePath.toAbsolutePath().toString());
         System.setProperty("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
-        System.out.println("Set JVM property javax.net.ssl.trustStore to: " + System.getProperty("javax.net.ssl.trustStore"));
-        System.out.println("Set JVM property javax.net.ssl.trustStorePassword.");
+        logger.debug("Set JVM property javax.net.ssl.trustStore to: " + System.getProperty("javax.net.ssl.trustStore"));
+        logger.debug("Set JVM property javax.net.ssl.trustStorePassword.");
 
 
-        System.out.println("Verifying chain certificates exist in resources...");
+        logger.debug("Verifying chain certificates exist in resources...");
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + "leaf.crt")) {
             if (is == null) {
                 throw new IllegalStateException("Leaf certificate not found in resources. " +
@@ -85,7 +92,7 @@ public class CertificateChainTrustValidationTestLatestIT {
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        System.out.println("Loading chain certificates from classpath: " + CERT_RESOURCE_PATH + "...");
+        logger.debug("Loading chain certificates from classpath: " + CERT_RESOURCE_PATH + "...");
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + "leaf.crt")) {
             leafCert = (X509Certificate) cf.generateCertificate(is);
         }
@@ -101,15 +108,15 @@ public class CertificateChainTrustValidationTestLatestIT {
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + "st_class2_root.crt")) {
             stClass2RootCert = (X509Certificate) cf.generateCertificate(is);
         }
-        System.out.println("Chain certificates loaded successfully.");
+        logger.debug("Chain certificates loaded successfully.");
 
-        System.out.println("Loading the specific self-signed Amz Root CA 1 for the trust store...");
+        logger.debug("Loading the specific self-signed Amz Root CA 1 for the trust store...");
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + "amz_root_ca1_trust_store.crt")) {
             amzRootCa1SelfSignedForTrustStoreCert = (X509Certificate) cf.generateCertificate(is);
         }
-        System.out.println("Self-signed Amz Root CA 1 for Trust Store loaded.");
+        logger.debug("Self-signed Amz Root CA 1 for Trust Store loaded.");
 
-        System.out.println("Loading trust store from classpath: " + CERT_RESOURCE_PATH + TRUST_STORE_FILE_NAME + "...");
+        logger.debug("Loading trust store from classpath: " + CERT_RESOURCE_PATH + TRUST_STORE_FILE_NAME + "...");
         KeyStore trustStore = KeyStore.getInstance("JKS");
         // Load trust store using the dynamically set property, or directly from classpath if that fails (for robustness)
         // Note: When javax.net.ssl.trustStore is set, default TrustManagerFactory uses it automatically.
@@ -117,17 +124,17 @@ public class CertificateChainTrustValidationTestLatestIT {
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + TRUST_STORE_FILE_NAME)) {
             trustStore.load(is, TRUST_STORE_PASSWORD.toCharArray());
         }
-        System.out.println("Trust store loaded.");
+        logger.debug("Trust store loaded.");
 
         assertTrue(trustStore.containsAlias("rootca1_self_signed_for_ts"), "Trust store MUST contain 'rootca1_self_signed_for_ts' alias.");
-        System.out.println("Trust store content verified: only rootca1_self_signed_for_ts is present as a trust anchor.");
+        logger.debug("Trust store content verified: only rootca1_self_signed_for_ts is present as a trust anchor.");
 
-        System.out.println("Initializing PKIX X509TrustManager...");
+        logger.debug("Initializing PKIX X509TrustManager...");
         sfTrustManager = new SFTrustManager(new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null);
         assertNotNull(sfTrustManager, "PKIX X509TrustManager should be initialized.");
-        System.out.println("PKIX X509TrustManager initialized successfully.");
+        logger.debug("PKIX X509TrustManager initialized successfully.");
 
-        System.out.println("Initializing SunX509 X509TrustManager...");
+        logger.debug("Initializing SunX509 X509TrustManager...");
         TrustManagerFactory sunX509Tmf = TrustManagerFactory.getInstance("SunX509");
         sunX509Tmf.init(trustStore); // Initialize with our explicitly loaded trustStore
         for (TrustManager tm : sunX509Tmf.getTrustManagers()) {
@@ -137,31 +144,31 @@ public class CertificateChainTrustValidationTestLatestIT {
             }
         }
         assertNotNull(sunX509TrustManager, "SunX509 X509TrustManager should be initialized.");
-        System.out.println("SunX509 X509TrustManager initialized successfully.");
+        logger.debug("SunX509 X509TrustManager initialized successfully.");
 
-        System.out.println("--- Test Setup Complete ---");
+        logger.debug("--- Test Setup Complete ---");
     }
 
     @AfterAll
     static void tearDownAll() {
-        System.out.println("--- Test Teardown Started ---");
+        logger.debug("--- Test Teardown Started ---");
         // Restore original JVM properties
         if (originalTrustStore != null) {
             System.setProperty("javax.net.ssl.trustStore", originalTrustStore);
-            System.out.println("Restored javax.net.ssl.trustStore to: " + originalTrustStore);
+            logger.debug("Restored javax.net.ssl.trustStore to: " + originalTrustStore);
         } else {
             System.clearProperty("javax.net.ssl.trustStore");
-            System.out.println("Cleared javax.net.ssl.trustStore property.");
+            logger.debug("Cleared javax.net.ssl.trustStore property.");
         }
 
         if (originalTrustStorePassword != null) {
             System.setProperty("javax.net.ssl.trustStorePassword", originalTrustStorePassword);
-            System.out.println("Restored javax.net.ssl.trustStorePassword.");
+            logger.debug("Restored javax.net.ssl.trustStorePassword.");
         } else {
             System.clearProperty("javax.net.ssl.trustStorePassword");
-            System.out.println("Cleared javax.net.ssl.trustStorePassword property.");
+            logger.debug("Cleared javax.net.ssl.trustStorePassword property.");
         }
-        System.out.println("--- Test Teardown Complete ---");
+        logger.debug("--- Test Teardown Complete ---");
     }
 
     private static InputStream getResourceStream(String resourceName) {
