@@ -667,4 +667,33 @@ public class RestRequestTest {
       elapsedMilliForTransientIssues += backoffInMilli;
     }
   }
+  
+	/*
+	 * @Test public void testIllegalStateExceptionHandling() throws IOException {
+	 * boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+	 * 
+	 * CloseableHttpClient client = mock(CloseableHttpClient.class);
+	 * when(client.execute(any(HttpUriRequest.class))) .thenAnswer( new
+	 * Answer<CloseableHttpResponse>() { int callCount = 0;
+	 * 
+	 * @Override public CloseableHttpResponse answer(InvocationOnMock invocation)
+	 * throws Throwable { return IllegalStateExceptionResponse(); } });
+	 * 
+	 * try { TelemetryService.disable(); assertThrows( SnowflakeSQLException.class,
+	 * () -> execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true,
+	 * false, 1)); } finally { if (telemetryEnabled) { TelemetryService.enable(); }
+	 * else { TelemetryService.disable(); } } }
+	   
+  private CloseableHttpResponse IllegalStateExceptionResponse() throws IllegalStateException {
+	    StatusLine successStatusLine = mock(StatusLine.class);
+	    when(successStatusLine.getStatusCode()).thenThrow(new IllegalStateException("Connection pool is closed"));
+
+	    CloseableHttpResponse successResponse = mock(CloseableHttpResponse.class);
+	    when(successStatusLine.getStatusCode()).thenThrow(new IllegalStateException("Connection pool is closed"));
+
+	    return successResponse;
+	  }
+
+  
+	 */
 }
