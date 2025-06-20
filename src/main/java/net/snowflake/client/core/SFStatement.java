@@ -261,6 +261,20 @@ public class SFStatement extends SFBaseStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
+      // --- Begin gRPC endpoint discovery logic ---
+      JsonNode stablePathNode = jsonResult.path("stablepath");
+      if (!stablePathNode.isMissingNode()) {
+          String grpcHost = stablePathNode.path("grpc_host").asText(null);
+          int grpcPort = stablePathNode.path("grpc_port").asInt(-1);
+          String executorId = stablePathNode.path("executorid").asText(null);
+          // String queryServiceIfVersion = stablePathNode.path("query_service_if_version").asText(null); // unused for now
+
+          if (grpcHost != null && grpcPort > 0 && executorId != null) {
+              GrpcEndpointInfo grpcEndpointInfo = new GrpcEndpointInfo(grpcHost, grpcPort, executorId);
+              session.getSqlHashToGrpcEndpoint().put(sql.hashCode(), grpcEndpointInfo);
+          }
+      }
+      // --- End gRPC endpoint discovery logic ---
       resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult, execTimeData);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
