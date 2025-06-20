@@ -36,6 +36,18 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
+import net.snowflake.queryservice.QueryServiceGrpc;
+import net.snowflake.queryservice.QueryServiceOuterClass.*;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.math.BigDecimal;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+import java.util.Date;
 
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
@@ -199,6 +211,19 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
+    // Check for gRPC endpoint mapping
+    int sqlHash = sql.hashCode();
+    ConcurrentHashMap<Integer, GrpcEndpointInfo> grpcMap = session.getSqlHashToGrpcEndpoint();
+    GrpcEndpointInfo grpcInfo = grpcMap.get(sqlHash);
+    if (grpcInfo != null) {
+      // Call gRPC endpoint and return result
+      try {
+        return callGrpcAndBuildResultSet(grpcInfo, sql, parameterBindings);
+      } catch (Exception e) {
+        throw new SQLException("gRPC call failed", e);
+      }
+    }
+
     resetState();
 
     logger.debug("ExecuteQuery: {}", sql);
@@ -297,7 +322,7 @@ public class SFStatement extends SFBaseStatement {
           statement.cancel(CancellationReason.TIMEOUT);
         } catch (SFException ex) {
           throw new SnowflakeSQLLoggedException(
-              session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
+              statement.session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
         }
         return null;
       }
@@ -953,5 +978,152 @@ public class SFStatement extends SFBaseStatement {
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     return execute(sql, true, parametersBinding, caller, execTimeData);
+  }
+
+  // Helper to call gRPC endpoint and build a dummy SFBaseResultSet
+  private SFBaseResultSet callGrpcAndBuildResultSet(GrpcEndpointInfo grpcInfo, String sql, Map<String, ParameterBindingDTO> parameterBindings) throws Exception {
+    // Build channel and async stub
+    ManagedChannel channel = ManagedChannelBuilder.forAddress(grpcInfo.getHost(), grpcInfo.getPort())
+            .usePlaintext() // TODO: Use TLS in production
+            .build();
+    QueryServiceGrpc.QueryServiceStub stub = QueryServiceGrpc.newStub(channel);
+
+    // Build ExecutorInvocationRequest
+    ExecutorInvocationRequest.Builder execReqBuilder = ExecutorInvocationRequest.newBuilder()
+            .setExecutorId(grpcInfo.getExecutorId());
+    if (parameterBindings != null) {
+        for (ParameterBindingDTO binding : parameterBindings.values()) {
+            String value = binding == null ? null : String.valueOf(binding.getValue());
+            ExecutorInvocationRequest.BindValue.Builder bindBuilder = ExecutorInvocationRequest.BindValue.newBuilder();
+            if (value != null) bindBuilder.setValue(value);
+            execReqBuilder.addBindValues(bindBuilder);
+        }
+    }
+    QueryServiceRequest req = QueryServiceRequest.newBuilder()
+            .setExecutorInvocationRequest(execReqBuilder)
+            .build();
+
+    // Use CompletableFuture to get the first response
+    final CompletableFuture<QueryServiceResponse> responseFuture = new CompletableFuture<>();
+
+    StreamObserver<QueryServiceRequest> requestObserver = stub.execute(new StreamObserver<QueryServiceResponse>() {
+        @Override
+        public void onNext(QueryServiceResponse value) {
+            responseFuture.complete(value);
+        }
+        @Override
+        public void onError(Throwable t) {
+            responseFuture.completeExceptionally(t);
+        }
+        @Override
+        public void onCompleted() {
+            // No-op
+        }
+    });
+
+    // Send the request and complete
+    requestObserver.onNext(req);
+    requestObserver.onCompleted();
+
+    // Wait for the response (timeout 10s)
+    QueryServiceResponse resp = responseFuture.get(10, TimeUnit.SECONDS);
+    StatementResult result = resp.getStatementResult();
+    if (result.hasSuccess()) {
+        // Placeholder: return a dummy SFBaseResultSet
+        // TODO: Adapt result.getSuccess().getResultData() to a real ResultSet
+        return new DummySFBaseResultSet();
+    } else if (result.hasError()) {
+        throw new SQLException("gRPC error: " + result.getError().getResultObject());
+    } else {
+        throw new SQLException("gRPC returned unknown result");
+    }
+  }
+
+  // Dummy placeholder result set
+  private static class DummySFBaseResultSet extends SFBaseResultSet {
+      @Override
+      public String getQueryId() {
+          return null;
+      }
+      @Override
+      public void setStatementType(SFStatementType statementType) {
+          // No-op for dummy implementation
+      }
+      @Override
+      public boolean isLast() {
+          return false;
+      }
+      @Override
+      public boolean isAfterLast() {
+          return false;
+      }
+      @Override
+      public String getString(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public boolean getBoolean(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public byte getByte(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public short getShort(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public int getInt(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public long getLong(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public float getFloat(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public double getDouble(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public byte[] getBytes(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public Time getTime(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public Timestamp getTimestamp(int columnIndex, TimeZone tz) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public java.sql.Date getDate(int columnIndex, TimeZone tz) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public Object getObject(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public Object getObjectWithoutString(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public BigDecimal getBigDecimal(int columnIndex) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public BigDecimal getBigDecimal(int columnIndex, int scale) {
+          throw new UnsupportedOperationException();
+      }
+      @Override
+      public SFStatementType getStatementType() {
+          return null;
+      }
   }
 }

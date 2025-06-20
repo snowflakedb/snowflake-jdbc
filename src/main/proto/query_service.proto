@@ -1,0 +1,52 @@
+
+ option java_package = "net.snowflake.queryservice";
+ 
+// Request to run an Executor with the supplied binds
+message ExecutorInvocationRequest {
+
+  // A user-supplied bind value. Binds of all types are transmitted as strings and casted within XP
+  message BindValue {
+    // If not set, the bind is NULL
+    optional string value = 1;
+  }
+
+  // Globally unique identifier of the Executor
+  required string executor_id = 1;
+
+  // The user-supplied bind values. E.g. 42 and 1337 in CALL MY_STORED_PROC(42, 1337)
+  repeated BindValue bind_values = 2;
+
+  required int32 time_spent_in_gs_and_previous_xp_steps_ms = 3;
+}
+
+// The result of executing a statement.
+message StatementResult {
+  message Success {
+    optional bytes result_data = 1;     // See ExecutionPlatformResource.processStatementResult().
+    required string result_object = 2;  // See ExecutionPlatformResource.reportSuccessForJob().
+  }
+
+  message Error {
+    required string result_object = 1; // See ExecutePlatformResource.reportErrorForJob().
+  }
+  oneof result {
+    Success success = 1;
+    Error error = 2;
+  }
+}
+
+message QueryServiceRequest {
+  required int64 server_id = 1;
+  // Unistore WarpSpeed: Request to execute an Executor
+  required ExecutorInvocationRequest executor_invocation_request = 2;
+}
+
+// The Executor response message from QueryService.
+message QueryServiceResponse {
+  required StatementResult statement_result = 1;
+}
+
+// The gRPC service exposed by SP for query related requests by GS instances.
+service QueryService {
+  rpc Execute(stream QueryServiceRequest) returns (stream QueryServiceResponse) {}
+}

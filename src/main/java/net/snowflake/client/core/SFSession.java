@@ -157,6 +157,9 @@ public class SFSession extends SFBaseSession {
 
   private List<HttpHeadersCustomizer> httpHeadersCustomizers;
 
+  // Map from SQL hash to gRPC endpoint info
+  private final ConcurrentHashMap<Integer, GrpcEndpointInfo> sqlHashToGrpcEndpoint = new ConcurrentHashMap<>();
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -1481,5 +1484,9 @@ public class SFSession extends SFBaseSession {
 
   public List<HttpHeadersCustomizer> getHttpHeadersCustomizers() {
     return httpHeadersCustomizers;
+  }
+
+  public ConcurrentHashMap<Integer, GrpcEndpointInfo> getSqlHashToGrpcEndpoint() {
+    return sqlHashToGrpcEndpoint;
   }
 }
