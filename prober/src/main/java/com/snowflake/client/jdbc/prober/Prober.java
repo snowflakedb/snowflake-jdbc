@@ -63,7 +63,7 @@ public class Prober {
   public static void main(String[] args) throws Exception {
     Map<String, String> arguments = parseArguments(args);
 
-    String url = "jdbc:snowflake://" + arguments.get("account") + "." + arguments.get("host");
+    String url = "jdbc:snowflake://" + arguments.get("host");
     Properties props = new Properties();
     for (Map.Entry<String, String> entry : arguments.entrySet()) {
       props.setProperty(entry.getKey(), entry.getValue());
