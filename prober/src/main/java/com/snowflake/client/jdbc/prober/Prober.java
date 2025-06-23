@@ -353,7 +353,7 @@ public class Prober {
   }
 
   private static void setPrivateKey(Properties props) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-    String keyStr = new String(Files.readAllBytes(Paths.get(props.getProperty("private_key_file")))).trim();
+    String keyStr = new String(Files.readAllBytes(Paths.get(props.getProperty("private_key_file"))), StandardCharsets.UTF_8).trim();
     byte[] keyBytes = Base64.getUrlDecoder().decode(keyStr);
 
     // Convert the DER bytes to a private key object
