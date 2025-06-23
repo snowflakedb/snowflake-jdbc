@@ -1074,8 +1074,6 @@ public class RestRequest {
       httpExecutingContext.setSkipRetriesBecauseOf200(
           response.getStatusLine().getStatusCode() == 200);
 
-      logger.error("Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
-
       try {
         if (response == null || response.getStatusLine().getStatusCode() != 200) {
           logger.error(
