@@ -84,7 +84,7 @@ public class CertificateChainTrustValidationTestLatestIT {
         try (InputStream is = getResourceStream(CERT_RESOURCE_PATH + "leaf.crt")) {
             if (is == null) {
                 throw new IllegalStateException("Leaf certificate not found in resources. " +
-                        "Please ensure the './recreate_all_certs.sh' script was run successfully from your project root.");
+                        "Please ensure the 'test/resources/ssl-tests/generate_certs.sh' script was run successfully.");
             }
         } catch (IOException e) {
             throw new IllegalStateException("Error accessing test resources: " + e.getMessage(), e);
