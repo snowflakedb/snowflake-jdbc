@@ -50,6 +50,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /** Connection integration tests */
 @Tag(TestTags.CONNECTION)
@@ -941,5 +947,172 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         ex.printStackTrace();
       }
     }
+  }
+
+  /**
+   * Integration test for measuring baseline and stablepath latencies using a HYBRID table.
+   *
+   * The test has four main sections: setup, populate, baseline, and stablepath.
+   *
+   * - Setup: Creates a HYBRID table with schema (id INT PRIMARY KEY, payload INT).
+   * - Populate: Loads the table with C rows (id=1..C, payload=random 1..C).
+   * - Baseline: Runs a lookup workload for N seconds, measuring step latencies and logging percentiles every 3 seconds.
+   * - Stablepath: Enables stablepath mode, runs the same workload, and logs as above.
+   *
+   * Each section is logged to a file with a timestamp and section name. Each step in the workload
+   * is measured in milliseconds and tracked in a histogram. Every 3 seconds, the histogram is logged
+   * (P5, P30, P50, P90, P99, P99.9) and reset. The log file is appended to if it already exists.
+   *
+   * The baseline and stablepath workloads both:
+   *   - Start with a random id between 1 and C.
+   *   - For each step, look up the row with the current id, read the payload, and use that as the next id.
+   *   - Each step's duration is measured and recorded in the histogram.
+   *
+   * Switching to stablepath mode is done by setting the session parameter ENABLE_STABLEPATH_GRPC_ENDPOINT=TRUE.
+   *
+   * The log file is /tmp/stablepaths_latency.log.
+   *
+   * Uses a handcrafted histogram implementation (ArrayList<Long> + sort) for percentiles.
+   */
+  @Test
+  public void testStablePathsLatency() throws Exception {
+    final int C = 10_000; // Number of rows in the table
+    final int N = 20; // Duration of each workload section in seconds
+    final int HISTOGRAM_LOG_INTERVAL_SEC = 3; // Histogram log interval in seconds
+    final String TABLE_NAME = "STABLEPATHS_TEST";
+    final String LOG_FILE = "/tmp/stablepaths_latency.log";
+    final String BASELINE = "baseline";
+    final String STABLEPATH = "stablepath";
+    final String SETUP = "setup";
+    final String POPULATE = "populate";
+    final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    Random rand = new Random();
+
+    try (FileWriter log = new FileWriter(LOG_FILE, true)) {
+      // --- SETUP ---
+      // Create a HYBRID table with (id INT PRIMARY KEY, payload INT)
+      log.write(LocalDateTime.now().format(TS_FMT) + " [" + SETUP + "] SECTION START\n");
+      try (Statement stmt = connection.createStatement()) {
+        stmt.execute("DROP TABLE IF EXISTS " + TABLE_NAME);
+        // Create a HYBRID table as required for the test
+        stmt.execute("CREATE HYBRID TABLE " + TABLE_NAME + " (id INT PRIMARY KEY, payload INT)");
+      }
+      // --- POPULATE ---
+      // Populate the table with C rows: id=1..C, payload=random 1..C
+      log.write(LocalDateTime.now().format(TS_FMT) + " [" + POPULATE + "] SECTION START\n");
+      try (PreparedStatement pstmt = connection.prepareStatement(
+              "INSERT INTO " + TABLE_NAME + " (id, payload) VALUES (?, ?)");) {
+        for (int i = 1; i <= C; i++) {
+          pstmt.setInt(1, i);
+          pstmt.setInt(2, 1 + rand.nextInt(C));
+          pstmt.addBatch();
+          if (i % 10_000 == 0) pstmt.executeBatch(); // Batch insert for efficiency
+        }
+        pstmt.executeBatch();
+      }
+      // --- BASELINE ---
+      // Run the baseline workload for N seconds, logging histogram every 3 seconds
+      log.write(LocalDateTime.now().format(TS_FMT) + " [" + BASELINE + "] SECTION START\n");
+      runWorkloadHandcraftedHistogram(connection, TABLE_NAME, C, N, HISTOGRAM_LOG_INTERVAL_SEC, BASELINE, log, rand, TS_FMT);
+      // --- STABLEPATH ---
+      // Enable stablepath mode and run the same workload
+      log.write(LocalDateTime.now().format(TS_FMT) + " [" + STABLEPATH + "] SECTION START\n");
+      try (Statement stmt = connection.createStatement()) {
+        //stmt.execute("ALTER SESSION SET ENABLE_STABLEPATH_GRPC_ENDPOINT=TRUE");
+        stmt.execute("ALTER SESSION SET ENABLE_JOB_DETAILS_TO_S3=FALSE");
+      }
+      runWorkloadHandcraftedHistogram(connection, TABLE_NAME, C, N, HISTOGRAM_LOG_INTERVAL_SEC, STABLEPATH, log, rand, TS_FMT);
+      log.flush();
+    } catch (Exception e) {
+      // Log any error to the log file
+      try (FileWriter log = new FileWriter(LOG_FILE, true)) {
+        log.write(LocalDateTime.now().format(TS_FMT) + " [error] " + e.getMessage() + "\n");
+        log.flush();
+      } catch (IOException ignored) {}
+      throw e;
+    }
+  }
+
+  /**
+   * Runs a lookup workload for N seconds, measuring step latencies and logging percentiles every logIntervalSec seconds.
+   *
+   * Each step:
+   *   - Starts with a random id between 1 and C (first step only).
+   *   - For each step, looks up the row with the current id, reads the payload, and uses that as the next id.
+   *   - Measures the duration of each step in milliseconds and records it in the histogram.
+   *
+   * Every logIntervalSec seconds, logs the P5, P30, P50, P90, P99, and P99.9 latencies and the count, then resets the histogram.
+   *
+   * @param connection JDBC connection
+   * @param tableName Name of the table to query
+   * @param C Number of rows in the table
+   * @param N Duration of the workload in seconds
+   * @param logIntervalSec Interval for logging histogram percentiles
+   * @param section Section name for logging
+   * @param log FileWriter for logging
+   * @param rand Random number generator
+   * @param TS_FMT DateTimeFormatter for timestamps
+   * @throws Exception if any error occurs
+   */
+  private void runWorkloadHandcraftedHistogram(Connection connection, String tableName, int C, int N, int logIntervalSec, String section, FileWriter log, Random rand, DateTimeFormatter TS_FMT) throws Exception {
+    List<Long> durations = new ArrayList<>();
+    long end = System.currentTimeMillis() + N * 1000L;
+    long nextLog = System.currentTimeMillis() + logIntervalSec * 1000L;
+    int currentId = 1 + rand.nextInt(C); // Seed with a random id
+    while (System.currentTimeMillis() < end) {
+      long stepStart = System.nanoTime();
+      int payload = -1;
+      // Lookup the row with the current id and read the payload
+      try (PreparedStatement pstmt = connection.prepareStatement(
+              "SELECT payload FROM " + tableName + " WHERE id = ?")) {
+        pstmt.setInt(1, currentId);
+        try (ResultSet rs = pstmt.executeQuery()) {
+          if (rs.next()) {
+            payload = rs.getInt(1);
+          } else {
+            throw new SQLException("No row found for id=" + currentId);
+          }
+        }
+      }
+      long stepEnd = System.nanoTime();
+      long durationMs = TimeUnit.NANOSECONDS.toMillis(stepEnd - stepStart);
+      durations.add(durationMs);
+      currentId = payload; // Use the payload as the next id
+      // Log histogram every logIntervalSec seconds
+      if (System.currentTimeMillis() >= nextLog) {
+        if (!durations.isEmpty()) {
+          List<Long> sorted = new ArrayList<>(durations);
+          Collections.sort(sorted);
+          int count = sorted.size();
+          long p5 = percentile(sorted, 5);
+          long p30 = percentile(sorted, 30);
+          long p50 = percentile(sorted, 50);
+          long p90 = percentile(sorted, 90);
+          long p99 = percentile(sorted, 99);
+          long p999 = percentile(sorted, 99.9);
+          String trace = String.format(
+                  "%s [%s] P5=%dms P30=%dms P50=%dms P90=%dms P99=%dms P99.9=%dms count=%d\n",
+                  LocalDateTime.now().format(TS_FMT), section,
+                  p5, p30, p50, p90, p99, p999, count);
+          log.write(trace);
+          durations.clear();
+        }
+        nextLog = System.currentTimeMillis() + logIntervalSec * 1000L;
+      }
+    }
+  }
+
+  /**
+   * Returns the value at the given percentile from a sorted list.
+   * For example, percentile(sorted, 90) returns the 90th percentile value.
+   * @param sorted Sorted list of longs
+   * @param percentile Percentile (e.g., 90 for P90, 99.9 for P99.9)
+   * @return Value at the given percentile, or 0 if the list is empty
+   */
+  private long percentile(List<Long> sorted, double percentile) {
+    if (sorted.isEmpty()) return 0;
+    int index = (int) Math.ceil(percentile / 100.0 * sorted.size()) - 1;
+    index = Math.max(0, Math.min(index, sorted.size() - 1));
+    return sorted.get(index);
   }
 }
