@@ -93,10 +93,10 @@ public class Prober {
     } catch (SQLException e) {
       success = false;
       System.err.println(e.getMessage());
-      logMetric("cloudprober_driver_jdbc_perform_login", Status.FAILURE);
+      logMetric("cloudprober_driver_java_perform_login", Status.FAILURE);
       System.exit(1);
     }
-    logMetric("cloudprober_driver_jdbc_perform_login", success ? Status.SUCCESS : Status.FAILURE);
+    logMetric("cloudprober_driver_java_perform_login", success ? Status.SUCCESS : Status.FAILURE);
   }
 
   private static void testPutFetchGet(String url, Properties properties) {
