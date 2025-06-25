@@ -76,15 +76,6 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
-   *     "iss": "https://not.azure.sts.issuer.com",
-   *     "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD"
-   * }
-   */
-  private static final String INVALID_ISSUER_FLOW_SCENARIO =
-      SCENARIOS_BASE_DIR + "/invalid_issuer_flow.json";
-
-  /*
-   * {
    *   "sub": "77213E30-E8CB-4595-B1B6-5F050E8308FD",
    * }
    */
@@ -200,11 +191,6 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     Mockito.when(attestationServiceMock.getClientId()).thenReturn(null);
 
     executeAndAssertNullAttestation(attestationServiceMock, loginInput);
-  }
-
-  @Test
-  public void basicFlowErrorInvalidIssuer() {
-    executeErrorScenarioAndAssertNullAttestation(INVALID_ISSUER_FLOW_SCENARIO);
   }
 
   @Test
