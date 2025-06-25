@@ -41,19 +41,19 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       logger.debug("No AWS region was found.");
       return null;
     }
-    String arn = attestationService.getArn();
-    if (arn == null) {
-      logger.debug("No Caller Identity was found.");
-      return null;
-    }
 
-    String stsHostname = String.format("sts.%s.amazonaws.com", region);
+    String stsHostname = getStsHostname(region);
     Request<Void> request = createStsRequest(stsHostname);
     attestationService.signRequestWithSigV4(request, awsCredentials);
 
     String credential = createBase64EncodedRequestCredential(request);
     return new WorkloadIdentityAttestation(
-        WorkloadIdentityProviderType.AWS, credential, Collections.singletonMap("arn", arn));
+        WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
+  }
+
+  private String getStsHostname(String region) {
+    String domain = region.startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
+    return String.format("sts.%s.%s", region, domain);
   }
 
   private Request<Void> createStsRequest(String hostname) {
