@@ -1221,7 +1221,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Setting up the GCS client ", false);
 
     try {
-      this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      if (stage.getUseVirtualUrl()) {
+        this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
+      } else {
+        this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      }
 
       if (encMat != null) {
         byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
