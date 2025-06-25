@@ -15,8 +15,6 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   private static final String METADATA_FLAVOR_HEADER_NAME = "Metadata-Flavor";
   private static final String METADATA_FLAVOR = "Google";
-  private static final String EXPECTED_GCP_TOKEN_ISSUER = "https://accounts.google.com";
-  private static final String DEFAULT_GCP_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
 
   private final String gcpMetadataServiceBaseUrl;
 
@@ -49,14 +47,6 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
         WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
     if (claims == null) {
       logger.error("Could not extract claims from token");
-      return null;
-    }
-
-    if (!EXPECTED_GCP_TOKEN_ISSUER.equalsIgnoreCase(claims.getIssuer())) {
-      logger.error(
-          "Unexpected token issuer: {}, should be {}",
-          claims.getIssuer(),
-          EXPECTED_GCP_TOKEN_ISSUER);
       return null;
     }
 
