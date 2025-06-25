@@ -366,8 +366,12 @@ public class SessionUtil {
     try {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     } catch (SnowflakeReauthenticationRequest ex) {
-      if (ex.getErrorCode() == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE) {
-        if (loginInput.getOauthRefreshToken() != null) {
+      if (ex.getErrorCode() == Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE
+          && isNativeOAuthOriginalAuthenticator(loginInput)) {
+        if (loginInput.getOauthRefreshToken() != null
+            && AuthenticatorType.OAUTH_AUTHORIZATION_CODE
+                .name()
+                .equals(loginInput.getOriginalAuthenticator())) {
           refreshOAuthAccessTokenAndUpdateInput(loginInput);
         } else {
           loginInput.restoreOriginalAuthenticator();
@@ -376,6 +380,15 @@ public class SessionUtil {
       }
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
+  }
+
+  private static boolean isNativeOAuthOriginalAuthenticator(SFLoginInput loginInput) {
+    return AuthenticatorType.OAUTH_AUTHORIZATION_CODE
+            .name()
+            .equals(loginInput.getOriginalAuthenticator())
+        || AuthenticatorType.OAUTH_CLIENT_CREDENTIALS
+            .name()
+            .equals(loginInput.getOriginalAuthenticator());
   }
 
   private static WorkloadIdentityAttestation getWorkloadIdentityAttestation(SFLoginInput loginInput)
@@ -959,7 +972,11 @@ public class SessionUtil {
           clearAccessTokenCache(loginInput);
 
           logger.debug("OAuth Access Token Expired: {}", errorCode);
-          SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
+          if (AuthenticatorType.OAUTH.name().equals(loginInput.getOriginalAuthenticator())) {
+            SnowflakeUtil.checkErrorAndThrowException(jsonNode);
+          } else {
+            SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
+          }
         }
 
         if (authenticatorType == AuthenticatorType.USERNAME_PASSWORD_MFA) {

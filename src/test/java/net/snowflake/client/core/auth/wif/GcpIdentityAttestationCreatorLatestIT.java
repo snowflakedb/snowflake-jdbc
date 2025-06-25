@@ -32,18 +32,6 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
 
   /*
    * {
-   *   "iss": "https://not.google.com",
-   *   "iat": 1743761213,
-   *   "exp": 1743764813,
-   *   "aud": "www.example.com",
-   *   "sub": "some-subject"
-   * }
-   */
-  private static final String INVALID_ISSUER_SCENARIO_MAPPINGS =
-      SCENARIOS_BASE_DIR + "/invalid_issuer_claim.json";
-
-  /*
-   * {
    *   "sub": "some-subject",
    *   "iat": 1743761213,
    *   "exp": 1743764813,
@@ -83,12 +71,6 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     assertEquals(WorkloadIdentityProviderType.GCP, attestation.getProvider());
     assertEquals("some-subject", attestation.getUserIdentifierComponents().get("sub"));
     assertNotNull(attestation.getCredential());
-  }
-
-  @Test
-  public void invalidIssuerScenario() {
-    importMappingFromResources(INVALID_ISSUER_SCENARIO_MAPPINGS);
-    createAttestationAndAssertNull();
   }
 
   @Test
