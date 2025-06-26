@@ -42,6 +42,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -268,6 +269,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.flush();
               outStream.close();
               bodyStream.close();
+              SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+                  localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
                     createCaseInsensitiveMap(response.getAllHeaders());
@@ -296,7 +299,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           Map<String, String> userDefinedMetadata =
               this.gcsAccessStrategy.download(
                   parallelism, remoteStorageLocation, stageFilePath, localFile);
-
+          SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+              localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
           stopwatch.stop();
           downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);

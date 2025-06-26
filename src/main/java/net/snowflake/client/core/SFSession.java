@@ -578,6 +578,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case OWNER_ONLY_STAGE_FILE_PERMISSIONS_ENABLED:
+          if (propertyValue != null) {
+            setOwnerOnlyStageFilePermissionsEnabled(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
