@@ -139,9 +139,10 @@ public enum SFSessionProperty {
   HTTP_HEADER_CUSTOMIZERS(
       HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY, false, List.class),
 
-  // Used to enable the owner-only stage file permissions feature. This feature will be enabled by default in the next major release.
+  // Used to enable the owner-only stage file permissions feature. This feature will be enabled by
+  // default in the next major release.
   OWNER_ONLY_STAGE_FILE_PERMISSIONS_ENABLED(
-    "ownerOnlyStageFilePermissionsEnabled", false, Boolean.class);
+      "ownerOnlyStageFilePermissionsEnabled", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

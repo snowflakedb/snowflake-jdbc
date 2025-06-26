@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.category.TestTags;
@@ -52,6 +51,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Tag(TestTags.OTHERS)
@@ -913,37 +914,49 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
     }
   }
 
-  @Test
   @DontRunOnWindows
-  public void testDownloadedFilePermissions(@TempDir File tempDir)
-          throws SQLException, IOException {
+  @ParameterizedTest
+  @CsvSource({"true, rwx------", "false, rwxr-xr-x"})
+  public void testDownloadedFilePermissions(
+      boolean ownerOnlyStageFilePermissionsEnabled,
+      String expectedDirectoryPermissions,
+      @TempDir File tempDir)
+      throws SQLException, IOException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
     try (Connection connection = getConnection();
-         Statement statement = connection.createStatement()) {
+        Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE " + stageName);
         SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        sfSession.setOwnerOnlyStageFilePermissionsEnabled(true);
+        sfSession.setOwnerOnlyStageFilePermissionsEnabled(ownerOnlyStageFilePermissionsEnabled);
 
         String command =
-                "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + stageName + " AUTO_COMPRESS=FALSE";
+            "PUT file:///"
+                + getFullPathFileInResource(TEST_DATA_FILE)
+                + " @"
+                + stageName
+                + " AUTO_COMPRESS=FALSE";
         SnowflakeFileTransferAgent sfAgent =
-                new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent.execute());
 
         String tempDirPath = (tempDir.getCanonicalPath() + "/new_directory").replace("\\", "/");
-        String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
+        String getCommand = "GET @" + stageName + " file://" + tempDirPath;
         SnowflakeFileTransferAgent sfAgent1 =
-                new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent1.execute());
         assertEquals(1, sfAgent1.statusRows.size());
         File downloadedFile = new File(tempDirPath, TEST_DATA_FILE);
-        PosixFileAttributes fileAttributes = Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
-        PosixFileAttributes dirAttributes = Files.readAttributes(new File(tempDirPath).toPath(), PosixFileAttributes.class);
+        PosixFileAttributes fileAttributes =
+            Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
+        PosixFileAttributes dirAttributes =
+            Files.readAttributes(new File(tempDirPath).toPath(), PosixFileAttributes.class);
         Set<PosixFilePermission> filePermissions = fileAttributes.permissions();
         Set<PosixFilePermission> tmpDirPermissions = dirAttributes.permissions();
+
         assertEquals(PosixFilePermissions.fromString("rw-------"), filePermissions);
-        assertEquals(PosixFilePermissions.fromString("rwx------"), tmpDirPermissions);
+        assertEquals(
+            PosixFilePermissions.fromString(expectedDirectoryPermissions), tmpDirPermissions);
       } finally {
         statement.execute("DROP STAGE if exists " + stageName);
       }

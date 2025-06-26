@@ -1562,9 +1562,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           boolean created = false;
           if (session.isOwnerOnlyStageFilePermissionsEnabled()) {
             created =
-                    SnowflakeUtil.isWindows()
-                            ? dir.mkdirs()
-                            : createOwnerOnlyPermissionDir(localLocation);
+                SnowflakeUtil.isWindows()
+                    ? dir.mkdirs()
+                    : createOwnerOnlyPermissionDir(localLocation);
           } else {
             created = dir.mkdirs();
           }
