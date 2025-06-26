@@ -951,7 +951,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         PosixFileAttributes dirAttributes =
             Files.readAttributes(new File(tempDirPath).toPath(), PosixFileAttributes.class);
         PosixFileAttributes fileAttributes =
-                Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
+            Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
         Set<PosixFilePermission> tmpDirPermissions = dirAttributes.permissions();
         Set<PosixFilePermission> filePermissions = fileAttributes.permissions();
 

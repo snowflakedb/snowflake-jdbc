@@ -391,7 +391,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         String iv = metaMap.get(AMZ_IV);
 
         myDownload.waitForCompletion();
-        SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+        SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+            localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 

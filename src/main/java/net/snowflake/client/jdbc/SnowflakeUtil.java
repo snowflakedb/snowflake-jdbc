@@ -926,7 +926,8 @@ public class SnowflakeUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  public static void assureOnlyUserAccessibleFilePermissions(File file, boolean isOwnerOnlyStageFilePermissionsEnabled) throws IOException {
+  public static void assureOnlyUserAccessibleFilePermissions(
+      File file, boolean isOwnerOnlyStageFilePermissionsEnabled) throws IOException {
     if (isWindows()) {
       return;
     }

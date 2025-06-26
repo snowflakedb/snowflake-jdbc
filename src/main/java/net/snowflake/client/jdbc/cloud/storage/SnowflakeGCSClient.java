@@ -269,7 +269,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.flush();
               outStream.close();
               bodyStream.close();
-              SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+              SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+                  localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
                     createCaseInsensitiveMap(response.getAllHeaders());
@@ -298,7 +299,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           Map<String, String> userDefinedMetadata =
               this.gcsAccessStrategy.download(
                   parallelism, remoteStorageLocation, stageFilePath, localFile);
-          SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+          SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+              localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
           stopwatch.stop();
           downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);
