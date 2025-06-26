@@ -916,10 +916,11 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
   @DontRunOnWindows
   @ParameterizedTest
-  @CsvSource({"true, rwx------", "false, rwxr-xr-x"})
+  @CsvSource({"true, rwx------, rw-------", "false, rwxr-xr-x, rw-r--r--"})
   public void testDownloadedFilePermissions(
       boolean ownerOnlyStageFilePermissionsEnabled,
       String expectedDirectoryPermissions,
+      String expectedFilePermissions,
       @TempDir File tempDir)
       throws SQLException, IOException {
     String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
@@ -947,16 +948,16 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         assertTrue(sfAgent1.execute());
         assertEquals(1, sfAgent1.statusRows.size());
         File downloadedFile = new File(tempDirPath, TEST_DATA_FILE);
-        PosixFileAttributes fileAttributes =
-            Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
         PosixFileAttributes dirAttributes =
             Files.readAttributes(new File(tempDirPath).toPath(), PosixFileAttributes.class);
-        Set<PosixFilePermission> filePermissions = fileAttributes.permissions();
+        PosixFileAttributes fileAttributes =
+                Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
         Set<PosixFilePermission> tmpDirPermissions = dirAttributes.permissions();
+        Set<PosixFilePermission> filePermissions = fileAttributes.permissions();
 
-        assertEquals(PosixFilePermissions.fromString("rw-------"), filePermissions);
         assertEquals(
             PosixFilePermissions.fromString(expectedDirectoryPermissions), tmpDirPermissions);
+        assertEquals(PosixFilePermissions.fromString(expectedFilePermissions), filePermissions);
       } finally {
         statement.execute("DROP STAGE if exists " + stageName);
       }

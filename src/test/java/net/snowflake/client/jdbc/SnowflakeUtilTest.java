@@ -146,7 +146,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     Path tmp = tempDir.resolve("fileTesting.txt");
     File file = tmp.toFile();
     assertTrue(file.createNewFile());
-    SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(file);
+    SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(file, true);
     PosixFileAttributes attributes = Files.readAttributes(tmp, PosixFileAttributes.class);
     Set<PosixFilePermission> permissions = attributes.permissions();
     assertEquals(PosixFilePermissions.toString(permissions), "rw-------");

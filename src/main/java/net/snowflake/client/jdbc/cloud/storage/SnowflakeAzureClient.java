@@ -336,7 +336,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         transferOptions.setConcurrentRequestCount(parallelism);
 
         blob.downloadToFile(localFilePath, null, transferOptions, opContext);
-        SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile);
+        SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+
+
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 

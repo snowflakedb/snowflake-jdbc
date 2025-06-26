@@ -926,8 +926,13 @@ public class SnowflakeUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  public static void assureOnlyUserAccessibleFilePermissions(File file) throws IOException {
+  public static void assureOnlyUserAccessibleFilePermissions(File file, boolean isOwnerOnlyStageFilePermissionsEnabled) throws IOException {
     if (isWindows()) {
+      return;
+    }
+    if (!isOwnerOnlyStageFilePermissionsEnabled) {
+      // If the owner only stage file permissions are not enabled, we do not need to set the file
+      // permissions.
       return;
     }
     boolean disableUserPermissions =
