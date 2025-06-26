@@ -1385,7 +1385,7 @@ public abstract class SFBaseSession {
     return ownerOnlyStageFilePermissionsEnabled;
   }
 
-  void setOwnerOnlyStageFilePermissionsEnabled(boolean booleanValue) {
+  public void setOwnerOnlyStageFilePermissionsEnabled(boolean booleanValue) {
     this.ownerOnlyStageFilePermissionsEnabled = booleanValue;
   }
 }

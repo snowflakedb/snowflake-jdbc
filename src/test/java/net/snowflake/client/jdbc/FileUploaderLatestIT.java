@@ -21,6 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -29,7 +32,10 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -901,6 +907,43 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         assertTrue(sfAgent1.execute());
         assertEquals(1, sfAgent1.statusRows.size());
+      } finally {
+        statement.execute("DROP STAGE if exists " + stageName);
+      }
+    }
+  }
+
+  @Test
+  @DontRunOnWindows
+  public void testDownloadedFilePermissions(@TempDir File tempDir)
+          throws SQLException, IOException {
+    String stageName = "testStage" + SnowflakeUtil.randomAlphaNumeric(10);
+    try (Connection connection = getConnection();
+         Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("CREATE OR REPLACE STAGE " + stageName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        sfSession.setOwnerOnlyStageFilePermissionsEnabled(true);
+
+        String command =
+                "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + stageName + " AUTO_COMPRESS=FALSE";
+        SnowflakeFileTransferAgent sfAgent =
+                new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent.execute());
+
+        String tempDirPath = (tempDir.getCanonicalPath() + "/new_directory").replace("\\", "/");
+        String getCommand = "GET @" + stageName + " file:///" + tempDirPath;
+        SnowflakeFileTransferAgent sfAgent1 =
+                new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+        assertTrue(sfAgent1.execute());
+        assertEquals(1, sfAgent1.statusRows.size());
+        File downloadedFile = new File(tempDirPath, TEST_DATA_FILE);
+        PosixFileAttributes fileAttributes = Files.readAttributes(downloadedFile.toPath(), PosixFileAttributes.class);
+        PosixFileAttributes dirAttributes = Files.readAttributes(new File(tempDirPath).toPath(), PosixFileAttributes.class);
+        Set<PosixFilePermission> filePermissions = fileAttributes.permissions();
+        Set<PosixFilePermission> tmpDirPermissions = dirAttributes.permissions();
+        assertEquals(PosixFilePermissions.fromString("rw-------"), filePermissions);
+        assertEquals(PosixFilePermissions.fromString("rwx------"), tmpDirPermissions);
       } finally {
         statement.execute("DROP STAGE if exists " + stageName);
       }
