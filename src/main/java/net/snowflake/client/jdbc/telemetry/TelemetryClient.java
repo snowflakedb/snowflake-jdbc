@@ -237,6 +237,7 @@ public class TelemetryClient implements Telemetry {
     if (!isTelemetryEnabled()) {
       return; // if disable, do nothing
     }
+
     synchronized (locker) {
       this.logBatch.add(log);
     }

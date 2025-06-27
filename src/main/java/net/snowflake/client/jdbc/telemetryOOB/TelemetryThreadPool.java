@@ -12,7 +12,8 @@ import java.util.concurrent.TimeUnit;
  * asynchronously to server
  */
 public class TelemetryThreadPool {
-  private ExecutorService uploader;
+  private static final int CORE_POOL_SIZE = 10;
+  private final ExecutorService uploader;
 
   private static TelemetryThreadPool instance;
 
@@ -40,8 +41,8 @@ public class TelemetryThreadPool {
   private TelemetryThreadPool() {
     uploader =
         new ThreadPoolExecutor(
-            10, // core size
-            10, // max size
+            CORE_POOL_SIZE, // core size
+            CORE_POOL_SIZE, // max size
             30L, // keep alive time
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>() // work queue
