@@ -12,7 +12,8 @@ import java.util.concurrent.TimeUnit;
  * asynchronously to server
  */
 public class TelemetryThreadPool {
-  private ExecutorService uploader;
+  private static final int CORE_POOL_SIZE = 10;
+  private final ExecutorService uploader;
 
   private static TelemetryThreadPool instance;
 
@@ -27,15 +28,27 @@ public class TelemetryThreadPool {
     return instance;
   }
 
+  /**
+   * Private constructor to initialize the singleton instance.
+   *
+   * <p>Configures a thread pool that scales dynamically based on workload. The pool starts with
+   * zero threads and will create new threads on demand up to a maximum of 10. If all 10 threads are
+   * active, new tasks are placed in an unbounded queue to await execution.
+   *
+   * <p>To conserve resources, threads that are idle for more than 30 seconds are terminated,
+   * allowing the pool to shrink back to zero during periods of inactivity.
+   */
   private TelemetryThreadPool() {
     uploader =
         new ThreadPoolExecutor(
-            0, // core size
-            10, // max size
-            1, // keep alive time
+            CORE_POOL_SIZE, // core size
+            CORE_POOL_SIZE, // max size
+            30L, // keep alive time
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>() // work queue
             );
+    // Allow core threads to time out and be terminated when idle.
+    ((ThreadPoolExecutor) uploader).allowCoreThreadTimeOut(true);
   }
 
   public void execute(Runnable task) {

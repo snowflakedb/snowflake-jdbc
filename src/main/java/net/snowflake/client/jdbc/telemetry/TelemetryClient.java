@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -27,7 +26,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 /** Telemetry Service Interface */
 public class TelemetryClient implements Telemetry {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(TelemetryClient.class);
 
   private static final String SF_PATH_TELEMETRY = "/telemetry/send";
   private static final String SF_PATH_TELEMETRY_SESSIONLESS = "/telemetry/send/sessionless";
