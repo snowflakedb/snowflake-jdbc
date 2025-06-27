@@ -22,7 +22,6 @@ public class AwsIdentityAttestationCreatorTest {
     AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(null);
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
-    Mockito.when(attestationServiceMock.getArn()).thenReturn("arn:aws:attestation:abc");
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
     assertNull(attestationCreator.createAttestation());
@@ -34,7 +33,6 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.when(attestationServiceMock.getAWSCredentials())
         .thenReturn(new BasicAWSCredentials("abc", "abc"));
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(null);
-    Mockito.when(attestationServiceMock.getArn()).thenReturn("arn:aws:attestation:abc");
 
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock);
@@ -42,27 +40,24 @@ public class AwsIdentityAttestationCreatorTest {
   }
 
   @Test
-  public void shouldReturnNullWhenNoCallerIdentity() {
-    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
-    Mockito.when(attestationServiceMock.getAWSCredentials())
-        .thenReturn(new BasicSessionCredentials("abc", "abc", "aws-session-token"));
-    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("eu-west-1");
-    Mockito.when(attestationServiceMock.getArn()).thenReturn(null);
-
-    AwsIdentityAttestationCreator attestationCreator =
-        new AwsIdentityAttestationCreator(attestationServiceMock);
-    assertNull(attestationCreator.createAttestation());
+  public void shouldReturnProperAttestationWithStandardRegion() throws JsonProcessingException {
+    shouldReturnProperAttestationWithSignedRequestCredential(
+        "us-east-1", "sts.us-east-1.amazonaws.com");
   }
 
   @Test
-  public void shouldReturnProperAttestationWithSignedRequestCredential()
-      throws JsonProcessingException {
+  public void shouldReturnProperAttestationWithCnRegion() throws JsonProcessingException {
+    shouldReturnProperAttestationWithSignedRequestCredential(
+        "cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
+  }
+
+  private void shouldReturnProperAttestationWithSignedRequestCredential(
+      String region, String expectedStsUrl) throws JsonProcessingException {
     AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
     Mockito.doReturn(new BasicSessionCredentials("abc", "abc", "aws-session-token"))
         .when(attestationServiceSpy)
         .getAWSCredentials();
-    Mockito.doReturn("eu-west-1").when(attestationServiceSpy).getAWSRegion();
-    Mockito.doReturn("arn:aws:attestation:abc").when(attestationServiceSpy).getArn();
+    Mockito.doReturn(region).when(attestationServiceSpy).getAWSRegion();
 
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceSpy);
@@ -70,20 +65,19 @@ public class AwsIdentityAttestationCreatorTest {
 
     assertNotNull(attestation);
     assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
-    assertEquals("arn:aws:attestation:abc", attestation.getUserIdentifierComponents().get("arn"));
     assertNotNull(attestation.getCredential());
     Base64.Decoder decoder = Base64.getDecoder();
     String json = new String(decoder.decode(attestation.getCredential()));
     Map<String, Object> credentialMap = new ObjectMapper().readValue(json, HashMap.class);
     assertEquals(3, credentialMap.size());
     assertEquals(
-        "https://sts.eu-west-1.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15",
+        String.format("https://%s?Action=GetCallerIdentity&Version=2011-06-15", expectedStsUrl),
         credentialMap.get("url"));
     assertEquals("POST", credentialMap.get("method"));
     assertNotNull(credentialMap.get("headers"));
     Map<String, String> headersMap = (Map<String, String>) credentialMap.get("headers");
     assertEquals(5, headersMap.size());
-    assertEquals("sts.eu-west-1.amazonaws.com", headersMap.get("Host"));
+    assertEquals(expectedStsUrl, headersMap.get("Host"));
     assertEquals("snowflakecomputing.com", headersMap.get("X-Snowflake-Audience"));
     assertNotNull(headersMap.get("X-Amz-Date"));
     assertTrue(headersMap.get("Authorization").matches("^AWS4-HMAC-SHA256 Credential=.*"));
