@@ -241,7 +241,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                  session.getAuthTimeout(),
+                  0,
                   session.getHttpClientSocketTimeout(),
                   getMaxRetries(),
                   0, // no socket timeout injection
@@ -430,7 +430,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       httpClient,
                       httpRequest,
                       session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                      session.getAuthTimeout(),
+                      0,
                       session.getHttpClientSocketTimeout(),
                       getMaxRetries(),
                       0, // no socket timeout injection
@@ -623,7 +623,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       uploadWithPresignedUrl(
           networkTimeoutInMilli,
-          0, // auth timeout
           (int) HttpUtil.getSocketTimeout().toMillis(),
           meta.getContentEncoding(),
           meta.getUserMetadata(),
@@ -715,7 +714,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Starting upload with downscope token", false);
       uploadWithPresignedUrl(
           session.getNetworkTimeoutInMilli(),
-          session.getAuthTimeout(),
           session.getHttpClientSocketTimeout(),
           meta.getContentEncoding(),
           meta.getUserMetadata(),
@@ -886,7 +884,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   private void uploadWithPresignedUrl(
       int networkTimeoutInMilli,
-      int authTimeout,
       int httpClientSocketTimeout,
       String contentEncoding,
       Map<String, String> metadata,
@@ -927,7 +924,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   networkTimeoutInMilli / 1000, // retry timeout
-                  authTimeout, // auth timeout
+                  0,
                   httpClientSocketTimeout, // socket timeout in ms
                   getMaxRetries(),
                   0, // no socket timeout injection
