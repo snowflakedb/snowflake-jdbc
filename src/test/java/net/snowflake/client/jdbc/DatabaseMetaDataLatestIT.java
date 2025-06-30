@@ -1732,6 +1732,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
+  @DontRunOnGithubActions
   public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
