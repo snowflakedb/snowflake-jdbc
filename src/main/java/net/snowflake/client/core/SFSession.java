@@ -32,6 +32,7 @@ import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.QueryStatusV2;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -111,7 +112,7 @@ public class SFSession extends SFBaseSession {
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
-  private int authTimeout = 0;
+  @Deprecated private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
   private Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
   private Duration httpClientSocketTimeout = HttpUtil.getSocketTimeout();
@@ -155,6 +156,8 @@ public class SFSession extends SFBaseSession {
 
   private boolean javaUtilLoggingConsoleOut = false;
   private String javaUtilLoggingConsoleOutThreshold = null;
+
+  private List<HttpHeadersCustomizer> httpHeadersCustomizers;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -231,7 +234,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 get,
                 loginTimeout,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 maxHttpRetries,
                 getHttpClientKey());
@@ -771,7 +774,7 @@ public class SFSession extends SFBaseSession {
     TelemetryService.disableOOBTelemetry();
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
-    HttpUtil.initHttpClient(httpClientSettingsKey, null);
+    HttpUtil.initHttpClient(httpClientSettingsKey, null, httpHeadersCustomizers);
     HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
     HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
 
@@ -1152,7 +1155,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 postRequest,
                 SF_HEARTBEAT_TIMEOUT,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 0,
                 getHttpClientKey());
@@ -1486,5 +1489,13 @@ public class SFSession extends SFBaseSession {
             + " If this is unintended then disable diagnostics check by removing the "
             + SFSessionProperty.ENABLE_DIAGNOSTICS
             + " connection parameter");
+  }
+
+  public void setHttpHeadersCustomizers(List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    this.httpHeadersCustomizers = httpHeadersCustomizers;
+  }
+
+  public List<HttpHeadersCustomizer> getHttpHeadersCustomizers() {
+    return httpHeadersCustomizers;
   }
 }

@@ -6,8 +6,6 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -21,6 +19,7 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +28,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUseDPoPNonceException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -42,10 +40,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -64,15 +59,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
-import org.apache.http.util.EntityUtils;
 
 /** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
-
-  static final String ERROR_FIELD_NAME = "error";
-  static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
-  static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
@@ -86,7 +76,6 @@ public class HttpUtil {
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
-
   private static Duration connectionTimeout;
   private static Duration socketTimeout;
 
@@ -290,6 +279,24 @@ public class HttpUtil {
    */
   public static CloseableHttpClient buildHttpClient(
       @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
+    return buildHttpClient(key, ocspCacheFile, downloadUnCompressed, null);
+  }
+
+  /**
+   * Build an Http client using our set of default.
+   *
+   * @param key Key to HttpClient hashmap containing OCSP mode and proxy information, could be null
+   * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
+   *     used.
+   * @param downloadUnCompressed Whether the HTTP client should be built requesting no decompression
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object
+   */
+  public static CloseableHttpClient buildHttpClient(
+      @Nullable HttpClientSettingsKey key,
+      File ocspCacheFile,
+      boolean downloadUnCompressed,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
     logger.debug(
         "Building http client with client settings key: {}, ocsp cache file: {}, download uncompressed: {}",
         key != null ? key.toString() : null,
@@ -422,6 +429,12 @@ public class HttpUtil {
         logger.debug("Disabling content compression for http client");
         httpClientBuilder.disableContentCompression();
       }
+      if (httpHeadersCustomizers != null && !httpHeadersCustomizers.isEmpty()) {
+        logger.debug("Setting up http headers customizers");
+        httpClientBuilder.setRetryHandler(new AttributeEnhancingHttpRequestRetryHandler());
+        httpClientBuilder.addInterceptorLast(
+            new HeaderCustomizerHttpRequestInterceptor(httpHeadersCustomizers));
+      }
       return httpClientBuilder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
@@ -464,7 +477,7 @@ public class HttpUtil {
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient getHttpClient(HttpClientSettingsKey ocspAndProxyKey) {
-    return initHttpClient(ocspAndProxyKey, null);
+    return initHttpClient(ocspAndProxyKey, null, null);
   }
 
   /**
@@ -475,7 +488,31 @@ public class HttpUtil {
    */
   public static CloseableHttpClient getHttpClientWithoutDecompression(
       HttpClientSettingsKey ocspAndProxyKey) {
-    return initHttpClientWithoutDecompression(ocspAndProxyKey, null);
+    return initHttpClientWithoutDecompression(ocspAndProxyKey, null, null);
+  }
+
+  /**
+   * Gets HttpClient with insecureMode false
+   *
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient getHttpClient(
+      HttpClientSettingsKey ocspAndProxyKey, List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    return initHttpClient(ocspAndProxyKey, null, httpHeadersCustomizers);
+  }
+
+  /**
+   * Gets HttpClient with insecureMode false and disabling decompression
+   *
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient getHttpClientWithoutDecompression(
+      HttpClientSettingsKey ocspAndProxyKey, List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    return initHttpClientWithoutDecompression(ocspAndProxyKey, null, httpHeadersCustomizers);
   }
 
   /**
@@ -489,7 +526,7 @@ public class HttpUtil {
       HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
     return httpClientWithoutDecompression.computeIfAbsent(
-        key, k -> buildHttpClient(key, ocspCacheFile, true));
+        key, k -> buildHttpClient(key, ocspCacheFile, true, null));
   }
 
   /**
@@ -502,7 +539,42 @@ public class HttpUtil {
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
     return httpClient.computeIfAbsent(
-        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled(), null));
+  }
+
+  /**
+   * Accessor for the HTTP client singleton.
+   *
+   * @param key contains information needed to build specific HttpClient
+   * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient initHttpClientWithoutDecompression(
+      HttpClientSettingsKey key,
+      File ocspCacheFile,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    updateRoutePlanner(key);
+    return httpClientWithoutDecompression.computeIfAbsent(
+        key, k -> buildHttpClient(key, ocspCacheFile, true, httpHeadersCustomizers));
+  }
+
+  /**
+   * Accessor for the HTTP client singleton.
+   *
+   * @param key contains information needed to build specific HttpClient
+   * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
+   * @param httpHeadersCustomizers List of HTTP headers customizers
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient initHttpClient(
+      HttpClientSettingsKey key,
+      File ocspCacheFile,
+      List<HttpHeadersCustomizer> httpHeadersCustomizers) {
+    updateRoutePlanner(key);
+    return httpClient.computeIfAbsent(
+        key,
+        k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled(), httpHeadersCustomizers));
   }
 
   /**
@@ -622,7 +694,7 @@ public class HttpUtil {
         false, // no retry parameter
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
-        getHttpClient(ocspAndProxyKey),
+        getHttpClient(ocspAndProxyKey, null),
         new ExecTimeTelemetryData(),
         null);
   }
@@ -680,7 +752,7 @@ public class HttpUtil {
         false,
         false,
         false,
-        getHttpClient(ocspAndProxyAndGzipKey),
+        getHttpClient(ocspAndProxyAndGzipKey, null),
         new ExecTimeTelemetryData(),
         null);
   }
@@ -860,7 +932,7 @@ public class HttpUtil {
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        getHttpClient(ocspAndProxyKey),
+        getHttpClient(ocspAndProxyKey, null),
         execTimeData,
         retryContextManager);
   }
@@ -905,80 +977,36 @@ public class HttpUtil {
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager)
       throws SnowflakeSQLException, IOException {
-    // HttpRequest.toString() contains request URI. Scrub any credentials, if
-    // present, before logging
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    String responseText = "";
 
     logger.debug(
         "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
 
-    String theString;
-    StringWriter writer = null;
     CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
-    if (logger.isDebugEnabled()) {
-      stopwatch = new Stopwatch();
-      stopwatch.start();
-    }
-
-    try {
-      response =
-          RestRequest.execute(
-              httpClient,
-              httpRequest,
-              retryTimeout,
-              authTimeout,
-              socketTimeout,
-              maxRetries,
-              injectSocketTimeout,
-              canceling,
-              withoutCookies,
-              includeRetryParameters,
-              includeRequestGuid,
-              retryOnHTTP403,
-              execTimeData,
-              retryContextManager);
-      if (logger.isDebugEnabled() && stopwatch != null) {
-        stopwatch.stop();
-      }
-
-      if (response == null || response.getStatusLine().getStatusCode() != 200) {
-        logger.error("Error executing request: {}", requestInfoScrubbed);
-
-        if (response != null
-            && response.getStatusLine().getStatusCode() == 400
-            && response.getEntity() != null) {
-          checkForDPoPNonceError(response);
-        }
-
-        SnowflakeUtil.logResponseDetails(response, logger);
-
-        if (response != null) {
-          EntityUtils.consume(response.getEntity());
-        }
-
-        // We throw here exception if timeout was reached for login
-        throw new SnowflakeSQLException(
-            SqlState.IO_ERROR,
-            ErrorCode.NETWORK_ERROR.getMessageCode(),
-            "HTTP status="
-                + ((response != null)
-                    ? response.getStatusLine().getStatusCode()
-                    : "null response"));
-      }
-
-      execTimeData.setResponseIOStreamStart();
-      writer = new StringWriter();
-      try (InputStream ins = response.getEntity().getContent()) {
-        IOUtils.copy(ins, writer, "UTF-8");
-      }
-      theString = writer.toString();
-      execTimeData.setResponseIOStreamEnd();
-    } finally {
-      IOUtils.closeQuietly(writer);
-      IOUtils.closeQuietly(response);
-    }
+    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+    HttpExecutingContext context =
+        HttpExecutingContextBuilder.forSimpleRequest(requestIdStr, requestInfoScrubbed)
+            .retryTimeout(retryTimeout)
+            .authTimeout(authTimeout)
+            .origSocketTimeout(socketTimeout)
+            .maxRetries(maxRetries)
+            .injectSocketTimeout(injectSocketTimeout)
+            .canceling(canceling)
+            .withoutCookies(withoutCookies)
+            .includeRetryParameters(includeRetryParameters)
+            .includeRequestGuid(includeRequestGuid)
+            .retryHTTP403(retryOnHTTP403)
+            .unpackResponse(true)
+            .noRetry(false)
+            .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+            .build();
+    responseText =
+        RestRequest.executeWithRetries(
+                httpClient, httpRequest, context, execTimeData, retryContextManager)
+            .getUnpackedCloseableHttpResponse();
 
     logger.debug(
         "Pool: {} Request returned for: {} took {} ms",
@@ -986,23 +1014,7 @@ public class HttpUtil {
         requestInfoScrubbed,
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
-    return theString;
-  }
-
-  private static void checkForDPoPNonceError(HttpResponse response) throws IOException {
-    String errorResponse = EntityUtils.toString(response.getEntity());
-    if (!isNullOrEmpty(errorResponse)) {
-      ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-      JsonNode rootNode = objectMapper.readTree(errorResponse);
-      JsonNode errorNode = rootNode.get(ERROR_FIELD_NAME);
-      if (errorNode != null
-          && errorNode.isValueNode()
-          && errorNode.isTextual()
-          && errorNode.textValue().equals(ERROR_USE_DPOP_NONCE)) {
-        throw new SnowflakeUseDPoPNonceException(
-            response.getFirstHeader(DPOP_NONCE_HEADER_NAME).getValue());
-      }
-    }
+    return responseText;
   }
 
   // This is a workaround for JDK-7036144.

@@ -36,6 +36,8 @@ public class StageInfo implements Serializable {
   private boolean useS3RegionalUrl;
   // whether to use regional URL (AWS and GCS only)
   private boolean useRegionalUrl;
+  // whether to use virtual style URLs (GCP in SPCS only)
+  private boolean useVirtualUrl;
   private Properties proxyProperties;
 
   /*
@@ -187,6 +189,16 @@ public class StageInfo implements Serializable {
   @SnowflakeJdbcInternalApi
   public boolean getUseRegionalUrl() {
     return useRegionalUrl;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setUseVirtualUrl(boolean useVirtualUrl) {
+    this.useVirtualUrl = useVirtualUrl;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public boolean getUseVirtualUrl() {
+    return useVirtualUrl;
   }
 
   private static boolean isSpecified(String arg) {

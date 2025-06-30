@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -118,26 +121,34 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
         context.getChunkIndex(),
         context.getResultChunk().getScrubbedUrl());
 
+    SFBaseSession session = context.getSession();
+    List<HttpHeadersCustomizer> headersCustomizers = null;
+    if (session instanceof SFSession) {
+      headersCustomizers = ((SFSession) session).getHttpHeadersCustomizers();
+    }
     CloseableHttpClient httpClient =
-        HttpUtil.getHttpClient(context.getChunkDownloader().getHttpClientSettingsKey());
+        HttpUtil.getHttpClient(
+            context.getChunkDownloader().getHttpClientSettingsKey(), headersCustomizers);
 
     // fetch the result chunk
     HttpResponse response =
-        RestRequest.execute(
-            httpClient,
-            httpRequest,
-            context.getNetworkTimeoutInMilli() / 1000, // retry timeout
-            context.getAuthTimeout(),
-            context.getSocketTimeout(),
-            0,
-            0, // no socket timeout injection
-            null, // no canceling
-            false, // no cookie
-            false, // no retry parameters in url
-            false, // no request_guid
-            true, // retry on HTTP403 for AWS S3
-            true, // no retry on http request
-            new ExecTimeTelemetryData());
+        RestRequest.executeWithRetries(
+                httpClient,
+                httpRequest,
+                context.getNetworkTimeoutInMilli() / 1000, // retry timeout
+                0,
+                context.getSocketTimeout(),
+                0,
+                0, // no socket timeout injection
+                null, // no canceling
+                false, // no cookie
+                false, // no retry parameters in url
+                false, // no request_guid
+                true, // retry on HTTP403 for AWS S3
+                true, // no retry on http request
+                false,
+                new ExecTimeTelemetryData())
+            .getHttpResponse();
 
     logger.debug(
         "Thread {} Call chunk#{} returned for URL: {}, response: {}",
