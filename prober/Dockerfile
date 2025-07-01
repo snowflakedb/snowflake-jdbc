@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 # boilerplate labels required by validation when pushing to ACR, ECR & GCR
 LABEL org.opencontainers.image.source="https://github.com/snowflakedb/snowflake-jdbc"
