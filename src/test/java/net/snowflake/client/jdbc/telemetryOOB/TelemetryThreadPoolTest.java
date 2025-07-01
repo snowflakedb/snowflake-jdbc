@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
@@ -63,9 +64,17 @@ class TelemetryThreadPoolTest {
 
     executor.setKeepAliveTime(
         1L, TimeUnit.MILLISECONDS); // Reset keep-alive time to 0 to allow threads to terminate.
-    Thread.sleep(10); // Wait for the core tasks to terminate and the pool to reset.
 
-    assertEquals(0, executor.getPoolSize());
+    await()
+        .atMost(5, TimeUnit.SECONDS) // Max time to wait for the condition
+        .pollInterval(100, TimeUnit.MILLISECONDS) // Check every 100ms
+        .untilAsserted(
+            () -> {
+              assertEquals(
+                  0,
+                  executor.getPoolSize(),
+                  "The thread pool should have scaled down to 0 idle threads.");
+            });
   }
 
   private ThreadPoolExecutor getThreadPoolExecutor(TelemetryThreadPool telemetryThreadPool) {
