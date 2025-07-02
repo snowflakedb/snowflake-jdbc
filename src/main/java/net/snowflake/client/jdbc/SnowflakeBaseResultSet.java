@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
@@ -1643,7 +1639,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         (StructObjectWrapper)
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> sfBaseResultSet.getObjectWithoutString(columnIndex));
-    if (structObjectWrapper == null) {
+    if (structObjectWrapper == null || structObjectWrapper.getObject() == null) {
       return null;
     }
     Map<String, Object> map =
@@ -1833,24 +1829,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (Map<String, Object>) object;
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
-    }
-  }
-
-  private Object createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
-    try {
-      if (obj == null) {
-        return null;
-      }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree(obj.getJsonString());
-      return new JsonSqlInput(
-          obj.getJsonString(),
-          jsonNode,
-          session,
-          sfBaseResultSet.getConverters(),
-          sfBaseResultSet.getMetaData().getColumnFields(columnIndex),
-          sfBaseResultSet.getSessionTimeZone());
-    } catch (JsonProcessingException e) {
-      throw new SFException(sfBaseResultSet.getQueryId(), e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 }

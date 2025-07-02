@@ -1,16 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-/**
- * Base Event class for events that don't need to deviate from the default flush behavior.
- *
- * @author jrosen
- */
+/** Base Event class for events that don't need to deviate from the default flush behavior. */
 public class BasicEvent extends Event {
   // Format strings for query state transitions
   private static final String requestId = "requestId: %s";

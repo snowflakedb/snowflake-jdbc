@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -40,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -61,12 +58,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   /** Refer to all created and open statements from this connection */
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
+
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
   private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   private boolean isClosed;
   private SQLWarning sqlWarnings = null;
   private List<DriverPropertyInfo> missingProperties = null;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -76,12 +75,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * <p>Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
+
   /* this should be set to Connection.TRANSACTION_READ_COMMITTED
    * There may not be many implications here since the call to
    * setTransactionIsolation doesn't do anything.
    */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
   private SFBaseSession sfSession;
+
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
   private SFConnectionHandler sfConnectionHandler;
 
@@ -726,7 +727,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-    return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
+    return new SfSqlArray(JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements);
   }
 
   @Override
@@ -985,7 +986,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug(
         "Download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);
 
-    if (Strings.isNullOrEmpty(stageName)) {
+    if (isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(
           sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -993,7 +994,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           "stage name is null or empty");
     }
 
-    if (Strings.isNullOrEmpty(sourceFileName)) {
+    if (isNullOrEmpty(sourceFileName)) {
       throw new SnowflakeSQLLoggedException(
           sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -1036,6 +1037,12 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
+
+    // We cannot match whole sourceFileName since it may be different e.g. for git repositories so
+    // we match only raw filename
+    String[] split = sourceFileName.split("/");
+    String fileName = Pattern.quote(split[split.length - 1]);
+    getCommand.append(" PATTERN=\".*").append(fileName).append("$\"");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getSFBaseStatement());

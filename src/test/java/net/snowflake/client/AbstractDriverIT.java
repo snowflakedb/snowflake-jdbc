@@ -1,9 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.base.Strings;
 import java.net.URISyntaxException;
@@ -41,13 +40,6 @@ public class AbstractDriverIT {
   private static Logger logger = Logger.getLogger(AbstractDriverIT.class.getName());
 
   protected final int ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF = 2210;
-
-  protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
-
-  private static String getConnPropKeyFromEnv(String connectionType, String propKey) {
-    String envKey = String.format("SNOWFLAKE_%s_%s", connectionType, propKey);
-    return envKey;
-  }
 
   private static String getConnPropValueFromEnv(String connectionType, String propKey) {
     String envKey = String.format("SNOWFLAKE_%s_%s", connectionType, propKey);
@@ -334,7 +326,15 @@ public class AbstractDriverIT {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
-    return DriverManager.getConnection(params.get("uri"), properties);
+    String uri =
+        properties.getProperty("host") != null && properties.getProperty("port") != null
+            ? String.format(
+                "jdbc:snowflake://%s%s:%s",
+                properties.getProperty("protocol"),
+                properties.getProperty("host"),
+                properties.getProperty("port"))
+            : params.get("uri");
+    return DriverManager.getConnection(uri, properties);
   }
 
   /**
@@ -391,6 +391,18 @@ public class AbstractDriverIT {
       }
     } else {
       throw new RuntimeException("No file is found: " + fileName);
+    }
+  }
+
+  public static void connectAndVerifySimpleQuery(Properties props) throws SQLException {
+    try (Connection con =
+            DriverManager.getConnection(
+                String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port")),
+                props);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      assertTrue(rs.next());
+      assertEquals(1, rs.getInt(1));
     }
   }
 

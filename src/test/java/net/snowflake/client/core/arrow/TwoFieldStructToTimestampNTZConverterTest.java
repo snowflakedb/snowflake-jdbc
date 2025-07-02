@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.arrow;
 
 import static java.util.stream.Stream.concat;
@@ -175,9 +171,11 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
       } else {
         epochs.setSafe(j, testSecondsInt64[i]);
         fractions.setSafe(j, testNanoSecs[i++]);
+        structVector.setIndexDefined(j);
       }
       j++;
     }
+    structVector.setValueCount(j);
 
     ArrowVectorConverter converter =
         new TwoFieldStructToTimestampNTZConverter(structVector, 0, this);

@@ -1,24 +1,17 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getFieldMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isVectorType;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 import java.io.Serializable;
 import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
-/**
- * @author jhuang
- */
 public class SnowflakeColumnMetadata implements Serializable {
   private static final long serialVersionUID = 1L;
   private String name;
@@ -142,8 +135,7 @@ public class SnowflakeColumnMetadata implements Serializable {
     JsonNode udtOutputType = colNode.path("outputType");
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
     String extColTypeName = null;
-    if (!extColTypeNameNode.isMissingNode()
-        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+    if (!extColTypeNameNode.isMissingNode() && !isNullOrEmpty(extColTypeNameNode.asText())) {
       extColTypeName = extColTypeNameNode.asText();
     }
     String internalColTypeName = colNode.path("type").asText();

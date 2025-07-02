@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;

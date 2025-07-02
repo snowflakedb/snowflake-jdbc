@@ -1,13 +1,14 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;
@@ -111,5 +112,36 @@ public class SnowflakeBasicDataSourceTest {
     assertEquals("fake_key", props.get(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey()));
     assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey()));
     assertEquals("SNOWFLAKE_JWT", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+  }
+
+  @Test
+  public void testDataSourceWithoutUsernameOrPasswordThrowsExplicitException() {
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+
+    ds.setAccount("testaccount");
+    ds.setAuthenticator("snowflake");
+    Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertEquals(
+        "Cannot create connection because username is missing in DataSource properties.",
+        e.getMessage());
+
+    ds.setUser("testuser");
+    e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertEquals(
+        "Cannot create connection because password is missing in DataSource properties.",
+        e.getMessage());
+  }
+
+  @Test
+  public void testSetsHttpHeadersCustomizers() {
+    List<HttpHeadersCustomizer> customizers =
+        Collections.singletonList(mock(HttpHeadersCustomizer.class));
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+
+    ds.setHttpHeadersCustomizers(customizers);
+
+    Properties properties = ds.getProperties();
+    assertEquals(
+        customizers, properties.get(HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY));
   }
 }

@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -27,12 +24,12 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
-    if (Strings.isNullOrEmpty(cred)) {
+    if (isNullOrEmpty(cred)) {
       logger.debug("No credential provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
     byte[] credBytes = cred.getBytes(StandardCharsets.UTF_8);
@@ -92,7 +89,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public String getCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -141,7 +138,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 

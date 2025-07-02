@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core.bind;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -12,19 +8,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFBaseSession;
@@ -56,11 +50,15 @@ public class BindUploader implements Closeable {
 
   private int fileCount = 0;
 
-  private final DateFormat timestampFormat;
-  private final DateFormat dateFormat;
-  private final SimpleDateFormat timeFormat;
+  private final DateTimeFormatter timestampFormatter =
+      new DateTimeFormatterBuilder()
+          .append(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSSSS "))
+          .appendOffset("+HH:MM", "Z")
+          .toFormatter();
+  private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+  private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS");
+
   private final String createStageSQL;
-  private Calendar cal;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -89,23 +87,16 @@ public class BindUploader implements Closeable {
             + " type=csv"
             + " field_optionally_enclosed_by='\"'"
             + ")";
-
-    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    cal.clear();
-
-    this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.timestampFormat.setCalendar(cal);
-    this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(cal);
-    this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(cal);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
     if (o == null) {
       return null;
     }
-    return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
+    long millis = Long.parseLong(o);
+    Instant instant = Instant.ofEpochMilli(millis);
+    LocalDate localDate = instant.atZone(ZoneOffset.UTC).toLocalDate();
+    return localDate.format(this.dateFormatter);
   }
 
   private synchronized String synchronizedTimeFormat(String o) {
@@ -116,10 +107,8 @@ public class BindUploader implements Closeable {
     long sec = times.left;
     int nano = times.right;
 
-    Time v1 = new Time(sec * 1000);
-    String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
-    // Take out the Date portion of the formatted string. Only time data is needed.
-    return formatWithDate.substring(11);
+    LocalTime time = Instant.ofEpochSecond(sec, nano).atZone(ZoneOffset.UTC).toLocalTime();
+    return time.format(timeFormatter);
   }
 
   private SFPair<Long, Integer> getNanosAndSecs(String o, boolean isNegative) {
@@ -158,21 +147,17 @@ public class BindUploader implements Closeable {
     long sec = times.left;
     int nano = times.right;
 
-    Timestamp v1 = new Timestamp(sec * 1000);
-    ZoneOffset offsetId;
+    Instant instant = Instant.ofEpochSecond(sec, nano);
+
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
     if ("TIMESTAMP_LTZ".equals(type)) {
-      TimeZone tz = TimeZone.getDefault();
-      cal.setTimeZone(tz);
-      cal.clear();
-      timestampFormat.setCalendar(cal);
-      offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
+      ZonedDateTime zdt = instant.atZone(ZoneId.systemDefault());
+      return zdt.format(timestampFormatter);
     } else {
-      offsetId = ZoneOffset.UTC;
+      ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, ZoneOffset.UTC);
+      return zdt.format(timestampFormatter);
     }
-
-    return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
 
   /**

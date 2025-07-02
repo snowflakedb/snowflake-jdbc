@@ -1,16 +1,12 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.AbstractDriverIT.connectAndVerifySimpleQuery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
@@ -99,18 +95,6 @@ public class ProxyLatestIT extends BaseWiremockTest {
 
   private void verifyProxyNotUsed() {
     verifyRequestToProxy(".*", 0);
-  }
-
-  private void connectAndVerifySimpleQuery(Properties props) throws SQLException {
-    try (Connection con =
-            DriverManager.getConnection(
-                String.format("jdbc:snowflake://%s:%s", props.get("host"), props.get("port")),
-                props);
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery("select 1")) {
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-    }
   }
 
   private void verifyRequestToProxy(String pathPattern, int expectedCount) {

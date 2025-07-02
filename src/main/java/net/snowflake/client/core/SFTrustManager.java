@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -14,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +43,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -169,8 +164,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   /** Default OCSP Cache server host name prefix */
   private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
-  /** Default OCSP Cache server host name */
-  private static final String DEFAULT_OCSP_CACHE_HOST = DEFAULT_OCSP_CACHE_HOST_PREFIX + "com";
+  /** Default domain for OCSP cache host */
+  private static final String DEFAULT_OCSP_CACHE_HOST_DOMAIN = "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -225,8 +220,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
-            .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+            .setOnlyOwnerPermissions(false)
             .build();
   }
 
@@ -270,10 +265,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
     this.ocspMode = key.getOcspMode();
     this.proxySettingsKey = key;
-    this.trustManager = getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+    this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
+        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
     checkNewOCSPEndpointAvailability();
 
@@ -333,7 +328,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
   }
 
-  private static void setOCSPResponseCacheServerURL(String topLevelDomain) {
+  static void setOCSPResponseCacheServerURL(String serverURL) {
     String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -349,6 +344,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           true);
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
+      String topLevelDomain = DEFAULT_OCSP_CACHE_HOST_DOMAIN;
+      try {
+        URL url = new URL(serverURL);
+        int domainIndex = url.getHost().lastIndexOf(".") + 1;
+        topLevelDomain = url.getHost().substring(domainIndex);
+      } catch (Exception e) {
+        logger.debug("Exception while setting top level domain (for OCSP)", e);
+      }
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
           String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
     }
@@ -406,8 +409,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static String CertificateIDToString(CertificateID certificateID) {
     return String.format(
         "CertID. NameHash: %s, KeyHash: %s, Serial Number: %s",
-        byteToHexString(certificateID.getIssuerNameHash()),
-        byteToHexString(certificateID.getIssuerKeyHash()),
+        HexUtil.byteToHexString(certificateID.getIssuerNameHash()),
+        HexUtil.byteToHexString(certificateID.getIssuerKeyHash()),
         MessageFormat.format("{0,number,#}", certificateID.getSerialNumber()));
   }
 
@@ -538,23 +541,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   }
 
   /**
-   * Converts Byte array to hex string
-   *
-   * @param bytes a byte array
-   * @return a string in hexadecimal code
-   */
-  private static String byteToHexString(byte[] bytes) {
-    final char[] hexArray = "0123456789ABCDEF".toCharArray();
-    char[] hexChars = new char[bytes.length * 2];
-    for (int j = 0; j < bytes.length; j++) {
-      int v = bytes[j] & 0xFF;
-      hexChars[j * 2] = hexArray[v >>> 4];
-      hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-    }
-    return new String(hexChars);
-  }
-
-  /**
    * Gets HttpClient object
    *
    * @return HttpClient
@@ -598,8 +584,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               Protocol.HTTP,
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())
-          && !Strings.isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
+      if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
+          && !isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
         Credentials credentials =
             new UsernamePasswordCredentials(
                 proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
@@ -793,8 +779,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    String topLevelDomain = peerHost.substring(peerHost.lastIndexOf(".") + 1);
-    setOCSPResponseCacheServerURL(topLevelDomain);
     boolean isCached = isCached(pairIssuerSubjectList);
     if (useOCSPResponseCacheServer() && !isCached) {
       if (!ocspCacheServer.new_endpoint_enabled) {
@@ -841,10 +825,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   }
 
   private String generateFailOpenLog(String logData) {
-    return "WARNING!!! Using fail-open to connect. Driver is connecting to an "
-        + "HTTPS endpoint without OCSP based Certificate Revocation checking "
-        + "as it could not obtain a valid OCSP Response to use from the CA OCSP "
-        + "responder. Details: \n"
+    return "OCSP responder didn't respond correctly. Assuming certificate is "
+        + "not revoked. Details: "
         + logData;
   }
 
@@ -981,7 +963,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_VALIDATION_ERROR, error);
       if (isOCSPFailOpen()) {
         // Log includes fail-open warning.
-        logger.error(generateFailOpenLog(ocspLog), false);
+        logger.debug(generateFailOpenLog(ocspLog), false);
       } else {
         // still not success, raise an error.
         logger.debug(ocspLog, false);
@@ -1129,7 +1111,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         String urlEncodedOCSPReq = URLUtil.urlEncode(ocspReqDerBase64);
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
           URL ocspUrl = new URL(ocspUrlStr);
-          if (!Strings.isNullOrEmpty(ocspUrl.getPath())) {
+          if (!isNullOrEmpty(ocspUrl.getPath())) {
             path = ocspUrl.getPath();
           }
           if (ocspUrl.getPort() > 0) {
@@ -1163,7 +1145,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           new DecorrelatedJitterBackoff(sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
       boolean success = false;
 
-      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 3;
+      final int maxRetryCounter = isOCSPFailOpen() ? 1 : 2;
       Exception savedEx = null;
       CloseableHttpClient httpClient =
           ocspCacheServerClient.computeIfAbsent(
@@ -1468,6 +1450,15 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         continue; // skipping ROOT CA
       }
       if (i < len - 1) {
+        // Check if the root certificate has been found and stop going down the chain.
+        Certificate issuer = ROOT_CA.get(bcCert.getIssuer().hashCode());
+        if (issuer != null) {
+          logger.debug(
+              "A trusted root certificate found: %s, stopping chain traversal here",
+              bcCert.getIssuer().toString());
+          pairIssuerSubject.add(SFPair.of(issuer, bcChain.get(i)));
+          break;
+        }
         pairIssuerSubject.add(SFPair.of(bcChain.get(i + 1), bcChain.get(i)));
       } else {
         // no root CA certificate is attached in the certificate chain, so
@@ -1611,7 +1602,9 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     public String toString() {
       return String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
-          byteToHexString(nameHash), byteToHexString(keyHash), serialNumber.toString());
+          HexUtil.byteToHexString(nameHash),
+          HexUtil.byteToHexString(keyHash),
+          serialNumber.toString());
     }
   }
 

@@ -1,11 +1,9 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -23,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -76,12 +75,12 @@ public class FileUploaderExpandFileNamesTest {
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new Exception());
     String[] locations = {"/Tes*Fil*A", "/TestFil?B", "~/TestFileC", "TestFileD"};
 
-    try {
-      SnowflakeFileTransferAgent.expandFileNames(locations, null);
-    } catch (SnowflakeSQLException err) {
-      assertEquals(200007, err.getErrorCode());
-      assertEquals("22000", err.getSQLState());
-    }
+    SnowflakeSQLException err =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SnowflakeFileTransferAgent.expandFileNames(locations, null));
+    assertEquals(ErrorCode.FAIL_LIST_FILES.getMessageCode(), err.getErrorCode());
+    assertEquals(SqlState.DATA_EXCEPTION, err.getSQLState());
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 

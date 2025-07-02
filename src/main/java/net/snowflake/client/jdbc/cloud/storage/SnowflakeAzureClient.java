@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -62,11 +59,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 
-/**
- * Encapsulates the Azure Storage client and all Azure Storage operations and logic
- *
- * @author lgiakoumakis
- */
+/** Encapsulates the Azure Storage client and all Azure Storage operations and logic */
 public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
   private static final String localFileSep = systemGetProperty("file.separator");
@@ -352,13 +345,21 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          if (!userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
+            throw new SnowflakeSQLLoggedException(
+                queryId,
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Encryption data not found in the metadata of a file being downloaded");
+          }
+          AbstractMap.SimpleEntry<String, String> encryptionData =
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
+
+          String key = encryptionData.getKey();
+          String iv = encryptionData.getValue();
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
@@ -452,12 +453,20 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> userDefinedMetadata =
             SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          if (!userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
+            throw new SnowflakeSQLLoggedException(
+                queryId,
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Encryption data not found in the metadata of a file being downloaded");
+          }
+          AbstractMap.SimpleEntry<String, String> encryptionData =
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
+          String key = encryptionData.getKey();
+          String iv = encryptionData.getValue();
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(

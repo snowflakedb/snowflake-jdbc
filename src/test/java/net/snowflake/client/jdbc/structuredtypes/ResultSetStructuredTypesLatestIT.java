@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc.structuredtypes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -74,6 +71,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           "alter session set jdbc_query_result_format = '"
               + format.sessionParameterTypeValue
               + "'");
+      stmt.execute("ALTER SESSION SET ENABLE_STRUCTURED_TYPES_IN_FDN_TABLES = TRUE");
       if (format == ResultSetFormatType.NATIVE_ARROW) {
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
         stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
@@ -631,6 +629,19 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf(10), resultArray[0]);
           assertEquals(Long.valueOf(20), resultArray[1]);
           assertEquals(Long.valueOf(30), resultArray[2]);
+        },
+        format);
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(ResultFormatProvider.class)
+  @DontRunOnGithubActions
+  public void testMapIntegerArrayGetObject(ResultSetFormatType format) throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
+        (resultSet) -> {
+          Object resultArray = resultSet.getObject(1);
+          TestUtil.assertEqualsIgnoringWhitespace("[10,20,30]", (String) resultArray);
         },
         format);
   }

@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.IOException;
@@ -14,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -100,7 +103,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   @Override
   public void initializeConnection(String url, Properties info) throws SQLException {
-    initialize(conStr, LoginInfoDTO.SF_JDBC_APP_ID, SnowflakeDriver.implementVersion);
+    initialize(conStr, LoginInfoDTO.SF_JDBC_APP_ID, SnowflakeDriver.implementVersion, info);
   }
 
   /** Returns the default SFSession client implementation. */
@@ -117,6 +120,12 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   protected void initialize(SnowflakeConnectString conStr, String appID, String appVersion)
       throws SQLException {
+    this.initialize(conStr, appID, appVersion, null);
+  }
+
+  protected void initialize(
+      SnowflakeConnectString conStr, String appID, String appVersion, Properties properties)
+      throws SQLException {
     TelemetryService.getInstance().updateContext(conStr);
 
     try {
@@ -124,6 +133,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initSessionProperties(conStr, appID, appVersion);
       setClientConfig();
       initLogger();
+      initHttpHeaderCustomizers(properties);
       logger.debug(
           "Trying to establish session, JDBC driver: {}", SnowflakeDriver.getJdbcJarname());
       if (!skipOpen) {
@@ -278,7 +288,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
   }
 
   private void checkLogFolderPermissions(Path path) throws SnowflakeSQLLoggedException {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
+    if (!isWindows()) {
       try {
         Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
         if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
@@ -381,5 +391,27 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
               + " SFStatement.");
     }
     return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
+  }
+
+  private void initHttpHeaderCustomizers(Properties properties) {
+    if (properties == null) {
+      return;
+    }
+    Object httpHeadersCustomizers =
+        properties.get(HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY);
+    if (httpHeadersCustomizers instanceof List<?>) {
+      List<HttpHeadersCustomizer> typedCustomizers = new ArrayList<>();
+      for (Object customizer : (List<?>) httpHeadersCustomizers) {
+        if (customizer instanceof HttpHeadersCustomizer) {
+          typedCustomizers.add((HttpHeadersCustomizer) customizer);
+        } else if (customizer != null) {
+          logger.warn(
+              "Invalid object type found in HttpHeadersCustomizer list: {}",
+              customizer.getClass().getName());
+        }
+      }
+      logger.debug("Registering {} HttpHeadersCustomizer", typedCustomizers.size());
+      this.sfSession.setHttpHeadersCustomizers(typedCustomizers);
+    }
   }
 }

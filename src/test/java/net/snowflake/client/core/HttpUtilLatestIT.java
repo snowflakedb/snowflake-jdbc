@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -14,6 +11,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -27,6 +25,12 @@ public class HttpUtilLatestIT {
   @BeforeEach
   public void resetHttpClientsCache() {
     HttpUtil.httpClient.clear();
+  }
+
+  @AfterEach
+  public void resetHttpTimeouts() {
+    HttpUtil.setConnectionTimeout(60000);
+    HttpUtil.setSocketTimeout(300000);
   }
 
   /** Added in > 3.14.5 */
@@ -46,14 +50,12 @@ public class HttpUtilLatestIT {
 
     CloseableHttpClient httpClient =
         HttpUtil.getHttpClient(new HttpClientSettingsKey(OCSPMode.INSECURE));
-    try {
-      httpClient.execute(new HttpGet(HANG_WEBSERVER_ADDRESS));
-      fail("Request should fail with exception");
-    } catch (IOException e) {
-      MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
-    } finally {
-      HttpUtil.setConnectionTimeout(60000);
-      HttpUtil.setSocketTimeout(300000);
-    }
+    IOException e =
+        assertThrows(
+            IOException.class,
+            () -> {
+              httpClient.execute(new HttpGet(HANG_WEBSERVER_ADDRESS));
+            });
+    MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
   }
 }

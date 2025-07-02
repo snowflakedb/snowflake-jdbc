@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.core.auth;
 
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -20,5 +17,7 @@ public enum ClientAuthnParameter {
   BROWSER_MODE_REDIRECT_PORT,
   SESSION_PARAMETERS,
   PROOF_KEY,
-  TOKEN
+  TOKEN,
+  OAUTH_TYPE,
+  PROVIDER
 }

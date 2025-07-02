@@ -43,7 +43,7 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
         "CLIENT_SESSION_KEEP_ALIVE",
         useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
 
-    try (Connection connection = getConnection(sessionParams);
+    try (Connection connection = getConnection("s3testaccount", sessionParams);
         Statement stmt = connection.createStatement();
         // Query will take 5 seconds to run, but ResultSet will be returned immediately
         ResultSet resultSet =
@@ -67,23 +67,11 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
     }
   }
 
-  @Test
-  @DontRunOnGithubActions
-  public void testAsynchronousQuerySuccess() throws Exception {
-    testSuccess();
-  }
-
-  @Test
-  @DontRunOnGithubActions
-  public void testAsynchronousQueryFailure() throws Exception {
-    testFailure();
-  }
-
   /** Test that isValid() function returns false when session is expired */
   @Test
   @DontRunOnGithubActions
   public void testIsValidWithInvalidSession() throws Exception {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection("s3testaccount")) {
       // assert that connection starts out valid
       assertTrue(connection.isValid(5));
       Thread.sleep(61000); // sleep 61 seconds to await session expiration time

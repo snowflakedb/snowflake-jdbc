@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.core.arrow;
 
 import java.sql.Date;
@@ -42,7 +39,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public boolean isNull(int index) {
-    return epochs.isNull(index);
+    return structVector.isNull(index) || epochs.isNull(index) || fractions.isNull(index);
   }
 
   @Override
@@ -51,7 +48,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp NTZ formatter");
     }
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+      Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 
       return ts == null
           ? null
@@ -92,7 +89,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return null;
     }
     throw new SFException(
@@ -119,7 +116,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public boolean toBoolean(int index) throws SFException {
-    if (epochs.isNull(index)) {
+    if (isNull(index)) {
       return false;
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());

@@ -1,11 +1,6 @@
-/*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -13,12 +8,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -38,7 +33,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -239,34 +233,45 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
-      try {
-        statement.executeQuery("PUT file://" + sourceFilePath + " @not_existing_state");
-        fail("PUT statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      SnowflakeSQLException e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement
+                    .executeQuery("PUT file://" + sourceFilePath + " @not_existing_state")
+                    .close();
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+
       String putQueryId = snowflakeStatement.getQueryID();
-      try {
-        statement.executeQuery(
-            "GET @not_existing_state 'file://" + destFolderCanonicalPath + "' parallel=8");
-        fail("GET statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement
+                    .executeQuery(
+                        "GET @not_existing_state 'file://"
+                            + destFolderCanonicalPath
+                            + "' parallel=8")
+                    .close();
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+
       String getQueryId = snowflakeStatement.getQueryID();
       assertNotEquals(putQueryId, getQueryId, "put and get query id should be different");
       String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       statement.execute("CREATE OR REPLACE STAGE " + stageName);
       TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-      try {
-        statement.executeQuery("PUT file://not_existing_file @" + stageName);
-        fail("PUT statement should fail");
-      } catch (SnowflakeSQLException e) {
-        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
-      }
+      e =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> {
+                statement.executeQuery("PUT file://not_existing_file @" + stageName);
+              });
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
     }
   }
 
@@ -298,12 +303,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     Thread.sleep(1000 * 70);
     // Create a new connection and new instance of a resultSet using query ID
     try (Connection con = getConnection()) {
-      try (ResultSet rs =
-          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID")) {
-        fail("Query ID should be rejected");
-      } catch (SQLException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  con.unwrap(SnowflakeConnection.class)
+                      .createResultSet("Totally invalid query ID")
+                      .close());
+      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
         QueryStatusV2 statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
         // Assert status of query is a success
@@ -340,17 +347,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Create another query that will not be successful (querying table that does not exist)
       try (ResultSet rs1 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!")) {
-        try {
-          rs1.next();
-        } catch (SQLException ex) {
-          assertEquals(
-              "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-                  + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-              ex.getMessage());
-          assertEquals(
-              "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-              rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
-        }
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () -> {
+                  rs1.next();
+                });
+        assertEquals(
+            "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+                + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+            ex.getMessage());
+        assertEquals(
+            "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+            rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
       }
       try (ResultSet rs2 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
@@ -574,87 +583,37 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
     int count = TelemetryService.getInstance().getEventCount();
-    try {
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
 
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
-      if (TelemetryService.getInstance()
-              .getServerDeploymentName()
-              .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
-          || TelemetryService.getInstance()
-              .getServerDeploymentName()
-              .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
-        // a connection error response (wrong user and password)
-        // with status code 200 is returned in RT
-        assertThat(
-            "Communication error",
-            e.getErrorCode(),
-            anyOf(equalTo(INVALID_CONNECTION_INFO_CODE), equalTo(BAD_REQUEST_GS_CODE)));
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+    if (TelemetryService.getInstance()
+            .getServerDeploymentName()
+            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
+        || TelemetryService.getInstance()
+            .getServerDeploymentName()
+            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
 
-        // since it returns normal response,
-        // the telemetry does not create new event
-        Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-        if (TelemetryService.getInstance().isDeploymentEnabled()) {
-          assertThat(
-              "Telemetry should not create new event",
-              TelemetryService.getInstance().getEventCount(),
-              equalTo(count));
-        }
-      } else {
-        // in qa1 and others, 404 http status code should be returned
-        assertThat(
-            "Communication error",
-            e.getErrorCode(),
-            equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-
-        if (TelemetryService.getInstance().isDeploymentEnabled()) {
-          assertThat(
-              "Telemetry event has not been reported successfully. Error: "
-                  + TelemetryService.getInstance().getLastClientError(),
-              TelemetryService.getInstance().getClientFailureCount(),
-              equalTo(0));
-        }
-      }
-      return;
-    }
-    fail();
-  }
-
-  @Test
-  public void testWrongHostNameTimeout() throws InterruptedException {
-    long connStart = 0, conEnd;
-    Properties properties = new Properties();
-    properties.put("account", "testaccount");
-    properties.put("loginTimeout", "20");
-    properties.put("user", "fakeuser");
-    properties.put("password", "fakepassword");
-    // Adding authenticator type for code coverage purposes
-    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
-    try {
-      connStart = System.currentTimeMillis();
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri =
-          params.get("uri").replace("." + hostItems[hostItems.length - 2] + ".", ".wronghostname.");
-
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
-      assertThat(
-          "Communication error",
-          e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-
-      conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-
+      // since it returns normal response,
+      // the telemetry does not create new event
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+      if (TelemetryService.getInstance().isDeploymentEnabled()) {
+        assertThat(
+            "Telemetry should not create new event",
+            TelemetryService.getInstance().getEventCount(),
+            equalTo(count));
+      }
+    } else {
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(
             "Telemetry event has not been reported successfully. Error: "
@@ -662,9 +621,48 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             TelemetryService.getInstance().getClientFailureCount(),
             equalTo(0));
       }
-      return;
     }
-    fail();
+  }
+
+  @Test
+  public void testWrongHostNameTimeout() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("account", "testaccount");
+    properties.put("loginTimeout", "20");
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
+    long connStart = System.currentTimeMillis(), conEnd;
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri =
+                  params
+                      .get("uri")
+                      .replace("." + hostItems[hostItems.length - 2] + ".", ".wronghostname.");
+
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
+    conEnd = System.currentTimeMillis();
+    assertThat("Login time out not taking effective", conEnd - connStart < 300000);
+
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
+    }
   }
 
   @Test
@@ -678,33 +676,31 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // only when ssl is on can trigger the login timeout
     // ssl is off will trigger 404
     properties.put("ssl", "on");
-    try {
-      connStart = System.currentTimeMillis();
-      Map<String, String> params = getConnectionParameters();
-      // use wrongaccount in url
-      String host = params.get("host");
-      String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
-      DriverManager.getConnection(wrongUri, properties);
-    } catch (SQLException e) {
-      assertThat(
-          "Communication error",
-          e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+    connStart = System.currentTimeMillis();
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Map<String, String> params = getConnectionParameters();
+              // use wrongaccount in url
+              String host = params.get("host");
+              String[] hostItems = host.split("\\.");
+              String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+              DriverManager.getConnection(wrongUri, properties);
+            });
+    assertThat(
+        "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
-      conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
-      }
-      return;
+    conEnd = System.currentTimeMillis();
+    assertThat("Login time out not taking effective", conEnd - connStart < 300000);
+    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+    if (TelemetryService.getInstance().isDeploymentEnabled()) {
+      assertThat(
+          "Telemetry event has not been reported successfully. Error: "
+              + TelemetryService.getInstance().getLastClientError(),
+          TelemetryService.getInstance().getClientFailureCount(),
+          equalTo(0));
     }
-    fail();
   }
 
   @Test
@@ -835,7 +831,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
       uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
-      connectExpectingError390144(uri, properties);
+      connectExpectingInvalidJWTError(uri, properties);
 
       // test with invalid private key
       privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
@@ -864,12 +860,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         + password;
   }
 
-  private static void connectExpectingError390144(String fullUri, Properties properties) {
-    try (Connection connection = DriverManager.getConnection(fullUri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(390144, e.getErrorCode());
-    }
+  private static void connectExpectingInvalidJWTError(String fullUri, Properties properties) {
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(fullUri, properties).close());
+    assertEquals(390144, e.getErrorCode());
   }
 
   private static void connectSuccessfully(String uri, Properties properties) throws SQLException {
@@ -951,7 +946,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
       uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
-      connectExpectingError390144(uri, properties);
+      connectExpectingInvalidJWTError(uri, properties);
 
       // test with invalid private key
       privateKeyBase64 = readPrivateKeyFileToBase64Content("invalid_private_key.pem");
@@ -992,12 +987,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   private static void connectExpectingInvalidOrUnsupportedPrivateKey(
       String uri, Properties properties) {
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
+    SQLException e =
+        assertThrows(
+            SQLException.class, () -> DriverManager.getConnection(uri, properties).close());
+    assertEquals(
+        (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
   }
 
   /** Works in > 3.18.0 */
@@ -1182,22 +1176,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
           queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         }
-        try {
-          connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-          fail("The getChildQueryIds() should fail because query is running");
-        } catch (SQLException ex) {
-          String msg = ex.getMessage();
-          if (!msg.contains("Status of query associated with resultSet is")
-              || !msg.contains("Results not generated.")) {
-            ex.printStackTrace();
-            QueryStatus qs =
-                connection
-                    .unwrap(SnowflakeConnectionV1.class)
-                    .getSfSession()
-                    .getQueryStatus(queryID);
-            fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
-          }
+        String finalQueryID = queryID;
+        SQLException ex =
+            assertThrows(
+                SQLException.class,
+                () -> {
+                  connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(finalQueryID);
+                });
+        String msg = ex.getMessage();
+        if (!msg.contains("Status of query associated with resultSet is")
+            || !msg.contains("Results not generated.")) {
+          ex.printStackTrace();
+          QueryStatus qs =
+              connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
+          fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
+
       } finally {
         try (Statement statement = connection.createStatement()) {
           statement.execute("select system$cancel_query('" + queryID + "')");
@@ -1208,7 +1202,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetChildQueryIdsNegativeTestQueryFailed() throws Exception {
-    String queryID = null;
+    String queryID;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       String multiStmtQuery = "select 1; select to_date('not_date'); select 2";
@@ -1218,17 +1212,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
       }
-      try {
-        waitForAsyncQueryDone(connection, queryID);
-        connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        fail("The getChildQueryIds() should fail because the query fails");
-      } catch (SQLException ex) {
-        assertTrue(
-            ex.getMessage()
-                .contains(
-                    "Uncaught Execution of multiple statements failed on statement \"select"
-                        + " to_date('not_date')\""));
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                waitForAsyncQueryDone(connection, queryID);
+                connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+              });
+      assertTrue(
+          ex.getMessage()
+              .contains(
+                  "Uncaught Execution of multiple statements failed on statement \"select"
+                      + " to_date('not_date')\""));
     }
   }
 
@@ -1301,13 +1296,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
       long startDownloadTime = System.currentTimeMillis();
-      try {
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
-      } catch (SQLException ex) {
-        assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                connection
+                    .unwrap(SnowflakeConnection.class)
+                    .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+              });
+      assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
+
       long endDownloadTime = System.currentTimeMillis();
       // S3Client retries some exception for a default timeout of 5 minutes
       // Check that 404 was not retried
@@ -1586,11 +1584,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   @Test
   public void testSetHoldability() throws Throwable {
     try (Connection connection = getConnection()) {
-      try {
-        connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      } catch (SQLFeatureNotSupportedException ex) {
-        fail("should not fail");
-      }
+      connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
       // return an empty type map. setTypeMap is not supported.
       assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
       connection.close();
@@ -1620,20 +1614,21 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("password", "testpassword");
     properties.put("ocspFailOpen", Boolean.FALSE.toString());
 
-    try {
-      DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
-      fail("should fail");
-    } catch (SQLException e) {
-      // *.badssl.com may fail with timeout
-      if (!(e.getCause() instanceof SSLHandshakeException)
-          && e.getCause().getMessage().toLowerCase().contains("timed out")) {
-        return;
-      }
-      assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
-      assertTrue(
-          e.getMessage()
-              .contains(
-                  "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+            });
+    // *.badssl.com may fail with timeout
+    if (!(e.getCause() instanceof SSLHandshakeException)
+        && e.getCause().getMessage().toLowerCase().contains("timed out")) {
+      return;
     }
+    assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+    assertTrue(
+        e.getMessage()
+            .contains(
+                "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
 }

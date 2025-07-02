@@ -15,8 +15,15 @@ public enum OCSPMode {
    */
   FAIL_OPEN(1),
 
-  /** Insure mode. No OCSP check is made. */
-  INSECURE(2);
+  /**
+   * @deprecated Use {@link #DISABLE_OCSP_CHECKS} for clarity. This configuration option is used to
+   *     disable OCSP verification. Insure mode. No OCSP check is made.
+   */
+  @Deprecated
+  INSECURE(2),
+
+  /** Disable OCSP checks. It's used to disable OCSP verification. */
+  DISABLE_OCSP_CHECKS(3);
 
   private final int value;
 

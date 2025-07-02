@@ -1,10 +1,7 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -38,7 +35,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus setCredential(String host, String user, String type, String token) {
-    if (Strings.isNullOrEmpty(token)) {
+    if (isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
@@ -47,7 +44,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     Memory credBlobMem = new Memory(credBlob.length);
     credBlobMem.write(0, credBlob, 0, credBlob.length);
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential();
     cred.Type = SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType();
@@ -76,7 +73,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
 
   public String getCredential(String host, String user, String type) {
     PointerByReference pCredential = new PointerByReference();
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     try {
       boolean ret = false;
@@ -127,7 +124,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     boolean ret = false;
     synchronized (advapi32Lib) {

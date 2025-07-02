@@ -58,11 +58,13 @@ public class SFClientConfigParser {
         derivedConfigFilePath = driverLocation;
       } else {
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
-        String userHomeFilePath =
-            Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
-        if (Files.exists(Paths.get(userHomeFilePath))) {
-          logger.info("Using config file specified from home directory: {}", userHomeFilePath);
-          derivedConfigFilePath = userHomeFilePath;
+        String homeDirectory = systemGetProperty("user.home");
+        if (homeDirectory != null) {
+          String userHomeFilePath = Paths.get(homeDirectory, SF_CLIENT_CONFIG_FILE_NAME).toString();
+          if (Files.exists(Paths.get(userHomeFilePath))) {
+            logger.info("Using config file specified from home directory: {}", userHomeFilePath);
+            derivedConfigFilePath = userHomeFilePath;
+          }
         }
       }
     }
@@ -88,8 +90,7 @@ public class SFClientConfigParser {
 
         return clientConfig;
       } catch (IOException e) {
-        String customErrorMessage =
-            "Error while reading config file at location: " + derivedConfigFilePath;
+        String customErrorMessage = "Error while reading config file: " + derivedConfigFilePath;
         throw new IOException(customErrorMessage, e);
       }
     }

@@ -1,10 +1,11 @@
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -97,13 +98,9 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
           preparedStatement.setInt(2, 30);
 
           // first statement
-          try {
-            preparedStatement.executeUpdate();
-            fail();
-          } catch (SQLException e) {
-            // error code comes from xp, which is js execution failed.
-            assertThat(e.getErrorCode(), is(100132));
-          }
+          SQLException e =
+              assertThrows(SQLException.class, () -> preparedStatement.executeUpdate());
+          assertThat(e.getMessage(), containsString("Bind variable ? not set"));
         }
       } finally {
         statement.execute("drop table if exists test_multi_bind");

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -8,13 +5,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
@@ -51,12 +51,8 @@ public class TestUtil {
    * @param testCode the code that will run and throws exception
    */
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
-    try {
-      testCode.run();
-      fail();
-    } catch (SFException e) {
-      assertThat(e.getVendorCode(), is(errorCode));
-    }
+    SFException e = assertThrows(SFException.class, testCode::run);
+    assertThat(e.getVendorCode(), is(errorCode));
   }
 
   /** Functional interface used to run a piece of code which throws SFException */
@@ -137,12 +133,8 @@ public class TestUtil {
   }
 
   public static void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
-    }
+    SQLException ex = assertThrows(SQLException.class, f::run);
+    assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
   }
 
   /**
@@ -153,5 +145,18 @@ public class TestUtil {
    */
   public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
     assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
+  }
+
+  public static String randomTableName(String jiraId) {
+    return ("TEST_" + (jiraId != null ? jiraId : "") + "_" + UUID.randomUUID())
+        .replaceAll("-", "_");
+  }
+
+  public static List<Integer> randomIntList(int length, int modulo) {
+    return new Random()
+        .ints()
+        .limit(length)
+        .mapToObj(i -> Math.abs(i) % modulo)
+        .collect(Collectors.toList());
   }
 }

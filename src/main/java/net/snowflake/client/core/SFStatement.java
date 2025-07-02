@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
@@ -487,8 +483,14 @@ public class SFStatement extends SFBaseStatement {
       // if timeout is set, start a thread to cancel the request after timeout
       // reached.
       if (this.queryTimeout > 0) {
-        executor = Executors.newScheduledThreadPool(1);
-        setTimeBomb(executor);
+        if (session.getImplicitServerSideQueryTimeout()) {
+          // Server side only query timeout
+          statementParametersMap.put("STATEMENT_TIMEOUT_IN_SECONDS", this.queryTimeout);
+        } else {
+          // client side only query timeout
+          executor = Executors.newScheduledThreadPool(1);
+          setTimeBomb(executor);
+        }
       }
 
       StmtUtil.StmtOutput stmtOutput = null;
@@ -505,8 +507,8 @@ public class SFStatement extends SFBaseStatement {
               // renew the session
               session.renewSession(stmtInput.sessionToken);
             } catch (SnowflakeReauthenticationRequest ex0) {
-              if (session.isExternalbrowserAuthenticator()) {
-                reauthenticate();
+              if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
+                session.open();
               } else {
                 throw ex0;
               }
@@ -693,19 +695,6 @@ public class SFStatement extends SFBaseStatement {
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     return execute(sql, false, parametersBinding, caller, execTimeData);
-  }
-
-  private void reauthenticate() throws SFException, SnowflakeSQLException {
-    SFLoginInput input =
-        new SFLoginInput()
-            .setRole(session.getRole())
-            .setWarehouse(session.getWarehouse())
-            .setDatabaseName(session.getDatabase())
-            .setSchemaName(session.getSchema())
-            .setOCSPMode(session.getOCSPMode())
-            .setHttpClientSettingsKey(session.getHttpClientKey());
-
-    session.open();
   }
 
   /**

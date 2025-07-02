@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -11,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.sql.BatchUpdateException;
@@ -54,11 +51,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testFetchDirection() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
-      try {
-        statement.setFetchDirection(ResultSet.FETCH_REVERSE);
-      } catch (SQLFeatureNotSupportedException e) {
-        assertTrue(true);
-      }
+      assertThrows(
+          SQLFeatureNotSupportedException.class,
+          () -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
     }
   }
 
@@ -102,13 +97,15 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       assertEquals(0, statement.getQueryTimeout());
       statement.setQueryTimeout(5);
       assertEquals(5, statement.getQueryTimeout());
-      try {
-        statement.executeQuery("select count(*) from table(generator(timeLimit => 100))");
-      } catch (SQLException e) {
-        assertTrue(true);
-        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
-        assertEquals("SQL execution canceled", e.getMessage());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  statement.executeQuery(
+                      "select count(*) from table(generator(timeLimit => 100))"));
+      assertTrue(true);
+      assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+      assertEquals("SQL execution canceled", e.getMessage());
     }
   }
 
@@ -254,12 +251,11 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table t(c1 int)");
       statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
-      try {
-        statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS);
-        fail("no autogenerate key is supported");
-      } catch (SQLFeatureNotSupportedException ex) {
-        // nop
-      }
+
+      assertThrows(
+          SQLFeatureNotSupportedException.class,
+          () -> statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS));
+
       // empty result
       try (ResultSet rset = statement.getGeneratedKeys()) {
         assertFalse(rset.next());
@@ -334,25 +330,21 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
           assertThat(resultSet.getInt("B"), is(7));
           statement.clearBatch();
 
-          // one of the batch is query instead of ddl/dml
-          // it should continuing processing
-          try {
-            statement.addBatch("insert into test_batch values('str3', 3)");
-            statement.addBatch("select * from test_batch");
-            statement.addBatch("select * from test_batch_not_exist");
-            statement.addBatch("insert into test_batch values('str4', 4)");
-            statement.executeBatch();
-            fail();
-          } catch (BatchUpdateException e) {
-            rowCounts = e.getUpdateCounts();
-            assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
-            assertThat(rowCounts[0], is(1));
-            assertThat(rowCounts[1], is(Statement.SUCCESS_NO_INFO));
-            assertThat(rowCounts[2], is(Statement.EXECUTE_FAILED));
-            assertThat(rowCounts[3], is(1));
+          // one of the batch query returns error
+          // it should continue processing
+          statement.addBatch("insert into test_batch values('str3', 3)");
+          statement.addBatch("select * from test_batch");
+          statement.addBatch("select * from test_batch_not_exist");
+          statement.addBatch("insert into test_batch values('str4', 4)");
+          BatchUpdateException e =
+              assertThrows(BatchUpdateException.class, statement::executeBatch);
+          rowCounts = e.getUpdateCounts();
+          assertThat(rowCounts[0], is(1));
+          assertThat(rowCounts[1], is(Statement.SUCCESS_NO_INFO));
+          assertThat(rowCounts[2], is(Statement.EXECUTE_FAILED));
+          assertThat(rowCounts[3], is(1));
 
-            connection.rollback();
-          }
+          connection.rollback();
 
           statement.clearBatch();
 
@@ -478,15 +470,15 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       };
 
       for (String testCommand : testCommands) {
-        try {
-          statement.executeUpdate(testCommand);
-          fail("TestCommand: " + testCommand + " is expected to be failed to execute");
-        } catch (SQLException e) {
-          assertThat(
-              testCommand,
-              e.getErrorCode(),
-              is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
-        }
+        SQLException e =
+            assertThrows(
+                SQLException.class,
+                () -> statement.executeUpdate(testCommand),
+                "TestCommand: " + testCommand + " is expected to be failed to execute");
+        assertThat(
+            testCommand,
+            e.getErrorCode(),
+            is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
       }
     }
   }
@@ -530,12 +522,12 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               + "insert into test_multi VALUES (1), (2);\n"
               + "select cola from test_multi order by cola asc";
 
-      try {
-        statement.execute(multiStmtQuery);
-        fail("Using a multi-statement query without the parameter set should fail");
-      } catch (SnowflakeSQLException ex) {
-        assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
-      }
+      SnowflakeSQLException ex =
+          assertThrows(
+              SnowflakeSQLException.class,
+              () -> statement.execute(multiStmtQuery),
+              "Using a multi-statement query without the parameter set should fail");
+      assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
     }
   }
 
@@ -568,44 +560,40 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testCreateStatementWithParameters() throws Throwable {
     try (Connection connection = getConnection()) {
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      try {
-        connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        fail("updateable cursor is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+      SQLException ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.createStatement(
+                      ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+
       connection.createStatement(
           ResultSet.TYPE_FORWARD_ONLY,
           ResultSet.CONCUR_READ_ONLY,
           ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      try {
-        connection.createStatement(
-            ResultSet.TYPE_FORWARD_ONLY,
-            ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        fail("hold cursor over commit is not supported.");
-      } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
+
+      ex =
+          assertThrows(
+              SQLException.class,
+              () ->
+                  connection.createStatement(
+                      ResultSet.TYPE_FORWARD_ONLY,
+                      ResultSet.CONCUR_READ_ONLY,
+                      ResultSet.HOLD_CURSORS_OVER_COMMIT));
+      assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
     }
   }
 
   @Test
   public void testUnwrapper() throws Throwable {
     try (Statement statement = connection.createStatement()) {
-      if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
-        statement.execute("select 1");
-        SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
-        assertNotNull(sfstatement.getQueryID());
-      } else {
-        fail("should be able to unwrap");
-      }
-      try {
-        statement.unwrap(SnowflakeConnectionV1.class);
-        fail("should fail to cast");
-      } catch (SQLException ex) {
-        // nop
-      }
+      assertTrue(statement.isWrapperFor(SnowflakeStatementV1.class));
+      statement.execute("select 1");
+      SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
+      assertNotNull(sfstatement.getQueryID());
+
+      assertThrows(SQLException.class, () -> statement.unwrap(SnowflakeConnectionV1.class));
     }
   }
 

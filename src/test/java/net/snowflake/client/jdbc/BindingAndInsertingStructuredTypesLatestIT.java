@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -272,7 +269,10 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
 
       Array array = connection.createArrayOf("INTEGER", new Integer[] {1, 2, 3});
+      Array arrayFromLowerCaseType = connection.createArrayOf("integer", new Integer[] {1, 2, 3});
       stmt.setArray(1, array);
+      stmt.executeUpdate();
+      stmt.setArray(1, arrayFromLowerCaseType);
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
@@ -282,6 +282,10 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(Long.valueOf(1), resultArray[0]);
         assertEquals(Long.valueOf(2), resultArray[1]);
         assertEquals(Long.valueOf(3), resultArray[2]);
+
+        resultSet.next();
+        Long[] resultArrayFromLowerCaseType = (Long[]) resultSet.getArray(1).getArray();
+        assertArrayEquals(resultArray, resultArrayFromLowerCaseType);
       }
     }
   }

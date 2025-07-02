@@ -1,9 +1,7 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.FileUtil.isWritable;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -23,7 +21,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Date;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -38,13 +41,14 @@ class FileCacheManager {
   private String cacheDirectorySystemProperty;
   private String cacheDirectoryEnvironmentVariable;
   private String baseCacheFileName;
-  private long cacheExpirationInMilliseconds;
   private long cacheFileLockExpirationInMilliseconds;
 
   private File cacheFile;
   private File cacheLockFile;
 
   private File cacheDir;
+
+  private boolean onlyOwnerPermissions = true;
 
   private FileCacheManager() {}
 
@@ -67,15 +71,18 @@ class FileCacheManager {
     return this;
   }
 
-  FileCacheManager setCacheExpirationInSeconds(long cacheExpirationInSeconds) {
-    // converting from seconds to milliseconds
-    this.cacheExpirationInMilliseconds = cacheExpirationInSeconds * 1000;
-    return this;
-  }
-
   FileCacheManager setCacheFileLockExpirationInSeconds(long cacheFileLockExpirationInSeconds) {
     this.cacheFileLockExpirationInMilliseconds = cacheFileLockExpirationInSeconds * 1000;
     return this;
+  }
+
+  FileCacheManager setOnlyOwnerPermissions(boolean onlyOwnerPermissions) {
+    this.onlyOwnerPermissions = onlyOwnerPermissions;
+    return this;
+  }
+
+  synchronized String getCacheFilePath() {
+    return cacheFile.getAbsolutePath();
   }
 
   /**
@@ -83,14 +90,23 @@ class FileCacheManager {
    *
    * @param newCacheFile a file object to override the default one.
    */
-  void overrideCacheFile(File newCacheFile) {
+  synchronized void overrideCacheFile(File newCacheFile) {
+    if (!FileUtil.exists(newCacheFile)) {
+      logger.debug("Cache file doesn't exist. File: {}", newCacheFile);
+    }
+    if (onlyOwnerPermissions) {
+      FileUtil.handleWhenFilePermissionsWiderThanUserOnly(newCacheFile, "Override cache file");
+      FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(
+          newCacheFile, "Override cache file");
+    } else {
+      FileUtil.logFileUsage(cacheFile, "Override cache file", false);
+    }
     this.cacheFile = newCacheFile;
     this.cacheDir = newCacheFile.getParentFile();
     this.baseCacheFileName = newCacheFile.getName();
-    FileUtil.logFileUsage(cacheFile, "Override cache file", true);
   }
 
-  FileCacheManager build() {
+  synchronized FileCacheManager build() {
     // try to get cacheDir from system property or environment variable
     String cacheDirPath =
         this.cacheDirectorySystemProperty != null
@@ -114,35 +130,34 @@ class FileCacheManager {
     if (cacheDirPath != null) {
       this.cacheDir = new File(cacheDirPath);
     } else {
-      // use user home directory to store the cache file
-      String homeDir = systemGetProperty("user.home");
-      if (homeDir == null) {
-        // use tmp dir if not exists.
-        homeDir = systemGetProperty("java.io.tmpdir");
-      } else {
-        // Checking if home directory is writable.
-        File homeFile = new File(homeDir);
-        if (!homeFile.canWrite()) {
-          logger.debug("Home directory not writeable, using tmpdir", false);
-          homeDir = systemGetProperty("java.io.tmpdir");
+      this.cacheDir = getDefaultCacheDir();
+    }
+    if (cacheDir == null) {
+      return this;
+    }
+    if (!cacheDir.exists()) {
+      try {
+        if (!isWindows() && onlyOwnerPermissions) {
+          Files.createDirectories(
+              cacheDir.toPath(),
+              PosixFilePermissions.asFileAttribute(
+                  Stream.of(
+                          PosixFilePermission.OWNER_READ,
+                          PosixFilePermission.OWNER_WRITE,
+                          PosixFilePermission.OWNER_EXECUTE)
+                      .collect(Collectors.toSet())));
+        } else {
+          Files.createDirectories(cacheDir.toPath());
         }
-      }
-      if (homeDir == null) {
-        // if still home directory is null, no cache dir is set.
+      } catch (IOException e) {
+        logger.info(
+            "Failed to create the cache directory: {}. Ignored. {}",
+            e.getMessage(),
+            cacheDir.getAbsoluteFile());
         return this;
       }
-      if (Constants.getOS() == Constants.OS.WINDOWS) {
-        this.cacheDir =
-            new File(
-                new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
-      } else if (Constants.getOS() == Constants.OS.MAC) {
-        this.cacheDir = new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
-      } else {
-        this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
-      }
     }
-
-    if (!this.cacheDir.mkdirs() && !this.cacheDir.exists()) {
+    if (!this.cacheDir.exists()) {
       logger.debug(
           "Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
       return this;
@@ -155,7 +170,16 @@ class FileCacheManager {
       // If exists. the method returns false.
       // In this particular case, it doesn't matter as long as the file is
       // writable.
-      if (cacheFileTmp.createNewFile()) {
+      if (!cacheFileTmp.exists()) {
+        if (!isWindows() && onlyOwnerPermissions) {
+          Files.createFile(
+              cacheFileTmp.toPath(),
+              PosixFilePermissions.asFileAttribute(
+                  Stream.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+                      .collect(Collectors.toSet())));
+        } else {
+          Files.createFile(cacheFileTmp.toPath());
+        }
         logger.debug("Successfully created a cache file {}", cacheFileTmp);
       } else {
         logger.debug("Cache file already exists {}", cacheFileTmp);
@@ -165,26 +189,96 @@ class FileCacheManager {
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     } catch (IOException | SecurityException ex) {
-      logger.debug("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
+      logger.info(
+          "Failed to touch the cache file: {}. Ignored. {}",
+          ex.getMessage(),
+          cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }
 
-  /** Reads the cache file. */
-  JsonNode readCacheFile() {
-    if (cacheFile == null || !this.checkCacheLockFile()) {
-      // no cache or the cache is not valid.
+  static File getDefaultCacheDir() {
+    if (Constants.getOS() == Constants.OS.LINUX) {
+      String xdgCacheHome = getXdgCacheHome();
+      if (xdgCacheHome != null) {
+        return new File(xdgCacheHome, "snowflake");
+      }
+    }
+
+    String homeDir = getHomeDirProperty();
+    if (homeDir == null) {
+      // if still home directory is null, no cache dir is set.
+      return null;
+    }
+    if (Constants.getOS() == Constants.OS.WINDOWS) {
+      return new File(
+          new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
+    } else if (Constants.getOS() == Constants.OS.MAC) {
+      return new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
+    } else {
+      return new File(new File(homeDir, ".cache"), "snowflake");
+    }
+  }
+
+  private static String getXdgCacheHome() {
+    String xdgCacheHome = systemGetEnv("XDG_CACHE_HOME");
+    if (xdgCacheHome != null && isWritable(xdgCacheHome)) {
+      return xdgCacheHome;
+    }
+    return null;
+  }
+
+  private static String getHomeDirProperty() {
+    String homeDir = systemGetProperty("user.home");
+    if (homeDir != null && isWritable(homeDir)) {
+      return homeDir;
+    }
+    return null;
+  }
+
+  synchronized <T> T withLock(Supplier<T> supplier) {
+    if (cacheFile == null) {
+      logger.error("No cache file assigned", false);
+      return null;
+    }
+    if (cacheLockFile == null) {
+      logger.error("No cache lock file assigned", false);
+      return null;
+    } else if (cacheLockFile.exists()) {
+      deleteCacheLockIfExpired();
+    }
+
+    if (!tryToLockCacheFile()) {
+      logger.debug("Failed to lock the file. Skipping cache operation", false);
       return null;
     }
     try {
-      if (!cacheFile.exists()) {
-        logger.debug("Cache file doesn't exists. File: {}", cacheFile);
+      return supplier.get();
+    } finally {
+      if (!unlockCacheFile()) {
+        logger.debug("Failed to unlock cache file", false);
+      }
+    }
+  }
+
+  /** Reads the cache file. */
+  synchronized JsonNode readCacheFile() {
+    try {
+      if (!FileUtil.exists(cacheFile)) {
+        logger.debug("Cache file doesn't exist. Ignoring read. File: {}", cacheFile);
         return null;
       }
 
       try (Reader reader =
           new InputStreamReader(new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
-        FileUtil.logFileUsage(cacheFile, "Read cache", false);
+
+        if (onlyOwnerPermissions) {
+          FileUtil.handleWhenFilePermissionsWiderThanUserOnly(cacheFile, "Read cache");
+          FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(cacheFile, "Read cache");
+          FileUtil.throwWhenOwnerDifferentThanCurrentUser(cacheFile, "Read cache");
+        } else {
+          FileUtil.logFileUsage(cacheFile, "Read cache", false);
+        }
         return OBJECT_MAPPER.readTree(reader);
       }
     } catch (IOException ex) {
@@ -193,34 +287,31 @@ class FileCacheManager {
     return null;
   }
 
-  void writeCacheFile(JsonNode input) {
+  synchronized void writeCacheFile(JsonNode input) {
     logger.debug("Writing cache file. File: {}", cacheFile);
-    if (cacheFile == null || !tryLockCacheFile()) {
-      // no cache file or it failed to lock file
-      logger.debug(
-          "No cache file exists or failed to lock the file. Skipping writing the cache", false);
-      return;
-    }
-    // NOTE: must unlock cache file
     try {
-      if (input == null) {
+      if (input == null || !FileUtil.exists(cacheFile)) {
+        logger.debug(
+            "Cache file doesn't exist or input is null. Ignoring write. File: {}", cacheFile);
         return;
       }
       try (Writer writer =
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
-        FileUtil.logFileUsage(cacheFile, "Write to cache", false);
+        if (onlyOwnerPermissions) {
+          FileUtil.handleWhenFilePermissionsWiderThanUserOnly(cacheFile, "Write to cache");
+          FileUtil.handleWhenParentDirectoryPermissionsWiderThanUserOnly(
+              cacheFile, "Write to cache");
+        } else {
+          FileUtil.logFileUsage(cacheFile, "Write to cache", false);
+        }
         writer.write(input.toString());
       }
     } catch (IOException ex) {
       logger.debug("Failed to write the cache file. File: {}", cacheFile);
-    } finally {
-      if (!unlockCacheFile()) {
-        logger.debug("Failed to unlock cache file", false);
-      }
     }
   }
 
-  void deleteCacheFile() {
+  synchronized void deleteCacheFile() {
     logger.debug("Deleting cache file. File: {}, lock file: {}", cacheFile, cacheLockFile);
 
     if (cacheFile == null) {
@@ -238,68 +329,44 @@ class FileCacheManager {
    *
    * @return true if success or false
    */
-  private boolean tryLockCacheFile() {
+  private synchronized boolean tryToLockCacheFile() {
     int cnt = 0;
     boolean locked = false;
-    while (cnt < 100 && !(locked = lockCacheFile())) {
+    while (cnt < 5 && !(locked = lockCacheFile())) {
       try {
-        Thread.sleep(100);
+        Thread.sleep(10);
       } catch (InterruptedException ex) {
         // doesn't matter
       }
       ++cnt;
     }
     if (!locked) {
-      logger.debug("Failed to lock the cache file.", false);
+      deleteCacheLockIfExpired();
+      if (!lockCacheFile()) {
+        logger.debug("Failed to lock the cache file.", false);
+      }
     }
     return locked;
   }
 
-  /**
-   * Lock cache file by creating a lock directory
-   *
-   * @return true if success or false
-   */
-  private boolean lockCacheFile() {
-    return cacheLockFile.mkdirs();
-  }
-
-  /**
-   * Unlock cache file by deleting a lock directory
-   *
-   * @return true if success or false
-   */
-  private boolean unlockCacheFile() {
-    return cacheLockFile.delete();
-  }
-
-  private boolean checkCacheLockFile() {
+  private synchronized void deleteCacheLockIfExpired() {
     long currentTime = new Date().getTime();
-    long cacheFileTs = fileCreationTime(cacheFile);
-
-    if (!cacheLockFile.exists()
-        && cacheFileTs > 0
-        && currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs) {
-      logger.debug("No cache file lock directory exists and cache file is up to date.", false);
-      return true;
-    }
-
     long lockFileTs = fileCreationTime(cacheLockFile);
     if (lockFileTs < 0) {
-      // failed to get the timestamp of lock directory
-      return false;
-    }
-    if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds) {
+      logger.debug("Failed to get the timestamp of lock directory");
+    } else if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds) {
       // old lock file
-      if (!cacheLockFile.delete()) {
-        logger.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
-        return false;
+      try {
+        if (!cacheLockFile.delete()) {
+          logger.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
+        } else {
+          logger.debug("Deleted expired cache lock directory.", false);
+        }
+      } catch (Exception e) {
+        logger.debug(
+            "Failed to delete the directory. Dir: {}, Error: {}", cacheLockFile, e.getMessage());
       }
-      logger.debug("Deleted the cache lock directory, because it was old.", false);
-      return currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs;
     }
-    logger.debug("Failed to lock the file. Ignored.", false);
-    return false;
   }
 
   /**
@@ -307,9 +374,9 @@ class FileCacheManager {
    *
    * @return epoch time in ms
    */
-  private static long fileCreationTime(File targetFile) {
-    if (!targetFile.exists()) {
-      logger.debug("File not exists. File: {}", targetFile);
+  private static synchronized long fileCreationTime(File targetFile) {
+    if (!FileUtil.exists(targetFile)) {
+      logger.debug("File does not exist. File: {}", targetFile);
       return -1;
     }
     try {
@@ -322,7 +389,21 @@ class FileCacheManager {
     return -1;
   }
 
-  String getCacheFilePath() {
-    return cacheFile.getAbsolutePath();
+  /**
+   * Lock cache file by creating a lock directory
+   *
+   * @return true if success or false
+   */
+  private synchronized boolean lockCacheFile() {
+    return cacheLockFile.mkdirs();
+  }
+
+  /**
+   * Unlock cache file by deleting a lock directory
+   *
+   * @return true if success or false
+   */
+  private synchronized boolean unlockCacheFile() {
+    return cacheLockFile.delete();
   }
 }

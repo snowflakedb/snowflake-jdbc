@@ -1,8 +1,6 @@
-/*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.GENERATED_SCHEMA_PREFIX;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
@@ -14,8 +12,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -26,15 +24,18 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -80,10 +81,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private static final String ENABLE_PATTERN_SEARCH =
       SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey();
 
-  private static final String startingSchema;
-  private static final String startingDatabase;
+  private static String startingSchema;
+  private static String startingDatabase;
 
-  static {
+  @BeforeAll
+  public static void prepare() {
     try {
       startingSchema = connection.getSchema();
       startingDatabase = connection.getCatalog();
@@ -112,6 +114,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
    * @throws Exception arises if any error occurs
    */
   @Test
+  @DontRunOnGithubActions
   public void testUseConnectionCtx() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -234,7 +237,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       // quote
       String schemaName =
           "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + GENERATED_SCHEMA_PREFIX
               + "TEST_SCHEMA_\"\"WITH_QUOTES"
               + schemaRandomPart
               + "\"\"\"";
@@ -471,7 +474,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       String database = startingDatabase;
       String schemaPrefix =
-          TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
+          GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
       String schema1 = schemaPrefix + "SCH1";
       String schema2 = schemaPrefix + "SCH2";
       TestUtil.withSchema(
@@ -887,13 +890,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -916,9 +922,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -937,13 +947,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -966,9 +979,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertThat(
+            "Columns metadata SPECIFIC_NAME should contains expected columns ",
+            resultSet
+                .getString("SPECIFIC_NAME")
+                .replaceAll("\\s", "")
+                .matches(
+                    "^FUNC112.*RETURNTABLE.*COLAVARCHAR.*,COLBNUMBER,BIN2BINARY.*,SHAREDCOLNUMBER.?$"));
         assertFalse(resultSet.next());
       }
 
@@ -1030,11 +1047,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       // test getColumns with escaped special characters in schema and table name
       String specialSchemaSuffix = SnowflakeUtil.randomAlphaNumeric(5);
       String specialSchema =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "SPECIAL%_\\SCHEMA"
-              + specialSchemaSuffix
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "SPECIAL%_\\SCHEMA" + specialSchemaSuffix + "\"";
       TestUtil.withSchema(
           statement,
           specialSchema,
@@ -1592,12 +1605,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
           assertTrue(resultSet.next());
           assertEquals("%", resultSet.getString("COLUMN_DEF"));
-          try {
-            resultSet.getString("INVALID_COLUMN");
-            fail("must fail");
-          } catch (SQLException ex) {
-            // nop
-          }
+          assertThrows(SQLException.class, () -> resultSet.getString("INVALID_COLUMN"));
         }
 
         // no column privilege is supported.
@@ -1724,6 +1732,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
+  @DontRunOnGithubActions
   public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -1744,7 +1753,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             metaData.getProcedureColumns(connection.getCatalog(), null, "PROCTEST", "%")) {
           res.next();
           assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
-          assertEquals("id", res.getString("COLUMN_NAME"));
+          assertEquals("\"id\"", res.getString("COLUMN_NAME"));
           assertEquals(
               DatabaseMetaData.procedureColumnResult,
               res.getInt("COLUMN_TYPE")); // procedureColumnResult
@@ -1752,13 +1761,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals("NUMBER", res.getString("TYPE_NAME"));
           assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
           res.next();
-          assertEquals("name", res.getString("COLUMN_NAME"));
+          assertEquals("\"name\"", res.getString("COLUMN_NAME"));
           assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", res.getString("TYPE_NAME"));
           assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
           res.next();
-          assertEquals("address", res.getString("COLUMN_NAME"));
+          assertEquals("\"address\"", res.getString("COLUMN_NAME"));
           assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", res.getString("TYPE_NAME"));
@@ -1867,11 +1876,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = connection.createStatement()) {
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
       String schemaName =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "TEST_PATTERNS_SCHEMA_"
-              + schemaRandomPart
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "TEST_PATTERNS_SCHEMA_" + schemaRandomPart + "\"";
 
       TestUtil.withSchema(
           statement,
@@ -2106,11 +2111,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
       String schemaName =
-          "\""
-              + TestUtil.GENERATED_SCHEMA_PREFIX
-              + "TEST_PATTERNS_SCHEMA_"
-              + schemaRandomPart
-              + "\"";
+          "\"" + GENERATED_SCHEMA_PREFIX + "TEST_PATTERNS_SCHEMA_" + schemaRandomPart + "\"";
 
       TestUtil.withSchema(
           statement,
@@ -2336,6 +2337,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     DatabaseMetaData metaData = connection.getMetaData();
     assertEquals(43, metaData.getSQLKeywords().split(",").length);
   }
+
   /** Added in > 3.16.1 */
   @Test
   public void testVectorDimension() throws SQLException {
@@ -2368,6 +2370,284 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(256, unwrapResultSetMetadata.getDimension(2));
         assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
         assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+      }
+    }
+  }
+
+  /**
+   * Added in > 3.21.0 for SNOW-1619625 - we need to use exact schema when
+   * CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
+   */
+  @Test
+  public void testExactSchemaSearching() throws SQLException {
+    Random random = new Random();
+    int suffix = random.nextInt(Integer.MAX_VALUE);
+    // schemas created in tests must start with GENERATED_SCHEMA_PREFIX value
+    String coreSchemaName = "ESCAPED_UNDERSCORE%" + suffix;
+    String schemaName = GENERATED_SCHEMA_PREFIX + coreSchemaName;
+    String alternativeSchemaName =
+        GENERATED_SCHEMA_PREFIX + coreSchemaName.replaceAll("_", "x").replaceAll("%", "y");
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      for (String scm : Arrays.asList(schemaName, alternativeSchemaName)) {
+        statement.execute("CREATE SCHEMA \"" + scm + "\"");
+        statement.execute(
+            "CREATE TABLE \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable1\" (a text)");
+        statement.execute(
+            "CREATE TABLE \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable2\" (a text)");
+
+        statement.execute(
+            "ALTER TABLE \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable2\""
+                + " ADD CONSTRAINT pk_1 PRIMARY KEY (a);");
+        statement.execute(
+            "ALTER TABLE \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable1\""
+                + " ADD CONSTRAINT fk_1 FOREIGN KEY (a) REFERENCES \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable2\""
+                + " (a);");
+        statement.execute(
+            "create or replace function \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"myfun1\""
+                + "(a number, b number) RETURNS NUMBER as 'a*b'");
+        statement.execute(
+            "create or replace procedure \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"myproc1\""
+                + "(a varchar, b varchar)\n"
+                + "    returns varchar not null\n"
+                + "    language javascript\n"
+                + "    as\n"
+                + "    $$\n"
+                + "    return a +b;\n"
+                + "    $$\n"
+                + "    ;");
+        statement.execute(
+            "create or replace stream \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"stream1\""
+                + " on table \""
+                + connection.getCatalog()
+                + "\".\""
+                + scm
+                + "\".\"mytable1\"");
+      }
+
+      String schemaNameColumnInMetadata = "TABLE_SCHEM"; // it's not typo
+
+      try {
+        Properties props = new Properties();
+        props.put("CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX", true);
+        props.put("ENABLE_EXACT_SCHEMA_SEARCH_ENABLED", true);
+        props.put("schema", schemaName); // we should not escape schema here
+        try (Connection connectionWithContext = getConnection(props)) {
+          try (ResultSet schemas = connectionWithContext.getMetaData().getSchemas()) {
+            assertEquals(schemaName, connectionWithContext.getSchema());
+            assertTrue(schemas.next());
+            assertEquals(schemaName, schemas.getString(schemaNameColumnInMetadata));
+            assertFalse(schemas.next());
+          }
+
+          try (ResultSet schemasWithPattern =
+              connectionWithContext.getMetaData().getSchemas(null, null)) {
+            assertTrue(schemasWithPattern.next());
+            assertEquals(schemaName, schemasWithPattern.getString(schemaNameColumnInMetadata));
+            assertFalse(schemasWithPattern.next());
+          }
+
+          try (ResultSet tables =
+              connectionWithContext.getMetaData().getTables(null, null, null, null)) {
+            assertTrue(tables.next());
+            assertEquals("mytable1", tables.getString("TABLE_NAME"));
+            assertEquals(schemaName, tables.getString(schemaNameColumnInMetadata));
+            assertTrue(tables.next());
+            assertEquals("mytable2", tables.getString("TABLE_NAME"));
+            assertEquals(schemaName, tables.getString(schemaNameColumnInMetadata));
+            assertFalse(tables.next());
+          }
+
+          try (ResultSet tablePrivileges =
+              connectionWithContext.getMetaData().getTablePrivileges(null, null, "mytable1")) {
+            assertTrue(tablePrivileges.next());
+            assertEquals("mytable1", tablePrivileges.getString("TABLE_NAME"));
+            assertEquals(schemaName, tablePrivileges.getString(schemaNameColumnInMetadata));
+            assertFalse(tablePrivileges.next());
+          }
+
+          try (ResultSet columns =
+              connectionWithContext.getMetaData().getColumns(null, null, null, null)) {
+            assertTrue(columns.next());
+            assertEquals("mytable1", columns.getString("TABLE_NAME"));
+            assertEquals(schemaName, columns.getString(schemaNameColumnInMetadata));
+            assertEquals("A", columns.getString("COLUMN_NAME"));
+            assertTrue(columns.next());
+            assertEquals("mytable2", columns.getString("TABLE_NAME"));
+            assertEquals(schemaName, columns.getString(schemaNameColumnInMetadata));
+            assertEquals("A", columns.getString("COLUMN_NAME"));
+            assertFalse(columns.next());
+          }
+
+          try (ResultSet primaryKeys =
+              connectionWithContext.getMetaData().getPrimaryKeys(null, null, null)) {
+            assertTrue(primaryKeys.next());
+            assertEquals("mytable2", primaryKeys.getString("TABLE_NAME"));
+            assertEquals(schemaName, primaryKeys.getString(schemaNameColumnInMetadata));
+            assertEquals("A", primaryKeys.getString("COLUMN_NAME"));
+            assertFalse(primaryKeys.next());
+          }
+
+          try (ResultSet importedKeys =
+              connectionWithContext.getMetaData().getImportedKeys(null, null, null)) {
+            assertTrue(importedKeys.next());
+            assertEquals("mytable2", importedKeys.getString("PKTABLE_NAME"));
+            assertEquals(schemaName, importedKeys.getString("PKTABLE_SCHEM"));
+            assertEquals("A", importedKeys.getString("PKCOLUMN_NAME"));
+            assertEquals("mytable1", importedKeys.getString("FKTABLE_NAME"));
+            assertEquals(schemaName, importedKeys.getString("FKTABLE_SCHEM"));
+            assertEquals("A", importedKeys.getString("FKCOLUMN_NAME"));
+            assertFalse(importedKeys.next());
+          }
+
+          try (ResultSet exportedKeys =
+              connectionWithContext.getMetaData().getExportedKeys(null, null, null)) {
+            assertTrue(exportedKeys.next());
+            assertEquals("mytable2", exportedKeys.getString("PKTABLE_NAME"));
+            assertEquals(schemaName, exportedKeys.getString("PKTABLE_SCHEM"));
+            assertEquals("A", exportedKeys.getString("PKCOLUMN_NAME"));
+            assertEquals("mytable1", exportedKeys.getString("FKTABLE_NAME"));
+            assertEquals(schemaName, exportedKeys.getString("FKTABLE_SCHEM"));
+            assertEquals("A", exportedKeys.getString("FKCOLUMN_NAME"));
+            assertFalse(exportedKeys.next());
+          }
+
+          try (ResultSet crossReferences =
+              connectionWithContext
+                  .getMetaData()
+                  .getCrossReference(null, null, null, null, null, null)) {
+            assertTrue(crossReferences.next());
+            assertEquals("mytable2", crossReferences.getString("PKTABLE_NAME"));
+            assertEquals(schemaName, crossReferences.getString("PKTABLE_SCHEM"));
+            assertEquals("A", crossReferences.getString("PKCOLUMN_NAME"));
+            assertEquals("mytable1", crossReferences.getString("FKTABLE_NAME"));
+            assertEquals(schemaName, crossReferences.getString("FKTABLE_SCHEM"));
+            assertEquals("A", crossReferences.getString("FKCOLUMN_NAME"));
+            assertFalse(crossReferences.next());
+          }
+
+          try (ResultSet functions =
+              connectionWithContext.getMetaData().getFunctions(null, null, "myfun%")) {
+            assertTrue(functions.next());
+            assertEquals("myfun1", functions.getString("FUNCTION_NAME"));
+            // schema name contains % so it is returned in ""
+            assertEquals('"' + schemaName + '"', functions.getString("FUNCTION_SCHEM"));
+            assertFalse(functions.next());
+          }
+
+          try (ResultSet functionColumns =
+              connectionWithContext.getMetaData().getFunctionColumns(null, null, "myfun%", null)) {
+            assertTrue(functionColumns.next());
+            assertEquals("myfun1", functionColumns.getString("FUNCTION_NAME"));
+            // schema name is empty when getFunctionColumns schema is empty
+            assertEquals(null, functionColumns.getString("FUNCTION_SCHEM"));
+            // first parameter is an empty string
+            assertEquals("", functionColumns.getString("COLUMN_NAME"));
+            assertTrue(functionColumns.next());
+            // schema name is empty when getFunctionColumns schema is empty
+            assertEquals(null, functionColumns.getString("FUNCTION_SCHEM"));
+            assertEquals("A", functionColumns.getString("COLUMN_NAME"));
+            assertTrue(functionColumns.next());
+            assertEquals("myfun1", functionColumns.getString("FUNCTION_NAME"));
+            // schema name is empty when getFunctionColumns schema is empty
+            assertEquals(null, functionColumns.getString("FUNCTION_SCHEM"));
+            assertEquals("B", functionColumns.getString("COLUMN_NAME"));
+            assertFalse(functionColumns.next());
+          }
+
+          try (ResultSet procedures =
+              connectionWithContext.getMetaData().getProcedures(null, null, "myproc%")) {
+            assertTrue(procedures.next());
+            // schema name contains % so it is returned in ""
+            assertEquals('"' + schemaName + '"', procedures.getString("PROCEDURE_SCHEM"));
+            assertEquals("myproc1", procedures.getString("PROCEDURE_NAME"));
+            assertFalse(procedures.next());
+          }
+
+          try (ResultSet procedureColumns =
+              connectionWithContext
+                  .getMetaData()
+                  .getProcedureColumns(null, null, "myproc%", null)) {
+            assertTrue(procedureColumns.next());
+            assertEquals("myproc1", procedureColumns.getString("PROCEDURE_NAME"));
+            // schema name contains % so it is returned in ""
+            assertEquals('"' + schemaName + '"', procedureColumns.getString("PROCEDURE_SCHEM"));
+            // first parameter is an empty string
+            assertEquals("", procedureColumns.getString("COLUMN_NAME"));
+            assertTrue(procedureColumns.next());
+            assertEquals('"' + schemaName + '"', procedureColumns.getString("PROCEDURE_SCHEM"));
+            assertEquals("A", procedureColumns.getString("COLUMN_NAME"));
+            assertTrue(procedureColumns.next());
+            assertEquals("myproc1", procedureColumns.getString("PROCEDURE_NAME"));
+            assertEquals('"' + schemaName + '"', procedureColumns.getString("PROCEDURE_SCHEM"));
+            assertEquals("B", procedureColumns.getString("COLUMN_NAME"));
+            assertFalse(procedureColumns.next());
+          }
+
+          try (ResultSet streams =
+              connectionWithContext
+                  .getMetaData()
+                  .unwrap(SnowflakeDatabaseMetaData.class)
+                  .getStreams(null, null, null)) {
+            assertTrue(streams.next());
+            // here table name is full qualified name, schema name contains % so it is returned in
+            // "", table name is always in ""
+            assertEquals(
+                connection.getCatalog() + ".\"" + schemaName + "\".\"mytable1\"",
+                streams.getString("TABLE_NAME"));
+            // here schema name does not contain "" but maybe should
+            assertEquals(schemaName, streams.getString("SCHEMA_NAME"));
+            assertEquals("stream1", streams.getString("STREAM_NAME"));
+            assertFalse(streams.next());
+          }
+
+          // not supported:
+          // getAttributes
+          // getBestRowIdentifier
+          // getColumnPrivileges
+          // getIndexInfo
+          // getPseudoColumns
+          // getSuperTypes
+          // getSuperTables
+          // getVersionColumns
+          // getUDTs
+        }
+      } finally {
+        for (String scm : Arrays.asList(schemaName, alternativeSchemaName)) {
+          statement.execute("DROP SCHEMA \"" + scm + "\"");
+        }
       }
     }
   }

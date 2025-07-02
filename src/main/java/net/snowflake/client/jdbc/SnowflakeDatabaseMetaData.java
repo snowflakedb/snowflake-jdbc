@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
@@ -18,11 +14,11 @@ import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_STREAMS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -47,7 +43,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
 
@@ -167,6 +162,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   // Indicates if pattern matching is allowed for all parameters.
   private boolean isPatternMatchingEnabled = true;
+  private boolean exactSchemaSearchEnabled;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.trace("SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
@@ -179,6 +175,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.ibInstance = session.getTelemetryClient();
     this.procedureResultsetColumnNum = -1;
     this.isPatternMatchingEnabled = session.getEnablePatternSearch();
+    this.exactSchemaSearchEnabled = session.getEnableExactSchemaSearch();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
@@ -1116,21 +1113,29 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getProcedures(
-      final String catalog, final String schemaPattern, final String procedureNamePattern)
+      final String originalCatalog,
+      final String originalSchemaPattern,
+      final String procedureNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     logger.trace(
-        "public ResultSet getProcedures(String catalog, "
-            + "String schemaPattern,String procedureNamePattern)",
+        "public ResultSet getProcedures(String originalCatalog, "
+            + "String originalSchemaPattern,String procedureNamePattern)",
         false);
 
     String showProcedureCommand =
-        getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
+        getFirstResultSetCommand(
+            originalCatalog, originalSchemaPattern, procedureNamePattern, "procedures");
 
     if (showProcedureCommand.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURES, statement);
     }
+
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledProcedurePattern = Wildcard.toRegexPattern(procedureNamePattern, true);
@@ -1157,7 +1162,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if ((compiledProcedurePattern == null
                   || compiledProcedurePattern.matcher(procedureName).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())) {
+                  || compiledSchemaPattern.matcher(schemaName).matches()
+                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
             logger.trace("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -1390,7 +1396,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   // apply session context when catalog is unspecified
-  private SFPair<String, String> applySessionContext(String catalog, String schemaPattern) {
+  private ContextAwareMetadataSearch applySessionContext(String catalog, String schemaPattern) {
     if (metadataRequestUseConnectionCtx) {
       // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
       if (catalog == null) {
@@ -1407,7 +1413,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         }
       }
     }
-    return SFPair.of(catalog, schemaPattern);
+    return new ContextAwareMetadataSearch(
+        catalog, schemaPattern, exactSchemaSearchEnabled && useSessionSchema);
   }
 
   /* helper function for getProcedures, getFunctionColumns, etc. Returns sql command to show some type of result such
@@ -1415,9 +1422,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   private String getFirstResultSetCommand(
       String catalog, String schemaPattern, String name, String type) {
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(catalog, schemaPattern);
+    catalog = result.database();
+    schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     String showProcedureCommand = "show /* JDBC:DatabaseMetaData.getProcedures() */ " + type;
 
@@ -1431,7 +1439,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return "";
     } else {
       String catalogEscaped = escapeSqlQuotes(catalog);
-      if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
+      if (!isExactSchema && (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern))) {
         showProcedureCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return "";
@@ -1449,17 +1457,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   procedures or functions */
   private String getSecondResultSetCommand(
       String catalog, String schemaPattern, String name, String type) {
-    if (Strings.isNullOrEmpty(name)) {
+    if (isNullOrEmpty(name)) {
       return "";
     }
     String procedureCols = name.substring(name.indexOf("("), name.indexOf(" RETURN"));
     String quotedName = "\"" + name.substring(0, name.indexOf("(")) + "\"";
     String procedureName = quotedName + procedureCols;
     String showProcedureColCommand;
-    if (!Strings.isNullOrEmpty(catalog) && !Strings.isNullOrEmpty(schemaPattern)) {
+    if (!isNullOrEmpty(catalog) && !isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand =
           "desc " + type + " " + catalog + "." + schemaPattern + "." + procedureName;
-    } else if (!Strings.isNullOrEmpty(schemaPattern)) {
+    } else if (!isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand = "desc " + type + " " + schemaPattern + "." + procedureName;
     } else {
       showProcedureColCommand = "desc " + type + " " + procedureName;
@@ -1510,9 +1518,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
-    final String catalog = resPair.left;
-    final String schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1553,7 +1562,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
       } else {
-        String schemaUnescaped = unescapeChars(schemaPattern);
+        String schemaUnescaped = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
         showTablesCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
       }
     }
@@ -1614,7 +1623,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           }
         }
 
-        close(); // close
+        close();
         return false;
       }
     };
@@ -1699,9 +1708,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
-    final String catalog = resPair.left;
-    final String schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1729,7 +1739,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
-        String schemaUnescaped = unescapeChars(schemaPattern);
+        String schemaUnescaped = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
           showColumnsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
@@ -1968,9 +1978,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLE_PRIVILEGES, statement);
     }
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
-    final String catalog = resPair.left;
-    final String schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     String showView = "select * from ";
 
@@ -1993,10 +2004,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !schemaPattern.isEmpty()
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
+      String unescapedSchema = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
       if (showView.contains("where table_name")) {
-        showView += " and table_schema = '" + unescapeChars(schemaPattern) + "'";
+        showView += " and table_schema = '" + unescapedSchema + "'";
       } else {
-        showView += " where table_schema = '" + unescapeChars(schemaPattern) + "'";
+        showView += " where table_schema = '" + unescapedSchema + "'";
       }
     }
     showView += " order by table_catalog, table_schema, table_name, privilege_type";
@@ -2087,9 +2099,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
-    final String catalog = resPair.left;
-    final String schema = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchema);
+    String catalog = result.database();
+    String schema = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     // These Patterns will only be used if the connection property enablePatternSearch=true
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schema, true);
@@ -2106,7 +2119,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       } else if (schema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
       } else {
-        String schemaUnescaped = unescapeChars(schema);
+        String schemaUnescaped = isExactSchema ? schema : unescapeChars(schema);
         if (table == null) {
           showPKCommand += "schema \"" + catalogUnescaped + "\".\"" + schemaUnescaped + "\"";
         } else if (table.isEmpty()) {
@@ -2250,11 +2263,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     StringBuilder commandBuilder = new StringBuilder();
 
     // apply session context when catalog is unspecified
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair =
+    ContextAwareMetadataSearch result =
         applySessionContext(originalParentCatalog, originalParentSchema);
-    final String parentCatalog = resPair.left;
-    final String parentSchema = resPair.right;
+    String parentCatalog = result.database();
+    String parentSchema = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     // These Patterns will only be used to filter results if the connection property
     // enablePatternSearch=true
@@ -2283,7 +2296,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       } else if (parentSchema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
       } else {
-        String unescapedParentSchema = unescapeChars(parentSchema);
+        String unescapedParentSchema = isExactSchema ? parentSchema : unescapeChars(parentSchema);
         if (parentTable == null) {
           commandBuilder.append(
               "schema \"" + unescapedParentCatalog + "\".\"" + unescapedParentSchema + "\"");
@@ -2580,12 +2593,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         originalSchema,
         table);
 
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
-    final String catalog = resPair.left;
-    final String schema = resPair.right;
-
-    return getForeignKeys("import", catalog, schema, table, null, null, null);
+    return getForeignKeys("import", originalCatalog, originalSchema, table, null, null, null);
   }
 
   @Override
@@ -2598,10 +2606,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         schema,
         table);
 
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schema);
-    catalog = resPair.left;
-    schema = resPair.right;
     return getForeignKeys("export", catalog, schema, table, null, null, null);
   }
 
@@ -2625,11 +2629,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         foreignCatalog,
         foreignSchema,
         foreignTable);
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(parentCatalog, parentSchema);
-    parentCatalog = resPair.left;
-    parentSchema = resPair.right;
-
     return getForeignKeys(
         "cross",
         parentCatalog,
@@ -2877,9 +2876,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
-    final String catalog = resPair.left;
-    final String schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledStreamNamePattern = Wildcard.toRegexPattern(streamName, true);
@@ -2904,7 +2904,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
       } else {
-        String schemaUnescaped = unescapeChars(schemaPattern);
+        String schemaUnescaped = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
         if (streamName == null || Wildcard.isWildcardPatternStr(streamName)) {
           showStreamsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         }
@@ -3280,35 +3280,44 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
-    final String catalog = resPair.left;
-    final String schemaPattern = resPair.right;
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchema);
+    final String catalog = result.database();
+    final String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
 
-    String showSchemas = "show /* JDBC:DatabaseMetaData.getSchemas() */ schemas";
+    StringBuilder showSchemas =
+        new StringBuilder("show /* JDBC:DatabaseMetaData.getSchemas() */ schemas");
 
     Statement statement = connection.createStatement();
-    // only add pattern if it is not empty and not matching all character.
-    if (schemaPattern != null
+    if (isExactSchema) {
+      String escapedSchema =
+          schemaPattern.replaceAll("_", "\\\\\\\\_").replaceAll("%", "\\\\\\\\%");
+      showSchemas.append(" like '").append(escapedSchema).append("'");
+    } else if (schemaPattern != null
         && !schemaPattern.isEmpty()
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
-      showSchemas += " like '" + escapeSingleQuoteForLikeCommand(schemaPattern) + "'";
+      // only add pattern if it is not empty and not matching all character.
+      showSchemas
+          .append(" like '")
+          .append(escapeSingleQuoteForLikeCommand(schemaPattern))
+          .append("'");
     }
 
     if (catalog == null) {
-      showSchemas += " in account";
+      showSchemas.append(" in account");
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_SCHEMAS, statement);
     } else {
-      showSchemas += " in database \"" + escapeSqlQuotes(catalog) + "\"";
+      showSchemas.append(" in database \"").append(escapeSqlQuotes(catalog)).append("\"");
     }
 
-    logger.debug("Sql command to get schemas metadata: {}", showSchemas);
+    String sqlQuery = showSchemas.toString();
+    logger.debug("Sql command to get schemas metadata: {}", sqlQuery);
 
-    ResultSet resultSet =
-        executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
+    ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, sqlQuery, GET_SCHEMAS);
     sendInBandTelemetryMetadataMetrics(
         resultSet, "getSchemas", originalCatalog, originalSchema, "none", "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement) {
@@ -3323,7 +3332,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           String dbName = showObjectResultSet.getString(5);
 
           if (compiledSchemaPattern == null
-              || compiledSchemaPattern.matcher(schemaName).matches()) {
+              || compiledSchemaPattern.matcher(schemaName).matches()
+              || isExactSchema && schemaPattern.equals(schemaPattern)) {
             nextRow[0] = schemaName;
             nextRow[1] = dbName;
             return true;
@@ -3358,22 +3368,30 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getFunctions(
-      final String catalog, final String schemaPattern, final String functionNamePattern)
+      final String originalCatalog,
+      final String originalSchemaPattern,
+      final String functionNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     logger.trace(
         "public ResultSet getFunctions(String catalog={}, String schemaPattern={}, "
             + "String functionNamePattern={}",
-        catalog,
-        schemaPattern,
+        originalCatalog,
+        originalSchemaPattern,
         functionNamePattern);
 
     String showFunctionCommand =
-        getFirstResultSetCommand(catalog, schemaPattern, functionNamePattern, "functions");
+        getFirstResultSetCommand(
+            originalCatalog, originalSchemaPattern, functionNamePattern, "functions");
     if (showFunctionCommand.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTIONS, statement);
     }
+    ContextAwareMetadataSearch result = applySessionContext(originalCatalog, originalSchemaPattern);
+    String catalog = result.database();
+    String schemaPattern = result.schema();
+    boolean isExactSchema = result.isExactSchema();
+
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
 
@@ -3402,7 +3420,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if ((compiledFunctionPattern == null
                   || compiledFunctionPattern.matcher(functionName).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())) {
+                  || compiledSchemaPattern.matcher(schemaName).matches()
+                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
             logger.debug("Found a matched function:" + schemaName + "." + functionName);
 
             nextRow[0] = catalogName;
@@ -3658,7 +3677,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       Statement statement, String sql, DBMetadataResultSetMetadata metadataType)
       throws SQLException {
     ResultSet resultSet;
-    if (Strings.isNullOrEmpty(sql)) {
+    if (isNullOrEmpty(sql)) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
     }
     try {
@@ -3683,5 +3702,29 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
     return resultSet;
+  }
+
+  private static class ContextAwareMetadataSearch {
+    private final String database;
+    private final String schema;
+    private final boolean isExactSchema;
+
+    public ContextAwareMetadataSearch(String database, String schema, boolean isExactSchema) {
+      this.database = database;
+      this.schema = schema;
+      this.isExactSchema = isExactSchema;
+    }
+
+    public String database() {
+      return database;
+    }
+
+    public String schema() {
+      return schema;
+    }
+
+    public boolean isExactSchema() {
+      return isExactSchema;
+    }
   }
 }

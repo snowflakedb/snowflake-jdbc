@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,6 +15,7 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -32,6 +29,14 @@ public class SecretDetector {
   private static final Pattern AWS_TOKEN_PATTERN =
       Pattern.compile(
           "(accessToken|tempToken|keySecret)\"\\s*:\\s*\"([a-z0-9/+]{32,}={0,2})\"",
+          Pattern.CASE_INSENSITIVE);
+
+  // Used for detecting OAuth tokens in serialized JSON
+  private static final Pattern OAUTH_JSON_PATTERN =
+      Pattern.compile(
+          "(access_token|refresh_token)\""
+              + "\\s*:\\s*"
+              + "\"([a-zA-Z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{3,})\"",
           Pattern.CASE_INSENSITIVE);
 
   // Signature added in the query string of a URL in SAS based authentication
@@ -70,6 +75,9 @@ public class SecretDetector {
           "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
           Pattern.CASE_INSENSITIVE);
 
+  private static final Pattern ENCRYPTION_MATERIAL_PATTERN =
+      Pattern.compile("\"encryptionMaterial\"\\s*:\\s*\\{.*?\\}", Pattern.CASE_INSENSITIVE);
+
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
 
@@ -88,6 +96,10 @@ public class SecretDetector {
     "sig",
     "signature",
     "temptoken",
+    "oauthClientId",
+    "oauthClientSecret",
+    "accessToken",
+    "refreshToken"
   };
 
   private static Set<String> SENSITIVE_NAME_SET = new HashSet<>(Arrays.asList(SENSITIVE_NAMES));
@@ -113,7 +125,7 @@ public class SecretDetector {
   private static boolean isSensitiveParameter(String name) {
     Pattern PASSWORD_IN_NAME =
         Pattern.compile(
-            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword|private_key_base).*?",
+            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword|private_key_base|oauthClientSecret|oauthClientId).*?",
             Pattern.CASE_INSENSITIVE);
     Matcher matcher = PASSWORD_IN_NAME.matcher(name);
     return isSensitive(name) || matcher.matches();
@@ -136,6 +148,9 @@ public class SecretDetector {
   }
 
   private static String filterAWSKeys(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         AWS_KEY_PATTERN.matcher(text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
@@ -146,6 +161,9 @@ public class SecretDetector {
   }
 
   private static String filterSASTokens(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         SAS_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -157,6 +175,9 @@ public class SecretDetector {
   }
 
   private static String filterPassword(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         PASSWORD_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -168,6 +189,9 @@ public class SecretDetector {
   }
 
   private static String filterConnectionTokens(String text) {
+    if (text == null) {
+      return null;
+    }
     Matcher matcher =
         CONNECTION_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -207,8 +231,35 @@ public class SecretDetector {
    * @return Masked string
    */
   public static String maskSecrets(String text) {
+    if (text == null) {
+      return null;
+    }
     return filterAccessTokens(
-        filterConnectionTokens(filterPassword(filterSASTokens(filterAWSKeys(text)))));
+        filterConnectionTokens(
+            filterPassword(
+                filterSASTokens(
+                    filterAWSKeys(filterOAuthTokens(filterEncryptionMaterial(text)))))));
+  }
+
+  /**
+   * Masks any secrets present in the OAuth token request JSON response.
+   *
+   * @param text Text which may contain secrets
+   * @return Masked string
+   */
+  @SnowflakeJdbcInternalApi
+  public static String filterOAuthTokens(String text) {
+    if (text == null) {
+      return null;
+    }
+    Matcher matcher =
+        OAUTH_JSON_PATTERN.matcher(
+            text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    if (matcher.find()) {
+      return matcher.replaceAll("$1\":\"****\"");
+    }
+    return text;
   }
 
   /**
@@ -248,6 +299,26 @@ public class SecretDetector {
       message = gcsMatcher.replaceAll("\"privateKeyData\": \"XXXX\"");
     }
 
+    return message;
+  }
+
+  /**
+   * Filter encryption material that may be buried inside a JSON string.
+   *
+   * @param message the message text which may contain encryption material
+   * @return Return filtered message
+   */
+  public static String filterEncryptionMaterial(String message) {
+    if (message == null) {
+      return null;
+    }
+    Matcher matcher =
+        ENCRYPTION_MATERIAL_PATTERN.matcher(
+            message.length() <= MAX_LENGTH ? message : message.substring(0, MAX_LENGTH));
+
+    if (matcher.find()) {
+      return matcher.replaceAll("\"encryptionMaterial\" : ****");
+    }
     return message;
   }
 

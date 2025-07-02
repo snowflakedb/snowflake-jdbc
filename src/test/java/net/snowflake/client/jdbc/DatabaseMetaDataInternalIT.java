@@ -1,12 +1,10 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
- */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -221,11 +219,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getFunctions(null, "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
     // resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
-    try {
-      resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
-    } catch (SQLException e) {
-      assertEquals(2003, e.getErrorCode());
-    }
+
+    resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
+    assertEquals(0, getSizeOfResultSet(resultSet));
+
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA1_", "_DBCFUNCTEST11_");
@@ -467,12 +464,12 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
       databaseMetaData = connection.getMetaData();
 
-      try {
-        ResultSet resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
-      } catch (SQLException e) {
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
-      }
+      SQLException e =
+          assertThrows(
+              SQLException.class,
+              () -> databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"}));
+      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
+      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"SYSTEM_TABLE"})) {

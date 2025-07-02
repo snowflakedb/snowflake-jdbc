@@ -1,12 +1,8 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.QueryStatus.NO_DATA;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
-import com.google.api.client.util.Strings;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -155,7 +151,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
           // exception
           if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
             String errorMessage = qs.getErrorMessage();
-            if (Strings.isNullOrEmpty(errorMessage)) {
+            if (isNullOrEmpty(errorMessage)) {
               errorMessage = "No error message available";
             }
             throw new SQLException(

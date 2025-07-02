@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
@@ -556,7 +552,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           updateCounts.intArr,
           exceptionReturned);
     }
-
+    if (this.getSFBaseStatement().getSFBaseSession().getClearBatchOnlyAfterSuccessfulExecution()) {
+      clearBatch();
+    }
     return updateCounts;
   }
 
@@ -880,6 +878,23 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
+  @Override
+  public void setAsyncQueryTimeout(int seconds) throws SQLException {
+    logger.trace("setAsyncQueryTimeout(int seconds)", false);
+    raiseSQLExceptionIfStatementIsClosed();
+
+    try {
+      if (this.sfBaseStatement != null) {
+        this.sfBaseStatement.addProperty("STATEMENT_TIMEOUT_IN_SECONDS", seconds);
+        // disable statement level query timeout to avoid override by connection parameter
+        this.setQueryTimeout(0);
+      }
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+          null, ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -1259,6 +1274,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {}
+
+    @Override
+    public void setAsyncQueryTimeout(int seconds) throws SQLException {}
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {

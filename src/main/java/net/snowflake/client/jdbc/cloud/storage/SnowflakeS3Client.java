@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
@@ -54,6 +50,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import net.snowflake.client.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
@@ -61,6 +58,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -77,11 +75,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
-/**
- * Wrapper around AmazonS3Client.
- *
- * @author ffunke
- */
+/** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private static final String localFileSep = systemGetProperty("file.separator");
@@ -235,6 +229,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
+
+    if (session instanceof SFSession) {
+      List<HttpHeadersCustomizer> headersCustomizers =
+          ((SFSession) session).getHttpHeadersCustomizers();
+      if (headersCustomizers != null && !headersCustomizers.isEmpty()) {
+        amazonS3Builder.withRequestHandlers(
+            new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
+      }
+    }
+
     amazonClient = (AmazonS3) amazonS3Builder.build();
   }
 
@@ -387,7 +391,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         String iv = metaMap.get(AMZ_IV);
 
         myDownload.waitForCompletion();
-
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 

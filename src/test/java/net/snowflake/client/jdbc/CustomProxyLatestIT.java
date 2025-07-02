@@ -6,8 +6,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.net.Authenticator;
@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 // To run these tests, you must:
 // 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite. Confluence doc on
@@ -472,71 +474,36 @@ public class CustomProxyLatestIT {
         connectionUrl, /* usesConnectionProperties */ false, /* usesIncorrectJVMParameters */ true);
   }
 
-  @Test
-  @Disabled
-  public void testProxyConnectionWithoutProxyPortOrHost()
-      throws ClassNotFoundException, SQLException {
-    // proxyPort is empty
-    String connectionUrl =
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=localhost&proxyPort="
             + "&proxyUser=testuser1&proxyPassword=test"
-            + "&useProxy=true";
-    try {
-      runAzureProxyConnection(
-          connectionUrl, /* usesConnectionProperties */
-          false, /* usesIncorrectJVMParameters */
-          true);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
-    }
-    // proxyPort is non-integer value
-    connectionUrl =
+            + "&useProxy=true",
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=localhost&proxyPort=cheese"
             + "&proxyUser=testuser1&proxyPassword=test"
-            + "&useProxy=true";
-    try {
-      runAzureProxyConnection(
-          connectionUrl, /* usesConnectionProperties */
-          false, /* usesIncorrectJVMParameters */
-          true);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
-    }
-
-    // proxyHost is empty, proxyPort is valid
-    connectionUrl =
+            + "&useProxy=true",
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=&proxyPort=3128"
             + "&proxyUser=testuser1&proxyPassword=test"
-            + "&useProxy=true";
-    try {
-      runAzureProxyConnection(
-          connectionUrl, /* usesConnectionProperties */
-          false, /* usesIncorrectJVMParameters */
-          true);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
-    }
-
-    // proxyPort and proxyHost are empty, but username and password are specified
-    connectionUrl =
+            + "&useProxy=true",
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
             + "&proxyUser=testuser1&proxyPassword=test"
-            + "&useProxy=true";
-    try {
-      runAzureProxyConnection(
-          connectionUrl, /* usesConnectionProperties */
-          false, /* usesIncorrectJVMParameters */
-          true);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
-    }
+            + "&useProxy=true"
+      })
+  @Disabled
+  public void testProxyConnectionWithoutProxyPortOrHost(String connectionUrl) {
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () ->
+                runAzureProxyConnection(
+                    connectionUrl, /* usesConnectionProperties */
+                    false, /* usesIncorrectJVMParameters */
+                    true));
+    assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
   }
 
   /**

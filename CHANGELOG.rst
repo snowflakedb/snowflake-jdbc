@@ -1,3 +1,35 @@
+**JDBC Driver 3.25.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.24.2**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.24.1**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.24.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.23.2**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.23.1**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.23.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.22.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
 **JDBC Driver 3.21.0**
 
 - \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc

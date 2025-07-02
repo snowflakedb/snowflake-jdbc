@@ -1,17 +1,13 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.jdbc;
 
 import static java.util.Arrays.stream;
+import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.base.Strings;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -58,9 +54,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 
-/**
- * @author jhuang
- */
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
@@ -170,6 +163,7 @@ public class SnowflakeUtil {
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
         case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
+        case OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE:
           throw new SnowflakeReauthenticationRequest(queryId, errorMessage, sqlState, errorCode);
       }
     }
@@ -370,8 +364,7 @@ public class SnowflakeUtil {
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
-      if (!extColTypeNameNode.isMissingNode()
-          && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+      if (!extColTypeNameNode.isMissingNode() && !isNullOrEmpty(extColTypeNameNode.asText())) {
         extColTypeName = extColTypeNameNode.asText();
       }
       ColumnTypeInfo columnTypeInfo =
@@ -758,8 +751,7 @@ public class SnowflakeUtil {
         String userAgentSuffix =
             info.getProperty(SFSessionProperty.USER_AGENT_SUFFIX.getPropertyKey());
         Boolean gzipDisabled =
-            Strings.isNullOrEmpty(
-                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()))
+            isNullOrEmpty(info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()))
                 ? false
                 : Boolean.valueOf(
                     info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()));
@@ -900,5 +892,19 @@ public class SnowflakeUtil {
     } else {
       return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
+  }
+
+  /**
+   * Check whether the OS is Windows
+   *
+   * @return boolean
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean isWindows() {
+    return Constants.getOS() == Constants.OS.WINDOWS;
+  }
+
+  public static boolean isNullOrEmpty(String str) {
+    return str == null || str.isEmpty();
   }
 }

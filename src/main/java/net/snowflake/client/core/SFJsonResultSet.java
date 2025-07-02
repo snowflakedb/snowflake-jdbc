@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
-
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -94,7 +90,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         }
       case Types.ARRAY:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
-          return getArray(columnIndex);
+          return new StructObjectWrapper((String) obj, getArray(columnIndex));
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
