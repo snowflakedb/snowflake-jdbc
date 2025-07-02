@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.24.3-SNAPSHOT</version>
+    <version>3.25.0</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.24.3-SNAPSHOT</version>
+  <version>3.25.0</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -1490,7 +1490,7 @@
                 <configuration>
                   <file>target/${project.artifactId}.jar</file>
                   <repositoryId>ossrh</repositoryId>
-                  <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
                   <pomFile>generated_public_pom.xml</pomFile>
                   <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
                   <sources>target/${project.artifactId}-sources.jar</sources>

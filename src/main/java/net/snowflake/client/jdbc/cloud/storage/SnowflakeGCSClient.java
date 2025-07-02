@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemPropertyToBooleanValue;
 import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
@@ -12,19 +11,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.gax.paging.Page;
-import com.google.api.gax.rpc.FixedHeaderProvider;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.NoCredentials;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.HttpStorageOptions;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.Storage.BlobListOption;
-import com.google.cloud.storage.StorageException;
-import com.google.cloud.storage.StorageOptions;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,7 +20,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
-import java.nio.channels.Channels;
 import java.security.InvalidKeyException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -57,7 +42,6 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -90,8 +74,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   private int encryptionKeySize = 0; // used for PUTs
   private StageInfo stageInfo;
   private RemoteStoreFileEncryptionMaterial encMat;
-  private Storage gcsClient = null;
   private SFSession session = null;
+  private GCSAccessStrategy gcsAccessStrategy = null;
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeGCSClient.class);
 
@@ -188,40 +172,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
-    try {
-      logger.debug(
-          "Listing objects in the bucket {} with prefix {}", remoteStorageLocation, prefix);
-      Page<Blob> blobs = this.gcsClient.list(remoteStorageLocation, BlobListOption.prefix(prefix));
-      return new StorageObjectSummaryCollection(blobs);
-    } catch (Exception e) {
-      logger.debug("Failed to list objects", false);
-      throw new StorageProviderException(e);
-    }
+    return this.gcsAccessStrategy.listObjects(remoteStorageLocation, prefix);
   }
 
   @Override
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
-    try {
-      BlobId blobId = BlobId.of(remoteStorageLocation, prefix);
-      Blob blob = gcsClient.get(blobId);
-
-      // GCS returns null if the blob was not found
-      // By design, our storage platform expects to see a "blob not found" situation
-      // as a RemoteStorageProviderException
-      // Hence, we throw a RemoteStorageProviderException
-      if (blob == null) {
-        throw new StorageProviderException(
-            new StorageException(
-                404, // because blob not found
-                "Blob" + blobId.getName() + " not found in bucket " + blobId.getBucket()));
-      }
-
-      return new CommonObjectMetadata(
-          blob.getSize(), blob.getContentEncoding(), blob.getMetadata());
-    } catch (StorageException ex) {
-      throw new StorageProviderException(ex);
-    }
+    return this.gcsAccessStrategy.getObjectMetadata(remoteStorageLocation, prefix);
   }
 
   /**
@@ -283,7 +240,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                  session.getAuthTimeout(),
+                  0,
                   session.getHttpClientSocketTimeout(),
                   getMaxRetries(),
                   0, // no socket timeout injection
@@ -336,25 +293,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             handleStorageException(ex, ++retryCount, "download", session, command, queryId);
           }
         } else {
-          BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
-          Blob blob = gcsClient.get(blobId);
-          if (blob == null) {
-            throw new StorageProviderException(
-                new StorageException(
-                    404, // because blob not found
-                    "Blob" + blobId.getName() + " not found in bucket " + blobId.getBucket()));
-          }
+          Map<String, String> userDefinedMetadata =
+              this.gcsAccessStrategy.download(
+                  parallelism, remoteStorageLocation, stageFilePath, localFile);
 
-          logger.debug("Starting download without presigned URL", false);
-          blob.downloadTo(
-              localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
           stopwatch.stop();
           downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);
 
-          // Get the user-defined BLOB metadata
-          Map<String, String> userDefinedMetadata =
-              SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
           if (isEncrypting()) {
             if (!userDefinedMetadata.isEmpty()) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
@@ -480,7 +426,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       httpClient,
                       httpRequest,
                       session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                      session.getAuthTimeout(),
+                      0,
                       session.getHttpClientSocketTimeout(),
                       getMaxRetries(),
                       0, // no socket timeout injection
@@ -525,19 +471,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             handleStorageException(ex, ++retryCount, "download", session, command, queryId);
           }
         } else {
-          BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
-          Blob blob = gcsClient.get(blobId);
-          if (blob == null) {
-            throw new StorageProviderException(
-                new StorageException(
-                    404, // because blob not found
-                    "Blob" + blobId.getName() + " not found in bucket " + blobId.getBucket()));
-          }
-          inputStream = Channels.newInputStream(blob.reader());
+          SFPair<InputStream, Map<String, String>> pair =
+              this.gcsAccessStrategy.downloadToStream(
+                  remoteStorageLocation, stageFilePath, isEncrypting());
+          inputStream = pair.left;
           if (isEncrypting()) {
             // Get the user-defined BLOB metadata
-            Map<String, String> userDefinedMetadata =
-                SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
+            Map<String, String> userDefinedMetadata = pair.right;
             AbstractMap.SimpleEntry<String, String> encryptionData =
                 parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
@@ -665,10 +605,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     if (isNullOrEmpty(presignedUrl) || "null".equalsIgnoreCase(presignedUrl)) {
       logger.debug("Starting upload with downscoped token");
       uploadWithDownScopedToken(
+          parallelism,
           remoteStorageLocation,
           destFileName,
           meta.getContentEncoding(),
           meta.getUserMetadata(),
+          meta.getContentLength(),
           uploadStreamInfo.left,
           queryId);
       logger.debug("Upload successful with downscoped token");
@@ -677,7 +619,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       uploadWithPresignedUrl(
           networkTimeoutInMilli,
-          0, // auth timeout
           (int) HttpUtil.getSocketTimeout().toMillis(),
           meta.getContentEncoding(),
           meta.getUserMetadata(),
@@ -769,7 +710,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Starting upload with downscope token", false);
       uploadWithPresignedUrl(
           session.getNetworkTimeoutInMilli(),
-          session.getAuthTimeout(),
           session.getHttpClientSocketTimeout(),
           meta.getContentEncoding(),
           meta.getUserMetadata(),
@@ -807,10 +747,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         logger.debug("Starting upload", false);
 
         uploadWithDownScopedToken(
+            parallelism,
             remoteStorageLocation,
             destFileName,
             meta.getContentEncoding(),
             meta.getUserMetadata(),
+            meta.getContentLength(),
             uploadStreamInfo.left,
             queryId);
 
@@ -885,26 +827,43 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param content File content
    */
   private void uploadWithDownScopedToken(
+      int parallelism,
       String remoteStorageLocation,
       String destFileName,
       String contentEncoding,
       Map<String, String> metadata,
+      long contentLength,
       InputStream content,
       String queryId)
       throws SnowflakeSQLException {
     logger.debug("Uploading file {} to bucket {}", destFileName, remoteStorageLocation);
-    BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
-    BlobInfo blobInfo =
-        BlobInfo.newBuilder(blobId)
-            .setContentEncoding(contentEncoding)
-            .setMetadata(metadata)
-            .build();
-
     try {
-      gcsClient.create(blobInfo, content);
+      this.gcsAccessStrategy.uploadWithDownScopedToken(
+          parallelism,
+          remoteStorageLocation,
+          destFileName,
+          contentEncoding,
+          metadata,
+          contentLength,
+          content,
+          queryId);
     } catch (Exception e) {
       handleStorageException(e, 0, "upload", session, queryId);
-      throw e;
+      SnowflakeSQLException wrappedException;
+      if (e instanceof SnowflakeSQLException) {
+        wrappedException = (SnowflakeSQLException) e;
+
+      } else {
+        wrappedException =
+            new SnowflakeSQLLoggedException(
+                queryId,
+                session,
+                SqlState.SYSTEM_ERROR,
+                ErrorCode.IO_ERROR.getMessageCode(),
+                e,
+                "Encountered exception during " + "upload" + ": " + e.getMessage());
+      }
+      throw wrappedException;
     }
   }
 
@@ -921,7 +880,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   private void uploadWithPresignedUrl(
       int networkTimeoutInMilli,
-      int authTimeout,
       int httpClientSocketTimeout,
       String contentEncoding,
       Map<String, String> metadata,
@@ -962,7 +920,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   networkTimeoutInMilli / 1000, // retry timeout
-                  authTimeout, // auth timeout
+                  0,
                   httpClientSocketTimeout, // socket timeout in ms
                   getMaxRetries(),
                   0, // no socket timeout injection
@@ -1126,61 +1084,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
-    if (ex instanceof StorageException) {
-      // NOTE: this code path only handle Access token based operation,
-      // presigned URL is not covered. Presigned Url do not raise
-      // StorageException
-
-      StorageException se = (StorageException) ex;
-      // If we have exceeded the max number of retries, propagate the error
-      if (retryCount > getMaxRetries()) {
-        throw new SnowflakeSQLLoggedException(
-            queryId,
-            session,
-            SqlState.SYSTEM_ERROR,
-            ErrorCode.GCP_SERVICE_ERROR.getMessageCode(),
-            se,
-            operation,
-            se.getCode(),
-            se.getMessage(),
-            se.getReason());
-      } else {
-        logger.debug(
-            "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
-            operation,
-            retryCount);
-        logger.debug("Stack trace: ", ex);
-
-        // exponential backoff up to a limit
-        int backoffInMillis = getRetryBackoffMin();
-
-        if (retryCount > 1) {
-          backoffInMillis <<= (Math.min(retryCount - 1, getRetryBackoffMaxExponent()));
-        }
-
-        try {
-          logger.debug("Sleep for {} milliseconds before retry", backoffInMillis);
-
-          Thread.sleep(backoffInMillis);
-        } catch (InterruptedException ex1) {
-          // ignore
-        }
-
-        if (se.getCode() == 401 && command != null) {
-          if (session != null) {
-            // A 401 indicates that the access token has expired,
-            // we need to refresh the GCS client with the new token
-            SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
-          } else {
-            throw new SnowflakeSQLException(
-                queryId,
-                se.getMessage(),
-                CLOUD_STORAGE_CREDENTIALS_EXPIRED,
-                "GCS credentials have expired");
-          }
-        }
-      }
+    if (this.gcsAccessStrategy.handleStorageException(
+        ex, retryCount, operation, session, command, queryId, this)) {
+      // exception is handled in gcsAccessStrategy.handleStorageException
     } else if (ex instanceof InterruptedException
         || getRootCause(ex) instanceof SocketTimeoutException) {
       if (retryCount > getMaxRetries()) {
@@ -1312,34 +1218,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Setting up the GCS client ", false);
 
     try {
-      String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
-      if (accessToken != null) {
-        // We are authenticated with an oauth access token.
-        StorageOptions.Builder builder = StorageOptions.newBuilder();
-        overrideHost(stage, builder);
-
-        if (areDisabledGcsDefaultCredentials(session)) {
-          logger.debug(
-              "Adding explicit credentials to avoid default credential lookup by the GCS client");
-          builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
-        }
-
-        // Using GoogleCredential with access token will cause IllegalStateException when the token
-        // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
-        // header so we can caught the error code.
-        this.gcsClient =
-            builder
-                .setHeaderProvider(
-                    FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
-                .build()
-                .getService();
-      } else {
-        // Use anonymous authentication.
-        HttpStorageOptions.Builder builder =
-            HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
-        overrideHost(stage, builder);
-        this.gcsClient = builder.build().getService();
-      }
+      this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
 
       if (encMat != null) {
         byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
@@ -1359,20 +1238,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
   }
 
-  private static void overrideHost(StageInfo stage, StorageOptions.Builder builder) {
-    stage
-        .gcsCustomEndpoint()
-        .ifPresent(
-            host -> {
-              if (host.startsWith("https://")) {
-                builder.setHost(host);
-              } else {
-                builder.setHost("https://" + host);
-              }
-            });
-  }
-
-  private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
+  protected static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
         || convertSystemPropertyToBooleanValue(DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, true);
   }
