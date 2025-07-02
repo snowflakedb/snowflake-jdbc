@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.24.3-SNAPSHOT</version>
+  <version>3.25.0</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -95,7 +95,7 @@
     <version.plugin.exec>3.1.0</version.plugin.exec>
     <version.plugin.failsafe>3.5.1</version.plugin.failsafe>
     <version.plugin.fmt>2.19</version.plugin.fmt>
-    <version.plugin.gpg>3.0.1</version.plugin.gpg>
+    <version.plugin.gpg>3.2.7</version.plugin.gpg>
     <version.plugin.install>3.1.1</version.plugin.install>
     <version.plugin.jacoco>0.8.8</version.plugin.jacoco>
     <version.plugin.japicmp>0.23.0</version.plugin.japicmp>
