@@ -1269,13 +1269,4 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);
   }
-
-  // This function should only be used for testing purpose
-  public static void setInjectedException(Throwable th) {
-    injectedException = th;
-  }
-
-  public static boolean isInjectedExceptionEnabled() {
-    return injectedException != null;
-  }
 }
