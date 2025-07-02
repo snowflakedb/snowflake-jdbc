@@ -90,7 +90,7 @@
     <version.plugin.clean>3.2.0</version.plugin.clean>
     <version.plugin.compiler>3.11.0</version.plugin.compiler>
     <version.plugin.dependency>3.5.0</version.plugin.dependency>
-    <version.plugin.deploy>3.1.1</version.plugin.deploy>
+    <version.plugin.deploy>3.1.4</version.plugin.deploy>
     <version.plugin.enforcer>3.0.0-M3</version.plugin.enforcer>
     <version.plugin.exec>3.1.0</version.plugin.exec>
     <version.plugin.failsafe>3.5.1</version.plugin.failsafe>
