@@ -58,7 +58,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     if (endpoint.startsWith("https://")) {
       endpoint = endpoint.replaceFirst("https://", "");
     }
-    if (endpoint.startsWith(stage.getStorageAccount())) {
+    if (stage.getStorageAccount() != null && endpoint.startsWith(stage.getStorageAccount())) {
       endpoint = endpoint.replaceFirst(stage.getStorageAccount() + ".", "");
     }
 

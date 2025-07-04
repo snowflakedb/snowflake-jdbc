@@ -158,7 +158,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void shutdown() {
-    if(this.gcsAccessStrategy != null) {
+    if (this.gcsAccessStrategy != null) {
       this.gcsAccessStrategy.shutdown();
     }
   }
@@ -1220,7 +1220,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Setting up the GCS client ", false);
 
     try {
-      if (stage.getUseVirtualUrl()) {
+      boolean overrideAwsAccessStrategy =
+          Boolean.valueOf(System.getenv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
+      if (stage.getUseVirtualUrl() || overrideAwsAccessStrategy) {
         this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
       } else {
         this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
