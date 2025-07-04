@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 # boilerplate labels required by validation when pushing to ACR, ECR & GCR
 LABEL org.opencontainers.image.source="https://github.com/snowflakedb/snowflake-jdbc"
@@ -21,7 +21,7 @@ RUN apt-get update && \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-ENV SDKMAN_DIR="/root/.sdkman"
+ENV SDKMAN_DIR="/app/.sdkman"
 
 RUN curl -s "https://get.sdkman.io?rcupdate=false&ci=false" | bash
 
@@ -44,9 +44,6 @@ RUN \
 
 WORKDIR /app
 
-# Create the package directory structure for the Prober
-RUN mkdir -p com/snowflake/client/jdbc/prober
-
 # Copy the Prober.java source code into the correct package structure
 COPY /src/main/java/com/snowflake/client/jdbc/prober/Prober.java com/snowflake/client/jdbc/prober/Prober.java
 
@@ -67,8 +64,6 @@ RUN \
     bash -c "${COMPILE_COMMAND}"
 
 # Copy the entrypoint script into the image and make it executable
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Set the entrypoint script to be executed when the container starts
-ENTRYPOINT ["/entrypoint.sh"]
+COPY entrypoint.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
+RUN chmod +x /app/.sdkman/bin/sdkman-init.sh
