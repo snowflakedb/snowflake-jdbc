@@ -1542,7 +1542,7 @@
               <publishingServerId>ossrh</publishingServerId>
               <autoPublish>false</autoPublish>
               <publish>true</publish>
-              <pomPath>generated_public_pom.xml</pomPath>
+              <pomPath>public_pom.xml</pomPath>
             </configuration>
           </plugin>
         </plugins>
