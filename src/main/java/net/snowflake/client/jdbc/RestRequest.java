@@ -969,7 +969,7 @@ public class RestRequest {
     if (ex instanceof IllegalStateException) {
       throw new SnowflakeSQLLoggedException(
           null, ErrorCode.INVALID_STATE, ex, /* session= */ ex.getMessage());
-    } else if (isExceptionInGroup(ex, sslExceptions)) {
+    } else if (isExceptionInGroup(ex, sslExceptions) && !isProtocolVersionError(ex)) {
       String formattedMsg =
           ex.getMessage()
               + "\n"
@@ -1009,6 +1009,10 @@ public class RestRequest {
       }
     }
     return false;
+  }
+
+  private static boolean isProtocolVersionError(Exception e) {
+    return e.getMessage().contains("Received fatal alert: protocol_version");
   }
 
   private static boolean handleCertificateRevoked(
