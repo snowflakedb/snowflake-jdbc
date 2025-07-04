@@ -58,6 +58,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** General integration tests */
 @Tag(TestTags.OTHERS)
@@ -730,9 +732,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
   @DontRunOnGithubActions
-  public void testPutWithWildcardGCP() throws Throwable {
+  public void testPutWithWildcardGCP(boolean useAwsSDKStrategy) throws Throwable {
+    if (useAwsSDKStrategy) {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+    }
+
     Properties _connectionProperties = new Properties();
     _connectionProperties.put("inject_wait_in_put", 5);
     _connectionProperties.put("ssl", "off");
@@ -784,6 +791,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       } finally {
         statement.execute("DROP STAGE IF EXISTS wildcard_stage");
       }
+    } finally {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
     }
   }
 
@@ -805,9 +814,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
   @DontRunOnGithubActions
-  public void testPutGetLargeFileGCP() throws Throwable {
+  public void testPutGetLargeFileGCP(boolean useAwsSDKStrategy) throws Throwable {
+    if (useAwsSDKStrategy) {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+    }
     try (Connection connection = getConnection("gcpaccount");
         Statement statement = connection.createStatement()) {
       try {
@@ -882,6 +895,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         statement.execute("DROP STAGE IF EXISTS extra_stage");
         statement.execute("DROP TABLE IF EXISTS large_table");
       }
+    } finally {
+      SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
     }
   }
 
@@ -909,9 +924,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts =
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i));
+      String accountName = accounts.get(i);
+      if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
+        accountName = "gcpaccount";
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+      }
+      try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         try {
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
@@ -954,6 +975,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
+      } finally {
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
   }
@@ -962,9 +985,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testPut() throws Throwable {
 
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts =
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i));
+      String accountName = accounts.get(i);
+      if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
+        accountName = "gcpaccount";
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+      }
+      if (accounts.get(i) == null || !accounts.get(i).startsWith(("gcp"))) {
+        continue;
+      }
+      try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         try {
           // load file test
@@ -1023,6 +1055,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
+      } finally {
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
   }
@@ -2613,9 +2647,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testPutGet() throws Throwable {
 
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts =
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i));
+      String accountName = accounts.get(i);
+      if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
+        accountName = "gcpaccount";
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+      }
+      try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
@@ -2655,6 +2695,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         } finally {
           statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
         }
+      } finally {
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
   }
@@ -2669,9 +2711,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testPutGetToUnencryptedStage() throws Throwable {
 
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts =
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i));
+      String accountName = accounts.get(i);
+      if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
+        accountName = "gcpaccount";
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+      }
+      try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
@@ -2712,6 +2760,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         } finally {
           statement.execute("DROP STAGE IF EXISTS testPutGet_unencstage");
         }
+      } finally {
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
   }
