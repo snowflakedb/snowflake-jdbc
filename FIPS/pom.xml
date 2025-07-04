@@ -857,5 +857,32 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>ossrh-deploy-new</id>
+      <activation>
+        <property>
+          <name>ossrh-deploy-new</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <autoPublish>false</autoPublish>
+              <publish>true</publish>
+              <gpg>
+                <keyname>${env.GPG_KEY_ID}</keyname>
+                <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
+              </gpg>
+              <pomPath>generated_public_pom.xml</pomPath>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
