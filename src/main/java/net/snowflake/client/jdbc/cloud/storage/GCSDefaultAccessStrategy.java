@@ -246,4 +246,9 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       return false;
     }
   }
+
+  @Override
+  public void shutdown() {
+    // nothing to do here
+  }
 }
