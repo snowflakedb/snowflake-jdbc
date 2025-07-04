@@ -867,6 +867,23 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <keyname>${env.GPG_KEY_ID}</keyname>
+              <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <phase>verify</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
             <extensions>true</extensions>
@@ -874,10 +891,6 @@
               <publishingServerId>ossrh</publishingServerId>
               <autoPublish>false</autoPublish>
               <publish>true</publish>
-              <gpg>
-                <keyname>${env.GPG_KEY_ID}</keyname>
-                <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
-              </gpg>
               <pomPath>generated_public_pom.xml</pomPath>
             </configuration>
           </plugin>
