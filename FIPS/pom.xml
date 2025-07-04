@@ -884,15 +884,25 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <extensions>true</extensions>
-            <configuration>
-              <publishingServerId>ossrh</publishingServerId>
-              <autoPublish>false</autoPublish>
-              <publish>true</publish>
-              <pomPath>public_pom.xml</pomPath>
-            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>deploy-all-artifacts</id>
+                <goals>
+                  <goal>deploy-file</goal>
+                </goals>
+                <phase>deploy</phase>
+                <configuration>
+                  <file>target/${project.artifactId}.jar</file>
+                  <repositoryId>ossrh</repositoryId>
+                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
+                  <pomFile>generated_public_pom.xml</pomFile>
+                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
+                  <sources>target/${project.artifactId}-sources.jar</sources>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
