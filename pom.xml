@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.24.3-SNAPSHOT</version>
+    <version>3.25.0</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.24.3-SNAPSHOT</version>
+  <version>3.25.0</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -175,6 +175,11 @@
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${version.plugin.jacoco}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${version.plugin.publish}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -1490,7 +1495,7 @@
                 <configuration>
                   <file>target/${project.artifactId}.jar</file>
                   <repositoryId>ossrh</repositoryId>
-                  <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
                   <pomFile>generated_public_pom.xml</pomFile>
                   <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
                   <sources>target/${project.artifactId}-sources.jar</sources>
@@ -1499,6 +1504,46 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>ossrh-deploy-new</id>
+      <activation>
+        <property>
+          <name>ossrh-deploy-new</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <keyname>${env.GPG_KEY_ID}</keyname>
+              <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <phase>verify</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <autoPublish>false</autoPublish>
+              <publish>true</publish>
+              <pomPath>public_pom.xml</pomPath>
+            </configuration>
           </plugin>
         </plugins>
       </build>
