@@ -74,6 +74,7 @@ public abstract class SFBaseSession {
   private boolean formatDateWithTimezone;
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled = false;
+  private boolean isTelemetryServiceAvailable = true;
   private boolean useSessionTimezone;
   private boolean defaultFormatDateWithTimezone = true;
   private boolean getDateUseNullTimezone = true;
@@ -1013,6 +1014,14 @@ public abstract class SFBaseSession {
 
   public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
     this.clientTelemetryEnabled = clientTelemetryEnabled;
+  }
+
+  public boolean isTelemetryServiceAvailable() {
+    return isTelemetryServiceAvailable;
+  }
+
+  public void setTelemetryServiceAvailable(boolean isTelemetryServiceAvailable) {
+    this.isTelemetryServiceAvailable = isTelemetryServiceAvailable;
   }
 
   public int getArrayBindStageThreshold() {
