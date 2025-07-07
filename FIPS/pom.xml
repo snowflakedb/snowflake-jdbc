@@ -868,6 +868,25 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>replace-pom-for-release</id>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <target>
+                    <copy file="generated_public_pom.xml" overwrite="true" tofile="pom.xml"/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <configuration>
               <keyname>${env.GPG_KEY_ID}</keyname>
@@ -884,25 +903,13 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>deploy-all-artifacts</id>
-                <goals>
-                  <goal>deploy-file</goal>
-                </goals>
-                <phase>deploy</phase>
-                <configuration>
-                  <file>target/${project.artifactId}.jar</file>
-                  <repositoryId>ossrh</repositoryId>
-                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
-                  <pomFile>generated_public_pom.xml</pomFile>
-                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
-                  <sources>target/${project.artifactId}-sources.jar</sources>
-                </configuration>
-              </execution>
-            </executions>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <autoPublish>false</autoPublish>
+            </configuration>
           </plugin>
         </plugins>
       </build>
