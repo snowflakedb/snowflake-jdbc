@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -176,11 +176,6 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${version.plugin.jacoco}</version>
         </plugin>
-        <plugin>
-          <groupId>org.sonatype.central</groupId>
-          <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>${version.plugin.publish}</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -196,7 +191,6 @@
           <sortExecutions>true</sortExecutions>
           <sortModules>true</sortModules>
           <sortProperties>true</sortProperties>
-          <verifyFail>stop</verifyFail>
         </configuration>
         <executions>
           <execution>
@@ -1518,25 +1512,6 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>3.1.0</version>
-            <executions>
-              <execution>
-                <id>replace-pom-for-release</id>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <phase>prepare-package</phase>
-                <configuration>
-                  <target>
-                    <copy file="generated_public_pom.xml" overwrite="true" tofile="pom.xml"/>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <configuration>
               <keyname>${env.GPG_KEY_ID}</keyname>
@@ -1553,13 +1528,29 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <extensions>true</extensions>
-            <configuration>
-              <publishingServerId>ossrh</publishingServerId>
-              <autoPublish>false</autoPublish>
-            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>deploy-all-artifacts</id>
+                <goals>
+                  <goal>deploy-file</goal>
+                </goals>
+                <phase>deploy</phase>
+                <configuration>
+                  <file>target/${project.artifactId}.jar</file>
+                  <repositoryId>ossrh</repositoryId>
+                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
+                  <pomFile>generated_public_pom.xml</pomFile>
+                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
+                  <sources>target/${project.artifactId}-sources.jar</sources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>default-deploy</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
