@@ -900,7 +900,7 @@
                 <configuration>
                   <file>target/${project.artifactId}.jar</file>
                   <repositoryId>ossrh</repositoryId>
-                  <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
+                  <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                   <pomFile>generated_public_pom.xml</pomFile>
                   <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
                   <sources>target/${project.artifactId}-sources.jar</sources>
