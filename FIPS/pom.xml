@@ -909,7 +909,6 @@
             <configuration>
               <publishingServerId>ossrh</publishingServerId>
               <autoPublish>false</autoPublish>
-              <publish>true</publish>
             </configuration>
           </plugin>
         </plugins>
