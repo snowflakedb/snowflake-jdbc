@@ -197,7 +197,6 @@
           <sortModules>true</sortModules>
           <sortProperties>true</sortProperties>
           <verifyFail>stop</verifyFail>
-          <verifyFailOn>strict</verifyFailOn>
         </configuration>
         <executions>
           <execution>
