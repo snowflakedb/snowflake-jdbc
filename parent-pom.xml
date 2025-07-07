@@ -98,6 +98,7 @@
     <version.plugin.gpg>3.0.1</version.plugin.gpg>
     <version.plugin.install>3.1.1</version.plugin.install>
     <version.plugin.jacoco>0.8.8</version.plugin.jacoco>
+    <version.plugin.publish>0.8.0</version.plugin.publish>
     <version.plugin.japicmp>0.23.0</version.plugin.japicmp>
     <version.plugin.jar>3.3.0</version.plugin.jar>
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
