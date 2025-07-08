@@ -91,7 +91,7 @@
     <version.plugin.compiler>3.11.0</version.plugin.compiler>
     <version.plugin.dependency>3.5.0</version.plugin.dependency>
     <version.plugin.deploy>3.1.1</version.plugin.deploy>
-    <version.plugin.enforcer>3.0.0-M3</version.plugin.enforcer>
+    <version.plugin.enforcer>3.4.1</version.plugin.enforcer>
     <version.plugin.exec>3.1.0</version.plugin.exec>
     <version.plugin.failsafe>3.5.1</version.plugin.failsafe>
     <version.plugin.fmt>2.19</version.plugin.fmt>
