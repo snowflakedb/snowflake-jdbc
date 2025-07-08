@@ -20,8 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidKeyException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
@@ -43,10 +41,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
@@ -74,7 +68,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.ssl.SSLInitializationException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -112,7 +105,7 @@ import org.bouncycastle.operator.DigestCalculator;
  * sslContext.init(null, trustManagers, null);
  * }</pre>
  */
-public class SFTrustManager extends X509ExtendedTrustManager {
+public class SFTrustManager implements X509TrustManager {
   /** Test System Parameters. Not used in the production */
   public static final String SF_OCSP_RESPONSE_CACHE_SERVER_URL =
       "SF_OCSP_RESPONSE_CACHE_SERVER_URL";
@@ -186,7 +179,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final Map<Integer, String> OCSP_RESPONSE_CODE_TO_STRING =
       new ConcurrentHashMap<>();
 
-  private static final Object ROOT_CA_LOCK = new Object();
   /** OCSP Response cache */
   private static final Map<OcspResponseCacheKey, SFPair<Long, String>> OCSP_RESPONSE_CACHE =
       new ConcurrentHashMap<>();
@@ -201,7 +193,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
   private static JcaX509CertificateConverter CONVERTER_X509 = new JcaX509CertificateConverter();
   /** RootCA cache */
-  private static Map<Integer, Certificate> ROOT_CA = new ConcurrentHashMap<>();
+  private final Map<Integer, Certificate> ROOT_CA;
 
   private static final AtomicBoolean WAS_CACHE_UPDATED = new AtomicBoolean();
   private static final AtomicBoolean WAS_CACHE_READ = new AtomicBoolean();
@@ -247,8 +239,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
   /** The default JVM Trust manager. */
   private final X509TrustManager trustManager;
-  /** The default JVM Extended Trust Manager */
-  private final X509ExtendedTrustManager exTrustManager;
 
   OCSPCacheServer ocspCacheServer = new OCSPCacheServer();
   /** OCSP mode */
@@ -262,13 +252,16 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param key HttpClientSettingsKey
    * @param cacheFile cache file.
    */
-  SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
+  SFTrustManager(
+      HttpClientSettingsKey key,
+      File cacheFile,
+      Map<Integer, Certificate> rootCa,
+      X509TrustManager trustManager)
+      throws IOException {
     this.ocspMode = key.getOcspMode();
     this.proxySettingsKey = key;
-    this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
-
-    this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
+    ROOT_CA = rootCa;
+    this.trustManager = trustManager;
 
     checkNewOCSPEndpointAvailability();
 
@@ -671,44 +664,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     ocspCacheServer.new_endpoint_enabled = new_ocsp_ept != null;
   }
 
-  /**
-   * Get TrustManager for the algorithm. This is mainly used to get the JVM default trust manager
-   * and cache all of the root CA.
-   *
-   * @param algorithm algorithm.
-   * @return TrustManager object.
-   */
-  private X509TrustManager getTrustManager(String algorithm) {
-    try {
-      TrustManagerFactory factory = TrustManagerFactory.getInstance(algorithm);
-      factory.init((KeyStore) null);
-      X509TrustManager ret = null;
-      for (TrustManager tm : factory.getTrustManagers()) {
-        // Multiple TrustManager may be attached. We just need X509 Trust
-        // Manager here.
-        if (tm instanceof X509TrustManager) {
-          ret = (X509TrustManager) tm;
-          break;
-        }
-      }
-      if (ret == null) {
-        return null;
-      }
-      synchronized (ROOT_CA_LOCK) {
-        // cache root CA certificates for later use.
-        if (ROOT_CA.isEmpty()) {
-          for (X509Certificate cert : ret.getAcceptedIssuers()) {
-            Certificate bcCert = Certificate.getInstance(cert.getEncoded());
-            ROOT_CA.put(bcCert.getSubject().hashCode(), bcCert);
-          }
-        }
-      }
-      return ret;
-    } catch (NoSuchAlgorithmException | KeyStoreException | CertificateEncodingException ex) {
-      throw new SSLInitializationException(ex.getMessage(), ex);
-    }
-  }
-
   @Override
   public void checkClientTrusted(X509Certificate[] chain, String authType)
       throws CertificateException {
@@ -720,37 +675,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   public void checkServerTrusted(X509Certificate[] chain, String authType)
       throws CertificateException {
     trustManager.checkServerTrusted(chain, authType);
-  }
-
-  @Override
-  public void checkClientTrusted(X509Certificate[] chain, String authType, java.net.Socket socket)
-      throws CertificateException {
-    // default behavior
-    this.exTrustManager.checkClientTrusted(chain, authType, socket);
-  }
-
-  @Override
-  public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine)
-      throws CertificateException {
-    // default behavior
-    exTrustManager.checkClientTrusted(chain, authType, sslEngine);
-  }
-
-  @Override
-  public void checkServerTrusted(X509Certificate[] chain, String authType, java.net.Socket socket)
-      throws CertificateException {
-    // default behavior
-    exTrustManager.checkServerTrusted(chain, authType, socket);
-    String host = socket.getInetAddress().getHostName();
-    this.validateRevocationStatus(chain, host);
-  }
-
-  @Override
-  public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine)
-      throws CertificateException {
-    // default behavior
-    exTrustManager.checkServerTrusted(chain, authType, sslEngine);
-    this.validateRevocationStatus(chain, sslEngine.getPeerHost());
   }
 
   @Override

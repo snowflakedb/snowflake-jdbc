@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,10 +48,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFTrustManagerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -2755,5 +2762,24 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     // NOTE: Don't add new tests here. Instead, add it to other appropriate test class or create a
     // new
     // one. This class is too large to have more tests.
+  }
+
+  @Test
+  void shouldWorkWithSimpleTrustManager() throws Exception {
+    TrustManagerFactory trustManagerFactory = mock(TrustManagerFactory.class);
+    when(trustManagerFactory.getTrustManagers())
+        .thenReturn(new TrustManager[] {mock(X509TrustManager.class)});
+    SFTrustManagerFactory sfTrustManagerFactory = new SFTrustManagerFactory(trustManagerFactory);
+    HttpUtil.setSfTrustManagerFactory(sfTrustManagerFactory);
+    try (Connection connection = getConnection()) {
+      try (Statement statement = connection.createStatement()) {
+        try (ResultSet resultSet = statement.executeQuery("SELECT 1")) {
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1));
+        }
+      }
+    } finally {
+      HttpUtil.resetSfTrustManagerFactory();
+    }
   }
 }

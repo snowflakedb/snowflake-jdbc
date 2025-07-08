@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -140,7 +141,12 @@ public class CertificateChainTrustValidationTestLatestIT {
         "Trust store content verified: only rootca1_self_signed_for_ts is present as a trust anchor.");
 
     logger.debug("Initializing PKIX X509TrustManager...");
-    sfTrustManager = new SFTrustManager(new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null);
+    sfTrustManager =
+        new SFTrustManager(
+            new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+            null,
+            new java.util.HashMap<>(),
+            mock(X509TrustManager.class));
     assertNotNull(sfTrustManager, "PKIX X509TrustManager should be initialized.");
     logger.debug("PKIX X509TrustManager initialized successfully.");
 

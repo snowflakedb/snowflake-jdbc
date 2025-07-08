@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.RestRequest;
@@ -105,6 +106,31 @@ public class HttpUtil {
   private static RequestConfig DefaultRequestConfig = null;
 
   private static boolean socksProxyDisabled = false;
+  private static SFTrustManagerFactory sfTrustManagerFactory;
+
+  static {
+    resetSfTrustManagerFactory();
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setSfTrustManagerFactory(SFTrustManagerFactory factory) {
+    sfTrustManagerFactory = factory;
+    httpClient.clear();
+    httpClientWithoutDecompression.clear();
+    httpClientRoutePlanner.clear();
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void resetSfTrustManagerFactory() {
+    try {
+      setSfTrustManagerFactory(
+          new SFTrustManagerFactory(
+              TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())));
+    } catch (NoSuchAlgorithmException e) {
+      throw new ExceptionInInitializerError(
+          "Failed to initialize SFTrustManagerFactory: " + e.getMessage());
+    }
+  }
 
   @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
@@ -291,6 +317,7 @@ public class HttpUtil {
    * @param downloadUnCompressed Whether the HTTP client should be built requesting no decompression
    * @param httpHeadersCustomizers List of HTTP headers customizers
    * @return HttpClient object
+   * @deprecated
    */
   public static CloseableHttpClient buildHttpClient(
       @Nullable HttpClientSettingsKey key,
@@ -333,8 +360,8 @@ public class HttpUtil {
         } else {
           logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
         }
-        TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
-        trustManagers = tm;
+        trustManagers =
+            new TrustManager[] {sfTrustManagerFactory.getTrustManager(key, ocspCacheFile)};
       } catch (Exception | Error err) {
         // dump error stack
         StringWriter errors = new StringWriter();

@@ -6,9 +6,10 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.HashMap;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -29,7 +30,7 @@ public class SFTrustManagerMockitoMockLatestIT {
    */
   @Test
   @Disabled("static initialization block of SFTrustManager class doesn't run sometimes")
-  public void testUnitOCSPWithCustomCacheDirectory() throws IOException {
+  public void testUnitOCSPWithCustomCacheDirectory() throws Exception {
     try (MockedStatic<TrustManagerFactory> mockedTrustManagerFactory =
             mockStatic(TrustManagerFactory.class);
         MockedStatic<SnowflakeUtil> mockedSnowflakeUtil = mockStatic(SnowflakeUtil.class)) {
@@ -48,7 +49,10 @@ public class SFTrustManagerMockitoMockLatestIT {
           .thenReturn(tested);
 
       new SFTrustManager(
-          new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null); // cache file location
+          new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+          null, // cache file location
+          new HashMap<>(),
+          mock(X509TrustManager.class));
 
       // The goal is to check if the cache file location is changed to the specified
       // directory, so it doesn't need to do OCSP check in this test.
