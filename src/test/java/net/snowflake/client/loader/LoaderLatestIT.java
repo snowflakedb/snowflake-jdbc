@@ -233,7 +233,7 @@ public class LoaderLatestIT extends LoaderBase {
   }
 
   @Test
-  private void testMultipleVectorColumnsInTable() throws Exception {
+  private void testMultipleFloatVectorColumnsInTable() throws Exception {
     String tableName = "VECTOR_TABLE";
     try {
       testConnection
@@ -254,6 +254,38 @@ public class LoaderLatestIT extends LoaderBase {
       loader.start();
 
       loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]"});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @Test
+  private void testMultipleIntVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(INT, 3), vec2 VECTOR(INT, 3))",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14, 100]", "[12, 14, 100]"});
+      loader.setVectorColumnType("int");
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
