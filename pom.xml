@@ -1373,12 +1373,6 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>extra-enforcer-rules</artifactId>
                 <version>1.8.0</version>
-                <exclusions>
-                  <exclusion>
-                    <groupId>org.eclipse.aether</groupId>
-                    <artifactId>aether-util</artifactId>
-                  </exclusion>
-                </exclusions>
               </dependency>
             </dependencies>
             <executions>
