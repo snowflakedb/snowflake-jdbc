@@ -262,13 +262,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param key HttpClientSettingsKey
    * @param cacheFile cache file.
    */
-  SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
+  SFTrustManager(HttpClientSettingsKey key, File cacheFile, TrustManagerFactory trustManagerFactory)
+      throws IOException {
     this.ocspMode = key.getOcspMode();
     this.proxySettingsKey = key;
-    this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
+    this.trustManager = getTrustManager(trustManagerFactory);
 
-    this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
+    this.exTrustManager = getExtendedTrustManager(trustManager);
 
     checkNewOCSPEndpointAvailability();
 
@@ -678,12 +678,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param algorithm algorithm.
    * @return TrustManager object.
    */
-  private X509TrustManager getTrustManager(String algorithm) {
+  private X509TrustManager getTrustManager(TrustManagerFactory trustManagerFactory) {
     try {
-      TrustManagerFactory factory = TrustManagerFactory.getInstance(algorithm);
-      factory.init((KeyStore) null);
+      trustManagerFactory.init((KeyStore) null);
       X509TrustManager ret = null;
-      for (TrustManager tm : factory.getTrustManagers()) {
+      for (TrustManager tm : trustManagerFactory.getTrustManagers()) {
         // Multiple TrustManager may be attached. We just need X509 Trust
         // Manager here.
         if (tm instanceof X509TrustManager) {
@@ -704,8 +703,17 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         }
       }
       return ret;
-    } catch (NoSuchAlgorithmException | KeyStoreException | CertificateEncodingException ex) {
+    } catch (KeyStoreException | CertificateEncodingException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
+    }
+  }
+
+  private X509ExtendedTrustManager getExtendedTrustManager(X509TrustManager trustManager) {
+    if (trustManager instanceof X509ExtendedTrustManager) {
+      return (X509ExtendedTrustManager) trustManager;
+    } else {
+      logger.debug("Default JVM TrustManager is not an instance of X509ExtendedTrustManager. ");
+      return null;
     }
   }
 

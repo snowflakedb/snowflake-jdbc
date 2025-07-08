@@ -140,7 +140,11 @@ public class CertificateChainTrustValidationTestLatestIT {
         "Trust store content verified: only rootca1_self_signed_for_ts is present as a trust anchor.");
 
     logger.debug("Initializing PKIX X509TrustManager...");
-    sfTrustManager = new SFTrustManager(new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null);
+    sfTrustManager =
+        new SFTrustManager(
+            new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+            null,
+            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()));
     assertNotNull(sfTrustManager, "PKIX X509TrustManager should be initialized.");
     logger.debug("PKIX X509TrustManager initialized successfully.");
 
