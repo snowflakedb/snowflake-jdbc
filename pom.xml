@@ -16,7 +16,22 @@
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
+  <description>Snowflake JDBC Driver</description>
   <url>https://github.com/snowflakedb/snowflake-jdbc</url>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Snowflake Support Team</name>
+      <email>snowflake-java@snowflake.net</email>
+      <organization>Snowflake Computing</organization>
+      <organizationUrl>https://www.snowflake.net</organizationUrl>
+    </developer>
+  </developers>
 
   <scm>
     <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
@@ -176,6 +191,11 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${version.plugin.jacoco}</version>
         </plugin>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${version.plugin.publish}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -191,6 +211,8 @@
           <sortExecutions>true</sortExecutions>
           <sortModules>true</sortModules>
           <sortProperties>true</sortProperties>
+          <verifyFail>stop</verifyFail>
+          <verifyFailOn>strict</verifyFailOn>
         </configuration>
         <executions>
           <execution>
@@ -1528,29 +1550,13 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>deploy-all-artifacts</id>
-                <goals>
-                  <goal>deploy-file</goal>
-                </goals>
-                <phase>deploy</phase>
-                <configuration>
-                  <file>target/${project.artifactId}.jar</file>
-                  <repositoryId>ossrh</repositoryId>
-                  <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                  <pomFile>generated_public_pom.xml</pomFile>
-                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
-                  <sources>target/${project.artifactId}-sources.jar</sources>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-deploy</id>
-                <phase>none</phase>
-              </execution>
-            </executions>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <autoPublish>false</autoPublish>
+            </configuration>
           </plugin>
         </plugins>
       </build>

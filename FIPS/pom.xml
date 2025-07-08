@@ -14,18 +14,30 @@
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
-  <url>http://maven.apache.org</url>
+  <url>https://github.com/snowflakedb/snowflake-jdbc</url>
+  <description>Snowflake JDBC Driver</description>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Snowflake Support Team</name>
+      <email>snowflake-java@snowflake.net</email>
+      <organization>Snowflake Computing</organization>
+      <organizationUrl>https://www.snowflake.net</organizationUrl>
+    </developer>
+  </developers>
 
   <prerequisites>
     <maven>3.3.9</maven>
   </prerequisites>
 
-  <!-- dummy scm connection required to get the buildnumber plugin working -->
   <scm>
-    <connection>scm:svn:http://127.0.0.1/svn/dummy</connection>
-    <developerConnection>scm:svn:https://127.0.0.1/svn/dummy</developerConnection>
-    <tag>HEAD</tag>
-    <url>http://127.0.0.1/websvn/dummy</url>
+    <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
+    <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
 
   <dependencies>
@@ -869,6 +881,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
+            <version>${version.plugin.gpg}</version>
             <configuration>
               <keyname>${env.GPG_KEY_ID}</keyname>
               <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
@@ -884,29 +897,14 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-deploy</id>
-                <phase>none</phase>
-              </execution>
-              <execution>
-                <id>deploy-all-artifacts</id>
-                <goals>
-                  <goal>deploy-file</goal>
-                </goals>
-                <phase>deploy</phase>
-                <configuration>
-                  <file>target/${project.artifactId}.jar</file>
-                  <repositoryId>ossrh</repositoryId>
-                  <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                  <pomFile>generated_public_pom.xml</pomFile>
-                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
-                  <sources>target/${project.artifactId}-sources.jar</sources>
-                </configuration>
-              </execution>
-            </executions>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${version.plugin.publish}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <autoPublish>false</autoPublish>
+            </configuration>
           </plugin>
         </plugins>
       </build>
