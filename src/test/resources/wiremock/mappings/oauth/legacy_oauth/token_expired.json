@@ -1,0 +1,58 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Throwing expired access token exception in legacy OAuth flow",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST",
+        "headers": {
+          "CLIENT_APP_ID": {
+            "equalTo": "MOCK_APP_ID"
+          },
+          "CLIENT_APP_VERSION": {
+            "equalTo": "MOCK_APP_VERSION"
+          },
+          "Authorization": {
+            "equalTo": "Basic"
+          },
+          "accept": {
+            "equalTo": "application/json"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "equalToJson": {
+              "data": {
+                "ACCOUNT_NAME": "MOCK_ACCOUNT_NAME",
+                "CLIENT_APP_ID": "MOCK_APP_ID",
+                "CLIENT_ENVIRONMENT": {
+                  "tracing": "INFO",
+                  "OCSP_MODE": "FAIL_OPEN"
+                },
+                "CLIENT_APP_VERSION": "MOCK_APP_VERSION",
+                "TOKEN": "expired-access-token-123",
+                "LOGIN_NAME": "MOCK_USERNAME",
+                "AUTHENTICATOR": "OAUTH"
+              }
+            },
+            "ignoreExtraElements": true
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "nextAction": "RETRY_LOGIN",
+            "authnMethod": "OAUTH",
+            "signInOptions": {}
+          },
+          "code": "390318",
+          "message": "OAuth access token expired. [1172527951366]",
+          "success": false,
+          "headers": null
+        }
+      }
+    }
+  ]
+}
