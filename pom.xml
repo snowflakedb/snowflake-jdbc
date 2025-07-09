@@ -1502,10 +1502,10 @@
       </build>
     </profile>
     <profile>
-      <id>ossrh-deploy-new</id>
+      <id>central-deploy</id>
       <activation>
         <property>
-          <name>ossrh-deploy-new</name>
+          <name>central-deploy</name>
         </property>
       </activation>
       <build>
@@ -1556,7 +1556,7 @@
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>ossrh</publishingServerId>
-              <skipPublishing>true</skipPublishing>
+              <autoPublish>false</autoPublish>
             </configuration>
           </plugin>
         </plugins>
