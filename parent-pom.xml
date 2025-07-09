@@ -107,6 +107,8 @@
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.5.1</version.plugin.surefire>
     <version.plugin.wiremock>3.8.0</version.plugin.wiremock>
+    <version.plugin.buildhelper>3.6.1</version.plugin.buildhelper>
+    <version.plugin.publishing>0.8.0</version.plugin.publishing>
   </properties>
 
   <dependencyManagement>
