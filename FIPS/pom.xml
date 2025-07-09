@@ -869,7 +869,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.6.0</version>
+            <version>${version.plugin.buildhelper}</version>
             <executions>
               <execution>
                 <id>attach-public-pom</id>
@@ -908,7 +908,7 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.8.0</version>
+            <version>${version.plugin.publishing}</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>ossrh</publishingServerId>
