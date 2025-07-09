@@ -98,7 +98,6 @@
     <version.plugin.gpg>3.0.1</version.plugin.gpg>
     <version.plugin.install>3.1.1</version.plugin.install>
     <version.plugin.jacoco>0.8.8</version.plugin.jacoco>
-    <version.plugin.publish>0.8.0</version.plugin.publish>
     <version.plugin.japicmp>0.23.0</version.plugin.japicmp>
     <version.plugin.jar>3.3.0</version.plugin.jar>
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
@@ -108,6 +107,8 @@
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.5.1</version.plugin.surefire>
     <version.plugin.wiremock>3.8.0</version.plugin.wiremock>
+    <version.plugin.buildhelper>3.6.1</version.plugin.buildhelper>
+    <version.plugin.publishing>0.8.0</version.plugin.publishing>
   </properties>
 
   <dependencyManagement>

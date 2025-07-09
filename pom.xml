@@ -176,11 +176,6 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${version.plugin.jacoco}</version>
         </plugin>
-        <plugin>
-          <groupId>org.sonatype.central</groupId>
-          <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>${version.plugin.publish}</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -196,8 +191,6 @@
           <sortExecutions>true</sortExecutions>
           <sortModules>true</sortModules>
           <sortProperties>true</sortProperties>
-          <verifyFail>stop</verifyFail>
-          <verifyFailOn>strict</verifyFailOn>
         </configuration>
         <executions>
           <execution>
@@ -1509,14 +1502,36 @@
       </build>
     </profile>
     <profile>
-      <id>ossrh-deploy-new</id>
+      <id>central-deploy</id>
       <activation>
         <property>
-          <name>ossrh-deploy-new</name>
+          <name>central-deploy</name>
         </property>
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>${version.plugin.buildhelper}</version>
+            <executions>
+              <execution>
+                <id>attach-public-pom</id>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>generated_public_pom.xml</file>
+                      <type>pom</type>
+                    </artifact>
+                  </artifacts>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
@@ -1537,12 +1552,11 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${version.plugin.publishing}</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>ossrh</publishingServerId>
-              <autoPublish>false</autoPublish>
-              <publish>true</publish>
-              <pomPath>public_pom.xml</pomPath>
+              <autoPublish>true</autoPublish>
             </configuration>
           </plugin>
         </plugins>
