@@ -912,7 +912,7 @@
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>ossrh</publishingServerId>
-              <autoPublish>false</autoPublish>
+              <autoPublish>true</autoPublish>
             </configuration>
           </plugin>
         </plugins>
