@@ -6,13 +6,17 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -23,6 +27,9 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.SystemPropertyOverrider;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -36,6 +43,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -314,6 +322,44 @@ public class SFTrustManagerIT extends BaseJDBCTest {
       Arrays.asList(useProxyOverrider, proxyHostOverrider, proxyPortOverrider)
           .forEach(SystemPropertyOverrider::rollback);
     }
+  }
+
+  @Test
+  void shouldNotFailIfDefaultTrustManagerIsNotX509TrustManager() throws Exception {
+    TrustManagerFactory trustManagerFactory = mock(TrustManagerFactory.class);
+    when(trustManagerFactory.getTrustManagers())
+        .thenReturn(new TrustManager[] {new TrustManager() {}});
+    assertDoesNotThrow(
+        () ->
+            new SFTrustManager(
+                new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null, trustManagerFactory));
+  }
+
+  @Test
+  void shouldNotFailIfDefaultTrustManagerIsNotExtendedX509TrustManager() throws Exception {
+    TrustManagerFactory trustManagerFactory = mock(TrustManagerFactory.class);
+    when(trustManagerFactory.getTrustManagers())
+        .thenReturn(
+            new TrustManager[] {
+              new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException {}
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException {}
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                  return new X509Certificate[0];
+                }
+              }
+            });
+    assertDoesNotThrow(
+        () ->
+            new SFTrustManager(
+                new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null, trustManagerFactory));
   }
 
   @BeforeEach

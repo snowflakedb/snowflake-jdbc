@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.util.Base64;
 import java.util.Properties;
+import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import org.junit.jupiter.api.AfterAll;
@@ -75,14 +76,16 @@ public class SFTrustManagerTest {
   }
 
   @Test
-  public void testBuildNewRetryURL() {
+  public void testBuildNewRetryURL() throws Exception {
     try {
       System.setProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint", Boolean.TRUE.toString());
 
       SFTrustManager tManager =
           new SFTrustManager(
-              new HttpClientSettingsKey(OCSPMode.FAIL_OPEN), null // OCSP Cache file custom location
-              ); // Use OCSP Cache Server
+              new HttpClientSettingsKey(OCSPMode.FAIL_OPEN),
+              null, // OCSP Cache file custom location
+              TrustManagerFactory.getInstance(
+                  TrustManagerFactory.getDefaultAlgorithm())); // Use OCSP Cache Server
       tManager.ocspCacheServer.resetOCSPResponseCacheServer("a1.snowflakecomputing.com");
       assertThat(
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER,

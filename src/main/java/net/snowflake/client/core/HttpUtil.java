@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.RestRequest;
@@ -333,7 +334,12 @@ public class HttpUtil {
         } else {
           logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
         }
-        TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
+        TrustManager[] tm = {
+          new SFTrustManager(
+              key,
+              ocspCacheFile,
+              TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()))
+        };
         trustManagers = tm;
       } catch (Exception | Error err) {
         // dump error stack
