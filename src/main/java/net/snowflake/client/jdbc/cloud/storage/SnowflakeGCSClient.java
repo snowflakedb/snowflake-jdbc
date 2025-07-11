@@ -79,6 +79,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeGCSClient.class);
 
+  private static Throwable injectedException = null; // for testing purpose
+
   private SnowflakeGCSClient() {}
 
   /*
