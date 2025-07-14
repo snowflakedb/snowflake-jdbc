@@ -733,10 +733,15 @@ public class RestRequest {
       networkComunnicationStapwatch.stop();
     }
     if (responseDto.getSavedEx() != null) {
-      throw new SnowflakeSQLException(
-          responseDto.getSavedEx(),
-          ErrorCode.NETWORK_ERROR,
-          "Exception encountered for HTTP request: " + responseDto.getSavedEx().getMessage());
+      Exception savedEx = responseDto.getSavedEx();
+      if (savedEx instanceof SnowflakeSQLException) {
+        throw (SnowflakeSQLException) savedEx;
+      } else {
+        throw new SnowflakeSQLException(
+            savedEx,
+            ErrorCode.NETWORK_ERROR,
+            "Exception encountered for HTTP request: " + savedEx.getMessage());
+      }
     }
     return responseDto;
   }
