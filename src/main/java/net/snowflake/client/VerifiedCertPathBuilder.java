@@ -15,7 +15,7 @@ import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -26,8 +26,8 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Builds and verifies certificate paths using a truststore and CertPathBuilder. This class takes a
- * certificate chain presented by a server and returns verified paths that include trust anchors
- * for CRL validation support.
+ * certificate chain presented by a server and returns verified paths that include trust anchors for
+ * CRL validation support.
  */
 class VerifiedCertPathBuilder {
 
@@ -53,12 +53,14 @@ class VerifiedCertPathBuilder {
    * of each path for CRL validation support.
    *
    * @param certificateChain the certificate chain presented by the server
-   * @param authType the authentication type (e.g., "RSA", "ECDSA", "ECDHE", "ECDH") used for the connection
+   * @param authType the authentication type (e.g., "RSA", "ECDSA", "ECDHE", "ECDH") used for the
+   *     connection
    * @return a list of all verified certificate paths with trust anchors included
    * @throws CertificateException if certificate validation fails
    * @throws CertPathBuilderException if no valid certificate paths could be built
    */
-  public List<X509Certificate[]> buildAllVerifiedPaths(X509Certificate[] certificateChain, String authType)
+  public List<X509Certificate[]> buildAllVerifiedPaths(
+      X509Certificate[] certificateChain, String authType)
       throws CertificateException, CertPathBuilderException {
 
     if (certificateChain == null || certificateChain.length == 0) {
@@ -68,17 +70,19 @@ class VerifiedCertPathBuilder {
       throw new IllegalArgumentException("Authentication type cannot be null or empty");
     }
 
-    logger.debug("Building verified paths for chain length: {} with authType: {}", 
-        certificateChain.length, authType);
+    logger.debug(
+        "Building verified paths for chain length: {} with authType: {}",
+        certificateChain.length,
+        authType);
 
     List<X509Certificate[]> allVerifiedPaths = new ArrayList<>();
 
     try {
       Set<TrustAnchor> trustAnchors = createTrustAnchors();
-      
-      Collection<Certificate> certCollection = new ArrayList<>();
-      Collections.addAll(certCollection, certificateChain);
-      CertStore certStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(certCollection));
+
+      List<Certificate> certCollection = Arrays.asList(certificateChain);
+      CertStore certStore =
+          CertStore.getInstance("Collection", new CollectionCertStoreParameters(certCollection));
 
       PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustAnchors, null);
       pkixParams.addCertStore(certStore);
@@ -88,10 +92,10 @@ class VerifiedCertPathBuilder {
       logger.debug("Identified leaf certificate: {}", leafCertificate.getSubjectX500Principal());
 
       pkixParams.setTargetCertConstraints(new TargetCertSelector(leafCertificate));
-      
+
       allVerifiedPaths.addAll(
           findAllPathsForTarget(leafCertificate, trustAnchors, certStore, authType));
-          
+
     } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
       throw new CertificateException("Failed to build certificate paths", e);
     }
@@ -104,21 +108,20 @@ class VerifiedCertPathBuilder {
     return allVerifiedPaths;
   }
 
-  /**
-   * Finds all possible valid paths from a leaf certificate to trust anchors.
-   */
+  /** Finds all possible valid paths from a leaf certificate to trust anchors. */
   private List<X509Certificate[]> findAllPathsForTarget(
       X509Certificate targetCert,
       Set<TrustAnchor> trustAnchors,
       CertStore certStore,
-      String authType) throws CertificateException {
+      String authType) {
 
     List<X509Certificate[]> pathsForTarget = new ArrayList<>();
 
     for (TrustAnchor trustAnchor : trustAnchors) {
       try {
         Set<TrustAnchor> singleTrustAnchor = Collections.singleton(trustAnchor);
-        PKIXBuilderParameters singleAnchorParams = new PKIXBuilderParameters(singleTrustAnchor, null);
+        PKIXBuilderParameters singleAnchorParams =
+            new PKIXBuilderParameters(singleTrustAnchor, null);
         singleAnchorParams.addCertStore(certStore);
         singleAnchorParams.setRevocationEnabled(false);
         singleAnchorParams.setTargetCertConstraints(new TargetCertSelector(targetCert));
@@ -133,24 +136,32 @@ class VerifiedCertPathBuilder {
           try {
             X509Certificate[] certArray = convertCertPathToArray(certPath);
             trustManager.checkServerTrusted(certArray, authType);
-            
+
             // Create path with trust anchor included for CRL validation
             X509Certificate[] pathWithTrustAnchor = new X509Certificate[certArray.length + 1];
             System.arraycopy(certArray, 0, pathWithTrustAnchor, 0, certArray.length);
             pathWithTrustAnchor[certArray.length] = trustAnchor.getTrustedCert();
-            
+
             pathsForTarget.add(pathWithTrustAnchor);
-            logger.trace("Found valid path via trust anchor {}: length {}", 
-                trustAnchor.getTrustedCert().getSubjectX500Principal(), pathWithTrustAnchor.length);
-                
+            logger.trace(
+                "Found valid path via trust anchor {}: length {}",
+                trustAnchor.getTrustedCert().getSubjectX500Principal(),
+                pathWithTrustAnchor.length);
+
           } catch (CertificateException e) {
-            logger.trace("Path validation failed via trust anchor {}: {}", 
-                trustAnchor.getTrustedCert().getSubjectX500Principal(), e.getMessage());
+            logger.trace(
+                "Path validation failed via trust anchor {}: {}",
+                trustAnchor.getTrustedCert().getSubjectX500Principal(),
+                e.getMessage());
           }
         }
-      } catch (CertPathBuilderException | NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-        logger.trace("Failed to build path via trust anchor {}: {}", 
-            trustAnchor.getTrustedCert().getSubjectX500Principal(), e.getMessage());
+      } catch (CertPathBuilderException
+          | NoSuchAlgorithmException
+          | InvalidAlgorithmParameterException e) {
+        logger.trace(
+            "Failed to build path via trust anchor {}: {}",
+            trustAnchor.getTrustedCert().getSubjectX500Principal(),
+            e.getMessage());
       }
     }
 
@@ -164,13 +175,14 @@ class VerifiedCertPathBuilder {
    * @return the leaf certificate found in the chain
    * @throws CertificateException if no leaf certificate is found in the chain
    */
-  private X509Certificate identifyLeafCertificate(X509Certificate[] certificateChain) throws CertificateException {
+  private X509Certificate identifyLeafCertificate(X509Certificate[] certificateChain)
+      throws CertificateException {
     for (X509Certificate cert : certificateChain) {
       boolean isIssuer = false;
 
       for (X509Certificate otherCert : certificateChain) {
-        if (!cert.equals(otherCert) && 
-            otherCert.getIssuerX500Principal().equals(cert.getSubjectX500Principal())) {
+        if (!cert.equals(otherCert)
+            && otherCert.getIssuerX500Principal().equals(cert.getSubjectX500Principal())) {
           isIssuer = true;
           break;
         }
@@ -184,9 +196,7 @@ class VerifiedCertPathBuilder {
     throw new CertificateException("No leaf certificate found in the chain");
   }
 
-  /**
-   * Creates trust anchors from the truststore.
-   */
+  /** Creates trust anchors from the truststore. */
   private Set<TrustAnchor> createTrustAnchors() throws CertificateException {
     Set<TrustAnchor> trustAnchors = new HashSet<>();
 
@@ -203,9 +213,7 @@ class VerifiedCertPathBuilder {
     return trustAnchors;
   }
 
-  /**
-   * Converts a CertPath to an X509Certificate array.
-   */
+  /** Converts a CertPath to an X509Certificate array. */
   private X509Certificate[] convertCertPathToArray(CertPath certPath) throws CertificateException {
     List<? extends Certificate> certificates = certPath.getCertificates();
 
@@ -217,7 +225,8 @@ class VerifiedCertPathBuilder {
     for (int i = 0; i < certificates.size(); i++) {
       Certificate cert = certificates.get(i);
       if (!(cert instanceof X509Certificate)) {
-        throw new CertificateException("Certificate path contains non-X509 certificate: " + cert.getClass().getName());
+        throw new CertificateException(
+            "Certificate path contains non-X509 certificate: " + cert.getClass().getName());
       }
       certArray[i] = (X509Certificate) cert;
     }
@@ -225,9 +234,7 @@ class VerifiedCertPathBuilder {
     return certArray;
   }
 
-  /**
-   * X509CertSelector that targets a specific certificate for path building.
-   */
+  /** X509CertSelector that targets a specific certificate for path building. */
   private static class TargetCertSelector extends java.security.cert.X509CertSelector {
     public TargetCertSelector(X509Certificate cert) {
       setCertificate(cert);
