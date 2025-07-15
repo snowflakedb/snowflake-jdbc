@@ -968,7 +968,7 @@ public class RestRequest {
     }
   }
 
-  private static Exception handlingNotRetryableException(
+  static Exception handlingNotRetryableException(
       Exception ex, HttpExecutingContext httpExecutingContext) throws SnowflakeSQLLoggedException {
     Exception savedEx = null;
     if (ex instanceof IllegalStateException) {
@@ -1007,7 +1007,7 @@ public class RestRequest {
     return ex;
   }
 
-  private static boolean isExceptionInGroup(Exception e, Set<Class<?>> group) {
+  static boolean isExceptionInGroup(Exception e, Set<Class<?>> group) {
     for (Class<?> clazz : group) {
       if (clazz.isInstance(e)) {
         return true;
@@ -1016,8 +1016,8 @@ public class RestRequest {
     return false;
   }
 
-  private static boolean isProtocolVersionError(Exception e) {
-    return e.getMessage().contains("Received fatal alert: protocol_version");
+  static boolean isProtocolVersionError(Exception e) {
+    return e.getMessage() != null && e.getMessage().contains("Received fatal alert: protocol_version");
   }
 
   private static boolean handleCertificateRevoked(
