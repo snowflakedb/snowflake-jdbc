@@ -2,7 +2,6 @@ package net.snowflake.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -22,8 +21,10 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -36,40 +37,30 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-/**
- * Comprehensive test suite for VerifiedCertPathBuilder that tests path validation with cross-signed
- * certificate scenarios using programmatically created certificates.
- */
-@org.junit.jupiter.api.Tag("CORE")
+@Tag("CORE")
 class VerifiedCertPathBuilderTest {
 
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(VerifiedCertPathBuilderTest.class);
+  // Cross-signed scenario path identifiers
+  private static final String PATH_INTERMEDIATE_TO_ROOT = "intermediateCrossSignedByRoot->rootCASelfSigned";
+  private static final String PATH_INTERMEDIATE_TO_OLD_ROOT = "intermediateCrossSignedByOldRoot->oldRootCA";
 
-  // Constants for certificate path validation
-  private static final String INTERMEDIATE_CROSS_SIGNED_BY_ROOT_PAIRING =
-      "intermediateCrossSignedByRoot->rootCASelfSigned";
-  private static final String INTERMEDIATE_CROSS_SIGNED_BY_OLD_ROOT_PAIRING =
-      "intermediateCrossSignedByOldRoot->oldRootCA";
-
-  // Constants for SSL/TLS system properties
+  // Truststore configuration
   private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
-  private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD =
-      "javax.net.ssl.trustStorePassword";
+  private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
   private static final String JAVAX_NET_SSL_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
 
-  // Constants for keystore and cryptographic operations
+  // Certificate generation constants
   private static final String KEYSTORE_TYPE_JKS = "JKS";
   private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
   private static final String RSA_ALGORITHM = "RSA";
   private static final String SIGNATURE_ALGORITHM = "SHA256WithRSA";
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
-  // Constants for test file operations
+  // Test file constants
   private static final String TEST_TRUSTSTORE_PREFIX = "test-truststore";
   private static final String KEYSTORE_EXTENSION = ".jks";
   private static final String TEST_ROOT_ALIAS_PREFIX = "testroot";
@@ -79,119 +70,81 @@ class VerifiedCertPathBuilderTest {
   private String originalTrustStorePassword;
   private String originalTrustStoreType;
 
+  @BeforeAll
+  static void setUpClass() {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
   @BeforeEach
   void setUp() throws Exception {
-    // Initialize BouncyCastle provider for certificate generation
-    Security.addProvider(new BouncyCastleProvider());
-
     // Store original truststore properties
     originalTrustStore = System.getProperty(JAVAX_NET_SSL_TRUST_STORE);
     originalTrustStorePassword = System.getProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD);
     originalTrustStoreType = System.getProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE);
 
-    // Initialize certificate generator
     certGen = new TestCertificateGenerator();
   }
 
   @AfterEach
   void tearDown() {
     // Restore original truststore properties
-    if (originalTrustStore != null) {
-      System.setProperty(JAVAX_NET_SSL_TRUST_STORE, originalTrustStore);
-    } else {
-      System.clearProperty(JAVAX_NET_SSL_TRUST_STORE);
-    }
-
-    if (originalTrustStorePassword != null) {
-      System.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, originalTrustStorePassword);
-    } else {
-      System.clearProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD);
-    }
-
-    if (originalTrustStoreType != null) {
-      System.setProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, originalTrustStoreType);
-    } else {
-      System.clearProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE);
-    }
+    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE, originalTrustStore);
+    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, originalTrustStorePassword);
+    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, originalTrustStoreType);
   }
 
   @Test
-  @DisplayName("Should validate simple certificate chain")
   void shouldValidateSimpleCertificateChain() throws Exception {
     CertificateChain chain = certGen.createSimpleChain();
     setUpTrustStore(chain.rootCert);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder();
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
     X509Certificate[] certChain = {chain.leafCert, chain.intermediateCert, chain.rootCert};
-    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(certChain);
+    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(certChain, "RSA");
 
     assertFalse(paths.isEmpty(), "Should find at least one valid path");
     assertEquals(1, paths.size(), "Should find exactly one path for simple chain");
 
-    // Validate the path structure
     X509Certificate[] path = paths.get(0);
-    assertTrue(path.length >= 1, "Path should contain at least the end-entity certificate");
+    assertEquals(3, path.length, "Expected path length of 3 (including trust anchor)");
+    
+    // Verify path structure: [leaf, intermediate, trust anchor]
+    assertEquals(chain.leafCert.getSubjectX500Principal(), path[0].getSubjectX500Principal());
+    assertEquals(chain.intermediateCert.getSubjectX500Principal(), path[1].getSubjectX500Principal());
+    assertEquals(chain.rootCert.getSubjectX500Principal(), path[2].getSubjectX500Principal());
 
-    // Expected path: [leafCert, intermediateCert] (trusted root not included)
-    assertEquals(2, path.length, "Expected path length of 2 for simple chain");
-    assertEquals(
-        chain.leafCert.getSubjectDN(),
-        path[0].getSubjectDN(),
-        "Path[0] should be the leaf certificate");
-    assertEquals(
-        chain.intermediateCert.getSubjectDN(),
-        path[1].getSubjectDN(),
-        "Path[1] should be the intermediate certificate");
-
-    // Verify certificate chain relationships for the built path
     validateCertificateChainOrder(path);
-
-    // Verify trust anchor (rootCert) is NOT included in the path
-    assertTrustAnchorNotInPath(path, chain.rootCert);
-
-    // Verify the issuer of the last certificate in the path is the trust anchor
-    X509Certificate lastCertInPath = path[path.length - 1];
-    assertEquals(
-        chain.rootCert.getSubjectX500Principal(),
-        lastCertInPath.getIssuerX500Principal(),
-        "The issuer of the last certificate in the path should be the trust anchor");
-
-    logger.debug("Successfully validated simple certificate chain with path: [leaf, intermediate]");
+    assertTrustAnchorInPath(path, chain.rootCert);
   }
 
   @Test
-  @DisplayName("Should return empty list for empty certificate chain")
   void shouldReturnEmptyForEmptyChain() throws Exception {
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder();
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
 
-    // Test with empty array
-    X509Certificate[] emptyChain = {};
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          builder.buildAllVerifiedPaths(emptyChain);
-        },
+    assertThrows(IllegalArgumentException.class, 
+        () -> builder.buildAllVerifiedPaths(new X509Certificate[]{}, "RSA"),
         "Empty certificate chain should throw IllegalArgumentException");
 
-    // Test with null
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          builder.buildAllVerifiedPaths(null);
-        },
+    assertThrows(IllegalArgumentException.class, 
+        () -> builder.buildAllVerifiedPaths(null, "RSA"),
         "Null certificate chain should throw IllegalArgumentException");
+        
+    assertThrows(IllegalArgumentException.class, 
+        () -> builder.buildAllVerifiedPaths(new X509Certificate[]{certGen.createSimpleChain().leafCert}, null),
+        "Null authType should throw IllegalArgumentException");
+        
+    assertThrows(IllegalArgumentException.class, 
+        () -> builder.buildAllVerifiedPaths(new X509Certificate[]{certGen.createSimpleChain().leafCert}, ""),
+        "Empty authType should throw IllegalArgumentException");
   }
 
   @Test
-  @DisplayName("Should find all valid paths in cross-signed scenario")
   void shouldFindAllValidPathsInCrossSignedScenario() throws Exception {
-    CrossSignedCertificateChain certs = certGen.createCrossSignedCertificates();
+    CrossSignedCertificates certs = certGen.createCrossSignedCertificates();
     setUpTrustStore(certs.oldRootCA, certs.rootCASelfSigned);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder();
-
-    // Extended certificate set with cross-signed intermediates - theoretically allows 2 paths
-    X509Certificate[] extendedChain = {
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    X509Certificate[] chain = {
       certs.leafCert,
       certs.intermediateCrossSignedByRoot,
       certs.intermediateCrossSignedByOldRoot,
@@ -199,245 +152,140 @@ class VerifiedCertPathBuilderTest {
       certs.rootCASelfSigned
     };
 
-    // Test comprehensive path discovery
-    List<X509Certificate[]> allPaths = builder.buildAllVerifiedPaths(extendedChain);
+    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(chain, "RSA");
 
-    assertFalse(allPaths.isEmpty(), "Should find valid paths");
+    assertFalse(paths.isEmpty(), "Should find valid paths");
+    assertEquals(2, paths.size(), "Should find exactly 2 paths in cross-signed scenario");
 
-    // Comprehensive path discovery finds both valid paths in cross-signed scenario
-    assertEquals(
-        2,
-        allPaths.size(),
-        "Should find exactly 2 paths in cross-signed scenario for comprehensive CRL validation");
-
-    // Track which specific intermediate-trust anchor pairings are found
-    Set<String> foundPairings = new HashSet<>();
-
-    // Validate each path with stronger assertions
-    for (int i = 0; i < allPaths.size(); i++) {
-      X509Certificate[] path = allPaths.get(i);
-      assertEquals(2, path.length, "Path " + i + " should have length 2: [leaf, intermediate]");
-      assertEquals(
-          certs.leafCert.getSubjectDN(),
-          path[0].getSubjectDN(),
-          "Path " + i + "[0] should be the leaf certificate");
-
-      // Get the intermediate certificate from the path
-      X509Certificate intermediate = path[1];
-
-      // Make strong assertions about the specific intermediate-trust anchor pairing
-      // Cross-signed certificates have the same subject DN but different issuers
-      // So we identify them by their issuer DN
-      if (intermediate.getIssuerDN().equals(certs.rootCASelfSigned.getSubjectDN())) {
-        // If intermediate is issued by rootCASelfSigned, then it's the cross-signed by root version
-        foundPairings.add(INTERMEDIATE_CROSS_SIGNED_BY_ROOT_PAIRING);
-
-        logger.debug("Path {}: uses intermediateCrossSignedByRoot -> rootCASelfSigned", i);
-
-      } else if (intermediate.getIssuerDN().equals(certs.oldRootCA.getSubjectDN())) {
-        // If intermediate is issued by oldRootCA, then it's the cross-signed by old root version
-        foundPairings.add(INTERMEDIATE_CROSS_SIGNED_BY_OLD_ROOT_PAIRING);
-
-        logger.debug("Path {}: uses intermediateCrossSignedByOldRoot -> oldRootCA", i);
-
-      } else {
-        fail(
-            "Path "
-                + i
-                + ": unexpected intermediate certificate with issuer: "
-                + intermediate.getIssuerDN());
-      }
-
-      // Validate path structure and trust anchor compliance
-      validateCertificateChainOrder(path);
-      assertTrustAnchorsNotInPath(path, certs.oldRootCA, certs.rootCASelfSigned);
-    }
-
-    // Verify that BOTH expected intermediate-trust anchor pairings are found
-    assertEquals(
-        2,
-        foundPairings.size(),
-        "Should find exactly 2 distinct intermediate-trust anchor pairings");
-    assertTrue(
-        foundPairings.contains(INTERMEDIATE_CROSS_SIGNED_BY_ROOT_PAIRING),
-        "Should find path: intermediateCrossSignedByRoot -> rootCASelfSigned");
-    assertTrue(
-        foundPairings.contains(INTERMEDIATE_CROSS_SIGNED_BY_OLD_ROOT_PAIRING),
-        "Should find path: intermediateCrossSignedByOldRoot -> oldRootCA");
-
-    logger.debug(
-        "Successfully validated comprehensive path discovery: {} paths with {} distinct pairings",
-        allPaths.size(),
-        foundPairings.size());
+    Set<String> foundPairings = validateCrossSignedPaths(paths, certs);
+    assertEquals(2, foundPairings.size(), "Should find 2 distinct intermediate-trust anchor pairings");
+    assertTrue(foundPairings.contains(PATH_INTERMEDIATE_TO_ROOT));
+    assertTrue(foundPairings.contains(PATH_INTERMEDIATE_TO_OLD_ROOT));
   }
 
   @Test
-  @DisplayName("Should validate cross-signed chain to self-signed root")
-  void shouldValidateCrossSignedChainToSelfSignedRoot() throws Exception {
-    ComplexCrossSignedCertificateChain certs = certGen.createComplexCrossSignedChain();
-
-    // Trust store contains ONLY the self-signed root CA
-    // (same subject DN and public key as crossSignedRoot, but self-signed)
+  void shouldValidateComplexCrossSignedChain() throws Exception {
+    ComplexCrossSignedCertificates certs = certGen.createComplexCrossSignedChain();
     setUpTrustStore(certs.selfSignedRoot);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder();
-
-    // The chain provided includes cross-signed certificates
-    // Chain: leafCert -> intermediate -> crossSignedRoot (issued by intermediateRoot) ->
-    // intermediateRoot
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
     X509Certificate[] chain = {
-      certs.leafCert, // Leaf certificate
-      certs.intermediate, // Intermediate certificate
-      certs.crossSignedRoot, // Cross-signed root (issued by intermediate root)
-      certs.intermediateRoot // Intermediate root
+      certs.leafCert,
+      certs.intermediate,
+      certs.crossSignedRoot,
+      certs.intermediateRoot
     };
 
-    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(chain);
+    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(chain, "RSA");
 
-    assertFalse(
-        paths.isEmpty(),
-        "PKIX should find valid path because cross-signed root in chain has same public key as trusted self-signed version");
-    assertEquals(1, paths.size(), "Should find exactly one path for complex cross-signed scenario");
+    assertFalse(paths.isEmpty(), "Should find valid path for complex cross-signed scenario");
+    assertEquals(1, paths.size(), "Should find exactly one path");
 
-    // Expected path: [leafCert, intermediate] (cross-signed root verified against trusted
-    // selfSignedRoot)
     X509Certificate[] path = paths.get(0);
-    assertEquals(2, path.length, "Expected path length of 2 for complex cross-signed chain");
-    assertEquals(
-        certs.leafCert.getSubjectDN(),
-        path[0].getSubjectDN(),
-        "Path[0] should be the leaf certificate");
-    assertEquals(
-        certs.intermediate.getSubjectDN(),
-        path[1].getSubjectDN(),
-        "Path[1] should be the intermediate certificate");
+    assertEquals(3, path.length, "Expected path length of 3 (including trust anchor)");
+    
+    // Verify path structure
+    assertEquals(certs.leafCert.getSubjectX500Principal(), path[0].getSubjectX500Principal());
+    assertEquals(certs.intermediate.getSubjectX500Principal(), path[1].getSubjectX500Principal());
+    assertEquals(certs.selfSignedRoot.getSubjectX500Principal(), path[2].getSubjectX500Principal());
 
     validateCertificateChainOrder(path);
-
-    // Verify trust anchor (selfSignedRoot) is NOT included in the path
-    assertTrustAnchorNotInPath(path, certs.selfSignedRoot);
-
-    // Verify the issuer of the last certificate in the path is the trust anchor
-    X509Certificate lastCertInPath = path[path.length - 1];
-    assertEquals(
-        certs.selfSignedRoot.getSubjectX500Principal(),
-        lastCertInPath.getIssuerX500Principal(),
-        "The issuer of the last certificate in the path should be the trust anchor (selfSignedRoot)");
-
-    logger.debug(
-        "Successfully validated complex cross-signed chain with path: [leaf, intermediate]");
+    assertTrustAnchorInPath(path, certs.selfSignedRoot);
   }
 
   @Test
-  @DisplayName("Should validate cross-signed chain to ultimate root")
-  void shouldValidateCrossSignedChainToUltimateRoot() throws Exception {
-    ComplexCrossSignedCertificateChain certs = certGen.createComplexCrossSignedChain();
-
-    // Trust store contains ONLY the ultimate root
-    // This tests the longest possible certification path
+  void shouldValidateChainToUltimateRoot() throws Exception {
+    ComplexCrossSignedCertificates certs = certGen.createComplexCrossSignedChain();
     setUpTrustStore(certs.ultimateRoot);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder();
-
-    // Provide the complete chain including all intermediate certificates
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
     X509Certificate[] chain = {
-      certs.leafCert, // Leaf certificate
-      certs.intermediate, // Intermediate certificate
-      certs.crossSignedRoot, // Cross-signed root (issued by intermediate root)
-      certs.intermediateRoot // Intermediate root (issued by ultimate root)
-      // NOTE: ultimateRoot is NOT included - it's a trust anchor, not part of the chain
+      certs.leafCert,
+      certs.intermediate,
+      certs.crossSignedRoot,
+      certs.intermediateRoot
     };
 
-    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(chain);
+    List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(chain, "RSA");
 
     assertFalse(paths.isEmpty(), "Should find valid path to ultimate root");
-    assertEquals(1, paths.size(), "Should find exactly one path to ultimate root");
+    assertEquals(1, paths.size(), "Should find exactly one path");
 
-    // Expected path: [leafCert, intermediate, crossSignedRoot, intermediateRoot]
-    // (ultimateRoot is trusted but not included in returned path)
     X509Certificate[] path = paths.get(0);
-    assertEquals(4, path.length, "Expected path length of 4 for complete chain to ultimate root");
-    assertEquals(
-        certs.leafCert.getSubjectDN(),
-        path[0].getSubjectDN(),
-        "Path[0] should be the leaf certificate");
-    assertEquals(
-        certs.intermediate.getSubjectDN(),
-        path[1].getSubjectDN(),
-        "Path[1] should be the intermediate certificate");
-    assertEquals(
-        certs.crossSignedRoot.getSubjectDN(),
-        path[2].getSubjectDN(),
-        "Path[2] should be the cross-signed root certificate");
-    assertEquals(
-        certs.intermediateRoot.getSubjectDN(),
-        path[3].getSubjectDN(),
-        "Path[3] should be the intermediate root certificate");
+    assertEquals(5, path.length, "Expected path length of 5 (including trust anchor)");
+    
+    // Verify complete path structure
+    assertEquals(certs.leafCert.getSubjectX500Principal(), path[0].getSubjectX500Principal());
+    assertEquals(certs.intermediate.getSubjectX500Principal(), path[1].getSubjectX500Principal());
+    assertEquals(certs.crossSignedRoot.getSubjectX500Principal(), path[2].getSubjectX500Principal());
+    assertEquals(certs.intermediateRoot.getSubjectX500Principal(), path[3].getSubjectX500Principal());
+    assertEquals(certs.ultimateRoot.getSubjectX500Principal(), path[4].getSubjectX500Principal());
 
     validateCertificateChainOrder(path);
-
-    // Verify trust anchor (ultimateRoot) is NOT included in the path
-    assertTrustAnchorNotInPath(path, certs.ultimateRoot);
-
-    // Verify the issuer of the last certificate in the path is the trust anchor
-    X509Certificate lastCertInPath = path[path.length - 1];
-    assertEquals(
-        certs.ultimateRoot.getSubjectX500Principal(),
-        lastCertInPath.getIssuerX500Principal(),
-        "The issuer of the last certificate in the path should be the trust anchor (ultimateRoot)");
-
-    logger.debug(
-        "Successfully validated complete chain to ultimate root with path: [leaf, intermediate, cross-signed-root, intermediate-root]");
+    assertTrustAnchorInPath(path, certs.ultimateRoot);
   }
 
-  /** Validates that certificates in a path have proper issuer-subject relationships */
+  private Set<String> validateCrossSignedPaths(List<X509Certificate[]> paths, CrossSignedCertificates certs) {
+    Set<String> foundPairings = new HashSet<>();
+
+    for (int i = 0; i < paths.size(); i++) {
+      X509Certificate[] path = paths.get(i);
+      assertEquals(3, path.length, "Path " + i + " should have length 3");
+      assertEquals(certs.leafCert.getSubjectX500Principal(), path[0].getSubjectX500Principal());
+
+      X509Certificate intermediate = path[1];
+      X509Certificate trustAnchor = path[2];
+
+      if (intermediate.getIssuerX500Principal().equals(certs.rootCASelfSigned.getSubjectX500Principal())
+          && trustAnchor.getSubjectX500Principal().equals(certs.rootCASelfSigned.getSubjectX500Principal())) {
+        foundPairings.add(PATH_INTERMEDIATE_TO_ROOT);
+      } else if (intermediate.getIssuerX500Principal().equals(certs.oldRootCA.getSubjectX500Principal())
+          && trustAnchor.getSubjectX500Principal().equals(certs.oldRootCA.getSubjectX500Principal())) {
+        foundPairings.add(PATH_INTERMEDIATE_TO_OLD_ROOT);
+      } else {
+        fail("Unexpected intermediate-trust anchor pairing in path " + i);
+      }
+
+      validateCertificateChainOrder(path);
+    }
+
+    return foundPairings;
+  }
+
   private void validateCertificateChainOrder(X509Certificate[] path) {
-    for (int i = 0; i < path.length - 1; i++) {
-      X509Certificate current = path[i];
-      X509Certificate issuer = path[i + 1];
-
-      assertEquals(
-          current.getIssuerDN(),
-          issuer.getSubjectDN(),
-          String.format("Certificate %d issuer should match certificate %d subject", i, i + 1));
+    // Validate issuer-subject relationships (excluding the trust anchor which may be self-signed)
+    for (int i = 0; i < path.length - 2; i++) {
+      assertEquals(path[i].getIssuerX500Principal(), path[i + 1].getSubjectX500Principal(),
+          "Certificate " + i + " issuer should match certificate " + (i + 1) + " subject");
+    }
+    
+    // Verify second-to-last certificate is issued by trust anchor
+    if (path.length >= 2) {
+      assertEquals(path[path.length - 2].getIssuerX500Principal(), 
+          path[path.length - 1].getSubjectX500Principal(),
+          "Second-to-last certificate should be issued by the trust anchor");
     }
   }
 
-  /**
-   * Validates that the trust anchor is NOT included in the certification path. This is correct PKIX
-   * behavior - trust anchors should not be part of the returned path.
-   */
-  private void assertTrustAnchorNotInPath(X509Certificate[] path, X509Certificate trustAnchor) {
+  private void assertTrustAnchorInPath(X509Certificate[] path, X509Certificate trustAnchor) {
+    boolean found = false;
     for (X509Certificate cert : path) {
-      assertNotEquals(
-          trustAnchor.getSubjectDN(),
-          cert.getSubjectDN(),
-          "Trust anchor should not be included in the certification path (PKIX compliance)");
+      if (trustAnchor.getSubjectX500Principal().equals(cert.getSubjectX500Principal())) {
+        found = true;
+        break;
+      }
     }
+    assertTrue(found, "Trust anchor should be included in the certification path for CRL validation");
   }
 
-  /**
-   * Validates that none of the trust anchors are included in the certification path. This is
-   * correct PKIX behavior - trust anchors should not be part of the returned path.
-   */
-  private void assertTrustAnchorsNotInPath(
-      X509Certificate[] path, X509Certificate... trustAnchors) {
-    for (X509Certificate trustAnchor : trustAnchors) {
-      assertTrustAnchorNotInPath(path, trustAnchor);
-    }
-  }
-
-  /** Sets up a custom truststore with the given certificates. */
   private void setUpTrustStore(X509Certificate... certificates) throws Exception {
     KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
     trustStore.load(null, null);
 
     for (int i = 0; i < certificates.length; i++) {
-      String alias = TEST_ROOT_ALIAS_PREFIX + i;
-      trustStore.setCertificateEntry(alias, certificates[i]);
+      trustStore.setCertificateEntry(TEST_ROOT_ALIAS_PREFIX + i, certificates[i]);
     }
 
-    // Save truststore to temporary file
     File tempFile = File.createTempFile(TEST_TRUSTSTORE_PREFIX, KEYSTORE_EXTENSION);
     tempFile.deleteOnExit();
 
@@ -445,303 +293,190 @@ class VerifiedCertPathBuilderTest {
       trustStore.store(fos, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
     }
 
-    // Set system properties
     System.setProperty(JAVAX_NET_SSL_TRUST_STORE, tempFile.getAbsolutePath());
     System.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD);
     System.setProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, KEYSTORE_TYPE_JKS);
   }
 
-  /** Helper class for generating test certificates using BouncyCastle. */
+  private void restoreSystemProperty(String property, String originalValue) {
+    if (originalValue != null) {
+      System.setProperty(property, originalValue);
+    } else {
+      System.clearProperty(property);
+    }
+  }
+
+  /**
+   * Creates an X509TrustManager using the system default truststore.
+   */
+  private X509TrustManager createTrustManager() throws Exception {
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init((KeyStore) null); // Use system default truststore
+
+    for (javax.net.ssl.TrustManager tm : tmf.getTrustManagers()) {
+      if (tm instanceof X509TrustManager) {
+        return (X509TrustManager) tm;
+      }
+    }
+
+    throw new RuntimeException("No X509TrustManager found");
+  }
+
+  /** Certificate generator for test scenarios */
   private static class TestCertificateGenerator {
+    private final SecureRandom random = new SecureRandom();
 
-    final SecureRandom random = new SecureRandom();
-
-    /** Creates a simple certificate chain: Leaf -> Intermediate -> Root. */
     CertificateChain createSimpleChain() throws Exception {
-      // Generate key pairs
       KeyPair rootKeyPair = generateKeyPair();
       KeyPair intermediateKeyPair = generateKeyPair();
       KeyPair leafKeyPair = generateKeyPair();
 
-      // Create root certificate (self-signed)
-      X509Certificate rootCert =
-          createSelfSignedCertificate(
-              rootKeyPair, "CN=Test Root CA " + random.nextInt(10000), true);
+      X509Certificate rootCert = createSelfSignedCertificate(
+          rootKeyPair, "CN=Test Root CA " + random.nextInt(10000), true);
 
-      // Create intermediate certificate (signed by root)
-      X509Certificate intermediateCert =
-          createSignedCertificate(
-              intermediateKeyPair.getPublic(),
-              "CN=Test Intermediate CA " + random.nextInt(10000),
-              rootKeyPair.getPrivate(),
-              rootCert,
-              true);
+      X509Certificate intermediateCert = createSignedCertificate(
+          intermediateKeyPair.getPublic(), "CN=Test Intermediate CA " + random.nextInt(10000),
+          rootKeyPair.getPrivate(), rootCert, true);
 
-      // Create leaf certificate (signed by intermediate)
-      X509Certificate leafCert =
-          createSignedCertificate(
-              leafKeyPair.getPublic(),
-              "CN=Test Leaf " + random.nextInt(10000),
-              intermediateKeyPair.getPrivate(),
-              intermediateCert,
-              false);
+      X509Certificate leafCert = createSignedCertificate(
+          leafKeyPair.getPublic(), "CN=Test Leaf " + random.nextInt(10000),
+          intermediateKeyPair.getPrivate(), intermediateCert, false);
 
       return new CertificateChain(rootCert, intermediateCert, leafCert);
     }
 
-    /** Creates a cross-signed certificate chain scenario. */
-    CrossSignedCertificateChain createCrossSignedCertificates() throws Exception {
-      // Generate key pairs
+    CrossSignedCertificates createCrossSignedCertificates() throws Exception {
       KeyPair rootCAKeyPair = generateKeyPair();
       KeyPair oldRootCAKeyPair = generateKeyPair();
       KeyPair intermediateKeyPair = generateKeyPair();
       KeyPair leafKeyPair = generateKeyPair();
 
-      // Use consistent subject names for cross-signed certificates
       String rootSubject = "CN=Test Root CA " + random.nextInt(10000);
       String oldRootSubject = "CN=Test Old Root CA " + random.nextInt(10000);
       String intermediateSubject = "CN=Test Cross-Signed Intermediate " + random.nextInt(10000);
-      String leafSubject = "CN=Test Leaf " + random.nextInt(10000);
 
-      // Create root CA certificate (self-signed)
-      X509Certificate rootCASelfSigned =
-          createSelfSignedCertificate(rootCAKeyPair, rootSubject, true);
+      X509Certificate rootCASelfSigned = createSelfSignedCertificate(rootCAKeyPair, rootSubject, true);
+      X509Certificate oldRootCA = createSelfSignedCertificate(oldRootCAKeyPair, oldRootSubject, true);
 
-      // Create old root CA certificate (self-signed)
-      X509Certificate oldRootCA =
-          createSelfSignedCertificate(oldRootCAKeyPair, oldRootSubject, true);
+      // Create same intermediate signed by different roots
+      X509Certificate intermediateCrossSignedByRoot = createSignedCertificate(
+          intermediateKeyPair.getPublic(), intermediateSubject,
+          rootCAKeyPair.getPrivate(), rootCASelfSigned, true);
 
-      // Create intermediate certificate signed by root CA
-      // This represents the same intermediate certificate signed by the new root
-      X509Certificate intermediateCrossSignedByRoot =
-          createSignedCertificate(
-              intermediateKeyPair.getPublic(),
-              intermediateSubject,
-              rootCAKeyPair.getPrivate(),
-              rootCASelfSigned,
-              true);
+      X509Certificate intermediateCrossSignedByOldRoot = createSignedCertificate(
+          intermediateKeyPair.getPublic(), intermediateSubject,
+          oldRootCAKeyPair.getPrivate(), oldRootCA, true);
 
-      // Create the same intermediate certificate signed by old root CA
-      // This represents the same intermediate certificate signed by the old root
-      X509Certificate intermediateCrossSignedByOldRoot =
-          createSignedCertificate(
-              intermediateKeyPair.getPublic(),
-              intermediateSubject,
-              oldRootCAKeyPair.getPrivate(),
-              oldRootCA,
-              true);
+      X509Certificate leafCert = createSignedCertificate(
+          leafKeyPair.getPublic(), "CN=Test Leaf " + random.nextInt(10000),
+          intermediateKeyPair.getPrivate(), intermediateCrossSignedByRoot, false);
 
-      // Create leaf certificate signed by intermediate
-      X509Certificate leafCert =
-          createSignedCertificate(
-              leafKeyPair.getPublic(),
-              leafSubject,
-              intermediateKeyPair.getPrivate(),
-              intermediateCrossSignedByRoot,
-              false);
-
-      return new CrossSignedCertificateChain(
-          rootCASelfSigned,
-          oldRootCA,
-          intermediateCrossSignedByRoot,
-          intermediateCrossSignedByOldRoot,
-          leafCert);
+      return new CrossSignedCertificates(rootCASelfSigned, oldRootCA,
+          intermediateCrossSignedByRoot, intermediateCrossSignedByOldRoot, leafCert);
     }
 
-    /** Creates a complex cross-signed certificate chain with multiple trust anchor levels. */
-    ComplexCrossSignedCertificateChain createComplexCrossSignedChain() throws Exception {
-      // Generate key pairs for the complex cross-signed scenario
+    ComplexCrossSignedCertificates createComplexCrossSignedChain() throws Exception {
       KeyPair ultimateRootKeyPair = generateKeyPair();
       KeyPair intermediateRootKeyPair = generateKeyPair();
-      KeyPair crossSignedRootKeyPair = generateKeyPair(); // Same key pair for both versions
+      KeyPair crossSignedRootKeyPair = generateKeyPair();
       KeyPair intermediateKeyPair = generateKeyPair();
       KeyPair leafKeyPair = generateKeyPair();
 
-      // Generic certificate subjects
-      String ultimateRootSubject =
-          "CN=Ultimate Root CA " + random.nextInt(10000) + ", O=Test Organization, C=US";
-      String intermediateRootSubject =
-          "CN=Intermediate Root CA " + random.nextInt(10000) + ", O=Test Organization, C=US";
-      String crossSignedRootSubject =
-          "CN=Cross-Signed Root CA " + random.nextInt(10000) + ", O=Test Organization, C=US";
-      String intermediateSubject =
-          "CN=Test Intermediate CA " + random.nextInt(10000) + ", O=Test Organization, C=US";
-      String leafSubject = "CN=test.example.com, O=Test Organization, C=US";
+      X509Certificate ultimateRoot = createSelfSignedCertificate(
+          ultimateRootKeyPair, "CN=Ultimate Root CA " + random.nextInt(10000), true);
 
-      // Create ultimate root (self-signed)
-      X509Certificate ultimateRoot =
-          createSelfSignedCertificate(ultimateRootKeyPair, ultimateRootSubject, true);
+      X509Certificate intermediateRoot = createSignedCertificate(
+          intermediateRootKeyPair.getPublic(), "CN=Intermediate Root CA " + random.nextInt(10000),
+          ultimateRootKeyPair.getPrivate(), ultimateRoot, true);
 
-      // Create intermediate root (signed by ultimate root)
-      X509Certificate intermediateRoot =
-          createSignedCertificate(
-              intermediateRootKeyPair.getPublic(),
-              intermediateRootSubject,
-              ultimateRootKeyPair.getPrivate(),
-              ultimateRoot,
-              true);
+      String crossSignedSubject = "CN=Cross-Signed Root CA " + random.nextInt(10000);
+      X509Certificate crossSignedRoot = createSignedCertificate(
+          crossSignedRootKeyPair.getPublic(), crossSignedSubject,
+          intermediateRootKeyPair.getPrivate(), intermediateRoot, true);
 
-      // Create cross-signed root issued by intermediate root (cross-signed version)
-      X509Certificate crossSignedRoot =
-          createSignedCertificate(
-              crossSignedRootKeyPair.getPublic(),
-              crossSignedRootSubject,
-              intermediateRootKeyPair.getPrivate(),
-              intermediateRoot,
-              true);
+      X509Certificate selfSignedRoot = createSelfSignedCertificate(
+          crossSignedRootKeyPair, crossSignedSubject, true);
 
-      // Create cross-signed root self-signed version (for trust store)
-      // This has the same subject DN and public key as the cross-signed version
-      X509Certificate selfSignedRoot =
-          createSelfSignedCertificate(crossSignedRootKeyPair, crossSignedRootSubject, true);
+      X509Certificate intermediate = createSignedCertificate(
+          intermediateKeyPair.getPublic(), "CN=Intermediate CA " + random.nextInt(10000),
+          crossSignedRootKeyPair.getPrivate(), crossSignedRoot, true);
 
-      // Create intermediate certificate (signed by cross-signed root)
-      X509Certificate intermediate =
-          createSignedCertificate(
-              intermediateKeyPair.getPublic(),
-              intermediateSubject,
-              crossSignedRootKeyPair.getPrivate(),
-              crossSignedRoot,
-              true);
+      X509Certificate leafCert = createSignedCertificate(
+          leafKeyPair.getPublic(), "CN=Test Leaf " + random.nextInt(10000),
+          intermediateKeyPair.getPrivate(), intermediate, false);
 
-      // Create leaf certificate (signed by intermediate)
-      X509Certificate leafCert =
-          createSignedCertificate(
-              leafKeyPair.getPublic(),
-              leafSubject,
-              intermediateKeyPair.getPrivate(),
-              intermediate,
-              false);
-
-      return new ComplexCrossSignedCertificateChain(
-          ultimateRoot, intermediateRoot, crossSignedRoot, selfSignedRoot, intermediate, leafCert);
+      return new ComplexCrossSignedCertificates(ultimateRoot, intermediateRoot, 
+          crossSignedRoot, selfSignedRoot, intermediate, leafCert);
     }
 
-    KeyPair generateKeyPair() throws Exception {
+    private KeyPair generateKeyPair() throws Exception {
       KeyPairGenerator keyGen = KeyPairGenerator.getInstance(RSA_ALGORITHM);
       keyGen.initialize(2048);
       return keyGen.generateKeyPair();
     }
 
-    X509Certificate createSelfSignedCertificate(KeyPair keyPair, String subjectDN, boolean isCA)
+    private X509Certificate createSelfSignedCertificate(KeyPair keyPair, String subjectDN, boolean isCA)
         throws Exception {
-
-      long now = System.currentTimeMillis();
-      Date notBefore = new Date(now);
-      Date notAfter = new Date(now + 365L * 24 * 60 * 60 * 1000); // 1 year
-
-      X500Name subject = new X500Name(subjectDN);
-      X500Name issuer = subject; // Self-signed
-
-      X509v3CertificateBuilder certBuilder =
-          new JcaX509v3CertificateBuilder(
-              issuer,
-              BigInteger.valueOf(random.nextLong()),
-              notBefore,
-              notAfter,
-              subject,
-              keyPair.getPublic());
-
-      // Add basic constraints
-      certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCA));
-
-      // Add key usage
-      if (isCA) {
-        certBuilder.addExtension(
-            Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-      } else {
-        certBuilder.addExtension(
-            Extension.keyUsage,
-            true,
-            new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
-      }
-
-      ContentSigner contentSigner =
-          new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(keyPair.getPrivate());
-
-      X509CertificateHolder certHolder = certBuilder.build(contentSigner);
-
-      return new JcaX509CertificateConverter()
-          .setProvider(BOUNCY_CASTLE_PROVIDER)
-          .getCertificate(certHolder);
+      return createCertificate(keyPair.getPublic(), subjectDN, keyPair.getPrivate(), subjectDN, isCA);
     }
 
-    X509Certificate createSignedCertificate(
-        PublicKey publicKey,
-        String subjectDN,
-        PrivateKey issuerPrivateKey,
-        X509Certificate issuerCert,
-        boolean isCA)
-        throws Exception {
+    private X509Certificate createSignedCertificate(PublicKey publicKey, String subjectDN,
+        PrivateKey issuerPrivateKey, X509Certificate issuerCert, boolean isCA) throws Exception {
+      return createCertificate(publicKey, subjectDN, issuerPrivateKey, 
+          issuerCert.getSubjectX500Principal().getName(), isCA);
+    }
 
+    private X509Certificate createCertificate(PublicKey publicKey, String subjectDN,
+        PrivateKey signerPrivateKey, String issuerDN, boolean isCA) throws Exception {
       long now = System.currentTimeMillis();
       Date notBefore = new Date(now);
-      Date notAfter = new Date(now + 365L * 24 * 60 * 60 * 1000); // 1 year
+      Date notAfter = new Date(now + 365L * 24 * 60 * 60 * 1000);
 
-      X500Name subject = new X500Name(subjectDN);
-      X500Name issuer = new X500Name(issuerCert.getSubjectDN().getName());
+      X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+          new X500Name(issuerDN), BigInteger.valueOf(random.nextLong()),
+          notBefore, notAfter, new X500Name(subjectDN), publicKey);
 
-      X509v3CertificateBuilder certBuilder =
-          new JcaX509v3CertificateBuilder(
-              issuer,
-              BigInteger.valueOf(random.nextLong()),
-              notBefore,
-              notAfter,
-              subject,
-              publicKey);
-
-      // Add basic constraints
       certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCA));
 
-      // Add key usage
       if (isCA) {
-        certBuilder.addExtension(
-            Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        certBuilder.addExtension(Extension.keyUsage, true, 
+            new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
       } else {
-        certBuilder.addExtension(
-            Extension.keyUsage,
-            true,
+        certBuilder.addExtension(Extension.keyUsage, true,
             new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
       }
 
-      ContentSigner contentSigner =
-          new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(issuerPrivateKey);
-
+      ContentSigner contentSigner = new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(signerPrivateKey);
       X509CertificateHolder certHolder = certBuilder.build(contentSigner);
 
       return new JcaX509CertificateConverter()
-          .setProvider(BOUNCY_CASTLE_PROVIDER)
-          .getCertificate(certHolder);
+          .setProvider(BOUNCY_CASTLE_PROVIDER).getCertificate(certHolder);
     }
   }
 
-  /** Holds a simple certificate chain. */
+  /** Simple certificate chain holder */
   private static class CertificateChain {
     final X509Certificate rootCert;
     final X509Certificate intermediateCert;
     final X509Certificate leafCert;
 
-    CertificateChain(
-        X509Certificate rootCert, X509Certificate intermediateCert, X509Certificate leafCert) {
+    CertificateChain(X509Certificate rootCert, X509Certificate intermediateCert, X509Certificate leafCert) {
       this.rootCert = rootCert;
       this.intermediateCert = intermediateCert;
       this.leafCert = leafCert;
     }
   }
 
-  /** Holds a cross-signed certificate chain. */
-  private static class CrossSignedCertificateChain {
+  /** Cross-signed certificate chain holder */
+  private static class CrossSignedCertificates {
     final X509Certificate rootCASelfSigned;
     final X509Certificate oldRootCA;
     final X509Certificate intermediateCrossSignedByRoot;
     final X509Certificate intermediateCrossSignedByOldRoot;
     final X509Certificate leafCert;
 
-    CrossSignedCertificateChain(
-        X509Certificate rootCASelfSigned,
-        X509Certificate oldRootCA,
-        X509Certificate intermediateCrossSignedByRoot,
-        X509Certificate intermediateCrossSignedByOldRoot,
+    CrossSignedCertificates(X509Certificate rootCASelfSigned, X509Certificate oldRootCA,
+        X509Certificate intermediateCrossSignedByRoot, X509Certificate intermediateCrossSignedByOldRoot,
         X509Certificate leafCert) {
       this.rootCASelfSigned = rootCASelfSigned;
       this.oldRootCA = oldRootCA;
@@ -751,8 +486,8 @@ class VerifiedCertPathBuilderTest {
     }
   }
 
-  /** Holds a complex cross-signed certificate chain with multiple trust anchor levels. */
-  private static class ComplexCrossSignedCertificateChain {
+  /** Complex cross-signed certificate chain holder */
+  private static class ComplexCrossSignedCertificates {
     final X509Certificate ultimateRoot;
     final X509Certificate intermediateRoot;
     final X509Certificate crossSignedRoot;
@@ -760,13 +495,9 @@ class VerifiedCertPathBuilderTest {
     final X509Certificate intermediate;
     final X509Certificate leafCert;
 
-    ComplexCrossSignedCertificateChain(
-        X509Certificate ultimateRoot,
-        X509Certificate intermediateRoot,
-        X509Certificate crossSignedRoot,
-        X509Certificate selfSignedRoot,
-        X509Certificate intermediate,
-        X509Certificate leafCert) {
+    ComplexCrossSignedCertificates(X509Certificate ultimateRoot, X509Certificate intermediateRoot,
+        X509Certificate crossSignedRoot, X509Certificate selfSignedRoot,
+        X509Certificate intermediate, X509Certificate leafCert) {
       this.ultimateRoot = ultimateRoot;
       this.intermediateRoot = intermediateRoot;
       this.crossSignedRoot = crossSignedRoot;
