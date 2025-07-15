@@ -159,7 +159,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void shutdown() {
-    // nothing to do here
+    if (this.gcsAccessStrategy != null) {
+      this.gcsAccessStrategy.shutdown();
+    }
   }
 
   /**
@@ -1222,7 +1224,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Setting up the GCS client ", false);
 
     try {
-      this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      boolean overrideAwsAccessStrategy =
+          Boolean.valueOf(System.getenv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
+      if (stage.getUseVirtualUrl() || overrideAwsAccessStrategy) {
+        this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
+      } else {
+        this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      }
 
       if (encMat != null) {
         byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
