@@ -3,7 +3,6 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Assign arguments to variables for clarity
 JAVA_VERSION_ID=""
 JDBC_VERSION=""
 
@@ -17,23 +16,25 @@ else
   exit 1
 fi
 
+PROBER_ARGS=("${@}")
+
 # Define key directories
-SDKMAN_DIR="/root/.sdkman"
+SDKMAN_DIR="/app/.sdkman"
 DRIVERS_DIR="/opt/jdbc_drivers"
 PROBER_APP_DIR="/app"
 
-# Get all arguments starting from the third one to pass to the Java application
-PROBER_ARGS=("${@}")
+source "${SDKMAN_DIR}/bin/sdkman-init.sh" >/dev/null 2>&1
+sdk use java "${JAVA_VERSION_ID}" >/dev/null 2>&1
 
 JDBC_DRIVER_JAR_PATH="${DRIVERS_DIR}/snowflake-jdbc-${JDBC_VERSION}.jar"
 CURRENT_CLASSPATH="${PROBER_APP_DIR}:${JDBC_DRIVER_JAR_PATH}"
 
-# Construct the command to run the pre-compiled Prober application
-RUN_PROBER_COMMAND="source \"${SDKMAN_DIR}/bin/sdkman-init.sh\" >/dev/null 2>&1 && \
-                    sdk use java \"${JAVA_VERSION_ID}\" >/dev/null 2>&1 && \
-                    java -cp \"${CURRENT_CLASSPATH}\" --add-opens=java.base/java.nio=ALL-UNNAMED com.snowflake.client.jdbc.prober.Prober \$@"
+exec java -cp "${CURRENT_CLASSPATH}" \
+          --add-opens=java.base/java.nio=ALL-UNNAMED \
+          com.snowflake.client.jdbc.prober.Prober \
+          "${PROBER_ARGS[@]}"
 
-# Execute the Prober
-bash -c "${RUN_PROBER_COMMAND}" _ "${PROBER_ARGS[@]}"
-
-exit 0
+# This line will not be reached because 'exec' replaces the process.
+# It would only be reached if 'exec java' itself failed to start the Java process.
+echo "Error: Java application failed to start."
+exit 1 # Exit with an error if Java failed to start
