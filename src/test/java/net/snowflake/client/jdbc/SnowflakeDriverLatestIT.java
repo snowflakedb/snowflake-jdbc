@@ -1678,11 +1678,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "alter account "
               + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " set ENABLE_SNOW_654741_FOR_TESTING=true");
-
-      statement.execute(
-          "alter account "
-              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
-              + " set ENABLE_SNOW_910885_FOR_TESTING=false");
     }
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -1729,11 +1724,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "alter account "
               + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " unset ENABLE_SNOW_654741_FOR_TESTING");
-
-      statement.execute(
-          "alter account "
-              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
-              + " unset ENABLE_SNOW_910885_FOR_TESTING");
     }
   }
 
