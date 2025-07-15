@@ -518,6 +518,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS:
+          if (propertyValue != null) {
+            setEnableWildcardsInShowMetadataCommands(getBooleanValue(propertyValue));
+          }
+          break;
+
         case DISABLE_GCS_DEFAULT_CREDENTIALS:
           if (propertyValue != null) {
             setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));

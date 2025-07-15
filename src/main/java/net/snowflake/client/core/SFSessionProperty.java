@@ -137,7 +137,10 @@ public enum SFSessionProperty {
       "CLIENT_TREAT_TIME_AS_WALL_CLOCK_TIME", false, Boolean.class),
 
   HTTP_HEADER_CUSTOMIZERS(
-      HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY, false, List.class);
+      HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY, false, List.class),
+
+  ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS(
+      "ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
