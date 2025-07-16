@@ -12,9 +12,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +30,7 @@ import net.snowflake.client.SystemPropertyOverrider;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.jdbc.TestSecurityProvider;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -36,6 +40,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -313,6 +318,19 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     } finally {
       Arrays.asList(useProxyOverrider, proxyHostOverrider, proxyPortOverrider)
           .forEach(SystemPropertyOverrider::rollback);
+    }
+  }
+
+  @Test
+  void shouldNotFailWhenSimpleTrustManagerIsUsed() throws Exception {
+    Security.insertProviderAt(new TestSecurityProvider(), 1);
+    HttpUtil.reset();
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.execute("SELECT 1");
+    } finally {
+      Security.removeProvider(TestSecurityProvider.class.getSimpleName());
+      HttpUtil.reset();
     }
   }
 
