@@ -39,4 +39,6 @@ interface GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException;
+
+  void shutdown();
 }
