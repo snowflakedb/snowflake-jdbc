@@ -13,6 +13,7 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,7 +92,9 @@ class VerifiedCertPathBuilder {
       X509Certificate leafCertificate = identifyLeafCertificate(certificateChain);
       logger.debug("Identified leaf certificate: {}", leafCertificate.getSubjectX500Principal());
 
-      pkixParams.setTargetCertConstraints(new TargetCertSelector(leafCertificate));
+      X509CertSelector selector = new X509CertSelector();
+      selector.setCertificate(leafCertificate);
+      pkixParams.setTargetCertConstraints(selector);
 
       allVerifiedPaths.addAll(
           findAllPathsForTarget(leafCertificate, trustAnchors, certStore, authType));
@@ -124,7 +127,9 @@ class VerifiedCertPathBuilder {
             new PKIXBuilderParameters(singleTrustAnchor, null);
         singleAnchorParams.addCertStore(certStore);
         singleAnchorParams.setRevocationEnabled(false);
-        singleAnchorParams.setTargetCertConstraints(new TargetCertSelector(targetCert));
+        X509CertSelector selector = new X509CertSelector();
+        selector.setCertificate(targetCert);
+        singleAnchorParams.setTargetCertConstraints(selector);
 
         CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
         CertPathBuilderResult result = builder.build(singleAnchorParams);
@@ -226,18 +231,12 @@ class VerifiedCertPathBuilder {
       Certificate cert = certificates.get(i);
       if (!(cert instanceof X509Certificate)) {
         throw new CertificateException(
-            "Certificate path contains non-X509 certificate: " + cert.getClass().getName());
+            "Certificate path contains non-X509 certificate: "
+                + cert.getClass().getCanonicalName());
       }
       certArray[i] = (X509Certificate) cert;
     }
 
     return certArray;
-  }
-
-  /** X509CertSelector that targets a specific certificate for path building. */
-  private static class TargetCertSelector extends java.security.cert.X509CertSelector {
-    public TargetCertSelector(X509Certificate cert) {
-      setCertificate(cert);
-    }
   }
 }

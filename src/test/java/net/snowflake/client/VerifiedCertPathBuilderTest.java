@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -34,7 +32,6 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -49,28 +46,12 @@ class VerifiedCertPathBuilderTest {
   private static final String PATH_INTERMEDIATE_TO_OLD_ROOT =
       "intermediateCrossSignedByOldRoot->oldRootCA";
 
-  // Truststore configuration
-  private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
-  private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD =
-      "javax.net.ssl.trustStorePassword";
-  private static final String JAVAX_NET_SSL_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
-
   // Certificate generation constants
-  private static final String KEYSTORE_TYPE_JKS = "JKS";
-  private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
   private static final String RSA_ALGORITHM = "RSA";
   private static final String SIGNATURE_ALGORITHM = "SHA256WithRSA";
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
-  // Test file constants
-  private static final String TEST_TRUSTSTORE_PREFIX = "test-truststore";
-  private static final String KEYSTORE_EXTENSION = ".jks";
-  private static final String TEST_ROOT_ALIAS_PREFIX = "testroot";
-
   private TestCertificateGenerator certGen;
-  private String originalTrustStore;
-  private String originalTrustStorePassword;
-  private String originalTrustStoreType;
 
   @BeforeAll
   static void setUpClass() {
@@ -78,29 +59,16 @@ class VerifiedCertPathBuilderTest {
   }
 
   @BeforeEach
-  void setUp() throws Exception {
-    // Store original truststore properties
-    originalTrustStore = System.getProperty(JAVAX_NET_SSL_TRUST_STORE);
-    originalTrustStorePassword = System.getProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD);
-    originalTrustStoreType = System.getProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE);
-
+  void setUp() {
     certGen = new TestCertificateGenerator();
-  }
-
-  @AfterEach
-  void tearDown() {
-    // Restore original truststore properties
-    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE, originalTrustStore);
-    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, originalTrustStorePassword);
-    restoreSystemProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, originalTrustStoreType);
   }
 
   @Test
   void shouldValidateSimpleCertificateChain() throws Exception {
     CertificateChain chain = certGen.createSimpleChain();
-    setUpTrustStore(chain.rootCert);
+    KeyStore trustStore = createInMemoryTrustStore(chain.rootCert);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager(trustStore));
     X509Certificate[] certChain = {chain.leafCert, chain.intermediateCert, chain.rootCert};
     List<X509Certificate[]> paths = builder.buildAllVerifiedPaths(certChain, "RSA");
 
@@ -122,7 +90,10 @@ class VerifiedCertPathBuilderTest {
 
   @Test
   void shouldReturnEmptyForEmptyChain() throws Exception {
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    // Create a minimal trust store for validation testing
+    CertificateChain chain = certGen.createSimpleChain();
+    KeyStore trustStore = createInMemoryTrustStore(chain.rootCert);
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager(trustStore));
 
     assertThrows(
         IllegalArgumentException.class,
@@ -152,9 +123,8 @@ class VerifiedCertPathBuilderTest {
   @Test
   void shouldFindAllValidPathsInCrossSignedScenario() throws Exception {
     CrossSignedCertificates certs = certGen.createCrossSignedCertificates();
-    setUpTrustStore(certs.oldRootCA, certs.rootCASelfSigned);
-
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    KeyStore trustStore = createInMemoryTrustStore(certs.oldRootCA, certs.rootCASelfSigned);
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager(trustStore));
     X509Certificate[] chain = {
       certs.leafCert,
       certs.intermediateCrossSignedByRoot,
@@ -178,9 +148,9 @@ class VerifiedCertPathBuilderTest {
   @Test
   void shouldValidateComplexCrossSignedChain() throws Exception {
     ComplexCrossSignedCertificates certs = certGen.createComplexCrossSignedChain();
-    setUpTrustStore(certs.selfSignedRoot);
+    KeyStore trustStore = createInMemoryTrustStore(certs.selfSignedRoot);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager(trustStore));
     X509Certificate[] chain = {
       certs.leafCert, certs.intermediate, certs.crossSignedRoot, certs.intermediateRoot
     };
@@ -205,9 +175,9 @@ class VerifiedCertPathBuilderTest {
   @Test
   void shouldValidateChainToUltimateRoot() throws Exception {
     ComplexCrossSignedCertificates certs = certGen.createComplexCrossSignedChain();
-    setUpTrustStore(certs.ultimateRoot);
+    KeyStore trustStore = createInMemoryTrustStore(certs.ultimateRoot);
 
-    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager());
+    VerifiedCertPathBuilder builder = new VerifiedCertPathBuilder(createTrustManager(trustStore));
     X509Certificate[] chain = {
       certs.leafCert, certs.intermediate, certs.crossSignedRoot, certs.intermediateRoot
     };
@@ -299,39 +269,23 @@ class VerifiedCertPathBuilderTest {
         found, "Trust anchor should be included in the certification path for CRL validation");
   }
 
-  private void setUpTrustStore(X509Certificate... certificates) throws Exception {
-    KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
+  /** Creates an in-memory KeyStore with the provided certificates as trusted CAs. */
+  private KeyStore createInMemoryTrustStore(X509Certificate... certificates) throws Exception {
+    KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
     trustStore.load(null, null);
 
     for (int i = 0; i < certificates.length; i++) {
-      trustStore.setCertificateEntry(TEST_ROOT_ALIAS_PREFIX + i, certificates[i]);
+      trustStore.setCertificateEntry("testroot" + i, certificates[i]);
     }
 
-    File tempFile = File.createTempFile(TEST_TRUSTSTORE_PREFIX, KEYSTORE_EXTENSION);
-    tempFile.deleteOnExit();
-
-    try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-      trustStore.store(fos, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
-    }
-
-    System.setProperty(JAVAX_NET_SSL_TRUST_STORE, tempFile.getAbsolutePath());
-    System.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD);
-    System.setProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, KEYSTORE_TYPE_JKS);
+    return trustStore;
   }
 
-  private void restoreSystemProperty(String property, String originalValue) {
-    if (originalValue != null) {
-      System.setProperty(property, originalValue);
-    } else {
-      System.clearProperty(property);
-    }
-  }
-
-  /** Creates an X509TrustManager using the system default truststore. */
-  private X509TrustManager createTrustManager() throws Exception {
+  /** Creates an X509TrustManager using the provided KeyStore. */
+  private X509TrustManager createTrustManager(KeyStore trustStore) throws Exception {
     TrustManagerFactory tmf =
         TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init((KeyStore) null); // Use system default truststore
+    tmf.init(trustStore);
 
     for (javax.net.ssl.TrustManager tm : tmf.getTrustManagers()) {
       if (tm instanceof X509TrustManager) {
