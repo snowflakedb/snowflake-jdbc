@@ -1017,7 +1017,8 @@ public class RestRequest {
   }
 
   static boolean isProtocolVersionError(Exception e) {
-    return e.getMessage() != null && e.getMessage().contains("Received fatal alert: protocol_version");
+    return e.getMessage() != null
+        && e.getMessage().contains("Received fatal alert: protocol_version");
   }
 
   private static boolean handleCertificateRevoked(
