@@ -270,6 +270,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     if (trustManager instanceof X509ExtendedTrustManager) {
       this.exTrustManager = (X509ExtendedTrustManager) trustManager;
     } else {
+      logger.debug("Standard X509TrustManager is used instead of X509ExtendedTrustManager.");
       this.exTrustManager = null;
     }
 
