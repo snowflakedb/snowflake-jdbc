@@ -19,7 +19,13 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLProtocolException;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpExecutingContext;
+import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
@@ -666,5 +672,142 @@ public class RestRequestTest {
       }
       elapsedMilliForTransientIssues += backoffInMilli;
     }
+  }
+
+  @Test
+  public void testHandlingNotRetryableException_isProtocolVersionError() throws Exception {
+    // Create a mock HttpExecutingContext
+    HttpExecutingContext mockContext =
+        HttpExecutingContextBuilder.withRequest("test-request-id", "test-request-info").build();
+
+    // Test case 1: SSL exception with protocol version error - should NOT throw
+    // SnowflakeSQLLoggedException
+    // This should fall through to the general exception handling
+    SSLHandshakeException protocolVersionException =
+        new SSLHandshakeException("Received fatal alert: protocol_version");
+
+    Exception result =
+        RestRequest.handlingNotRetryableException(protocolVersionException, mockContext);
+
+    // Should return the original exception, not throw SnowflakeSQLLoggedException
+    assertEquals(
+        protocolVersionException,
+        result,
+        "SSL exception with protocol version error should return original exception");
+
+    // Test case 2: SSL exception without protocol version error - should throw
+    // SnowflakeSQLLoggedException
+    SSLHandshakeException nonProtocolVersionException =
+        new SSLHandshakeException("SSL handshake failed for some other reason");
+
+    assertThrows(
+        SnowflakeSQLLoggedException.class,
+        () -> {
+          RestRequest.handlingNotRetryableException(nonProtocolVersionException, mockContext);
+        },
+        "SSL exception without protocol version error should throw SnowflakeSQLLoggedException");
+
+    // Test case 3: Different SSL exception types with protocol version error
+    SSLProtocolException sslProtocolException =
+        new SSLProtocolException("Received fatal alert: protocol_version");
+
+    Exception result2 =
+        RestRequest.handlingNotRetryableException(sslProtocolException, mockContext);
+    assertEquals(
+        sslProtocolException,
+        result2,
+        "SSLProtocolException with protocol version error should return original exception");
+
+    // Test case 4: Different SSL exception types without protocol version error
+    SSLKeyException sslKeyException = new SSLKeyException("SSL key verification failed");
+
+    assertThrows(
+        SnowflakeSQLLoggedException.class,
+        () -> {
+          RestRequest.handlingNotRetryableException(sslKeyException, mockContext);
+        },
+        "SSLKeyException without protocol version error should throw SnowflakeSQLLoggedException");
+
+    // Test case 5: SSLPeerUnverifiedException with protocol version error
+    SSLPeerUnverifiedException peerUnverifiedException =
+        new SSLPeerUnverifiedException("Received fatal alert: protocol_version");
+
+    Exception result3 =
+        RestRequest.handlingNotRetryableException(peerUnverifiedException, mockContext);
+    assertEquals(
+        peerUnverifiedException,
+        result3,
+        "SSLPeerUnverifiedException with protocol version error should return original exception");
+
+    // Test case 6: Non-SSL exception - should return the original exception
+    IOException ioException = new IOException("Some IO error");
+
+    Exception result4 = RestRequest.handlingNotRetryableException(ioException, mockContext);
+    assertEquals(ioException, result4, "Non-SSL exception should return original exception");
+  }
+
+  @Test
+  public void testIsProtocolVersionError() {
+    // Test true cases
+    assertTrue(
+        RestRequest.isProtocolVersionError(
+            new SSLHandshakeException("Received fatal alert: protocol_version")),
+        "Should return true for exception with protocol_version message");
+
+    assertTrue(
+        RestRequest.isProtocolVersionError(
+            new SSLProtocolException(
+                "Some prefix Received fatal alert: protocol_version some suffix")),
+        "Should return true for exception containing protocol_version message");
+
+    // Test false cases
+    assertFalse(
+        RestRequest.isProtocolVersionError(new SSLHandshakeException("Some other SSL error")),
+        "Should return false for exception without protocol_version message");
+
+    assertFalse(
+        RestRequest.isProtocolVersionError(
+            new SSLHandshakeException("Received fatal alert: handshake_failure")),
+        "Should return false for different SSL alert type");
+
+    assertFalse(
+        RestRequest.isProtocolVersionError(new IOException("Some IO error")),
+        "Should return false for non-SSL exception");
+
+    // Test null message
+    assertFalse(
+        RestRequest.isProtocolVersionError(new SSLHandshakeException((String) null)),
+        "Should return false for exception with null message");
+  }
+
+  @Test
+  public void testIsExceptionInGroup() {
+    // Test SSL exceptions are in the sslExceptions group
+    assertTrue(
+        RestRequest.isExceptionInGroup(
+            new SSLHandshakeException("test"), RestRequest.sslExceptions),
+        "SSLHandshakeException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(new SSLKeyException("test"), RestRequest.sslExceptions),
+        "SSLKeyException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(
+            new SSLPeerUnverifiedException("test"), RestRequest.sslExceptions),
+        "SSLPeerUnverifiedException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(new SSLProtocolException("test"), RestRequest.sslExceptions),
+        "SSLProtocolException should be in SSL exceptions group");
+
+    // Test non-SSL exceptions are not in the group
+    assertFalse(
+        RestRequest.isExceptionInGroup(new IOException("test"), RestRequest.sslExceptions),
+        "IOException should not be in SSL exceptions group");
+
+    assertFalse(
+        RestRequest.isExceptionInGroup(new RuntimeException("test"), RestRequest.sslExceptions),
+        "RuntimeException should not be in SSL exceptions group");
   }
 }
