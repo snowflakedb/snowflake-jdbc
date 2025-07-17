@@ -908,7 +908,8 @@ public class SnowflakeUtil {
   @SnowflakeJdbcInternalApi
   public static boolean createOwnerOnlyPermissionDir(String location) {
     if (isWindows()) {
-      return false;
+      File dir = new File(location);
+      return dir.mkdirs();
     }
 
     boolean isDirCreated = true;
