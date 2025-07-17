@@ -229,6 +229,6 @@ Feel free to file an issue or submit a PR here for general cases. For official s
 https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge
 
 Note
-----------
+-----------
 
 This driver support GCP regional endpoints starting from version 3.21.0. Please ensure that any workloads using through this driver below the version 3.21.0 do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
