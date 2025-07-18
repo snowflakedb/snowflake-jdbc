@@ -106,6 +106,13 @@ public class HttpUtil {
   private static boolean socksProxyDisabled = false;
 
   @SnowflakeJdbcInternalApi
+  public static void reset() {
+    httpClient.clear();
+    httpClientWithoutDecompression.clear();
+    httpClientRoutePlanner.clear();
+  }
+
+  @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
     return connectionTimeout != null
         ? connectionTimeout
