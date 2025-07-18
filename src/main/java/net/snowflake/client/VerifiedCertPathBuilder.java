@@ -1,5 +1,9 @@
 package net.snowflake.client;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+import javax.net.ssl.X509TrustManager;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPath;
@@ -21,9 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.net.ssl.X509TrustManager;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import java.util.stream.Collectors;
 
 /**
  * Builds and verifies certificate paths using a truststore and CertPathBuilder. This class takes a
@@ -34,6 +36,7 @@ class VerifiedCertPathBuilder {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(VerifiedCertPathBuilder.class);
   private final X509TrustManager trustManager;
+  private final Set<TrustAnchor> trustAnchors;
 
   /**
    * Constructor that initializes the VerifiedCertPathBuilder with the provided trust manager.
@@ -41,11 +44,12 @@ class VerifiedCertPathBuilder {
    * @param trustManager the X509TrustManager to use for certificate validation
    * @throws IllegalArgumentException if trustManager is null
    */
-  public VerifiedCertPathBuilder(X509TrustManager trustManager) {
+  public VerifiedCertPathBuilder(X509TrustManager trustManager) throws CertificateException {
     if (trustManager == null) {
       throw new IllegalArgumentException("Trust manager cannot be null");
     }
     this.trustManager = trustManager;
+    this.trustAnchors = createTrustAnchors(trustManager);
   }
 
   /**
@@ -54,8 +58,7 @@ class VerifiedCertPathBuilder {
    * of each path for CRL validation support.
    *
    * @param certificateChain the certificate chain presented by the server
-   * @param authType the authentication type (e.g., "RSA", "ECDSA", "ECDHE", "ECDH") used for the
-   *     connection
+   * @param authType the authentication type used for the connection
    * @return a list of all verified certificate paths with trust anchors included
    * @throws CertificateException if certificate validation fails
    * @throws CertPathBuilderException if no valid certificate paths could be built
@@ -79,8 +82,6 @@ class VerifiedCertPathBuilder {
     List<X509Certificate[]> allVerifiedPaths = new ArrayList<>();
 
     try {
-      Set<TrustAnchor> trustAnchors = createTrustAnchors();
-
       List<Certificate> certCollection = Arrays.asList(certificateChain);
       CertStore certStore =
           CertStore.getInstance("Collection", new CollectionCertStoreParameters(certCollection));
@@ -182,27 +183,20 @@ class VerifiedCertPathBuilder {
    */
   private X509Certificate identifyLeafCertificate(X509Certificate[] certificateChain)
       throws CertificateException {
-    for (X509Certificate cert : certificateChain) {
-      boolean isIssuer = false;
-
-      for (X509Certificate otherCert : certificateChain) {
-        if (!cert.equals(otherCert)
-            && otherCert.getIssuerX500Principal().equals(cert.getSubjectX500Principal())) {
-          isIssuer = true;
-          break;
-        }
-      }
-
-      if (!isIssuer) {
-        return cert;
-      }
+    Set<X509Certificate> leafCerts = Arrays.stream(certificateChain)
+        .filter(cert -> cert != null && cert.getBasicConstraints() == -1) // Basic constraints -1 indicates a leaf certificate
+        .collect(Collectors.toSet());
+    if (leafCerts.isEmpty()) {
+      throw new CertificateException("No leaf certificate found in the chain");
     }
-
-    throw new CertificateException("No leaf certificate found in the chain");
+    if (leafCerts.size() > 1) {
+      throw new CertificateException("Multiple leaf certificates found, returning one arbitrarily");
+    }
+    return leafCerts.iterator().next();
   }
 
   /** Creates trust anchors from the truststore. */
-  private Set<TrustAnchor> createTrustAnchors() throws CertificateException {
+  private Set<TrustAnchor> createTrustAnchors(X509TrustManager trustManager) throws CertificateException {
     Set<TrustAnchor> trustAnchors = new HashSet<>();
 
     try {
