@@ -74,3 +74,6 @@ whitesource/
 
 #created in some tests
 placeholder
+
+#vs code
+.vscode/
