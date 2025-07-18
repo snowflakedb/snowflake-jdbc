@@ -46,7 +46,6 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -703,7 +702,10 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         getHttpClient(ocspAndProxyKey, null),
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        ocspAndProxyKey,
+        null,
+        false);
   }
 
   /**
@@ -761,7 +763,10 @@ public class HttpUtil {
         false,
         getHttpClient(ocspAndProxyAndGzipKey, null),
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        ocspAndProxyAndGzipKey,
+        null,
+        false);
   }
 
   /**
@@ -842,7 +847,10 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         httpClient,
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        null,
+        null,
+        false);
   }
 
   /**
@@ -941,7 +949,10 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey, null),
         execTimeData,
-        retryContextManager);
+        retryContextManager,
+        ocspAndProxyKey,
+        null,
+        false);
   }
 
   /**
@@ -964,6 +975,10 @@ public class HttpUtil {
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
    * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param key HttpClientSettingsKey object
+   * @param httpHeaderCustomizer HttpHeadersCustomizer object for customization of HTTP headers for
+   *     requests sent by the Snowflake JDBC driver.
+   * @param isHttpClientWithoutDecompression flag for create client without Decompression
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -982,7 +997,10 @@ public class HttpUtil {
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContextManager retryContextManager,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException, IOException {
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
     String responseText = "";
@@ -990,7 +1008,6 @@ public class HttpUtil {
     logger.debug(
         "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
 
-    CloseableHttpResponse response = null;
     Stopwatch stopwatch = null;
 
     String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
@@ -1012,7 +1029,14 @@ public class HttpUtil {
             .build();
     responseText =
         RestRequest.executeWithRetries(
-                httpClient, httpRequest, context, execTimeData, retryContextManager)
+                httpClient,
+                httpRequest,
+                context,
+                execTimeData,
+                retryContextManager,
+                key,
+                httpHeaderCustomizer,
+                isHttpClientWithoutDecompression)
             .getUnpackedCloseableHttpResponse();
 
     logger.debug(
