@@ -25,5 +25,5 @@ docker run \
   -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
   -v $WORKSPACE:/mnt/workspace \
   --rm \
-  nexus.int.snowflakecomputing.com:8086/docker/snowdrivers-test-external-browser-jdbc:2 \
+  nexus.int.snowflakecomputing.com:8086/docker/snowdrivers-test-external-browser-jdbc:3 \
   "/mnt/host/ci/container/test_authentication.sh"
