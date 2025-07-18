@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -37,6 +39,7 @@ public class SFConnectionConfigParser {
   public static final String SNOWFLAKE_TOKEN_FILE_PATH = "/snowflake/session/token";
   public static final String SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION =
       "SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION";
+  public static final String SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE = "SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE";
 
   public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
     String defaultConnectionName =
@@ -118,21 +121,69 @@ public class SFConnectionConfigParser {
   private static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
     if (!isWindows()) {
-      PosixFileAttributeView posixFileAttributeView =
-          Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
-      if (!posixFileAttributeView.readAttributes().permissions().stream()
-          .allMatch(
-              o ->
-                  Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
-                      .contains(o))) {
-        logger.error(
-            "Reading from file %s is not safe because file permissions are different than read/write for user",
-            configFilePath);
-        throw new SnowflakeSQLException(
-            String.format(
-                "Reading from file %s is not safe because file permissions are different than read/write for user",
-                configFilePath));
-      }
+    	/*if(configFilePath.endsWith("connections.toml"))
+    	{
+    		boolean shouldSkipWarningForReadPermissions =
+                    convertSystemGetEnvToBooleanValue(SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE, false);
+    		PosixFileAttributeView posixFileAttributeView =
+    		          Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
+    		      Set<PosixFilePermission> permissions = posixFileAttributeView.readAttributes().permissions();
+    		    
+    		    if (!shouldSkipWarningForReadPermissions) {
+		        boolean groupRead = permissions.contains(PosixFilePermission.GROUP_READ);
+		        boolean othersRead = permissions.contains(PosixFilePermission.OTHERS_READ);
+		        // Warning if readable by group/others (must be 600 or stricter)
+		        if (groupRead || othersRead) {
+		          logger.warn(
+		              "File %s is readable by group or others. Permissions should be 600 or stricter for maximum security.",
+		              configFilePath);
+		        }
+    		    }
+
+    	      boolean groupWrite = permissions.contains(PosixFilePermission.GROUP_WRITE);
+    	      boolean othersWrite = permissions.contains(PosixFilePermission.OTHERS_WRITE);
+    	      // Error if writable by group/others (must be 644 or stricter)
+    	      if (groupWrite || othersWrite) {
+    	        logger.error(
+    	            "File %s is writable by group or others. Permissions must be 644 or stricter.",
+    	            configFilePath);
+    	        throw new SnowflakeSQLException(
+    	            String.format(
+    	                "File %s is writable by group or others. Permissions must be 644 or stricter.",
+    	                configFilePath));
+    	      }
+    	      
+    	   // Error if executable by anyone
+    	      boolean ownerExec = permissions.contains(PosixFilePermission.OWNER_EXECUTE);
+    	      boolean groupExec = permissions.contains(PosixFilePermission.GROUP_EXECUTE);
+    	      boolean othersExec = permissions.contains(PosixFilePermission.OTHERS_EXECUTE);
+    	      // Executable permission is not allowed
+    	      if (ownerExec || groupExec || othersExec) {
+    	        logger.error(
+    	            "File %s is executable. Executable permission is not allowed.",
+    	            configFilePath);
+    	        throw new SnowflakeSQLException(
+    	            String.format(
+    	                "File %s is executable. Executable permission is not allowed.",
+    	                configFilePath));
+    	      }
+    	} else {*/
+    		PosixFileAttributeView posixFileAttributeView =
+    		          Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
+    		      if (!posixFileAttributeView.readAttributes().permissions().stream()
+    		          .allMatch(
+    		              o ->
+    		                  Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+    		                      .contains(o))) {
+    		        logger.error(
+    		            "Reading from file %s is not safe because file permissions are different than read/write for user",
+    		            configFilePath);
+    		        throw new SnowflakeSQLException(
+    		            String.format(
+    		                "Reading from file %s is not safe because file permissions are different than read/write for user",
+    		                configFilePath));
+    		      //}
+    	}
     }
   }
 
