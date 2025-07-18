@@ -92,6 +92,18 @@ timestamps {
       }
     })
 
+    jobDefinitions.put('Test WIF', {
+      withCredentials([
+        string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
+      ]) {
+        sh '''\
+      |#!/bin/bash
+      |set -e
+      |ci/test_wif.sh
+    '''.stripMargin()
+      }
+    })
+
     stage('Test') {
       parallel (jobDefinitions)
     }

@@ -74,3 +74,6 @@ whitesource/
 
 #created in some tests
 placeholder
+
+# SSH private key for WIF tests
+ci/wif/parameters/rsa_wif
