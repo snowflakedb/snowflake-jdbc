@@ -24,12 +24,16 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
@@ -2650,5 +2654,293 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
     }
+  }
+
+  @Test
+  public void testWildcardsInShowMetadataQueries() throws Exception {
+    Random random = new Random();
+    int suffix = random.nextInt(Integer.MAX_VALUE);
+
+    // Create objects with underscore that would be treated as wildcard pattern
+    String schemaWithUnderscore = GENERATED_SCHEMA_PREFIX + "MY_SCHEMA_" + suffix;
+    String tableWithUnderscore = "MY_TABLE_" + suffix;
+    String columnWithUnderscore = "MY_COLUMN_" + suffix;
+    String procedureWithUnderscore = "MY_PROCEDURE_" + suffix;
+    String functionWithUnderscore = "MY_FUNCTION_" + suffix;
+    String database = connection.getCatalog();
+
+    // Create an alternative object that would match the pattern if underscore was treated as
+    // wildcard
+    String alternativeSchema = schemaWithUnderscore.replace("_", "X");
+    String alternativeTable = tableWithUnderscore.replace("_", "X");
+    String alternativeColumn = columnWithUnderscore.replace("_", "X");
+    String alternativeProcedure = procedureWithUnderscore.replace("_", "X");
+    String alternativeFunction = functionWithUnderscore.replace("_", "X");
+
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("CREATE SCHEMA \"" + schemaWithUnderscore + "\"");
+      statement.execute("USE SCHEMA \"" + schemaWithUnderscore + "\"");
+      statement.execute(
+          "CREATE TABLE \""
+              + tableWithUnderscore
+              + "\" ("
+              + columnWithUnderscore
+              + " VARCHAR(50), col2 INT)");
+      statement.execute(
+          "CREATE PROCEDURE "
+              + procedureWithUnderscore
+              + "()\nRETURNS VARCHAR\n LANGUAGE SQL\n AS\n $$\n BEGIN\n    RETURN 'Hello, Snowflake!';\n END;\n $$;");
+      statement.execute(
+          "CREATE FUNCTION "
+              + functionWithUnderscore
+              + "()\nRETURNS VARCHAR\n AS\n $$\n 'Hello, Snowflake!'\n $$;");
+
+      statement.execute("CREATE SCHEMA \"" + alternativeSchema + "\"");
+      statement.execute("USE SCHEMA \"" + alternativeSchema + "\"");
+      statement.execute(
+          "CREATE TABLE \""
+              + alternativeTable
+              + "\" ("
+              + alternativeColumn
+              + " VARCHAR(50), col2 INT)");
+      statement.execute(
+          "CREATE PROCEDURE "
+              + alternativeProcedure
+              + "()\nRETURNS VARCHAR\n LANGUAGE SQL\n AS\n $$\n BEGIN\n    RETURN 'Hello, Snowflake!';\n END;\n $$;");
+      statement.execute(
+          "CREATE FUNCTION "
+              + alternativeFunction
+              + "()\nRETURNS VARCHAR\n AS\n $$\n 'Hello, Snowflake!'\n $$;");
+
+      // Test 1: With pattern matching ENABLED (default behavior)
+      // Driver cannot use schema-specific queries because underscore might be a pattern
+      Properties propsWithPatternMatching = new Properties();
+      propsWithPatternMatching.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "true");
+
+      try (Connection connWithPatterns = getConnection(propsWithPatternMatching)) {
+        DatabaseMetaData metaData = connWithPatterns.getMetaData();
+
+        try (ResultSet rs =
+            metaData.getColumns(
+                database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "columns like '" + columnWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeTable, alternativeSchema, alternativeColumn),
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore, columnWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("TABLE_NAME"),
+                          r.getString("TABLE_SCHEM"),
+                          r.getString("COLUMN_NAME"))));
+        }
+
+        try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "schemas like '" + schemaWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(alternativeSchema, schemaWithUnderscore),
+              handleException(r -> r.getString("TABLE_SCHEM")));
+        }
+
+        try (ResultSet rs =
+            metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
+          assertMetadataQueryResult(
+              rs,
+              "objects like '" + tableWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeTable, alternativeSchema),
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
+        }
+
+        try (ResultSet rs =
+            metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "procedures like '" + procedureWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeProcedure, alternativeSchema),
+                  Arrays.asList(procedureWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
+        }
+
+        try (ResultSet rs =
+            metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "functions like '" + functionWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeFunction, alternativeSchema),
+                  Arrays.asList(functionWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
+        }
+      }
+
+      // Test 2: With pattern matching DISABLED
+      // Driver can now treat underscore as literals and use more specific SHOW ... IN ... queries
+      Properties propsWithoutPatternMatching = new Properties();
+      propsWithoutPatternMatching.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
+
+      try (Connection connWithoutPatterns = getConnection(propsWithoutPatternMatching)) {
+        DatabaseMetaData metaData = connWithoutPatterns.getMetaData();
+
+        try (ResultSet rs =
+            metaData.getColumns(
+                database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "columns like '"
+                  + columnWithUnderscore
+                  + "' in table \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\".\""
+                  + tableWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore, columnWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("TABLE_NAME"),
+                          r.getString("TABLE_SCHEM"),
+                          r.getString("COLUMN_NAME"))));
+        }
+
+        try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "schemas like '" + schemaWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(alternativeSchema, schemaWithUnderscore),
+              handleException(r -> r.getString("TABLE_SCHEM")));
+        }
+
+        try (ResultSet rs =
+            metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
+          assertMetadataQueryResult(
+              rs,
+              "objects like '"
+                  + tableWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(Arrays.asList(tableWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
+        }
+
+        try (ResultSet rs =
+            metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "procedures like '"
+                  + procedureWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(procedureWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
+        }
+
+        try (ResultSet rs =
+            metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "functions like '"
+                  + functionWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(functionWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
+        }
+      }
+    } finally {
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("DROP SCHEMA IF EXISTS \"" + schemaWithUnderscore + "\"");
+        statement.execute("DROP SCHEMA IF EXISTS \"" + alternativeSchema + "\"");
+      }
+    }
+  }
+
+  @FunctionalInterface
+  interface ThrowingFunction<T, R> {
+    R apply(T t) throws SQLException;
+  }
+
+  // 2. Create the static helper method to wrap the exception
+  static <T, R> Function<T, R> handleException(ThrowingFunction<T, R> f) {
+    return t -> {
+      try {
+        return f.apply(t);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    };
+  }
+
+  private <T> void assertMetadataQueryResult(
+      ResultSet rs,
+      String expectedSqlEnding,
+      int expectedRowCount,
+      List<T> expectedRows,
+      Function<ResultSet, T> rowMapper)
+      throws Exception {
+    // 1. Assert the underlying SQL query text
+    String sqlText = getSqlText(rs.unwrap(SnowflakeBaseResultSet.class).getStatement());
+    assertTrue(sqlText.endsWith(expectedSqlEnding));
+
+    // 2. Map ResultSet to a List
+    List<T> actualRows = new ArrayList<>();
+    while (rs.next()) {
+      actualRows.add(rowMapper.apply(rs));
+    }
+
+    // 3. Assert row count and content
+    assertEquals(expectedRowCount, actualRows.size());
+    assertEquals(expectedRows, actualRows);
+  }
+
+  private static String getSqlText(Statement statement) throws Exception {
+    Class<?> stmtClass = statement.getClass();
+    Field sfBaseStatementField = stmtClass.getDeclaredField("sfBaseStatement");
+    sfBaseStatementField.setAccessible(true); // Allow access to private field
+    Object sfBaseStatement = sfBaseStatementField.get(statement);
+
+    Class<?> sfBaseStmtClass = sfBaseStatement.getClass();
+    Field sqlTextField = sfBaseStmtClass.getDeclaredField("sqlText");
+    sqlTextField.setAccessible(true); // Allow access to private field
+    return (String) sqlTextField.get(sfBaseStatement);
   }
 }

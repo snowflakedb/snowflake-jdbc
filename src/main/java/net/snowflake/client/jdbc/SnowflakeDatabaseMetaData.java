@@ -163,6 +163,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // Indicates if pattern matching is allowed for all parameters.
   private boolean isPatternMatchingEnabled = true;
   private boolean exactSchemaSearchEnabled;
+  private boolean enableWildcardsInShowMetadataCommands;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.trace("SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
@@ -176,6 +177,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.procedureResultsetColumnNum = -1;
     this.isPatternMatchingEnabled = session.getEnablePatternSearch();
     this.exactSchemaSearchEnabled = session.getEnableExactSchemaSearch();
+    this.enableWildcardsInShowMetadataCommands = session.getEnableWildcardsInShowMetadataCommands();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
@@ -271,8 +273,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   private boolean isSchemaNameWildcardPattern(String inputString) {
-    // if session schema contains wildcard, don't treat it as wildcard; treat as just a schema name
-    return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
+    // if schema contains wildcard, don't treat it as wildcard; treat as just a schema name if
+    // session schema or wildcards in identifiers in show metadata queries disabled
+    return (useSessionSchema || !enableWildcardsInShowMetadataCommands)
+        ? false
+        : Wildcard.isWildcardPatternStr(inputString);
   }
 
   @Override
@@ -1414,7 +1419,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
     return new ContextAwareMetadataSearch(
-        catalog, schemaPattern, exactSchemaSearchEnabled && useSessionSchema);
+        catalog,
+        schemaPattern,
+        (exactSchemaSearchEnabled && useSessionSchema) || !enableWildcardsInShowMetadataCommands);
   }
 
   /* helper function for getProcedures, getFunctionColumns, etc. Returns sql command to show some type of result such
@@ -1740,7 +1747,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
         String schemaUnescaped = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
-        if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
+        if (tableNamePattern == null
+            || (Wildcard.isWildcardPatternStr(tableNamePattern)
+                && enableWildcardsInShowMetadataCommands)) {
           showColumnsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
@@ -3291,7 +3300,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         new StringBuilder("show /* JDBC:DatabaseMetaData.getSchemas() */ schemas");
 
     Statement statement = connection.createStatement();
-    if (isExactSchema) {
+    if (isExactSchema && enableWildcardsInShowMetadataCommands) {
       String escapedSchema =
           schemaPattern.replaceAll("_", "\\\\\\\\_").replaceAll("%", "\\\\\\\\%");
       showSchemas.append(" like '").append(escapedSchema).append("'");
