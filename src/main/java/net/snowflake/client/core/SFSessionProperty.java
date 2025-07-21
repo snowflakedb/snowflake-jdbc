@@ -142,7 +142,10 @@ public enum SFSessionProperty {
   // Used to enable the owner-only stage file permissions feature. This feature will be enabled by
   // default in the next major release.
   OWNER_ONLY_STAGE_FILE_PERMISSIONS_ENABLED(
-      "ownerOnlyStageFilePermissionsEnabled", false, Boolean.class);
+      "ownerOnlyStageFilePermissionsEnabled", false, Boolean.class),
+
+  ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS(
+      "ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
