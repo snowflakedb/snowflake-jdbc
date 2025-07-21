@@ -267,8 +267,12 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     this.proxySettingsKey = key;
     this.trustManager = getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
 
-    this.exTrustManager =
-        (X509ExtendedTrustManager) getTrustManager(TrustManagerFactory.getDefaultAlgorithm());
+    if (trustManager instanceof X509ExtendedTrustManager) {
+      this.exTrustManager = (X509ExtendedTrustManager) trustManager;
+    } else {
+      logger.debug("Standard X509TrustManager is used instead of X509ExtendedTrustManager.");
+      this.exTrustManager = null;
+    }
 
     checkNewOCSPEndpointAvailability();
 
@@ -725,22 +729,31 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   @Override
   public void checkClientTrusted(X509Certificate[] chain, String authType, java.net.Socket socket)
       throws CertificateException {
-    // default behavior
-    this.exTrustManager.checkClientTrusted(chain, authType, socket);
+    if (exTrustManager != null) {
+      exTrustManager.checkClientTrusted(chain, authType, socket);
+    } else {
+      trustManager.checkClientTrusted(chain, authType);
+    }
   }
 
   @Override
   public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine)
       throws CertificateException {
-    // default behavior
-    exTrustManager.checkClientTrusted(chain, authType, sslEngine);
+    if (exTrustManager != null) {
+      exTrustManager.checkClientTrusted(chain, authType, sslEngine);
+    } else {
+      trustManager.checkClientTrusted(chain, authType);
+    }
   }
 
   @Override
   public void checkServerTrusted(X509Certificate[] chain, String authType, java.net.Socket socket)
       throws CertificateException {
-    // default behavior
-    exTrustManager.checkServerTrusted(chain, authType, socket);
+    if (exTrustManager != null) {
+      exTrustManager.checkServerTrusted(chain, authType, socket);
+    } else {
+      trustManager.checkServerTrusted(chain, authType);
+    }
     String host = socket.getInetAddress().getHostName();
     this.validateRevocationStatus(chain, host);
   }
@@ -748,8 +761,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   @Override
   public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine)
       throws CertificateException {
-    // default behavior
-    exTrustManager.checkServerTrusted(chain, authType, sslEngine);
+    if (exTrustManager != null) {
+      exTrustManager.checkServerTrusted(chain, authType, sslEngine);
+    } else {
+      trustManager.checkServerTrusted(chain, authType);
+    }
     this.validateRevocationStatus(chain, sslEngine.getPeerHost());
   }
 

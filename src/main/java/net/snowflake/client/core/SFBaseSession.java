@@ -154,6 +154,8 @@ public abstract class SFBaseSession {
   /** Treat java.sql.Time as wall clock time without converting it to UTC */
   private boolean treatTimeAsWallClockTime = false;
 
+  private boolean ownerOnlyStageFilePermissionsEnabled = false;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -1373,5 +1375,18 @@ public abstract class SFBaseSession {
 
   public void setTreatTimeAsWallClockTime(boolean treatTimeAsWallClockTime) {
     this.treatTimeAsWallClockTime = treatTimeAsWallClockTime;
+  }
+
+  /**
+   * Get if owner-only stage file permissions feature is enabled.
+   *
+   * @return true if owner-only stage file permissions feature is enabled
+   */
+  public boolean isOwnerOnlyStageFilePermissionsEnabled() {
+    return ownerOnlyStageFilePermissionsEnabled;
+  }
+
+  public void setOwnerOnlyStageFilePermissionsEnabled(boolean booleanValue) {
+    this.ownerOnlyStageFilePermissionsEnabled = booleanValue;
   }
 }
