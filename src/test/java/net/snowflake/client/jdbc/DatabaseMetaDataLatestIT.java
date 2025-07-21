@@ -39,6 +39,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.util.ThrowingFunction;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -2894,13 +2895,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @FunctionalInterface
-  interface ThrowingFunction<T, R> {
-    R apply(T t) throws SQLException;
-  }
-
-  // 2. Create the static helper method to wrap the exception
-  static <T, R> Function<T, R> handleException(ThrowingFunction<T, R> f) {
+  static <T, R> Function<T, R> handleException(ThrowingFunction<T, R, SQLException> f) {
     return t -> {
       try {
         return f.apply(t);
