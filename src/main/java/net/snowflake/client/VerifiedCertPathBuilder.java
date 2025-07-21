@@ -190,7 +190,7 @@ class VerifiedCertPathBuilder {
       throw new CertificateException("No leaf certificate found in the chain");
     }
     if (leafCerts.size() > 1) {
-      throw new CertificateException("Multiple leaf certificates found, returning one arbitrarily");
+      throw new CertificateException("Multiple leaf certificates found");
     }
     return leafCerts.iterator().next();
   }
