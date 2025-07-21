@@ -40,11 +40,14 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.util.ThrowingFunction;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -2657,70 +2660,106 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Test
-  public void testWildcardsInShowMetadataQueries() throws Exception {
-    Random random = new Random();
-    int suffix = random.nextInt(Integer.MAX_VALUE);
+  @Nested
+  @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+  class WildcardsInShowMetadataQueries {
+    private String schemaWithUnderscore;
+    private String tableWithUnderscore;
+    private String columnWithUnderscore;
+    private String procedureWithUnderscore;
+    private String functionWithUnderscore;
 
-    // Create objects with underscore that would be treated as wildcard pattern
-    String schemaWithUnderscore = GENERATED_SCHEMA_PREFIX + "MY_SCHEMA_" + suffix;
-    String tableWithUnderscore = "MY_TABLE_" + suffix;
-    String columnWithUnderscore = "MY_COLUMN_" + suffix;
-    String procedureWithUnderscore = "MY_PROCEDURE_" + suffix;
-    String functionWithUnderscore = "MY_FUNCTION_" + suffix;
-    String database = connection.getCatalog();
+    private String alternativeSchema;
+    private String alternativeTable;
+    private String alternativeColumn;
+    private String alternativeProcedure;
+    private String alternativeFunction;
 
-    // Create an alternative object that would match the pattern if underscore was treated as
-    // wildcard
-    String alternativeSchema = schemaWithUnderscore.replace("_", "X");
-    String alternativeTable = tableWithUnderscore.replace("_", "X");
-    String alternativeColumn = columnWithUnderscore.replace("_", "X");
-    String alternativeProcedure = procedureWithUnderscore.replace("_", "X");
-    String alternativeFunction = functionWithUnderscore.replace("_", "X");
+    private String database;
 
-    try (Statement statement = connection.createStatement()) {
-      statement.execute("CREATE SCHEMA \"" + schemaWithUnderscore + "\"");
-      statement.execute("USE SCHEMA \"" + schemaWithUnderscore + "\"");
-      statement.execute(
-          "CREATE TABLE \""
-              + tableWithUnderscore
-              + "\" ("
-              + columnWithUnderscore
-              + " VARCHAR(50), col2 INT)");
-      statement.execute(
-          "CREATE PROCEDURE "
-              + procedureWithUnderscore
-              + "()\nRETURNS VARCHAR\n LANGUAGE SQL\n AS\n $$\n BEGIN\n    RETURN 'Hello, Snowflake!';\n END;\n $$;");
-      statement.execute(
-          "CREATE FUNCTION "
-              + functionWithUnderscore
-              + "()\nRETURNS VARCHAR\n AS\n $$\n 'Hello, Snowflake!'\n $$;");
+    @BeforeAll
+    void setUp() throws Exception {
+      Random random = new Random();
+      int suffix = random.nextInt(Integer.MAX_VALUE);
 
-      statement.execute("CREATE SCHEMA \"" + alternativeSchema + "\"");
-      statement.execute("USE SCHEMA \"" + alternativeSchema + "\"");
-      statement.execute(
-          "CREATE TABLE \""
-              + alternativeTable
-              + "\" ("
-              + alternativeColumn
-              + " VARCHAR(50), col2 INT)");
-      statement.execute(
-          "CREATE PROCEDURE "
-              + alternativeProcedure
-              + "()\nRETURNS VARCHAR\n LANGUAGE SQL\n AS\n $$\n BEGIN\n    RETURN 'Hello, Snowflake!';\n END;\n $$;");
-      statement.execute(
-          "CREATE FUNCTION "
-              + alternativeFunction
-              + "()\nRETURNS VARCHAR\n AS\n $$\n 'Hello, Snowflake!'\n $$;");
+      database = connection.getCatalog();
 
-      // Test 1: With pattern matching ENABLED (default behavior)
-      // Driver cannot use schema-specific queries because underscore might be a pattern
-      Properties propsWithPatternMatching = new Properties();
-      propsWithPatternMatching.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "true");
+      schemaWithUnderscore = GENERATED_SCHEMA_PREFIX + "MY_SCHEMA_" + suffix;
+      tableWithUnderscore = "MY_TABLE_" + suffix;
+      columnWithUnderscore = "MY_COLUMN_" + suffix;
+      procedureWithUnderscore = "MY_PROCEDURE_" + suffix;
+      functionWithUnderscore = "MY_FUNCTION_" + suffix;
 
-      try (Connection connWithPatterns = getConnection(propsWithPatternMatching)) {
-        DatabaseMetaData metaData = connWithPatterns.getMetaData();
+      alternativeSchema = schemaWithUnderscore.replace("_", "X");
+      alternativeTable = tableWithUnderscore.replace("_", "X");
+      alternativeColumn = columnWithUnderscore.replace("_", "X");
+      alternativeProcedure = procedureWithUnderscore.replace("_", "X");
+      alternativeFunction = functionWithUnderscore.replace("_", "X");
 
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("CREATE SCHEMA \"" + schemaWithUnderscore + "\"");
+        statement.execute("USE SCHEMA \"" + schemaWithUnderscore + "\"");
+        statement.execute(
+            "CREATE TABLE \""
+                + tableWithUnderscore
+                + "\" ("
+                + columnWithUnderscore
+                + " VARCHAR(50), col2 INT)");
+        statement.execute(
+            "CREATE PROCEDURE "
+                + procedureWithUnderscore
+                + "() RETURNS VARCHAR LANGUAGE SQL AS 'BEGIN RETURN ''Hello''; END;'");
+        statement.execute(
+            "CREATE FUNCTION " + functionWithUnderscore + "() RETURNS VARCHAR AS '''Hello'''");
+
+        statement.execute("CREATE SCHEMA \"" + alternativeSchema + "\"");
+        statement.execute("USE SCHEMA \"" + alternativeSchema + "\"");
+        statement.execute(
+            "CREATE TABLE \""
+                + alternativeTable
+                + "\" ("
+                + alternativeColumn
+                + " VARCHAR(50), col2 INT)");
+        statement.execute(
+            "CREATE PROCEDURE "
+                + alternativeProcedure
+                + "() RETURNS VARCHAR LANGUAGE SQL AS 'BEGIN RETURN ''Hello''; END;'");
+        statement.execute(
+            "CREATE FUNCTION " + alternativeFunction + "() RETURNS VARCHAR AS '''Hello'''");
+      }
+    }
+
+    @AfterAll
+    void tearDown() throws Exception {
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("DROP SCHEMA IF EXISTS \"" + schemaWithUnderscore + "\"");
+        statement.execute("DROP SCHEMA IF EXISTS \"" + alternativeSchema + "\"");
+      }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class WhenWildcardsEnabled {
+      private DatabaseMetaData metaData;
+      private Connection connection;
+
+      @BeforeAll
+      void setUp() throws Exception {
+        Properties props = new Properties();
+        props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "true");
+        connection = getConnection(props);
+        metaData = connection.getMetaData();
+      }
+
+      @AfterAll
+      void tearDown() throws Exception {
+        if (connection != null) {
+          connection.close();
+        }
+      }
+
+      @Test
+      void testGetColumns() throws Exception {
         try (ResultSet rs =
             metaData.getColumns(
                 database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
@@ -2738,7 +2777,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                           r.getString("TABLE_SCHEM"),
                           r.getString("COLUMN_NAME"))));
         }
+      }
 
+      @Test
+      void testGetSchemas() throws Exception {
         try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
           assertMetadataQueryResult(
               rs,
@@ -2747,7 +2789,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               Arrays.asList(alternativeSchema, schemaWithUnderscore),
               handleException(r -> r.getString("TABLE_SCHEM")));
         }
+      }
 
+      @Test
+      void testGetTables() throws Exception {
         try (ResultSet rs =
             metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
           assertMetadataQueryResult(
@@ -2760,7 +2805,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               handleException(
                   r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
         }
+      }
 
+      @Test
+      void testGetProcedures() throws Exception {
         try (ResultSet rs =
             metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
           assertMetadataQueryResult(
@@ -2775,7 +2823,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                       Arrays.asList(
                           r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
         }
+      }
 
+      @Test
+      void testGetFunctions() throws Exception {
         try (ResultSet rs =
             metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
           assertMetadataQueryResult(
@@ -2789,15 +2840,31 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                   r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
         }
       }
+    }
 
-      // Test 2: With pattern matching DISABLED
-      // Driver can now treat underscore as literals and use more specific SHOW ... IN ... queries
-      Properties propsWithoutPatternMatching = new Properties();
-      propsWithoutPatternMatching.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class WhenWildcardsDisabled {
+      private DatabaseMetaData metaData;
+      private Connection connection;
 
-      try (Connection connWithoutPatterns = getConnection(propsWithoutPatternMatching)) {
-        DatabaseMetaData metaData = connWithoutPatterns.getMetaData();
+      @BeforeAll
+      void setUp() throws Exception {
+        Properties props = new Properties();
+        props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
+        connection = getConnection(props);
+        metaData = connection.getMetaData();
+      }
 
+      @AfterAll
+      void tearDown() throws Exception {
+        if (connection != null) {
+          connection.close();
+        }
+      }
+
+      @Test
+      void testGetColumns() throws Exception {
         try (ResultSet rs =
             metaData.getColumns(
                 database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
@@ -2822,7 +2889,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                           r.getString("TABLE_SCHEM"),
                           r.getString("COLUMN_NAME"))));
         }
+      }
 
+      @Test
+      void testGetSchemas() throws Exception {
         try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
           assertMetadataQueryResult(
               rs,
@@ -2831,7 +2901,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               Arrays.asList(alternativeSchema, schemaWithUnderscore),
               handleException(r -> r.getString("TABLE_SCHEM")));
         }
+      }
 
+      @Test
+      void testGetTables() throws Exception {
         try (ResultSet rs =
             metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
           assertMetadataQueryResult(
@@ -2848,7 +2921,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               handleException(
                   r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
         }
+      }
 
+      @Test
+      void testGetProcedures() throws Exception {
         try (ResultSet rs =
             metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
           assertMetadataQueryResult(
@@ -2868,7 +2944,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                       Arrays.asList(
                           r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
         }
+      }
 
+      @Test
+      void testGetFunctions() throws Exception {
         try (ResultSet rs =
             metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
           assertMetadataQueryResult(
@@ -2887,55 +2966,50 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                   r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
         }
       }
-    } finally {
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("DROP SCHEMA IF EXISTS \"" + schemaWithUnderscore + "\"");
-        statement.execute("DROP SCHEMA IF EXISTS \"" + alternativeSchema + "\"");
-      }
-    }
-  }
-
-  static <T, R> Function<T, R> handleException(ThrowingFunction<T, R, SQLException> f) {
-    return t -> {
-      try {
-        return f.apply(t);
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    };
-  }
-
-  private <T> void assertMetadataQueryResult(
-      ResultSet rs,
-      String expectedSqlEnding,
-      int expectedRowCount,
-      List<T> expectedRows,
-      Function<ResultSet, T> rowMapper)
-      throws Exception {
-    // 1. Assert the underlying SQL query text
-    String sqlText = getSqlText(rs.unwrap(SnowflakeBaseResultSet.class).getStatement());
-    assertTrue(sqlText.endsWith(expectedSqlEnding));
-
-    // 2. Map ResultSet to a List
-    List<T> actualRows = new ArrayList<>();
-    while (rs.next()) {
-      actualRows.add(rowMapper.apply(rs));
     }
 
-    // 3. Assert row count and content
-    assertEquals(expectedRowCount, actualRows.size());
-    assertEquals(expectedRows, actualRows);
-  }
+    private <T, R> Function<T, R> handleException(ThrowingFunction<T, R, SQLException> f) {
+      return t -> {
+        try {
+          return f.apply(t);
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      };
+    }
 
-  private static String getSqlText(Statement statement) throws Exception {
-    Class<?> stmtClass = statement.getClass();
-    Field sfBaseStatementField = stmtClass.getDeclaredField("sfBaseStatement");
-    sfBaseStatementField.setAccessible(true); // Allow access to private field
-    Object sfBaseStatement = sfBaseStatementField.get(statement);
+    private <T> void assertMetadataQueryResult(
+        ResultSet rs,
+        String expectedSqlEnding,
+        int expectedRowCount,
+        List<T> expectedRows,
+        Function<ResultSet, T> rowMapper)
+        throws Exception {
+      // 1. Assert the underlying SQL query text
+      String sqlText = getSqlText(rs.unwrap(SnowflakeBaseResultSet.class).getStatement());
+      assertTrue(sqlText.endsWith(expectedSqlEnding));
 
-    Class<?> sfBaseStmtClass = sfBaseStatement.getClass();
-    Field sqlTextField = sfBaseStmtClass.getDeclaredField("sqlText");
-    sqlTextField.setAccessible(true); // Allow access to private field
-    return (String) sqlTextField.get(sfBaseStatement);
+      // 2. Map ResultSet to a List
+      List<T> actualRows = new ArrayList<>();
+      while (rs.next()) {
+        actualRows.add(rowMapper.apply(rs));
+      }
+
+      // 3. Assert row count and content
+      assertEquals(expectedRowCount, actualRows.size());
+      assertEquals(expectedRows, actualRows);
+    }
+
+    private String getSqlText(Statement statement) throws Exception {
+      Class<?> stmtClass = statement.getClass();
+      Field sfBaseStatementField = stmtClass.getDeclaredField("sfBaseStatement");
+      sfBaseStatementField.setAccessible(true); // Allow access to private field
+      Object sfBaseStatement = sfBaseStatementField.get(statement);
+
+      Class<?> sfBaseStmtClass = sfBaseStatement.getClass();
+      Field sqlTextField = sfBaseStmtClass.getDeclaredField("sqlText");
+      sqlTextField.setAccessible(true); // Allow access to private field
+      return (String) sqlTextField.get(sfBaseStatement);
+    }
   }
 }
