@@ -12,5 +12,5 @@ mvn clean install --batch-mode --show-version
 
 cd FIPS
 rm -f lib/*.jar
-mvn clean install --batch-mode --show-version
+mvn clean install -Dsurefire.argLine="-Djavax.net.debug=ssl:handshake" -Dfailsafe.argLine="-Djavax.net.debug=ssl:handshake" --batch-mode --show-version
 $THIS_DIR/upload_artifact.sh
