@@ -140,6 +140,10 @@ public abstract class SFBaseSession {
   // value is false for backwards compatibility.
   private boolean enableExactSchemaSearch = false;
 
+  // This is true by default, but can be set to false to disable pattern matching in cases when
+  // wildcards are used as a part of identifiers eg. "my_table" or "my_schema"
+  private boolean enableWildcardsInShowMetadataCommands = true;
+
   /** Disable lookup for default credentials by GCS library */
   private boolean disableGcsDefaultCredentials = true;
 
@@ -1103,6 +1107,14 @@ public abstract class SFBaseSession {
 
   void setEnableExactSchemaSearch(boolean enableExactSchemaSearch) {
     this.enableExactSchemaSearch = enableExactSchemaSearch;
+  }
+
+  public boolean getEnableWildcardsInShowMetadataCommands() {
+    return enableWildcardsInShowMetadataCommands;
+  }
+
+  void setEnableWildcardsInShowMetadataCommands(boolean enableWildcardsInShowMetadataCommands) {
+    this.enableWildcardsInShowMetadataCommands = enableWildcardsInShowMetadataCommands;
   }
 
   public boolean getDisableGcsDefaultCredentials() {
