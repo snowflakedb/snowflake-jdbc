@@ -51,6 +51,8 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
+    System.out.println("Exception message: " + ex.getMessage());
+
     assertTrue(ex.getMessage().contains("writable by group or others"));
     Files.deleteIfExists(tempFile);
   }
@@ -68,6 +70,9 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
+
+    System.out.println("Exception message: " + ex.getMessage());
+
     assertTrue(ex.getMessage().contains("writable by group or others"));
     Files.deleteIfExists(tempFile);
   }
