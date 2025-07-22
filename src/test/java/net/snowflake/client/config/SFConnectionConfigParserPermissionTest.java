@@ -51,7 +51,6 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    System.out.println("Exception message: " + ex.getMessage());
 
     assertTrue(ex.getMessage().contains("writable by group or others"));
     Files.deleteIfExists(tempFile);
@@ -71,8 +70,6 @@ class SFConnectionConfigParserPermissionTest {
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
 
-    System.out.println("Exception message: " + ex.getMessage());
-
     assertTrue(ex.getMessage().contains("writable by group or others"));
     Files.deleteIfExists(tempFile);
   }
@@ -90,7 +87,7 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("safe because file permissions are different"));
+    assertTrue(ex.getMessage().contains("executable"));
     Files.deleteIfExists(tempFile);
   }
 
@@ -107,7 +104,7 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("safe because file permissions are different"));
+    assertTrue(ex.getMessage().contains("executable"));
     Files.deleteIfExists(tempFile);
   }
 
@@ -124,7 +121,7 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("safe because file permissions are different"));
+    assertTrue(ex.getMessage().contains("executable"));
     Files.deleteIfExists(tempFile);
   }
 
@@ -141,7 +138,7 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("safe because file permissions are different"));
+    assertTrue(ex.getMessage().contains("is readable by group"));
     Files.deleteIfExists(tempFile);
   }
 
@@ -158,7 +155,7 @@ class SFConnectionConfigParserPermissionTest {
         assertThrows(
             net.snowflake.client.jdbc.SnowflakeSQLException.class,
             () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("safe because file permissions are different"));
+    assertTrue(ex.getMessage().contains("is readable by"));
     Files.deleteIfExists(tempFile);
   }
 

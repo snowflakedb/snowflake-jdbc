@@ -121,8 +121,6 @@ public class SFConnectionConfigParser {
   private static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
     if (!isWindows()) {
-      System.out.println(
-          "PATH is " + configFilePath + "condition is " + configFilePath.endsWith(".toml"));
       if (configFilePath.getFileName().toString().endsWith(".toml")) {
         boolean shouldSkipWarningForReadPermissions =
             convertSystemGetEnvToBooleanValue(
