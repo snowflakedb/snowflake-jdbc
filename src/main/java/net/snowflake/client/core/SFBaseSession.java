@@ -141,6 +141,10 @@ public abstract class SFBaseSession {
   // value is false for backwards compatibility.
   private boolean enableExactSchemaSearch = false;
 
+  // This is true by default, but can be set to false to disable pattern matching in cases when
+  // wildcards are used as a part of identifiers eg. "my_table" or "my_schema"
+  private boolean enableWildcardsInShowMetadataCommands = true;
+
   /** Disable lookup for default credentials by GCS library */
   private boolean disableGcsDefaultCredentials = true;
 
@@ -154,6 +158,8 @@ public abstract class SFBaseSession {
 
   /** Treat java.sql.Time as wall clock time without converting it to UTC */
   private boolean treatTimeAsWallClockTime = false;
+
+  private boolean ownerOnlyStageFilePermissionsEnabled = false;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -1112,6 +1118,14 @@ public abstract class SFBaseSession {
     this.enableExactSchemaSearch = enableExactSchemaSearch;
   }
 
+  public boolean getEnableWildcardsInShowMetadataCommands() {
+    return enableWildcardsInShowMetadataCommands;
+  }
+
+  void setEnableWildcardsInShowMetadataCommands(boolean enableWildcardsInShowMetadataCommands) {
+    this.enableWildcardsInShowMetadataCommands = enableWildcardsInShowMetadataCommands;
+  }
+
   public boolean getDisableGcsDefaultCredentials() {
     return disableGcsDefaultCredentials;
   }
@@ -1382,5 +1396,18 @@ public abstract class SFBaseSession {
 
   public void setTreatTimeAsWallClockTime(boolean treatTimeAsWallClockTime) {
     this.treatTimeAsWallClockTime = treatTimeAsWallClockTime;
+  }
+
+  /**
+   * Get if owner-only stage file permissions feature is enabled.
+   *
+   * @return true if owner-only stage file permissions feature is enabled
+   */
+  public boolean isOwnerOnlyStageFilePermissionsEnabled() {
+    return ownerOnlyStageFilePermissionsEnabled;
+  }
+
+  public void setOwnerOnlyStageFilePermissionsEnabled(boolean booleanValue) {
+    this.ownerOnlyStageFilePermissionsEnabled = booleanValue;
   }
 }

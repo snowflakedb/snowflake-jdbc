@@ -520,6 +520,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS:
+          if (propertyValue != null) {
+            setEnableWildcardsInShowMetadataCommands(getBooleanValue(propertyValue));
+          }
+          break;
+
         case DISABLE_GCS_DEFAULT_CREDENTIALS:
           if (propertyValue != null) {
             setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
@@ -580,6 +586,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case OWNER_ONLY_STAGE_FILE_PERMISSIONS_ENABLED:
+          if (propertyValue != null) {
+            setOwnerOnlyStageFilePermissionsEnabled(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -626,7 +638,8 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {}, private key file: {}, private key pwd is {},"
+            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {},"
+            + " private key file: {}, private key base 64: {}, private key pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}, browser response timeout: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),

@@ -12,9 +12,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +30,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactorySpi;
+import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.SystemPropertyOverrider;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -36,6 +48,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -316,9 +329,60 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     }
   }
 
+  @Test
+  void shouldNotFailWhenSimpleTrustManagerIsUsed() throws Exception {
+    Security.insertProviderAt(new TestSecurityProvider(), 1);
+    HttpUtil.reset();
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.execute("SELECT 1");
+    } finally {
+      Security.removeProvider(TestSecurityProvider.class.getSimpleName());
+      HttpUtil.reset();
+    }
+  }
+
   @BeforeEach
   @AfterEach
   void cleanup() {
     SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = null;
+  }
+}
+
+// Standard JCA implementation for registering custom TrustManagerFactory
+class TestTrustManagerSpi extends TrustManagerFactorySpi {
+
+  @Override
+  protected void engineInit(KeyStore ks) throws KeyStoreException {}
+
+  @Override
+  protected void engineInit(ManagerFactoryParameters spec)
+      throws InvalidAlgorithmParameterException {}
+
+  @Override
+  protected TrustManager[] engineGetTrustManagers() {
+    return new TrustManager[] {
+      new X509TrustManager() {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
+            throws CertificateException {}
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
+            throws CertificateException {}
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+          return new X509Certificate[0];
+        }
+      }
+    };
+  }
+}
+
+class TestSecurityProvider extends Provider {
+  public TestSecurityProvider() {
+    super(TestSecurityProvider.class.getSimpleName(), 1.0, "Test security provider");
+    put("TrustManagerFactory.PKIX", TestTrustManagerSpi.class.getName());
   }
 }
