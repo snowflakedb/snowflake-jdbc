@@ -121,7 +121,7 @@ public class SFConnectionConfigParser {
   private static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
     if (!isWindows()) {
-      if (configFilePath.endsWith("connections.toml")) {
+      if (configFilePath.endsWith(".toml")) {
         boolean shouldSkipWarningForReadPermissions =
             convertSystemGetEnvToBooleanValue(
                 SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE, false);
