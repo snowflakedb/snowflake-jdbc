@@ -42,6 +42,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -160,7 +161,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void shutdown() {
-    // nothing to do here
+    if (this.gcsAccessStrategy != null) {
+      this.gcsAccessStrategy.shutdown();
+    }
   }
 
   /**
@@ -270,6 +273,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.flush();
               outStream.close();
               bodyStream.close();
+              SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+                  localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
                     createCaseInsensitiveMap(response.getAllHeaders());
@@ -298,7 +303,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           Map<String, String> userDefinedMetadata =
               this.gcsAccessStrategy.download(
                   parallelism, remoteStorageLocation, stageFilePath, localFile);
-
+          SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+              localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
           stopwatch.stop();
           downloadMillis = stopwatch.elapsedMillis();
           logger.debug("Download successful", false);
@@ -1220,7 +1226,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Setting up the GCS client ", false);
 
     try {
-      this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      boolean overrideAwsAccessStrategy =
+          Boolean.valueOf(System.getenv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
+      if (stage.getUseVirtualUrl() || overrideAwsAccessStrategy) {
+        this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
+      } else {
+        this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
+      }
 
       if (encMat != null) {
         byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());

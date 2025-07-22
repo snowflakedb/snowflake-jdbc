@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createOwnerOnlyPermissionDir;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -1572,7 +1573,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       if (commandType == CommandType.DOWNLOAD) {
         File dir = new File(localLocation);
         if (!dir.exists()) {
-          boolean created = dir.mkdirs();
+          boolean created;
+          if (session.isOwnerOnlyStageFilePermissionsEnabled()) {
+            created = createOwnerOnlyPermissionDir(localLocation);
+          } else {
+            created = dir.mkdirs();
+          }
           if (created) {
             logger.debug("Directory created: {}", localLocation);
           } else {
@@ -2517,7 +2523,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       RemoteStoreFileEncryptionMaterial encMat,
       String presignedUrl,
       String queryId)
-      throws SQLException {
+      throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
     String stageFilePath = filePath;
