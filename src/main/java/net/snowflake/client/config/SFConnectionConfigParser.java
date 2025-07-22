@@ -123,7 +123,7 @@ public class SFConnectionConfigParser {
     if (!isWindows()) {
       System.out.println(
           "PATH is " + configFilePath + "condition is " + configFilePath.endsWith(".toml"));
-      if (configFilePath.endsWith(".toml")) {
+      if (configFilePath.getFileName().toString().endsWith(".toml")) {
         boolean shouldSkipWarningForReadPermissions =
             convertSystemGetEnvToBooleanValue(
                 SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE, false);
