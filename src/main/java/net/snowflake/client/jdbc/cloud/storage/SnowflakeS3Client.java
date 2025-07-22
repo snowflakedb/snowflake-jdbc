@@ -199,7 +199,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         throw new SnowflakeSQLLoggedException(
             QueryIdHelper.queryIdFromEncMatOr(encMat, null),
             session,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "unsupported key size",
             encryptionKeySize);
@@ -402,7 +402,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw new SnowflakeSQLLoggedException(
                 queryId,
                 session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
                 SqlState.INTERNAL_ERROR,
                 "File metadata incomplete");
           }
@@ -436,7 +436,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
 
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, "download", session, command, this, queryId);
+        handleS3Exception(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
         if (tx != null) {
@@ -448,7 +448,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     throw new SnowflakeSQLLoggedException(
         queryId,
         session,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
   }
@@ -501,7 +501,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             throw new SnowflakeSQLLoggedException(
                 queryId,
                 session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
                 SqlState.INTERNAL_ERROR,
                 "File metadata incomplete");
           }
@@ -533,14 +533,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
         return stream;
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, "download", session, command, this, queryId);
+        handleS3Exception(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
         queryId,
         session,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
   }
@@ -670,7 +670,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
       } catch (Exception ex) {
 
-        handleS3Exception(ex, ++retryCount, "upload", session, command, this, queryId);
+        handleS3Exception(ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(
               queryId,
@@ -705,7 +705,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     throw new SnowflakeSQLLoggedException(
         queryId,
         session,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: upload unsuccessful without exception!");
   }
@@ -754,7 +754,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
             ex,
             "Failed to encrypt input",
             ex.getMessage());
@@ -781,7 +781,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
             ex,
             "Failed to open input file",
             ex.getMessage());
@@ -791,7 +791,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
             ex,
             "Failed to open input stream",
             ex.getMessage());
@@ -858,7 +858,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 queryId,
                 session,
                 SqlState.SYSTEM_ERROR,
-                ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
+                StorageHelper.getOperationException(operation).getMessageCode(),
                 ex1,
                 operation,
                 ex1.getErrorType().toString(),
@@ -873,7 +873,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               queryId,
               session,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
+              StorageHelper.getOperationException(operation).getMessageCode(),
               ex,
               operation,
               ex.getMessage());
@@ -927,7 +927,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               queryId,
               session,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
+              StorageHelper.getOperationException(operation).getMessageCode(),
               ex,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
@@ -942,7 +942,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.SYSTEM_ERROR,
-            ErrorCode.IO_ERROR.getMessageCode(),
+            StorageHelper.getOperationException(operation).getMessageCode(),
             ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }

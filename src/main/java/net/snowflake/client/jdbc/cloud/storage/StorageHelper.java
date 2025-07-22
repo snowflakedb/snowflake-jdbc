@@ -2,9 +2,15 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.File;
 import java.io.InputStream;
+
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 
 class StorageHelper {
+  protected final static String DOWNLOAD = "download";
+  protected final static String UPLOAD = "upload";
+
+  
   static String getStartUploadLog(
       String serviceName,
       boolean uploadFromStream,
@@ -31,6 +37,17 @@ class StorageHelper {
           + serviceName
           + " location: "
           + destFileName;
+    }
+  }
+
+  static ErrorCode getOperationException(String operation) {
+    switch (operation) {
+      case UPLOAD:
+        return ErrorCode.UPLOAD_ERROR;
+      case DOWNLOAD:
+        return ErrorCode.DOWNLOAD_ERROR;
+      default:
+        return ErrorCode.FILE_TRANSFER_ERROR;
     }
   }
 }
