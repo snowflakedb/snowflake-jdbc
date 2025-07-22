@@ -2690,7 +2690,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       procedureWithUnderscore = "MY_PROCEDURE_" + suffix;
       functionWithUnderscore = "MY_FUNCTION_" + suffix;
 
-      alternativeSchema = schemaWithUnderscore.replace("_", "X");
+      alternativeSchema = GENERATED_SCHEMA_PREFIX + "MYXSCHEMAX" + suffix;
       alternativeTable = tableWithUnderscore.replace("_", "X");
       alternativeColumn = columnWithUnderscore.replace("_", "X");
       alternativeProcedure = procedureWithUnderscore.replace("_", "X");
