@@ -24,7 +24,18 @@ class SFConnectionConfigParserPermissionTest {
     Method method =
         SFConnectionConfigParser.class.getDeclaredMethod("verifyFilePermissionSecure", Path.class);
     method.setAccessible(true);
-    method.invoke(null, path);
+    try {
+      method.invoke(null, path);
+    } catch (java.lang.reflect.InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof net.snowflake.client.jdbc.SnowflakeSQLException) {
+        throw (net.snowflake.client.jdbc.SnowflakeSQLException) cause;
+      } else if (cause instanceof Exception) {
+        throw (Exception) cause;
+      } else {
+        throw new RuntimeException(cause);
+      }
+    }
   }
 
   @Test
