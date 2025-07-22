@@ -1018,8 +1018,8 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       // Enable stablepath mode and run the same workload
       log.write(LocalDateTime.now().format(TS_FMT) + " [" + STABLEPATH + "] SECTION START\n");
       try (Statement stmt = connection.createStatement()) {
-        //stmt.execute("ALTER SESSION SET ENABLE_STABLEPATH_GRPC_ENDPOINT=TRUE");
-        stmt.execute("ALTER SESSION SET ENABLE_JOB_DETAILS_TO_S3=FALSE");
+        stmt.execute("ALTER SESSION SET ENABLE_STABLEPATH_GRPC_ENDPOINT=TRUE");
+        //stmt.execute("ALTER SESSION SET ENABLE_JOB_DETAILS_TO_S3=FALSE");
       }
       runWorkloadHandcraftedHistogram(connection, TABLE_NAME, C, N, HISTOGRAM_LOG_INTERVAL_SEC, STABLEPATH, log, rand, TS_FMT);
       log.flush();

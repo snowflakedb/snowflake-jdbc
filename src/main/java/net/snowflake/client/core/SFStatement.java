@@ -36,8 +36,8 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
-import net.snowflake.queryservice.QueryServiceGrpc;
-import net.snowflake.queryservice.QueryServiceOuterClass.*;
+import net.snowflake.queryservicelite.QueryServiceLiteGrpc;
+import net.snowflake.queryservicelite.QueryServiceLiteOuterClass.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -1000,29 +1000,29 @@ public class SFStatement extends SFBaseStatement {
     ManagedChannel channel = ManagedChannelBuilder.forAddress(grpcInfo.getHost(), grpcInfo.getPort())
             .usePlaintext() // TODO: Use TLS in production
             .build();
-    QueryServiceGrpc.QueryServiceStub stub = QueryServiceGrpc.newStub(channel);
+    QueryServiceLiteGrpc.QueryServiceLiteStub stub = QueryServiceLiteGrpc.newStub(channel);
 
     // Build ExecutorInvocationRequest
-    ExecutorInvocationRequest.Builder execReqBuilder = ExecutorInvocationRequest.newBuilder()
+    ExecutorInvocationRequestLite.Builder execReqBuilder = ExecutorInvocationRequestLite.newBuilder()
             .setExecutorId(grpcInfo.getExecutorId());
     if (parameterBindings != null) {
         for (ParameterBindingDTO binding : parameterBindings.values()) {
             String value = binding == null ? null : String.valueOf(binding.getValue());
-            ExecutorInvocationRequest.BindValue.Builder bindBuilder = ExecutorInvocationRequest.BindValue.newBuilder();
+            ExecutorInvocationRequestLite.BindValue.Builder bindBuilder = ExecutorInvocationRequestLite.BindValue.newBuilder();
             if (value != null) bindBuilder.setValue(value);
             execReqBuilder.addBindValues(bindBuilder);
         }
     }
-    QueryServiceRequest req = QueryServiceRequest.newBuilder()
+    QueryServiceRequestLite req = QueryServiceRequestLite.newBuilder()
             .setExecutorInvocationRequest(execReqBuilder)
             .build();
 
     // Use CompletableFuture to get the first response
-    final CompletableFuture<QueryServiceResponse> responseFuture = new CompletableFuture<>();
+    final CompletableFuture<QueryServiceResponseLite> responseFuture = new CompletableFuture<>();
 
-    StreamObserver<QueryServiceRequest> requestObserver = stub.execute(new StreamObserver<QueryServiceResponse>() {
+    StreamObserver<QueryServiceRequestLite> requestObserver = stub.execute(new StreamObserver<QueryServiceResponseLite>() {
         @Override
-        public void onNext(QueryServiceResponse value) {
+        public void onNext(QueryServiceResponseLite value) {
             responseFuture.complete(value);
         }
         @Override
@@ -1040,8 +1040,8 @@ public class SFStatement extends SFBaseStatement {
     requestObserver.onCompleted();
 
     // Wait for the response (timeout 10s)
-    QueryServiceResponse resp = responseFuture.get(10, TimeUnit.SECONDS);
-    StatementResult result = resp.getStatementResult();
+    QueryServiceResponseLite resp = responseFuture.get(10, TimeUnit.SECONDS);
+    StatementResultLite result = resp.getStatementResult();
     if (result.hasSuccess()) {
         // Placeholder: return a dummy SFBaseResultSet
         // TODO: Adapt result.getSuccess().getResultData() to a real ResultSet
