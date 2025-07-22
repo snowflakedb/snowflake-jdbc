@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnWindows;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Test;
 
 class SFConnectionConfigParserPermissionTest {
@@ -127,45 +128,31 @@ class SFConnectionConfigParserPermissionTest {
 
   @Test
   @DontRunOnWindows
-  void testGroupReadPermissionRaisesException() throws Exception {
-    Set<PosixFilePermission> perms =
-        Set.of(
-            PosixFilePermission.OWNER_READ,
-            PosixFilePermission.OWNER_WRITE,
-            PosixFilePermission.GROUP_READ);
-    Path tempFile = createTempFileWithPermissions(perms);
-    Exception ex =
-        assertThrows(
-            net.snowflake.client.jdbc.SnowflakeSQLException.class,
-            () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("is readable by group"));
-    Files.deleteIfExists(tempFile);
-  }
-
-  @Test
-  @DontRunOnWindows
-  void testOthersReadPermissionRaisesException() throws Exception {
-    Set<PosixFilePermission> perms =
-        Set.of(
-            PosixFilePermission.OWNER_READ,
-            PosixFilePermission.OWNER_WRITE,
-            PosixFilePermission.OTHERS_READ);
-    Path tempFile = createTempFileWithPermissions(perms);
-    Exception ex =
-        assertThrows(
-            net.snowflake.client.jdbc.SnowflakeSQLException.class,
-            () -> invokeVerifyFilePermissionSecure(tempFile));
-    assertTrue(ex.getMessage().contains("is readable by"));
-    Files.deleteIfExists(tempFile);
-  }
-
-  @Test
-  @DontRunOnWindows
   void testOwnerReadWritePermissionDoesNotRaiseException() throws Exception {
     Set<PosixFilePermission> perms =
         Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
     Path tempFile = createTempFileWithPermissions(perms);
     assertDoesNotThrow(() -> invokeVerifyFilePermissionSecure(tempFile));
     Files.deleteIfExists(tempFile);
+  }
+
+  @Test
+  @DontRunOnWindows
+  void testSkipWarningForReadPermissionsEnvVar() throws Exception {
+    // Set the environment variable to skip read permission warnings
+    SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
+    Set<PosixFilePermission> perms =
+        Set.of(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.OTHERS_READ);
+    Path tempFile = createTempFileWithPermissions(perms);
+    try {
+      assertDoesNotThrow(() -> invokeVerifyFilePermissionSecure(tempFile));
+    } finally {
+      Files.deleteIfExists(tempFile);
+      SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", null);
+    }
   }
 }
