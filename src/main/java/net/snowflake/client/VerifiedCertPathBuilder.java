@@ -86,16 +86,8 @@ class VerifiedCertPathBuilder {
       CertStore certStore =
           CertStore.getInstance("Collection", new CollectionCertStoreParameters(certCollection));
 
-      PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustAnchors, null);
-      pkixParams.addCertStore(certStore);
-      pkixParams.setRevocationEnabled(false);
-
       X509Certificate leafCertificate = identifyLeafCertificate(certificateChain);
       logger.debug("Identified leaf certificate: {}", leafCertificate.getSubjectX500Principal());
-
-      X509CertSelector selector = new X509CertSelector();
-      selector.setCertificate(leafCertificate);
-      pkixParams.setTargetCertConstraints(selector);
 
       allVerifiedPaths.addAll(
           findAllPathsForTarget(leafCertificate, trustAnchors, certStore, authType));
