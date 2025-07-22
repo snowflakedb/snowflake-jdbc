@@ -1,9 +1,5 @@
 package net.snowflake.client;
 
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
-import javax.net.ssl.X509TrustManager;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPath;
@@ -26,6 +22,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.net.ssl.X509TrustManager;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Builds and verifies certificate paths using a truststore and CertPathBuilder. This class takes a
@@ -175,9 +174,14 @@ class VerifiedCertPathBuilder {
    */
   private X509Certificate identifyLeafCertificate(X509Certificate[] certificateChain)
       throws CertificateException {
-    Set<X509Certificate> leafCerts = Arrays.stream(certificateChain)
-        .filter(cert -> cert != null && cert.getBasicConstraints() == -1) // Basic constraints -1 indicates a leaf certificate
-        .collect(Collectors.toSet());
+    Set<X509Certificate> leafCerts =
+        Arrays.stream(certificateChain)
+            .filter(
+                cert ->
+                    cert != null
+                        && cert.getBasicConstraints()
+                            == -1) // Basic constraints -1 indicates a leaf certificate
+            .collect(Collectors.toSet());
     if (leafCerts.isEmpty()) {
       throw new CertificateException("No leaf certificate found in the chain");
     }
@@ -188,7 +192,8 @@ class VerifiedCertPathBuilder {
   }
 
   /** Creates trust anchors from the truststore. */
-  private Set<TrustAnchor> createTrustAnchors(X509TrustManager trustManager) throws CertificateException {
+  private Set<TrustAnchor> createTrustAnchors(X509TrustManager trustManager)
+      throws CertificateException {
     Set<TrustAnchor> trustAnchors = new HashSet<>();
 
     try {
