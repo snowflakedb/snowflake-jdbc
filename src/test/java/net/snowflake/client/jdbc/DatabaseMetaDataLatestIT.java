@@ -24,22 +24,30 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.util.ThrowingFunction;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -2649,6 +2657,359 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           statement.execute("DROP SCHEMA \"" + scm + "\"");
         }
       }
+    }
+  }
+
+  @Nested
+  @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+  class WildcardsInShowMetadataQueries {
+    private String schemaWithUnderscore;
+    private String tableWithUnderscore;
+    private String columnWithUnderscore;
+    private String procedureWithUnderscore;
+    private String functionWithUnderscore;
+
+    private String alternativeSchema;
+    private String alternativeTable;
+    private String alternativeColumn;
+    private String alternativeProcedure;
+    private String alternativeFunction;
+
+    private String database;
+
+    @BeforeAll
+    void setUp() throws Exception {
+      Random random = new Random();
+      int suffix = random.nextInt(Integer.MAX_VALUE);
+
+      database = connection.getCatalog();
+
+      schemaWithUnderscore = GENERATED_SCHEMA_PREFIX + "MY_SCHEMA_" + suffix;
+      tableWithUnderscore = "MY_TABLE_" + suffix;
+      columnWithUnderscore = "MY_COLUMN_" + suffix;
+      procedureWithUnderscore = "MY_PROCEDURE_" + suffix;
+      functionWithUnderscore = "MY_FUNCTION_" + suffix;
+
+      alternativeSchema = GENERATED_SCHEMA_PREFIX + "MYXSCHEMAX" + suffix;
+      alternativeTable = tableWithUnderscore.replace("_", "X");
+      alternativeColumn = columnWithUnderscore.replace("_", "X");
+      alternativeProcedure = procedureWithUnderscore.replace("_", "X");
+      alternativeFunction = functionWithUnderscore.replace("_", "X");
+
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("CREATE SCHEMA \"" + schemaWithUnderscore + "\"");
+        statement.execute("USE SCHEMA \"" + schemaWithUnderscore + "\"");
+        statement.execute(
+            "CREATE TABLE \""
+                + tableWithUnderscore
+                + "\" ("
+                + columnWithUnderscore
+                + " VARCHAR(50), col2 INT)");
+        statement.execute(
+            "CREATE PROCEDURE "
+                + procedureWithUnderscore
+                + "() RETURNS VARCHAR LANGUAGE SQL AS 'BEGIN RETURN ''Hello''; END;'");
+        statement.execute(
+            "CREATE FUNCTION " + functionWithUnderscore + "() RETURNS VARCHAR AS '''Hello'''");
+
+        statement.execute("CREATE SCHEMA \"" + alternativeSchema + "\"");
+        statement.execute("USE SCHEMA \"" + alternativeSchema + "\"");
+        statement.execute(
+            "CREATE TABLE \""
+                + alternativeTable
+                + "\" ("
+                + alternativeColumn
+                + " VARCHAR(50), col2 INT)");
+        statement.execute(
+            "CREATE PROCEDURE "
+                + alternativeProcedure
+                + "() RETURNS VARCHAR LANGUAGE SQL AS 'BEGIN RETURN ''Hello''; END;'");
+        statement.execute(
+            "CREATE FUNCTION " + alternativeFunction + "() RETURNS VARCHAR AS '''Hello'''");
+      }
+    }
+
+    @AfterAll
+    void tearDown() throws Exception {
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("DROP SCHEMA IF EXISTS \"" + schemaWithUnderscore + "\"");
+        statement.execute("DROP SCHEMA IF EXISTS \"" + alternativeSchema + "\"");
+      }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class WhenWildcardsEnabled {
+      private DatabaseMetaData metaData;
+      private Connection connection;
+
+      @BeforeAll
+      void setUp() throws Exception {
+        Properties props = new Properties();
+        props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "true");
+        connection = getConnection(props);
+        metaData = connection.getMetaData();
+      }
+
+      @AfterAll
+      void tearDown() throws Exception {
+        if (connection != null) {
+          connection.close();
+        }
+      }
+
+      @Test
+      void testGetColumns() throws Exception {
+        try (ResultSet rs =
+            metaData.getColumns(
+                database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "columns like '" + columnWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeTable, alternativeSchema, alternativeColumn),
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore, columnWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("TABLE_NAME"),
+                          r.getString("TABLE_SCHEM"),
+                          r.getString("COLUMN_NAME"))));
+        }
+      }
+
+      @Test
+      void testGetSchemas() throws Exception {
+        try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "schemas like '" + schemaWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(alternativeSchema, schemaWithUnderscore),
+              handleException(r -> r.getString("TABLE_SCHEM")));
+        }
+      }
+
+      @Test
+      void testGetTables() throws Exception {
+        try (ResultSet rs =
+            metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
+          assertMetadataQueryResult(
+              rs,
+              "objects like '" + tableWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeTable, alternativeSchema),
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
+        }
+      }
+
+      @Test
+      void testGetProcedures() throws Exception {
+        try (ResultSet rs =
+            metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "procedures like '" + procedureWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeProcedure, alternativeSchema),
+                  Arrays.asList(procedureWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
+        }
+      }
+
+      @Test
+      void testGetFunctions() throws Exception {
+        try (ResultSet rs =
+            metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "functions like '" + functionWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(
+                  Arrays.asList(alternativeFunction, alternativeSchema),
+                  Arrays.asList(functionWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
+        }
+      }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class WhenWildcardsDisabled {
+      private DatabaseMetaData metaData;
+      private Connection connection;
+
+      @BeforeAll
+      void setUp() throws Exception {
+        Properties props = new Properties();
+        props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
+        connection = getConnection(props);
+        metaData = connection.getMetaData();
+      }
+
+      @AfterAll
+      void tearDown() throws Exception {
+        if (connection != null) {
+          connection.close();
+        }
+      }
+
+      @Test
+      void testGetColumns() throws Exception {
+        try (ResultSet rs =
+            metaData.getColumns(
+                database, schemaWithUnderscore, tableWithUnderscore, columnWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "columns like '"
+                  + columnWithUnderscore
+                  + "' in table \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\".\""
+                  + tableWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(tableWithUnderscore, schemaWithUnderscore, columnWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("TABLE_NAME"),
+                          r.getString("TABLE_SCHEM"),
+                          r.getString("COLUMN_NAME"))));
+        }
+      }
+
+      @Test
+      void testGetSchemas() throws Exception {
+        try (ResultSet rs = metaData.getSchemas(database, schemaWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "schemas like '" + schemaWithUnderscore + "' in database \"" + database + "\"",
+              2,
+              Arrays.asList(alternativeSchema, schemaWithUnderscore),
+              handleException(r -> r.getString("TABLE_SCHEM")));
+        }
+      }
+
+      @Test
+      void testGetTables() throws Exception {
+        try (ResultSet rs =
+            metaData.getTables(database, schemaWithUnderscore, tableWithUnderscore, null)) {
+          assertMetadataQueryResult(
+              rs,
+              "objects like '"
+                  + tableWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(Arrays.asList(tableWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
+        }
+      }
+
+      @Test
+      void testGetProcedures() throws Exception {
+        try (ResultSet rs =
+            metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "procedures like '"
+                  + procedureWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(procedureWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r ->
+                      Arrays.asList(
+                          r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
+        }
+      }
+
+      @Test
+      void testGetFunctions() throws Exception {
+        try (ResultSet rs =
+            metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
+          assertMetadataQueryResult(
+              rs,
+              "functions like '"
+                  + functionWithUnderscore
+                  + "' in schema \""
+                  + database
+                  + "\".\""
+                  + schemaWithUnderscore
+                  + "\"",
+              1,
+              Collections.singletonList(
+                  Arrays.asList(functionWithUnderscore, schemaWithUnderscore)),
+              handleException(
+                  r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
+        }
+      }
+    }
+
+    private <T, R> Function<T, R> handleException(ThrowingFunction<T, R, SQLException> f) {
+      return t -> {
+        try {
+          return f.apply(t);
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      };
+    }
+
+    private <T> void assertMetadataQueryResult(
+        ResultSet rs,
+        String expectedSqlEnding,
+        int expectedRowCount,
+        List<T> expectedRows,
+        Function<ResultSet, T> rowMapper)
+        throws Exception {
+      // 1. Assert the underlying SQL query text
+      String sqlText = getSqlText(rs.unwrap(SnowflakeBaseResultSet.class).getStatement());
+      assertTrue(sqlText.endsWith(expectedSqlEnding));
+
+      // 2. Map ResultSet to a List
+      List<T> actualRows = new ArrayList<>();
+      while (rs.next()) {
+        actualRows.add(rowMapper.apply(rs));
+      }
+
+      // 3. Assert row count and content
+      assertEquals(expectedRowCount, actualRows.size());
+      assertEquals(expectedRows, actualRows);
+    }
+
+    private String getSqlText(Statement statement) throws Exception {
+      Class<?> stmtClass = statement.getClass();
+      Field sfBaseStatementField = stmtClass.getDeclaredField("sfBaseStatement");
+      sfBaseStatementField.setAccessible(true); // Allow access to private field
+      Object sfBaseStatement = sfBaseStatementField.get(statement);
+
+      Class<?> sfBaseStmtClass = sfBaseStatement.getClass();
+      Field sqlTextField = sfBaseStmtClass.getDeclaredField("sqlText");
+      sqlTextField.setAccessible(true); // Allow access to private field
+      return (String) sqlTextField.get(sfBaseStatement);
     }
   }
 }
