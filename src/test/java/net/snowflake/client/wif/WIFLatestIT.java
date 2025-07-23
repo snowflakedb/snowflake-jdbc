@@ -57,7 +57,7 @@ public class WIFLatestIT {
     properties.put("account", ACCOUNT);
     properties.put("authenticator", "WORKLOAD_IDENTITY");
     properties.put("workloadIdentityProvider", "OIDC");
-    properties.put("token", getAzureAccessToken());
+    properties.put("token", System.getenv("TOKEN"));
     connectAndExecuteSimpleQuery(properties);
   }
 
