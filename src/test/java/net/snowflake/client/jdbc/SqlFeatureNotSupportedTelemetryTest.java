@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import org.junit.jupiter.api.Test;
 
 public class SqlFeatureNotSupportedTelemetryTest {
@@ -28,7 +30,7 @@ public class SqlFeatureNotSupportedTelemetryTest {
   /** Test that creating in-band objectNode looks as expected */
   @Test
   public void testCreateIBValue() {
-    ObjectNode ibValue = SnowflakeSQLLoggedException.createIBValue(queryId, SQLState, vendorCode);
+    ObjectNode ibValue = TelemetryUtil.createIBValue(queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
     assertEquals(comparison, ibValue.toString());
   }
 

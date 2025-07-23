@@ -86,7 +86,9 @@ public enum ErrorCode {
   WORKLOAD_IDENTITY_FLOW_ERROR(200071, SqlState.CONNECTION_EXCEPTION),
   FILE_TRANSFER_ERROR(253000, SqlState.SYSTEM_ERROR),
   DOWNLOAD_ERROR(253002, SqlState.SYSTEM_ERROR),
-  UPLOAD_ERROR(253003, SqlState.SYSTEM_ERROR);
+  UPLOAD_ERROR(253003, SqlState.SYSTEM_ERROR),
+
+  HTTP_GENERAL_ERROR(290000, SqlState.INTERNAL_ERROR);
 
   public static final String errorMessageResource = "net.snowflake.client.jdbc.jdbc_error_messages";
 

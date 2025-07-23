@@ -141,7 +141,8 @@ public class RestRequestTest {
         true,
         noRetry,
         false,
-        new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData(),
+        null);
   }
 
   @Test

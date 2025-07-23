@@ -253,7 +253,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no request_guid
                   true, // retry on HTTP 403
                   false,
-                  new ExecTimeTelemetryData());
+                  new ExecTimeTelemetryData(),
+                  session);
           HttpResponse response = responseDto.getHttpResponse();
 
           logger.debug(
@@ -444,7 +445,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       false, // no request_guid
                       true, // retry on HTTP 403
                       false,
-                      new ExecTimeTelemetryData())
+                      new ExecTimeTelemetryData(),
+                      session)
                   .getHttpResponse();
 
           logger.debug(
@@ -940,7 +942,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no request_guid
                   true, // retry on HTTP 403
                   true, // disable retry
-                  new ExecTimeTelemetryData())
+                  new ExecTimeTelemetryData(),
+                  session)
               .getHttpResponse();
 
       logger.debug(
