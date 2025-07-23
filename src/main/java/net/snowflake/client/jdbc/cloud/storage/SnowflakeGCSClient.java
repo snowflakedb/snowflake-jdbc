@@ -288,14 +288,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
-              handleStorageException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
+              handleStorageException(
+                  ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
             }
           } else {
             Exception ex =
                 new HttpResponseException(
                     response.getStatusLine().getStatusCode(),
                     EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
+            handleStorageException(
+                ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
           }
         } else {
           Map<String, String> userDefinedMetadata =
@@ -467,14 +469,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
-              handleStorageException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
+              handleStorageException(
+                  ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
             }
           } else {
             Exception ex =
                 new HttpResponseException(
                     response.getStatusLine().getStatusCode(),
                     EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
+            handleStorageException(
+                ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, queryId);
           }
         } else {
           SFPair<InputStream, Map<String, String>> pair =

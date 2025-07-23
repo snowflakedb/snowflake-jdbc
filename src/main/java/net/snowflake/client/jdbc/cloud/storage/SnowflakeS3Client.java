@@ -436,7 +436,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
 
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+        handleS3Exception(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
         if (tx != null) {
@@ -533,7 +534,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
         return stream;
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+        handleS3Exception(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 

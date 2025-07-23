@@ -258,6 +258,7 @@ public class HttpExecutingContextBuilder {
 
   /**
    * Sets the session associated with this context.
+   *
    * @param sfSession SFBaseSession to associate with this context
    * @return this builder instance
    */

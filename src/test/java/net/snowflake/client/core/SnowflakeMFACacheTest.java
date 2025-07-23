@@ -109,8 +109,7 @@ public class SnowflakeMFACacheTest {
                       anyInt(),
                       anyInt(),
                       any(HttpClientSettingsKey.class),
-                      nullable(SFBaseSession.class)
-                  ))
+                      nullable(SFBaseSession.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;

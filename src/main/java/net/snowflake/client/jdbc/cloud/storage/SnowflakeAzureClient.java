@@ -402,7 +402,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -510,7 +511,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Downloading unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount < getMaxRetries());
 
@@ -624,7 +626,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         return;
       } catch (Exception ex) {
-        handleAzureException(ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
 
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(

@@ -273,7 +273,7 @@ public class StmtUtil {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData)
-          throws SFException, SnowflakeSQLException {
+      throws SFException, SnowflakeSQLException {
     return execute(stmtInput, execTimeData, null);
   }
 
@@ -291,7 +291,8 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData, SFBaseSession sfSession)
+  public static StmtOutput execute(
+      StmtInput stmtInput, ExecTimeTelemetryData execTimeData, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
@@ -540,7 +541,8 @@ public class StmtUtil {
         }
         execTimeData.incrementRetryCount();
         execTimeData.addRetryLocation("StmtUtil queryInProgress");
-        resultAsString = getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput, session);
+        resultAsString =
+            getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput, session);
 
         // save the previous get result path in case we run into session
         // expiration
@@ -579,7 +581,10 @@ public class StmtUtil {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   protected static String getQueryResult(
-      JsonNode inProgressResponse, String previousGetResultPath, StmtInput stmtInput, SFBaseSession sfSession)
+      JsonNode inProgressResponse,
+      String previousGetResultPath,
+      StmtInput stmtInput,
+      SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     String getResultPath = null;
 
@@ -611,7 +616,8 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  protected static String getQueryResult(String getResultPath, StmtInput stmtInput, SFBaseSession sfSession)
+  protected static String getQueryResult(
+      String getResultPath, StmtInput stmtInput, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     HttpGet httpRequest = null;
     logger.debug("Get query result: {}", getResultPath);
@@ -715,7 +721,7 @@ public class StmtUtil {
    * @throws SnowflakeSQLException if failed to cancel the statement
    */
   public static void cancel(StmtInput stmtInput, CancellationReason cancellationReason)
-          throws SFException, SnowflakeSQLException {
+      throws SFException, SnowflakeSQLException {
     cancel(stmtInput, cancellationReason, null);
   }
 
@@ -728,7 +734,8 @@ public class StmtUtil {
    * @throws SFException if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
    */
-  public static void cancel(StmtInput stmtInput, CancellationReason cancellationReason, SFBaseSession sfSession)
+  public static void cancel(
+      StmtInput stmtInput, CancellationReason cancellationReason, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 

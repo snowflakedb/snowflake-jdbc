@@ -1352,7 +1352,8 @@ public class SessionUtil {
    * @throws SnowflakeSQLException if failed to close session
    * @throws SFException if failed to close session
    */
-  static void closeSession(SFLoginInput loginInput, SFBaseSession session) throws SFException, SnowflakeSQLException {
+  static void closeSession(SFLoginInput loginInput, SFBaseSession session)
+      throws SFException, SnowflakeSQLException {
     logger.trace("void close() throws SFException");
 
     // assert the following inputs are valid

@@ -2,15 +2,13 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.File;
 import java.io.InputStream;
-
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 
 class StorageHelper {
-  protected final static String DOWNLOAD = "download";
-  protected final static String UPLOAD = "upload";
+  protected static final String DOWNLOAD = "download";
+  protected static final String UPLOAD = "upload";
 
-  
   static String getStartUploadLog(
       String serviceName,
       boolean uploadFromStream,
