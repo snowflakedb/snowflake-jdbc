@@ -865,7 +865,8 @@ public class SessionUtil {
                   loginInput.getAuthTimeout(),
                   leftsocketTimeout,
                   retryCount,
-                  loginInput.getHttpClientSettingsKey());
+                  loginInput.getHttpClientSettingsKey(),
+                  null);
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
@@ -1217,16 +1218,17 @@ public class SessionUtil {
    * Renew a session.
    *
    * @param loginInput login information
+   * @param session the session associated with the request
    * @return login output
    * @throws SFException if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static SFLoginOutput renewSession(SFLoginInput loginInput)
+  static SFLoginOutput renewSession(SFLoginInput loginInput, SFBaseSession session)
       throws SFException, SnowflakeSQLException {
-    return renewTokenRequest(loginInput);
+    return renewTokenRequest(loginInput, session);
   }
 
-  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput)
+  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput, SFBaseSession session)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null, "missing server URL for tokenRequest");
 
@@ -1304,7 +1306,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              session);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1345,10 +1348,11 @@ public class SessionUtil {
    * Close a session
    *
    * @param loginInput login information
+   * @param session the session associated with the request
    * @throws SnowflakeSQLException if failed to close session
    * @throws SFException if failed to close session
    */
-  static void closeSession(SFLoginInput loginInput) throws SFException, SnowflakeSQLException {
+  static void closeSession(SFLoginInput loginInput, SFBaseSession session) throws SFException, SnowflakeSQLException {
     logger.trace("void close() throws SFException");
 
     // assert the following inputs are valid
@@ -1397,7 +1401,8 @@ public class SessionUtil {
               0,
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              session);
 
       JsonNode rootNode;
 
@@ -1463,7 +1468,8 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey(),
-              retryWithNewOTTManager);
+              retryWithNewOTTManager,
+              null);
 
       // step 5
       validateSAML(responseHtml, loginInput);
@@ -1556,7 +1562,8 @@ public class SessionUtil {
               0,
               0,
               null,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              null);
 
       logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
 
@@ -1624,7 +1631,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              null);
 
       logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);

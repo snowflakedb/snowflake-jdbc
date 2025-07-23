@@ -1259,7 +1259,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     postRequest.addHeader("accept", "application/json");
 
     String theString =
-        HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null));
+        HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null), null);
 
     JsonNode jsonNode = mapper.readTree(theString);
     assertEquals(

@@ -674,6 +674,7 @@ public class HttpUtil {
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -686,7 +687,8 @@ public class HttpUtil {
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyKey,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     logger.debug("Executing request without cookies");
     return executeRequestInternal(
@@ -703,7 +705,8 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         getHttpClient(ocspAndProxyKey, null),
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        sfSession);
   }
 
   /**
@@ -716,6 +719,7 @@ public class HttpUtil {
    * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
    *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -726,7 +730,8 @@ public class HttpUtil {
       int authTimeout,
       int socketTimeout,
       int retryCount,
-      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     return executeGeneralRequest(
         httpRequest,
@@ -735,7 +740,8 @@ public class HttpUtil {
         socketTimeout,
         retryCount,
         ocspAndProxyAndGzipKey,
-        null);
+        null,
+        sfSession);
   }
 
   @SnowflakeJdbcInternalApi
@@ -745,7 +751,8 @@ public class HttpUtil {
       int authTimeout,
       int socketTimeout,
       int retryCount,
-      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
@@ -761,7 +768,8 @@ public class HttpUtil {
         false,
         getHttpClient(ocspAndProxyAndGzipKey, null),
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        sfSession);
   }
 
   /**
@@ -775,6 +783,7 @@ public class HttpUtil {
    *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -787,7 +796,8 @@ public class HttpUtil {
       int socketTimeout,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey,
-      RetryContextManager retryContextManager)
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     logger.debug("Executing general request");
     return executeRequest(
@@ -802,7 +812,8 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         ocspAndProxyAndGzipKey,
         new ExecTimeTelemetryData(),
-        retryContextManager);
+        retryContextManager,
+        sfSession);
   }
 
   /**
@@ -815,6 +826,7 @@ public class HttpUtil {
    * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
    *     only retryTimeout will determine when to end the retries
    * @param httpClient client object used to communicate with other machine
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -825,7 +837,8 @@ public class HttpUtil {
       int authTimeout,
       int socketTimeout,
       int retryCount,
-      CloseableHttpClient httpClient)
+      CloseableHttpClient httpClient,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     logger.debug("Executing general request");
     return executeRequestInternal(
@@ -842,7 +855,8 @@ public class HttpUtil {
         false, // no retry on HTTP 403
         httpClient,
         new ExecTimeTelemetryData(),
-        null);
+        null,
+        sfSession);
   }
 
   /**
@@ -859,6 +873,7 @@ public class HttpUtil {
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @param execTimeData query execution time telemetry data object
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -874,7 +889,8 @@ public class HttpUtil {
       boolean includeRetryParameters,
       boolean retryOnHTTP403,
       HttpClientSettingsKey ocspAndProxyKey,
-      ExecTimeTelemetryData execTimeData)
+      ExecTimeTelemetryData execTimeData,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
@@ -888,7 +904,8 @@ public class HttpUtil {
         retryOnHTTP403,
         ocspAndProxyKey,
         execTimeData,
-        null);
+        null,
+        sfSession);
   }
 
   /**
@@ -906,6 +923,7 @@ public class HttpUtil {
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @param execTimeData query execution time telemetry data object
    * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -922,7 +940,8 @@ public class HttpUtil {
       boolean retryOnHTTP403,
       HttpClientSettingsKey ocspAndProxyKey,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.DISABLE_OCSP_CHECKS));
     logger.debug("Executing request with OCSP enabled: {}", ocspEnabled);
@@ -941,7 +960,8 @@ public class HttpUtil {
         retryOnHTTP403,
         getHttpClient(ocspAndProxyKey, null),
         execTimeData,
-        retryContextManager);
+        retryContextManager,
+        sfSession);
   }
 
   /**
@@ -964,6 +984,7 @@ public class HttpUtil {
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
    * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param sfSession the session associated with the request
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -982,7 +1003,8 @@ public class HttpUtil {
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryContextManager)
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
     String responseText = "";
@@ -1009,6 +1031,7 @@ public class HttpUtil {
             .unpackResponse(true)
             .noRetry(false)
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+            .withSfSession(sfSession)
             .build();
     responseText =
         RestRequest.executeWithRetries(

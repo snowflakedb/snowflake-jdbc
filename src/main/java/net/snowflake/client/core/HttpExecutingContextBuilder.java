@@ -23,6 +23,7 @@ public class HttpExecutingContextBuilder {
   private boolean noRetry;
   private boolean unpackResponse;
   private boolean isLoginRequest;
+  private SFBaseSession sfSession;
 
   /**
    * Creates a new builder instance with required parameters.
@@ -256,6 +257,16 @@ public class HttpExecutingContextBuilder {
   }
 
   /**
+   * Sets the session associated with this context.
+   * @param sfSession SFBaseSession to associate with this context
+   * @return this builder instance
+   */
+  public HttpExecutingContextBuilder withSfSession(SFBaseSession sfSession) {
+    this.sfSession = sfSession;
+    return this;
+  }
+
+  /**
    * Builds and returns a new HttpExecutingContext instance with the configured parameters.
    *
    * @return A new HttpExecutingContext instance
@@ -275,6 +286,7 @@ public class HttpExecutingContextBuilder {
     context.setNoRetry(noRetry);
     context.setUnpackResponse(unpackResponse);
     context.setLoginRequest(isLoginRequest);
+    context.setSfSession(sfSession);
     return context;
   }
 }
