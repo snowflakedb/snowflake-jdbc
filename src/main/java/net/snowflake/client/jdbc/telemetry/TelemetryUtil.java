@@ -42,7 +42,12 @@ public class TelemetryUtil {
    * @return ObjectNode for IB telemetry log
    */
   public static ObjectNode createIBValue(
-      String queryId, String sqlState, int errorNumber, TelemetryField type, String errorMessage) {
+      String queryId,
+      String sqlState,
+      int errorNumber,
+      TelemetryField type,
+      String errorMessage,
+      String reason) {
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put(TelemetryField.TYPE.toString(), type.toString());
     ibValue.put(TelemetryField.DRIVER_TYPE.toString(), LoginInfoDTO.SF_JDBC_APP_ID);
@@ -56,8 +61,12 @@ public class TelemetryUtil {
     if (errorNumber != NO_VENDOR_CODE) {
       ibValue.put(TelemetryField.ERROR_NUMBER.toString(), errorNumber);
     }
-    if (!isNullOrEmpty(errorMessage))
+    if (!isNullOrEmpty(errorMessage)) {
       ibValue.put(TelemetryField.ERROR_MESSAGE.toString(), errorMessage);
+    }
+    if (!isNullOrEmpty(reason)) {
+      ibValue.put(TelemetryField.REASON.toString(), reason);
+    }
     return ibValue;
   }
 }

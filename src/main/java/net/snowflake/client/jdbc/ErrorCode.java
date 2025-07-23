@@ -88,6 +88,7 @@ public enum ErrorCode {
   DOWNLOAD_ERROR(253002, SqlState.SYSTEM_ERROR),
   UPLOAD_ERROR(253003, SqlState.SYSTEM_ERROR),
 
+  OCSP_GENERAL_ERROR(254000, SqlState.INTERNAL_ERROR),
   HTTP_GENERAL_ERROR(290000, SqlState.INTERNAL_ERROR);
 
   public static final String errorMessageResource = "net.snowflake.client.jdbc.jdbc_error_messages";

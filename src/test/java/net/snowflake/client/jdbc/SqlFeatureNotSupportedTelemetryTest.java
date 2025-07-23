@@ -32,7 +32,7 @@ public class SqlFeatureNotSupportedTelemetryTest {
   public void testCreateIBValue() {
     ObjectNode ibValue =
         TelemetryUtil.createIBValue(
-            queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
+            queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null, null);
     assertEquals(comparison, ibValue.toString());
   }
 

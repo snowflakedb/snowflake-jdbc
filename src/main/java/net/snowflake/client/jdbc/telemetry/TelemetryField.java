@@ -13,6 +13,7 @@ public enum TelemetryField {
   SQL_STATE("SQLState"),
   ERROR_NUMBER("ErrorNumber"),
   ERROR_MESSAGE("ErrorMessage"),
+  REASON("reason"),
 
   // Values of the field "type"
   // we use "client_" as a prefix for all metrics on the client side
@@ -30,7 +31,8 @@ public enum TelemetryField {
 
   METADATA_METRICS("client_metadata_api_metrics"),
 
-  HTTP_EXCEPTION("client_http_exception");
+  HTTP_EXCEPTION("client_http_exception"),
+  OCSP_EXCEPTION("client_ocsp_exception");
 
   public final String field;
 

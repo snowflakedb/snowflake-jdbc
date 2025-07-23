@@ -1008,6 +1008,12 @@ public class RestRequest {
               + "To troubleshoot your connection further, you can refer to this article:\n"
               + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
 
+      Throwable ex0 = getRootCause(ex);
+      if (ex0 instanceof SFOCSPException) {
+        SFOCSPException ocspException = (SFOCSPException) ex0;
+        sendIBOCSPErrorEvent(httpExecutingContext, ocspException);
+      }
+
       throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
     } else if (ex instanceof Exception) {
       savedEx = ex;
@@ -1201,7 +1207,29 @@ public class RestRequest {
             SqlState.INTERNAL_ERROR,
             calculatedErrorNumber,
             TelemetryField.HTTP_EXCEPTION,
-            errorMessage);
+            errorMessage,
+            null);
+    TelemetryData td = TelemetryUtil.buildJobData(ibValue);
+    session.getTelemetryClient().addLogToBatch(td);
+  }
+
+  private static void sendIBOCSPErrorEvent(
+      HttpExecutingContext httpExecutingContext, SFOCSPException ex) {
+    SFBaseSession session = httpExecutingContext.getSfSession();
+
+    if (session == null) {
+      return;
+    }
+
+    String errorMessage = ex.toString();
+    ObjectNode ibValue =
+        TelemetryUtil.createIBValue(
+            null,
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.OCSP_GENERAL_ERROR.getMessageCode(),
+            TelemetryField.OCSP_EXCEPTION,
+            errorMessage,
+            ex.toString());
     TelemetryData td = TelemetryUtil.buildJobData(ibValue);
     session.getTelemetryClient().addLogToBatch(td);
   }

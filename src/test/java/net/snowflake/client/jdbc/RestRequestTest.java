@@ -30,9 +30,11 @@ import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpExecutingContext;
 import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -877,7 +879,10 @@ public class RestRequestTest {
       TelemetryData mockTelemetryData = mock(TelemetryData.class);
 
       mockedTelemetryUtil
-          .when(() -> TelemetryUtil.createIBValue(any(), any(), anyInt(), any(), anyString()))
+          .when(
+              () ->
+                  TelemetryUtil.createIBValue(
+                      any(), any(), anyInt(), any(), anyString(), anyString()))
           .thenReturn(mockIbValue);
       mockedTelemetryUtil
           .when(() -> TelemetryUtil.buildJobData(any(ObjectNode.class)))
@@ -910,7 +915,8 @@ public class RestRequestTest {
                   eq(ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + 500),
                   eq(TelemetryField.HTTP_EXCEPTION),
                   eq(
-                      "HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request")));
+                      "HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request"),
+                  eq(null)));
 
       mockedTelemetryUtil.verify(() -> TelemetryUtil.buildJobData(mockIbValue));
     }

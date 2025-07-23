@@ -14,10 +14,12 @@ public class TelemetryUtilTest {
   int errorNumber = 1000;
   TelemetryField type = TelemetryField.HTTP_EXCEPTION;
   String errorMessage = "Test error message";
+  String reason = "reason";
 
   @Test
   public void testCreateIBValueWithAllValues() {
-    ObjectNode on = TelemetryUtil.createIBValue(queryId, sqlState, errorNumber, type, errorMessage);
+    ObjectNode on =
+        TelemetryUtil.createIBValue(queryId, sqlState, errorNumber, type, errorMessage, reason);
 
     assertEquals(type.toString(), on.get(TelemetryField.TYPE.toString()).asText());
     assertEquals(
@@ -29,11 +31,14 @@ public class TelemetryUtilTest {
     assertEquals(sqlState, on.get(TelemetryField.SQL_STATE.toString()).asText());
     assertEquals(errorNumber, on.get(TelemetryField.ERROR_NUMBER.toString()).asInt());
     assertEquals(errorMessage, on.get(TelemetryField.ERROR_MESSAGE.toString()).asText());
+    assertEquals(reason, on.get(TelemetryField.REASON.toString()).asText());
   }
 
   @Test
   public void testCreateIBValueWithNullValue() {
-    ObjectNode on = TelemetryUtil.createIBValue(null, sqlState, errorNumber, type, errorMessage);
+    ObjectNode on =
+        TelemetryUtil.createIBValue(null, sqlState, errorNumber, type, errorMessage, null);
     assertNull(on.get(TelemetryField.QUERY_ID.toString()));
+    assertNull(on.get(TelemetryField.REASON.toString()));
   }
 }
