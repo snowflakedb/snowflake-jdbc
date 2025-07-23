@@ -36,6 +36,7 @@ import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFTrustManager;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
@@ -880,9 +881,7 @@ public class RestRequestTest {
 
       mockedTelemetryUtil
           .when(
-              () ->
-                  TelemetryUtil.createIBValue(
-                      any(), any(), anyInt(), any(), anyString(), anyString()))
+              () -> TelemetryUtil.createIBValue(any(), any(), anyInt(), any(), anyString(), any()))
           .thenReturn(mockIbValue);
       mockedTelemetryUtil
           .when(() -> TelemetryUtil.buildJobData(any(ObjectNode.class)))
@@ -991,5 +990,71 @@ public class RestRequestTest {
     assertTrue(
         capturedData.getTimeStamp() <= System.currentTimeMillis(),
         "Timestamp should not be in the future");
+  }
+
+  @Test
+  public void testOCSPCheckFailsWithEventEmission() throws IOException {
+    System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
+    System.setProperty(
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
+
+    try {
+      SFBaseSession mockSession = mock(SFBaseSession.class);
+      TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
+      when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+
+      HttpClientSettingsKey settingsKey = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED);
+      CloseableHttpClient httpClient = HttpUtil.buildHttpClient(settingsKey, null, false);
+
+      HttpRequestBase httpRequest = new HttpGet("https://test.snowflakecomputing.com/");
+
+      HttpExecutingContext context =
+          HttpExecutingContextBuilder.withRequest("test-request-id", "test-request-info")
+              .withSfSession(mockSession)
+              .build();
+
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              RestRequest.executeWithRetries(
+                  httpClient, httpRequest, context, new ExecTimeTelemetryData(), null));
+
+      ArgumentCaptor<TelemetryData> telemetryDataCaptor =
+          ArgumentCaptor.forClass(TelemetryData.class);
+      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
+
+      TelemetryData capturedData = telemetryDataCaptor.getValue();
+      assertNotNull(capturedData, "TelemetryData should not be null");
+
+      ObjectNode message = capturedData.getMessage();
+      assertNotNull(message, "TelemetryData message should not be null");
+
+      assertEquals(
+          "client_ocsp_exception",
+          message.get("type").asText(),
+          "Type should be client_ocsp_exception");
+      assertEquals("JDBC", message.get("DriverType").asText(), "DriverType should be JDBC");
+      assertNotNull(message.get("DriverVersion"), "DriverVersion should be present");
+      assertEquals(
+          "XX000", message.get("SQLState").asText(), "SQLState should be XX000 (INTERNAL_ERROR)");
+      assertEquals(254000, message.get("ErrorNumber").asInt(), "ErrorNumber should be 254000");
+      assertTrue(
+          message
+              .get("ErrorMessage")
+              .asText()
+              .contains("The OCSP response validity is out of range"),
+          "ErrorMessage should contain OCSP validity error message");
+      assertTrue(
+          message.get("reason").asText().contains("INVALID_OCSP_RESPONSE_VALIDITY"),
+          "Reason should contain INVALID_OCSP_RESPONSE_VALIDITY");
+
+      assertTrue(capturedData.getTimeStamp() > 0, "Timestamp should be positive");
+      assertTrue(
+          capturedData.getTimeStamp() <= System.currentTimeMillis(),
+          "Timestamp should not be in the future");
+    } finally {
+      SFTrustManager.cleanTestSystemParameters();
+    }
   }
 }
