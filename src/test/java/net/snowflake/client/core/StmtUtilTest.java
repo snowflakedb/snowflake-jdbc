@@ -60,7 +60,7 @@ public class StmtUtilTest extends BaseJDBCTest {
                   Mockito.anyBoolean(),
                   Mockito.nullable(HttpClientSettingsKey.class),
                   Mockito.nullable(ExecTimeTelemetryData.class),
-                  Mockito.any(SFBaseSession.class));
+                  Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":333334,\"message\":null,\"success\":true}");
