@@ -12,6 +12,9 @@ public class TelemetryUtil {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
   public static final int NO_VENDOR_CODE = -1;
+  @Deprecated public static final String TYPE = "type";
+  @Deprecated public static final String QUERY_ID = "query_id";
+  @Deprecated public static final String VALUE = "value";
 
   /**
    * Create a simple TelemetryData instance for Job metrics using given parameters

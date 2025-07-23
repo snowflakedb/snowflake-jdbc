@@ -674,6 +674,44 @@ public class HttpUtil {
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  static String executeRequestWithoutCookies(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      HttpClientSettingsKey ocspAndProxyKey)
+      throws SnowflakeSQLException, IOException {
+    return executeRequestWithoutCookies(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        injectSocketTimeout,
+        canceling,
+        ocspAndProxyKey,
+        null);
+  }
+
+  /**
+   * Executes an HTTP request with the cookie spec set to IGNORE_COOKIES
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
@@ -707,6 +745,38 @@ public class HttpUtil {
         new ExecTimeTelemetryData(),
         null,
         sfSession);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeGeneralRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      throws SnowflakeSQLException, IOException {
+    return executeGeneralRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        ocspAndProxyAndGzipKey,
+        null);
   }
 
   /**
@@ -826,6 +896,32 @@ public class HttpUtil {
    * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
    *     only retryTimeout will determine when to end the retries
    * @param httpClient client object used to communicate with other machine
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeGeneralRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      CloseableHttpClient httpClient)
+      throws SnowflakeSQLException, IOException {
+    return executeGeneralRequest(
+        httpRequest, retryTimeout, authTimeout, socketTimeout, retryCount, httpClient, null);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
+   * @param httpClient client object used to communicate with other machine
    * @param sfSession the session associated with the request
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
@@ -857,6 +953,52 @@ public class HttpUtil {
         new ExecTimeTelemetryData(),
         null,
         sfSession);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param maxRetries retry count for the request
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param retryOnHTTP403 whether to retry on HTTP 403 or not
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param execTimeData query execution time telemetry data object
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean includeRetryParameters,
+      boolean retryOnHTTP403,
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException, IOException {
+    return executeRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        includeRetryParameters,
+        retryOnHTTP403,
+        ocspAndProxyKey,
+        execTimeData,
+        (SFBaseSession) null);
   }
 
   /**
@@ -906,6 +1048,55 @@ public class HttpUtil {
         execTimeData,
         null,
         sfSession);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param maxRetries retry count for the request
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param retryOnHTTP403 whether to retry on HTTP 403 or not
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param execTimeData query execution time telemetry data object
+   * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeRequest(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean includeRetryParameters,
+      boolean retryOnHTTP403,
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager)
+      throws SnowflakeSQLException, IOException {
+    return executeRequest(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        includeRetryParameters,
+        retryOnHTTP403,
+        ocspAndProxyKey,
+        execTimeData,
+        retryContextManager,
+        null);
   }
 
   /**
