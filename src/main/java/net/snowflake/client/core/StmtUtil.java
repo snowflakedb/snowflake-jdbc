@@ -575,11 +575,31 @@ public class StmtUtil {
    * @param inProgressResponse In progress response in JSON form
    * @param previousGetResultPath previous get results path
    * @param stmtInput input statement
+   * @return results in string form
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
+   */
+  @Deprecated
+  protected static String getQueryResult(
+      JsonNode inProgressResponse, String previousGetResultPath, StmtInput stmtInput)
+      throws SFException, SnowflakeSQLException {
+    return getQueryResult(inProgressResponse, previousGetResultPath, stmtInput, null);
+  }
+
+  /**
+   * Issue get-result call to get query result given an in-progress response.
+   *
+   * <p>
+   *
+   * @param inProgressResponse In progress response in JSON form
+   * @param previousGetResultPath previous get results path
+   * @param stmtInput input statement
    * @param sfSession the session associated with the request
    * @return results in string form
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
+  @SnowflakeJdbcInternalApi
   protected static String getQueryResult(
       JsonNode inProgressResponse,
       String previousGetResultPath,
@@ -611,11 +631,27 @@ public class StmtUtil {
    *
    * @param getResultPath path to results
    * @param stmtInput object with context information
+   * @return results in string form
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
+   */
+  @Deprecated
+  protected static String getQueryResult(String getResultPath, StmtInput stmtInput)
+      throws SFException, SnowflakeSQLException {
+    return getQueryResult(getResultPath, stmtInput, null);
+  }
+
+  /**
+   * Issue get-result call to get query result given an in-progress response.
+   *
+   * @param getResultPath path to results
+   * @param stmtInput object with context information
    * @param sfSession the session associated with the request
    * @return results in string form
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
+  @SnowflakeJdbcInternalApi
   protected static String getQueryResult(
       String getResultPath, StmtInput stmtInput, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
