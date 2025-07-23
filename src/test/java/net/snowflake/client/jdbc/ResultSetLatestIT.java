@@ -50,7 +50,6 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;

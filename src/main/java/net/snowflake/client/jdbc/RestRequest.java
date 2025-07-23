@@ -4,6 +4,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -20,8 +21,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.ExecTimeTelemetryData;
@@ -1172,9 +1171,9 @@ public class RestRequest {
   }
 
   private static void sendIBHttpErrorEvent(
-        HttpRequestBase request,
-        CloseableHttpResponse response,
-        HttpExecutingContext httpExecutingContext) {
+      HttpRequestBase request,
+      CloseableHttpResponse response,
+      HttpExecutingContext httpExecutingContext) {
     SFBaseSession session = httpExecutingContext.getSfSession();
 
     if (session == null) {
@@ -1182,23 +1181,25 @@ public class RestRequest {
     }
 
     StatusLine statusLine = response.getStatusLine();
-    int calculatedErrorNumber = ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + statusLine.getStatusCode();
-    String errorMessage = "HTTP " +
-                          statusLine.getStatusCode() +
-                          " " +
-                          statusLine.getReasonPhrase() +
-                          ": " +
-                          request.getMethod() +
-                          " " +
-                          request.getURI().getHost() +
-                          request.getURI().getPath();
+    int calculatedErrorNumber =
+        ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + statusLine.getStatusCode();
+    String errorMessage =
+        "HTTP "
+            + statusLine.getStatusCode()
+            + " "
+            + statusLine.getReasonPhrase()
+            + ": "
+            + request.getMethod()
+            + " "
+            + request.getURI().getHost()
+            + request.getURI().getPath();
     ObjectNode ibValue =
-            TelemetryUtil.createIBValue(
-                    null,
-                    SqlState.INTERNAL_ERROR,
-                    calculatedErrorNumber,
-                    TelemetryField.HTTP_EXCEPTION,
-                    errorMessage);
+        TelemetryUtil.createIBValue(
+            null,
+            SqlState.INTERNAL_ERROR,
+            calculatedErrorNumber,
+            TelemetryField.HTTP_EXCEPTION,
+            errorMessage);
     TelemetryData td = TelemetryUtil.buildJobData(ibValue);
     session.getTelemetryClient().addLogToBatch(td);
   }

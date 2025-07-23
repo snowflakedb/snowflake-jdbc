@@ -30,7 +30,9 @@ public class SqlFeatureNotSupportedTelemetryTest {
   /** Test that creating in-band objectNode looks as expected */
   @Test
   public void testCreateIBValue() {
-    ObjectNode ibValue = TelemetryUtil.createIBValue(queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
+    ObjectNode ibValue =
+        TelemetryUtil.createIBValue(
+            queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
     assertEquals(comparison, ibValue.toString());
   }
 

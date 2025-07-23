@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc.telemetry;
 
-// TODO: Refactor this enum, as it contains the possible values of the field "type" and is misleading.
+// TODO: Refactor this enum, as it contains the possible values of the field "type" and is
+// misleading.
 //  Separate values from the field names.
 public enum TelemetryField {
   // Fields
@@ -30,7 +31,6 @@ public enum TelemetryField {
   METADATA_METRICS("client_metadata_api_metrics"),
 
   HTTP_EXCEPTION("client_http_exception");
-
 
   public final String field;
 

@@ -164,7 +164,9 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     // if in-band instance is successfully created, compile sql exception data into an in-band
     // telemetry log
     if (ibInstance != null) {
-      ObjectNode ibValue = TelemetryUtil.createIBValue(queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
+      ObjectNode ibValue =
+          TelemetryUtil.createIBValue(
+              queryId, SQLState, vendorCode, TelemetryField.SQL_EXCEPTION, null);
       // try  to send in-band data asynchronously
       ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
       Telemetry finalIbInstance = ibInstance;

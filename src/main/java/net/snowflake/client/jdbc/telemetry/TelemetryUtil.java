@@ -1,12 +1,12 @@
 package net.snowflake.client.jdbc.telemetry;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.common.core.LoginInfoDTO;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 public class TelemetryUtil {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
@@ -41,7 +41,8 @@ public class TelemetryUtil {
    * @param errorNumber the error number
    * @return ObjectNode for IB telemetry log
    */
-  public static ObjectNode createIBValue(String queryId, String sqlState, int errorNumber, TelemetryField type, String errorMessage) {
+  public static ObjectNode createIBValue(
+      String queryId, String sqlState, int errorNumber, TelemetryField type, String errorMessage) {
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put(TelemetryField.TYPE.toString(), type.toString());
     ibValue.put(TelemetryField.DRIVER_TYPE.toString(), LoginInfoDTO.SF_JDBC_APP_ID);
