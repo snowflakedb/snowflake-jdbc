@@ -634,7 +634,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               queryId,
               ex,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
+              ErrorCode.UPLOAD_ERROR.getMessageCode(),
               "Encountered exception during upload: "
                   + ex.getMessage()
                   + "\nCannot retry upload from stream.");
@@ -879,7 +879,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               queryId,
               session,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
+              ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
               ex,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
@@ -894,7 +894,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.SYSTEM_ERROR,
-            ErrorCode.IO_ERROR.getMessageCode(),
+            ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
             ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
@@ -989,7 +989,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           queryId,
           session,
           SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
+          ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
           ex,
           "Error parsing encryption data as json" + ": " + ex.getMessage());
     }

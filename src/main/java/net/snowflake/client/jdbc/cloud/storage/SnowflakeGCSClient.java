@@ -1190,7 +1190,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           queryId,
           ex,
           SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
+          ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
           "Error parsing encryption data as json" + ": " + ex.getMessage());
     }
   }
