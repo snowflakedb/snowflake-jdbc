@@ -1,5 +1,7 @@
 
 syntax = "proto3";
+package sf.proto.wpm;
+
 option java_package = "net.snowflake.queryservicelite";
 
 // Request to run an Executor with the supplied binds
