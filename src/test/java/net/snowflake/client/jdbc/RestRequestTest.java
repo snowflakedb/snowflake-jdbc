@@ -5,9 +5,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,8 +31,10 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpExecutingContext;
 import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -36,9 +42,22 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.common.core.SqlState;
+import org.apache.http.client.methods.HttpRequestBase;
+import java.net.URI;
+import org.mockito.ArgumentCaptor;
 
 /** RestRequest unit tests. */
 public class RestRequestTest {
@@ -810,5 +829,144 @@ public class RestRequestTest {
     assertFalse(
         RestRequest.isExceptionInGroup(new RuntimeException("test"), RestRequest.sslExceptions),
         "RuntimeException should not be in SSL exceptions group");
+  }
+
+  @Test
+  public void testSendIBHttpErrorEventWithNullSessionNoException() throws Exception {
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+
+    when(mockContext.getSfSession()).thenReturn(null);
+
+    java.lang.reflect.Method method = RestRequest.class.getDeclaredMethod(
+        "sendIBHttpErrorEvent",
+        HttpRequestBase.class,
+        CloseableHttpResponse.class,
+        HttpExecutingContext.class);
+    method.setAccessible(true);
+
+    method.invoke(null, mockRequest, mockResponse, mockContext);
+
+    Mockito.verify(mockContext).getSfSession();
+  }
+
+  @Test
+  public void testSendIBHttpErrorEventWithValidSession() throws Exception {
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+    StatusLine mockStatusLine = mock(StatusLine.class);
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+    SFBaseSession mockSession = mock(SFBaseSession.class);
+    Telemetry mockTelemetryClient = mock(Telemetry.class);
+    
+    when(mockContext.getSfSession()).thenReturn(mockSession);
+    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
+    when(mockStatusLine.getStatusCode()).thenReturn(500);
+    when(mockStatusLine.getReasonPhrase()).thenReturn("Internal Server Error");
+    
+    when(mockRequest.getMethod()).thenReturn("POST");
+    URI mockURI = new URI("https://test.snowflakecomputing.com/session/v1/login-request");
+    when(mockRequest.getURI()).thenReturn(mockURI);
+
+    try (MockedStatic<TelemetryUtil> mockedTelemetryUtil = Mockito.mockStatic(TelemetryUtil.class)) {
+      ObjectNode mockIbValue = mock(ObjectNode.class);
+      TelemetryData mockTelemetryData = mock(TelemetryData.class);
+      
+      mockedTelemetryUtil.when(() -> TelemetryUtil.createIBValue(
+          any(), any(), anyInt(), any(), anyString())).thenReturn(mockIbValue);
+      mockedTelemetryUtil.when(() -> TelemetryUtil.buildJobData(any(ObjectNode.class)))
+          .thenReturn(mockTelemetryData);
+
+      java.lang.reflect.Method method = RestRequest.class.getDeclaredMethod(
+          "sendIBHttpErrorEvent", 
+          HttpRequestBase.class, 
+          CloseableHttpResponse.class, 
+          HttpExecutingContext.class);
+      method.setAccessible(true);
+
+      method.invoke(null, mockRequest, mockResponse, mockContext);
+
+      Mockito.verify(mockContext).getSfSession();
+      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockResponse).getStatusLine();
+      Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getStatusCode();
+      Mockito.verify(mockStatusLine).getReasonPhrase();
+      Mockito.verify(mockRequest).getMethod();
+      Mockito.verify(mockRequest, Mockito.atLeast(1)).getURI();
+      Mockito.verify(mockTelemetryClient).addLogToBatch(mockTelemetryData);
+
+      mockedTelemetryUtil.verify(() -> TelemetryUtil.createIBValue(
+          eq(null),
+          eq(SqlState.INTERNAL_ERROR),
+          eq(ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + 500),
+          eq(TelemetryField.HTTP_EXCEPTION),
+          eq("HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request")
+      ));
+      
+      mockedTelemetryUtil.verify(() -> TelemetryUtil.buildJobData(mockIbValue));
+    }
+  }
+
+  @Test
+  public void testExecuteRequestFailsWithEventEmission() throws IOException {
+    StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1),500, "Internal Server Error");
+
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getMethod()).thenReturn("POST");
+    URI mockURI = URI.create("https://test.snowflakecomputing.com/session/v1/login-request");
+    when(mockRequest.getURI()).thenReturn(mockURI);
+
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+    SFBaseSession mockSession = mock(SFBaseSession.class);
+    TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
+
+    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockContext.getSfSession()).thenReturn(mockSession);
+
+    HttpExecutingContext mockHttpExecutingContext = mock(HttpExecutingContext.class);
+    when(mockHttpExecutingContext.getSfSession()).thenReturn(mockSession);
+
+    try (
+            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+            CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    ) {
+      when(mockHttpClient.execute(any(HttpUriRequest.class)))
+              .thenReturn(mockResponse);
+      when(mockResponse.getStatusLine()).thenReturn(statusLine);
+      when(mockResponse.getStatusLine()).thenReturn(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1),500, "Internal Server Error"));
+
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              RestRequest.executeWithRetries(
+                  mockHttpClient,
+                  mockRequest,
+                  mockHttpExecutingContext,
+                  new ExecTimeTelemetryData(),
+                  null));
+    }
+
+    ArgumentCaptor<TelemetryData> telemetryDataCaptor = ArgumentCaptor.forClass(TelemetryData.class);
+    Mockito.verify(mockSession).getTelemetryClient();
+    Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
+    
+    TelemetryData capturedData = telemetryDataCaptor.getValue();
+    assertNotNull(capturedData, "TelemetryData should not be null");
+    
+    ObjectNode message = capturedData.getMessage();
+    assertNotNull(message, "TelemetryData message should not be null");
+    
+    assertEquals("client_http_exception", message.get("type").asText(), "Type should be client_http_exception");
+    assertEquals("JDBC", message.get("DriverType").asText(), "DriverType should be JDBC");
+    assertNotNull(message.get("DriverVersion"), "DriverVersion should be present");
+    assertEquals("XX000", message.get("SQLState").asText(), "SQLState should be XX000 (INTERNAL_ERROR)");
+    assertEquals(290500, message.get("ErrorNumber").asInt(), "ErrorNumber should be 290500 (290000 + 500)");
+    assertEquals("HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request", 
+                 message.get("ErrorMessage").asText(), "ErrorMessage should match expected format");
+    
+    assertTrue(capturedData.getTimeStamp() > 0, "Timestamp should be positive");
+    assertTrue(capturedData.getTimeStamp() <= System.currentTimeMillis(), "Timestamp should not be in the future");
   }
 }

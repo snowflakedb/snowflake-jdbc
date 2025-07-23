@@ -759,8 +759,10 @@ public class RestRequest {
     if (responseDto.getSavedEx() != null) {
       Exception savedEx = responseDto.getSavedEx();
       if (savedEx instanceof SnowflakeSQLException) {
+        sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
         throw (SnowflakeSQLException) savedEx;
       } else {
+        sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
         throw new SnowflakeSQLException(
             savedEx,
             ErrorCode.NETWORK_ERROR,
