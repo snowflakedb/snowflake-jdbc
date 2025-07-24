@@ -1006,7 +1006,9 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
           pstmt.setInt(1, i);
           pstmt.setInt(2, 1 + rand.nextInt(C));
           pstmt.addBatch();
-          if (i % 10_000 == 0) pstmt.executeBatch(); // Batch insert for efficiency
+          if (i % 10_000 == 0) {
+            pstmt.executeBatch(); // Batch insert for efficiency
+          }
         }
         pstmt.executeBatch();
       }
@@ -1019,7 +1021,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
       log.write(LocalDateTime.now().format(TS_FMT) + " [" + STABLEPATH + "] SECTION START\n");
       try (Statement stmt = connection.createStatement()) {
         stmt.execute("ALTER SESSION SET ENABLE_STABLEPATH_GRPC_ENDPOINT=TRUE");
-        //stmt.execute("ALTER SESSION SET ENABLE_JOB_DETAILS_TO_S3=FALSE");
       }
       runWorkloadHandcraftedHistogram(connection, TABLE_NAME, C, N, HISTOGRAM_LOG_INTERVAL_SEC, STABLEPATH, log, rand, TS_FMT);
       log.flush();
