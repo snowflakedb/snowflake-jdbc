@@ -901,7 +901,7 @@ public class RestRequestTest {
       Mockito.verify(mockSession).getTelemetryClient();
       Mockito.verify(mockResponse).getStatusLine();
       Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getStatusCode();
-      Mockito.verify(mockStatusLine).getReasonPhrase();
+      Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getReasonPhrase();
       Mockito.verify(mockRequest).getMethod();
       Mockito.verify(mockRequest, Mockito.atLeast(1)).getURI();
       Mockito.verify(mockTelemetryClient).addLogToBatch(mockTelemetryData);
