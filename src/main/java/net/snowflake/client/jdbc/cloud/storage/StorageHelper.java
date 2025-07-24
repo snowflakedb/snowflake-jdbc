@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.InputStream;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 class StorageHelper {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(StorageHelper.class);
+
   protected static final String DOWNLOAD = "download";
   protected static final String UPLOAD = "upload";
 
@@ -45,6 +49,9 @@ class StorageHelper {
       case DOWNLOAD:
         return ErrorCode.DOWNLOAD_ERROR;
       default:
+        logger.warn(
+            "Unknown operation: {}. Retuning fallback error code: ErrorCode.FILE_TRANSFER_ERROR",
+            operation);
         return ErrorCode.FILE_TRANSFER_ERROR;
     }
   }

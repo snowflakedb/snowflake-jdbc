@@ -109,6 +109,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -163,6 +164,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -219,6 +221,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -275,6 +278,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -332,6 +336,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -388,6 +393,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -448,6 +454,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -509,6 +516,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -981,11 +989,10 @@ public class RestRequest {
     }
     if (responseDto.getSavedEx() != null) {
       Exception savedEx = responseDto.getSavedEx();
+      sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
       if (savedEx instanceof SnowflakeSQLException) {
-        sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
         throw (SnowflakeSQLException) savedEx;
       } else {
-        sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
         throw new SnowflakeSQLException(
             savedEx,
             ErrorCode.NETWORK_ERROR,
@@ -1231,10 +1238,9 @@ public class RestRequest {
               + "To troubleshoot your connection further, you can refer to this article:\n"
               + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
 
-      Throwable ex0 = getRootCause(ex);
-      if (ex0 instanceof SFOCSPException) {
-        SFOCSPException ocspException = (SFOCSPException) ex0;
-        sendIBOCSPErrorEvent(httpExecutingContext, ocspException);
+      Throwable rootCause = getRootCause(ex);
+      if (rootCause instanceof SFOCSPException) {
+        sendIBOCSPErrorEvent(httpExecutingContext, (SFOCSPException) rootCause);
       }
 
       throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
@@ -1408,10 +1414,15 @@ public class RestRequest {
     SFBaseSession session = httpExecutingContext.getSfSession();
 
     if (session == null) {
+      logger.debug("Not sending telemetry event as the request is sessionless (session is null)");
       return;
     }
 
     StatusLine statusLine = response.getStatusLine();
+    logger.debug(
+        "Preparing telemetry event for HTTP error: {} {}",
+        statusLine.getStatusCode(),
+        statusLine.getReasonPhrase());
     int calculatedErrorNumber =
         ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + statusLine.getStatusCode();
     String errorMessage =

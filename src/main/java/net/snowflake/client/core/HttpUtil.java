@@ -678,6 +678,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @Deprecated
   static String executeRequestWithoutCookies(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -761,6 +762,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @Deprecated
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -794,6 +796,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -900,6 +903,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @Deprecated
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -927,6 +931,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -973,6 +978,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @Deprecated
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1020,6 +1026,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @SnowflakeJdbcInternalApi
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1069,6 +1076,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @Deprecated
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1119,6 +1127,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
+  @SnowflakeJdbcInternalApi
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
