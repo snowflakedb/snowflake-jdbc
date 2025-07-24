@@ -80,7 +80,8 @@ class OAuthUtil {
             loginInput.getAuthTimeout(),
             loginInput.getSocketTimeoutInMillis(),
             0,
-            loginInput.getHttpClientSettingsKey());
+            loginInput.getHttpClientSettingsKey(),
+            null);
     ObjectMapper objectMapper = new ObjectMapper();
     TokenResponseDTO tokenResponseDTO =
         objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
