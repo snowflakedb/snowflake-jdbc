@@ -407,7 +407,7 @@ public interface SnowflakeStorageClient {
    * @param ex the exception to handle
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation string that indicates the function/operation that was taking place, when the
-   *     exception was raised, for example "upload"
+   *     exception was raised, for example StorageHelper.UPLOAD
    * @param connection the current SFSession object used by the client
    * @param command the command attempted at the time of the exception
    * @throws SnowflakeSQLException exceptions that were not handled, or retried past what the retry
@@ -426,7 +426,7 @@ public interface SnowflakeStorageClient {
    * @param ex the exception to handle
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation string that indicates the function/operation that was taking place, when the
-   *     exception was raised, for example "upload"
+   *     exception was raised, for example StorageHelper.UPLOAD
    * @param connection the current SFSession object used by the client
    * @param command the command attempted at the time of the exception
    * @param queryId last query id

@@ -199,7 +199,8 @@ public class SessionUtilExternalBrowser {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              null);
 
       logger.debug("Authenticator-request response: {}", theString);
 

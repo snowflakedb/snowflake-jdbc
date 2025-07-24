@@ -545,7 +545,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
         SnowflakeSQLException thrown = assertThrows(SnowflakeSQLException.class, sfAgent::execute);
-        assertEquals(ErrorCode.IO_ERROR.getMessageCode(), thrown.getErrorCode());
+        assertEquals(ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(), thrown.getErrorCode());
         assertTrue(thrown.getMessage().contains("Encountered exception during listObjects"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
