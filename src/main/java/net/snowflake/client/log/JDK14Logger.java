@@ -11,6 +11,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import net.snowflake.client.core.EventHandler;
@@ -205,6 +206,12 @@ public class JDK14Logger implements SFLogger {
     }
   }
 
+  public void log(LogRecord record) {
+    if (jdkLogger.isLoggable(record.getLevel())) {
+      jdkLogger.log(record);
+    }
+  }
+
   public static void addHandler(Handler handler) {
     Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
     snowflakeLogger.addHandler(handler);
@@ -242,6 +249,7 @@ public class JDK14Logger implements SFLogger {
     if (!isLoggerInit) {
       loggerInit(level, logPath);
       isLoggerInit = true;
+      SFLoggerFactory.reconfigure();
     }
   }
 

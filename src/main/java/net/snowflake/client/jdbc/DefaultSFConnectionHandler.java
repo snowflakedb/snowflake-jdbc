@@ -133,6 +133,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initSessionProperties(conStr, appID, appVersion);
       setClientConfig();
       initLogger();
+      SFLoggerFactory.reconfigure();
       initHttpHeaderCustomizers(properties);
       logger.debug(
           "Trying to establish session, JDBC driver: {}", SnowflakeDriver.getJdbcJarname());
