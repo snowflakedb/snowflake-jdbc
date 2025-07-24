@@ -1,8 +1,7 @@
 package net.snowflake.client.jdbc.telemetry;
 
-// TODO: Refactor this enum, as it contains the possible values of the field "type" and is
-// misleading.
-//  Separate values from the field names.
+// TODO: SNOW-2223750 Refactor this enum, as it contains the possible values of the field "type" and
+//  is misleading. Separate values from the field names.
 public enum TelemetryField {
   // Fields
   TYPE("type"),

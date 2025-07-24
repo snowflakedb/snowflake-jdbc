@@ -50,7 +50,7 @@ class StorageHelper {
         return ErrorCode.DOWNLOAD_ERROR;
       default:
         logger.warn(
-            "Unknown operation: {}. Retuning fallback error code: ErrorCode.FILE_TRANSFER_ERROR",
+            "Unknown operation: {}. Returning fallback error code: ErrorCode.FILE_TRANSFER_ERROR",
             operation);
         return ErrorCode.FILE_TRANSFER_ERROR;
     }

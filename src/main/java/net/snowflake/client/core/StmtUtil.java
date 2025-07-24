@@ -570,8 +570,6 @@ public class StmtUtil {
   /**
    * Issue get-result call to get query result given an in-progress response.
    *
-   * <p>
-   *
    * @param inProgressResponse In progress response in JSON form
    * @param previousGetResultPath previous get results path
    * @param stmtInput input statement
@@ -588,8 +586,6 @@ public class StmtUtil {
 
   /**
    * Issue get-result call to get query result given an in-progress response.
-   *
-   * <p>
    *
    * @param inProgressResponse In progress response in JSON form
    * @param previousGetResultPath previous get results path

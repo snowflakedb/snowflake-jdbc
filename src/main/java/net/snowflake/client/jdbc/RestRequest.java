@@ -717,7 +717,7 @@ public class RestRequest {
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
-   * @param sfSession * @param sfSession the session associated with the request
+   * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -777,7 +777,7 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeTelemetryData ExecTimeTelemetryData should be executed before and/or after the
    *     retry
-   * @param sfSession * @param sfSession the session associated with the request
+   * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
