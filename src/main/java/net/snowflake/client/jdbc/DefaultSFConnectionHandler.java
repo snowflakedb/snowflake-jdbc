@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.config.SFClientConfigParser.checkConfigFilePermissions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
@@ -201,13 +202,14 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         try {
           logger.debug("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
           JDK14Logger.instantiateLogger(logLevel, logPattern);
+          if (sfClientConfig != null) {
+            logger.debug(
+                "SF Client config found at location: {}.", sfClientConfig.getConfigFilePath());
+            checkConfigFilePermissions(sfClientConfig.getConfigFilePath());
+          }
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
               sfSession, ErrorCode.INTERNAL_ERROR, ex.getMessage());
-        }
-        if (sfClientConfig != null) {
-          logger.debug(
-              "SF Client config found at location: {}.", sfClientConfig.getConfigFilePath());
         }
         logger.debug(
             "Instantiating JDK14Logger with level: {}, output path: {}", logLevel, logPattern);
