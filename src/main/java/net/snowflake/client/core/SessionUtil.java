@@ -3,7 +3,6 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 import static net.snowflake.client.core.SFTrustManager.setOCSPResponseCacheServerURL;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -300,7 +299,6 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-    checkIfExperimentalAuthnEnabled(authenticator);
 
     if (isTokenOrPasswordRequired(authenticator)) {
       AssertUtil.assertTrue(
@@ -400,16 +398,6 @@ public class SessionUtil {
             new AzureIdentityAttestationCreator(new AzureAttestationService(), loginInput),
             new OidcIdentityAttestationCreator(loginInput.getToken()));
     return attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
-  }
-
-  static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
-    if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
-      boolean experimentalAuthenticationMethodsEnabled =
-          Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
-      AssertUtil.assertTrue(
-          experimentalAuthenticationMethodsEnabled,
-          "Following authentication method not yet supported: " + authenticator);
-    }
   }
 
   private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {

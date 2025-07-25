@@ -111,8 +111,6 @@ echo "MAVEN OPTIONS %MAVEN_OPTS%"
 REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
 
-set SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
-
 if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
     echo "[INFO] Run Fips tests"
