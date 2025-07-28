@@ -5,32 +5,60 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLProtocolException;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpExecutingContext;
+import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFTrustManager;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
+import net.snowflake.common.core.SqlState;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -135,7 +163,8 @@ public class RestRequestTest {
         true,
         noRetry,
         false,
-        new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData(),
+        null);
   }
 
   @Test
@@ -665,6 +694,367 @@ public class RestRequestTest {
             "Backoff should be higher or equal to min backoff limit");
       }
       elapsedMilliForTransientIssues += backoffInMilli;
+    }
+  }
+
+  @Test
+  public void testHandlingNotRetryableException_isProtocolVersionError() throws Exception {
+    // Create a mock HttpExecutingContext
+    HttpExecutingContext mockContext =
+        HttpExecutingContextBuilder.withRequest("test-request-id", "test-request-info").build();
+
+    // Test case 1: SSL exception with protocol version error - should NOT throw
+    // SnowflakeSQLLoggedException
+    // This should fall through to the general exception handling
+    SSLHandshakeException protocolVersionException =
+        new SSLHandshakeException("Received fatal alert: protocol_version");
+
+    Exception result =
+        RestRequest.handlingNotRetryableException(protocolVersionException, mockContext);
+
+    // Should return the original exception, not throw SnowflakeSQLLoggedException
+    assertEquals(
+        protocolVersionException,
+        result,
+        "SSL exception with protocol version error should return original exception");
+
+    // Test case 2: SSL exception without protocol version error - should throw
+    // SnowflakeSQLLoggedException
+    SSLHandshakeException nonProtocolVersionException =
+        new SSLHandshakeException("SSL handshake failed for some other reason");
+
+    assertThrows(
+        SnowflakeSQLLoggedException.class,
+        () -> {
+          RestRequest.handlingNotRetryableException(nonProtocolVersionException, mockContext);
+        },
+        "SSL exception without protocol version error should throw SnowflakeSQLLoggedException");
+
+    // Test case 3: Different SSL exception types with protocol version error
+    SSLProtocolException sslProtocolException =
+        new SSLProtocolException("Received fatal alert: protocol_version");
+
+    Exception result2 =
+        RestRequest.handlingNotRetryableException(sslProtocolException, mockContext);
+    assertEquals(
+        sslProtocolException,
+        result2,
+        "SSLProtocolException with protocol version error should return original exception");
+
+    // Test case 4: Different SSL exception types without protocol version error
+    SSLKeyException sslKeyException = new SSLKeyException("SSL key verification failed");
+
+    assertThrows(
+        SnowflakeSQLLoggedException.class,
+        () -> {
+          RestRequest.handlingNotRetryableException(sslKeyException, mockContext);
+        },
+        "SSLKeyException without protocol version error should throw SnowflakeSQLLoggedException");
+
+    // Test case 5: SSLPeerUnverifiedException with protocol version error
+    SSLPeerUnverifiedException peerUnverifiedException =
+        new SSLPeerUnverifiedException("Received fatal alert: protocol_version");
+
+    Exception result3 =
+        RestRequest.handlingNotRetryableException(peerUnverifiedException, mockContext);
+    assertEquals(
+        peerUnverifiedException,
+        result3,
+        "SSLPeerUnverifiedException with protocol version error should return original exception");
+
+    // Test case 6: Non-SSL exception - should return the original exception
+    IOException ioException = new IOException("Some IO error");
+
+    Exception result4 = RestRequest.handlingNotRetryableException(ioException, mockContext);
+    assertEquals(ioException, result4, "Non-SSL exception should return original exception");
+  }
+
+  @Test
+  public void testIsProtocolVersionError() {
+    // Test true cases
+    assertTrue(
+        RestRequest.isProtocolVersionError(
+            new SSLHandshakeException("Received fatal alert: protocol_version")),
+        "Should return true for exception with protocol_version message");
+
+    assertTrue(
+        RestRequest.isProtocolVersionError(
+            new SSLProtocolException(
+                "Some prefix Received fatal alert: protocol_version some suffix")),
+        "Should return true for exception containing protocol_version message");
+
+    // Test false cases
+    assertFalse(
+        RestRequest.isProtocolVersionError(new SSLHandshakeException("Some other SSL error")),
+        "Should return false for exception without protocol_version message");
+
+    assertFalse(
+        RestRequest.isProtocolVersionError(
+            new SSLHandshakeException("Received fatal alert: handshake_failure")),
+        "Should return false for different SSL alert type");
+
+    assertFalse(
+        RestRequest.isProtocolVersionError(new IOException("Some IO error")),
+        "Should return false for non-SSL exception");
+
+    // Test null message
+    assertFalse(
+        RestRequest.isProtocolVersionError(new SSLHandshakeException((String) null)),
+        "Should return false for exception with null message");
+  }
+
+  @Test
+  public void testIsExceptionInGroup() {
+    // Test SSL exceptions are in the sslExceptions group
+    assertTrue(
+        RestRequest.isExceptionInGroup(
+            new SSLHandshakeException("test"), RestRequest.sslExceptions),
+        "SSLHandshakeException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(new SSLKeyException("test"), RestRequest.sslExceptions),
+        "SSLKeyException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(
+            new SSLPeerUnverifiedException("test"), RestRequest.sslExceptions),
+        "SSLPeerUnverifiedException should be in SSL exceptions group");
+
+    assertTrue(
+        RestRequest.isExceptionInGroup(new SSLProtocolException("test"), RestRequest.sslExceptions),
+        "SSLProtocolException should be in SSL exceptions group");
+
+    // Test non-SSL exceptions are not in the group
+    assertFalse(
+        RestRequest.isExceptionInGroup(new IOException("test"), RestRequest.sslExceptions),
+        "IOException should not be in SSL exceptions group");
+
+    assertFalse(
+        RestRequest.isExceptionInGroup(new RuntimeException("test"), RestRequest.sslExceptions),
+        "RuntimeException should not be in SSL exceptions group");
+  }
+
+  @Test
+  public void testSendIBHttpErrorEventWithNullSessionNoException() throws Exception {
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+
+    when(mockContext.getSfSession()).thenReturn(null);
+
+    java.lang.reflect.Method method =
+        RestRequest.class.getDeclaredMethod(
+            "sendIBHttpErrorEvent",
+            HttpRequestBase.class,
+            CloseableHttpResponse.class,
+            HttpExecutingContext.class);
+    method.setAccessible(true);
+
+    method.invoke(null, mockRequest, mockResponse, mockContext);
+
+    Mockito.verify(mockContext).getSfSession();
+  }
+
+  @Test
+  public void testSendIBHttpErrorEventWithValidSession() throws Exception {
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+    StatusLine mockStatusLine = mock(StatusLine.class);
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+    SFBaseSession mockSession = mock(SFBaseSession.class);
+    Telemetry mockTelemetryClient = mock(Telemetry.class);
+
+    when(mockContext.getSfSession()).thenReturn(mockSession);
+    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
+    when(mockStatusLine.getStatusCode()).thenReturn(500);
+    when(mockStatusLine.getReasonPhrase()).thenReturn("Internal Server Error");
+
+    when(mockRequest.getMethod()).thenReturn("POST");
+    URI mockURI = new URI("https://test.snowflakecomputing.com/session/v1/login-request");
+    when(mockRequest.getURI()).thenReturn(mockURI);
+
+    try (MockedStatic<TelemetryUtil> mockedTelemetryUtil =
+        Mockito.mockStatic(TelemetryUtil.class)) {
+      ObjectNode mockIbValue = mock(ObjectNode.class);
+      TelemetryData mockTelemetryData = mock(TelemetryData.class);
+
+      mockedTelemetryUtil
+          .when(
+              () -> TelemetryUtil.createIBValue(any(), any(), anyInt(), any(), anyString(), any()))
+          .thenReturn(mockIbValue);
+      mockedTelemetryUtil
+          .when(() -> TelemetryUtil.buildJobData(any(ObjectNode.class)))
+          .thenReturn(mockTelemetryData);
+
+      java.lang.reflect.Method method =
+          RestRequest.class.getDeclaredMethod(
+              "sendIBHttpErrorEvent",
+              HttpRequestBase.class,
+              CloseableHttpResponse.class,
+              HttpExecutingContext.class);
+      method.setAccessible(true);
+
+      method.invoke(null, mockRequest, mockResponse, mockContext);
+
+      Mockito.verify(mockContext).getSfSession();
+      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockResponse).getStatusLine();
+      Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getStatusCode();
+      Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getReasonPhrase();
+      Mockito.verify(mockRequest).getMethod();
+      Mockito.verify(mockRequest, Mockito.atLeast(1)).getURI();
+      Mockito.verify(mockTelemetryClient).addLogToBatch(mockTelemetryData);
+
+      mockedTelemetryUtil.verify(
+          () ->
+              TelemetryUtil.createIBValue(
+                  eq(null),
+                  eq(SqlState.INTERNAL_ERROR),
+                  eq(ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + 500),
+                  eq(TelemetryField.HTTP_EXCEPTION),
+                  eq(
+                      "HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request"),
+                  eq(null)));
+
+      mockedTelemetryUtil.verify(() -> TelemetryUtil.buildJobData(mockIbValue));
+    }
+  }
+
+  @Test
+  public void testExecuteRequestFailsWithEventEmission() throws IOException {
+    StatusLine statusLine =
+        new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 500, "Internal Server Error");
+
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getMethod()).thenReturn("POST");
+    URI mockURI = URI.create("https://test.snowflakecomputing.com/session/v1/login-request");
+    when(mockRequest.getURI()).thenReturn(mockURI);
+
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+    SFBaseSession mockSession = mock(SFBaseSession.class);
+    TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
+
+    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockContext.getSfSession()).thenReturn(mockSession);
+
+    HttpExecutingContext mockHttpExecutingContext = mock(HttpExecutingContext.class);
+    when(mockHttpExecutingContext.getSfSession()).thenReturn(mockSession);
+
+    try (CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+        CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class); ) {
+      when(mockHttpClient.execute(any(HttpUriRequest.class))).thenReturn(mockResponse);
+      when(mockResponse.getStatusLine()).thenReturn(statusLine);
+      when(mockResponse.getStatusLine())
+          .thenReturn(
+              new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 500, "Internal Server Error"));
+
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              RestRequest.executeWithRetries(
+                  mockHttpClient,
+                  mockRequest,
+                  mockHttpExecutingContext,
+                  new ExecTimeTelemetryData(),
+                  null));
+    }
+
+    ArgumentCaptor<TelemetryData> telemetryDataCaptor =
+        ArgumentCaptor.forClass(TelemetryData.class);
+    Mockito.verify(mockSession).getTelemetryClient();
+    Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
+
+    TelemetryData capturedData = telemetryDataCaptor.getValue();
+    assertNotNull(capturedData, "TelemetryData should not be null");
+
+    ObjectNode message = capturedData.getMessage();
+    assertNotNull(message, "TelemetryData message should not be null");
+
+    assertEquals(
+        "client_http_exception",
+        message.get("type").asText(),
+        "Type should be client_http_exception");
+    assertEquals("JDBC", message.get("DriverType").asText(), "DriverType should be JDBC");
+    assertNotNull(message.get("DriverVersion"), "DriverVersion should be present");
+    assertEquals(
+        "XX000", message.get("SQLState").asText(), "SQLState should be XX000 (INTERNAL_ERROR)");
+    assertEquals(
+        290500, message.get("ErrorNumber").asInt(), "ErrorNumber should be 290500 (290000 + 500)");
+    assertEquals(
+        "HTTP 500 Internal Server Error: POST test.snowflakecomputing.com/session/v1/login-request",
+        message.get("ErrorMessage").asText(),
+        "ErrorMessage should match expected format");
+
+    assertTrue(capturedData.getTimeStamp() > 0, "Timestamp should be positive");
+    assertTrue(
+        capturedData.getTimeStamp() <= System.currentTimeMillis(),
+        "Timestamp should not be in the future");
+  }
+
+  @Test
+  public void testOCSPCheckFailsWithEventEmission() throws IOException {
+    System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
+    System.setProperty(
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
+
+    try {
+      SFBaseSession mockSession = mock(SFBaseSession.class);
+      TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
+      when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+
+      HttpClientSettingsKey settingsKey = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED);
+      CloseableHttpClient httpClient = HttpUtil.buildHttpClient(settingsKey, null, false);
+
+      HttpRequestBase httpRequest = new HttpGet("https://test.snowflakecomputing.com/");
+
+      HttpExecutingContext context =
+          HttpExecutingContextBuilder.withRequest("test-request-id", "test-request-info")
+              .withSfSession(mockSession)
+              .build();
+
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              RestRequest.executeWithRetries(
+                  httpClient, httpRequest, context, new ExecTimeTelemetryData(), null));
+
+      ArgumentCaptor<TelemetryData> telemetryDataCaptor =
+          ArgumentCaptor.forClass(TelemetryData.class);
+      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
+
+      TelemetryData capturedData = telemetryDataCaptor.getValue();
+      assertNotNull(capturedData, "TelemetryData should not be null");
+
+      ObjectNode message = capturedData.getMessage();
+      assertNotNull(message, "TelemetryData message should not be null");
+
+      assertEquals(
+          "client_ocsp_exception",
+          message.get("type").asText(),
+          "Type should be client_ocsp_exception");
+      assertEquals("JDBC", message.get("DriverType").asText(), "DriverType should be JDBC");
+      assertNotNull(message.get("DriverVersion"), "DriverVersion should be present");
+      assertEquals(
+          "XX000", message.get("SQLState").asText(), "SQLState should be XX000 (INTERNAL_ERROR)");
+      assertEquals(254000, message.get("ErrorNumber").asInt(), "ErrorNumber should be 254000");
+      assertTrue(
+          message
+              .get("ErrorMessage")
+              .asText()
+              .contains("The OCSP response validity is out of range"),
+          "ErrorMessage should contain OCSP validity error message");
+      assertTrue(
+          message.get("reason").asText().contains("INVALID_OCSP_RESPONSE_VALIDITY"),
+          "Reason should contain INVALID_OCSP_RESPONSE_VALIDITY");
+
+      assertTrue(capturedData.getTimeStamp() > 0, "Timestamp should be positive");
+      assertTrue(
+          capturedData.getTimeStamp() <= System.currentTimeMillis(),
+          "Timestamp should not be in the future");
+    } finally {
+      SFTrustManager.cleanTestSystemParameters();
     }
   }
 }
