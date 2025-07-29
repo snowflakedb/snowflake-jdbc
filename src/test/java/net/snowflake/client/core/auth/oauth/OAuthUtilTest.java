@@ -83,7 +83,7 @@ public class OAuthUtilTest {
     URI redirectUri = OAuthUtil.buildRedirectUri(loginInput);
     Assertions.assertNotNull(redirectUri);
     Assertions.assertTrue(
-        redirectUri.toString().matches("^http://127.0.0.1:([0-9]*)/"),
+        redirectUri.toString().matches("^http://127.0.0.1:([0-9]*)"),
         "Invalid redirect URI: " + redirectUri);
   }
 
