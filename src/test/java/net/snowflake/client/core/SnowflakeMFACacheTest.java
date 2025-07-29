@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.nullable;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,7 +108,8 @@ public class SnowflakeMFACacheTest {
                       anyInt(),
                       anyInt(),
                       anyInt(),
-                      any(HttpClientSettingsKey.class)))
+                      any(HttpClientSettingsKey.class),
+                      nullable(SFBaseSession.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;
@@ -255,7 +257,8 @@ public class SnowflakeMFACacheTest {
                       anyInt(),
                       anyInt(),
                       anyInt(),
-                      any(HttpClientSettingsKey.class)))
+                      any(HttpClientSettingsKey.class),
+                      nullable(SFBaseSession.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;

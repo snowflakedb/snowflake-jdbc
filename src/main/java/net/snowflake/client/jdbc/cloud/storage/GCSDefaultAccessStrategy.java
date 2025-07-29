@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.util.Map;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -198,7 +197,7 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
             queryId,
             session,
             SqlState.SYSTEM_ERROR,
-            ErrorCode.GCP_SERVICE_ERROR.getMessageCode(),
+            StorageHelper.getOperationException(operation).getMessageCode(),
             se,
             operation,
             se.getCode(),
