@@ -50,7 +50,6 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
@@ -232,7 +231,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertEquals(logs.size(), 1);
     // Assert the log is of type client_metadata_api_metrics
     assertEquals(
-        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        logs.get(0).getMessage().get(TelemetryField.TYPE.toString()).textValue(),
         TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
     assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
@@ -254,12 +253,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
     assertEquals(
-        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        logs.get(0).getMessage().get(TelemetryField.TYPE.toString()).textValue(),
         TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
     // second item in log buffer is metrics on getProcedureColumns() parameters
     // Assert the log is of type client_metadata_api_metrics
     assertEquals(
-        logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        logs.get(1).getMessage().get(TelemetryField.TYPE.toString()).textValue(),
         TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
     assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
@@ -325,7 +324,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         succeeded[i] = false;
         for (TelemetryData log : logs) {
           if (log.getMessage()
-              .get(TelemetryUtil.TYPE)
+              .get(TelemetryField.TYPE.toString())
               .textValue()
               .equals(expectedFields[i].field)) {
             succeeded[i] = true;

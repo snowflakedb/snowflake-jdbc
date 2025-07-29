@@ -65,7 +65,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                     Mockito.anyInt(),
                     Mockito.anyInt(),
                     Mockito.anyInt(),
-                    Mockito.nullable(HttpClientSettingsKey.class)))
+                    Mockito.nullable(HttpClientSettingsKey.class),
+                    Mockito.nullable(SFBaseSession.class)))
         .thenThrow(ex) // fail first
         .thenReturn(
             "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}"); // succeed on retry
@@ -155,7 +156,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
-                  Mockito.nullable(HttpClientSettingsKey.class));
+                  Mockito.nullable(HttpClientSettingsKey.class),
+                  Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
@@ -210,7 +212,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
-                  Mockito.nullable(HttpClientSettingsKey.class));
+                  Mockito.nullable(HttpClientSettingsKey.class),
+                  Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
@@ -258,7 +261,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("{\"code\":null,\"message\":\"POST request failed\",\"success\":false}");
       SnowflakeSQLException e =
           assertThrows(
@@ -285,7 +289,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"invalid!@url$%^\","
                   + "\"ssoUrl\":\"invalid!@url$%^\","
@@ -315,7 +320,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/^123\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/^123\","
@@ -346,7 +352,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
@@ -363,7 +370,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(AtomicBoolean.class),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
 
@@ -377,7 +385,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContextManager.class)))
+                      Mockito.nullable(RetryContextManager.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenThrow(new IOException());
 
       SnowflakeSQLException e =
@@ -423,7 +432,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
@@ -438,14 +448,15 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .when(
               () ->
                   HttpUtil.executeRequestWithoutCookies(
-                      Mockito.any(HttpRequestBase.class),
+                      any(HttpRequestBase.class),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(AtomicBoolean.class),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
 
@@ -459,7 +470,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContextManager.class)))
+                      Mockito.nullable(RetryContextManager.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -488,7 +500,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
@@ -505,7 +518,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(AtomicBoolean.class),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"test-session-token-2\"}");
 
@@ -519,7 +533,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContextManager.class)))
+                      Mockito.nullable(RetryContextManager.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
@@ -540,7 +555,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
@@ -557,7 +573,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(AtomicBoolean.class),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
 
@@ -571,7 +588,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContextManager.class)))
+                      Mockito.nullable(RetryContextManager.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SnowflakeSQLException ex =
@@ -596,7 +614,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
                   + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
@@ -613,7 +632,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(AtomicBoolean.class),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
 
@@ -627,7 +647,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
-                      Mockito.nullable(RetryContextManager.class)))
+                      Mockito.nullable(RetryContextManager.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
       SnowflakeSQLException ex =

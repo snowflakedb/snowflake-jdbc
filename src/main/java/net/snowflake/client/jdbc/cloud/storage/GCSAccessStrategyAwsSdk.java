@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import net.snowflake.client.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -267,7 +266,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
                 queryId,
                 session,
                 SqlState.SYSTEM_ERROR,
-                ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
+                StorageHelper.getOperationException(operation).getMessageCode(),
                 ex1,
                 operation,
                 ex1.getErrorType().toString(),
@@ -282,7 +281,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
               queryId,
               session,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
+              StorageHelper.getOperationException(operation).getMessageCode(),
               ex,
               operation,
               ex.getMessage());

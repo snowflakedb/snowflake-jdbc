@@ -139,7 +139,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           throw new SnowflakeSQLLoggedException(
               QueryIdHelper.queryIdFromEncMatOr(encMat, null),
               session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
               "unsupported key size",
               encryptionKeySize);
@@ -402,14 +402,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
         queryId,
         session,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
   }
@@ -510,7 +511,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Downloading unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount < getMaxRetries());
 
@@ -624,14 +626,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         return;
       } catch (Exception ex) {
-        handleAzureException(ex, ++retryCount, "upload", session, command, this, queryId);
+        handleAzureException(
+            ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
 
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(
               queryId,
               ex,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
+              ErrorCode.UPLOAD_ERROR.getMessageCode(),
               "Encountered exception during upload: "
                   + ex.getMessage()
                   + "\nCannot retry upload from stream.");
@@ -876,7 +879,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               queryId,
               session,
               SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
+              ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
               ex,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
@@ -891,7 +894,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             queryId,
             session,
             SqlState.SYSTEM_ERROR,
-            ErrorCode.IO_ERROR.getMessageCode(),
+            ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
             ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
@@ -986,7 +989,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           queryId,
           session,
           SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
+          ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
           ex,
           "Error parsing encryption data as json" + ": " + ex.getMessage());
     }

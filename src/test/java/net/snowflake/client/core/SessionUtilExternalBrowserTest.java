@@ -147,7 +147,8 @@ public class SessionUtilExternalBrowserTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               "{\"success\":\"true\",\"data\":{\"proofKey\":\""
                   + MOCK_PROOF_KEY
@@ -188,7 +189,8 @@ public class SessionUtilExternalBrowserTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.nullable(HttpClientSettingsKey.class)))
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn("{\"success\":\"false\",\"code\":\"123456\",\"message\":\"errormes\"}");
 
       SessionUtilExternalBrowser sub =

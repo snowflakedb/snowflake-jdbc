@@ -274,6 +274,26 @@ public class StmtUtil {
    */
   public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData)
       throws SFException, SnowflakeSQLException {
+    return execute(stmtInput, execTimeData, null);
+  }
+
+  /**
+   * Execute a statement
+   *
+   * <p>side effect: stmtInput.prevGetResultURL is set if we have started ping pong and receives an
+   * exception from session token expiration so that during retry we don't retry the query
+   * submission, but continue the ping pong process.
+   *
+   * @param stmtInput input statement
+   * @param execTimeData ExecTimeTelemetryData
+   * @param sfSession the session associated with the request
+   * @return StmtOutput output statement
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
+   */
+  public static StmtOutput execute(
+      StmtInput stmtInput, ExecTimeTelemetryData execTimeData, SFBaseSession sfSession)
+      throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(
@@ -388,10 +408,11 @@ public class StmtUtil {
                 true, // include retry parameters
                 false, // no retry on HTTP 403
                 stmtInput.httpClientSettingsKey,
-                execTimeData);
+                execTimeData,
+                sfSession);
       }
 
-      return pollForOutput(resultAsString, stmtInput, httpRequest, execTimeData);
+      return pollForOutput(resultAsString, stmtInput, httpRequest, execTimeData, sfSession);
     } catch (Exception ex) {
       if (!(ex instanceof SnowflakeSQLException)) {
         if (ex instanceof IOException) {
@@ -429,7 +450,8 @@ public class StmtUtil {
       String resultAsString,
       StmtInput stmtInput,
       HttpPost httpRequest,
-      ExecTimeTelemetryData execTimeData)
+      ExecTimeTelemetryData execTimeData,
+      SFBaseSession session)
       throws SFException, SnowflakeSQLException {
     /*
      * Check response for error or for ping pong response
@@ -519,7 +541,8 @@ public class StmtUtil {
         }
         execTimeData.incrementRetryCount();
         execTimeData.addRetryLocation("StmtUtil queryInProgress");
-        resultAsString = getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput);
+        resultAsString =
+            getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput, session);
 
         // save the previous get result path in case we run into session
         // expiration
@@ -547,8 +570,6 @@ public class StmtUtil {
   /**
    * Issue get-result call to get query result given an in-progress response.
    *
-   * <p>
-   *
    * @param inProgressResponse In progress response in JSON form
    * @param previousGetResultPath previous get results path
    * @param stmtInput input statement
@@ -556,8 +577,30 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
+  @Deprecated
   protected static String getQueryResult(
       JsonNode inProgressResponse, String previousGetResultPath, StmtInput stmtInput)
+      throws SFException, SnowflakeSQLException {
+    return getQueryResult(inProgressResponse, previousGetResultPath, stmtInput, null);
+  }
+
+  /**
+   * Issue get-result call to get query result given an in-progress response.
+   *
+   * @param inProgressResponse In progress response in JSON form
+   * @param previousGetResultPath previous get results path
+   * @param stmtInput input statement
+   * @param sfSession the session associated with the request
+   * @return results in string form
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
+   */
+  @SnowflakeJdbcInternalApi
+  protected static String getQueryResult(
+      JsonNode inProgressResponse,
+      String previousGetResultPath,
+      StmtInput stmtInput,
+      SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     String getResultPath = null;
 
@@ -576,7 +619,7 @@ public class StmtUtil {
     } else {
       getResultPath = inProgressResponse.path("data").path("getResultUrl").asText();
     }
-    return getQueryResult(getResultPath, stmtInput);
+    return getQueryResult(getResultPath, stmtInput, sfSession);
   }
 
   /**
@@ -588,7 +631,25 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
+  @Deprecated
   protected static String getQueryResult(String getResultPath, StmtInput stmtInput)
+      throws SFException, SnowflakeSQLException {
+    return getQueryResult(getResultPath, stmtInput, null);
+  }
+
+  /**
+   * Issue get-result call to get query result given an in-progress response.
+   *
+   * @param getResultPath path to results
+   * @param stmtInput object with context information
+   * @param sfSession the session associated with the request
+   * @return results in string form
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
+   */
+  @SnowflakeJdbcInternalApi
+  protected static String getQueryResult(
+      String getResultPath, StmtInput stmtInput, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     HttpGet httpRequest = null;
     logger.debug("Get query result: {}", getResultPath);
@@ -629,7 +690,8 @@ public class StmtUtil {
           false, // no retry parameter
           false, // no retry on HTTP 403
           stmtInput.httpClientSettingsKey,
-          new ExecTimeTelemetryData());
+          new ExecTimeTelemetryData(),
+          sfSession);
     } catch (URISyntaxException | IOException ex) {
       logger.error("Exception encountered when getting result for " + httpRequest, ex);
 
@@ -662,10 +724,10 @@ public class StmtUtil {
             .setHttpClientSettingsKey(session.getHttpClientKey())
             .setMaxRetries(session.getMaxHttpRetries());
 
-    String resultAsString = getQueryResult(getResultPath, stmtInput);
+    String resultAsString = getQueryResult(getResultPath, stmtInput, session);
 
     StmtOutput stmtOutput =
-        pollForOutput(resultAsString, stmtInput, null, new ExecTimeTelemetryData());
+        pollForOutput(resultAsString, stmtInput, null, new ExecTimeTelemetryData(), session);
     return stmtOutput.getResult();
   }
 
@@ -675,11 +737,11 @@ public class StmtUtil {
    * @param stmtInput input statement
    * @throws SFException if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
-   * @deprecated use {@link #cancel(StmtInput, CancellationReason)} instead
+   * @deprecated use {@link #cancel(StmtInput, CancellationReason, SFBaseSession)} instead
    */
   @Deprecated
   public static void cancel(StmtInput stmtInput) throws SFException, SnowflakeSQLException {
-    cancel(stmtInput, CancellationReason.UNKNOWN);
+    cancel(stmtInput, CancellationReason.UNKNOWN, null);
   }
 
   /**
@@ -691,6 +753,21 @@ public class StmtUtil {
    * @throws SnowflakeSQLException if failed to cancel the statement
    */
   public static void cancel(StmtInput stmtInput, CancellationReason cancellationReason)
+      throws SFException, SnowflakeSQLException {
+    cancel(stmtInput, cancellationReason, null);
+  }
+
+  /**
+   * Cancel a statement identifiable by a request id
+   *
+   * @param stmtInput input statement
+   * @param cancellationReason reason for the cancellation
+   * @param sfSession the session associated with the request
+   * @throws SFException if there is an internal exception
+   * @throws SnowflakeSQLException if failed to cancel the statement
+   */
+  public static void cancel(
+      StmtInput stmtInput, CancellationReason cancellationReason, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
@@ -762,7 +839,8 @@ public class StmtUtil {
               false, // no retry parameter
               false, // no retry on HTTP 403
               stmtInput.httpClientSettingsKey,
-              new ExecTimeTelemetryData());
+              new ExecTimeTelemetryData(),
+              sfSession);
 
       // trace the response if requested
       logger.debug("Json response: {}", jsonString);

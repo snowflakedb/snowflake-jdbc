@@ -1,6 +1,20 @@
 package net.snowflake.client.jdbc.telemetry;
 
+// TODO: SNOW-2223750 Refactor this enum, as it contains the possible values of the field "type" and
+//  is misleading. Separate values from the field names.
 public enum TelemetryField {
+  // Fields
+  TYPE("type"),
+  VALUE("value"),
+  DRIVER_TYPE("DriverType"),
+  DRIVER_VERSION("DriverVersion"),
+  QUERY_ID("QueryID"),
+  SQL_STATE("SQLState"),
+  ERROR_NUMBER("ErrorNumber"),
+  ERROR_MESSAGE("ErrorMessage"),
+  REASON("reason"),
+
+  // Values of the field "type"
   // we use "client_" as a prefix for all metrics on the client side
   TIME_CONSUME_FIRST_RESULT("client_time_consume_first_result"),
   TIME_CONSUME_LAST_RESULT("client_time_consume_last_result"),
@@ -14,7 +28,10 @@ public enum TelemetryField {
 
   SQL_EXCEPTION("client_sql_exception"),
 
-  METADATA_METRICS("client_metadata_api_metrics");
+  METADATA_METRICS("client_metadata_api_metrics"),
+
+  HTTP_EXCEPTION("client_http_exception"),
+  OCSP_EXCEPTION("client_ocsp_exception");
 
   public final String field;
 
