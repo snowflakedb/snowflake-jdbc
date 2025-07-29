@@ -690,12 +690,6 @@ public class SessionUtil {
         }
       }
 
-      // OAuth metrics data
-      if (authenticatorType == AuthenticatorType.OAUTH
-          && loginInput.getOriginalAuthenticator() != null) {
-        data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
-      }
-
       if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(
@@ -788,6 +782,13 @@ public class SessionUtil {
       }
 
       clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+
+      // OAuth metrics data
+      if (authenticatorType == AuthenticatorType.OAUTH
+          && loginInput.getOriginalAuthenticator() != null) {
+        clientEnv.put(
+            ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+      }
 
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);
 
