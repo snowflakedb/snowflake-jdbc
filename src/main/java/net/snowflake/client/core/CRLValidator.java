@@ -14,6 +14,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,16 +33,16 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 
-/**
- * CRL (Certificate Revocation List) validator implementation.
- */
+/** CRL (Certificate Revocation List) validator implementation. */
 public class CRLValidator {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLValidator.class);
 
-  // Short-lived certificate threshold (7-10 days based on design doc)
-  private static final long SHORT_LIVED_CERT_THRESHOLD_MS = 10L * 24 * 60 * 60 * 1000; // 10 days
-  private static final long SHORT_LIVED_CERT_MARGIN_MS = 1000; // 1 second margin
+  // CA/Browser Forum Baseline Requirements date thresholds (using UTC for consistency)
+  private static final Date MARCH_15_2024 =
+      Date.from(LocalDate.of(2024, 3, 15).atStartOfDay(ZoneId.of("UTC")).toInstant());
+  private static final Date MARCH_15_2026 =
+      Date.from(LocalDate.of(2026, 3, 15).atStartOfDay(ZoneId.of("UTC")).toInstant());
 
   private final CRLValidationConfig config;
   private final ConcurrentHashMap<String, ReentrantLock> urlLocks = new ConcurrentHashMap<>();
@@ -54,6 +56,7 @@ public class CRLValidator {
 
   /**
    * Validates certificate chains against CRLs.
+   *
    * @param certificateChains the verified certificate chains to validate
    * @return true if validation passes, false otherwise
    * @throws CertificateException if validation fails in ENABLED mode or certificate is revoked
@@ -359,10 +362,33 @@ public class CRLValidator {
     return crlUrls;
   }
 
-  /** Checks if certificate is short-lived (doesn't require CRL validation). */
+  /**
+   * Checks if certificate is short-lived (doesn't require CRL validation). Follows CA/Browser Forum
+   * Baseline Requirements for short-lived certificates.
+   *
+   * @see <a
+   *     href="https://cabforum.org/working-groups/server/baseline-requirements/requirements/">CA/Browser
+   *     Forum Baseline Requirements</a>
+   */
   private boolean isShortLived(X509Certificate cert) {
-    long validityPeriod = cert.getNotAfter().getTime() - cert.getNotBefore().getTime();
-    return validityPeriod <= (SHORT_LIVED_CERT_THRESHOLD_MS + SHORT_LIVED_CERT_MARGIN_MS);
+    // Certificates issued before March 15, 2024 are not considered short-lived
+    if (cert.getNotBefore().before(MARCH_15_2024)) {
+      return false;
+    }
+
+    // Default maximum validity period is 7 days (for certificates issued after March 15, 2026)
+    long maximumValidityPeriodMs = 7L * 24 * 60 * 60 * 1000;
+
+    // For certificates issued between March 15, 2024 and March 15, 2026, maximum is 10 days
+    if (cert.getNotBefore().before(MARCH_15_2026)) {
+      maximumValidityPeriodMs = 10L * 24 * 60 * 60 * 1000;
+    }
+
+    // Add 1 minute margin to handle timing precision issues
+    maximumValidityPeriodMs += 60 * 1000;
+
+    long certValidityPeriodMs = cert.getNotAfter().getTime() - cert.getNotBefore().getTime();
+    return maximumValidityPeriodMs > certValidityPeriodMs;
   }
 
   /** Checks if list contains only the specified result type. */

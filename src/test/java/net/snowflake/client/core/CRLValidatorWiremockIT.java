@@ -220,7 +220,6 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   @Test
   void shouldSkipShortLivedCertificates() throws Exception {
     // Don't need to setup CRL mapping since short-lived certs should be skipped
-
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
