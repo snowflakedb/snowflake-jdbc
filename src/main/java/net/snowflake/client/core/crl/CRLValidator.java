@@ -1,4 +1,4 @@
-package net.snowflake.client.core;
+package net.snowflake.client.core.crl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,7 +82,7 @@ public class CRLValidator {
       return true; // OPEN
     }
 
-    if (containsOnly(crlValidationResults, CRLValidationResult.CHAIN_REVOKED)) {
+    if (containsOnlyRevokedChains(crlValidationResults)) {
       logger.error("Every verified certificate chain contained revoked certificates");
       throw new CertificateException(
           "Certificate chain validation failed: certificates are revoked");
@@ -108,6 +108,7 @@ public class CRLValidator {
       // For every cert in a chain except root (trust anchor)
       for (int i = 0; i < certChain.length - 1; i++) {
         X509Certificate cert = certChain[i];
+        X509Certificate parentCert = certChain[i + 1]; // Next certificate in chain is the parent
 
         if (isShortLived(cert)) {
           logger.debug("Skipping short-lived certificate: {}", cert.getSubjectX500Principal());
@@ -126,7 +127,7 @@ public class CRLValidator {
           continue;
         }
 
-        CertificateValidationResult certStatus = validateCert(cert, certChain);
+        CertificateValidationResult certStatus = validateCert(cert, parentCert);
 
         if (certStatus == CertificateValidationResult.CERT_REVOKED) {
           chainResult = CRLValidationResult.CHAIN_REVOKED;
@@ -153,14 +154,14 @@ public class CRLValidator {
    * Checks if cert is not revoked on any of its CRL URLs.
    *
    * @param cert the certificate to validate
-   * @param certChain the full certificate chain containing the certificate
+   * @param parentCert the parent certificate that should have issued the cert
    */
   private CertificateValidationResult validateCert(
-      X509Certificate cert, X509Certificate[] certChain) {
+      X509Certificate cert, X509Certificate parentCert) {
     List<String> crlUrls = extractCRLDistributionPoints(cert);
 
     for (String url : crlUrls) {
-      CertificateValidationResult result = validateCert(cert, url, certChain);
+      CertificateValidationResult result = validateCert(cert, url, parentCert);
 
       if (result == CertificateValidationResult.CERT_REVOKED
           || result == CertificateValidationResult.CERT_ERROR) {
@@ -176,10 +177,10 @@ public class CRLValidator {
    *
    * @param cert the certificate to validate
    * @param crlUrl the CRL URL to fetch from
-   * @param certChain the full certificate chain for issuer resolution
+   * @param parentCert the parent certificate that should have issued the cert
    */
   private CertificateValidationResult validateCert(
-      X509Certificate cert, String crlUrl, X509Certificate[] certChain) {
+      X509Certificate cert, String crlUrl, X509Certificate parentCert) {
     // Thread-safe processing of CRL for given crlUrl
     ReentrantLock lock = urlLocks.computeIfAbsent(crlUrl, k -> new ReentrantLock());
 
@@ -194,7 +195,7 @@ public class CRLValidator {
         return CertificateValidationResult.CERT_ERROR;
       }
 
-      if (!isCrlSignatureAndIssuerValid(crl, cert, certChain)) {
+      if (!isCrlSignatureAndIssuerValid(crl, cert, parentCert)) {
         logger.error("Unable to verify CRL for {}", crlUrl);
         return CertificateValidationResult.CERT_ERROR;
       }
@@ -214,18 +215,22 @@ public class CRLValidator {
   }
 
   /**
-   * Validates CRL signature and issuer. Performs full cryptographic verification of the CRL.
+   * Validates CRL signature and issuer.
    *
    * @param crl the CRL to validate
    * @param cert the certificate being validated
-   * @param certChain the full certificate chain for issuer resolution
+   * @param parentCert the parent certificate that should have issued the cert and signed the CRL
    */
   private boolean isCrlSignatureAndIssuerValid(
-      X509CRL crl, X509Certificate cert, X509Certificate[] certChain) {
+      X509CRL crl, X509Certificate cert, X509Certificate parentCert) {
     try {
       // Verify CRL signature and issuer match
-      if (!crl.getIssuerX500Principal().equals(cert.getIssuerX500Principal())) {
-        logger.debug("CRL issuer does not match certificate issuer");
+      if (!crl.getIssuerX500Principal().equals(parentCert.getSubjectX500Principal())) {
+        logger.debug(
+            "CRL issuer {} does not match parent certificate subject {} for {}",
+            crl.getIssuerX500Principal(),
+            parentCert.getSubjectX500Principal(),
+            "validation");
         return false;
       }
 
@@ -241,19 +246,11 @@ public class CRLValidator {
         return false;
       }
 
-      // Find the issuer certificate that should have signed this CRL
-      // In a proper certificate chain, we need to find the CA certificate that issued 'cert'
-      X509Certificate issuerCert = findCRLIssuerCertificate(crl, cert, certChain);
-      if (issuerCert == null) {
-        logger.debug("Could not find CRL issuer certificate");
-        return false;
-      }
-
-      // Verify CRL signature using issuer's public key
-      PublicKey issuerPublicKey = issuerCert.getPublicKey();
+      // Verify CRL signature using parent certificate's public key
+      PublicKey parentPublicKey = parentCert.getPublicKey();
       try {
-        crl.verify(issuerPublicKey);
-        logger.debug("CRL signature verified successfully");
+        crl.verify(parentPublicKey);
+        logger.debug("CRL signature verified successfully using parent certificate");
       } catch (InvalidKeyException
           | NoSuchAlgorithmException
           | NoSuchProviderException
@@ -263,7 +260,7 @@ public class CRLValidator {
       }
 
       // Verify IDP (Issuing Distribution Point) extension if present
-      if (!verifyIssuingDistributionPoint(crl, cert, certChain)) {
+      if (!verifyIssuingDistributionPoint(crl, cert)) {
         logger.debug("IDP extension verification failed");
         return false;
       }
@@ -297,7 +294,6 @@ public class CRLValidator {
             java.security.cert.CertificateFactory.getInstance("X.509");
         return (X509CRL) cf.generateCRL(inputStream);
       }
-
     } catch (IOException | CRLException | java.security.cert.CertificateException e) {
       logger.debug("Failed to fetch CRL from {}: {}", crlUrl, e.getMessage());
       return null;
@@ -391,71 +387,16 @@ public class CRLValidator {
     return maximumValidityPeriodMs > certValidityPeriodMs;
   }
 
-  /** Checks if list contains only the specified result type. */
-  private boolean containsOnly(
-      List<CRLValidationResult> results, CRLValidationResult expectedResult) {
-    return !results.isEmpty() && results.stream().allMatch(result -> result == expectedResult);
-  }
-
-  /**
-   * Finds the certificate that issued the CRL. For a certificate chain, this is typically the CA
-   * certificate that issued the given certificate.
-   *
-   * @param crl the CRL whose issuer we need to find
-   * @param cert the certificate being validated
-   * @param certChain the full certificate chain including trust anchors
-   */
-  private X509Certificate findCRLIssuerCertificate(
-      X509CRL crl, X509Certificate cert, X509Certificate[] certChain) {
-    // The CRL issuer should match the certificate's issuer
-    // Find the certificate in the chain that matches the CRL issuer
-
-    // First, try to find a certificate in the chain whose subject matches the CRL issuer
-    for (X509Certificate chainCert : certChain) {
-      if (crl.getIssuerX500Principal().equals(chainCert.getSubjectX500Principal())) {
-        logger.debug(
-            "Found CRL issuer certificate in chain: {}", chainCert.getSubjectX500Principal());
-        return chainCert;
-      }
-    }
-
-    // If not found by subject match, try to find the certificate that issued the given cert
-    // This handles cases where the CRL issuer DN might be slightly different but it's the same CA
-    for (X509Certificate chainCert : certChain) {
-      // Check if this certificate could have issued the given cert
-      if (cert.getIssuerX500Principal().equals(chainCert.getSubjectX500Principal())) {
-        // Verify that the CRL issuer also matches (or could be the same CA)
-        if (crl.getIssuerX500Principal().equals(chainCert.getSubjectX500Principal())
-            || crl.getIssuerX500Principal().equals(cert.getIssuerX500Principal())) {
-          logger.debug(
-              "Found CRL issuer certificate by cert issuer match: {}",
-              chainCert.getSubjectX500Principal());
-          return chainCert;
-        }
-      }
-    }
-
-    // As a fallback, if the certificate is self-signed (root CA), it can verify its own CRL
-    if (cert.getIssuerX500Principal().equals(cert.getSubjectX500Principal())
-        && crl.getIssuerX500Principal().equals(cert.getSubjectX500Principal())) {
-      logger.debug(
-          "Using self-signed certificate as CRL issuer: {}", cert.getSubjectX500Principal());
-      return cert;
-    }
-
-    logger.debug(
-        "Could not find CRL issuer certificate in chain. CRL issuer: {}, Cert issuer: {}",
-        crl.getIssuerX500Principal(),
-        cert.getIssuerX500Principal());
-    return null;
+  private boolean containsOnlyRevokedChains(List<CRLValidationResult> results) {
+    return !results.isEmpty()
+        && results.stream().allMatch(result -> result == CRLValidationResult.CHAIN_REVOKED);
   }
 
   /**
    * Verifies the Issuing Distribution Point (IDP) extension if present. The IDP extension restricts
    * which certificates this CRL covers.
    */
-  private boolean verifyIssuingDistributionPoint(
-      X509CRL crl, X509Certificate cert, X509Certificate[] certChain) {
+  private boolean verifyIssuingDistributionPoint(X509CRL crl, X509Certificate cert) {
     try {
       // Get IDP extension (OID 2.5.29.28)
       byte[] extensionBytes = crl.getExtensionValue("2.5.29.28");
@@ -514,7 +455,6 @@ public class CRLValidator {
 
       logger.debug("IDP extension verification passed");
       return true;
-
     } catch (Exception e) {
       logger.debug("Failed to verify IDP extension: {}", e.getMessage());
       return false;
