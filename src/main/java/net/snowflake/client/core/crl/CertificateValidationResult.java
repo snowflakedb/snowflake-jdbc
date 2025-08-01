@@ -1,9 +1,6 @@
-package net.snowflake.client.core;
+package net.snowflake.client.core.crl;
 
-/**
- * Represents the result of CRL validation for an individual certificate. Based on the CRL
- * validation design specification.
- */
+/** Represents the result of CRL validation for an individual certificate. */
 public enum CertificateValidationResult {
   /** Certificate is not revoked according to CRL */
   CERT_UNREVOKED,

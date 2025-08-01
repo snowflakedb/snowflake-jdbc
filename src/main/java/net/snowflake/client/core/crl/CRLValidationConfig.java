@@ -1,4 +1,4 @@
-package net.snowflake.client.core;
+package net.snowflake.client.core.crl;
 
 /** Configuration parameters for CRL validation. */
 public class CRLValidationConfig {
