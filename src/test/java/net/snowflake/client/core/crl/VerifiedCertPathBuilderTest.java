@@ -1,4 +1,4 @@
-package net.snowflake.client;
+package net.snowflake.client.core.crl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import net.snowflake.client.category.TestTags;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -37,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag("CORE")
+@Tag(TestTags.CORE)
 class VerifiedCertPathBuilderTest {
 
   // Cross-signed scenario path identifiers
