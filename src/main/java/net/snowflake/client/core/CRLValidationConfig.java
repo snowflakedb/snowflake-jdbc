@@ -1,8 +1,6 @@
 package net.snowflake.client.core;
 
-/**
- * Configuration parameters for CRL validation. Based on the CRL validation design specification.
- */
+/** Configuration parameters for CRL validation. */
 public class CRLValidationConfig {
 
   /** Certificate revocation check mode. */
@@ -25,20 +23,12 @@ public class CRLValidationConfig {
 
   private final CertRevocationCheckMode certRevocationCheckMode;
   private final boolean allowCertificatesWithoutCrlUrl;
-  private final boolean enableCRLDiskCaching;
-  private final boolean enableCRLInMemoryCaching;
-  private final String crlResponseCacheDir;
-  private final long crlValidityTimeMs;
   private final int connectionTimeoutMs;
   private final int readTimeoutMs;
 
   private CRLValidationConfig(Builder builder) {
     this.certRevocationCheckMode = builder.certRevocationCheckMode;
     this.allowCertificatesWithoutCrlUrl = builder.allowCertificatesWithoutCrlUrl;
-    this.enableCRLDiskCaching = builder.enableCRLDiskCaching;
-    this.enableCRLInMemoryCaching = builder.enableCRLInMemoryCaching;
-    this.crlResponseCacheDir = builder.crlResponseCacheDir;
-    this.crlValidityTimeMs = builder.crlValidityTimeMs;
     this.connectionTimeoutMs = builder.connectionTimeoutMs;
     this.readTimeoutMs = builder.readTimeoutMs;
   }
@@ -49,22 +39,6 @@ public class CRLValidationConfig {
 
   public boolean isAllowCertificatesWithoutCrlUrl() {
     return allowCertificatesWithoutCrlUrl;
-  }
-
-  public boolean isEnableCRLDiskCaching() {
-    return enableCRLDiskCaching;
-  }
-
-  public boolean isEnableCRLInMemoryCaching() {
-    return enableCRLInMemoryCaching;
-  }
-
-  public String getCrlResponseCacheDir() {
-    return crlResponseCacheDir;
-  }
-
-  public long getCrlValidityTimeMs() {
-    return crlValidityTimeMs;
   }
 
   public int getConnectionTimeoutMs() {
@@ -82,10 +56,6 @@ public class CRLValidationConfig {
   public static class Builder {
     private CertRevocationCheckMode certRevocationCheckMode = CertRevocationCheckMode.DISABLED;
     private boolean allowCertificatesWithoutCrlUrl = false;
-    private boolean enableCRLDiskCaching = true;
-    private boolean enableCRLInMemoryCaching = true;
-    private String crlResponseCacheDir = null; // Will use default
-    private long crlValidityTimeMs = 10L * 24 * 60 * 60 * 1000; // 10 days
     private int connectionTimeoutMs = 30000; // 30 seconds
     private int readTimeoutMs = 30000; // 30 seconds
 
@@ -96,26 +66,6 @@ public class CRLValidationConfig {
 
     public Builder allowCertificatesWithoutCrlUrl(boolean allow) {
       this.allowCertificatesWithoutCrlUrl = allow;
-      return this;
-    }
-
-    public Builder enableCRLDiskCaching(boolean enable) {
-      this.enableCRLDiskCaching = enable;
-      return this;
-    }
-
-    public Builder enableCRLInMemoryCaching(boolean enable) {
-      this.enableCRLInMemoryCaching = enable;
-      return this;
-    }
-
-    public Builder crlResponseCacheDir(String dir) {
-      this.crlResponseCacheDir = dir;
-      return this;
-    }
-
-    public Builder crlValidityTimeMs(long timeMs) {
-      this.crlValidityTimeMs = timeMs;
       return this;
     }
 
