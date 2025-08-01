@@ -30,7 +30,8 @@ class WorkloadIdentityUtil {
         3, // 3s timeout
         loginInput.getSocketTimeoutInMillis(),
         0,
-        loginInput.getHttpClientSettingsKey());
+        loginInput.getHttpClientSettingsKey(),
+        null);
   }
 
   static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token) {

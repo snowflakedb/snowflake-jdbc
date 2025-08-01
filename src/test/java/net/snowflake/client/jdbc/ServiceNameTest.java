@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.jupiter.api.Test;
@@ -100,7 +101,8 @@ public class ServiceNameTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.any(HttpClientSettingsKey.class)))
+                      Mockito.any(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(responseLogin());
       mockedHttpUtil
           .when(
@@ -116,7 +118,8 @@ public class ServiceNameTest {
                       Mockito.anyBoolean(),
                       Mockito.anyBoolean(),
                       Mockito.any(HttpClientSettingsKey.class),
-                      Mockito.any(ExecTimeTelemetryData.class)))
+                      Mockito.any(ExecTimeTelemetryData.class),
+                      Mockito.nullable(SFBaseSession.class)))
           .thenReturn(responseQuery());
 
       Properties props = new Properties();

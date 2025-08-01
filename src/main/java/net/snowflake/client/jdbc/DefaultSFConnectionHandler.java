@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.config.SFClientConfigParser.checkConfigFilePermissions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
@@ -183,10 +184,12 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       Level logLevel = null;
       String logPattern = "%h/snowflake_jdbc%u.log"; // default pattern.
       SFClientConfig sfClientConfig = sfSession.getSfClientConfig();
+      Path logPath = null;
 
       if (sfClientConfig != null) {
         String logPathFromConfig = sfClientConfig.getCommonProps().getLogPath();
-        logPattern = constructLogPattern(logPathFromConfig);
+        logPath = getLogPath(logPathFromConfig);
+        logPattern = constructLogPattern(logPath, logPathFromConfig);
         String levelStr = sfClientConfig.getCommonProps().getLogLevel();
         SFLogLevel sfLogLevel = SFLogLevel.getLogLevel(levelStr);
         logLevel = SFToJavaLogMapper.toJavaUtilLoggingLevel(sfLogLevel);
@@ -201,13 +204,17 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         try {
           logger.debug("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
           JDK14Logger.instantiateLogger(logLevel, logPattern);
+          if (sfClientConfig != null) {
+            logger.debug(
+                "SF Client config found at location: {}.", sfClientConfig.getConfigFilePath());
+            checkConfigFilePermissions(sfClientConfig.getConfigFilePath());
+          }
+          if (logPath != null) {
+            checkLogFolderPermissions(logPath);
+          }
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
               sfSession, ErrorCode.INTERNAL_ERROR, ex.getMessage());
-        }
-        if (sfClientConfig != null) {
-          logger.debug(
-              "SF Client config found at location: {}.", sfClientConfig.getConfigFilePath());
         }
         logger.debug(
             "Instantiating JDK14Logger with level: {}, output path: {}", logLevel, logPattern);
@@ -215,12 +222,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     }
   }
 
-  private String constructLogPattern(String logPathFromConfig) throws SnowflakeSQLLoggedException {
+  private Path getLogPath(String logPathFromConfig) throws SnowflakeSQLLoggedException {
     if (JDK14Logger.STDOUT.equalsIgnoreCase(logPathFromConfig)) {
-      return JDK14Logger.STDOUT;
+      return null;
     }
-
-    String logPattern = "%t/snowflake_jdbc%u.log"; // java.tmpdir
 
     Path logPath;
     if (logPathFromConfig != null && !logPathFromConfig.isEmpty()) {
@@ -252,9 +257,16 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       logPath = Paths.get(homePath);
     }
 
-    Path path = createLogPathSubDirectory(logPath);
+    return createLogPathSubDirectory(logPath);
+  }
 
-    logPattern = Paths.get(path.toString(), "snowflake_jdbc%u.log").toString();
+  private String constructLogPattern(Path logPath, String logPathFromConfig) {
+    if (JDK14Logger.STDOUT.equalsIgnoreCase(logPathFromConfig)) {
+      return JDK14Logger.STDOUT;
+    }
+
+    String logPattern = "%t/snowflake_jdbc%u.log"; // java.tmpdir
+    logPattern = Paths.get(logPath.toString(), "snowflake_jdbc%u.log").toString();
     return logPattern;
   }
 
@@ -262,8 +274,6 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     Path path = Paths.get(logPath.toString(), "jdbc");
     if (!Files.exists(path)) {
       createLogFolder(path);
-    } else {
-      checkLogFolderPermissions(path);
     }
     return path;
   }
@@ -298,7 +308,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
             || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
           logger.warn(
-              "Access permission for the logs directory '{}' is currently {} and is potentially "
+              "Access permission for the logs directory {} is currently {} and is potentially "
                   + "accessible to users other than the owner of the logs directory.",
               path.toString(),
               folderPermissions.toString());

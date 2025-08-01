@@ -4,6 +4,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -29,11 +30,15 @@ import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpResponseContextDto;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -43,6 +48,7 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
@@ -104,6 +110,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -132,9 +139,66 @@ public class RestRequest {
         includeRetryParameters,
         includeRequestGuid,
         retryHTTP403,
+        execTimeTelemetryData,
+        (SFBaseSession) null);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
+   * @param sfSession the session associated with the request
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeTelemetryData,
+      SFBaseSession sfSession)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
         false, // noRetry
         execTimeTelemetryData,
         null,
+        sfSession,
         null,
         null,
         false);
@@ -161,6 +225,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -192,7 +257,66 @@ public class RestRequest {
         retryHTTP403,
         noRetry,
         execTimeData,
+        (SFBaseSession) null);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
+   *     the retry
+   * @param sfSession the session associated with the request
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData,
+      SFBaseSession sfSession)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        noRetry,
+        execTimeData,
         null,
+        sfSession,
         null,
         null,
         false);
@@ -219,6 +343,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -248,9 +373,68 @@ public class RestRequest {
         includeRetryParameters,
         includeRequestGuid,
         retryHTTP403,
+        execTimeData,
+        retryContextManager,
+        null);
+  }
+
+  /**
+   * Execute an HTTP request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param maxRetries : max retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
+   * @param sfSession the session associated with the request
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession)
+      throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
         false, // noRetry
         execTimeData,
         retryContextManager,
+        sfSession,
         null,
         null,
         false);
@@ -280,6 +464,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @Deprecated
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -315,6 +500,7 @@ public class RestRequest {
         retryManager,
         null,
         null,
+        null,
         false);
   }
   /**
@@ -337,6 +523,7 @@ public class RestRequest {
    * @param execTimeData ExecTimeTelemetryData
    * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
    *     should be executed before and/or after the retry
+   * @param sfSession the session associated with the request
    * @param key HttpClientSettingsKey object
    * @param httpHeaderCustomizer HttpHeadersCustomizer object for customization of HTTP headers for
    *     requests sent by the Snowflake JDBC driver.
@@ -361,6 +548,7 @@ public class RestRequest {
       boolean noRetry,
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryManager,
+      SFBaseSession sfSession,
       HttpClientSettingsKey key,
       List<HttpHeadersCustomizer> httpHeaderCustomizer,
       boolean isHttpClientWithoutDecompression)
@@ -380,6 +568,7 @@ public class RestRequest {
             retryHTTP403, // retry on HTTP 403
             noRetry,
             new ExecTimeTelemetryData(),
+            sfSession,
             key,
             httpHeaderCustomizer,
             isHttpClientWithoutDecompression)
@@ -549,6 +738,7 @@ public class RestRequest {
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -569,6 +759,7 @@ public class RestRequest {
       boolean retryHTTP403,
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData,
+      SFBaseSession sfSession,
       HttpClientSettingsKey key,
       List<HttpHeadersCustomizer> httpHeaderCustomizer,
       boolean isHttpClientWithoutDecompression)
@@ -589,6 +780,7 @@ public class RestRequest {
         false,
         unpackResponse,
         execTimeTelemetryData,
+        sfSession,
         key,
         httpHeaderCustomizer,
         isHttpClientWithoutDecompression);
@@ -612,6 +804,7 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeTelemetryData ExecTimeTelemetryData should be executed before and/or after the
    *     retry
+   * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -633,6 +826,7 @@ public class RestRequest {
       boolean noRetry,
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData,
+      SFBaseSession sfSession,
       HttpClientSettingsKey key,
       List<HttpHeadersCustomizer> httpHeaderCustomizer,
       boolean isHttpClientWithoutDecompression)
@@ -654,6 +848,7 @@ public class RestRequest {
             .noRetry(noRetry)
             .unpackResponse(unpackResponse)
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
+            .withSfSession(sfSession)
             .build();
     return executeWithRetries(
         httpClient,
@@ -854,6 +1049,7 @@ public class RestRequest {
     }
     if (responseDto.getSavedEx() != null) {
       Exception savedEx = responseDto.getSavedEx();
+      sendIBHttpErrorEvent(httpRequest, responseDto.getHttpResponse(), httpExecutingContext);
       if (savedEx instanceof SnowflakeSQLException) {
         throw (SnowflakeSQLException) savedEx;
       } else {
@@ -1102,6 +1298,11 @@ public class RestRequest {
               + "To troubleshoot your connection further, you can refer to this article:\n"
               + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
 
+      Throwable rootCause = getRootCause(ex);
+      if (rootCause instanceof SFOCSPException) {
+        sendIBOCSPErrorEvent(httpExecutingContext, (SFOCSPException) rootCause);
+      }
+
       throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
     } else if (ex instanceof Exception) {
       savedEx = ex;
@@ -1264,6 +1465,67 @@ public class RestRequest {
             httpExecutingContext.getRetryCount(),
             SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode());
+  }
+
+  private static void sendIBHttpErrorEvent(
+      HttpRequestBase request,
+      CloseableHttpResponse response,
+      HttpExecutingContext httpExecutingContext) {
+    SFBaseSession session = httpExecutingContext.getSfSession();
+
+    if (session == null) {
+      logger.debug("Not sending telemetry event as the request is sessionless (session is null)");
+      return;
+    }
+
+    StatusLine statusLine = response.getStatusLine();
+    logger.debug(
+        "Preparing telemetry event for HTTP error: {} {}",
+        statusLine.getStatusCode(),
+        statusLine.getReasonPhrase());
+    int calculatedErrorNumber =
+        ErrorCode.HTTP_GENERAL_ERROR.getMessageCode() + statusLine.getStatusCode();
+    String errorMessage =
+        "HTTP "
+            + statusLine.getStatusCode()
+            + " "
+            + statusLine.getReasonPhrase()
+            + ": "
+            + request.getMethod()
+            + " "
+            + request.getURI().getHost()
+            + request.getURI().getPath();
+    ObjectNode ibValue =
+        TelemetryUtil.createIBValue(
+            null,
+            SqlState.INTERNAL_ERROR,
+            calculatedErrorNumber,
+            TelemetryField.HTTP_EXCEPTION,
+            errorMessage,
+            null);
+    TelemetryData td = TelemetryUtil.buildJobData(ibValue);
+    session.getTelemetryClient().addLogToBatch(td);
+  }
+
+  private static void sendIBOCSPErrorEvent(
+      HttpExecutingContext httpExecutingContext, SFOCSPException ex) {
+    SFBaseSession session = httpExecutingContext.getSfSession();
+
+    if (session == null) {
+      return;
+    }
+
+    String errorMessage = ex.toString();
+    ObjectNode ibValue =
+        TelemetryUtil.createIBValue(
+            null,
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.OCSP_GENERAL_ERROR.getMessageCode(),
+            TelemetryField.OCSP_EXCEPTION,
+            errorMessage,
+            ex.toString());
+    TelemetryData td = TelemetryUtil.buildJobData(ibValue);
+    session.getTelemetryClient().addLogToBatch(td);
   }
 
   private static boolean handleMaxRetriesExceeded(

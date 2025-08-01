@@ -43,7 +43,7 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
               () ->
                   SnowflakeAzureClient.createSnowflakeAzureClient(
                       sfAgent.getStageInfo(), content, sfSession));
-      assertEquals(ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
+      assertEquals(ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(), ex.getErrorCode());
     }
   }
 

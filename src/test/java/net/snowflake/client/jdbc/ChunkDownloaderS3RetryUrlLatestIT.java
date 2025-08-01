@@ -83,9 +83,10 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
         true,
         false,
         new ExecTimeTelemetryData(),
+        null, // retry HTTP 403
         sfContext.getChunkDownloader().getHttpClientSettingsKey(),
         null,
-        false); // retry HTTP 403
+        false);
 
     assertFalse(getRequest.containsHeader("retryCount"));
     assertFalse(getRequest.containsHeader("retryReason"));

@@ -70,6 +70,7 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
           new ExecTimeTelemetryData(),
           null,
           null,
+          null,
           false);
 
       CloseableHttpResponse response = httpClient.execute(request);

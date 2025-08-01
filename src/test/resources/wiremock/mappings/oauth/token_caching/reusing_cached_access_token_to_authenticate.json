@@ -29,13 +29,13 @@
                 "CLIENT_APP_ID": "MOCK_APP_ID",
                 "CLIENT_ENVIRONMENT": {
                   "tracing": "INFO",
-                  "OCSP_MODE": "FAIL_OPEN"
+                  "OCSP_MODE": "FAIL_OPEN",
+                  "OAUTH_TYPE": "OAUTH_AUTHORIZATION_CODE"
                 },
                 "CLIENT_APP_VERSION": "MOCK_APP_VERSION",
                 "TOKEN": "reused-access-token-123",
                 "LOGIN_NAME": "MOCK_USERNAME",
-                "AUTHENTICATOR": "OAUTH",
-                "OAUTH_TYPE": "OAUTH_AUTHORIZATION_CODE"
+                "AUTHENTICATOR": "OAUTH"
               }
             },
             "ignoreExtraElements" : true
