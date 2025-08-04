@@ -1,23 +1,10 @@
 package net.snowflake.client.core.crl;
 
-/** Configuration parameters for CRL validation. */
 class CRLValidationConfig {
 
-  /** Certificate revocation check mode. */
   enum CertRevocationCheckMode {
-    /** Disables CRL checking (with TLS handshake still in place) */
     DISABLED,
-
-    /**
-     * Fails the connection if certificate is revoked or there is other revocation status check
-     * issue
-     */
     ENABLED,
-
-    /**
-     * Fails the request for revoked certificate only. In case of any other problems assumes
-     * certificate is not revoked
-     */
     ADVISORY
   }
 
