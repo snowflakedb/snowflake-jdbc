@@ -19,6 +19,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -39,10 +40,13 @@ class CRLValidator {
   private final CRLValidationConfig config;
   private final CloseableHttpClient httpClient;
   private final Map<String, Lock> urlLocks = new ConcurrentHashMap<>();
+  private final CRLCacheManager cacheManager;
 
-  CRLValidator(CRLValidationConfig config, CloseableHttpClient httpClient) {
+  CRLValidator(
+      CRLValidationConfig config, CloseableHttpClient httpClient, CRLCacheManager cacheManager) {
     this.httpClient = httpClient;
     this.config = config;
+    this.cacheManager = cacheManager;
   }
 
   /**
@@ -100,7 +104,6 @@ class CRLValidator {
       for (int i = 0; i < certChain.length; i++) {
         X509Certificate cert = certChain[i];
         boolean isRoot = (i == certChain.length - 1);
-        // Don't validate root certificates against CRL - they are trust anchors
         if (isRoot) {
           break;
         }
@@ -177,20 +180,68 @@ class CRLValidator {
 
     lock.lock();
     try {
-      // TODO: Implement caching mechanism (getFromCache, updateCache)
-      // For now, always fetch fresh CRL
-      X509CRL crl = fetchCrl(crlUrl);
+      Instant now = Instant.now();
 
-      if (crl == null) {
-        return CertificateValidationResult.CERT_ERROR;
+      CRLCacheEntry cacheEntry = cacheManager.get(crlUrl);
+      X509CRL crl = cacheEntry != null ? cacheEntry.getCrl() : null;
+      Instant downloadTime = cacheEntry != null ? cacheEntry.getDownloadTime() : null;
+
+      boolean needsFreshCrl =
+          crl == null
+              || (crl.getNextUpdate() != null && crl.getNextUpdate().toInstant().isBefore(now))
+              || (downloadTime != null
+                  && downloadTime.plus(config.getCacheValidityTime()).isBefore(now));
+
+      boolean shouldUpdateCache = false;
+
+      if (needsFreshCrl) {
+        X509CRL newCrl = fetchCrl(crlUrl);
+
+        if (newCrl != null) {
+          shouldUpdateCache = crl == null || newCrl.getThisUpdate().after(crl.getThisUpdate());
+
+          if (shouldUpdateCache) {
+            logger.debug("Found updated CRL for {}", crlUrl);
+            crl = newCrl;
+            downloadTime = now;
+          } else {
+            // New CRL isn't newer, check if old one is still valid
+            if (crl.getNextUpdate() != null && crl.getNextUpdate().toInstant().isAfter(now)) {
+              logger.debug("CRL for {} is up-to-date, using cached version", crlUrl);
+            } else {
+              logger.warn("CRL for {} is not available or outdated", crlUrl);
+              return CertificateValidationResult.CERT_ERROR;
+            }
+          }
+        } else {
+          if (crl != null
+              && crl.getNextUpdate() != null
+              && crl.getNextUpdate().toInstant().isAfter(now)) {
+            logger.debug(
+                "Using cached CRL for {} (fetch failed but cached version still valid)", crlUrl);
+          } else {
+            logger.error(
+                "Unable to fetch fresh CRL from {} and no valid cached version available", crlUrl);
+            return CertificateValidationResult.CERT_ERROR;
+          }
+        }
       }
+
+      logger.debug(
+          "CRL has {} revoked entries, next update at {}",
+          crl.getRevokedCertificates() != null ? crl.getRevokedCertificates().size() : 0,
+          crl.getNextUpdate());
 
       if (!isCrlSignatureAndIssuerValid(crl, cert, parentCert, crlUrl)) {
         logger.debug("Unable to verify CRL for {}", crlUrl);
         return CertificateValidationResult.CERT_ERROR;
       }
 
-      // TODO: Update cache with new CRL
+      // Update cache if we have a new/updated CRL
+      if (shouldUpdateCache) {
+        logger.debug("CRL for {} is valid, updating cache", crlUrl);
+        cacheManager.put(crlUrl, crl, downloadTime);
+      }
 
       if (isCertificateRevoked(crl, cert)) {
         logger.debug(
