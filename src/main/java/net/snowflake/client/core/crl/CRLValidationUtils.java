@@ -102,6 +102,7 @@ class CRLValidationUtils {
           7L * 24 * 60 * 60 * 1000; // 7 days for certificates after March 15, 2026
     }
 
+    // Add 1 minute margin to account for clock differences and inclusive time boundaries
     maxValidityPeriodMs += 60 * 1000;
 
     long actualValidityPeriodMs = notAfter.getTime() - notBefore.getTime();
