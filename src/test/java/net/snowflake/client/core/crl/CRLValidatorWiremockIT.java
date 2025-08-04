@@ -1,6 +1,6 @@
 package net.snowflake.client.core.crl;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -18,6 +17,8 @@ import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
@@ -51,6 +52,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
   private TestCertificateAuthority testCA;
   private CRLValidator validator;
+  private CloseableHttpClient httpClient;
 
   @BeforeAll
   public static void setUpClassCRL() {
@@ -60,6 +62,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   @BeforeEach
   public void setUpTest() throws Exception {
     testCA = new TestCertificateAuthority();
+    httpClient = HttpClients.createDefault();
     resetWiremock();
   }
 
@@ -74,7 +77,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     // Create certificate with CRL distribution point pointing to WireMock
     X509Certificate cert =
@@ -104,15 +107,37 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     X509Certificate[] chain = {cert, testCA.getCACertificate()};
     List<X509Certificate[]> chains = Arrays.asList(new X509Certificate[][] {chain});
 
-    CertificateException exception =
-        assertThrows(CertificateException.class, () -> validator.validateCertificateChains(chains));
+    assertFalse(validator.validateCertificateChains(chains));
+  }
 
-    assertTrue(exception.getMessage().contains("certificates are revoked"));
+  @Test
+  void shouldAllowRevokedCertificateWhenCRLValidationDisabled() throws Exception {
+    X509Certificate revokedCert =
+        testCA.createCertificateWithCRLDistributionPoint(
+            "CN=Revoked Server (Disabled Mode)",
+            "http://localhost:" + wiremockHttpPort + "/test-ca.crl");
+
+    byte[] crlContent = testCA.generateCRLWithRevokedCertificate(revokedCert.getSerialNumber());
+    setupCRLMapping("/test-ca.crl", crlContent, 200);
+
+    CRLValidationConfig config =
+        CRLValidationConfig.builder()
+            .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.DISABLED)
+            .allowCertificatesWithoutCrlUrl(false)
+            .build();
+    validator = new CRLValidator(config, httpClient);
+
+    X509Certificate[] chain = {revokedCert, testCA.getCACertificate()};
+    List<X509Certificate[]> chains = Arrays.asList(new X509Certificate[][] {chain});
+
+    assertTrue(
+        validator.validateCertificateChains(chains),
+        "Should allow revoked certificate when CRL validation is disabled");
   }
 
   @Test
@@ -125,7 +150,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ADVISORY)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     X509Certificate cert =
         testCA.createCertificateWithCRLDistributionPoint(
@@ -148,7 +173,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     X509Certificate cert =
         testCA.createCertificateWithCRLDistributionPoint(
@@ -157,7 +182,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
     List<X509Certificate[]> chains = Arrays.asList(new X509Certificate[][] {chain});
 
-    assertThrows(CertificateException.class, () -> validator.validateCertificateChains(chains));
+    assertFalse(validator.validateCertificateChains(chains));
   }
 
   @Test
@@ -174,7 +199,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     // Create invalid chain first
     X509Certificate invalidCert =
@@ -195,7 +220,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   }
 
   @Test
-  void shouldHandleExpiredCRL() throws Exception {
+  void shouldRejectExpiredCRL() throws Exception {
     // Generate expired CRL (nextUpdate in the past)
     byte[] expiredCrlContent = testCA.generateExpiredCRL();
     setupCRLMapping("/expired-ca.crl", expiredCrlContent, 200);
@@ -205,7 +230,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     X509Certificate cert =
         testCA.createCertificateWithCRLDistributionPoint(
@@ -214,7 +239,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
     List<X509Certificate[]> chains = Arrays.asList(new X509Certificate[][] {chain});
 
-    assertThrows(CertificateException.class, () -> validator.validateCertificateChains(chains));
+    assertFalse(validator.validateCertificateChains(chains));
   }
 
   @Test
@@ -225,7 +250,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     // Create short-lived certificate (5 days validity)
     X509Certificate shortLivedCert = testCA.createShortLivedCertificate(5);
@@ -249,7 +274,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, httpClient);
 
     // Create certificate with multiple CRL distribution points
     List<String> crlUrls =

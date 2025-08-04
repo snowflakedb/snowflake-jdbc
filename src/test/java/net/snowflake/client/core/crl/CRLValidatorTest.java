@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -12,7 +13,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -21,9 +21,14 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -46,6 +51,7 @@ class CRLValidatorTest {
 
   private TestCertificateGenerator certGen;
   private CRLValidator validator;
+  private CloseableHttpClient mockHttpClient;
 
   @BeforeAll
   static void setUpClass() {
@@ -55,6 +61,7 @@ class CRLValidatorTest {
   @BeforeEach
   void setUp() {
     certGen = new TestCertificateGenerator();
+    mockHttpClient = mock(CloseableHttpClient.class);
   }
 
   @Test
@@ -63,7 +70,7 @@ class CRLValidatorTest {
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.DISABLED)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     CertificateChain chain = certGen.createSimpleChain();
     List<X509Certificate[]> chains = new ArrayList<>();
@@ -74,20 +81,12 @@ class CRLValidatorTest {
   }
 
   @Test
-  void shouldFailWithNullConfig() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new CRLValidator(null),
-        "Should throw IllegalArgumentException with null config");
-  }
-
-  @Test
   void shouldFailWithNullOrEmptyCertificateChains() throws Exception {
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     assertThrows(
         IllegalArgumentException.class,
@@ -107,7 +106,7 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(true) // Allow since we don't have CRL URLs
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Create a short-lived certificate (7 days validity) issued after March 15, 2024
     Date issuedDate =
@@ -131,7 +130,7 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false) // Don't allow - will cause validation to run
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Create a long-lived certificate (30 days validity) issued after March 15, 2024
     Date issuedDate =
@@ -142,11 +141,9 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {longLivedCert, chain.intermediateCert, chain.rootCert});
 
-    // Should fail because long-lived certificate is not skipped and has no CRL URLs
-    assertThrows(
-        CertificateException.class,
-        () -> validator.validateCertificateChains(chains),
-        "Should fail when chain contains long-lived certificates without CRL URLs");
+    assertFalse(
+        validator.validateCertificateChains(chains),
+        "Should return false when chain contains long-lived certificates without CRL URLs");
   }
 
   @Test
@@ -156,7 +153,7 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false) // Don't allow - will cause validation to run
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Create a certificate with 5 days validity issued before March 15, 2024
     Date issuedDate =
@@ -167,11 +164,9 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {oldCert, chain.intermediateCert, chain.rootCert});
 
-    // Should fail because certificate issued before March 2024 is not considered short-lived
-    assertThrows(
-        CertificateException.class,
-        () -> validator.validateCertificateChains(chains),
-        "Should fail for certificates issued before March 2024 regardless of validity period");
+    assertFalse(
+        validator.validateCertificateChains(chains),
+        "Should return false for certificates issued before March 2024 regardless of validity period");
   }
 
   @Test
@@ -181,7 +176,7 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(true) // Allow since we don't have CRL URLs
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Create a certificate with 8 days validity issued after March 15, 2026
     Date issuedDate =
@@ -205,7 +200,7 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(true) // Allow to test just the short-lived logic
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Create a certificate with 6 days validity issued after March 15, 2026
     Date issuedDate =
@@ -216,10 +211,9 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {shortCert, chain.intermediateCert, chain.rootCert});
 
-    // Should pass because short-lived certificate is skipped and we allow certs without CRL URLs
-    boolean result = validator.validateCertificateChains(chains);
     assertTrue(
-        result, "Should pass when short-lived cert is skipped (6 days after 2026 threshold)");
+        validator.validateCertificateChains(chains),
+        "Should pass when short-lived cert is skipped (6 days after 2026 threshold)");
   }
 
   @Test
@@ -227,20 +221,17 @@ class CRLValidatorTest {
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
-            .allowCertificatesWithoutCrlUrl(false) // Don't allow
+            .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     CertificateChain chain = certGen.createSimpleChain();
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    // Should fail because certificates don't have CRL URLs and allowCertificatesWithoutCrlUrl is
-    // false
-    assertThrows(
-        CertificateException.class,
-        () -> validator.validateCertificateChains(chains),
-        "Should fail when certificates lack CRL URLs and allowCertificatesWithoutCrlUrl is false");
+    assertFalse(
+        validator.validateCertificateChains(chains),
+        "Should return false when certificates lack CRL URLs and allowCertificatesWithoutCrlUrl is false");
   }
 
   @Test
@@ -248,15 +239,14 @@ class CRLValidatorTest {
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
-            .allowCertificatesWithoutCrlUrl(true) // Allow
+            .allowCertificatesWithoutCrlUrl(true)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     CertificateChain chain = certGen.createSimpleChain();
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    // Should pass because allowCertificatesWithoutCrlUrl is true
     boolean result = validator.validateCertificateChains(chains);
     assertTrue(result, "Should pass when allowCertificatesWithoutCrlUrl is true");
   }
@@ -268,13 +258,12 @@ class CRLValidatorTest {
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ADVISORY)
             .allowCertificatesWithoutCrlUrl(false) // Don't allow - will cause errors
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     CertificateChain chain = certGen.createSimpleChain();
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    // Should pass in advisory mode even with validation errors
     boolean result = validator.validateCertificateChains(chains);
     assertTrue(result, "Should pass in advisory mode even with validation errors");
   }
@@ -284,22 +273,27 @@ class CRLValidatorTest {
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
-            .allowCertificatesWithoutCrlUrl(false) // Don't allow certificates without CRL URLs
+            .allowCertificatesWithoutCrlUrl(true) // Allow certs without CRL URLs for valid chains
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
-    CertificateChain chain1 = certGen.createSimpleChain(); // Will have errors (no CRL URLs)
-    CertificateChain chain2 = certGen.createSimpleChain(); // Will also have errors (no CRL URLs)
+    Date beforeMarch2024 =
+        Date.from(LocalDate.of(2024, 2, 1).atStartOfDay(ZoneId.of("UTC")).toInstant());
+    X509Certificate invalidCert =
+        certGen.createShortLivedCertificate(5, beforeMarch2024); // Not considered short-lived
+    CertificateChain validChain = certGen.createSimpleChain();
 
     List<X509Certificate[]> chains = new ArrayList<>();
-    chains.add(new X509Certificate[] {chain1.leafCert, chain1.intermediateCert, chain1.rootCert});
-    chains.add(new X509Certificate[] {chain2.leafCert, chain2.intermediateCert, chain2.rootCert});
+    chains.add(
+        new X509Certificate[] {invalidCert, validChain.intermediateCert, validChain.rootCert});
+    chains.add(
+        new X509Certificate[] {
+          validChain.leafCert, validChain.intermediateCert, validChain.rootCert
+        });
 
-    // Should fail because no valid chain found (all have missing CRL URLs)
-    assertThrows(
-        CertificateException.class,
-        () -> validator.validateCertificateChains(chains),
-        "Should fail when no valid chain is found");
+    assertTrue(
+        validator.validateCertificateChains(chains),
+        "Should return true when at least one valid chain is found");
   }
 
   @Test
@@ -336,14 +330,14 @@ class CRLValidatorTest {
     X509Certificate certWithCDP =
         certGen.createCertificateWithCRLDistributionPoints(
             Arrays.asList(
-                "http://crl.example.com/test.crl", "https://backup-crl.example.com/test.crl"));
+                "http://crl.snowflake.com/test.crl", "https://backup-crl.snowflake.com/test.crl"));
 
     CRLValidationConfig config =
         CRLValidationConfig.builder()
             .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
             .allowCertificatesWithoutCrlUrl(false)
             .build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Use reflection to access the private method for testing
     java.lang.reflect.Method extractMethod =
@@ -354,14 +348,14 @@ class CRLValidatorTest {
     List<String> extractedUrls = (List<String>) extractMethod.invoke(validator, certWithCDP);
 
     assertEquals(2, extractedUrls.size(), "Should extract 2 CRL URLs");
-    assertTrue(extractedUrls.contains("http://crl.example.com/test.crl"));
-    assertTrue(extractedUrls.contains("https://backup-crl.example.com/test.crl"));
+    assertTrue(extractedUrls.contains("http://crl.snowflake.com/test.crl"));
+    assertTrue(extractedUrls.contains("https://backup-crl.snowflake.com/test.crl"));
   }
 
   @Test
   void shouldCorrectlyIdentifyShortLivedCertificates() throws Exception {
     CRLValidationConfig config = CRLValidationConfig.builder().build();
-    validator = new CRLValidator(config);
+    validator = new CRLValidator(config, mockHttpClient);
 
     // Use reflection to access the private isShortLived method
     java.lang.reflect.Method isShortLivedMethod =
@@ -462,10 +456,6 @@ class CRLValidatorTest {
               false);
 
       return new CertificateChain(rootCert, intermediateCert, leafCert);
-    }
-
-    X509Certificate createShortLivedCertificate(int validityDays) throws Exception {
-      return createShortLivedCertificate(validityDays, new Date());
     }
 
     X509Certificate createShortLivedCertificate(int validityDays, Date issuanceDate)
@@ -589,26 +579,20 @@ class CRLValidatorTest {
           Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
 
       // Add CRL Distribution Points extension using the provided URLs
-      org.bouncycastle.asn1.x509.GeneralName[] generalNames =
-          new org.bouncycastle.asn1.x509.GeneralName[crlUrls.size()];
+      GeneralName[] generalNames = new GeneralName[crlUrls.size()];
 
       for (int i = 0; i < crlUrls.size(); i++) {
-        generalNames[i] =
-            new org.bouncycastle.asn1.x509.GeneralName(
-                org.bouncycastle.asn1.x509.GeneralName.uniformResourceIdentifier, crlUrls.get(i));
+        generalNames[i] = new GeneralName(GeneralName.uniformResourceIdentifier, crlUrls.get(i));
       }
 
-      org.bouncycastle.asn1.x509.DistributionPointName dpName =
-          new org.bouncycastle.asn1.x509.DistributionPointName(
-              org.bouncycastle.asn1.x509.DistributionPointName.FULL_NAME,
+      DistributionPointName dpName =
+          new DistributionPointName(
+              DistributionPointName.FULL_NAME,
               new org.bouncycastle.asn1.x509.GeneralNames(generalNames));
 
-      org.bouncycastle.asn1.x509.DistributionPoint[] distributionPoints = {
-        new org.bouncycastle.asn1.x509.DistributionPoint(dpName, null, null)
-      };
+      DistributionPoint[] distributionPoints = {new DistributionPoint(dpName, null, null)};
 
-      org.bouncycastle.asn1.x509.CRLDistPoint crlDistPoint =
-          new org.bouncycastle.asn1.x509.CRLDistPoint(distributionPoints);
+      CRLDistPoint crlDistPoint = new CRLDistPoint(distributionPoints);
       certBuilder.addExtension(Extension.cRLDistributionPoints, true, crlDistPoint);
 
       ContentSigner contentSigner =
