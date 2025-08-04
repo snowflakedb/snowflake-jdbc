@@ -35,6 +35,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient httpClient;
+  private CRLCacheManager cacheManager;
 
   @BeforeAll
   public static void setUpClassCRL() {
@@ -45,6 +46,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   public void setUpTest() {
     certGen = new CertificateGeneratorUtil();
     httpClient = HttpClients.createDefault();
+    cacheManager = CRLCacheManager.fromConfig(CRL_CONFIG_ENABLED);
     resetWiremock();
   }
 
@@ -57,7 +59,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             Arrays.asList("http://localhost:" + wiremockHttpPort + "/test-ca.crl"));
     X509Certificate[] chain = {cert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
   }
@@ -72,7 +74,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
     setupCRLMapping(
         "/test-ca.crl", certGen.generateCRLWithRevokedCertificate(cert.getSerialNumber()), 200);
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     assertFalse(
         validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
@@ -90,7 +92,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
         certGen.generateCRLWithRevokedCertificate(revokedCert.getSerialNumber()),
         200);
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_DISABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_DISABLED, httpClient, cacheManager);
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
   }
@@ -104,7 +106,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             Arrays.asList("http://localhost:" + wiremockHttpPort + "/test-ca.crl"));
     X509Certificate[] chain = {cert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ADVISORY, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ADVISORY, httpClient, cacheManager);
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
   }
@@ -118,7 +120,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             Arrays.asList("http://localhost:" + wiremockHttpPort + "/test-ca.crl"));
     X509Certificate[] chain = {cert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     assertFalse(
         validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
@@ -142,7 +144,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             Arrays.asList("http://localhost:" + wiremockHttpPort + "/valid-ca.crl"));
     X509Certificate[] validChain = {validCert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(invalidChain, validChain)));
   }
@@ -152,7 +154,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
     byte[] expiredCrlContent = certGen.generateExpiredCRL();
     setupCRLMapping("/expired-ca.crl", expiredCrlContent, 200);
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     X509Certificate cert =
         certGen.createCertificateWithCRLDistributionPoints(
@@ -170,7 +172,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
     X509Certificate shortLivedCert = certGen.createShortLivedCertificate(5, new Date());
     X509Certificate[] chain = {shortLivedCert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
   }
@@ -189,7 +191,26 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
         certGen.createCertificateWithCRLDistributionPoints("CN=Multi-CRL Server", crlUrls);
     X509Certificate[] chain = {cert, certGen.getCACertificate()};
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient);
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
+
+    assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
+  }
+
+  @Test
+  void shouldCacheCRLOnFirstRequestAndReuseOnSecond() throws Exception {
+    setupCRLMapping("/cached-ca.crl", certGen.generateValidCRL(), 200);
+    String crlUrl = "http://localhost:" + wiremockHttpPort + "/cached-ca.crl";
+    X509Certificate cert =
+        certGen.createCertificateWithCRLDistributionPoints(
+            "CN=Cached Server", Arrays.asList(crlUrl));
+    X509Certificate[] chain = {cert, certGen.getCACertificate()};
+
+    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED, httpClient, cacheManager);
+
+    assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
+
+    // Remove the WireMock mapping to ensure second request uses cache
+    resetWiremock();
 
     assertTrue(validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})));
   }
