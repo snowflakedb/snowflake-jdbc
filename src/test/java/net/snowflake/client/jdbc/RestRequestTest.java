@@ -759,6 +759,7 @@ public class RestRequestTest {
               false,
               false,
               new ExecTimeTelemetryData(),
+              null,
               mockKey,
               Collections.emptyList(),
               useDecompression);
@@ -1037,7 +1038,10 @@ public class RestRequestTest {
                   mockRequest,
                   mockHttpExecutingContext,
                   new ExecTimeTelemetryData(),
-                  null));
+                  null,
+                  null,
+                  null,
+                  false));
     }
 
     ArgumentCaptor<TelemetryData> telemetryDataCaptor =
@@ -1097,7 +1101,14 @@ public class RestRequestTest {
           SnowflakeSQLException.class,
           () ->
               RestRequest.executeWithRetries(
-                  httpClient, httpRequest, context, new ExecTimeTelemetryData(), null));
+                  httpClient,
+                  httpRequest,
+                  context,
+                  new ExecTimeTelemetryData(),
+                  null,
+                  settingsKey,
+                  null,
+                  false));
 
       ArgumentCaptor<TelemetryData> telemetryDataCaptor =
           ArgumentCaptor.forClass(TelemetryData.class);
