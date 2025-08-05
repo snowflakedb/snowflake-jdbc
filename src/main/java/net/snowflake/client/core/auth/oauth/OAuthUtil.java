@@ -1,7 +1,6 @@
 package net.snowflake.client.core.auth.oauth;
 
 import static net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider.DEFAULT_REDIRECT_HOST;
-import static net.snowflake.client.core.auth.oauth.OAuthAuthorizationCodeAccessTokenProvider.DEFAULT_REDIRECT_URI_ENDPOINT;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,7 +79,8 @@ class OAuthUtil {
             loginInput.getAuthTimeout(),
             loginInput.getSocketTimeoutInMillis(),
             0,
-            loginInput.getHttpClientSettingsKey());
+            loginInput.getHttpClientSettingsKey(),
+            null);
     ObjectMapper objectMapper = new ObjectMapper();
     TokenResponseDTO tokenResponseDTO =
         objectMapper.readValue(tokenResponse, TokenResponseDTO.class);
@@ -94,8 +94,7 @@ class OAuthUtil {
 
   private static String createDefaultRedirectUri() throws IOException {
     try (ServerSocket socket = new ServerSocket(0)) {
-      return String.format(
-          "%s:%s%s", DEFAULT_REDIRECT_HOST, socket.getLocalPort(), DEFAULT_REDIRECT_URI_ENDPOINT);
+      return String.format("%s:%s", DEFAULT_REDIRECT_HOST, socket.getLocalPort());
     }
   }
 }

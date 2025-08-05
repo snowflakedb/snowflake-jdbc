@@ -77,3 +77,8 @@ placeholder
 
 #vs code
 .vscode/
+
+# SSH private key for WIF tests
+ci/wif/parameters/rsa_wif_aws_azure
+ci/wif/parameters/rsa_wif_gcp
+/target/
