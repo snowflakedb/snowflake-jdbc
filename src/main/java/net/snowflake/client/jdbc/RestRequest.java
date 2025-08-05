@@ -955,7 +955,7 @@ public class RestRequest {
           // because of closing of connection, then recreate the http client and remove existing
           // from the cache.
           logger.warn(
-              "Warning: IllegalStateException encountered while processing the HTTP request."
+              "IllegalStateException encountered while processing the HTTP request."
                   + " The HttpClient was shut down due to connection closure. "
                   + "Attempting to rebuild the HttpClient and retry the request.");
           // Clear the httpClient cache.
