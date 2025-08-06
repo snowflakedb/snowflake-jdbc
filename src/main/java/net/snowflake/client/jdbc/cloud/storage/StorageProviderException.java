@@ -35,8 +35,9 @@ public class StorageProviderException extends RuntimeException {
    *     thrown because of a 404, false otherwise.
    */
   public boolean isServiceException404() {
-    if (getCause() instanceof AmazonServiceException) {
-      AmazonServiceException asEx = (AmazonServiceException) getCause();
+    Throwable cause = getCause();
+    if (cause instanceof AmazonServiceException) {
+      AmazonServiceException asEx = (AmazonServiceException) cause;
       return (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND);
     }
 

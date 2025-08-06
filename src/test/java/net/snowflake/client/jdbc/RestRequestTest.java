@@ -8,14 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -26,10 +23,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -38,7 +33,6 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpExecutingContext;
 import net.snowflake.client.core.HttpExecutingContextBuilder;
-import net.snowflake.client.core.HttpResponseContextDto;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
@@ -62,9 +56,6 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -173,10 +164,7 @@ public class RestRequestTest {
         noRetry,
         false,
         new ExecTimeTelemetryData(),
-        null,
-        null,
-        null,
-        false);
+        null);
   }
 
   @Test
@@ -846,75 +834,6 @@ public class RestRequestTest {
         "RuntimeException should not be in SSL exceptions group");
   }
 
-  /**
-   * Test that IllegalStateException during HTTP request execution triggers a rebuild of the HTTP
-   * client.
-   *
-   * @param statusCode the status code to return from the mock response
-   * @param useDecompression whether to use decompression in the HTTP client
-   * @throws Exception if an error occurs during the test
-   */
-  @ParameterizedTest
-  @MethodSource("httpClientRebuildParams")
-  public void testIllegalStateExceptionTriggersHttpClientRebuildParameterized(
-      int statusCode, boolean useDecompression) throws Exception {
-
-    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
-    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
-    when(mockRequest.getURI()).thenReturn(new URI("https://example.com"));
-    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-    StatusLine mockStatusLine = mock(StatusLine.class);
-    when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
-    when(mockStatusLine.getStatusCode()).thenReturn(statusCode);
-    HttpClientSettingsKey mockKey = mock(HttpClientSettingsKey.class);
-
-    when(mockHttpClient.execute(any(HttpRequestBase.class)))
-        .thenThrow(new IllegalStateException("HttpClient shutdown"))
-        .thenReturn(mockResponse);
-
-    try (MockedStatic<HttpUtil> httpUtilMockedStatic = mockStatic(HttpUtil.class)) {
-      httpUtilMockedStatic
-          .when(() -> HttpUtil.getHttpClient(any(), any()))
-          .thenReturn(mockHttpClient);
-      httpUtilMockedStatic
-          .when(() -> HttpUtil.getHttpClientWithoutDecompression(any(), any()))
-          .thenReturn(mockHttpClient);
-
-      HttpResponseContextDto result =
-          RestRequest.executeWithRetries(
-              mockHttpClient,
-              mockRequest,
-              10,
-              0,
-              1000,
-              2,
-              0,
-              new AtomicBoolean(false),
-              false,
-              false,
-              false,
-              false,
-              false,
-              new ExecTimeTelemetryData(),
-              null,
-              mockKey,
-              Collections.emptyList(),
-              useDecompression);
-
-      verify(mockHttpClient, times(2)).execute(any(HttpRequestBase.class));
-      assertNotNull(result);
-    }
-  }
-
-  /**
-   * Provides parameters for the parameterized test.
-   *
-   * @return a stream of arguments for the test
-   */
-  private static Stream<Arguments> httpClientRebuildParams() {
-    return Stream.of(Arguments.of(200, false), Arguments.of(200, true));
-  }
-
   @Test
   public void testSendIBHttpErrorEventWithNullSessionNoException() throws Exception {
     HttpRequestBase mockRequest = mock(HttpRequestBase.class);
@@ -1038,10 +957,7 @@ public class RestRequestTest {
                   mockRequest,
                   mockHttpExecutingContext,
                   new ExecTimeTelemetryData(),
-                  null,
-                  null,
-                  null,
-                  false));
+                  null));
     }
 
     ArgumentCaptor<TelemetryData> telemetryDataCaptor =
@@ -1101,14 +1017,7 @@ public class RestRequestTest {
           SnowflakeSQLException.class,
           () ->
               RestRequest.executeWithRetries(
-                  httpClient,
-                  httpRequest,
-                  context,
-                  new ExecTimeTelemetryData(),
-                  null,
-                  settingsKey,
-                  null,
-                  false));
+                  httpClient, httpRequest, context, new ExecTimeTelemetryData(), null));
 
       ArgumentCaptor<TelemetryData> telemetryDataCaptor =
           ArgumentCaptor.forClass(TelemetryData.class);

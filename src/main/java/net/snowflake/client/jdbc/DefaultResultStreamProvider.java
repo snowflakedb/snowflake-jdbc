@@ -148,10 +148,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
                 true, // no retry on http request
                 false,
                 new ExecTimeTelemetryData(),
-                session,
-                context.getChunkDownloader().getHttpClientSettingsKey(),
-                headersCustomizers,
-                false)
+                session)
             .getHttpResponse();
 
     logger.debug(

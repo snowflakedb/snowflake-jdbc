@@ -254,10 +254,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   true, // retry on HTTP 403
                   false,
                   new ExecTimeTelemetryData(),
-                  session,
-                  session.getHttpClientKey(),
-                  session.getHttpHeadersCustomizers(),
-                  true);
+                  session);
           HttpResponse response = responseDto.getHttpResponse();
 
           logger.debug(
@@ -449,10 +446,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       true, // retry on HTTP 403
                       false,
                       new ExecTimeTelemetryData(),
-                      session,
-                      session.getHttpClientKey(),
-                      session.getHttpHeadersCustomizers(),
-                      true)
+                      session)
                   .getHttpResponse();
 
           logger.debug(
@@ -949,10 +943,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   true, // retry on HTTP 403
                   true, // disable retry
                   new ExecTimeTelemetryData(),
-                  session,
-                  ocspAndProxyKey,
-                  session.getHttpHeadersCustomizers(),
-                  false)
+                  session)
               .getHttpResponse();
 
       logger.debug(

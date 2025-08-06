@@ -68,10 +68,7 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
           false,
           false,
           new ExecTimeTelemetryData(),
-          null,
-          null,
-          null,
-          false);
+          null);
 
       CloseableHttpResponse response = httpClient.execute(request);
       assert (response.getStatusLine().getStatusCode() == 200);
