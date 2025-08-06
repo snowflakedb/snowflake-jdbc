@@ -645,7 +645,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               sfArray.getSchema());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
-      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array);
+      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession());
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               "json",

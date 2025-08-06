@@ -52,6 +52,7 @@ public class HttpExecutingContext {
   private boolean includeRequestGuid;
   private boolean unpackResponse;
   private AtomicBoolean canceling;
+  private SFBaseSession sfSession;
 
   public HttpExecutingContext(String requestIdStr, String requestInfoScrubbed) {
     this.requestId = requestIdStr;
@@ -302,5 +303,13 @@ public class HttpExecutingContext {
 
   public void setSkipRetriesBecauseOf200(boolean skipRetriesBecauseOf200) {
     this.skipRetriesBecauseOf200 = skipRetriesBecauseOf200;
+  }
+
+  public SFBaseSession getSfSession() {
+    return sfSession;
+  }
+
+  public void setSfSession(SFBaseSession sfSession) {
+    this.sfSession = sfSession;
   }
 }
