@@ -490,6 +490,7 @@ public class RestRequest {
         retryManager,
         null);
   }
+
   /**
    * Execute an HTTP request with retry logic.
    *
@@ -515,6 +516,7 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
+  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
