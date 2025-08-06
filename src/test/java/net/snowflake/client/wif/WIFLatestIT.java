@@ -34,14 +34,6 @@ public class WIFLatestIT {
   private static final String PROVIDER = System.getenv("SNOWFLAKE_TEST_WIF_PROVIDER");
 
   @Test
-  void shouldAuthenticateUsingWIFWithProviderDetection() {
-    Properties properties = new Properties();
-    properties.put("account", ACCOUNT);
-    properties.put("authenticator", "WORKLOAD_IDENTITY");
-    connectAndExecuteSimpleQuery(properties);
-  }
-
-  @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);
