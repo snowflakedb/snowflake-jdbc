@@ -76,8 +76,6 @@ cd $SOURCE_ROOT
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 $MVNW_EXE --batch-mode --show-version dependency:go-offline
 
-export SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
-
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
         JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
