@@ -3,20 +3,13 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaForType;
 import static net.snowflake.client.core.FieldSchemaCreator.logger;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import java.io.IOException;
 import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
@@ -46,31 +39,7 @@ public class SfSqlArray implements Array {
         ObjectMapperFactory.getObjectMapper()
             .setDateFormat(
                 new SimpleDateFormat(
-                    String.valueOf(session.getCommonParameters().get("DATE_OUTPUT_FORMAT"))))
-            .registerModule(
-                new SimpleModule()
-                    .addSerializer(
-                        Time.class,
-                        new StdSerializer<Time>(Time.class) {
-                          @Override
-                          public void serialize(
-                              Time value, JsonGenerator gen, SerializerProvider provider)
-                              throws IOException {
-                            gen.writeString(timeFormat.format(value, "UTC"));
-                          }
-                        }))
-            .registerModule(
-                new SimpleModule()
-                    .addSerializer(
-                        Timestamp.class,
-                        new StdSerializer<Timestamp>(Timestamp.class) {
-                          @Override
-                          public void serialize(
-                              Timestamp value, JsonGenerator gen, SerializerProvider provider)
-                              throws IOException {
-                            gen.writeString(timestampFormat.format(value, "UTC"));
-                          }
-                        }));
+                    String.valueOf(session.getCommonParameters().get("DATE_OUTPUT_FORMAT"))));
   }
 
   public SfSqlArray(int baseType, Object elements, SFBaseSession session) {

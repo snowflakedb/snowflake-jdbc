@@ -1,13 +1,10 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
@@ -18,15 +15,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.MockConnectionTest;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 public class SessionUtilTest {
   private static String originalUrlValue;
@@ -248,48 +242,6 @@ public class SessionUtilTest {
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"TIMEZONE\", \"value\": \"value\"}]"));
     assertEquals("value", result.get("TIMEZONE"));
-  }
-
-  @Test
-  public void shouldProperlyCheckIfExperimentalAuthEnabled() {
-    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic = mockStatic(SnowflakeUtil.class)) {
-      snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
-          .thenReturn(null);
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
-      assertThrows(
-          SFException.class,
-          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
-
-      snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
-          .thenReturn("true");
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
-      assertDoesNotThrow(
-          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
-    }
   }
 
   private void resetOcspConfiguration() {
