@@ -6,6 +6,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -145,7 +146,29 @@ class CertificateGeneratorUtil {
     return generateCRL(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000));
   }
 
-  private byte[] generateCRL(Date nextUpdate) throws Exception {
+  byte[] generateCRLWithThisUpdate(Date thisUpdate, Date nextUpdate) throws Exception {
+    X509v2CRLBuilder crlBuilder =
+        new X509v2CRLBuilder(
+            new X500Name(caCertificate.getSubjectX500Principal().getName()), thisUpdate);
+    crlBuilder.setNextUpdate(nextUpdate);
+
+    for (BigInteger serialNumber : revokedSerialNumbers) {
+      crlBuilder.addCRLEntry(serialNumber, thisUpdate, 0);
+    }
+
+    ContentSigner contentSigner =
+        new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(caKeyPair.getPrivate());
+    X509CRLHolder crlHolder = crlBuilder.build(contentSigner);
+    X509CRL crl = new JcaX509CRLConverter().setProvider(BOUNCY_CASTLE_PROVIDER).getCRL(crlHolder);
+    return crl.getEncoded();
+  }
+
+  X509CRL convertBytesToCRL(byte[] crlBytes) throws Exception {
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    return (X509CRL) cf.generateCRL(new java.io.ByteArrayInputStream(crlBytes));
+  }
+
+  byte[] generateCRL(Date nextUpdate) throws Exception {
     Date now = new Date();
     X509v2CRLBuilder crlBuilder =
         new X509v2CRLBuilder(new X500Name(caCertificate.getSubjectX500Principal().getName()), now);
