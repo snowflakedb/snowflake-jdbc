@@ -393,6 +393,9 @@ public class SessionUtil {
 
   private static WorkloadIdentityAttestation getWorkloadIdentityAttestation(SFLoginInput loginInput)
       throws SFException {
+    if (loginInput.getWorkloadIdentityProvider() == null) {
+      return null;
+    }
     WorkloadIdentityAttestationProvider attestationProvider =
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(new AwsAttestationService()),
