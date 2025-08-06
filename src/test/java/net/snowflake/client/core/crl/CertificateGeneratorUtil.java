@@ -32,7 +32,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-class TestCertificateGenerator {
+class CertificateGeneratorUtil {
   private static final String SIGNATURE_ALGORITHM = "SHA256WithRSA";
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
   private static final long ONE_YEAR_MS = 365L * 24 * 60 * 60 * 1000;
@@ -43,7 +43,7 @@ class TestCertificateGenerator {
   private X509Certificate caCertificate;
   private final List<BigInteger> revokedSerialNumbers = new ArrayList<>();
 
-  TestCertificateGenerator() {
+  CertificateGeneratorUtil() {
     try {
       this.caKeyPair = generateKeyPair();
       this.caCertificate = createCACertificate();
@@ -90,10 +90,6 @@ class TestCertificateGenerator {
   }
 
   CertificateChain createSimpleChain() throws Exception {
-    KeyPair rootKeyPair = generateKeyPair();
-    KeyPair intermediateKeyPair = generateKeyPair();
-    KeyPair leafKeyPair = generateKeyPair();
-
     X509Certificate rootCert =
         createCertificate("CN=Test Root CA " + random.nextInt(10000), true, null, null, null);
 
@@ -208,8 +204,12 @@ class TestCertificateGenerator {
       Date notAfter)
       throws CertIOException {
 
-    if (notBefore == null) notBefore = new Date();
-    if (notAfter == null) notAfter = new Date(notBefore.getTime() + ONE_YEAR_MS);
+    if (notBefore == null) {
+      notBefore = new Date();
+    }
+    if (notAfter == null) {
+      notAfter = new Date(notBefore.getTime() + ONE_YEAR_MS);
+    }
 
     X509v3CertificateBuilder certBuilder =
         new JcaX509v3CertificateBuilder(

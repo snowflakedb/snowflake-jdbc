@@ -33,7 +33,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
           .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ADVISORY)
           .build();
 
-  private TestCertificateGenerator certGen;
+  private CertificateGeneratorUtil certGen;
   private CloseableHttpClient httpClient;
 
   @BeforeAll
@@ -43,7 +43,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
   @BeforeEach
   public void setUpTest() {
-    certGen = new TestCertificateGenerator();
+    certGen = new CertificateGeneratorUtil();
     httpClient = HttpClients.createDefault();
     resetWiremock();
   }
