@@ -1,6 +1,8 @@
 package net.snowflake.client.core.crl;
 
-import static net.snowflake.client.core.crl.CRLValidationUtils.*;
+import static net.snowflake.client.core.crl.CRLValidationUtils.extractCRLDistributionPoints;
+import static net.snowflake.client.core.crl.CRLValidationUtils.isShortLived;
+import static net.snowflake.client.core.crl.CRLValidationUtils.verifyIssuingDistributionPoint;
 
 import java.io.IOException;
 import java.io.InputStream;

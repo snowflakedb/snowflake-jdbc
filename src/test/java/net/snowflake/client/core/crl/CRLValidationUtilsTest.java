@@ -1,6 +1,8 @@
 package net.snowflake.client.core.crl;
 
-import static net.snowflake.client.core.crl.CRLValidationUtils.*;
+import static net.snowflake.client.core.crl.CRLValidationUtils.extractCRLDistributionPoints;
+import static net.snowflake.client.core.crl.CRLValidationUtils.isShortLived;
+import static net.snowflake.client.core.crl.CRLValidationUtils.verifyIssuingDistributionPoint;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,7 +16,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.crl.TestCertificateGenerator.CertificateChain;
+import net.snowflake.client.core.crl.CertificateGeneratorUtil.CertificateChain;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
 class CRLValidationUtilsTest {
-  private TestCertificateGenerator certGen;
+  private CertificateGeneratorUtil certGen;
 
   @BeforeAll
   static void setUpClass() {
@@ -34,7 +36,7 @@ class CRLValidationUtilsTest {
 
   @BeforeEach
   void setUp() {
-    certGen = new TestCertificateGenerator();
+    certGen = new CertificateGeneratorUtil();
   }
 
   @Nested

@@ -1,6 +1,5 @@
 package net.snowflake.client.core.crl;
 
-import static net.snowflake.client.core.crl.CRLValidationConfig.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.crl.TestCertificateGenerator.CertificateChain;
+import net.snowflake.client.core.crl.CertificateGeneratorUtil.CertificateChain;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,18 +24,24 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.CORE)
 class CRLValidatorTest {
   private static final CRLValidationConfig CRL_CONFIG_DISABLED =
-      builder().certRevocationCheckMode(CertRevocationCheckMode.DISABLED).build();
+      CRLValidationConfig.builder()
+          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.DISABLED)
+          .build();
   private static final CRLValidationConfig CRL_CONFIG_ENABLED_URL_DISALLOWED =
-      builder().certRevocationCheckMode(CertRevocationCheckMode.ENABLED).build();
+      CRLValidationConfig.builder()
+          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
+          .build();
   private static final CRLValidationConfig CRL_CONFIG_ENABLED_URL_ALLOWED =
-      builder()
-          .certRevocationCheckMode(CertRevocationCheckMode.ENABLED)
+      CRLValidationConfig.builder()
+          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
           .allowCertificatesWithoutCrlUrl(true)
           .build();
   private static final CRLValidationConfig CRL_CONFIG_ADVISORY_URL_DISALLOWED =
-      builder().certRevocationCheckMode(CertRevocationCheckMode.ADVISORY).build();
+      CRLValidationConfig.builder()
+          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ADVISORY)
+          .build();
 
-  private TestCertificateGenerator certGen;
+  private CertificateGeneratorUtil certGen;
   private CloseableHttpClient mockHttpClient;
 
   @BeforeAll
@@ -46,7 +51,7 @@ class CRLValidatorTest {
 
   @BeforeEach
   void setUp() {
-    certGen = new TestCertificateGenerator();
+    certGen = new CertificateGeneratorUtil();
     mockHttpClient = mock(CloseableHttpClient.class);
   }
 
