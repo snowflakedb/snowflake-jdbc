@@ -499,7 +499,7 @@ public class SFStatement extends SFBaseStatement {
       do {
         sessionRenewed = false;
         try {
-          stmtOutput = StmtUtil.execute(stmtInput, execTimeData);
+          stmtOutput = StmtUtil.execute(stmtInput, execTimeData, session);
           break;
         } catch (SnowflakeSQLException ex) {
           if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE) {
@@ -726,7 +726,7 @@ public class SFStatement extends SFBaseStatement {
         .setMaxRetries(session.getMaxHttpRetries())
         .setHttpClientSettingsKey(session.getHttpClientKey());
 
-    StmtUtil.cancel(stmtInput, cancellationReason);
+    StmtUtil.cancel(stmtInput, cancellationReason, session);
 
     synchronized (this) {
       /*

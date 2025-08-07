@@ -235,7 +235,8 @@ public class SFSession extends SFBaseSession {
                 0,
                 (int) httpClientSocketTimeout.toMillis(),
                 maxHttpRetries,
-                getHttpClientKey());
+                getHttpClientKey(),
+                this);
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
@@ -956,7 +957,7 @@ public class SFSession extends SFBaseSession {
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 
-    SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
+    SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput, this);
 
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
@@ -1003,7 +1004,7 @@ public class SFSession extends SFBaseSession {
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 
-    SessionUtil.closeSession(loginInput);
+    SessionUtil.closeSession(loginInput, this);
     closeTelemetryClient();
     getClientInfo().clear();
 
@@ -1156,7 +1157,8 @@ public class SFSession extends SFBaseSession {
                 0,
                 (int) httpClientSocketTimeout.toMillis(),
                 0,
-                getHttpClientKey());
+                getHttpClientKey(),
+                this);
 
         JsonNode rootNode;
 
