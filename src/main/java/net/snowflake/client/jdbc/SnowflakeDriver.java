@@ -188,7 +188,7 @@ public class SnowflakeDriver implements Driver {
    * default port (8080)
    *
    * <p>jdbc:snowflake://localhost:8080- connect to localhost port 8080
-   * 
+   *
    * <p>jdbc:snowflake:auto - use connections.toml
    *
    * @param url url of the database including host and port
