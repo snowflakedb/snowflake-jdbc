@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -75,6 +77,24 @@ class TelemetryThreadPoolTest {
                   executor.getPoolSize(),
                   "The thread pool should have scaled down to 0 idle threads.");
             });
+  }
+
+  @Test
+  void testTelemetryThreadsAreDaemonThreads() throws InterruptedException {
+    TelemetryThreadPool telemetryPool = TelemetryThreadPool.getInstance();
+    final AtomicBoolean isDaemonThread = new AtomicBoolean(false);
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    telemetryPool.execute(
+        () -> {
+          isDaemonThread.set(Thread.currentThread().isDaemon());
+          latch.countDown();
+        });
+
+    // Wait for the task to complete
+    latch.await(5, TimeUnit.SECONDS);
+
+    assertTrue(isDaemonThread.get(), "TelemetryThreadPool threads should be daemon threads");
   }
 
   private ThreadPoolExecutor getThreadPoolExecutor(TelemetryThreadPool telemetryThreadPool) {
