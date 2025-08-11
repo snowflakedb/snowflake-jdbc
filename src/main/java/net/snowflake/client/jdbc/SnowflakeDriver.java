@@ -196,7 +196,7 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public boolean acceptsURL(String url) {
-    if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
+    if (url != null && url.equalsIgnoreCase(AUTO_CONNECTION_STRING_PREFIX)) {
       return true;
     }
 
