@@ -26,9 +26,9 @@ public class URLUtil {
   static final Pattern pattern = Pattern.compile(validURLPattern);
 
   public static boolean isValidURL(String url) {
-    if (url == null) {
-      return false;
-    }
+    /*
+     * if (url == null) { return false; }
+     */
     try {
       Matcher matcher = pattern.matcher(url);
       return matcher.find();
