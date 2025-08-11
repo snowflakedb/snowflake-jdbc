@@ -4,6 +4,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.amazonaws.ProxyAuthenticationMethod;
+import java.util.Arrays;
 import java.util.Properties;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpProtocol;
@@ -50,6 +52,10 @@ public class S3HttpUtil {
                 + SFLoggerUtil.isVariableProvided(key.getProxyPassword());
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
+        // Force the use of BASIC authentication only for proxy authentication
+        // This ensures that when multiple authentication schemes are offered by the proxy
+        // (e.g., NEGOTIATE, NTLM, BASIC), we only use BASIC authentication
+        clientConfig.setProxyAuthenticationMethods(Arrays.asList(ProxyAuthenticationMethod.BASIC));
       }
       logger.debug(logMessage);
     } else {
@@ -116,6 +122,11 @@ public class S3HttpUtil {
           logMessage += ", user: " + proxyUser + " with password provided";
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
+          // Force the use of BASIC authentication only for proxy authentication
+          // This ensures that when multiple authentication schemes are offered by the proxy
+          // (e.g., NEGOTIATE, NTLM, BASIC), we only use BASIC authentication
+          clientConfig.setProxyAuthenticationMethods(
+              Arrays.asList(ProxyAuthenticationMethod.BASIC));
         }
         logger.debug(logMessage);
       } else {
