@@ -4,32 +4,46 @@ import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaFor
 import static net.snowflake.client.core.FieldSchemaCreator.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
 
-  private String text;
-  private int baseType;
-  private Object elements;
+  private final String text;
+  private final int baseType;
+  private final Object elements;
   private String jsonStringFromElements;
+  private final ObjectMapper objectMapper;
 
-  public SfSqlArray(String text, int baseType, Object elements) {
+  public SfSqlArray(String text, int baseType, Object elements, SFBaseSession session) {
     this.text = text;
     this.baseType = baseType;
     this.elements = elements;
+    SnowflakeDateTimeFormat timestampFormat =
+        SnowflakeDateTimeFormat.fromSqlFormat(
+            String.valueOf(session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT")));
+    SnowflakeDateTimeFormat timeFormat =
+        SnowflakeDateTimeFormat.fromSqlFormat(
+            String.valueOf(session.getCommonParameters().get("TIME_OUTPUT_FORMAT")));
+    objectMapper =
+        ObjectMapperFactory.getObjectMapper()
+            .setDateFormat(
+                new SimpleDateFormat(
+                    String.valueOf(session.getCommonParameters().get("DATE_OUTPUT_FORMAT"))));
   }
 
-  public SfSqlArray(int baseType, Object elements) {
-    this(null, baseType, elements);
+  public SfSqlArray(int baseType, Object elements, SFBaseSession session) {
+    this(null, baseType, elements, session);
   }
 
   @Override
@@ -104,9 +118,9 @@ public class SfSqlArray implements Array {
     return jsonStringFromElements;
   }
 
-  private static String buildJsonStringFromElements(Object elements) throws SQLException {
+  private String buildJsonStringFromElements(Object elements) throws SQLException {
     try {
-      return SnowflakeUtil.mapJson(elements);
+      return objectMapper.writeValueAsString(elements);
     } catch (JsonProcessingException e) {
       throw new SQLException("There is exception during array to json string.", e);
     }

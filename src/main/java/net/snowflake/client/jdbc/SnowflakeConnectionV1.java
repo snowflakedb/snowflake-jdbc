@@ -727,7 +727,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-    return new SfSqlArray(JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements);
+    return new SfSqlArray(
+        JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements, sfSession);
   }
 
   @Override

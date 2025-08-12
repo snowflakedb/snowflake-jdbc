@@ -690,31 +690,35 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
               text,
               columnSubType,
               mapAndConvert(elements, converters.integerConverter(columnType))
-                  .toArray(Integer[]::new));
+                  .toArray(Integer[]::new),
+              session);
         case Types.SMALLINT:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.smallIntConverter(columnType))
-                  .toArray(Short[]::new));
+                  .toArray(Short[]::new),
+              session);
         case Types.TINYINT:
           return new SfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.tinyIntConverter(columnType))
-                  .toArray(Byte[]::new));
+              mapAndConvert(elements, converters.tinyIntConverter(columnType)).toArray(Byte[]::new),
+              session);
         case Types.BIGINT:
           return new SfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new));
+              mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new),
+              session);
         case Types.DECIMAL:
         case Types.NUMERIC:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.bigDecimalConverter(columnType))
-                  .toArray(BigDecimal[]::new));
+                  .toArray(BigDecimal[]::new),
+              session);
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
@@ -722,36 +726,42 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
               text,
               columnSubType,
               mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale))
-                  .toArray(String[]::new));
+                  .toArray(String[]::new),
+              session);
         case Types.BINARY:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.bytesConverter(columnType, scale))
-                  .toArray(Byte[][]::new));
+                  .toArray(Byte[][]::new),
+              session);
         case Types.FLOAT:
         case Types.REAL:
           return new SfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new));
+              mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new),
+              session);
         case Types.DOUBLE:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.doubleConverter(columnType))
-                  .toArray(Double[]::new));
+                  .toArray(Double[]::new),
+              session);
         case Types.DATE:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.dateFromIntConverter(sessionTimeZone))
-                  .toArray(Date[]::new));
+                  .toArray(Date[]::new),
+              session);
         case Types.TIME:
           return new SfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new));
+              mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new),
+              session);
         case Types.TIMESTAMP:
           return new SfSqlArray(
               text,
@@ -760,22 +770,25 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                       elements,
                       converters.timestampFromStructConverter(
                           columnType, columnSubType, sessionTimeZone, scale))
-                  .toArray(Timestamp[]::new));
+                  .toArray(Timestamp[]::new),
+              session);
         case Types.BOOLEAN:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.booleanConverter(columnType))
-                  .toArray(Boolean[]::new));
+                  .toArray(Boolean[]::new),
+              session);
         case Types.STRUCT:
           return new SfSqlArray(
-              text, columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new));
+              text, columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new), session);
         case Types.ARRAY:
           return new SfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, e -> ((List) e).stream().toArray(Map[]::new))
-                  .toArray(Map[][]::new));
+                  .toArray(Map[][]::new),
+              session);
         default:
           throw new SFException(
               queryId,
