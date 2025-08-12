@@ -92,7 +92,7 @@ class TelemetryThreadPoolTest {
         });
 
     // Wait for the task to complete
-    latch.await(5, TimeUnit.SECONDS);
+    latch.await(1, TimeUnit.SECONDS);
 
     assertTrue(isDaemonThread.get(), "TelemetryThreadPool threads should be daemon threads");
   }
