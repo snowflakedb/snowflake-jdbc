@@ -628,10 +628,7 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   private boolean isColumnTypeVector(String col) {
-    if (col != null && col.equalsIgnoreCase("vector")) {
-      return true;
-    }
-    return false;
+    return col != null && col.equalsIgnoreCase("vector");
   }
 
   @Override
