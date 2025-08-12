@@ -10,7 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -29,17 +31,17 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   }
 
   @Override
-  public WorkloadIdentityAttestation createAttestation() {
+  public WorkloadIdentityAttestation createAttestation() throws SFException {
     logger.debug("Creating AWS identity attestation...");
+    attestationService.initializeSignerRegion();
     AWSCredentials awsCredentials = attestationService.getAWSCredentials();
     if (awsCredentials == null) {
-      logger.debug("No AWS credentials were found.");
-      return null;
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS credentials were found");
     }
     String region = attestationService.getAWSRegion();
     if (region == null) {
-      logger.debug("No AWS region was found.");
-      return null;
+      throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS region was found");
     }
 
     String stsHostname = getStsHostname(region);
