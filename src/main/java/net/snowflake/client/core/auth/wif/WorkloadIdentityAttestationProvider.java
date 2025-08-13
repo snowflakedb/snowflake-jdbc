@@ -1,5 +1,7 @@
 package net.snowflake.client.core.auth.wif;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -42,9 +44,16 @@ public class WorkloadIdentityAttestationProvider {
     } else if (WorkloadIdentityProviderType.OIDC.name().equalsIgnoreCase(identityProvider)) {
       return oidcAttestationCreator;
     } else {
+      String validValues =
+          Arrays.stream(WorkloadIdentityProviderType.values())
+              .map(Enum::name)
+              .collect(Collectors.joining(", "));
       throw new SFException(
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
-          "Unknown Workload Identity provider specified: " + identityProvider);
+          "Unknown Workload Identity provider specified: "
+              + identityProvider
+              + ", valid values are: "
+              + validValues);
     }
   }
 }
