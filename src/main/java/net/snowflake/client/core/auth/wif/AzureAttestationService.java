@@ -1,7 +1,9 @@
 package net.snowflake.client.core.auth.wif;
 
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -27,12 +29,15 @@ public class AzureAttestationService {
     return SnowflakeUtil.systemGetEnv("MANAGED_IDENTITY_CLIENT_ID");
   }
 
-  String fetchTokenFromMetadataService(HttpRequestBase tokenRequest, SFLoginInput loginInput) {
+  String fetchTokenFromMetadataService(HttpRequestBase tokenRequest, SFLoginInput loginInput)
+      throws SFException {
     try {
       return WorkloadIdentityUtil.performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
-      logger.debug("Azure metadata server request was not successful: {}", e);
-      return null;
+      logger.error("Azure metadata server request failed", e);
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Azure metadata server request was not successful: " + e.getMessage());
     }
   }
 }

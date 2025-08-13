@@ -49,5 +49,7 @@ class WorkloadIdentityAttestationProviderTest {
 
     Assertions.assertThrows(
         SFException.class, () -> provider.getCreator("UNKNOWN_IDENTITY_PROVIDER"));
+
+    Assertions.assertThrows(SFException.class, () -> provider.getCreator(null));
   }
 }

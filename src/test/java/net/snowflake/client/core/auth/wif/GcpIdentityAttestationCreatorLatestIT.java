@@ -2,12 +2,13 @@ package net.snowflake.client.core.auth.wif;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
@@ -60,7 +61,7 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   private static final String HTTP_ERROR_MAPPINGS = SCENARIOS_BASE_DIR + "/http_error.json";
 
   @Test
-  public void successfulFlowScenario() {
+  public void successfulFlowScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
 
@@ -76,33 +77,32 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   @Test
   public void missingIssuerScenario() {
     importMappingFromResources(MISSING_ISSUER_SCENARIO_MAPPINGS);
-    createAttestationAndAssertNull();
+    createAttestationAndAssertExceptionThrown();
   }
 
   @Test
   public void missingSubScenario() {
     importMappingFromResources(MISSING_SUB_SCENARIO_MAPPINGS);
-    createAttestationAndAssertNull();
+    createAttestationAndAssertExceptionThrown();
   }
 
   @Test
   public void unparsableTokenScenario() {
     importMappingFromResources(TOKEN_PARSE_ERROR_SCENARIO_MAPPINGS);
-    createAttestationAndAssertNull();
+    createAttestationAndAssertExceptionThrown();
   }
 
   @Test
   public void httpErrorScenario() {
     importMappingFromResources(HTTP_ERROR_MAPPINGS);
-    createAttestationAndAssertNull();
+    createAttestationAndAssertExceptionThrown();
   }
 
-  private void createAttestationAndAssertNull() {
+  private void createAttestationAndAssertExceptionThrown() {
     SFLoginInput loginInput = createLoginInputStub();
     GcpIdentityAttestationCreator attestationCreator =
         new GcpIdentityAttestationCreator(loginInput, getBaseUrl());
-    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
-    assertNull(attestation);
+    assertThrows(SFException.class, attestationCreator::createAttestation);
   }
 
   private String getBaseUrl() {

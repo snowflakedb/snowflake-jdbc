@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -34,21 +36,21 @@ class WorkloadIdentityUtil {
         null);
   }
 
-  static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token) {
+  static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token) throws SFException {
     Map<String, Object> claims = extractClaimsMap(token);
     if (claims == null) {
-      logger.error("Failed to parse JWT and extract claims");
-      return null;
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to parse JWT and extract claims");
     }
     String issuer = (String) claims.get("iss");
     if (issuer == null) {
-      logger.error("Missing issuer claim in JWT token");
-      return null;
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Missing issuer claim in JWT token");
     }
     String subject = (String) claims.get("sub");
     if (subject == null) {
-      logger.error("Missing sub claim in JWT token");
-      return null;
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Missing sub claim in JWT token");
     }
     return new SubjectAndIssuer(subject, issuer);
   }
