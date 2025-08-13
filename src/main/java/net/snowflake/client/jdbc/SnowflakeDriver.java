@@ -182,18 +182,24 @@ public class SnowflakeDriver implements Driver {
   /**
    * Checks whether a given url is in a valid format.
    *
-   * <p>The current uri format is: jdbc:snowflake://[host[:port]]
+   * <p>The current uri format is: jdbc:snowflake://[host[:port]] or jdbc:snowflake:auto
    *
    * <p>jdbc:snowflake:// - run in embedded mode jdbc:snowflake://localhost - connect to localhost
    * default port (8080)
    *
    * <p>jdbc:snowflake://localhost:8080- connect to localhost port 8080
    *
+   * <p>jdbc:snowflake:auto - use connections.toml
+   *
    * @param url url of the database including host and port
    * @return true if the url is valid
    */
   @Override
   public boolean acceptsURL(String url) {
+    if (url != null && url.equalsIgnoreCase(AUTO_CONNECTION_STRING_PREFIX)) {
+      return true;
+    }
+
     return SnowflakeConnectString.parse(url, EMPTY_PROPERTIES).isValid();
   }
 
