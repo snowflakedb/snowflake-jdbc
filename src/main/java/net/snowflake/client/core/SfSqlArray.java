@@ -10,11 +10,9 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
@@ -25,25 +23,21 @@ public class SfSqlArray implements Array {
   private String jsonStringFromElements;
   private final ObjectMapper objectMapper;
 
-  public SfSqlArray(String text, int baseType, Object elements, SFBaseSession session) {
+  public SfSqlArray(
+      String text,
+      int baseType,
+      Object elements,
+      SFBaseSession session,
+      ObjectMapper objectMapper) {
     this.text = text;
     this.baseType = baseType;
     this.elements = elements;
-    SnowflakeDateTimeFormat timestampFormat =
-        SnowflakeDateTimeFormat.fromSqlFormat(
-            String.valueOf(session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT")));
-    SnowflakeDateTimeFormat timeFormat =
-        SnowflakeDateTimeFormat.fromSqlFormat(
-            String.valueOf(session.getCommonParameters().get("TIME_OUTPUT_FORMAT")));
-    objectMapper =
-        ObjectMapperFactory.getObjectMapper()
-            .setDateFormat(
-                new SimpleDateFormat(
-                    String.valueOf(session.getCommonParameters().get("DATE_OUTPUT_FORMAT"))));
+    this.objectMapper = objectMapper;
   }
 
-  public SfSqlArray(int baseType, Object elements, SFBaseSession session) {
-    this(null, baseType, elements, session);
+  public SfSqlArray(
+      int baseType, Object elements, SFBaseSession session, ObjectMapper objectMapper) {
+    this(null, baseType, elements, session, objectMapper);
   }
 
   @Override

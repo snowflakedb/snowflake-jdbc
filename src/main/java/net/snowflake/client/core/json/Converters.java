@@ -162,7 +162,7 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public Converter bytesConverter(int columnType, int scale) {
+  public Converter<Byte[]> bytesConverter(int columnType, int scale) {
     return value -> {
       byte[] primitiveArray = getBytesConverter().getBytes(value, columnType, Types.BINARY, scale);
       Byte[] newByteArray = new Byte[primitiveArray.length];
