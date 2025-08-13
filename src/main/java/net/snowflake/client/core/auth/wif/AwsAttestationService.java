@@ -23,6 +23,9 @@ public class AwsAttestationService {
 
   public AwsAttestationService() {
     aws4Signer = new AWS4Signer();
+  }
+
+  void initializeSignerRegion() {
     aws4Signer.setRegionName(getAWSRegion());
   }
 
@@ -31,18 +34,18 @@ public class AwsAttestationService {
   }
 
   String getAWSRegion() {
-    try {
-      if (!regionInitialized) {
-        String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
-        region = envRegion != null ? envRegion : new InstanceMetadataRegionProvider().getRegion();
+    if (!regionInitialized) {
+      logger.debug("Getting AWS region from environment variable");
+      String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
+      if (envRegion != null) {
+        region = envRegion;
+      } else {
+        logger.debug("Getting AWS region from EC2 metadata service");
+        region = new InstanceMetadataRegionProvider().getRegion();
       }
-      return region;
-    } catch (Exception e) {
-      logger.debug("Could not get AWS region", e);
-      return null;
-    } finally {
       regionInitialized = true;
     }
+    return region;
   }
 
   void signRequestWithSigV4(Request<Void> signableRequest, AWSCredentials awsCredentials) {
