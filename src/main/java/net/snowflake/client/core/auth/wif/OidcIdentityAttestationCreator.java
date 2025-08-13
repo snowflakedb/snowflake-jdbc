@@ -22,7 +22,9 @@ public class OidcIdentityAttestationCreator implements WorkloadIdentityAttestati
   public WorkloadIdentityAttestation createAttestation() throws SFException {
     logger.debug("Creating OIDC identity attestation...");
     if (token == null) {
-      throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No OIDC token was specified");
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "No OIDC token was specified. Please provide it in `token` property.");
     }
     WorkloadIdentityUtil.SubjectAndIssuer claims =
         WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
