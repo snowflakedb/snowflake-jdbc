@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -21,6 +22,10 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
  * across different cloud function implementations (AWS Lambda, Azure Functions).
  */
 public class WifTestHelper {
+
+    private static String generateUniqueSessionId() {
+        return System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8);
+    }
 
     public static void validateQueryParameters(Map<String, String> queryParams) {
         if (queryParams == null) {
@@ -80,9 +85,10 @@ public class WifTestHelper {
         File workspace = null;
         File mavenHomeDir = null;
         try {
-            // Use temp directory explicitly for all Maven directories
-            mavenRepo = new File(tempDirectory, "maven-repo-" + System.currentTimeMillis());
-            workspace = new File(tempDirectory, "workspace-" + System.currentTimeMillis());
+            // Use unique session ID to avoid conflicts with parallel test runs
+            String sessionId = generateUniqueSessionId();
+            mavenRepo = new File(tempDirectory, "maven-repo-" + sessionId);
+            workspace = new File(tempDirectory, "workspace-" + sessionId);
             mavenRepo.mkdirs();
             workspace.mkdirs();
 
@@ -108,7 +114,7 @@ public class WifTestHelper {
             pb.redirectErrorStream(true);
             
             // Redirect all Maven directories to temp directory to avoid read-only filesystem issues
-            String mavenHome = tempDirectory + "/maven-home-" + System.currentTimeMillis();
+            String mavenHome = tempDirectory + "/maven-home-" + sessionId;
             mavenHomeDir = new File(mavenHome);
             mavenHomeDir.mkdirs();
             
@@ -276,7 +282,7 @@ public class WifTestHelper {
                 logger.log("rm -rf command failed: " + e.getMessage());
             }
             
-            // Also clean up any orphaned Maven directories in the temp directory
+            // Also clean up any truly old orphaned Maven directories (older than 1 hour)
             cleanupOrphanedMavenDirectories(logger);
             
         } catch (Exception e) {
@@ -286,7 +292,8 @@ public class WifTestHelper {
     
     /**
      * Clean up any orphaned Maven temporary directories that might have been left behind
-     * from previous failed executions. This is a defensive cleanup measure.
+     * from previous failed executions. This is a defensive cleanup measure that only
+     * removes directories older than 1 hour to avoid conflicts with parallel test runs.
      */
     private static void cleanupOrphanedMavenDirectories(WifLogger logger) {
         try {
@@ -297,11 +304,13 @@ public class WifTestHelper {
                 return;
             }
             
-            logger.log("Scanning for orphaned Maven directories in: " + tempDir);
+            logger.log("Scanning for old orphaned Maven directories in: " + tempDir);
             
             File[] files = tempDirectory.listFiles();
             if (files != null) {
                 int cleanedCount = 0;
+                long oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000); // 1 hour ago
+                
                 for (File file : files) {
                     if (file.isDirectory() && (
                         file.getName().startsWith("maven-repo-") ||
@@ -309,15 +318,20 @@ public class WifTestHelper {
                         file.getName().startsWith("maven-home-") ||
                         file.getName().startsWith("wif-function-")
                     )) {
-                        cleanupDirectory(file, "orphaned directory", logger);
-                        cleanedCount++;
+                        // Only clean up directories older than 1 hour to avoid interfering with parallel runs
+                        if (file.lastModified() < oneHourAgo) {
+                            cleanupDirectory(file, "old orphaned directory", logger);
+                            cleanedCount++;
+                        } else {
+                            logger.log("Skipping recent directory (likely from parallel run): " + file.getName());
+                        }
                     }
                 }
                 
                 if (cleanedCount > 0) {
-                    logger.log("Cleaned up " + cleanedCount + " orphaned Maven/WIF directories");
+                    logger.log("Cleaned up " + cleanedCount + " old orphaned Maven/WIF directories");
                 } else {
-                    logger.log("No orphaned Maven/WIF directories found");
+                    logger.log("No old orphaned Maven/WIF directories found");
                 }
             }
             
@@ -327,9 +341,9 @@ public class WifTestHelper {
     }
 
     public static String downloadAndExtractRepository(String tarballUrl, WifLogger logger) throws IOException, InterruptedException {
-        // Create timestamp-based directory with millisecond precision
-        long timestamp = System.currentTimeMillis();
-        String workDir = "/tmp/wif-function-" + timestamp;
+        // Create unique session-based directory for complete isolation
+        String sessionId = generateUniqueSessionId();
+        String workDir = "/tmp/wif-function-" + sessionId;
         File workingDirectory = new File(workDir);
 
         if (!workingDirectory.exists()) {
