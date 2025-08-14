@@ -66,10 +66,17 @@ run_aws_function() {
   
   local http_code
   echo "Executing curl with --aws-sigv4..."
-  http_code=$("$curl_cmd" -s -o /dev/null -w "%{http_code}" \
+  echo "URL length: ${#url}"
+  
+  # Try with more detailed output first
+  local response
+  response=$("$curl_cmd" -w "HTTP_CODE:%{http_code}" \
     --aws-sigv4 "aws:amz:us-west-2:lambda" \
     --user "${AWS_ACCESS_KEY}:${AWS_SECRET_ACCESS_KEY}" \
-    "$url")
+    "$url" 2>&1)
+  
+  http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+  echo "Full response: $response"
   
   if [[ "$http_code" == "200" ]]; then
     echo "AWS Lambda Function test passed"
