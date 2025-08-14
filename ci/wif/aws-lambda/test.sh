@@ -13,10 +13,7 @@ run_aws_function() {
   # Clear potentially conflicting AWS environment variables
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   unset AWS_PROFILE AWS_CONFIG_FILE AWS_SHARED_CREDENTIALS_FILE
-  
-  echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
-  echo "Using AWS CLI for Lambda invocation..."
-  
+
   # Set AWS credentials for CLI
   export AWS_ACCESS_KEY_ID="$WIF_E2E_AWS_ACCESS_KEY"
   export AWS_SECRET_ACCESS_KEY="$WIF_E2E_AWS_SECRET_ACCESS_KEY"
@@ -26,8 +23,7 @@ run_aws_function() {
   # Check AWS CLI version to determine the correct command format
   local aws_version
   aws_version=$(aws --version 2>&1 | head -n1)
-  echo "AWS CLI Version: $aws_version"
-  
+
   local payload_json="{\"queryStringParameters\":{\"SNOWFLAKE_TEST_WIF_HOST\":\"${SNOWFLAKE_TEST_WIF_HOST_AWS}\",\"SNOWFLAKE_TEST_WIF_ACCOUNT\":\"${SNOWFLAKE_TEST_WIF_ACCOUNT}\",\"SNOWFLAKE_TEST_WIF_PROVIDER\":\"AWS\",\"BRANCH\":\"${BRANCH}\"}}"
   local function_name="drivers-wif-automated-tests"
   
@@ -45,7 +41,7 @@ run_aws_function() {
       --payload "$payload_json" \
       --cli-read-timeout 1000 \
       --cli-connect-timeout 60 \
-      "$cli_response_file" 2>"$cli_error_file"
+      "$cli_response_file" >/dev/null 2>"$cli_error_file"
   else
     # AWS CLI v1 - no --cli-binary-format flag needed, but include timeouts
     echo "Using AWS CLI v1 format"
@@ -55,7 +51,7 @@ run_aws_function() {
       --payload "$payload_json" \
       --cli-read-timeout 1000 \
       --cli-connect-timeout 60 \
-      "$cli_response_file" 2>"$cli_error_file"
+      "$cli_response_file" >/dev/null 2>"$cli_error_file"
   fi
   
   local invoke_result=$?
