@@ -20,26 +20,10 @@ setup_curl() {
     local curl_binary="$curl_dir/curl-amd64"
     
     if [[ ! -f "$curl_binary" ]]; then
-      echo "Downloading curl to $curl_binary..." >&2
-      # Try multiple sources for a curl binary with --aws-sigv4 support
-      local download_success=false
-      
-      # Option 1: Simple static curl (most reliable)
-      if curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v8.5.0/curl-amd64" -o "$curl_binary" 2>/dev/null; then
-        download_success=true
-        echo "Downloaded curl v8.5.0 from moparisthebest/static-curl" >&2
-      # Option 2: Alternative static curl
-      elif curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v8.4.0/curl-amd64" -o "$curl_binary" 2>/dev/null; then
-        download_success=true
-        echo "Downloaded curl v8.4.0 from moparisthebest/static-curl" >&2
-      fi
-      
-      # Clean up any temporary files
-      rm -f curl.tar.xz 2>/dev/null
-      
-      if [[ "$download_success" == true ]]; then
+      echo "Downloading curl v7.79.1 to $curl_binary..." >&2
+      if curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64" -o "$curl_binary" 2>/dev/null; then
         chmod +x "$curl_binary"
-        echo "Downloaded curl successfully" >&2
+        echo "Downloaded curl v7.79.1 successfully" >&2
       else
         echo "Failed to download curl, using system curl" >&2
         echo "curl"
