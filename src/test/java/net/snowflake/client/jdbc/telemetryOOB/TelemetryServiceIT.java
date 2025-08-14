@@ -408,7 +408,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     try {
       throw new SFException(ErrorCode.MISSING_SERVER_URL);
     } catch (SFException ex) {
-      // example for an exception metric
       // this metric will be delivered to snowflake and wavefront
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       TelemetryEvent log = logBuilder.withException(ex).build();
@@ -422,13 +421,11 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     try {
       throw new Exception();
     } catch (Exception ex) {
-      // example for an exception log
       // this log will be delivered to snowflake
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       TelemetryEvent log = logBuilder.withException(ex).withTag("domain", "test").build();
       service.report(log);
 
-      // example for an exception metric
       // this metric will be delivered to snowflake and wavefront
       TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
       TelemetryEvent metric = mBuilder.withException(ex).withTag("domain", "test").build();
