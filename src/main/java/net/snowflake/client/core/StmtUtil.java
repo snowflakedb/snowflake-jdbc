@@ -373,6 +373,8 @@ public class StmtUtil {
           gzos.write(bytes);
           gzos.finish();
           input = new ByteArrayEntity(baos.toByteArray());
+          //SNOW-2266612 fix the memory leak
+          gzos.close();
           httpRequest.addHeader("content-encoding", "gzip");
           execTimeData.setGzipEnd();
         } else {
