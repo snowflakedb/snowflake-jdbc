@@ -29,14 +29,15 @@ public class StorageProviderException extends RuntimeException {
 
   /**
    * Returns true if this is an exception corresponding to a HTTP 404 error returned by the storage
-   * provider
+   * provider.
    *
    * @return true if the specified exception is an AmazonServiceException instance and if it was
    *     thrown because of a 404, false otherwise.
    */
   public boolean isServiceException404() {
-    if ((Exception) this instanceof AmazonServiceException) {
-      AmazonServiceException asEx = (AmazonServiceException) ((java.lang.Exception) this);
+    Throwable cause = getCause();
+    if (cause instanceof AmazonServiceException) {
+      AmazonServiceException asEx = (AmazonServiceException) cause;
       return (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND);
     }
 

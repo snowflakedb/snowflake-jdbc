@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -167,6 +169,25 @@ public class SessionUtilExternalBrowserTest {
       sub.authenticate();
       MatcherAssert.assertThat(
           "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+
+      sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
+      Mockito.when(loginInput.getDisableConsoleLogin()).thenReturn(false);
+      sub.authenticate();
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+
+      sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
+      Mockito.when(loginInput.getDisableConsoleLogin())
+          .thenAnswer(
+              invocation -> {
+                throw new SocketTimeoutException("Test exception");
+              });
+      try {
+        sub.authenticate();
+        fail("should have failed with an exception.");
+      } catch (SFException ex) {
+        assertTrue(ex.getMessage().contains("External browser authentication failed"));
+      }
     }
   }
 
