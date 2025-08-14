@@ -21,7 +21,23 @@ setup_curl() {
     
     if [[ ! -f "$curl_binary" ]]; then
       echo "Downloading curl to $curl_binary..." >&2
-      if curl -sL "https://github.com/stunnel/static-curl/releases/download/8.5.0/curl-linux-x86_64-8.5.0.tar.xz" -o curl.tar.xz && tar -xf curl.tar.xz && mv curl-linux-x86_64-8.5.0/curl "$curl_binary"; then
+      # Try multiple sources for a curl binary with --aws-sigv4 support
+      local download_success=false
+      
+      # Option 1: Simple static curl (most reliable)
+      if curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v8.5.0/curl-amd64" -o "$curl_binary" 2>/dev/null; then
+        download_success=true
+        echo "Downloaded curl v8.5.0 from moparisthebest/static-curl" >&2
+      # Option 2: Alternative static curl
+      elif curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v8.4.0/curl-amd64" -o "$curl_binary" 2>/dev/null; then
+        download_success=true
+        echo "Downloaded curl v8.4.0 from moparisthebest/static-curl" >&2
+      fi
+      
+      # Clean up any temporary files
+      rm -f curl.tar.xz 2>/dev/null
+      
+      if [[ "$download_success" == true ]]; then
         chmod +x "$curl_binary"
         echo "Downloaded curl successfully" >&2
       else
