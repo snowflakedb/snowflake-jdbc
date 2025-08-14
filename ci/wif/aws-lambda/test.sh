@@ -68,9 +68,9 @@ run_aws_function() {
   echo "Executing curl with --aws-sigv4..."
   echo "URL length: ${#url}"
   
-  # Try with more detailed output first
+  # Try with more detailed output first, skip SSL verification for static curl
   local response
-  response=$("$curl_cmd" -w "HTTP_CODE:%{http_code}" \
+  response=$("$curl_cmd" -k -w "HTTP_CODE:%{http_code}" \
     --aws-sigv4 "aws:amz:us-west-2:lambda" \
     --user "${AWS_ACCESS_KEY}:${AWS_SECRET_ACCESS_KEY}" \
     "$url" 2>&1)
