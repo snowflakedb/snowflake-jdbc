@@ -99,8 +99,8 @@ EXIT_STATUS=0
 set +e  # Don't exit on first failure
 
 # WIF E2E tests on functions
-run_azure_function
 run_aws_function
+run_azure_function
 run_gcp_function
 # WIF E2E tests on VMs
 run_tests_and_set_result "AZURE" "$HOST_AZURE" "$SNOWFLAKE_TEST_WIF_HOST_AZURE" "$RSA_KEY_PATH_AWS_AZURE"
