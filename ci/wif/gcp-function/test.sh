@@ -57,7 +57,7 @@ run_gcp_function() {
   url="${url}&IS_GCP_FUNCTION=true"
   
   local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 1200 \
     -H "Authorization: Bearer $id_token" \
     "$url")
   

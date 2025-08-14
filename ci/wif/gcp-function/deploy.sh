@@ -5,7 +5,7 @@ set -e
 FUNCTION_NAME="drivers-wif-e2e-gcp"
 DEFAULT_REGION="us-central1"
 MEMORY="2048MB"
-TIMEOUT="540s"
+TIMEOUT="1100"
 RUNTIME="java17"
 ENTRY_POINT="com.snowflake.wif.gcp.WifGcpFunctionE2e"
 

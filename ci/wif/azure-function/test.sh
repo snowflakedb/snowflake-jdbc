@@ -2,9 +2,6 @@
 
 set -o pipefail
 
-# Azure Function E2E test script
-# This script contains Azure-specific test functions extracted from ci/test_wif.sh
-
 run_azure_function() {
   echo "Running Azure Function E2E test..."
   
@@ -15,7 +12,7 @@ run_azure_function() {
   url="${url}&SNOWFLAKE_TEST_WIF_PROVIDER=AZURE"
  
   local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 1200 "$url")
   
   if [[ "$http_code" == "200" ]]; then
     echo "Azure Function test passed"
@@ -26,9 +23,7 @@ run_azure_function() {
   fi
 }
 
-# Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  # Script is being executed directly
   run_azure_function
   exit $?
 fi
