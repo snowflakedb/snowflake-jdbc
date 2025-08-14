@@ -1,7 +1,9 @@
 package net.snowflake.client.core;
 
 import com.amazonaws.Request;
+// import software.amazon.awssdk.Request;
 import com.amazonaws.handlers.RequestHandler2;
+// import software.amazon.awssdk.handlers.RequestHandler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
