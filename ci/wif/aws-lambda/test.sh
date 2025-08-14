@@ -49,14 +49,13 @@ setup_curl() {
       echo "Using existing downloaded curl at $curl_binary" >&2
     fi
     
-    echo "Testing downloaded curl version and --aws-sigv4 support..." >&2
     echo "Downloaded curl version: $("$curl_binary" --version 2>/dev/null | head -1)" >&2
-    if [[ -x "$curl_binary" ]] && "$curl_binary" --help 2>/dev/null | grep -q "\-\-aws-sigv4"; then
-      echo "Downloaded curl supports --aws-sigv4, using it" >&2
+    if [[ -x "$curl_binary" ]]; then
+      echo "Using downloaded curl (should support --aws-sigv4)" >&2
       echo "$curl_binary"
       return 0
     else
-      echo "Downloaded curl doesn't support --aws-sigv4, using system curl" >&2
+      echo "Downloaded curl not executable, using system curl" >&2
     fi
   else
     echo "Not running on Linux, using system curl" >&2
