@@ -21,7 +21,7 @@ setup_curl() {
     
     if [[ ! -f "$curl_binary" ]]; then
       echo "Downloading curl to $curl_binary..." >&2
-      if curl -sL "https://github.com/moparisthebest/static-curl/releases/download/v7.85.0/curl-amd64" -o "$curl_binary"; then
+      if curl -sL "https://github.com/stunnel/static-curl/releases/download/8.5.0/curl-linux-x86_64-8.5.0.tar.xz" -o curl.tar.xz && tar -xf curl.tar.xz && mv curl-linux-x86_64-8.5.0/curl "$curl_binary"; then
         chmod +x "$curl_binary"
         echo "Downloaded curl successfully" >&2
       else
@@ -33,6 +33,8 @@ setup_curl() {
       echo "Using existing downloaded curl at $curl_binary" >&2
     fi
     
+    echo "Testing downloaded curl version and --aws-sigv4 support..." >&2
+    echo "Downloaded curl version: $("$curl_binary" --version 2>/dev/null | head -1)" >&2
     if [[ -x "$curl_binary" ]] && "$curl_binary" --help 2>/dev/null | grep -q "\-\-aws-sigv4"; then
       echo "Downloaded curl supports --aws-sigv4, using it" >&2
       echo "$curl_binary"
