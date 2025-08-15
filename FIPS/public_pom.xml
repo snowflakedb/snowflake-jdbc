@@ -33,7 +33,7 @@
 
     <properties>
       <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
-      <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
+      <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
       <jna.version>5.13.0</jna.version>
     </properties>
 
