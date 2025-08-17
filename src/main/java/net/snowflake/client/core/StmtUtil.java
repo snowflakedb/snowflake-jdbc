@@ -368,7 +368,6 @@ public class StmtUtil {
           execTimeData.setGzipStart();
           // SNOW-18057: compress the post body in gzip
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
-          //SNOW-2266612 fix the memory leak
           try (GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
               byte[] bytes = json.getBytes("UTF-8");
               gzos.write(bytes);
