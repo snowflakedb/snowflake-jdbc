@@ -3,7 +3,6 @@ package net.snowflake.client.core.crl;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
@@ -12,8 +11,6 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -35,11 +32,6 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
 
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient httpClient;
-
-  @BeforeAll
-  public static void setUpClassCRL() {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @BeforeEach
   public void setUpTest() {

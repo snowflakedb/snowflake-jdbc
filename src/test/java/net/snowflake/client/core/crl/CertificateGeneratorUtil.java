@@ -6,6 +6,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.CertIOException;
@@ -29,6 +31,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
@@ -45,6 +48,7 @@ class CertificateGeneratorUtil {
 
   CertificateGeneratorUtil() {
     try {
+      Security.addProvider(new BouncyCastleProvider());
       this.caKeyPair = generateKeyPair();
       this.caCertificate = createCACertificate();
     } catch (Exception e) {
@@ -78,8 +82,7 @@ class CertificateGeneratorUtil {
 
       DistributionPointName dpName =
           new DistributionPointName(
-              DistributionPointName.FULL_NAME,
-              new org.bouncycastle.asn1.x509.GeneralNames(generalNames));
+              DistributionPointName.FULL_NAME, new GeneralNames(generalNames));
 
       CRLDistPoint crlDistPoint =
           new CRLDistPoint(new DistributionPoint[] {new DistributionPoint(dpName, null, null)});
@@ -123,9 +126,7 @@ class CertificateGeneratorUtil {
             .toArray(GeneralName[]::new);
 
     DistributionPointName dpName =
-        new DistributionPointName(
-            DistributionPointName.FULL_NAME,
-            new org.bouncycastle.asn1.x509.GeneralNames(generalNames));
+        new DistributionPointName(DistributionPointName.FULL_NAME, new GeneralNames(generalNames));
 
     IssuingDistributionPoint idp =
         new IssuingDistributionPoint(dpName, false, false, null, false, false);

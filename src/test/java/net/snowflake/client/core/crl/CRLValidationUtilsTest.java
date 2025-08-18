@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.security.Security;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
@@ -18,8 +17,6 @@ import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.crl.CertificateGeneratorUtil.CertificateChain;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -28,11 +25,6 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.CORE)
 class CRLValidationUtilsTest {
   private CertificateGeneratorUtil certGen;
-
-  @BeforeAll
-  static void setUpClass() {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @BeforeEach
   void setUp() {

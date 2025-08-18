@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -15,8 +14,6 @@ import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.crl.CertificateGeneratorUtil.CertificateChain;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -43,11 +40,6 @@ class CRLValidatorTest {
 
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient mockHttpClient;
-
-  @BeforeAll
-  static void setUpClass() {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @BeforeEach
   void setUp() {

@@ -13,7 +13,6 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashSet;
@@ -30,10 +29,8 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -53,11 +50,6 @@ class VerifiedCertPathBuilderTest {
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
   private TestCertificateGenerator certGen;
-
-  @BeforeAll
-  static void setUpClass() {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @BeforeEach
   void setUp() {
