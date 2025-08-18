@@ -369,12 +369,12 @@ public class StmtUtil {
           // SNOW-18057: compress the post body in gzip
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
           try (GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
-              byte[] bytes = json.getBytes("UTF-8");
-              gzos.write(bytes);
-              gzos.finish();
-              input = new ByteArrayEntity(baos.toByteArray());
-              httpRequest.addHeader("content-encoding", "gzip");
-              execTimeData.setGzipEnd();
+            byte[] bytes = json.getBytes("UTF-8");
+            gzos.write(bytes);
+            gzos.finish();
+            input = new ByteArrayEntity(baos.toByteArray());
+            httpRequest.addHeader("content-encoding", "gzip");
+            execTimeData.setGzipEnd();
           }
         } else {
           input = new ByteArrayEntity(json.getBytes("UTF-8"));
