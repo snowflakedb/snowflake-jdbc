@@ -1,6 +1,7 @@
 package net.snowflake.client.core.crl;
 
 import static net.snowflake.client.core.crl.CRLValidationUtils.extractCRLDistributionPoints;
+import static net.snowflake.client.core.crl.CRLValidationUtils.getCertChainSubjects;
 import static net.snowflake.client.core.crl.CRLValidationUtils.isShortLived;
 import static net.snowflake.client.core.crl.CRLValidationUtils.verifyIssuingDistributionPoint;
 
@@ -59,7 +60,10 @@ class CRLValidator {
       throw new IllegalArgumentException("Certificate chains cannot be null or empty");
     }
 
-    logger.debug("Validating {} certificate chains", certificateChains.size());
+    logger.debug(
+        "Validating {} certificate chains with subjects: {}",
+        certificateChains.size(),
+        getCertChainSubjects(certificateChains));
 
     List<CRLValidationResult> crlValidationResults = validateChains(certificateChains);
 

@@ -5,8 +5,10 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -163,5 +165,12 @@ class CRLValidationUtils {
       logger.debug("Failed to verify IDP extension: {}", e.getMessage());
       return false;
     }
+  }
+
+  static String getCertChainSubjects(List<X509Certificate[]> certificateChains) {
+    return certificateChains.stream()
+        .flatMap(Arrays::stream)
+        .map(cert -> cert.getSubjectX500Principal().getName())
+        .collect(Collectors.joining(", "));
   }
 }
