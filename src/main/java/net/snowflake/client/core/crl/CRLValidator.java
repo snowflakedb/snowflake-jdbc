@@ -21,8 +21,10 @@ import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -149,16 +151,23 @@ class CRLValidator {
       X509Certificate cert, X509Certificate parentCert) {
     List<String> crlUrls = extractCRLDistributionPoints(cert);
 
+    Set<CertificateValidationResult> results = new HashSet<>();
+
     for (String url : crlUrls) {
       CertificateValidationResult result = validateCert(cert, url, parentCert);
 
-      if (result == CertificateValidationResult.CERT_REVOKED
-          || result == CertificateValidationResult.CERT_ERROR) {
+      if (result == CertificateValidationResult.CERT_REVOKED) {
         return result;
       }
+
+      results.add(result);
     }
 
-    return CertificateValidationResult.CERT_UNREVOKED;
+    if (results.contains(CertificateValidationResult.CERT_ERROR)) {
+      return CertificateValidationResult.CERT_ERROR;
+    } else {
+      return CertificateValidationResult.CERT_UNREVOKED;
+    }
   }
 
   private CertificateValidationResult validateCert(
