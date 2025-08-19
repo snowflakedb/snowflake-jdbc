@@ -7,9 +7,10 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -23,7 +24,8 @@ import org.apache.http.protocol.HttpContext;
 public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
-
+  private static TlsVersion minTlsVersion = TlsVersion.TLS_1_2;
+  private static TlsVersion maxTlsVersion = TlsVersion.TLS_1_3;
   private final boolean socksProxyDisabled;
 
   public SFSSLConnectionSocketFactory(TrustManager[] trustManagers, boolean socksProxyDisabled)
@@ -37,29 +39,28 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
   }
 
   private static String[] getSupportedTlsVersions() {
-    List<String> supportedVersions = new ArrayList<>();
-
-    // Check if TLS 1.3 is available and add it first (preferred)
-    if (isTls13Available()) {
-      supportedVersions.add("TLSv1.3");
-      logger.debug("TLS versions available: [TLSv1.3, TLSv1.2] (TLS 1.3 preferred)");
-    } else {
-      logger.debug("TLS versions available: [TLSv1.2] (TLS 1.3 not supported)");
+    if (minTlsVersion.compareTo(maxTlsVersion) > 0) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Minimum TLS version %s cannot be greater than the maximum TLS version %s",
+              minTlsVersion.getProtocolName(), maxTlsVersion.getProtocolName()));
     }
+    List<String> supported =
+        Arrays.stream(TlsVersion.values())
+            .sorted(Comparator.reverseOrder()) // Prefer newer TLS versions
+            .filter(TlsVersion::isAvailable)
+            .filter(v -> v.compareTo(minTlsVersion) >= 0)
+            .filter(v -> v.compareTo(maxTlsVersion) <= 0)
+            .map(TlsVersion::getProtocolName)
+            .collect(Collectors.toList());
 
-    // Always include TLS 1.2 as baseline
-    supportedVersions.add("TLSv1.2");
-
-    return supportedVersions.toArray(new String[0]);
-  }
-
-  private static boolean isTls13Available() {
-    try {
-      SSLContext.getInstance("TLSv1.3");
-      return true;
-    } catch (NoSuchAlgorithmException e) {
-      return false;
+    if (supported.isEmpty()) {
+      throw new IllegalStateException(
+          String.format(
+              "No TLS versions match constraints: min=%s, max=%s",
+              minTlsVersion.getProtocolName(), maxTlsVersion.getProtocolName()));
     }
+    return supported.toArray(new String[0]);
   }
 
   private static SSLContext initSSLContext(TrustManager[] trustManagers)
@@ -98,5 +99,52 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
     logger.trace("Cipher suites used: {}", (ArgSupplier) () -> Arrays.toString(cipherSuites));
 
     return cipherSuites;
+  }
+
+  public static void setMinTlsVersion(String minTlsVersion) {
+    logger.debug("Setting minimum TLS version to: {}", minTlsVersion);
+    SFSSLConnectionSocketFactory.minTlsVersion = TlsVersion.fromString(minTlsVersion);
+  }
+
+  public static void setMaxTlsVersion(String maxTlsVersion) {
+    logger.debug("Setting maximum TLS version to: {}", maxTlsVersion);
+    SFSSLConnectionSocketFactory.maxTlsVersion = TlsVersion.fromString(maxTlsVersion);
+  }
+
+  private enum TlsVersion {
+    TLS_1_2("TLSv1.2"),
+    TLS_1_3("TLSv1.3");
+
+    private final String protocolName;
+
+    TlsVersion(String protocolName) {
+      this.protocolName = protocolName;
+    }
+
+    String getProtocolName() {
+      return protocolName;
+    }
+
+    boolean isAvailable() {
+      try {
+        SSLContext.getInstance(this.protocolName);
+        return true;
+      } catch (NoSuchAlgorithmException e) {
+        logger.debug("TLS protocol {} is not available", this.protocolName);
+        return false;
+      }
+    }
+
+    static TlsVersion fromString(String text) {
+      if (text == null) {
+        return null;
+      }
+      for (TlsVersion v : TlsVersion.values()) {
+        if (v.protocolName.equalsIgnoreCase(text)) {
+          return v;
+        }
+      }
+      throw new IllegalArgumentException("Unsupported TLS version: " + text);
+    }
   }
 }
