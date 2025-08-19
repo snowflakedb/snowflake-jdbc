@@ -1,4 +1,4 @@
-package net.snowflake.client;
+package net.snowflake.client.core.crl;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;

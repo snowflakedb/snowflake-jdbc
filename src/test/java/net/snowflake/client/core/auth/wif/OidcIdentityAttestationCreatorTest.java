@@ -1,8 +1,9 @@
 package net.snowflake.client.core.auth.wif;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import net.snowflake.client.core.SFException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ class OidcIdentityAttestationCreatorTest {
       "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL29pZGMuZWtzLnVzLWVhc3QtMi5hbWF6b25hd3MuY29tL2lkLzNCODY5QkM1RDEyQ0VCNTUxNTM1ODYyMUQ4MDg1RDU4IiwiaWF0IjoxNzQ0Mjg3ODc4LCJleHAiOjE3NzU4MjM4NzgsImF1ZCI6Ind3dy5leGFtcGxlLmNvbSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpwb2MtbmFtZXNwYWNlOm9pZGMtc2EifQ.a8H6KRIF1XmM8lkqL6kR8ccInr7wAzQrbKd3ZHFgiEg";
 
   @Test
-  public void shouldReturnProperAttestation() {
+  public void shouldReturnProperAttestation() throws SFException {
     OidcIdentityAttestationCreator attestationCreator =
         new OidcIdentityAttestationCreator(VALID_TOKEN);
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
@@ -77,7 +78,6 @@ class OidcIdentityAttestationCreatorTest {
 
   private void createAttestationAndAssertNull(String token) {
     OidcIdentityAttestationCreator attestationCreator = new OidcIdentityAttestationCreator(token);
-    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
-    assertNull(attestation);
+    assertThrows(SFException.class, attestationCreator::createAttestation);
   }
 }
