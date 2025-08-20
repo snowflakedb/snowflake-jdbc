@@ -17,11 +17,14 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.SecurityUtil;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -269,6 +272,48 @@ public class StreamLatestIT extends BaseJDBCTest {
       } finally {
         stat.execute("DROP STAGE IF EXISTS " + randomStage);
       }
+    }
+  }
+
+  @Test
+  public void uploadAndDownloadNotWorking() throws Exception {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+
+    String accountName = System.getenv("ACCOUNT_ID");
+    Properties paramProperties = new Properties();
+    paramProperties.put("host", accountName + ".snowflakecomputing.com");
+    paramProperties.put("port", "443");
+    paramProperties.put("protocol", "");
+    paramProperties.put("user", "KEEBO_USER");
+    paramProperties.put("role", "KEEBO_ROLE");
+    paramProperties.put("db", "KEEBO_DB");
+    paramProperties.put("schema", "KEEBO_SCHEMA");
+    paramProperties.put("warehouse", "none");
+    paramProperties.put("private_key_base64", System.getenv("PK_BASE64"));
+    paramProperties.put("private_key_pwd", System.getenv("PK_PWD"));
+
+    try (Connection conn = getConnection(accountName, paramProperties);
+         Statement stat = conn.createStatement()) {
+
+      String stage = "~";
+      // Intentionally picked a wrong date so we don't pollute actual data.
+      String dir = "export/072ca-000/query_history_v4/dt=2025-07-32/";
+      String fileName = "test_file.csv";
+      String sourceFile = getFullPathFileInResource(fileName);
+      String stageDest = String.format("@%s/%s", stage, dir);
+      putFile(stat, sourceFile, stageDest, false);
+
+      List<String> filesInStage = new ArrayList<>();
+      try (ResultSet rs = stat.executeQuery("LIST " + stageDest)) {
+        while (rs.next()) {
+          filesInStage.add(rs.getString(1));
+        }
+      }
+      assertTrue(filesInStage.contains(dir + fileName), "File not found in stage");
+      assertEquals(1, filesInStage.size(), "More than one file in stage");
+
+      downloadStreamExpectingContent(
+              conn, stage, dir + "/" + fileName, false, "I am a file with extension");
     }
   }
 
