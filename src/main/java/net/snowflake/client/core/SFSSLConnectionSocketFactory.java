@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
@@ -47,7 +46,6 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
     }
     List<String> supported =
         Arrays.stream(TlsVersion.values())
-            .sorted(Comparator.reverseOrder()) // Prefer newer TLS versions
             .filter(TlsVersion::isAvailable)
             .filter(v -> v.compareTo(minTlsVersion) >= 0)
             .filter(v -> v.compareTo(maxTlsVersion) <= 0)

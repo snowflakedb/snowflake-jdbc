@@ -33,8 +33,8 @@ public class SFSSLConnectionSocketFactoryTest {
 
     if (isTls13Available()) {
       assertEquals(2, supportedVersions.length);
-      assertEquals("TLSv1.3", supportedVersions[0]);
-      assertEquals("TLSv1.2", supportedVersions[1]);
+      assertEquals("TLSv1.2", supportedVersions[0]);
+      assertEquals("TLSv1.3", supportedVersions[1]);
     } else {
       assertEquals(1, supportedVersions.length);
       assertEquals("TLSv1.2", supportedVersions[0]);
@@ -43,7 +43,7 @@ public class SFSSLConnectionSocketFactoryTest {
 
   @ParameterizedTest
   @CsvSource({
-    "TLSv1.2,TLSv1.3,TLSv1.3 TLSv1.2",
+    "TLSv1.2,TLSv1.3,TLSv1.2 TLSv1.3",
     "TLSv1.2,TLSv1.2,TLSv1.2",
     "TLSv1.3,TLSv1.3,TLSv1.3"
   })
