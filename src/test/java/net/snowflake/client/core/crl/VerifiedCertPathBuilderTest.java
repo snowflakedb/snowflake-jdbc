@@ -1,4 +1,4 @@
-package net.snowflake.client;
+package net.snowflake.client.core.crl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,7 +13,6 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashSet;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import net.snowflake.client.category.TestTags;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -29,15 +29,13 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag("CORE")
+@Tag(TestTags.CORE)
 class VerifiedCertPathBuilderTest {
 
   // Cross-signed scenario path identifiers
@@ -52,11 +50,6 @@ class VerifiedCertPathBuilderTest {
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
   private TestCertificateGenerator certGen;
-
-  @BeforeAll
-  static void setUpClass() {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @BeforeEach
   void setUp() {
