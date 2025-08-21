@@ -591,6 +591,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case MIN_TLS_VERSION:
+          if (propertyValue != null) {
+            SFSSLConnectionSocketFactory.setMinTlsVersion((String) propertyValue);
+          }
+          break;
+
+        case MAX_TLS_VERSION:
+          if (propertyValue != null) {
+            SFSSLConnectionSocketFactory.setMaxTlsVersion((String) propertyValue);
+          }
+          break;
+
         default:
           break;
       }
