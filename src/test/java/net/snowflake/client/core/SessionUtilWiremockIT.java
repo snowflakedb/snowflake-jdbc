@@ -32,6 +32,8 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_4 =
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
+  private static final String UNSUPPORTED_MFA_IN_FEDERATED_STEP_3 =
+      "/wiremock/mappings/session/session-util-wiremock-it-unsupported-mfa-in-federated-step-3.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
@@ -229,6 +231,33 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
         vanityUrlCalls,
         loginInput.getLoginTimeout(),
         ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS);
+  }
+
+  @Test
+  public void testErrorHandlingWhenOktaReturnsUnsupportedMfaInFederatedStep3() throws Throwable {
+    // GIVEN
+    Map<String, Object> placeholders = new HashMap<>();
+    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+    String wireMockMapping =
+        getWireMockMappingFromFile(UNSUPPORTED_MFA_IN_FEDERATED_STEP_3, placeholders);
+    importMapping(wireMockMapping);
+
+    setCustomTrustStorePropertyPath();
+
+    SFLoginInput loginInput = createOktaLoginInputBase();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+    try {
+      // WHEN
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+      // THEN
+    } catch (SnowflakeSQLException ex) {
+      assertThat(ex.getErrorCode(), equalTo(ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode()));
+      assertThat(
+          ex.getMessage(),
+          equalTo(
+              "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
+    }
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(
