@@ -1,0 +1,54 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Unsupported MFA in federated step 3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/session/authenticator-request",
+        "queryParameters": {
+          "request_guid": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "tokenUrl": "{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}/okta-stub/vanity-url/api/v1/authn",
+            "ssoUrl": "{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}/okta-stub/vanity-url/app/snowflake/tokenlikepartofurl/sso/saml",
+            "proofKey": null
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Unsupported MFA in federated step 3",
+      "request": {
+        "method": "POST",
+        "urlPath": "/okta-stub/vanity-url/api/v1/authn"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "status": "MFA_REQUIRED",
+          "sessionToken": null,
+          "cookieToken": null
+        }
+      }
+    }
+  ],
+  "importOptions": {
+    "duplicatePolicy": "IGNORE",
+    "deleteAllNotInImport": true
+  }
+}
