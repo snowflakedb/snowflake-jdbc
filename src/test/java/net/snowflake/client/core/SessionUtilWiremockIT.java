@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
@@ -15,6 +16,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -247,17 +249,15 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     SFLoginInput loginInput = createOktaLoginInputBase();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
 
-    try {
-      // WHEN
-      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      // THEN
-    } catch (SnowflakeSQLException ex) {
-      assertThat(ex.getErrorCode(), equalTo(ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode()));
-      assertThat(
-          ex.getMessage(),
-          equalTo(
-              "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
-    }
+    SnowflakeSQLLoggedException thrown =
+        assertThrows(
+            SnowflakeSQLLoggedException.class,
+            () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
+    assertThat(thrown.getErrorCode(), equalTo(ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode()));
+    assertThat(
+        thrown.getMessage(),
+        equalTo(
+            "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(

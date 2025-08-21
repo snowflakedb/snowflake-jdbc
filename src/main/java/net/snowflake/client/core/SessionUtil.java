@@ -1557,7 +1557,7 @@ public class SessionUtil {
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
-      boolean isMfaEnabledInOkta = jsonNode.get("status").asText().equals("MFA_REQUIRED");
+      boolean isMfaEnabledInOkta = "MFA_REQUIRED".equals(jsonNode.get("status").asText());
       if (isMfaEnabledInOkta) {
         throw new SnowflakeSQLLoggedException(
             null,
