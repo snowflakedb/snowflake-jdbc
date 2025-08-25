@@ -2,6 +2,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Date;
@@ -24,10 +25,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   protected final Converters converters;
+  protected final ObjectMapper objectMapper;
 
   protected SFJsonResultSet(TimeZone sessionTimeZone, Converters converters) {
     this.sessionTimeZone = sessionTimeZone;
     this.converters = converters;
+    this.objectMapper = ObjectMapperFactory.getObjectMapperForSession(session);
   }
 
   /**
@@ -122,7 +125,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     if (obj == null) {
       return null;
     }
-    return getJsonArray((String) obj, columnIndex);
+    return getJsonArray((String) obj, columnIndex, objectMapper);
   }
 
   @Override

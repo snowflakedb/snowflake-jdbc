@@ -4,6 +4,7 @@ import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -38,6 +39,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
@@ -87,6 +89,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private SFConnectionHandler sfConnectionHandler;
 
   private boolean showStatementParameters;
+
+  private ObjectMapper objectMapper;
 
   /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
@@ -150,6 +154,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
+    this.objectMapper = ObjectMapperFactory.getObjectMapperForSession(sfSession);
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
     stopwatch.stop();
@@ -728,7 +733,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
     return new SfSqlArray(
-        JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(), elements, sfSession);
+        JDBCType.valueOf(typeName.toUpperCase()).getVendorTypeNumber(),
+        elements,
+        sfSession,
+        objectMapper);
   }
 
   @Override
