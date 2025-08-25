@@ -710,7 +710,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
         stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_BINDS = enable");
-        stmt.execute("alter session set ENABLE_OBJECT_TYPED_BINDS = true");
         stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
       }
       return conn;
