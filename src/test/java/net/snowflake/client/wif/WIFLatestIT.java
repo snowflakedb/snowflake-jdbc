@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -32,6 +33,7 @@ public class WIFLatestIT {
   private static final String ACCOUNT = System.getenv("SNOWFLAKE_TEST_WIF_ACCOUNT");
   private static final String HOST = System.getenv("SNOWFLAKE_TEST_WIF_HOST");
   private static final String PROVIDER = System.getenv("SNOWFLAKE_TEST_WIF_PROVIDER");
+  private static final String IS_GCP_FUNCTION = System.getenv("IS_GCP_FUNCTION");
 
   @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
@@ -45,6 +47,7 @@ public class WIFLatestIT {
   @Test
   @EnabledIf("isProviderGCP")
   void shouldAuthenticateUsingOIDC() {
+    Assumptions.assumeTrue(!Objects.equals(IS_GCP_FUNCTION, "true"));
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);
     properties.put("authenticator", "WORKLOAD_IDENTITY");
