@@ -323,67 +323,12 @@ public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Test
-  void testMultiStatementArrowFormat() throws SQLException {
-    // Setup a memory buffer for JUL logs
-    ByteArrayOutputStream logCapture = new ByteArrayOutputStream();
-    PrintStream logStream = new PrintStream(logCapture);
-
-    Logger sfLogger = Logger.getLogger("net.snowflake");
-    sfLogger.setLevel(Level.ALL);
-    sfLogger.setUseParentHandlers(false); // Disable default console logging
-
-    Handler consoleHandler =
-        new ConsoleHandler() {
-          @Override
-          public synchronized void publish(java.util.logging.LogRecord record) {
-            logStream.println(record.getLevel() + ": " + record.getMessage());
-          }
-        };
-    consoleHandler.setLevel(Level.ALL);
-    sfLogger.addHandler(consoleHandler);
-    try (Statement stmt = connection.createStatement()) {
-      try {
-        queryResultFormat = "arrow";
-        stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-
-        /* Enable fix for multi-statement with arrow.
-         * Ignore failure since the test user might not be able to change the parameter.
-         * In such case assume the parameter has been enabled on the test account.
-         */
-        stmt.execute("ALTER SESSION SET ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS=TRUE");
-      } catch (SQLException e) {
-        // DO NOTHING .Ignore failure since the test user might not be able to change the parameter.
-      }
-      stmt.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-      String multiStmtQuery =
-          "select TO_DOUBLE('0.123456789123456789');\n"
-              + "select 456;\n"
-              + "select 789;\n"
-              + "select '000';";
-
-      stmt.execute(multiStmtQuery);
-      ;
-      ResultSet rs = stmt.getResultSet();
-
-      while (rs.next()) {
-        // Arrow has higher precision.
-        assertEquals(rs.getDouble(1), 0.123456789123456789);
-      }
-      rs.close();
-      stmt.close();
-
-      // Flush logs
-      consoleHandler.flush();
-      String logs = logCapture.toString();
-
-      // Verify Arrow format logged
-      assertTrue(
-          logs.contains("Query result received in ARROW format. Processing with SFArrowResultSet."),
-          "Expected Arrow logs but got: \n" + logs);
-    }
-  }
-
+  /**
+   * Tests multi-statements with different result formats (JSON and Arrow).
+   *
+   * @param queryResultFormat result format to test
+   * @throws Exception if failed
+   */
   @ParameterizedTest
   @ValueSource(strings = {"arrow", "json"})
   void testMultiStatementResultFormat(String queryResultFormat) throws Exception {
