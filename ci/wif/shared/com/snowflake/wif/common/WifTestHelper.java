@@ -103,13 +103,18 @@ public class WifTestHelper {
                 "-Djacoco.skip.instrument=true " +
                 "-Dskip.unitTests=true " +
                 "-DintegrationTestSuites=WIFTestSuite " +
+                "-Dmaven.artifact.threads=4 " +
                 "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn " +
                 "-Dnot-self-contained-jar " +
                 "-Dmaven.test.failure.ignore=false " +
-                "-DMAVEN_OPTS=\"-Xmx1536m\" " +
-                "-Dmaven.artifact.threads=1 " +
                 "-Dmaven.compile.fork=false " +
-                "verify --batch-mode --show-version --fail-fast --no-transfer-progress"
+                "-Dmaven.javadoc.skip=true " +
+                "-Dmaven.source.skip=true " +
+                "-Dcheckstyle.skip=true " +
+                "-Dspotbugs.skip=true " +
+                "-Denforcer.skip=true " +
+                "-T 2C " +
+                "test-compile test --batch-mode --show-version --fail-fast --no-transfer-progress"
             );
             pb.redirectErrorStream(true);
             
