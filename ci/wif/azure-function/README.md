@@ -1,6 +1,6 @@
-# Azure Cloud Function for WIF E2E Testing
+# Azure Function for WIF E2E Testing
 
 ## Deployment Steps
-- install azure client: brew install azure-cli
-- login to azure: `az login`, login in browser
-- run `mvn clean package azure-functions:deploy`
+1. Install Azure CLI
+2. Authenticate: `az login`, login in browser.
+3. Run deployment script: `./deploy.sh`

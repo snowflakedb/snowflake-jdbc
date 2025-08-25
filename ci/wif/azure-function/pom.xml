@@ -82,52 +82,13 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+            <!-- Azure Functions Maven plugin to generate function metadata -->
             <plugin>
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-functions-maven-plugin</artifactId>
                 <version>${azure.functions.maven.plugin.version}</version>
                 <configuration>
-                    <!-- function app name -->
-                    <appName>drivers-wif-e2e</appName>
-                    <!-- function app resource group -->
-                    <resourceGroup>automated-driver-tests</resourceGroup>
-                    <!-- function app service plan name -->
-                    <appServicePlanName>ASP-automateddrivertests-97ec</appServicePlanName>
-                    <!-- function app region-->
-                    <region>westus3</region>
-                    <!-- function pricing tier -->
-                    <pricingTier>EP1</pricingTier>
-                    <runtime>
-                        <os>linux</os>
-                        <javaVersion>17</javaVersion>
-                    </runtime>
-                    <appSettings>
-                        <property>
-                            <name>FUNCTIONS_EXTENSION_VERSION</name>
-                            <value>~4</value>
-                        </property>
-                        <property>
-                            <name>FUNCTIONS_WORKER_RUNTIME</name>
-                            <value>java</value>
-                        </property>
-                        <property>
-                            <name>WEBSITE_RUN_FROM_PACKAGE</name>
-                            <value>0</value>
-                        </property>
-                        <property>
-                            <name>SCM_DO_BUILD_DURING_DEPLOYMENT</name>
-                            <value>true</value>
-                        </property>
-                        <!-- Keep-warm settings to prevent cold starts -->
-                        <property>
-                            <name>WEBSITE_CONTENTAZUREFILECONNECTIONSTRING_ALWAYS_READY_INSTANCES</name>
-                            <value>1</value>
-                        </property>
-                        <property>
-                            <name>FUNCTIONS_WORKER_PROCESS_COUNT</name>
-                            <value>1</value>
-                        </property>
-                    </appSettings>
+                    <appName>${functionAppName}</appName>
                 </configuration>
                 <executions>
                     <execution>

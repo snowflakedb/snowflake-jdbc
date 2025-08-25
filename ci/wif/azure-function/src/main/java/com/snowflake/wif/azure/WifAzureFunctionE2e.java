@@ -36,7 +36,9 @@ public class WifAzureFunctionE2e {
         try {
             logger.log("=== WIF Azure Function E2E started ===");
             WifTestHelper.validateQueryParameters(request.getQueryParameters());
-            installJdkIfNeeded(logger);
+            
+            // JDK is pre-installed in Docker image, verify it's available
+            verifyJavaEnvironment(logger);
 
             String branch = request.getQueryParameters().get("BRANCH");
             String tarballUrl = WifTestHelper.buildTarballUrl(branch);
@@ -66,57 +68,12 @@ public class WifAzureFunctionE2e {
         }
     }
 
-    private void installJdkIfNeeded(WifTestHelper.WifLogger logger) {
+    private void verifyJavaEnvironment(WifTestHelper.WifLogger logger) {
         try {
-            logger.log("Checking Java environment in Azure Functions...");
-            
-            // Check if javac is already available
-            try {
-                ProcessBuilder javacCheck = new ProcessBuilder("javac", "-version");
-                Process javacProcess = javacCheck.start();
-                int javacExitCode = javacProcess.waitFor();
-                
-                if (javacExitCode == 0) {
-                    logger.log("javac is already available");
-                    return;
-                }
-            } catch (Exception e) {
-                logger.log("javac not found, installing OpenJDK...");
-            }
-            
-            logger.log("Installing OpenJDK 17 JDK...");
-            
-            try {
-                ProcessBuilder updateCmd = new ProcessBuilder("apt-get", "update", "-y");
-                Process updateProcess = updateCmd.start();
-                int updateExitCode = updateProcess.waitFor();
-                logger.log("apt-get update exit code: " + updateExitCode);
-                
-                ProcessBuilder installCmd = new ProcessBuilder("apt-get", "install", "-y", "openjdk-17-jdk");
-                Process installProcess = installCmd.start();
-                int installExitCode = installProcess.waitFor();
-                logger.log("OpenJDK installation exit code: " + installExitCode);
-                
-                if (installExitCode == 0) {
-                    logger.log("OpenJDK 17 JDK installed successfully");
-                    
-                    // Set JAVA_HOME environment
-                    String javaHome = "/usr/lib/jvm/java-17-openjdk-amd64";
-                    File javaHomeDir = new File(javaHome);
-                    if (!javaHomeDir.exists()) {
-                        javaHome = "/usr/lib/jvm/java-17-openjdk";
-                    }
-                    
-                    logger.log("Setting JAVA_HOME to: " + javaHome);
-                    System.setProperty("java.home", javaHome);
-                }
-                
-            } catch (Exception e) {
-                logger.log("Error during JDK installation: " + e.getMessage());
-                logger.log("Attempting to continue without JDK installation...");
-            }
+            String javaVersion = System.getProperty("java.version");
+            logger.log("Java Runtime Version: " + javaVersion);
         } catch (Exception e) {
-            logger.log("Error while configuring Java environment: " + e.getMessage());
+            logger.log("Error while verifying Java environment: " + e.getMessage());
         }
     }
 }
