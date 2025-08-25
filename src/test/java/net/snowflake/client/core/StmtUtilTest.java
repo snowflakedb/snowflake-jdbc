@@ -59,7 +59,8 @@ public class StmtUtilTest extends BaseJDBCTest {
                   Mockito.anyBoolean(),
                   Mockito.anyBoolean(),
                   Mockito.nullable(HttpClientSettingsKey.class),
-                  Mockito.nullable(ExecTimeTelemetryData.class));
+                  Mockito.nullable(ExecTimeTelemetryData.class),
+                  Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":333334,\"message\":null,\"success\":true}");
@@ -81,7 +82,7 @@ public class StmtUtilTest extends BaseJDBCTest {
       stmtInput.setSequenceId(1);
       stmtInput.setSql("SELECT * FROM MOCK_TABLE");
 
-      StmtUtil.execute(stmtInput, new ExecTimeTelemetryData());
+      StmtUtil.execute(stmtInput, new ExecTimeTelemetryData(), null);
 
       // After login, the only invocation to http should have been with the new
       // headers.

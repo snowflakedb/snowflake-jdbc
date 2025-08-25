@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SessionUtil;
@@ -231,7 +232,8 @@ public class SSOConnectionTest {
                     anyInt(),
                     anyInt(),
                     anyInt(),
-                    nullable(HttpClientSettingsKey.class)))
+                    nullable(HttpClientSettingsKey.class),
+                    nullable(SFBaseSession.class)))
         .thenAnswer(
             new Answer<String>() {
               int callCount = 0;

@@ -364,14 +364,16 @@ public class TelemetryClient implements Telemetry {
                     0,
                     (int) HttpUtil.getSocketTimeout().toMillis(),
                     0,
-                    this.httpClient)
+                    this.httpClient,
+                    null)
                 : HttpUtil.executeGeneralRequest(
                     post,
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
                     0,
                     this.session.getHttpClientSocketTimeout(),
                     0,
-                    this.session.getHttpClientKey());
+                    this.session.getHttpClientKey(),
+                    this.session);
         stopwatch.stop();
         logger.debug(
             "Sending telemetry took {} ms. Batch size: {}",

@@ -2,9 +2,11 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -13,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -24,6 +27,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.util.SFPair;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -674,7 +678,45 @@ public class BindingDataLatestIT extends AbstractDriverIT {
     }
   }
 
-  public void executePsStatementForTimestampTest(
+  @Nested
+  class BindingArrays {
+    @Test
+    @DontRunOnGithubActions
+    public void testBindArrayOfDates() throws SQLException {
+      try (Connection connection = getConnection()) {
+        Date date1 = Date.valueOf("2023-01-01");
+        Date date2 = Date.valueOf("2023-01-02");
+        Date date3 = Date.valueOf("2023-01-03");
+
+        Date[] dates = new Date[] {date1, date2, date3};
+        PreparedStatement statement =
+            connection.prepareStatement("SELECT to_array(?)::ARRAY(DATE)");
+
+        statement.setArray(1, connection.createArrayOf("DATE", dates));
+        try (ResultSet rs = statement.executeQuery()) {
+          assertTrue(rs.next());
+          Array array = rs.getArray(1);
+          assertEquals("DATE", array.getBaseTypeName());
+          assertEquals(Types.DATE, array.getBaseType());
+          Object[] result = (Object[]) array.getArray();
+          assertArrayEquals(dates, result);
+        }
+      }
+    }
+
+    private Connection getConnection() throws SQLException {
+      Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+      try (Statement stmt = conn.createStatement()) {
+        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
+        stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
+        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_BINDS = enable");
+        stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
+      }
+      return conn;
+    }
+  }
+
+  private void executePsStatementForTimestampTest(
       Connection connection, String tableName, Timestamp timestamp) throws SQLException {
     try (PreparedStatement prepStatement =
         connection.prepareStatement("insert into " + tableName + " values (?,?,?,?)")) {

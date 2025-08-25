@@ -147,7 +147,8 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
                 true, // retry on HTTP403 for AWS S3
                 true, // no retry on http request
                 false,
-                new ExecTimeTelemetryData())
+                new ExecTimeTelemetryData(),
+                session)
             .getHttpResponse();
 
     logger.debug(

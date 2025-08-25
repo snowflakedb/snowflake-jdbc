@@ -3,7 +3,6 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 import static net.snowflake.client.core.SFTrustManager.setOCSPResponseCacheServerURL;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -300,7 +299,6 @@ public class SessionUtil {
         loginInput.getLoginTimeout() >= 0, "negative login timeout for opening session");
 
     final AuthenticatorType authenticator = getAuthenticator(loginInput);
-    checkIfExperimentalAuthnEnabled(authenticator);
 
     if (isTokenOrPasswordRequired(authenticator)) {
       AssertUtil.assertTrue(
@@ -400,16 +398,6 @@ public class SessionUtil {
             new AzureIdentityAttestationCreator(new AzureAttestationService(), loginInput),
             new OidcIdentityAttestationCreator(loginInput.getToken()));
     return attestationProvider.getAttestation(loginInput.getWorkloadIdentityProvider());
-  }
-
-  static void checkIfExperimentalAuthnEnabled(AuthenticatorType authenticator) throws SFException {
-    if (authenticator.equals(AuthenticatorType.WORKLOAD_IDENTITY)) {
-      boolean experimentalAuthenticationMethodsEnabled =
-          Boolean.parseBoolean(systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"));
-      AssertUtil.assertTrue(
-          experimentalAuthenticationMethodsEnabled,
-          "Following authentication method not yet supported: " + authenticator);
-    }
   }
 
   private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {
@@ -690,12 +678,6 @@ public class SessionUtil {
         }
       }
 
-      // OAuth metrics data
-      if (authenticatorType == AuthenticatorType.OAUTH
-          && loginInput.getOriginalAuthenticator() != null) {
-        data.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
-      }
-
       if (authenticatorType == AuthenticatorType.WORKLOAD_IDENTITY) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(
@@ -789,6 +771,13 @@ public class SessionUtil {
 
       clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
 
+      // OAuth metrics data
+      if (authenticatorType == AuthenticatorType.OAUTH
+          && loginInput.getOriginalAuthenticator() != null) {
+        clientEnv.put(
+            ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+      }
+
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);
 
       // Initialize the session parameters
@@ -865,7 +854,8 @@ public class SessionUtil {
                   loginInput.getAuthTimeout(),
                   leftsocketTimeout,
                   retryCount,
-                  loginInput.getHttpClientSettingsKey());
+                  loginInput.getHttpClientSettingsKey(),
+                  null);
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
@@ -1217,16 +1207,17 @@ public class SessionUtil {
    * Renew a session.
    *
    * @param loginInput login information
+   * @param session the session associated with the request
    * @return login output
    * @throws SFException if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static SFLoginOutput renewSession(SFLoginInput loginInput)
+  static SFLoginOutput renewSession(SFLoginInput loginInput, SFBaseSession session)
       throws SFException, SnowflakeSQLException {
-    return renewTokenRequest(loginInput);
+    return renewTokenRequest(loginInput, session);
   }
 
-  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput)
+  private static SFLoginOutput renewTokenRequest(SFLoginInput loginInput, SFBaseSession session)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null, "missing server URL for tokenRequest");
 
@@ -1304,7 +1295,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              session);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1345,10 +1337,12 @@ public class SessionUtil {
    * Close a session
    *
    * @param loginInput login information
+   * @param session the session associated with the request
    * @throws SnowflakeSQLException if failed to close session
    * @throws SFException if failed to close session
    */
-  static void closeSession(SFLoginInput loginInput) throws SFException, SnowflakeSQLException {
+  static void closeSession(SFLoginInput loginInput, SFBaseSession session)
+      throws SFException, SnowflakeSQLException {
     logger.trace("void close() throws SFException");
 
     // assert the following inputs are valid
@@ -1397,7 +1391,8 @@ public class SessionUtil {
               0,
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              session);
 
       JsonNode rootNode;
 
@@ -1463,7 +1458,8 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey(),
-              retryWithNewOTTManager);
+              retryWithNewOTTManager,
+              null);
 
       // step 5
       validateSAML(responseHtml, loginInput);
@@ -1556,12 +1552,18 @@ public class SessionUtil {
               0,
               0,
               null,
-              loginInput.getHttpClientSettingsKey());
-
-      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
+              loginInput.getHttpClientSettingsKey(),
+              null);
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
+      boolean isMfaEnabledInOkta = "MFA_REQUIRED".equals(jsonNode.get("status").asText());
+      if (isMfaEnabledInOkta) {
+        throw new SnowflakeSQLLoggedException(
+            null,
+            ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode(),
+            SqlState.FEATURE_NOT_SUPPORTED);
+      }
       oneTimeToken =
           jsonNode.get("sessionToken") != null
               ? jsonNode.get("sessionToken").asText()
@@ -1569,6 +1571,7 @@ public class SessionUtil {
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
+    logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
     return oneTimeToken;
   }
 
@@ -1624,7 +1627,8 @@ public class SessionUtil {
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeoutInMillis(),
               0,
-              loginInput.getHttpClientSettingsKey());
+              loginInput.getHttpClientSettingsKey(),
+              null);
 
       logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);

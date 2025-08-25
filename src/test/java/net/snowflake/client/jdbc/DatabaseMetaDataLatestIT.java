@@ -122,7 +122,6 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
    * @throws Exception arises if any error occurs
    */
   @Test
-  @DontRunOnGithubActions
   public void testUseConnectionCtx() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
