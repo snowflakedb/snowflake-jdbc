@@ -5,7 +5,9 @@ set -o pipefail
 export THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export RSA_KEY_PATH_AWS_AZURE="$THIS_DIR/wif/parameters/rsa_wif_aws_azure"
 export RSA_KEY_PATH_GCP="$THIS_DIR/wif/parameters/rsa_wif_gcp"
+export RSA_GCP_FUNCTION_KEY="$THIS_DIR/wif/parameters/rsa_gcp_function"
 export PARAMETERS_FILE_PATH="$THIS_DIR/wif/parameters/parameters_wif.json"
+export PARAMETERS_FUNCTIONS_FILE_PATH="$THIS_DIR/wif/parameters/parameters_wif_function.json"
 
 run_tests_and_set_result() {
   local provider="$1"
@@ -50,20 +52,47 @@ EOF
 
 get_branch() {
   local branch
-  branch=$(git rev-parse --abbrev-ref HEAD)
-  if [[ "$branch" == "HEAD" ]]; then
-    branch=$(git name-rev --name-only HEAD | sed 's#^remotes/origin/##;s#^origin/##')
+  if [[ -n "${GIT_BRANCH}" ]]; then
+    # Jenkins
+    branch="${GIT_BRANCH}"
+  else
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" == "HEAD" ]]; then
+      branch=$(git name-rev --name-only HEAD | sed 's#^remotes/origin/##;s#^origin/##')
+    fi
   fi
   echo "$branch"
+}
+
+run_azure_function() {
+  if ! bash "$THIS_DIR/wif/azure-function/test.sh"; then
+    EXIT_STATUS=1
+  fi
+}
+
+run_aws_function() {
+  if ! bash "$THIS_DIR/wif/aws-lambda/test.sh"; then
+    EXIT_STATUS=1
+  fi
+}
+
+run_gcp_function() {
+  if ! bash "$THIS_DIR/wif/gcp-function/test.sh"; then
+    EXIT_STATUS=1
+  fi
 }
 
 setup_parameters() {
   gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$RSA_KEY_PATH_AWS_AZURE" "${RSA_KEY_PATH_AWS_AZURE}.gpg"
   gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$RSA_KEY_PATH_GCP" "${RSA_KEY_PATH_GCP}.gpg"
+  gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$RSA_GCP_FUNCTION_KEY" "${RSA_GCP_FUNCTION_KEY}.gpg"
   chmod 600 "$RSA_KEY_PATH_AWS_AZURE"
   chmod 600 "$RSA_KEY_PATH_GCP"
+  chmod 600 "$RSA_GCP_FUNCTION_KEY"
   gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$PARAMETERS_FILE_PATH" "${PARAMETERS_FILE_PATH}.gpg"
   eval $(jq -r '.wif | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETERS_FILE_PATH)
+  gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$PARAMETERS_FUNCTIONS_FILE_PATH" "${PARAMETERS_FUNCTIONS_FILE_PATH}.gpg"
+  eval $(jq -r '.wif | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETERS_FUNCTIONS_FILE_PATH)
 }
 
 BRANCH=$(get_branch)
@@ -73,9 +102,16 @@ setup_parameters
 # Run tests for all cloud providers
 EXIT_STATUS=0
 set +e  # Don't exit on first failure
+
+# WIF E2E tests on functions
+run_aws_function
+run_azure_function
+run_gcp_function
+# WIF E2E tests on VMs
 run_tests_and_set_result "AZURE" "$HOST_AZURE" "$SNOWFLAKE_TEST_WIF_HOST_AZURE" "$RSA_KEY_PATH_AWS_AZURE"
 run_tests_and_set_result "AWS" "$HOST_AWS" "$SNOWFLAKE_TEST_WIF_HOST_AWS" "$RSA_KEY_PATH_AWS_AZURE"
 run_tests_and_set_result "GCP" "$HOST_GCP" "$SNOWFLAKE_TEST_WIF_HOST_GCP" "$RSA_KEY_PATH_GCP"
+
 set -e  # Re-enable exit on error
 echo "Exit status: $EXIT_STATUS"
 exit $EXIT_STATUS
