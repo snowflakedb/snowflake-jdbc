@@ -6,13 +6,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * MultiStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -312,6 +320,129 @@ public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
       try (ResultSet rs = statement.getResultSet()) {
         assertEquals(4, getSizeOfResultSet(rs));
       }
+    }
+  }
+
+  @Test
+  void testMultiStatementArrowFormat() throws SQLException {
+    // Setup a memory buffer for JUL logs
+    ByteArrayOutputStream logCapture = new ByteArrayOutputStream();
+    PrintStream logStream = new PrintStream(logCapture);
+
+    Logger sfLogger = Logger.getLogger("net.snowflake");
+    sfLogger.setLevel(Level.ALL);
+    sfLogger.setUseParentHandlers(false); // Disable default console logging
+
+    Handler consoleHandler =
+        new ConsoleHandler() {
+          @Override
+          public synchronized void publish(java.util.logging.LogRecord record) {
+            logStream.println(record.getLevel() + ": " + record.getMessage());
+          }
+        };
+    consoleHandler.setLevel(Level.ALL);
+    sfLogger.addHandler(consoleHandler);
+    try (Statement stmt = connection.createStatement()) {
+      try {
+        queryResultFormat = "arrow";
+        stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+
+        /* Enable fix for multi-statement with arrow.
+         * Ignore failure since the test user might not be able to change the parameter.
+         * In such case assume the parameter has been enabled on the test account.
+         */
+        stmt.execute("ALTER SESSION SET ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS=TRUE");
+      } catch (SQLException e) {
+        // DO NOTHING .Ignore failure since the test user might not be able to change the parameter.
+      }
+      stmt.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
+      String multiStmtQuery =
+          "select TO_DOUBLE('0.123456789123456789');\n"
+              + "select 456;\n"
+              + "select 789;\n"
+              + "select '000';";
+
+      stmt.execute(multiStmtQuery);
+      ;
+      ResultSet rs = stmt.getResultSet();
+
+      while (rs.next()) {
+        // Arrow has higher precision.
+        assertEquals(rs.getDouble(1), 0.123456789123456789);
+      }
+      rs.close();
+      stmt.close();
+
+      // Flush logs
+      consoleHandler.flush();
+      String logs = logCapture.toString();
+
+      // Verify Arrow format logged
+      assertTrue(
+          logs.contains("Query result received in ARROW format. Processing with SFArrowResultSet."),
+          "Expected Arrow logs but got: \n" + logs);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"arrow", "json"})
+  void testMultiStatementResultFormat(String queryResultFormat) throws Exception {
+    // Setup a memory buffer for JUL logs
+    ByteArrayOutputStream logCapture = new ByteArrayOutputStream();
+    PrintStream logStream = new PrintStream(logCapture);
+
+    Logger sfLogger = Logger.getLogger("net.snowflake");
+    sfLogger.setLevel(Level.ALL);
+    sfLogger.setUseParentHandlers(false);
+
+    Handler consoleHandler =
+        new ConsoleHandler() {
+          @Override
+          public synchronized void publish(java.util.logging.LogRecord record) {
+            logStream.println(record.getLevel() + ": " + record.getMessage());
+          }
+        };
+    consoleHandler.setLevel(Level.ALL);
+    sfLogger.addHandler(consoleHandler);
+
+    try (Statement stmt = connection.createStatement()) {
+      try {
+        stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+        stmt.execute("ALTER SESSION SET ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS=TRUE");
+      } catch (SQLException ignore) {
+        // test user may not have privilege to change params
+      }
+
+      stmt.unwrap(net.snowflake.client.jdbc.SnowflakeStatement.class)
+          .setParameter("MULTI_STATEMENT_COUNT", 4);
+
+      String multiStmtQuery =
+          "select TO_DOUBLE('0.123456789123456789');\n"
+              + "select 456;\n"
+              + "select 789;\n"
+              + "select '000';";
+
+      stmt.execute(multiStmtQuery);
+      ResultSet rs = stmt.getResultSet();
+
+      while (rs.next()) {
+        if ("arrow".equals(queryResultFormat)) {
+          // Arrow returns double directly (precision ~15–16 digits)
+          assertEquals(0.12345678912345678d, rs.getDouble(1), 0.0);
+        } else {
+          // JSON preserves 10 precision digits.
+          assertEquals(new java.math.BigDecimal("0.1234567891"), rs.getBigDecimal(1));
+        }
+      }
+      rs.close();
+    }
+    consoleHandler.flush();
+    String logs = logCapture.toString();
+
+    if ("arrow".equals(queryResultFormat)) {
+      assertTrue(
+          logs.contains("Query result received in ARROW format. Processing with SFArrowResultSet."),
+          "Expected Arrow logs but got: \n" + logs);
     }
   }
 }
