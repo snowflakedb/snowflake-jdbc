@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   private CRLCacheManager cacheManager;
 
   @BeforeEach
-  public void setUpTest() {
+  public void setUpTest() throws SnowflakeSQLLoggedException {
     certGen = new CertificateGeneratorUtil();
     httpClient = HttpClients.createDefault();
     cacheManager = CRLCacheManager.fromConfig(CRL_CONFIG_ENABLED);

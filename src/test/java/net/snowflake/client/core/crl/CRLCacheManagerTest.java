@@ -11,13 +11,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.security.Security;
 import java.security.cert.X509CRL;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import net.snowflake.client.category.TestTags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -38,12 +37,11 @@ class CRLCacheManagerTest {
 
   @BeforeAll
   static void setUpClass() {
-    Security.addProvider(new BouncyCastleProvider());
     certGen = new CertificateGeneratorUtil();
   }
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     mockMemoryCache = mock(CRLInMemoryCache.class);
     mockFileCache = mock(CRLFileCache.class);
 
@@ -51,7 +49,7 @@ class CRLCacheManagerTest {
     testDownloadTime = Instant.now().minus(30, ChronoUnit.MINUTES);
     testCacheEntry = new CRLCacheEntry(testCrl, testDownloadTime);
 
-    cacheManager = new CRLCacheManager(mockMemoryCache, mockFileCache);
+    cacheManager = new CRLCacheManager(mockMemoryCache, mockFileCache, Duration.ZERO);
   }
 
   @Test
@@ -131,13 +129,8 @@ class CRLCacheManagerTest {
     verify(mockFileCache).put(TEST_CRL_URL, testCrl, secondPutTime);
   }
 
-  private X509CRL createTestCrl() {
-    try {
-      Date futureDate = Date.from(Instant.now().plus(1, ChronoUnit.DAYS));
-      byte[] crlBytes = certGen.generateCRL(futureDate);
-      return certGen.convertBytesToCRL(crlBytes);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to create test CRL", e);
-    }
+  private X509CRL createTestCrl() throws Exception {
+    Date futureDate = Date.from(Instant.now().plus(1, ChronoUnit.DAYS));
+    return certGen.generateCRL(futureDate);
   }
 }

@@ -1,11 +1,13 @@
 package net.snowflake.client.core.crl;
 
 import java.security.cert.X509CRL;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -17,15 +19,15 @@ class CRLCacheManager {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheManager.class);
 
-  private static final long DEFAULT_CLEANUP_INTERVAL_SECONDS = 3600; // 1 hour
-
   private final CRLInMemoryCache memoryCache;
   private final CRLFileCache fileCache;
   private final ScheduledExecutorService cleanupScheduler;
+  private final long cleanupIntervalInMs;
 
-  CRLCacheManager(CRLInMemoryCache memoryCache, CRLFileCache fileCache) {
+  CRLCacheManager(CRLInMemoryCache memoryCache, CRLFileCache fileCache, Duration cleanupInterval) {
     this.memoryCache = memoryCache;
     this.fileCache = fileCache;
+    this.cleanupIntervalInMs = cleanupInterval.toMillis();
 
     ThreadFactory threadFactory =
         r -> {
@@ -36,7 +38,7 @@ class CRLCacheManager {
     this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
   }
 
-  static CRLCacheManager fromConfig(CRLValidationConfig config) {
+  static CRLCacheManager fromConfig(CRLValidationConfig config) throws SnowflakeSQLLoggedException {
     CRLInMemoryCache memoryCache =
         new CRLInMemoryCache(config.getCacheValidityTime(), config.isInMemoryCacheEnabled());
 
@@ -46,7 +48,8 @@ class CRLCacheManager {
             config.getOnDiskCacheRemovalDelay(),
             config.isOnDiskCacheEnabled());
 
-    CRLCacheManager manager = new CRLCacheManager(memoryCache, fileCache);
+    CRLCacheManager manager =
+        new CRLCacheManager(memoryCache, fileCache, config.getOnDiskCacheRemovalDelay());
     if (config.isInMemoryCacheEnabled() || config.isOnDiskCacheEnabled()) {
       manager.startPeriodicCleanup();
     }
@@ -54,13 +57,11 @@ class CRLCacheManager {
   }
 
   CRLCacheEntry get(String crlUrl) {
-    // First check memory cache
     CRLCacheEntry entry = memoryCache.get(crlUrl);
     if (entry != null) {
       return entry;
     }
 
-    // Then check file cache
     entry = fileCache.get(crlUrl);
     if (entry != null) {
       // Promote to memory cache
@@ -83,8 +84,7 @@ class CRLCacheManager {
         () -> {
           try {
             logger.debug(
-                "Running periodic CRL cache cleanup with interval {} seconds",
-                DEFAULT_CLEANUP_INTERVAL_SECONDS);
+                "Running periodic CRL cache cleanup with interval {} seconds", cleanupIntervalInMs);
             memoryCache.cleanup();
             fileCache.cleanup();
           } catch (Exception e) {
@@ -93,13 +93,8 @@ class CRLCacheManager {
         };
 
     cleanupScheduler.scheduleAtFixedRate(
-        cleanupTask,
-        DEFAULT_CLEANUP_INTERVAL_SECONDS,
-        DEFAULT_CLEANUP_INTERVAL_SECONDS,
-        TimeUnit.SECONDS);
+        cleanupTask, cleanupIntervalInMs, cleanupIntervalInMs, TimeUnit.MILLISECONDS);
 
-    logger.debug(
-        "Scheduled CRL cache cleanup task to run every {} seconds.",
-        DEFAULT_CLEANUP_INTERVAL_SECONDS);
+    logger.debug("Scheduled CRL cache cleanup task to run every {} seconds.", cleanupIntervalInMs);
   }
 }

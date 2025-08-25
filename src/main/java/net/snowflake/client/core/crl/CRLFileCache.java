@@ -1,7 +1,8 @@
 package net.snowflake.client.core.crl;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,11 +17,15 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.core.Constants;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 class CRLFileCache {
 
@@ -29,24 +34,29 @@ class CRLFileCache {
   private final Path cacheDir;
   private final Duration removalDelay;
   private final boolean enabled;
+  private final Lock cacheLock = new ReentrantLock();
 
-  CRLFileCache(Path cacheDir, Duration removalDelay, boolean enabled) {
+  CRLFileCache(Path cacheDir, Duration removalDelay, boolean enabled)
+      throws SnowflakeSQLLoggedException {
     this.cacheDir = cacheDir;
     this.removalDelay = removalDelay;
     this.enabled = enabled;
 
     if (enabled) {
       try {
-        Files.createDirectories(cacheDir);
-
-        if (Constants.getOS() != Constants.OS.WINDOWS) {
-          Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("rwx------"));
+        boolean exists = Files.exists(cacheDir);
+        if (!exists) {
+          Files.createDirectories(cacheDir);
+          logger.debug("Initialized CRL cache directory: {}", cacheDir);
         }
 
-        logger.debug("Initialized CRL cache directory: {}", cacheDir);
+        if (Constants.getOS() != Constants.OS.WINDOWS && !ownerOnlyPermissions(cacheDir)) {
+          Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("rwx------"));
+          logger.debug("Set CRL cache directory permissions to 'rwx------");
+        }
       } catch (Exception e) {
-        throw new RuntimeException(
-            "Failed to create CRL cache directory " + cacheDir + ": " + e.getMessage(), e);
+        throw new SnowflakeSQLLoggedException(
+            null, null, SqlState.INTERNAL_ERROR, "Failed to create CRL cache directory", e);
       }
     }
   }
@@ -57,6 +67,7 @@ class CRLFileCache {
     }
 
     try {
+      cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
       if (Files.exists(crlFilePath)) {
         logger.debug("Found CRL on disk for {}", crlFilePath);
@@ -64,14 +75,16 @@ class CRLFileCache {
         BasicFileAttributes attrs = Files.readAttributes(crlFilePath, BasicFileAttributes.class);
         Instant downloadTime = attrs.lastModifiedTime().toInstant();
 
-        byte[] crlBytes = Files.readAllBytes(crlFilePath);
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        X509CRL crl = (X509CRL) certFactory.generateCRL(new ByteArrayInputStream(crlBytes));
-
-        return new CRLCacheEntry(crl, downloadTime);
+        try (InputStream crlBytes = Files.newInputStream(crlFilePath)) {
+          X509CRL crl = (X509CRL) certFactory.generateCRL(crlBytes);
+          return new CRLCacheEntry(crl, downloadTime);
+        }
       }
     } catch (Exception e) {
       logger.warn("Failed to read CRL from disk cache for {}: {}", crlUrl, e.getMessage());
+    } finally {
+      cacheLock.unlock();
     }
 
     return null;
@@ -83,6 +96,7 @@ class CRLFileCache {
     }
 
     try {
+      cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
 
       Files.write(
@@ -101,6 +115,8 @@ class CRLFileCache {
       logger.debug("Updated disk cache for {}", crlUrl);
     } catch (Exception e) {
       logger.warn("Failed to write CRL to disk cache for {}: {}", crlUrl, e.getMessage());
+    } finally {
+      cacheLock.unlock();
     }
   }
 
@@ -118,16 +134,17 @@ class CRLFileCache {
       }
 
       int removedCount = 0;
-      try (Stream<Path> stream = Files.list(cacheDir)) {
-        for (Path filePath : stream.filter(Files::isRegularFile).collect(Collectors.toList())) {
+      try (Stream<Path> files = Files.list(cacheDir)) {
+        cacheLock.lock();
+        for (Path filePath : files.filter(Files::isRegularFile).collect(Collectors.toList())) {
           try {
-            byte[] crlBytes = Files.readAllBytes(filePath);
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509CRL crl = (X509CRL) certFactory.generateCRL(new ByteArrayInputStream(crlBytes));
+            try (InputStream crlBytes = Files.newInputStream(filePath)) {
+              CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+              X509CRL crl = (X509CRL) certFactory.generateCRL(crlBytes);
+              CRLCacheEntry crlEntry =
+                  new CRLCacheEntry(crl, Files.getLastModifiedTime(filePath).toInstant());
 
-            if (crl.getNextUpdate() != null) {
-              Instant expiryWithDelay = crl.getNextUpdate().toInstant().plus(removalDelay);
-              if (expiryWithDelay.isBefore(now)) {
+              if (crlEntry.isCrlExpired(now) || crlEntry.isEvicted(now, removalDelay)) {
                 Files.delete(filePath);
                 removedCount++;
               }
@@ -143,6 +160,8 @@ class CRLFileCache {
             }
           }
         }
+      } finally {
+        cacheLock.unlock();
       }
 
       if (removedCount > 0) {
@@ -153,12 +172,13 @@ class CRLFileCache {
     }
   }
 
-  private Path getCrlFilePath(String crlUrl) {
-    try {
-      String encodedUrl = URLEncoder.encode(crlUrl, StandardCharsets.UTF_8.toString());
-      return cacheDir.resolve(encodedUrl);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+  private Path getCrlFilePath(String crlUrl) throws UnsupportedEncodingException {
+    String encodedUrl = URLEncoder.encode(crlUrl, StandardCharsets.UTF_8.toString());
+    return cacheDir.resolve(encodedUrl);
+  }
+
+  private static boolean ownerOnlyPermissions(Path cacheDir) throws IOException {
+    return Files.getPosixFilePermissions(cacheDir)
+        .equals(PosixFilePermissions.fromString("rwx------"));
   }
 }

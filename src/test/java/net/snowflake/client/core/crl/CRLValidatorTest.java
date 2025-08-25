@@ -40,11 +40,13 @@ class CRLValidatorTest {
 
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient mockHttpClient;
+  private CRLCacheManager mockCacheManager;
 
   @BeforeEach
   void setUp() {
     certGen = new CertificateGeneratorUtil();
     mockHttpClient = mock(CloseableHttpClient.class);
+    mockCacheManager = mock(CRLCacheManager.class);
   }
 
   @Test
@@ -53,14 +55,16 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_DISABLED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_DISABLED, mockHttpClient, mockCacheManager);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
 
   @Test
   void shouldFailWithNullOrEmptyCertificateChains() {
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient, mockCacheManager);
 
     assertThrows(IllegalArgumentException.class, () -> validator.validateCertificateChains(null));
 
@@ -75,7 +79,8 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient, mockCacheManager);
 
     assertFalse(validator.validateCertificateChains(chains));
   }
@@ -86,7 +91,8 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient, mockCacheManager);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
@@ -97,7 +103,8 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ADVISORY_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_ADVISORY_URL_DISALLOWED, mockHttpClient, mockCacheManager);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
@@ -119,7 +126,8 @@ class CRLValidatorTest {
           validChain.leafCert, validChain.intermediateCert, validChain.rootCert
         });
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient, mockCacheManager);
 
     assertTrue(
         validator.validateCertificateChains(chains),

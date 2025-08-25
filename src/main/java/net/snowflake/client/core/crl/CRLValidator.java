@@ -37,9 +37,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 class CRLValidator {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLValidator.class);
+  private final Map<String, Lock> urlLocks = new ConcurrentHashMap<>();
   private final CRLValidationConfig config;
   private final CloseableHttpClient httpClient;
-  private final Map<String, Lock> urlLocks = new ConcurrentHashMap<>();
   private final CRLCacheManager cacheManager;
 
   CRLValidator(
