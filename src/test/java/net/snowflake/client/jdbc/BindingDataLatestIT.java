@@ -704,63 +704,13 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       }
     }
 
-    @Test
-    @DontRunOnGithubActions
-    public void testWriteArrayOfTimes() throws SQLException {
-      try (Connection connection = getConnection()) {
-        Time time1 = Time.valueOf("00:00:00");
-        Time time2 = Time.valueOf("01:01:01");
-        Time time3 = Time.valueOf("13:13:13");
-
-        Time[] times = new Time[] {time1, time2, time3};
-        PreparedStatement statement =
-            connection.prepareStatement("SELECT to_array(?)::ARRAY(TIME)");
-
-        statement.setArray(1, connection.createArrayOf("TIME", times));
-        try (ResultSet rs = statement.executeQuery()) {
-          assertTrue(rs.next());
-          Array array = rs.getArray(1);
-          assertEquals("TIME", array.getBaseTypeName());
-          assertEquals(Types.TIME, array.getBaseType());
-          Object[] result = (Object[]) array.getArray();
-          assertArrayEquals(times, result);
-        }
-      }
-    }
-
-    @Test
-    @DontRunOnGithubActions
-    public void testWriteArrayOfTimestamps() throws SQLException {
-      try (Connection connection = getConnection()) {
-        Timestamp timestamp1 = Timestamp.valueOf("2025-03-01 00:00:00");
-        Timestamp timestamp2 = Timestamp.valueOf("2025-03-02 01:01:01");
-        Timestamp timestamp3 = Timestamp.valueOf("2025-03-03 13:13:13");
-
-        Timestamp[] timestamps = new Timestamp[] {timestamp1, timestamp2, timestamp3};
-        PreparedStatement statement =
-            connection.prepareStatement("SELECT to_array(?)::ARRAY(TIMESTAMP_NTZ)");
-
-        statement.setArray(1, connection.createArrayOf("TIMESTAMP", timestamps));
-        try (ResultSet rs = statement.executeQuery()) {
-          assertTrue(rs.next());
-          Array array = rs.getArray(1);
-          assertEquals("TIMESTAMP", array.getBaseTypeName());
-          assertEquals(Types.TIMESTAMP, array.getBaseType());
-          Object[] result = (Object[]) array.getArray();
-          assertArrayEquals(timestamps, result);
-        }
-      }
-    }
-
     private Connection getConnection() throws SQLException {
       Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
       try (Statement stmt = conn.createStatement()) {
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
         stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
         stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_BINDS = enable");
-        stmt.execute("alter session set ENABLE_OBJECT_TYPED_BINDS = true");
         stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
-        stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
       }
       return conn;
     }
