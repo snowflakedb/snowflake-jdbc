@@ -34,7 +34,7 @@ class CRLInMemoryCacheTest {
   void setUp() throws Exception {
     testCRL = createValidCrl();
     testCRL2 = createValidCrl();
-    cache = new CRLInMemoryCache(Duration.ofMinutes(10), true);
+    cache = new CRLInMemoryCache(Duration.ofMinutes(10));
   }
 
   @Test

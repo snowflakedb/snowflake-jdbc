@@ -19,16 +19,29 @@ class CRLCacheManager {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheManager.class);
 
-  private final CRLInMemoryCache memoryCache;
-  private final CRLFileCache fileCache;
+  private final CRLCache memoryCache;
+  private final CRLCache fileCache;
   private final ScheduledExecutorService cleanupScheduler;
+  private final Runnable cleanupTask;
   private final long cleanupIntervalInMs;
 
-  CRLCacheManager(CRLInMemoryCache memoryCache, CRLFileCache fileCache, Duration cleanupInterval) {
+  CRLCacheManager(CRLCache memoryCache, CRLCache fileCache, Duration cleanupInterval) {
     this.memoryCache = memoryCache;
     this.fileCache = fileCache;
     this.cleanupIntervalInMs = cleanupInterval.toMillis();
 
+    this.cleanupTask =
+        () -> {
+          try {
+            logger.debug(
+                "Running periodic CRL cache cleanup with interval {} seconds",
+                cleanupIntervalInMs / 1000.0);
+            memoryCache.cleanup();
+            fileCache.cleanup();
+          } catch (Exception e) {
+            logger.error("An error occurred during scheduled CRL cache cleanup.", e);
+          }
+        };
     ThreadFactory threadFactory =
         r -> {
           Thread t = new Thread(r, "crl-cache-cleanup");
@@ -39,14 +52,23 @@ class CRLCacheManager {
   }
 
   static CRLCacheManager fromConfig(CRLValidationConfig config) throws SnowflakeSQLLoggedException {
-    CRLInMemoryCache memoryCache =
-        new CRLInMemoryCache(config.getCacheValidityTime(), config.isInMemoryCacheEnabled());
+    CRLCache memoryCache;
+    if (config.isInMemoryCacheEnabled()) {
+      logger.debug("Enabling in-memory CRL cache");
+      memoryCache = new CRLInMemoryCache(config.getCacheValidityTime());
+    } else {
+      logger.debug("In-memory CRL cache disabled");
+      memoryCache = NoopCRLCache.INSTANCE;
+    }
 
-    CRLFileCache fileCache =
-        new CRLFileCache(
-            config.getOnDiskCacheDir(),
-            config.getOnDiskCacheRemovalDelay(),
-            config.isOnDiskCacheEnabled());
+    CRLCache fileCache;
+    if (config.isOnDiskCacheEnabled()) {
+      logger.debug("Enabling file based CRL cache");
+      fileCache = new CRLFileCache(config.getOnDiskCacheDir(), config.getOnDiskCacheRemovalDelay());
+    } else {
+      logger.debug("File based CRL cache disabled");
+      fileCache = NoopCRLCache.INSTANCE;
+    }
 
     CRLCacheManager manager =
         new CRLCacheManager(memoryCache, fileCache, config.getOnDiskCacheRemovalDelay());
@@ -76,25 +98,14 @@ class CRLCacheManager {
   void put(String crlUrl, X509CRL crl, Instant downloadTime) {
     CRLCacheEntry entry = new CRLCacheEntry(crl, downloadTime);
     memoryCache.put(crlUrl, entry);
-    fileCache.put(crlUrl, crl, downloadTime);
+    fileCache.put(crlUrl, entry);
   }
 
   private void startPeriodicCleanup() {
-    Runnable cleanupTask =
-        () -> {
-          try {
-            logger.debug(
-                "Running periodic CRL cache cleanup with interval {} seconds", cleanupIntervalInMs);
-            memoryCache.cleanup();
-            fileCache.cleanup();
-          } catch (Exception e) {
-            logger.error("An error occurred during scheduled CRL cache cleanup.", e);
-          }
-        };
-
     cleanupScheduler.scheduleAtFixedRate(
         cleanupTask, cleanupIntervalInMs, cleanupIntervalInMs, TimeUnit.MILLISECONDS);
 
-    logger.debug("Scheduled CRL cache cleanup task to run every {} seconds.", cleanupIntervalInMs);
+    logger.debug(
+        "Scheduled CRL cache cleanup task to run every {} seconds.", cleanupIntervalInMs / 1000.0);
   }
 }

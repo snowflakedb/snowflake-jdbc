@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -100,7 +101,7 @@ class CRLCacheManagerTest {
     cacheManager.put(TEST_CRL_URL, testCrl, putTime);
 
     verify(mockMemoryCache).put(eq(TEST_CRL_URL), any(CRLCacheEntry.class));
-    verify(mockFileCache).put(TEST_CRL_URL, testCrl, putTime);
+    verify(mockFileCache).put(eq(TEST_CRL_URL), any(CRLCacheEntry.class));
   }
 
   @Test
@@ -125,8 +126,15 @@ class CRLCacheManagerTest {
     cacheManager.put(TEST_CRL_URL, testCrl, secondPutTime);
 
     verify(mockMemoryCache, times(2)).put(eq(TEST_CRL_URL), any(CRLCacheEntry.class));
-    verify(mockFileCache).put(TEST_CRL_URL, testCrl, firstPutTime);
-    verify(mockFileCache).put(TEST_CRL_URL, testCrl, secondPutTime);
+    verify(mockFileCache)
+        .put(
+            eq(TEST_CRL_URL),
+            argThat(entry -> entry.getCrl() == testCrl && entry.getDownloadTime() == firstPutTime));
+    verify(mockFileCache)
+        .put(
+            eq(TEST_CRL_URL),
+            argThat(
+                entry -> entry.getCrl() == testCrl && entry.getDownloadTime() == secondPutTime));
   }
 
   private X509CRL createTestCrl() throws Exception {

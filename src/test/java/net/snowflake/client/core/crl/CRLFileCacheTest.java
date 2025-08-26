@@ -37,6 +37,8 @@ class CRLFileCacheTest {
   private CRLFileCache cache;
   private X509CRL testCRL;
   private X509CRL testCRL2;
+  private Instant downloadTime;
+  private CRLCacheEntry cacheEntry;
 
   @BeforeAll
   static void setUpClass() {
@@ -45,9 +47,11 @@ class CRLFileCacheTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    downloadTime = Instant.now();
     testCRL = createValidCrl();
     testCRL2 = createValidCrl();
-    cache = new CRLFileCache(tempCacheDir, Duration.ofMinutes(10), true);
+    cache = new CRLFileCache(tempCacheDir, Duration.ofMinutes(10));
+    cacheEntry = new CRLCacheEntry(testCRL, downloadTime);
   }
 
   @AfterEach
@@ -60,7 +64,7 @@ class CRLFileCacheTest {
     Path newCacheDir = tempCacheDir.resolve("new-cache");
     assertFalse(Files.exists(newCacheDir));
 
-    cache = new CRLFileCache(newCacheDir, Duration.ofMinutes(10), true);
+    cache = new CRLFileCache(newCacheDir, Duration.ofMinutes(10));
 
     assertTrue(Files.exists(newCacheDir));
     assertTrue(Files.isDirectory(newCacheDir));
@@ -73,9 +77,7 @@ class CRLFileCacheTest {
 
   @Test
   void testBasicPutAndGet() throws Exception {
-    Instant downloadTime = Instant.now();
-
-    cache.put(TEST_CRL_URL, testCRL, downloadTime);
+    cache.put(TEST_CRL_URL, cacheEntry);
 
     assertEquals(1, countFilesInCache());
 
@@ -95,13 +97,13 @@ class CRLFileCacheTest {
 
   @Test
   void testOverwriteExistingEntry() throws Exception {
-    Instant firstTime = Instant.now().minus(1, ChronoUnit.HOURS);
-    Instant secondTime = Instant.now();
+    Instant firstTime = downloadTime.minus(1, ChronoUnit.HOURS);
+    Instant secondTime = downloadTime;
 
-    cache.put(TEST_CRL_URL, testCRL, firstTime);
+    cache.put(TEST_CRL_URL, new CRLCacheEntry(testCRL, firstTime));
     assertEquals(1, countFilesInCache());
 
-    cache.put(TEST_CRL_URL, testCRL2, secondTime);
+    cache.put(TEST_CRL_URL, new CRLCacheEntry(testCRL2, secondTime));
     assertEquals(1, countFilesInCache()); // Should still be one file
 
     CRLCacheEntry retrieved = cache.get(TEST_CRL_URL);
@@ -113,11 +115,11 @@ class CRLFileCacheTest {
 
   @Test
   void testMultipleEntries() throws Exception {
-    Instant downloadTime1 = Instant.now().minus(30, ChronoUnit.MINUTES);
-    Instant downloadTime2 = Instant.now().minus(15, ChronoUnit.MINUTES);
+    Instant downloadTime1 = downloadTime.minus(30, ChronoUnit.MINUTES);
+    Instant downloadTime2 = downloadTime.minus(15, ChronoUnit.MINUTES);
 
-    cache.put(TEST_CRL_URL, testCRL, downloadTime1);
-    cache.put(TEST_CRL_URL_2, testCRL2, downloadTime2);
+    cache.put(TEST_CRL_URL, new CRLCacheEntry(testCRL, downloadTime1));
+    cache.put(TEST_CRL_URL_2, new CRLCacheEntry(testCRL2, downloadTime2));
 
     assertEquals(2, countFilesInCache());
 
@@ -133,9 +135,9 @@ class CRLFileCacheTest {
   @Test
   @DontRunOnWindows
   void testFilePermissions() throws Exception {
-    cache = new CRLFileCache(tempCacheDir, Duration.ofMinutes(10), true);
+    cache = new CRLFileCache(tempCacheDir, Duration.ofMinutes(10));
 
-    cache.put(TEST_CRL_URL, testCRL, Instant.now());
+    cache.put(TEST_CRL_URL, cacheEntry);
 
     try (Stream<Path> files = Files.list(tempCacheDir)) {
       Path crlFile = files.filter(Files::isRegularFile).findFirst().orElse(null);
@@ -147,22 +149,23 @@ class CRLFileCacheTest {
 
   @Test
   void testCleanupExpiredCrl() throws Exception {
-    cache.put(TEST_CRL_URL, createExpiredCrl(), Instant.now());
-    cache.put(TEST_CRL_URL_2, testCRL2, Instant.now());
+    cache.put(TEST_CRL_URL, cacheEntry);
+    cache.put(TEST_CRL_URL_2, new CRLCacheEntry(createExpiredCrl(), downloadTime));
 
     assertEquals(2, countFilesInCache());
 
     cache.cleanup();
 
     assertEquals(1, countFilesInCache());
-    assertNull(cache.get(TEST_CRL_URL));
-    assertNotNull(cache.get(TEST_CRL_URL_2));
+    assertNotNull(cache.get(TEST_CRL_URL));
+    assertNull(cache.get(TEST_CRL_URL_2));
   }
 
   @Test
   void testCleanupEvictedEntries() throws Exception {
-    cache.put(TEST_CRL_URL, testCRL, Instant.now().minus(20, ChronoUnit.MINUTES));
-    cache.put(TEST_CRL_URL_2, testCRL2, Instant.now().minus(5, ChronoUnit.MINUTES));
+    cache.put(TEST_CRL_URL, new CRLCacheEntry(testCRL, downloadTime.minus(20, ChronoUnit.MINUTES)));
+    cache.put(
+        TEST_CRL_URL_2, new CRLCacheEntry(testCRL2, downloadTime.minus(5, ChronoUnit.MINUTES)));
 
     assertEquals(2, countFilesInCache());
 
@@ -189,12 +192,12 @@ class CRLFileCacheTest {
   }
 
   private X509CRL createValidCrl() throws Exception {
-    Date futureDate = Date.from(Instant.now().plus(1, ChronoUnit.DAYS));
+    Date futureDate = Date.from(downloadTime.plus(1, ChronoUnit.DAYS));
     return certGen.generateCRL(futureDate);
   }
 
   private X509CRL createExpiredCrl() throws Exception {
-    Date pastDate = Date.from(Instant.now().minus(1, ChronoUnit.DAYS));
+    Date pastDate = Date.from(downloadTime.minus(1, ChronoUnit.DAYS));
     return certGen.generateCRL(pastDate);
   }
 

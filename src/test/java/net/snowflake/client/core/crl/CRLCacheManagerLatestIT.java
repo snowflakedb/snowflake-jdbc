@@ -39,15 +39,18 @@ public class CRLCacheManagerLatestIT {
   private CRLInMemoryCache crlInMemoryCache;
   private X509CRL testCRL;
   private X509CRL testCRL2;
+  private CRLCacheEntry cacheEntry;
+  private Instant downloadTime;
 
   @BeforeEach
   void setUp() throws Exception {
+    downloadTime = Instant.now();
     testCRL = createTestCrl();
     testCRL2 = createTestCrl();
-
-    crlInMemoryCache = new CRLInMemoryCache(Duration.ofSeconds(10), true);
-    crlFileCache = new CRLFileCache(tempCacheDir, Duration.ofSeconds(10), true);
+    crlInMemoryCache = new CRLInMemoryCache(Duration.ofSeconds(10));
+    crlFileCache = new CRLFileCache(tempCacheDir, Duration.ofSeconds(10));
     cacheManager = new CRLCacheManager(crlInMemoryCache, crlFileCache, Duration.ofSeconds(10));
+    cacheEntry = new CRLCacheEntry(testCRL, downloadTime);
   }
 
   @AfterEach
@@ -59,8 +62,7 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testFileCacheStoreAndRetrieve() throws Exception {
-    Instant downloadTime = Instant.now();
-    crlFileCache.put(TEST_CRL_URL, testCRL, downloadTime);
+    crlFileCache.put(TEST_CRL_URL, cacheEntry);
 
     CRLCacheEntry entry = crlFileCache.get(TEST_CRL_URL);
 
@@ -73,7 +75,7 @@ public class CRLCacheManagerLatestIT {
   @Test
   @DontRunOnWindows
   void testFileCacheFilePermissions() throws Exception {
-    crlFileCache.put(TEST_CRL_URL, testCRL, Instant.now());
+    crlFileCache.put(TEST_CRL_URL, cacheEntry);
     try (Stream<Path> files = Files.list(tempCacheDir)) {
       Path crlFile = files.filter(Files::isRegularFile).findFirst().orElse(null);
       assertNotNull(crlFile);
@@ -84,7 +86,7 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testFileCacheCorruptedFileHandling() throws Exception {
-    crlFileCache.put(TEST_CRL_URL, testCRL, Instant.now());
+    crlFileCache.put(TEST_CRL_URL, cacheEntry);
     Path corruptedFile = tempCacheDir.resolve("corrupted.crl");
     Files.write(corruptedFile, "This is not a valid CRL".getBytes());
 
@@ -99,9 +101,10 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testFileCacheExpiredCrlRemoval() throws Exception {
-    X509CRL expiredCrl = createExpiredCrl();
-    crlFileCache.put(TEST_CRL_URL, expiredCrl, Instant.now().minus(2, ChronoUnit.DAYS));
-    crlFileCache.put(TEST_CRL_URL_2, testCRL, Instant.now());
+    CRLCacheEntry expiredEntry =
+        new CRLCacheEntry(createExpiredCrl(), downloadTime.minus(1, ChronoUnit.DAYS));
+    crlFileCache.put(TEST_CRL_URL, expiredEntry);
+    crlFileCache.put(TEST_CRL_URL_2, cacheEntry);
 
     assertEquals(2, countFilesInCache());
 
@@ -115,8 +118,10 @@ public class CRLCacheManagerLatestIT {
   @Test
   void testFileCacheRemovalDelay() throws Exception {
     Duration removalDelay = Duration.ofHours(1);
-    CRLFileCache delayedCache = new CRLFileCache(tempCacheDir, removalDelay, true);
-    delayedCache.put(TEST_CRL_URL, testCRL, Instant.now().minus(30, ChronoUnit.MINUTES));
+    CRLFileCache delayedCache = new CRLFileCache(tempCacheDir, removalDelay);
+    CRLCacheEntry oldCacheEntry =
+        new CRLCacheEntry(testCRL, downloadTime.minus(30, ChronoUnit.MINUTES));
+    delayedCache.put(TEST_CRL_URL, oldCacheEntry);
 
     assertEquals(1, countFilesInCache());
 
@@ -128,8 +133,7 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testFileCachePromotionToMemoryCache() throws Exception {
-    Instant downloadTime = Instant.now();
-    crlFileCache.put(TEST_CRL_URL, testCRL, downloadTime);
+    crlFileCache.put(TEST_CRL_URL, cacheEntry);
 
     assertNull(crlInMemoryCache.get(TEST_CRL_URL));
     assertNotNull(crlFileCache.get(TEST_CRL_URL));
@@ -153,8 +157,8 @@ public class CRLCacheManagerLatestIT {
             .build();
 
     CRLCacheManager managerWithCleanup = CRLCacheManager.fromConfig(config);
-    managerWithCleanup.put(TEST_CRL_URL, testCRL, Instant.now().minus(200, ChronoUnit.MILLIS));
-    managerWithCleanup.put(TEST_CRL_URL_2, testCRL2, Instant.now());
+    managerWithCleanup.put(TEST_CRL_URL, testCRL, downloadTime.minus(200, ChronoUnit.MILLIS));
+    managerWithCleanup.put(TEST_CRL_URL_2, testCRL2, downloadTime);
 
     assertNotNull(managerWithCleanup.get(TEST_CRL_URL));
     assertNotNull(managerWithCleanup.get(TEST_CRL_URL_2));
@@ -170,8 +174,8 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testCrlUpdateScenario() throws Exception {
-    Instant firstDownload = Instant.now().minus(1, ChronoUnit.HOURS);
-    Instant secondDownload = Instant.now();
+    Instant firstDownload = downloadTime.minus(1, ChronoUnit.HOURS);
+    Instant secondDownload = downloadTime;
     cacheManager.put(TEST_CRL_URL, testCRL, firstDownload);
     cacheManager.put(TEST_CRL_URL, testCRL2, secondDownload);
 
@@ -183,12 +187,12 @@ public class CRLCacheManagerLatestIT {
   }
 
   private X509CRL createTestCrl() throws Exception {
-    Date futureDate = Date.from(Instant.now().plus(1, ChronoUnit.DAYS));
+    Date futureDate = Date.from(downloadTime.plus(1, ChronoUnit.DAYS));
     return certGen.generateCRL(futureDate);
   }
 
   private X509CRL createExpiredCrl() throws Exception {
-    Date pastDate = Date.from(Instant.now().minus(1, ChronoUnit.DAYS));
+    Date pastDate = Date.from(downloadTime.minus(1, ChronoUnit.DAYS));
     return certGen.generateCRL(pastDate);
   }
 

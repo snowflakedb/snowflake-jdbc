@@ -6,23 +6,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-class CRLInMemoryCache {
+class CRLInMemoryCache implements CRLCache {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLInMemoryCache.class);
   private final ConcurrentHashMap<String, CRLCacheEntry> cache = new ConcurrentHashMap<>();
   private final Duration cacheValidityTime;
-  private final boolean enabled;
 
-  CRLInMemoryCache(Duration cacheValidityTime, boolean enabled) {
+  CRLInMemoryCache(Duration cacheValidityTime) {
     this.cacheValidityTime = cacheValidityTime;
-    this.enabled = enabled;
   }
 
-  CRLCacheEntry get(String crlUrl) {
-    if (!enabled) {
-      return null;
-    }
-
+  public CRLCacheEntry get(String crlUrl) {
     CRLCacheEntry entry = cache.get(crlUrl);
     if (entry != null) {
       logger.debug("Found CRL in memory cache for {}", crlUrl);
@@ -30,18 +24,11 @@ class CRLInMemoryCache {
     return entry;
   }
 
-  void put(String crlUrl, CRLCacheEntry entry) {
-    if (!enabled) {
-      return;
-    }
+  public void put(String crlUrl, CRLCacheEntry entry) {
     cache.put(crlUrl, entry);
   }
 
-  void cleanup() {
-    if (!enabled) {
-      return;
-    }
-
+  public void cleanup() {
     Instant now = Instant.now();
     logger.debug("Cleaning up in-memory CRL cache at {}", now);
 
@@ -53,6 +40,11 @@ class CRLInMemoryCache {
               CRLCacheEntry cacheEntry = entry.getValue();
               boolean expired = cacheEntry.isCrlExpired(now);
               boolean evicted = cacheEntry.isEvicted(now, cacheValidityTime);
+              logger.debug(
+                  "Removing in-memory CRL cache entry for {}: expired={}, evicted={}",
+                  entry.getKey(),
+                  expired,
+                  evicted);
               return expired || evicted;
             });
 

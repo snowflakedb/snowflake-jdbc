@@ -27,45 +27,22 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-class CRLFileCache {
+class CRLFileCache implements CRLCache {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLFileCache.class);
 
   private final Path cacheDir;
   private final Duration removalDelay;
-  private final boolean enabled;
   private final Lock cacheLock = new ReentrantLock();
 
-  CRLFileCache(Path cacheDir, Duration removalDelay, boolean enabled)
-      throws SnowflakeSQLLoggedException {
+  CRLFileCache(Path cacheDir, Duration removalDelay) throws SnowflakeSQLLoggedException {
     this.cacheDir = cacheDir;
     this.removalDelay = removalDelay;
-    this.enabled = enabled;
 
-    if (enabled) {
-      try {
-        boolean exists = Files.exists(cacheDir);
-        if (!exists) {
-          Files.createDirectories(cacheDir);
-          logger.debug("Initialized CRL cache directory: {}", cacheDir);
-        }
-
-        if (Constants.getOS() != Constants.OS.WINDOWS && !ownerOnlyPermissions(cacheDir)) {
-          Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("rwx------"));
-          logger.debug("Set CRL cache directory permissions to 'rwx------");
-        }
-      } catch (Exception e) {
-        throw new SnowflakeSQLLoggedException(
-            null, null, SqlState.INTERNAL_ERROR, "Failed to create CRL cache directory", e);
-      }
-    }
+    ensureCacheDirectoryExists(cacheDir);
   }
 
-  CRLCacheEntry get(String crlUrl) {
-    if (!enabled) {
-      return null;
-    }
-
+  public CRLCacheEntry get(String crlUrl) {
     try {
       cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
@@ -90,23 +67,19 @@ class CRLFileCache {
     return null;
   }
 
-  void put(String crlUrl, X509CRL crl, Instant downloadTime) {
-    if (!enabled) {
-      return;
-    }
-
+  public void put(String crlUrl, CRLCacheEntry entry) {
     try {
       cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
 
       Files.write(
           crlFilePath,
-          crl.getEncoded(),
+          entry.getCrl().getEncoded(),
           StandardOpenOption.CREATE,
           StandardOpenOption.WRITE,
           StandardOpenOption.TRUNCATE_EXISTING);
 
-      Files.setLastModifiedTime(crlFilePath, FileTime.from(downloadTime));
+      Files.setLastModifiedTime(crlFilePath, FileTime.from(entry.getDownloadTime()));
 
       if (Constants.getOS() != Constants.OS.WINDOWS) {
         Files.setPosixFilePermissions(crlFilePath, PosixFilePermissions.fromString("rw-------"));
@@ -120,11 +93,7 @@ class CRLFileCache {
     }
   }
 
-  void cleanup() {
-    if (!enabled) {
-      return;
-    }
-
+  public void cleanup() {
     Instant now = Instant.now();
     logger.debug("Cleaning up on-disk CRL cache at {}", now);
 
@@ -141,12 +110,19 @@ class CRLFileCache {
             try (InputStream crlBytes = Files.newInputStream(filePath)) {
               CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
               X509CRL crl = (X509CRL) certFactory.generateCRL(crlBytes);
-              CRLCacheEntry crlEntry =
+              CRLCacheEntry entry =
                   new CRLCacheEntry(crl, Files.getLastModifiedTime(filePath).toInstant());
 
-              if (crlEntry.isCrlExpired(now) || crlEntry.isEvicted(now, removalDelay)) {
+              boolean expired = entry.isCrlExpired(now);
+              boolean evicted = entry.isEvicted(now, removalDelay);
+              if (expired || evicted) {
                 Files.delete(filePath);
                 removedCount++;
+                logger.debug(
+                    "Removing file based CRL cache entry for {}: expired={}, evicted={}",
+                    filePath,
+                    expired,
+                    evicted);
               }
             }
           } catch (IOException | CRLException | CertificateException e) {
@@ -180,5 +156,23 @@ class CRLFileCache {
   private static boolean ownerOnlyPermissions(Path cacheDir) throws IOException {
     return Files.getPosixFilePermissions(cacheDir)
         .equals(PosixFilePermissions.fromString("rwx------"));
+  }
+
+  private static void ensureCacheDirectoryExists(Path cacheDir) throws SnowflakeSQLLoggedException {
+    try {
+      boolean exists = Files.exists(cacheDir);
+      if (!exists) {
+        Files.createDirectories(cacheDir);
+        logger.debug("Initialized CRL cache directory: {}", cacheDir);
+      }
+
+      if (Constants.getOS() != Constants.OS.WINDOWS && !ownerOnlyPermissions(cacheDir)) {
+        Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("rwx------"));
+        logger.debug("Set CRL cache directory permissions to 'rwx------");
+      }
+    } catch (Exception e) {
+      throw new SnowflakeSQLLoggedException(
+          null, null, SqlState.INTERNAL_ERROR, "Failed to create CRL cache directory", e);
+    }
   }
 }
