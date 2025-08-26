@@ -6,7 +6,7 @@ COPY shared /src/shared
 
 # Build the function
 RUN cd /src/azure-function && \
-    mvn clean package -DskipTests && \
+    MAVEN_OPTS="-Xmx4g -Xms1g" mvn clean package -DskipTests && \
     mkdir -p /home/site/wwwroot && \
     cp -r target/azure-functions/drivers-wif-e2e/* /home/site/wwwroot/
 
@@ -21,6 +21,7 @@ RUN apt-get update && \
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
     PATH="/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" \
     AzureWebJobsScriptRoot=/home/site/wwwroot \
-    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    MAVEN_OPTS="-Xmx4g -Xms1g"
 
 COPY --from=build /home/site/wwwroot /home/site/wwwroot

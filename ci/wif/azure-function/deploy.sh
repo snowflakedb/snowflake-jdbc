@@ -38,7 +38,8 @@ az functionapp config appsettings set \
   --settings WEBSITE_MEMORY_LIMIT_MB=8192 \
              FUNCTIONS_WORKER_PROCESS_COUNT=8 \
              WEBSITE_CPU_CORES_LIMIT=2 \
-             WEBSITE_MAX_DYNAMIC_APPLICATION_SCALE_OUT=2
+             WEBSITE_MAX_DYNAMIC_APPLICATION_SCALE_OUT=2 \
+             JAVA_TOOL_OPTIONS="-Xmx6g -Xms2g -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 echo "Restarting Function App..."
 az functionapp restart \
   --name ${FUNCTION_APP_NAME} \

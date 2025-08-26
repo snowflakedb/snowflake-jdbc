@@ -89,7 +89,6 @@ public class WifTestHelper {
         try {
             // Use unique session ID to avoid conflicts with parallel test runs
             String sessionId = generateUniqueSessionId();
-            final int timeoutMinutes = 6;
             mavenRepo = new File(tempDirectory, "maven-repo-" + sessionId);
             workspace = new File(tempDirectory, "workspace-" + sessionId);
             mavenRepo.mkdirs();
@@ -117,7 +116,7 @@ public class WifTestHelper {
                 "-Dspotbugs.skip=true " +
                 "-Denforcer.skip=true " +
                 "-T 2C " +
-                "test-compile test --batch-mode --show-version --fail-fast --no-transfer-progress"
+                "test-compile verify --batch-mode --show-version --fail-fast --no-transfer-progress"
             );
             pb.redirectErrorStream(true);
             
@@ -154,7 +153,7 @@ public class WifTestHelper {
             });
             outputThread.start();
             
-            if (!process.waitFor(timeoutMinutes, TimeUnit.MINUTES)) {
+            if (!process.waitFor(6, TimeUnit.MINUTES)) {
                 process.destroyForcibly();
                 return -2; // timeout
             }
