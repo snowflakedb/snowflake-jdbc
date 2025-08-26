@@ -21,7 +21,7 @@ echo "AWS Account ID: $ACCOUNT_ID"
 FUNCTION_NAME="drivers-wif-automated-tests"
 REGION="us-west-2"
 RUNTIME="java17"
-TIMEOUT="900"
+TIMEOUT="480"
 MEMORY_SIZE="3000"
 
 # Parse command line arguments

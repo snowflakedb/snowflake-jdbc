@@ -19,7 +19,7 @@
         <lambda.functionName>drivers-wif-e2e</lambda.functionName>
         <lambda.region>us-west-2</lambda.region>
         <lambda.runtime>java17</lambda.runtime>
-        <lambda.timeout>900</lambda.timeout>
+        <lambda.timeout>480</lambda.timeout>
         <lambda.memorySize>3008</lambda.memorySize>
         <lambda.handler>com.snowflake.wif.aws.WifLambdaFunctionE2e::handleRequest</lambda.handler>
     </properties>

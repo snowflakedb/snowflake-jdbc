@@ -1,9 +1,11 @@
 package com.snowflake.wif.common;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -79,7 +81,7 @@ public class WifTestHelper {
         throw new RuntimeException("Driver repository folder not found in: " + workingDirectory);
     }
 
-    public static int executeMavenBuild(String repoFolderPath, String tempDirectory, int timeoutMinutes, WifLogger logger, Map<String, String> queryParams) {
+    public static int executeMavenBuild(String repoFolderPath, String tempDirectory, WifLogger logger, Map<String, String> queryParams) {
         Process process = null;
         File mavenRepo = null;
         File workspace = null;
@@ -87,6 +89,7 @@ public class WifTestHelper {
         try {
             // Use unique session ID to avoid conflicts with parallel test runs
             String sessionId = generateUniqueSessionId();
+            final int timeoutMinutes = 6;
             mavenRepo = new File(tempDirectory, "maven-repo-" + sessionId);
             workspace = new File(tempDirectory, "workspace-" + sessionId);
             mavenRepo.mkdirs();
@@ -138,10 +141,9 @@ public class WifTestHelper {
 
             process = pb.start();
             
-            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()));
-            
+            final InputStream processInputStream = process.getInputStream();
             Thread outputThread = new Thread(() -> {
-                try {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         logger.log(line);
@@ -435,7 +437,7 @@ public class WifTestHelper {
         return outputFile;
     }
 
-    public static String createMavenResultMessage(int mavenExitCode, int timeoutMinutes) {
+    public static String createMavenResultMessage(int mavenExitCode) {
         if (mavenExitCode == 0) {
             return "WIF tests completed successfully";
         } else {
@@ -444,7 +446,7 @@ public class WifTestHelper {
             
             if (mavenExitCode == -2) {
                 mavenResult = "TIMEOUT (exit code: " + mavenExitCode + ")";
-                testResults = "Build timed out after " + timeoutMinutes + " minutes";
+                testResults = "Build timed out after 6 minutes";
             } else {
                 mavenResult = "FAILED (exit code: " + mavenExitCode + ")";
                 testResults = "Build or tests failed";

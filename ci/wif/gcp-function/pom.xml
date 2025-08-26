@@ -19,7 +19,7 @@
         <function.name>drivers-wif-e2e-gcp</function.name>
         <function.region>us-central1</function.region>
         <function.memory>1024MB</function.memory>
-        <function.timeout>540</function.timeout>
+        <function.timeout>480</function.timeout>
     </properties>
 
     <dependencies>

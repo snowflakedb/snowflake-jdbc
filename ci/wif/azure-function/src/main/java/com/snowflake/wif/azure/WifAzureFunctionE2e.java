@@ -36,9 +36,6 @@ public class WifAzureFunctionE2e {
         try {
             logger.log("=== WIF Azure Function E2E started ===");
             WifTestHelper.validateQueryParameters(request.getQueryParameters());
-            
-            // JDK is pre-installed in Docker image, verify it's available
-            verifyJavaEnvironment(logger);
 
             String branch = request.getQueryParameters().get("BRANCH");
             String tarballUrl = WifTestHelper.buildTarballUrl(branch);
@@ -47,7 +44,7 @@ public class WifAzureFunctionE2e {
             workingDirectory = WifTestHelper.downloadAndExtractRepository(tarballUrl, logger);
             String repoFolderPath = WifTestHelper.findRepositoryFolder(workingDirectory);
             WifTestHelper.makeExecutable(repoFolderPath, logger);
-            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), 25, logger, request.getQueryParameters());
+            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), logger, request.getQueryParameters());
 
             return createResponse(request, mavenExitCode);
         } catch (Exception e) {
@@ -59,21 +56,12 @@ public class WifAzureFunctionE2e {
     }
     
     private HttpResponseMessage createResponse(HttpRequestMessage<Optional<String>> request, int mavenExitCode) {
-        String responseBody = WifTestHelper.createMavenResultMessage(mavenExitCode, 25);
+        String responseBody = WifTestHelper.createMavenResultMessage(mavenExitCode);
         
         if (mavenExitCode == 0) {
             return request.createResponseBuilder(HttpStatus.OK).body(responseBody).build();
         } else {
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody).build();
-        }
-    }
-
-    private void verifyJavaEnvironment(WifTestHelper.WifLogger logger) {
-        try {
-            String javaVersion = System.getProperty("java.version");
-            logger.log("Java Runtime Version: " + javaVersion);
-        } catch (Exception e) {
-            logger.log("Error while verifying Java environment: " + e.getMessage());
         }
     }
 }

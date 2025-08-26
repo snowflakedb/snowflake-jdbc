@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import static java.net.URLDecoder.*;
+import static java.util.stream.Collectors.*;
+
 public class WifGcpFunctionE2e implements HttpFunction {
     
     private static final Logger logger = Logger.getLogger(WifGcpFunctionE2e.class.getName());
@@ -29,10 +32,10 @@ public class WifGcpFunctionE2e implements HttpFunction {
         }
     }
 
-    private static String createGcpResponseMessage(int mavenExitCode, int timeoutMinutes, String additionalInfo) {
+    private static String createGcpResponseMessage(int mavenExitCode, String additionalInfo) {
         StringBuilder response = new StringBuilder();
         response.append("=== WIF GCP Function E2E Test Results ===\n");
-        response.append(WifTestHelper.createMavenResultMessage(mavenExitCode, timeoutMinutes));
+        response.append(WifTestHelper.createMavenResultMessage(mavenExitCode));
         
         if (additionalInfo != null && !additionalInfo.trim().isEmpty()) {
             response.append("\n\nAdditional Info:\n");
@@ -72,7 +75,7 @@ public class WifGcpFunctionE2e implements HttpFunction {
             String repoFolderPath = WifTestHelper.findRepositoryFolder(workingDirectory);
             WifTestHelper.makeExecutable(repoFolderPath, wifLogger);
             
-            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), 6, wifLogger, queryParameters);
+            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), wifLogger, queryParameters);
 
             createResponse(response, mavenExitCode, wifLogger);
         } catch (Exception e) {
@@ -101,15 +104,15 @@ public class WifGcpFunctionE2e implements HttpFunction {
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             String contentType = request.getContentType().orElse("");
             if (contentType.contains("application/x-www-form-urlencoded")) {
-                String body = request.getReader().lines().collect(java.util.stream.Collectors.joining("\n"));
+                String body = request.getReader().lines().collect(joining("\n"));
                 if (body != null && !body.trim().isEmpty()) {
                     String[] pairs = body.split("&");
                     for (String pair : pairs) {
                         String[] keyValue = pair.split("=", 2);
                         if (keyValue.length == 2) {
                             try {
-                                String key = java.net.URLDecoder.decode(keyValue[0], "UTF-8");
-                                String value = java.net.URLDecoder.decode(keyValue[1], "UTF-8");
+                                String key = decode(keyValue[0], "UTF-8");
+                                String value = decode(keyValue[1], "UTF-8");
                                 params.put(key, value);
                             } catch (Exception e) {
                                 // Log but continue with other parameters
@@ -125,7 +128,7 @@ public class WifGcpFunctionE2e implements HttpFunction {
     }
     
     private void createResponse(HttpResponse response, int mavenExitCode, WifTestHelper.WifLogger logger) throws IOException {
-        String responseBody = createGcpResponseMessage(mavenExitCode, 6, "GCP Function execution completed");
+        String responseBody = createGcpResponseMessage(mavenExitCode, "GCP Function execution completed");
         
         logger.log("Maven build completed with exit code: " + mavenExitCode);
         

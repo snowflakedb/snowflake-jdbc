@@ -46,7 +46,7 @@ public class WifLambdaFunctionE2e implements RequestHandler<Object, APIGatewayPr
             workingDirectory = WifTestHelper.downloadAndExtractRepository(tarballUrl, logger);
             String repoFolderPath = WifTestHelper.findRepositoryFolder(workingDirectory);
             WifTestHelper.makeExecutable(repoFolderPath, logger);
-            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), 14, logger, queryParameters);
+            int mavenExitCode = WifTestHelper.executeMavenBuild(repoFolderPath, System.getProperty("java.io.tmpdir"), logger, queryParameters);
 
             return createResponse(mavenExitCode);
         } catch (Exception e) {
@@ -84,7 +84,7 @@ public class WifLambdaFunctionE2e implements RequestHandler<Object, APIGatewayPr
         headers.put("Content-Type", "text/plain");
         response.setHeaders(headers);
 
-        String responseBody = WifTestHelper.createMavenResultMessage(mavenExitCode, 14);
+        String responseBody = WifTestHelper.createMavenResultMessage(mavenExitCode);
         
         if (mavenExitCode == 0) {
             response.setStatusCode(200);
