@@ -132,6 +132,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     try (Connection connection = init(format);
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
+      statement.execute(
+          "ALTER SESSION SET TIMESTAMP_OUTPUT_FORMAT = 'YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM'");
       try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
@@ -170,7 +172,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           // Only verify getString for Arrow since JSON representations have difficulties with
           // floating point toString conversion (3.300000000000000e+00 vs 3.3 in native arrow)
           String expectedArrowGetStringResult =
-              "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,\"bool\": true,\"timestamp_ltz\": \"2021-12-22 09:43:44.000 +0100\",\"timestamp_ntz\": \"2021-12-23 09:44:44.000\",\"timestamp_tz\": \"2021-12-24 09:45:45.000 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\",\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
+              "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,\"bool\": true,\"timestamp_ltz\": \"2021-12-22 09:43:44.000 +0100\",\"timestamp_ntz\": \"2021-12-23 09:44:44.000 Z\",\"timestamp_tz\": \"2021-12-24 09:45:45.000 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\",\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
           assertEquals(expectedArrowGetStringResult, resultSet.getString(1));
         }
       }
