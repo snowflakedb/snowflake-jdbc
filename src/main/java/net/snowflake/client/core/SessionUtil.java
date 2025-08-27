@@ -1555,10 +1555,15 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey(),
               null);
 
-      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
-
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
+      boolean isMfaEnabledInOkta = "MFA_REQUIRED".equals(jsonNode.get("status").asText());
+      if (isMfaEnabledInOkta) {
+        throw new SnowflakeSQLLoggedException(
+            null,
+            ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode(),
+            SqlState.FEATURE_NOT_SUPPORTED);
+      }
       oneTimeToken =
           jsonNode.get("sessionToken") != null
               ? jsonNode.get("sessionToken").asText()
@@ -1566,6 +1571,7 @@ public class SessionUtil {
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
+    logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
     return oneTimeToken;
   }
 

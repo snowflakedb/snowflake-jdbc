@@ -145,7 +145,11 @@ public enum SFSessionProperty {
       "ownerOnlyStageFilePermissionsEnabled", false, Boolean.class),
 
   ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS(
-      "ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false, Boolean.class);
+      "ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false, Boolean.class),
+
+  MIN_TLS_VERSION("MIN_TLS_VERSION", false, String.class),
+
+  MAX_TLS_VERSION("MAX_TLS_VERSION", false, String.class);
 
   // property key in string
   private String propertyKey;
