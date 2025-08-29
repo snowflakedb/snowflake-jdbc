@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.26.1</version>
+  <version>3.26.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
