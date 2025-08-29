@@ -19,9 +19,21 @@ import org.junit.jupiter.params.provider.MethodSource;
 class SFConnectionConfigParserPermissionTest {
 
   private Path createTempFileWithPermissions(Set<PosixFilePermission> perms) throws Exception {
-    Path tempFile = Files.createTempFile("connections", ".toml");
-    Files.setPosixFilePermissions(tempFile, perms);
-    return tempFile;
+    // Create a unique temporary directory
+    Path tempDir = Files.createTempDirectory("snowflake");
+
+    // Inside it, create a file named "connections.toml"
+    Path tomlFile = tempDir.resolve("connections.toml");
+    Files.createFile(tomlFile);
+
+    // Apply the given POSIX permissions
+    Files.setPosixFilePermissions(tomlFile, perms);
+
+    // Mark both the file and the directory for deletion on JVM exit
+    tomlFile.toFile().deleteOnExit();
+    tempDir.toFile().deleteOnExit();
+
+    return tomlFile;
   }
 
   static List<Object[]> permissionTestCases() {
