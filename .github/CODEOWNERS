@@ -1,1 +1,3 @@
 * @snowflakedb/Client
+/src/main/java/net/snowflake/client/core/crl/** @snowflakedb/pki-oversight
+/src/main/java/net/snowflake/client/core/SFTrustManager.java @@snowflakedb/pki-oversight
