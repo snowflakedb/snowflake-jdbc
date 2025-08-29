@@ -603,6 +603,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ALLOW_CERTIFICATES_WITHOUT_CRL_URL:
+          if (propertyValue != null) {
+            setAllowCertificatesWithoutCrlUrl(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }

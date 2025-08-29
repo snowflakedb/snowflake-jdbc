@@ -72,4 +72,16 @@ public class TelemetryUtil {
     }
     return ibValue;
   }
+
+  public static TelemetryData buildCrlData(
+      String crlUrl, long crlBytes, int revokedCertificates, long downloadTime, long parseTime) {
+    ObjectNode obj = mapper.createObjectNode();
+    obj.put(TelemetryField.TYPE.toString(), TelemetryField.CLIENT_CRL_STATS.toString());
+    obj.put(TelemetryField.CRL_URL.toString(), crlUrl);
+    obj.put(TelemetryField.CRL_BYTES.toString(), crlBytes);
+    obj.put(TelemetryField.CRL_REVOKED_CERTIFICATES.toString(), revokedCertificates);
+    obj.put(TelemetryField.TIME_DOWNLOADING_CRL.toString(), downloadTime);
+    obj.put(TelemetryField.TIME_PARSING_CRL.toString(), parseTime);
+    return new TelemetryData(obj, System.currentTimeMillis());
+  }
 }

@@ -29,24 +29,36 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.telemetry.RevocationCheckTelemetryData;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-class CRLValidator {
+@SnowflakeJdbcInternalApi
+public class CRLValidator {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLValidator.class);
   private final Map<String, Lock> urlLocks = new ConcurrentHashMap<>();
-  private final CRLValidationConfig config;
   private final CloseableHttpClient httpClient;
   private final CRLCacheManager cacheManager;
+  private final Telemetry telemetryClient;
+  private final CertRevocationCheckMode certRevocationCheckMode;
+  private final boolean allowCertificatesWithoutCrlUrl;
 
-  CRLValidator(
-      CRLValidationConfig config, CloseableHttpClient httpClient, CRLCacheManager cacheManager) {
+  public CRLValidator(
+      CertRevocationCheckMode revocationCheckMode,
+      boolean allowCertificatesWithoutCrlUrl,
+      CloseableHttpClient httpClient,
+      CRLCacheManager cacheManager,
+      Telemetry telemetryClient) {
     this.httpClient = httpClient;
-    this.config = config;
     this.cacheManager = cacheManager;
+    this.telemetryClient = telemetryClient;
+    this.certRevocationCheckMode = revocationCheckMode;
+    this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
   }
 
   /**
@@ -55,9 +67,8 @@ class CRLValidator {
    * @param certificateChains the verified certificate chains to validate
    * @return true if validation passes, false otherwise
    */
-  boolean validateCertificateChains(List<X509Certificate[]> certificateChains) {
-    if (config.getCertRevocationCheckMode()
-        == CRLValidationConfig.CertRevocationCheckMode.DISABLED) {
+  public boolean validateCertificateChains(List<X509Certificate[]> certificateChains) {
+    if (this.certRevocationCheckMode == CertRevocationCheckMode.DISABLED) {
       logger.debug("CRL validation is disabled");
       return true; // OPEN
     }
@@ -85,8 +96,7 @@ class CRLValidator {
     }
 
     logger.debug("Some certificate chains didn't pass or driver wasn't able to perform the checks");
-    if (config.getCertRevocationCheckMode()
-        == CRLValidationConfig.CertRevocationCheckMode.ADVISORY) {
+    if (this.certRevocationCheckMode == CertRevocationCheckMode.ADVISORY) {
       logger.debug("Advisory mode: allowing connection despite validation issues");
       return true; // FAIL OPEN
     }
@@ -117,7 +127,7 @@ class CRLValidator {
 
         List<String> crlUrls = extractCRLDistributionPoints(cert);
         if (crlUrls.isEmpty()) {
-          if (config.isAllowCertificatesWithoutCrlUrl()) {
+          if (this.allowCertificatesWithoutCrlUrl) {
             logger.debug(
                 "Certificate has missing CRL Distribution Point URLs: {}",
                 cert.getSubjectX500Principal());
@@ -181,6 +191,8 @@ class CRLValidator {
     lock.lock();
     try {
       Instant now = Instant.now();
+      RevocationCheckTelemetryData revocationTelemetry = new RevocationCheckTelemetryData();
+      revocationTelemetry.setCrlUrl(crlUrl);
 
       CRLCacheEntry cacheEntry = cacheManager.get(crlUrl);
       X509CRL crl = cacheEntry != null ? cacheEntry.getCrl() : null;
@@ -189,13 +201,12 @@ class CRLValidator {
       boolean needsFreshCrl =
           crl == null
               || (crl.getNextUpdate() != null && crl.getNextUpdate().toInstant().isBefore(now))
-              || (downloadTime != null
-                  && downloadTime.plus(config.getCacheValidityTime()).isBefore(now));
+              || cacheEntry.isEvicted(now, cacheManager.getCacheValidityTime());
 
       boolean shouldUpdateCache = false;
 
       if (needsFreshCrl) {
-        X509CRL newCrl = fetchCrl(crlUrl);
+        X509CRL newCrl = fetchCrl(crlUrl, revocationTelemetry);
 
         if (newCrl != null) {
           shouldUpdateCache = crl == null || newCrl.getThisUpdate().after(crl.getThisUpdate());
@@ -227,10 +238,13 @@ class CRLValidator {
         }
       }
 
+      int numberOfRevokedCertificates =
+          crl.getRevokedCertificates() != null ? crl.getRevokedCertificates().size() : 0;
       logger.debug(
           "CRL has {} revoked entries, next update at {}",
-          crl.getRevokedCertificates() != null ? crl.getRevokedCertificates().size() : 0,
+          numberOfRevokedCertificates,
           crl.getNextUpdate());
+      revocationTelemetry.setNumberOfRevokedCertificates(numberOfRevokedCertificates);
 
       if (!isCrlSignatureAndIssuerValid(crl, cert, parentCert, crlUrl)) {
         logger.debug("Unable to verify CRL for {}", crlUrl);
@@ -249,6 +263,7 @@ class CRLValidator {
         return CertificateValidationResult.CERT_REVOKED;
       }
 
+      telemetryClient.addLogToBatch(revocationTelemetry.buildTelemetry());
       return CertificateValidationResult.CERT_UNREVOKED;
     } finally {
       lock.unlock();
@@ -302,16 +317,22 @@ class CRLValidator {
     return entry != null;
   }
 
-  private X509CRL fetchCrl(String crlUrl) {
+  private X509CRL fetchCrl(String crlUrl, RevocationCheckTelemetryData revocationTelemetry) {
     try {
       logger.debug("Fetching CRL from {}", crlUrl);
-
       URL url = new URL(crlUrl);
       HttpGet get = new HttpGet(url.toString());
+      CertificateFactory cf = CertificateFactory.getInstance("X.509");
+      long start = System.currentTimeMillis();
       try (CloseableHttpResponse response = this.httpClient.execute(get)) {
         try (InputStream inputStream = response.getEntity().getContent()) {
-          CertificateFactory cf = CertificateFactory.getInstance("X.509");
-          return (X509CRL) cf.generateCRL(inputStream);
+          revocationTelemetry.setTimeDownloadingCrl(System.currentTimeMillis() - start);
+          start = System.currentTimeMillis();
+          X509CRL crl = (X509CRL) cf.generateCRL(inputStream);
+          long crlBytes = crl.getEncoded().length; // TODO: check if this is fast
+          revocationTelemetry.setTimeParsingCrl(System.currentTimeMillis() - start);
+          revocationTelemetry.setCrlBytes(crlBytes);
+          return crl;
         }
       }
     } catch (IOException | CRLException | CertificateException e) {
