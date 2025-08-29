@@ -120,8 +120,8 @@ class SFConnectionConfigParserPermissionTest {
   @MethodSource("skipReadWarningTestCases")
   @DontRunOnWindows
   void testSkipWarningForReadPermissionsEnvVar(Set<PosixFilePermission> perms) throws Exception {
-    SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
     Path tempFile = createTempFileWithPermissions(perms);
+    SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
     try {
       assertDoesNotThrow(() -> SFConnectionConfigParser.verifyFilePermissionSecure(tempFile));
     } finally {
