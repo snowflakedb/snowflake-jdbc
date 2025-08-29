@@ -16,6 +16,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -40,6 +41,9 @@ public class SFConnectionConfigParser {
       "SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION";
   public static final String SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE =
       "SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE";
+
+  private static final List<PosixFilePermission> REQUIRED_PERMISSIONS =
+      Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
 
   public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
     String defaultConnectionName =
@@ -118,10 +122,11 @@ public class SFConnectionConfigParser {
     }
   }
 
-  private static void verifyFilePermissionSecure(Path configFilePath)
+  protected static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
+    final String fileName = "connections.toml";
     if (!isWindows()) {
-      if (configFilePath.getFileName().toString().endsWith(".toml")) {
+      if (configFilePath.getFileName().toString().equals(fileName)) {
         boolean shouldSkipWarningForReadPermissions =
             convertSystemGetEnvToBooleanValue(
                 SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE, false);
@@ -170,10 +175,7 @@ public class SFConnectionConfigParser {
         PosixFileAttributeView posixFileAttributeView =
             Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
         if (!posixFileAttributeView.readAttributes().permissions().stream()
-            .allMatch(
-                o ->
-                    Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
-                        .contains(o))) {
+            .allMatch(o -> REQUIRED_PERMISSIONS.contains(o))) {
           logger.error(
               "Reading from file %s is not safe because file permissions are different than read/write for user",
               configFilePath);

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -20,27 +19,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 class SFConnectionConfigParserPermissionTest {
 
   private Path createTempFileWithPermissions(Set<PosixFilePermission> perms) throws Exception {
-    Path tempFile = Files.createTempFile("testConfig", ".toml");
+    Path tempFile = Files.createTempFile("connections", ".toml");
     Files.setPosixFilePermissions(tempFile, perms);
     return tempFile;
-  }
-
-  private void invokeVerifyFilePermissionSecure(Path path) throws Exception {
-    Method method =
-        SFConnectionConfigParser.class.getDeclaredMethod("verifyFilePermissionSecure", Path.class);
-    method.setAccessible(true);
-    try {
-      method.invoke(null, path);
-    } catch (java.lang.reflect.InvocationTargetException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof net.snowflake.client.jdbc.SnowflakeSQLException) {
-        throw (net.snowflake.client.jdbc.SnowflakeSQLException) cause;
-      } else if (cause instanceof Exception) {
-        throw (Exception) cause;
-      } else {
-        throw new RuntimeException(cause);
-      }
-    }
   }
 
   static List<Object[]> permissionTestCases() {
@@ -111,10 +92,10 @@ class SFConnectionConfigParserPermissionTest {
         Exception ex =
             assertThrows(
                 net.snowflake.client.jdbc.SnowflakeSQLException.class,
-                () -> invokeVerifyFilePermissionSecure(tempFile));
+                () -> SFConnectionConfigParser.verifyFilePermissionSecure(tempFile));
         assertTrue(ex.getMessage().contains(expectedMsg));
       } else {
-        assertDoesNotThrow(() -> invokeVerifyFilePermissionSecure(tempFile));
+        assertDoesNotThrow(() -> SFConnectionConfigParser.verifyFilePermissionSecure(tempFile));
       }
     } finally {
       Files.deleteIfExists(tempFile);
@@ -142,7 +123,7 @@ class SFConnectionConfigParserPermissionTest {
     SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
     Path tempFile = createTempFileWithPermissions(perms);
     try {
-      assertDoesNotThrow(() -> invokeVerifyFilePermissionSecure(tempFile));
+      assertDoesNotThrow(() -> SFConnectionConfigParser.verifyFilePermissionSecure(tempFile));
     } finally {
       Files.deleteIfExists(tempFile);
       SnowflakeUtil.systemSetEnv("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", null);
