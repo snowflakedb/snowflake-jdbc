@@ -22,7 +22,7 @@ public class FileCacheManagerDefaultDirTest {
             .thenReturn("/XDG/Cache/");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/XDG/Cache/")).thenReturn(true);
-          File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
+          File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
           Assertions.assertEquals("/XDG/Cache/snowflake", defaultCacheDir.getAbsolutePath());
         }
@@ -45,7 +45,7 @@ public class FileCacheManagerDefaultDirTest {
             .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
-          File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
+          File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
           Assertions.assertEquals("/User/Home/.cache/snowflake", defaultCacheDir.getAbsolutePath());
         }
@@ -65,7 +65,7 @@ public class FileCacheManagerDefaultDirTest {
             .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
-          File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
+          File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
           Assertions.assertEquals(
               "/User/Home/AppData/Local/Snowflake/Caches", defaultCacheDir.getAbsolutePath());
@@ -86,7 +86,7 @@ public class FileCacheManagerDefaultDirTest {
             .thenReturn("/User/Home");
         try (MockedStatic<FileUtil> fileUtilMockedStatic = Mockito.mockStatic(FileUtil.class)) {
           fileUtilMockedStatic.when(() -> FileUtil.isWritable("/User/Home")).thenReturn(true);
-          File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
+          File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
           Assertions.assertNotNull(defaultCacheDir);
           Assertions.assertEquals(
               "/User/Home/Library/Caches/Snowflake", defaultCacheDir.getAbsolutePath());
@@ -108,7 +108,7 @@ public class FileCacheManagerDefaultDirTest {
         snowflakeUtilMockedStatic
             .when(() -> SnowflakeUtil.systemGetProperty("user.home"))
             .thenReturn(null);
-        File defaultCacheDir = FileCacheManager.getDefaultCacheDir();
+        File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
         Assertions.assertNull(defaultCacheDir);
       }
     }
