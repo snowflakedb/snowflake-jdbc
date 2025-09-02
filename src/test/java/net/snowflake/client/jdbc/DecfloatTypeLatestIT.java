@@ -156,7 +156,24 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
         assertEquals(
             ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(),
             e.getErrorCode(),
-            "Expected error code INVALID_VALUE_CONVERT for getInt overflow");
+            "Expected error code INVALID_VALUE_CONVERT for getShort overflow");
+
+        // Test overflow scenarios with values that exceed Long.MAX_VALUE
+        final ResultSet rsLongOverflow =
+            stmt.executeQuery(
+                "SELECT 9223372036854775808::DECFLOAT"); // 2^63, exceeds long max value
+        assertTrue(rsLongOverflow.next());
+
+        // Long conversion should throw exception (overflow)
+        e =
+            assertThrows(
+                SnowflakeSQLException.class,
+                () -> rsLongOverflow.getLong(1),
+                "Expected SnowflakeSQLException for getLong overflow");
+        assertEquals(
+            ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(),
+            e.getErrorCode(),
+            "Expected error code INVALID_VALUE_CONVERT for getLong overflow");
       }
     }
   }

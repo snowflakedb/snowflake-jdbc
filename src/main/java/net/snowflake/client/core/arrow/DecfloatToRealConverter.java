@@ -20,6 +20,7 @@ class DecfloatToRealConverter extends AbstractArrowVectorConverter {
     this.vector = (StructVector) vector;
   }
 
+  @Override
   public BigDecimal toBigDecimal(int index) {
     if (isNull(index)) {
       return null;
@@ -93,14 +94,22 @@ class DecfloatToRealConverter extends AbstractArrowVectorConverter {
       return 0;
     }
     BigDecimal bigDecimal = toBigDecimal(rowIndex);
-    return bigDecimal.longValue();
+    if (bigDecimal.scale() == 0) {
+      BigInteger intVal = bigDecimal.toBigIntegerExact();
+      if (intVal.bitLength() <= 63) {
+        return intVal.longValue();
+      } else {
+        throw new SFException(
+            ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Long", bigDecimal.toPlainString());
+      }
+    } else {
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Long", bigDecimal.toPlainString());
+    }
   }
 
   @Override
   public Object toObject(int index) throws SFException {
-    if (isNull(index)) {
-      return null;
-    }
     return toBigDecimal(index);
   }
 
@@ -109,28 +118,18 @@ class DecfloatToRealConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-    return toBigDecimal(index).toPlainString();
+    return toBigDecimal(index).toEngineeringString();
   }
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    if (isNull(index)) {
-      return null;
-    }
-    BigDecimal val = toBigDecimal(index);
     throw new SFException(
-        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        SnowflakeUtil.BYTES_STR, val);
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BYTES_STR, null);
   }
 
   @Override
   public boolean toBoolean(int rowIndex) throws SFException {
-    if (isNull(rowIndex)) {
-      return false;
-    }
-    BigDecimal val = toBigDecimal(rowIndex);
     throw new SFException(
-        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        SnowflakeUtil.BOOLEAN_STR, val);
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BOOLEAN_STR, null);
   }
 }
