@@ -11,11 +11,11 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
-class DecfloatToRealConverter extends AbstractArrowVectorConverter {
+class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
 
   private StructVector vector;
 
-  public DecfloatToRealConverter(ValueVector vector, int idx, DataConversionContext context) {
+  public DecfloatToDecimalConverter(ValueVector vector, int idx, DataConversionContext context) {
     super(SnowflakeType.DECFLOAT.name(), vector, idx, context);
     this.vector = (StructVector) vector;
   }

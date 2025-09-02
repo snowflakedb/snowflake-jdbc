@@ -21,95 +21,41 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
-  public void testDecfloatToBigDecimal(String queryResultFormat) throws SQLException {
+  public void testBasicDecfloatConversions(String queryResultFormat) throws SQLException {
     try (Connection con = getConnection()) {
       try (Statement stmt = createStatement(con, queryResultFormat)) {
         ResultSet rs = stmt.executeQuery("SELECT 123.456::DECFLOAT, NULL::DECFLOAT");
         assertTrue(rs.next());
 
-        // Test non-null value
-        BigDecimal value = rs.getBigDecimal(1);
-        assertEquals(new BigDecimal("123.456"), value);
+        // Test BigDecimal conversions
+        BigDecimal bigDecimalValue = rs.getBigDecimal(1);
+        assertEquals(new BigDecimal("123.456"), bigDecimalValue);
+        BigDecimal nullBigDecimal = rs.getBigDecimal(2);
+        assertNull(nullBigDecimal);
 
-        // Test null value
-        BigDecimal nullValue = rs.getBigDecimal(2);
-        assertNull(nullValue);
-      }
-    }
-  }
+        // Test Double conversions
+        double doubleValue = rs.getDouble(1);
+        assertEquals(123.456, doubleValue, 0.001);
+        double nullDouble = rs.getDouble(2);
+        assertEquals(0.0, nullDouble, 0.001);
 
-  @ParameterizedTest
-  @ArgumentsSource(SimpleResultFormatProvider.class)
-  public void testDecfloatToDouble(String queryResultFormat) throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = createStatement(con, queryResultFormat)) {
-        ResultSet rs = stmt.executeQuery("SELECT 123.456::DECFLOAT, NULL::DECFLOAT");
-        assertTrue(rs.next());
+        // Test Float conversions
+        float floatValue = rs.getFloat(1);
+        assertEquals(123.456f, floatValue, 0.001f);
+        float nullFloat = rs.getFloat(2);
+        assertEquals(0.0f, nullFloat, 0.001f);
 
-        // Test non-null value
-        double value = rs.getDouble(1);
-        assertEquals(123.456, value, 0.001);
+        // Test String conversions
+        String stringValue = rs.getString(1);
+        assertEquals("123.456", stringValue);
+        String nullString = rs.getString(2);
+        assertNull(nullString);
 
-        // Test null value (returns 0.0)
-        double nullValue = rs.getDouble(2);
-        assertEquals(0.0, nullValue, 0.001);
-      }
-    }
-  }
-
-  @ParameterizedTest
-  @ArgumentsSource(SimpleResultFormatProvider.class)
-  public void testDecfloatToFloat(String queryResultFormat) throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = createStatement(con, queryResultFormat)) {
-        ResultSet rs = stmt.executeQuery("SELECT 123.456::DECFLOAT, NULL::DECFLOAT");
-        assertTrue(rs.next());
-
-        // Test non-null value
-        float value = rs.getFloat(1);
-        assertEquals(123.456f, value, 0.001f);
-
-        // Test null value (returns 0.0)
-        float nullValue = rs.getFloat(2);
-        assertEquals(0.0f, nullValue, 0.001f);
-      }
-    }
-  }
-
-  @ParameterizedTest
-  @ArgumentsSource(SimpleResultFormatProvider.class)
-  public void testDecfloatToString(String queryResultFormat) throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = createStatement(con, queryResultFormat)) {
-        ResultSet rs = stmt.executeQuery("SELECT 123.456::DECFLOAT, NULL::DECFLOAT");
-        assertTrue(rs.next());
-
-        // Test non-null value
-        String value = rs.getString(1);
-        assertEquals("123.456", value);
-
-        // Test null value
-        String nullValue = rs.getString(2);
-        assertNull(nullValue);
-      }
-    }
-  }
-
-  @ParameterizedTest
-  @ArgumentsSource(SimpleResultFormatProvider.class)
-  public void testDecfloatToObject(String queryResultFormat) throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = createStatement(con, queryResultFormat)) {
-        ResultSet rs = stmt.executeQuery("SELECT 123.456::DECFLOAT, NULL::DECFLOAT");
-        assertTrue(rs.next());
-
-        // Test non-null value
-        Object value = rs.getObject(1);
-        assertEquals(new BigDecimal("123.456"), value);
-
-        // Test null value
-        Object nullValue = rs.getObject(2);
-        assertNull(nullValue);
+        // Test Object conversions
+        Object objectValue = rs.getObject(1);
+        assertEquals(new BigDecimal("123.456"), objectValue);
+        Object nullObject = rs.getObject(2);
+        assertNull(nullObject);
       }
     }
   }
