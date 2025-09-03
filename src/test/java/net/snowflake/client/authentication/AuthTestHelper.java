@@ -90,16 +90,18 @@ public class AuthTestHelper {
 
   public List<String> getTotp(String seed) {
     if (runAuthTestsManually) {
-      System.err.println("ERROR: TOTP code needs to be setup manually when running auth tests manually");
+      System.err.println(
+          "ERROR: TOTP code needs to be setup manually when running auth tests manually");
       return Collections.emptyList();
     }
-    
+
     try {
       String totpGeneratorPath = "/externalbrowser/totpGenerator.js";
       ProcessBuilder processBuilder = new ProcessBuilder("node", totpGeneratorPath, seed);
       Process process = processBuilder.start();
-      
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+
+      try (BufferedReader reader =
+          new BufferedReader(new InputStreamReader(process.getInputStream()))) {
         String output = reader.readLine();
         process.waitFor(40, TimeUnit.SECONDS);
         return Arrays.asList(output.trim().split("\\s+"));
@@ -113,14 +115,15 @@ public class AuthTestHelper {
     return getTotp("");
   }
 
-  public boolean connectAndExecuteSimpleQueryWithMfaToken(Properties props, List<String> totpCodes) {
+  public boolean connectAndExecuteSimpleQueryWithMfaToken(
+      Properties props, List<String> totpCodes) {
     for (int i = 0; i < totpCodes.size(); i++) {
       String totpCode = totpCodes.get(i);
       props.put("passcode", totpCode);
       this.exception = null;
-      
+
       connectAndExecuteSimpleQuery(props, null);
-      
+
       if (this.exception == null) {
         return true;
       } else {
