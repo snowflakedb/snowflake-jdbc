@@ -356,6 +356,9 @@ public class SnowflakeDriverTest {
       t.match(t.url, SnowflakeConnectString.parse(t.url, SnowflakeDriver.EMPTY_PROPERTIES));
     }
 
+    // autoconfig with connections.toml
+    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake:auto"));
+
     // negative tests
     assertFalse(snowflakeDriver.acceptsURL("jdbc:"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://"));

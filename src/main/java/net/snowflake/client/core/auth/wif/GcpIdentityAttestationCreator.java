@@ -4,8 +4,10 @@ import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.DEFAULT_ME
 import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.performIdentityRequest;
 
 import java.util.Collections;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
@@ -35,20 +37,15 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
   }
 
   @Override
-  public WorkloadIdentityAttestation createAttestation() {
+  public WorkloadIdentityAttestation createAttestation() throws SFException {
     logger.debug("Creating GCP identity attestation...");
     String token = fetchTokenFromMetadataService();
     if (token == null) {
-      logger.debug("No GCP token was found.");
-      return null;
+      throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No GCP token was found.");
     }
     // if the token has been returned, we can assume that we're on GCP environment
     WorkloadIdentityUtil.SubjectAndIssuer claims =
         WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature(token);
-    if (claims == null) {
-      logger.error("Could not extract claims from token");
-      return null;
-    }
 
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.GCP,
@@ -56,7 +53,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
         Collections.singletonMap("sub", claims.getSubject()));
   }
 
-  private String fetchTokenFromMetadataService() {
+  private String fetchTokenFromMetadataService() throws SFException {
     String uri =
         gcpMetadataServiceBaseUrl
             + "/computeMetadata/v1/instance/service-accounts/default/identity?audience="
@@ -66,8 +63,10 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
     try {
       return performIdentityRequest(tokenRequest, loginInput);
     } catch (Exception e) {
-      logger.debug("GCP metadata server request was not successful: {}" + e);
-      return null;
+      logger.error("GCP metadata server request was not successful", e);
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "GCP metadata server request was not successful: " + e.getMessage());
     }
   }
 }

@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
@@ -15,6 +16,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +34,8 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-3.json";
   private static final String MULTIPLE_429_IN_FEDERATED_STEP_4 =
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
+  private static final String UNSUPPORTED_MFA_IN_FEDERATED_STEP_3 =
+      "/wiremock/mappings/session/session-util-wiremock-it-unsupported-mfa-in-federated-step-3.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
@@ -229,6 +233,31 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
         vanityUrlCalls,
         loginInput.getLoginTimeout(),
         ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS);
+  }
+
+  @Test
+  public void testErrorHandlingWhenOktaReturnsUnsupportedMfaInFederatedStep3() throws Throwable {
+    // GIVEN
+    Map<String, Object> placeholders = new HashMap<>();
+    placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+    String wireMockMapping =
+        getWireMockMappingFromFile(UNSUPPORTED_MFA_IN_FEDERATED_STEP_3, placeholders);
+    importMapping(wireMockMapping);
+
+    setCustomTrustStorePropertyPath();
+
+    SFLoginInput loginInput = createOktaLoginInputBase();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+    SnowflakeSQLLoggedException thrown =
+        assertThrows(
+            SnowflakeSQLLoggedException.class,
+            () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
+    assertThat(thrown.getErrorCode(), equalTo(ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode()));
+    assertThat(
+        thrown.getMessage(),
+        equalTo(
+            "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(

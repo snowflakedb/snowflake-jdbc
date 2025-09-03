@@ -234,6 +234,15 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         this.prefetchMaxRetry = (int) prefetchMaxRetry;
       }
     }
+
+    if (resultSetSerializable.getServerURL() != null) {
+      try {
+        SessionUtil.resetOCSPUrlIfNecessary(resultSetSerializable.getServerURL());
+      } catch (IOException e) {
+        logger.debug("Exception while resetting OCSP URL", e);
+      }
+    }
+
     this.memoryLimit = resultSetSerializable.getMemoryLimit();
     if (this.session != null
         && session.getMemoryLimitForTesting() != SFBaseSession.MEMORY_LIMIT_UNSET) {
