@@ -29,7 +29,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.telemetry.BufferedTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.RevocationCheckTelemetryData;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
@@ -41,12 +43,15 @@ import org.apache.http.impl.client.CloseableHttpClient;
 @SnowflakeJdbcInternalApi
 public class CRLValidator {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLValidator.class);
+  private static final Map<HttpClientSettingsKey, CRLValidator> validatorRegistryForTelemetry =
+      new ConcurrentHashMap<>();
+
   private final Map<String, Lock> urlLocks = new ConcurrentHashMap<>();
   private final CloseableHttpClient httpClient;
   private final CRLCacheManager cacheManager;
-  private final Telemetry telemetryClient;
   private final CertRevocationCheckMode certRevocationCheckMode;
   private final boolean allowCertificatesWithoutCrlUrl;
+  private final Telemetry telemetryClient;
 
   public CRLValidator(
       CertRevocationCheckMode revocationCheckMode,
@@ -56,9 +61,9 @@ public class CRLValidator {
       Telemetry telemetryClient) {
     this.httpClient = httpClient;
     this.cacheManager = cacheManager;
-    this.telemetryClient = telemetryClient;
     this.certRevocationCheckMode = revocationCheckMode;
     this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
+    this.telemetryClient = telemetryClient;
   }
 
   /**
@@ -344,5 +349,39 @@ public class CRLValidator {
   private boolean containsOnlyRevokedChains(List<CRLValidationResult> results) {
     return !results.isEmpty()
         && results.stream().allMatch(result -> result == CRLValidationResult.CHAIN_REVOKED);
+  }
+
+  /**
+   * Multiple sessions may share the same HttpClientSettingsKey thus CRL telemetry might be sent for
+   * wrong session. We accept this limitation.
+   */
+  public static void provideTelemetryClientForKey(
+      HttpClientSettingsKey key, Telemetry telemetryClient) {
+    CRLValidator result =
+        validatorRegistryForTelemetry.computeIfPresent(
+            key,
+            (k, validator) -> {
+              validator.provideTelemetryClient(telemetryClient);
+              return validator;
+            });
+
+    if (result == null) {
+      logger.debug("No CRL validator found for key: {}", key);
+    }
+  }
+
+  public static void registerValidator(HttpClientSettingsKey key, CRLValidator validator) {
+    validatorRegistryForTelemetry.put(key, validator);
+  }
+
+  private void provideTelemetryClient(Telemetry telemetryClient) {
+    try {
+      BufferedTelemetryClient bufferedClient = (BufferedTelemetryClient) this.telemetryClient;
+      if (!bufferedClient.hasRealTelemetryClient()) {
+        bufferedClient.setRealTelemetryClient(telemetryClient);
+      }
+    } catch (Exception e) {
+      logger.warn("Failed to set real telemetry client for trust manager: {}", e.getMessage());
+    }
   }
 }

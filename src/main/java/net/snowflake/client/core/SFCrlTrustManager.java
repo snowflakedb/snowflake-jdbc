@@ -22,7 +22,7 @@ import net.snowflake.client.core.crl.CRLCacheManager;
 import net.snowflake.client.core.crl.CRLValidator;
 import net.snowflake.client.core.crl.VerifiedCertPathBuilder;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
+import net.snowflake.client.jdbc.telemetry.BufferedTelemetryClient;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpHost;
@@ -84,7 +84,8 @@ public class SFCrlTrustManager extends X509ExtendedTrustManager {
             key.isAllowCertificatesWithoutCrlUrl(),
             httpClient,
             crlCacheManager,
-            new NoOpTelemetryClient()); // TODO how to get telemetry client?
+            new BufferedTelemetryClient());
+    CRLValidator.registerValidator(key, this.crlValidator);
   }
 
   @Override
