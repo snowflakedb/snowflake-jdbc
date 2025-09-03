@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.FieldSchemaCreator;
 import net.snowflake.client.core.JsonSqlOutput;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -99,6 +101,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private int batchSize = 0;
 
   private boolean alreadyDescribed = false;
+  private final ObjectMapper objectMapper;
 
   /**
    * Construct SnowflakePreparedStatementV1
@@ -124,6 +127,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     this.sql = sql;
     this.preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
     showStatementParameters = connection.getShowStatementParameters();
+    objectMapper = ObjectMapperFactory.getObjectMapperForSession(connection.getSFBaseSession());
   }
 
   /**
@@ -645,7 +649,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               sfArray.getSchema());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
-      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession());
+      SfSqlArray sfArray =
+          new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession(), objectMapper);
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               "json",
