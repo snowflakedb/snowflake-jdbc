@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.crl.CRLValidator;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
@@ -888,6 +889,7 @@ public class SFSession extends SFBaseSession {
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
+    this.getTelemetryClient();
     stopwatch.stop();
     logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
@@ -1291,6 +1293,14 @@ public class SFSession extends SFBaseSession {
         return null;
       }
       telemetryClient = TelemetryClient.createTelemetry(this);
+
+      // Provide the real telemetry client to the CRL validator for this session's
+      // HttpClientSettingsKey
+      try {
+        CRLValidator.provideTelemetryClientForKey(getHttpClientKey(), telemetryClient);
+      } catch (Exception e) {
+        logger.warn("Failed to provide telemetry client to CRL trust manager: {}", e.getMessage());
+      }
     }
     return telemetryClient;
   }

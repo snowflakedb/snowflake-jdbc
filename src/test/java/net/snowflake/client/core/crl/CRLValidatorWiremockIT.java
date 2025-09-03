@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.File;
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +23,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -30,6 +33,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   private CloseableHttpClient httpClient;
   private CRLCacheManager cacheManager;
   private Telemetry telemetry;
+  @TempDir private File cacheDir;
 
   @BeforeEach
   public void setUpTest() throws SnowflakeSQLLoggedException {
@@ -39,7 +43,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
         CRLCacheManager.build(
             CRLCacheConfig.getInMemoryCacheEnabled(),
             CRLCacheConfig.getOnDiskCacheEnabled(),
-            CRLCacheConfig.getOnDiskCacheDir(),
+            Paths.get(cacheDir.getAbsolutePath()),
             CRLCacheConfig.getOnDiskCacheRemovalDelay(),
             CRLCacheConfig.getCacheValidityTime());
     telemetry = Mockito.mock(Telemetry.class);
