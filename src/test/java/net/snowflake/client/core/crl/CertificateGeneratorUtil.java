@@ -134,7 +134,7 @@ class CertificateGeneratorUtil {
   }
 
   byte[] generateValidCRL() throws Exception {
-    return generateCRL(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000));
+    return generateCRL(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)).getEncoded();
   }
 
   byte[] generateCRLWithRevokedCertificate(BigInteger serialNumber) throws Exception {
@@ -143,10 +143,10 @@ class CertificateGeneratorUtil {
   }
 
   byte[] generateExpiredCRL() throws Exception {
-    return generateCRL(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000));
+    return generateCRL(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000)).getEncoded();
   }
 
-  private byte[] generateCRL(Date nextUpdate) throws Exception {
+  X509CRL generateCRL(Date nextUpdate) throws Exception {
     Date now = new Date();
     X509v2CRLBuilder crlBuilder =
         new X509v2CRLBuilder(new X500Name(caCertificate.getSubjectX500Principal().getName()), now);
@@ -159,8 +159,7 @@ class CertificateGeneratorUtil {
     ContentSigner contentSigner =
         new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(caKeyPair.getPrivate());
     X509CRLHolder crlHolder = crlBuilder.build(contentSigner);
-    X509CRL crl = new JcaX509CRLConverter().setProvider(BOUNCY_CASTLE_PROVIDER).getCRL(crlHolder);
-    return crl.getEncoded();
+    return new JcaX509CRLConverter().setProvider(BOUNCY_CASTLE_PROVIDER).getCRL(crlHolder);
   }
 
   private KeyPair generateKeyPair() throws Exception {
