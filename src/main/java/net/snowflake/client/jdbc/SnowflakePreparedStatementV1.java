@@ -490,7 +490,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.trace("setDecfloat(parameterIndex: {}, BigDecimal x)", parameterIndex);
 
     if (x == null) {
-      setNull(parameterIndex, Types.DECIMAL);
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(SnowflakeType.DECFLOAT.name(), String.valueOf(x));

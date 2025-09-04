@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -222,7 +223,6 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
               new BigDecimal("-9.8765432099999998623226732747455716901E-250");
           BigDecimal expValue = new BigDecimal("-1.2345e2"); // -123.45
 
-          // These lines should fail - method doesn't exist
           ps.setObject(1, veryLargeValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
           ps.setObject(2, verySmallValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
           ps.setObject(3, expValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
@@ -244,8 +244,7 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
 
   @ArgumentsSource(SimpleResultFormatProvider.class)
   @ParameterizedTest
-  public void testDecfloatBindingArrayAndBatchInserts(String queryResultString)
-      throws SQLException {
+  public void testDecfloatBindingArray(String queryResultString) throws SQLException {
     try (Connection con = getConnection()) {
       try (Statement stmt = createStatement(con, queryResultString)) {
         try {
@@ -254,9 +253,9 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           List<BigDecimal> firstArray =
               Arrays.asList(
                   new BigDecimal("123.45"),
-                  new BigDecimal("1234567890.1234567890123456789012345678"));
+                  new BigDecimal("1234567890.1234567890123456789012345678"),
+                  new BigDecimal("1.2345678901234567890123456789012345678e120"));
 
-          // Test regular array binding
           try (PreparedStatement ps =
               con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
             for (BigDecimal value : firstArray) {
@@ -266,10 +265,43 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
             ps.executeBatch();
           }
 
-          List<BigDecimal> secondArray =
-              Arrays.asList(new BigDecimal("-987.45e-4"), new BigDecimal("-1234.423e3"));
+          try (ResultSet rs =
+              stmt.executeQuery("SELECT * FROM test_decfloat order by value desc")) {
+            assertTrue(rs.next());
+            BigDecimal firstValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("1.2345678901234567890123456789012345678e120"), firstValue);
 
-          // Test bulk binding with stage
+            assertTrue(rs.next());
+            BigDecimal secondValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("1234567890.1234567890123456789012345678"), secondValue);
+
+            assertTrue(rs.next());
+            BigDecimal thirdValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("123.45"), thirdValue);
+          }
+        } finally {
+          // Cleanup
+          stmt.execute("DROP TABLE IF EXISTS test_decfloat");
+        }
+      }
+    }
+  }
+
+  @DontRunOnGithubActions
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @ParameterizedTest
+  public void testDecfloatBindingBatchInserts(String queryResultString) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = createStatement(con, queryResultString)) {
+        try {
+          stmt.execute("CREATE OR REPLACE TABLE test_decfloat (value DECFLOAT)");
+
+          List<BigDecimal> secondArray =
+              Arrays.asList(
+                  new BigDecimal("-987.45e-4"),
+                  new BigDecimal("-1234.423e3"),
+                  new BigDecimal("-9.8765432099999998623226732747455716901E-250"));
+
           stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
           try (PreparedStatement ps =
               con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
@@ -280,24 +312,20 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
             ps.executeBatch();
           }
 
-          // Verify results
           try (ResultSet rs =
               stmt.executeQuery("SELECT * FROM test_decfloat order by value desc")) {
             assertTrue(rs.next());
             BigDecimal firstValue = rs.getBigDecimal(1);
-            assertEquals(new BigDecimal("1234567890.1234567890123456789012345678"), firstValue);
-
-            assertTrue(rs.next());
-            BigDecimal secondValue = rs.getBigDecimal(1);
-            assertEquals(new BigDecimal("123.45"), secondValue);
-
-            assertTrue(rs.next());
-            BigDecimal thirdValue = rs.getBigDecimal(1);
-            assertEquals(new BigDecimal("-0.098745"), thirdValue);
+            assertEquals(
+                new BigDecimal("-9.8765432099999998623226732747455716901E-250"), firstValue);
 
             assertTrue(rs.next());
             BigDecimal fourthValue = rs.getBigDecimal(1);
-            assertEquals(new BigDecimal("-1234.423e3"), fourthValue);
+            assertEquals(new BigDecimal("-0.098745"), fourthValue);
+
+            assertTrue(rs.next());
+            BigDecimal fifthValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("-1234.423e3"), fifthValue);
           }
         } finally {
           // Cleanup
