@@ -78,6 +78,8 @@ public class SnowflakeUtil {
 
   public static final int EXTRA_TYPES_VECTOR = 50003;
 
+  public static final int EXTRA_TYPES_DECFLOAT = 50004;
+
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
