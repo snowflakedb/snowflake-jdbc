@@ -19,5 +19,6 @@ public enum ClientAuthnParameter {
   PROOF_KEY,
   TOKEN,
   OAUTH_TYPE,
-  PROVIDER
+  PROVIDER,
+  APPLICATION_PATH
 }
