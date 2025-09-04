@@ -1,11 +1,13 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -269,6 +271,27 @@ public class StreamLatestIT extends BaseJDBCTest {
       } finally {
         stat.execute("DROP STAGE IF EXISTS " + randomStage);
       }
+    }
+  }
+
+  @Test
+  public void shouldFindLowercasedStageFileWhenQuotedIdentifiersIgnoreCaseIsEnabled()
+      throws Exception {
+    Properties props = new Properties();
+    props.setProperty("QUOTED_IDENTIFIERS_IGNORE_CASE", "true");
+    try (Connection conn = getConnection(props);
+        Statement stmt = conn.createStatement()) {
+      SnowflakeConnection connection = conn.unwrap(SnowflakeConnection.class);
+      String randomStage = "test" + UUID.randomUUID().toString().replaceAll("-", "");
+      stmt.execute("CREATE OR REPLACE STAGE " + randomStage);
+      connection.uploadStream(
+          randomStage,
+          "PREFIX",
+          new ByteArrayInputStream("some text".getBytes()),
+          "testfile.csv",
+          false);
+      assertDoesNotThrow(
+          () -> connection.downloadStream(randomStage, "PREFIX/testfile.csv", false).close());
     }
   }
 
