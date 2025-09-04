@@ -49,7 +49,9 @@ public class CRLCacheManagerLatestIT {
     testCRL2 = createTestCrl();
     crlInMemoryCache = new CRLInMemoryCache(Duration.ofSeconds(10));
     crlFileCache = new CRLFileCache(tempCacheDir, Duration.ofSeconds(10));
-    cacheManager = new CRLCacheManager(crlInMemoryCache, crlFileCache, Duration.ofSeconds(10));
+    cacheManager =
+        new CRLCacheManager(
+            crlInMemoryCache, crlFileCache, Duration.ofSeconds(10), Duration.ofSeconds(10));
     cacheEntry = new CRLCacheEntry(testCRL, downloadTime);
   }
 
@@ -147,16 +149,9 @@ public class CRLCacheManagerLatestIT {
 
   @Test
   void testCacheManagerPeriodicCleanup() throws Exception {
-    CRLValidationConfig config =
-        CRLValidationConfig.builder()
-            .inMemoryCacheEnabled(true)
-            .onDiskCacheEnabled(true)
-            .onDiskCacheDir(tempCacheDir)
-            .cacheValidityTime(Duration.ofMillis(10))
-            .onDiskCacheRemovalDelay(Duration.ofMillis(100))
-            .build();
-
-    CRLCacheManager managerWithCleanup = CRLCacheManager.fromConfig(config);
+    CRLCacheManager managerWithCleanup =
+        CRLCacheManager.build(
+            true, true, tempCacheDir, Duration.ofMillis(100), Duration.ofMillis(10));
     managerWithCleanup.put(TEST_CRL_URL, testCRL, downloadTime.minus(200, ChronoUnit.MILLIS));
     managerWithCleanup.put(TEST_CRL_URL_2, testCRL2, downloadTime);
 

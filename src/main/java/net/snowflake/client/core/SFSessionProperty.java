@@ -149,7 +149,11 @@ public enum SFSessionProperty {
 
   MIN_TLS_VERSION("MIN_TLS_VERSION", false, String.class),
 
-  MAX_TLS_VERSION("MAX_TLS_VERSION", false, String.class);
+  MAX_TLS_VERSION("MAX_TLS_VERSION", false, String.class),
+
+  CERT_REVOCATION_CHECK_MODE("CERT_REVOCATION_CHECK_MODE", false, String.class),
+
+  ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
