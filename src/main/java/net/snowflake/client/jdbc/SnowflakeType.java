@@ -127,6 +127,8 @@ public enum SnowflakeType {
         retval = Types.NUMERIC;
         break;
       case "decfloat":
+        retval = SnowflakeUtil.EXTRA_TYPES_DECFLOAT;
+        break;
       case "decimal":
         retval = Types.DECIMAL;
         break;
