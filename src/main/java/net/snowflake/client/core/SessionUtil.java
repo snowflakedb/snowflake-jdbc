@@ -1152,9 +1152,10 @@ public class SessionUtil {
       String applicationPath =
           new File(SessionUtil.class.getProtectionDomain().getCodeSource().getLocation().toURI())
               .getPath();
-      clientEnv.put("APPLICATION_PATH", applicationPath);
-    } catch (URISyntaxException e) {
+      clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), applicationPath);
+    } catch (Exception e) {
       logger.debug("Exception in retrieving application path for client environment", e);
+      clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
     }
     return clientEnv;
   }
