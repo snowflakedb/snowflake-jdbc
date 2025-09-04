@@ -470,6 +470,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
         || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DECFLOAT) {
+      setDecfloat(parameterIndex, (BigDecimal) x);
     } else {
       logger.trace(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -480,6 +482,18 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSFBaseSession()),
               String.valueOf(x));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setDecfloat(int parameterIndex, BigDecimal x) throws SQLException {
+    logger.trace("setDecfloat(parameterIndex: {}, BigDecimal x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, Types.DECIMAL);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.DECFLOAT.name(), String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
