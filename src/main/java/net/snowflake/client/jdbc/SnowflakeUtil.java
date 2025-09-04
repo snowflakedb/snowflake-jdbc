@@ -78,6 +78,8 @@ public class SnowflakeUtil {
 
   public static final int EXTRA_TYPES_VECTOR = 50003;
 
+  public static final int EXTRA_TYPES_DECFLOAT = 50004;
+
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
@@ -206,7 +208,7 @@ public class SnowflakeUtil {
       boolean isVectorType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
-    ColumnTypeInfo columnTypeInfo = null;
+    ColumnTypeInfo columnTypeInfo;
 
     switch (baseType) {
       case TEXT:
@@ -220,6 +222,9 @@ public class SnowflakeUtil {
       case INTEGER:
         columnTypeInfo =
             new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
+        break;
+      case DECFLOAT:
+        columnTypeInfo = new ColumnTypeInfo(Types.DECIMAL, "DECFLOAT", baseType);
         break;
       case FIXED:
         if (isVectorType) {
