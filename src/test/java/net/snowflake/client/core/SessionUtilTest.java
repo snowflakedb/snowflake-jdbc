@@ -11,10 +11,13 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -280,5 +283,79 @@ public class SessionUtilTest {
     assertThat(
         "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
         SessionUtil.isNewRetryStrategyRequest(postRequest));
+  }
+
+  @Test
+  public void testCreateClientEnvironmentInfo() {
+    // GIVEN
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setOCSPMode(OCSPMode.FAIL_OPEN);
+    loginInput.setApplication("TestApp");
+
+    Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+    connectionPropertiesMap.put(SFSessionProperty.USER, "testuser");
+    connectionPropertiesMap.put(SFSessionProperty.PASSWORD, "testpass");
+    connectionPropertiesMap.put(
+        SFSessionProperty.SERVER_URL, "https://test.snowflakecomputing.com");
+    connectionPropertiesMap.put(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT, 30000);
+    connectionPropertiesMap.put(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT, 10000);
+
+    String tracingLevel = "INFO";
+    AuthenticatorType authenticatorType = AuthenticatorType.SNOWFLAKE;
+
+    // WHEN
+    Map<String, Object> clientEnv =
+        SessionUtil.createClientEnvironmentInfo(
+            loginInput, connectionPropertiesMap, tracingLevel, authenticatorType);
+
+    // THEN
+    // Verify basic environment properties
+    assertThat("OS should be set", clientEnv.containsKey("OS"));
+    assertThat("OS_VERSION should be set", clientEnv.containsKey("OS_VERSION"));
+    assertThat("JAVA_VERSION should be set", clientEnv.containsKey("JAVA_VERSION"));
+    assertThat("JAVA_RUNTIME should be set", clientEnv.containsKey("JAVA_RUNTIME"));
+    assertThat("JAVA_VM should be set", clientEnv.containsKey("JAVA_VM"));
+    assertThat("OCSP_MODE should be set", clientEnv.containsKey("OCSP_MODE"));
+    assertThat("JDBC_JAR_NAME should be set", clientEnv.containsKey("JDBC_JAR_NAME"));
+
+    // Verify application path is set
+    assertThat("APPLICATION_PATH should be set", clientEnv.containsKey("APPLICATION_PATH"));
+    assertThat("APPLICATION_PATH should not be null", clientEnv.get("APPLICATION_PATH") != null);
+    assertThat(
+        "APPLICATION_PATH should be a string", clientEnv.get("APPLICATION_PATH") instanceof String);
+
+    // Verify application name is set from loginInput
+    assertThat(
+        "APPLICATION should be set to TestApp", "TestApp".equals(clientEnv.get("APPLICATION")));
+
+    // Verify OCSP mode is set correctly
+    assertThat("OCSP_MODE should be FAIL_OPEN", "FAIL_OPEN".equals(clientEnv.get("OCSP_MODE")));
+
+    // Verify connection parameters are included (with masked values)
+    assertThat("User parameter should be included", clientEnv.containsKey("user"));
+    assertThat("User has correct value", clientEnv.get("user").toString().contains("testuser"));
+    assertThat("Server URL should be included", clientEnv.containsKey("serverURL"));
+    assertThat(
+        "Socket timeout should be included", clientEnv.containsKey("HTTP_CLIENT_SOCKET_TIMEOUT"));
+    assertThat(
+        "Connection timeout should be included",
+        clientEnv.containsKey("HTTP_CLIENT_CONNECTION_TIMEOUT"));
+
+    // Verify tracing level is set
+    assertThat("Tracing should be set to INFO", "INFO".equals(clientEnv.get("tracing")));
+
+    // Verify APPLICATION_PATH is a valid file path
+    String applicationPath = (String) clientEnv.get("APPLICATION_PATH");
+    assertThat("APPLICATION_PATH should not be empty", !applicationPath.isEmpty());
+    assertThat("APPLICATION_PATH should contain file path", isValidPath(applicationPath));
+  }
+
+  private static boolean isValidPath(String path) {
+    try {
+      Paths.get(path);
+    } catch (InvalidPathException | NullPointerException ex) {
+      return false;
+    }
+    return true;
   }
 }

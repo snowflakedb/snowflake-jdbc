@@ -58,6 +58,14 @@ public class AuthConnectionParameters {
     return properties;
   }
 
+  static Properties getMfaConnectionParameters() {
+    Properties properties = getBaseConnectionParameters();
+    properties.put("user", systemGetEnv("SNOWFLAKE_AUTH_TEST_MFA_USER"));
+    properties.put("password", systemGetEnv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD"));
+    properties.put("authenticator", "USERNAME_PASSWORD_MFA");
+    return properties;
+  }
+
   static Properties getOAuthExternalAuthorizationCodeConnectionParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("authenticator", "OAUTH_AUTHORIZATION_CODE");
