@@ -70,7 +70,7 @@ class SessionUtilKeyPair {
 
   private static final String SUBJECT_FMT = "%s.%s";
 
-  private static final int JWT_DEFAULT_AUTH_TIMEOUT = 10;
+  private static final int JWT_DEFAULT_AUTH_TIMEOUT = 0;
 
   private boolean isBouncyCastleProviderEnabled = false;
 
