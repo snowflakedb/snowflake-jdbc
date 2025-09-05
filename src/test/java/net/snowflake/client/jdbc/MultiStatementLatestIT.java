@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -323,12 +325,6 @@ public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  /**
-   * Tests multi-statements with different result formats (JSON and Arrow).
-   *
-   * @param queryResultFormat result format to test
-   * @throws Exception if failed
-   */
   @ParameterizedTest
   @ValueSource(strings = {"arrow", "json"})
   void testMultiStatementResultFormat(String queryResultFormat) throws Exception {
@@ -354,12 +350,18 @@ public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
       try {
         stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
         stmt.execute("ALTER SESSION SET ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS=TRUE");
-      } catch (SQLException ignore) {
-        // test user may not have privilege to change params
+      } catch (SQLException ex) {
+        /*
+         * Ingore failure since the test user might not be able to change the parameter.
+         * In such case assume the parameter has been enabled on the test account.
+         */
+        if (!ex.getMessage()
+            .contains("invalid parameter 'ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS'")) {
+          fail();
+        }
       }
 
-      stmt.unwrap(net.snowflake.client.jdbc.SnowflakeStatement.class)
-          .setParameter("MULTI_STATEMENT_COUNT", 4);
+      stmt.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
 
       String multiStmtQuery =
           "select TO_DOUBLE('0.123456789123456789');\n"
@@ -368,26 +370,58 @@ public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
               + "select '000';";
 
       stmt.execute(multiStmtQuery);
-      ResultSet rs = stmt.getResultSet();
 
-      while (rs.next()) {
-        if ("arrow".equals(queryResultFormat)) {
-          // Arrow returns double directly (precision ~15–16 digits)
-          assertEquals(0.12345678912345678d, rs.getDouble(1), 0.0);
-        } else {
-          // JSON preserves 10 precision digits.
-          assertEquals(new java.math.BigDecimal("0.1234567891"), rs.getBigDecimal(1));
+      int resultSetIndex = 0;
+      boolean hasResults = true;
+
+      while (hasResults) {
+        ResultSet rs = stmt.getResultSet();
+        assertNotNull(rs);
+
+        switch (resultSetIndex) {
+          case 0:
+            assertTrue(rs.next());
+            if ("arrow".equals(queryResultFormat)) {
+              assertEquals(0.12345678912345678d, rs.getDouble(1), 0.0);
+            } else {
+              assertEquals(new BigDecimal("0.1234567891"), rs.getBigDecimal(1));
+            }
+            break;
+          case 1:
+            assertTrue(rs.next());
+            assertEquals(456, rs.getInt(1));
+            break;
+          case 2:
+            assertTrue(rs.next());
+            assertEquals(789, rs.getInt(1));
+            break;
+          case 3:
+            assertTrue(rs.next());
+            assertEquals("000", rs.getString(1));
+            break;
+          default:
+            fail("Unexpected extra result set");
         }
-      }
-      rs.close();
-    }
-    consoleHandler.flush();
-    String logs = logCapture.toString();
 
-    if ("arrow".equals(queryResultFormat)) {
-      assertTrue(
-          logs.contains("Query result received in ARROW format. Processing with SFArrowResultSet."),
-          "Expected Arrow logs but got: \n" + logs);
+        rs.close();
+        hasResults = stmt.getMoreResults();
+        resultSetIndex++;
+      }
+    }
+
+    try {
+      consoleHandler.flush();
+      String logs = logCapture.toString();
+
+      if ("arrow".equals(queryResultFormat) && logs != null) {
+        assertTrue(
+            logs.contains(
+                "Query result received in ARROW format. Processing with SFArrowResultSet."),
+            "Expected Arrow logs but got: \n" + logs);
+      }
+    } finally {
+      sfLogger.removeHandler(consoleHandler);
+      consoleHandler.close();
     }
   }
 }
