@@ -14,12 +14,16 @@ else
     # GITHUB Actions
     if [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         SOURCE_PARAMETER_FILE=parameters_azure.json.gpg
+        RSA_KEY_FILE=rsa_key_jdbc_azure.json.gpg
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         SOURCE_PARAMETER_FILE=parameters_gcp.json.gpg
+        RSA_KEY_FILE=rsa_key_jdbc_gcp.json.gpg
     else
         SOURCE_PARAMETER_FILE=parameters_aws.json.gpg
+        RSA_KEY_FILE=rsa_key_jdbc_aws.json.gpg
     fi
     gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $WORKSPACE/parameters.json $THIS_DIR/../.github/workflows/$SOURCE_PARAMETER_FILE
+    gpg --quiet --batch --yes --decrypt --passphrase="$JDBC_PRIVATE_KEY_SECRET" --output $WORKSPACE/rsa_key_jdbc.json $THIS_DIR/../.github/workflows/rsa/keys/$RSA_KEY_FILE
     export client_git_url=https://github.com/${GITHUB_REPOSITORY}.git
     export client_git_branch=origin/$(basename ${GITHUB_REF})
     export client_git_commit=${GITHUB_SHA}

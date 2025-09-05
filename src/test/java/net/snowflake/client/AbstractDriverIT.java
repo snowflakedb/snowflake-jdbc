@@ -107,10 +107,24 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
-    assertThat(
-        "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
-    params.put("password", password);
+    String privateKeyFile = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_FILE");
+    if (!Strings.isNullOrEmpty(privateKeyFile)) {
+      params.put("privateKeyFile", privateKeyFile);
+      params.put("authenticator", "SNOWFLAKE_JWT");
+      
+      String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
+      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
+        params.put("privateKeyPwd", privateKeyPwd);
+      }
+      
+      System.out.println("[INFO] Using private key authentication: " + privateKeyFile);
+    } else {
+      String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
+      assertThat(
+          "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
+      params.put("password", password);
+      System.out.println("[INFO] Using password authentication");
+    }
 
     String port = getConnPropValueFromEnv(connectionType, "PORT");
     if (Strings.isNullOrEmpty(port)) {
@@ -304,9 +318,19 @@ public class AbstractDriverIT {
       properties.put("account", "snowflake");
     } else {
       properties.put("user", params.get("user"));
-      properties.put("password", params.get("password"));
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
+      
+      // Use private key authentication if detected, otherwise password
+      if (!Strings.isNullOrEmpty(params.get("privateKeyFile"))) {
+        properties.put("privateKeyFile", params.get("privateKeyFile"));
+        properties.put("authenticator", params.get("authenticator"));
+        if (!Strings.isNullOrEmpty(params.get("privateKeyPwd"))) {
+          properties.put("privateKeyPwd", params.get("privateKeyPwd"));
+        }
+      } else {
+        properties.put("password", params.get("password"));
+      }
     }
     properties.put("db", params.get("database"));
     properties.put("schema", params.get("schema"));

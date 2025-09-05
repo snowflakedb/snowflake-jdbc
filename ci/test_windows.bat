@@ -11,16 +11,20 @@ cd %GITHUB_WORKSPACE%
 
 if "%CLOUD_PROVIDER%"=="AZURE" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_azure.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_azure.json.gpg
 ) else if "%CLOUD_PROVIDER%"=="GCP" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_gcp.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_gcp.json.gpg
 ) else if "%CLOUD_PROVIDER%"=="AWS" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_aws.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_aws.json.gpg
 ) else (
   echo === unknown cloud provider
   exit /b 1
 )
 
 gpg --quiet --batch --yes --decrypt --passphrase=%PARAMETERS_SECRET% --output parameters.json %ENCODED_PARAMETERS_FILE%
+gpg --quiet --batch --yes --decrypt --passphrase=%JDBC_PRIVATE_KEY_SECRET% --output rsa_key_jdbc.json %ENCODED_RSA_KEY_FILE%
 
 REM DON'T FORGET TO include @echo off here or the password may be leaked!
 echo @echo off>parameters.bat
@@ -91,7 +95,7 @@ echo.>"%CLIENT_KNOWN_SSM_FILE_PATH%"
 echo "[INFO] Finish log setup"
 REM end setup log
 
-for /F "tokens=1,* delims==" %%i in ('set ^| findstr /I /R "^SNOWFLAKE_[^=]*$" ^| findstr /I /V /R "^SNOWFLAKE_PASS_[^=]*$" ^| sort') do (
+for /F "tokens=1,* delims==" %%i in ('set ^| findstr /I /R "^SNOWFLAKE_[^=]*$" ^| findstr /I /V /R "^SNOWFLAKE_(PASS|.*KEY|.*SECRET|.*TOKEN)_[^=]*$" ^| sort') do (
   echo %%i=%%j
 )
 
