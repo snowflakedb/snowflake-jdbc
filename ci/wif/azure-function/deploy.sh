@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e
+
+RESOURCE_GROUP="automated-driver-tests"
+FUNCTION_APP_NAME="drivers-wif-e2e"
+REGISTRY_NAME="driverswife2e"
+IMAGE_NAME="wif-azure-function"
+TAG="latest"
+
+echo "Deploying updated Azure Function..."
+
+echo "Building Docker image..."
+# Build from parent directory to include shared folder in Docker context
+cd ..
+docker build --platform linux/amd64 -f azure-function/Dockerfile -t ${IMAGE_NAME}:${TAG} .
+cd azure-function
+
+echo "Tagging image for Azure Container Registry..."
+docker tag ${IMAGE_NAME}:${TAG} ${REGISTRY_NAME}.azurecr.io/${IMAGE_NAME}:${TAG}
+
+echo "Logging into Azure Container Registry..."
+az acr login --name ${REGISTRY_NAME}
+
+echo "Pushing image to registry..."
+docker push ${REGISTRY_NAME}.azurecr.io/${IMAGE_NAME}:${TAG}
+
+echo "Updating Function App to use latest image..."
+az functionapp config set \
+  --name ${FUNCTION_APP_NAME} \
+  --resource-group ${RESOURCE_GROUP} \
+  --linux-fx-version "DOCKER|${REGISTRY_NAME}.azurecr.io/${IMAGE_NAME}:${TAG}"
+
+echo "Setting memory configuration..."
+az functionapp config appsettings set \
+  --name ${FUNCTION_APP_NAME} \
+  --resource-group ${RESOURCE_GROUP} \
+  --settings WEBSITE_MEMORY_LIMIT_MB=8192 \
+             FUNCTIONS_WORKER_PROCESS_COUNT=8 \
+             WEBSITE_CPU_CORES_LIMIT=2 \
+             WEBSITE_MAX_DYNAMIC_APPLICATION_SCALE_OUT=2 \
+             JAVA_TOOL_OPTIONS="-Xmx6g -Xms2g -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+echo "Restarting Function App..."
+az functionapp restart \
+  --name ${FUNCTION_APP_NAME} \
+  --resource-group ${RESOURCE_GROUP}

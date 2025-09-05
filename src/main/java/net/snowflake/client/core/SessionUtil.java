@@ -8,6 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -688,95 +689,9 @@ public class SessionUtil {
             loginInput.getWorkloadIdentityAttestation().getProvider());
       }
 
-      // map of client environment parameters, including connection parameters
-      // and environment properties like OS version, etc.
-      Map<String, Object> clientEnv = new HashMap<>();
-
-      clientEnv.put("OS", systemGetProperty("os.name"));
-      clientEnv.put("OS_VERSION", systemGetProperty("os.version"));
-      clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
-      clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
-      clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
-      clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
-
-      if (loginInput.getApplication() != null) {
-        clientEnv.put("APPLICATION", loginInput.getApplication());
-      } else {
-        // When you add new client environment info, please add new keys to
-        // messages_en_US.src.json so that they can be displayed properly in UI
-        // detect app name
-        String appName = systemGetProperty("sun.java.command");
-        // remove the arguments
-        if (appName != null) {
-          if (appName.indexOf(" ") > 0) {
-            appName = appName.substring(0, appName.indexOf(" "));
-          }
-
-          clientEnv.put("APPLICATION", appName);
-        }
-      }
-
-      // SNOW-20103: track additional client info in session
-      String clientInfoJSONStr;
-      if (connectionPropertiesMap.containsKey(SFSessionProperty.CLIENT_INFO)) {
-        clientInfoJSONStr = (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_INFO);
-      }
-      // if connection property is not set, check session property
-      else {
-        clientInfoJSONStr = systemGetProperty("snowflake.client.info");
-      }
-      if (clientInfoJSONStr != null) {
-        JsonNode clientInfoJSON = null;
-
-        try {
-          clientInfoJSON = mapper.readTree(clientInfoJSONStr);
-        } catch (Throwable ex) {
-          logger.debug(
-              "failed to process snowflake.client.info property as JSON: {}",
-              clientInfoJSONStr,
-              ex);
-        }
-
-        if (clientInfoJSON != null) {
-          Iterator<Map.Entry<String, JsonNode>> fields = clientInfoJSON.fields();
-          while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
-            clientEnv.put(field.getKey(), field.getValue().asText());
-          }
-        }
-      }
-      /*
-       Add all connection parameters and their values that have been set for this
-       * current session into clientEnv. These are the params set via the Properties map or in the
-       * connection string. Includes username, password, serverUrl, timeout values, etc
-      */
-
-      for (Map.Entry<SFSessionProperty, Object> entry : connectionPropertiesMap.entrySet()) {
-        // exclude client parameters already covered by other runtime parameters that have been
-        // added to clientEnv
-        if (entry.getKey().equals(SFSessionProperty.APP_ID)
-            || entry.getKey().equals(SFSessionProperty.APP_VERSION)) {
-          continue;
-        }
-        String propKey = entry.getKey().getPropertyKey();
-        // mask sensitive values like passwords, tokens, etc
-        String propVal = SecretDetector.maskParameterValue(propKey, entry.getValue().toString());
-        clientEnv.put(propKey, propVal);
-      }
-      // if map does not contain the tracing property, the default is set. Add
-      // this default value to the map.
-      if (!connectionPropertiesMap.containsKey(SFSessionProperty.TRACING)) {
-        clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
-      }
-
-      clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
-
-      // OAuth metrics data
-      if (authenticatorType == AuthenticatorType.OAUTH
-          && loginInput.getOriginalAuthenticator() != null) {
-        clientEnv.put(
-            ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
-      }
+      Map<String, Object> clientEnv =
+          createClientEnvironmentInfo(
+              loginInput, connectionPropertiesMap, tracingLevel, authenticatorType);
 
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);
 
@@ -1138,6 +1053,111 @@ public class SessionUtil {
         authenticatorType,
         stopwatch.elapsedMillis());
     return ret;
+  }
+
+  static Map<String, Object> createClientEnvironmentInfo(
+      SFLoginInput loginInput,
+      Map<SFSessionProperty, Object> connectionPropertiesMap,
+      String tracingLevel,
+      AuthenticatorType authenticatorType) {
+    // map of client environment parameters, including connection parameters
+    // and environment properties like OS version, etc.
+    Map<String, Object> clientEnv = new HashMap<>();
+
+    clientEnv.put("OS", systemGetProperty("os.name"));
+    clientEnv.put("OS_VERSION", systemGetProperty("os.version"));
+    clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
+    clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
+    clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
+    clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
+
+    if (loginInput.getApplication() != null) {
+      clientEnv.put("APPLICATION", loginInput.getApplication());
+    } else {
+      // When you add new client environment info, please add new keys to
+      // messages_en_US.src.json so that they can be displayed properly in UI
+      // detect app name
+      String appName = systemGetProperty("sun.java.command");
+      // remove the arguments
+      if (appName != null) {
+        if (appName.indexOf(" ") > 0) {
+          appName = appName.substring(0, appName.indexOf(" "));
+        }
+
+        clientEnv.put("APPLICATION", appName);
+      }
+    }
+
+    // SNOW-20103: track additional client info in session
+    String clientInfoJSONStr;
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.CLIENT_INFO)) {
+      clientInfoJSONStr = (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_INFO);
+    }
+    // if connection property is not set, check session property
+    else {
+      clientInfoJSONStr = systemGetProperty("snowflake.client.info");
+    }
+    if (clientInfoJSONStr != null) {
+      JsonNode clientInfoJSON = null;
+
+      try {
+        clientInfoJSON = mapper.readTree(clientInfoJSONStr);
+      } catch (Throwable ex) {
+        logger.debug(
+            "failed to process snowflake.client.info property as JSON: {}", clientInfoJSONStr, ex);
+      }
+
+      if (clientInfoJSON != null) {
+        Iterator<Map.Entry<String, JsonNode>> fields = clientInfoJSON.fields();
+        while (fields.hasNext()) {
+          Map.Entry<String, JsonNode> field = fields.next();
+          clientEnv.put(field.getKey(), field.getValue().asText());
+        }
+      }
+    }
+    /*
+     Add all connection parameters and their values that have been set for this
+     * current session into clientEnv. These are the params set via the Properties map or in the
+     * connection string. Includes username, password, serverUrl, timeout values, etc
+    */
+
+    for (Map.Entry<SFSessionProperty, Object> entry : connectionPropertiesMap.entrySet()) {
+      // exclude client parameters already covered by other runtime parameters that have been
+      // added to clientEnv
+      if (entry.getKey().equals(SFSessionProperty.APP_ID)
+          || entry.getKey().equals(SFSessionProperty.APP_VERSION)) {
+        continue;
+      }
+      String propKey = entry.getKey().getPropertyKey();
+      // mask sensitive values like passwords, tokens, etc
+      String propVal = SecretDetector.maskParameterValue(propKey, entry.getValue().toString());
+      clientEnv.put(propKey, propVal);
+    }
+    // if map does not contain the tracing property, the default is set. Add
+    // this default value to the map.
+    if (!connectionPropertiesMap.containsKey(SFSessionProperty.TRACING)) {
+      clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
+    }
+
+    clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+
+    // OAuth metrics data
+    if (authenticatorType == AuthenticatorType.OAUTH
+        && loginInput.getOriginalAuthenticator() != null) {
+      clientEnv.put(ClientAuthnParameter.OAUTH_TYPE.name(), loginInput.getOriginalAuthenticator());
+    }
+
+    // Application path
+    try {
+      String applicationPath =
+          new File(SessionUtil.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+              .getPath();
+      clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), applicationPath);
+    } catch (Exception e) {
+      logger.debug("Exception in retrieving application path for client environment", e);
+      clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
+    }
+    return clientEnv;
   }
 
   private static void clearAccessTokenCache(SFLoginInput loginInput) throws SFException {
@@ -1555,10 +1575,15 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey(),
               null);
 
-      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
-
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
+      boolean isMfaEnabledInOkta = "MFA_REQUIRED".equals(jsonNode.get("status").asText());
+      if (isMfaEnabledInOkta) {
+        throw new SnowflakeSQLLoggedException(
+            null,
+            ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode(),
+            SqlState.FEATURE_NOT_SUPPORTED);
+      }
       oneTimeToken =
           jsonNode.get("sessionToken") != null
               ? jsonNode.get("sessionToken").asText()
@@ -1566,6 +1591,7 @@ public class SessionUtil {
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
+    logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
     return oneTimeToken;
   }
 
