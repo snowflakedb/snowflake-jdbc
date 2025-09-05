@@ -122,7 +122,7 @@ public class SFConnectionConfigParser {
     }
   }
 
-  protected static void verifyFilePermissionSecure(Path configFilePath)
+  static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
     final String fileName = "connections.toml";
     if (!isWindows()) {
