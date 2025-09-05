@@ -109,28 +109,21 @@ public class AbstractDriverIT {
 
     String privateKeyFile = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_FILE");
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
-      try {
-        // Use pure Java base64 approach to avoid BouncyCastle dependency
-        String keyContent =
-            new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(privateKeyFile)));
-        keyContent =
-            keyContent
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
-
-        params.put("privateKeyBase64", keyContent);
-        params.put("authenticator", "SNOWFLAKE_JWT");
-
-        String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
-        if (!Strings.isNullOrEmpty(privateKeyPwd)) {
-          params.put("privateKeyPwd", privateKeyPwd);
-        }
-
-        System.out.println("[INFO] Using private key authentication (pure Java)");
-      } catch (java.io.IOException e) {
-        throw new RuntimeException("Failed to read private key file: " + privateKeyFile, e);
+      String workspace = System.getenv("WORKSPACE");
+      if (workspace != null) {
+        params.put("privateKeyFile", workspace + "/" + privateKeyFile);
+      } else {
+        params.put("privateKeyFile", privateKeyFile);
       }
+
+      params.put("authenticator", "SNOWFLAKE_JWT");
+
+      String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
+      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
+        params.put("privateKeyPwd", privateKeyPwd);
+      }
+
+      System.out.println("[INFO] Using private key authentication with file");
     } else {
       String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
       assertThat(

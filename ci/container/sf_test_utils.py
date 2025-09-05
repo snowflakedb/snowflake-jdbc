@@ -13,10 +13,26 @@ def init_connection_params():
     params = {
         'account': os.getenv("SNOWFLAKE_TEST_ACCOUNT"),
         'user': os.getenv("SNOWFLAKE_TEST_USER"),
-        'password': os.getenv("SNOWFLAKE_TEST_PASSWORD"),
         'database': os.getenv("SNOWFLAKE_TEST_DATABASE"),
         'role': os.getenv("SNOWFLAKE_TEST_ROLE"),
     }
+    
+    private_key_file = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE")
+    if private_key_file:
+        # Private key file is in workspace (same as parameters.json)
+        workspace = os.getenv("WORKSPACE")
+        if workspace:
+            params['private_key_file'] = workspace + "/" + private_key_file
+        else:
+            params['private_key_file'] = private_key_file
+            
+        params['authenticator'] = 'SNOWFLAKE_JWT'
+        private_key_pwd = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD")
+        if private_key_pwd:
+            params['private_key_file_pwd'] = private_key_pwd
+    else:
+        # Fall back to password authentication
+        params['password'] = os.getenv("SNOWFLAKE_TEST_PASSWORD")
     host = os.getenv("SNOWFLAKE_TEST_HOST")
     if host:
         params['host'] = host
