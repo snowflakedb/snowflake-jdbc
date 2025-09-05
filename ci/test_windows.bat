@@ -122,6 +122,7 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites=FipsTestSuite ^
+        -Dnet.snowflake.jdbc.enableBouncyCastle=true ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar ^
         verify ^
@@ -142,6 +143,7 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
+        -Dnet.snowflake.jdbc.enableBouncyCastle=true ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
         verify ^

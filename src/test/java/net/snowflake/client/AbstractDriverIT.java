@@ -111,19 +111,18 @@ public class AbstractDriverIT {
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
       params.put("privateKeyFile", privateKeyFile);
       params.put("authenticator", "SNOWFLAKE_JWT");
-      
+
       String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
       if (!Strings.isNullOrEmpty(privateKeyPwd)) {
         params.put("privateKeyPwd", privateKeyPwd);
       }
-      
+
       System.out.println("[INFO] Using private key authentication: " + privateKeyFile);
     } else {
       String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
       assertThat(
           "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
       params.put("password", password);
-      System.out.println("[INFO] Using password authentication");
     }
 
     String port = getConnPropValueFromEnv(connectionType, "PORT");
@@ -320,7 +319,7 @@ public class AbstractDriverIT {
       properties.put("user", params.get("user"));
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
-      
+
       // Use private key authentication if detected, otherwise password
       if (!Strings.isNullOrEmpty(params.get("privateKeyFile"))) {
         properties.put("privateKeyFile", params.get("privateKeyFile"));
