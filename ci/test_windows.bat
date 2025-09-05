@@ -11,13 +11,13 @@ cd %GITHUB_WORKSPACE%
 
 if "%CLOUD_PROVIDER%"=="AZURE" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_azure.json.gpg
-  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_azure.p8.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_azure.p8.gpg
 ) else if "%CLOUD_PROVIDER%"=="GCP" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_gcp.json.gpg
-  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_gcp.p8.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_gcp.p8.gpg
 ) else if "%CLOUD_PROVIDER%"=="AWS" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_aws.json.gpg
-  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa/keys/rsa_key_jdbc_aws.p8.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_aws.p8.gpg
 ) else (
   echo === unknown cloud provider
   exit /b 1
@@ -122,7 +122,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites=FipsTestSuite ^
-        -Dnet.snowflake.jdbc.enableBouncyCastle=true ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar ^
         verify ^
@@ -143,7 +142,6 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
-        -Dnet.snowflake.jdbc.enableBouncyCastle=true ^
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
         -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
         verify ^

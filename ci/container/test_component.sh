@@ -85,7 +85,6 @@ if [[ "$is_old_driver" == "true" ]]; then
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-            -Dnet.snowflake.jdbc.enableBouncyCastle=true \
             verify \
             --batch-mode --show-version
     popd >& /dev/null
@@ -98,7 +97,6 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
             -DintegrationTestSuites=FipsTestSuite \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             -Dnot-self-contained-jar \
-            -Dnet.snowflake.jdbc.enableBouncyCastle=true \
             verify \
             --batch-mode --show-version
     popd >& /dev/null
@@ -110,7 +108,6 @@ else
         -DintegrationTestSuites="$JDBC_TEST_SUITES" \
         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
-        -Dnet.snowflake.jdbc.enableBouncyCastle=true \
         verify \
         --batch-mode --show-version
 fi
