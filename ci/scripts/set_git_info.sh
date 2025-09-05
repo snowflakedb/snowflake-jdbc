@@ -23,7 +23,7 @@ else
         RSA_KEY_FILE=rsa_key_jdbc_aws.json.gpg
     fi
     gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $WORKSPACE/parameters.json $THIS_DIR/../.github/workflows/$SOURCE_PARAMETER_FILE
-    gpg --quiet --batch --yes --decrypt --passphrase="$JDBC_PRIVATE_KEY_SECRET" --output $WORKSPACE/rsa_key_jdbc.json $THIS_DIR/../.github/workflows/rsa/keys/$RSA_KEY_FILE
+    gpg --quiet --batch --yes --decrypt --passphrase="$JDBC_PRIVATE_KEY_SECRET" --output $WORKSPACE/rsa_key_jdbc.json $THIS_DIR/../.github/workflows/rsa_keys/$RSA_KEY_FILE
     export client_git_url=https://github.com/${GITHUB_REPOSITORY}.git
     export client_git_branch=origin/$(basename ${GITHUB_REF})
     export client_git_commit=${GITHUB_SHA}
