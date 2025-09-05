@@ -62,7 +62,7 @@ if [[ "${ENABLE_CLIENT_LOG_ANALYZE}" == "true" ]]; then
     fi
 fi
 
-env | grep SNOWFLAKE_ | grep -v PASS | sort
+env | grep SNOWFLAKE_ | grep -v -E "(PASS|KEY|SECRET|TOKEN)" | sort
 
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
