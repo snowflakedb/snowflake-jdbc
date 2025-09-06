@@ -148,7 +148,6 @@ public class SFClientConfigParserTest {
     SFClientConfig.CommonProps props = new SFClientConfig.CommonProps();
     props.setLogLevel("DEBUG");
     props.setLogPath("/tmp/logs");
-
     SFClientConfig config = new SFClientConfig(props);
     config.setConfigFilePath("/etc/snowflake/config.json");
 
