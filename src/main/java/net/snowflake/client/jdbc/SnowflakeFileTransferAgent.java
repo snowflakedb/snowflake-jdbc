@@ -44,6 +44,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.FileUtil;
@@ -1711,7 +1713,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     // when downloading files as stream there should be only one file in source files
     // let's fail fast when more than one file matches instead of fetching random one
-    if (sourceFiles.size() > 1) {
+    Set<String> matchedFiles =
+        sourceFiles.stream()
+            .filter(
+                sourceFileName -> {
+                  // We cannot match whole sourceFileName since it may be different e.g. for git
+                  // repositories so we match only raw filename
+                  String[] split = sourceFileName.split("/");
+                  String fileNamePattern = ".*" + Pattern.quote(split[split.length - 1]) + "$";
+                  return fileName.matches(fileNamePattern);
+                })
+            .collect(Collectors.toSet());
+    if (matchedFiles.size() > 1) {
       throw new SnowflakeSQLException(
           queryID,
           SqlState.NO_DATA,
@@ -1720,10 +1733,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           "There are more than one file matching "
               + fileName
               + ": "
-              + String.join(",", sourceFiles));
+              + String.join(",", matchedFiles));
     }
     String sourceLocation =
-        sourceFiles.stream()
+        matchedFiles.stream()
             .findFirst()
             .orElseThrow(
                 () ->
