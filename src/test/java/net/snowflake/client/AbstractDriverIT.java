@@ -124,9 +124,12 @@ public class AbstractDriverIT {
 
     } else {
       String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
-      assertThat(
-          "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
-      params.put("password", password);
+      if (!Strings.isNullOrEmpty(password)) {
+        params.put("password", password);
+      } else {
+        throw new IllegalStateException(
+            "Neither SNOWFLAKE_TEST_PRIVATE_KEY_FILE nor SNOWFLAKE_TEST_PASSWORD environment variable is set. Please configure one of them for authentication.");
+      }
     }
 
     String port = getConnPropValueFromEnv(connectionType, "PORT");
