@@ -19,7 +19,6 @@ def init_connection_params():
     
     private_key_file = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE")
     if private_key_file:
-        # Private key file is in workspace (same as parameters.json)
         workspace = os.getenv("WORKSPACE")
         if workspace:
             params['private_key_file'] = workspace + "/" + private_key_file

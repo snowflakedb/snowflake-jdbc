@@ -111,19 +111,17 @@ public class AbstractDriverIT {
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
       String workspace = System.getenv("WORKSPACE");
       if (workspace != null) {
-        params.put("privateKeyFile", workspace + "/" + privateKeyFile);
+        params.put("private_key_file", workspace + "/" + privateKeyFile);
       } else {
-        params.put("privateKeyFile", privateKeyFile);
+        params.put("private_key_file", privateKeyFile);
       }
-
       params.put("authenticator", "SNOWFLAKE_JWT");
 
       String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
       if (!Strings.isNullOrEmpty(privateKeyPwd)) {
-        params.put("privateKeyPwd", privateKeyPwd);
+        params.put("private_key_pwd", privateKeyPwd);
       }
 
-      System.out.println("[INFO] Using private key authentication with file");
     } else {
       String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
       assertThat(
@@ -326,14 +324,13 @@ public class AbstractDriverIT {
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
 
-      // Use private key authentication if detected, otherwise password
-      if (!Strings.isNullOrEmpty(params.get("privateKeyFile"))) {
-        properties.put("privateKeyFile", params.get("privateKeyFile"));
+      if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
+        properties.put("private_key_file", params.get("private_key_file"));
         properties.put("authenticator", params.get("authenticator"));
-        if (!Strings.isNullOrEmpty(params.get("privateKeyPwd"))) {
-          properties.put("privateKeyPwd", params.get("privateKeyPwd"));
+        if (!Strings.isNullOrEmpty(params.get("private_key_pwd"))) {
+          properties.put("private_key_pwd", params.get("private_key_pwd"));
         }
-      } else {
+      } else if (!Strings.isNullOrEmpty(params.get("password"))) {
         properties.put("password", params.get("password"));
       }
     }
