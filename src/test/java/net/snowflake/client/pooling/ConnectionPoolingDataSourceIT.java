@@ -35,12 +35,11 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
-    
+
     // Use private key authentication if available, otherwise password
     if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
-          properties.get("private_key_file"), 
-          properties.get("private_key_pwd"));
+          properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
       poolDataSource.setPassword(properties.get("password"));
     }
@@ -104,8 +103,17 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
 
-    PooledConnection pooledConnection =
-        poolDataSource.getPooledConnection(properties.get("user"), properties.get("password"));
+    PooledConnection pooledConnection;
+    // Use private key authentication if available, otherwise username/password method
+    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+      poolDataSource.setUser(properties.get("user"));
+      poolDataSource.setPrivateKeyFile(
+          properties.get("private_key_file"), properties.get("private_key_pwd"));
+      pooledConnection = poolDataSource.getPooledConnection();
+    } else {
+      pooledConnection =
+          poolDataSource.getPooledConnection(properties.get("user"), properties.get("password"));
+    }
     TestingConnectionListener listener = new TestingConnectionListener();
     pooledConnection.addConnectionEventListener(listener);
 

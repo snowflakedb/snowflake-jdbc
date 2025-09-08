@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -1015,7 +1016,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
-    ds.setPassword(params.get("password"));
+
+    // Use private key authentication if available, otherwise password
+    if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
+      ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
+    } else {
+      ds.setPassword(params.get("password"));
+    }
 
     connectAndExecuteSelect1(ds);
 

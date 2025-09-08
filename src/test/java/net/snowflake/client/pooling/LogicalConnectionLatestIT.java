@@ -438,16 +438,15 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
-    
+
     // Use private key authentication if available, otherwise password
     if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
-          properties.get("private_key_file"), 
-          properties.get("private_key_pwd"));
+          properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
       poolDataSource.setPassword(properties.get("password"));
     }
-    
+
     poolDataSource.setDatabaseName(properties.get("database"));
     poolDataSource.setSchema(properties.get("schema"));
     poolDataSource.setWarehouse(properties.get("warehouse"));
