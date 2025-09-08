@@ -34,13 +34,6 @@ if %ERRORLEVEL% NEQ 0 (
     echo === failed to set the test parameters
     exit /b 1
 )
-echo @echo off>parametersorg.bat
-jq -r ".orgconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.json >> parametersorg.bat
-call parametersorg.bat
-if %ERRORLEVEL% NEQ 0 (
-    echo === failed to set the org parameters
-    exit /b 1
-)
 set SNOWFLAKE_TEST_SCHEMA=%RUNNER_TRACKING_ID:-=_%_%GITHUB_SHA%
 set TARGET_SCHEMA_NAME=%SNOWFLAKE_TEST_SCHEMA%
 

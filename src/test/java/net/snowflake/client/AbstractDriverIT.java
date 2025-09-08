@@ -59,7 +59,7 @@ public class AbstractDriverIT {
    *     like below and these key/values have been flattened to a bunch of env variables of these
    *     junit tests.
    *     <p>"testconnection": { "SNOWFLAKE_TEST_ACCOUNT": "...", ... "SNOWFLAKE_TEST_ROLE": ".." },
-   *     "orgconnection": { "SNOWFLAKE_ORG_ACCOUNT": "...", ... "SNOWFLAKE_ORG_PORT": "443" } }
+   * }
    */
   public static Map<String, String> getConnectionParameters(
       String accountName, String connectionType) {
