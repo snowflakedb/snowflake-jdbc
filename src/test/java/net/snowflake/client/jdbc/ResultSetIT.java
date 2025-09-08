@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 /** Test ResultSet */
 @Tag(TestTags.RESULT_SET)
 public class ResultSetIT extends ResultSet0IT {
-  private final String selectAllSQL = "select * from test_rs";
+  private final String selectAllSQL = "select * from " + uniqueTestRsTableName;
 
   private static final byte[] byteArrayTestCase1 = new byte[0];
   private static final byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};

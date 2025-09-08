@@ -26,13 +26,28 @@ def init_connection_params():
             key_path = private_key_file
             
         try:
-            with open(key_path, 'rb') as key_file:
-                private_key_data = key_file.read()
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+            from cryptography.hazmat.backends import default_backend
             
-            params['private_key'] = private_key_data
-            params['authenticator'] = 'SNOWFLAKE_JWT'
+            with open(key_path, 'rb') as key_file:
+                pem_data = key_file.read()
             
             private_key_pwd = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD")
+            private_key_pwd_bytes = None
+            if private_key_pwd:
+                private_key_pwd_bytes = private_key_pwd.encode('utf-8')
+                
+            private_key_obj = load_pem_private_key(pem_data, password=private_key_pwd_bytes, backend=default_backend())
+            der_data = private_key_obj.private_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            )
+            
+            params['private_key'] = der_data
+            params['authenticator'] = 'SNOWFLAKE_JWT'
+            
             if private_key_pwd:
                 params['private_key_pwd'] = private_key_pwd
                 

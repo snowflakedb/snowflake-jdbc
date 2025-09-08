@@ -1016,24 +1016,33 @@ public class ResultSetLatestIT extends ResultSet0IT {
     String originalMaxJsonStringLength =
         System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
     System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
-    String tableName = "maxJsonStringLength_table";
+    String tableName =
+        "maxJsonStringLength_table_"
+            + System.currentTimeMillis()
+            + "_"
+            + (int) (Math.random() * 1000);
     int colLength = 16777216;
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
-      setQueryResultFormat(statement, queryResultFormat);
-      SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-      Integer maxVarcharSize =
-          (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
-      if (maxVarcharSize != null) {
-        colLength = maxVarcharSize;
-      }
-      statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
-      statement.execute(
-          "insert into " + tableName + " select randstr(" + colLength + ", random())");
-      try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
-        assertTrue(rs.next());
-        assertEquals(colLength, rs.getString(1).length());
-        assertFalse(rs.next());
+      try {
+        setQueryResultFormat(statement, queryResultFormat);
+        SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+        Integer maxVarcharSize =
+            (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
+        if (maxVarcharSize != null) {
+          colLength = maxVarcharSize;
+        }
+        statement.execute(
+            "create or replace table " + tableName + " (c1 string(" + colLength + "))");
+        statement.execute(
+            "insert into " + tableName + " select randstr(" + colLength + ", random())");
+        try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
+          assertTrue(rs.next());
+          assertEquals(colLength, rs.getString(1).length());
+          assertFalse(rs.next());
+        }
+      } finally {
+        statement.execute("drop table if exists " + tableName);
       }
     } finally {
       if (originalMaxJsonStringLength != null) {

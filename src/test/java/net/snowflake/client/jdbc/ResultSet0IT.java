@@ -28,14 +28,17 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   protected final String uniqueTableName =
       "orders_jdbc_resultset0it_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 1000);
 
+  protected final String uniqueTestRsTableName =
+      "test_rs_resultset0it_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 1000);
+
   @BeforeEach
   public void setUp() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       // TEST_RS
-      statement.execute("create or replace table test_rs (colA string)");
-      statement.execute("insert into test_rs values('rowOne')");
-      statement.execute("insert into test_rs values('rowTwo')");
-      statement.execute("insert into test_rs values('rowThree')");
+      statement.execute("create or replace table " + uniqueTestRsTableName + " (colA string)");
+      statement.execute("insert into " + uniqueTestRsTableName + " values('rowOne')");
+      statement.execute("insert into " + uniqueTestRsTableName + " values('rowTwo')");
+      statement.execute("insert into " + uniqueTestRsTableName + " values('rowThree')");
 
       // ORDERS_JDBC with unique name to prevent race conditions
       statement.execute(
@@ -69,7 +72,7 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   public void tearDown() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute("drop table if exists " + uniqueTableName);
-      statement.execute("drop table if exists test_rs");
+      statement.execute("drop table if exists " + uniqueTestRsTableName);
     }
   }
 
