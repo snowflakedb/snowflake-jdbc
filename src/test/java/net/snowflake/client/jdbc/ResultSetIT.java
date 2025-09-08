@@ -915,7 +915,7 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testIsLast(String queryResultFormat) throws Exception {
     try (Statement statement = createStatement(queryResultFormat)) {
-      try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
+      try (ResultSet ret = statement.executeQuery("select * from " + uniqueTableName)) {
         assertTrue(ret.isBeforeFirst(), "should be before the first");
         assertFalse(ret.isFirst(), "should not be the first");
 

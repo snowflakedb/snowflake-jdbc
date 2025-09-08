@@ -25,13 +25,20 @@ def init_connection_params():
         else:
             key_path = private_key_file
             
-        params['private_key_file'] = key_path
+        try:
+            with open(key_path, 'rb') as key_file:
+                private_key_data = key_file.read()
             
-        params['authenticator'] = 'SNOWFLAKE_JWT'
-        
-        private_key_pwd = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD")
-        if private_key_pwd:
-            params['private_key_pwd'] = private_key_pwd
+            params['private_key'] = private_key_data
+            params['authenticator'] = 'SNOWFLAKE_JWT'
+            
+            private_key_pwd = os.getenv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD")
+            if private_key_pwd:
+                params['private_key_pwd'] = private_key_pwd
+                
+        except Exception as e:
+            print(f"ERROR: Failed to read private key file {key_path}: {e}")
+            sys.exit(1)
     else:
         params['password'] = os.getenv("SNOWFLAKE_TEST_PASSWORD")
     host = os.getenv("SNOWFLAKE_TEST_HOST")

@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
@@ -24,6 +25,9 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
+  protected final String uniqueTableName =
+      "orders_jdbc_resultset0it_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 1000);
+
   @BeforeEach
   public void setUp() throws SQLException {
     try (Statement statement = connection.createStatement()) {
@@ -33,9 +37,10 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("insert into test_rs values('rowTwo')");
       statement.execute("insert into test_rs values('rowThree')");
 
-      // ORDERS_JDBC
+      // ORDERS_JDBC with unique name to prevent race conditions
       statement.execute(
-          "create or replace table orders_jdbc"
+          "create or replace table "
+              + uniqueTableName
               + "(C1 STRING NOT NULL COMMENT 'JDBC', "
               + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
               + "C7 STRING, C8 STRING, C9 STRING) "
@@ -44,16 +49,27 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
       // put files
       assertTrue(
           statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%" + uniqueTableName),
           "Failed to put a file");
       assertTrue(
           statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
+              "PUT file://"
+                  + getFullPathFileInResource(TEST_DATA_FILE_2)
+                  + " @%"
+                  + uniqueTableName),
           "Failed to put a file");
 
-      int numRows = statement.executeUpdate("copy into orders_jdbc");
+      int numRows = statement.executeUpdate("copy into " + uniqueTableName);
 
       assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
+    }
+  }
+
+  @AfterEach
+  public void tearDown() throws SQLException {
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("drop table if exists " + uniqueTableName);
+      statement.execute("drop table if exists test_rs");
     }
   }
 
