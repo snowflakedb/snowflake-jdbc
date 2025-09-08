@@ -7,8 +7,10 @@ import static net.snowflake.client.core.auth.wif.WorkloadIdentityUtil.extractCla
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
@@ -48,7 +50,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
   }
 
   @Override
-  public WorkloadIdentityAttestation createAttestation() {
+  public WorkloadIdentityAttestation createAttestation() throws SFException {
     logger.debug("Creating Azure identity attestation...");
     String identityEndpoint = azureAttestationService.getIdentityEndpoint();
     HttpGet request;
@@ -57,8 +59,9 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     } else {
       String identityHeader = azureAttestationService.getIdentityHeader();
       if (Strings.isNullOrEmpty(identityHeader)) {
-        logger.warn("Managed identity is not enabled on this Azure function.");
-        return null;
+        throw new SFException(
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+            "Managed identity is not enabled on this Azure function.");
       }
       request =
           createAzureFunctionsIdentityRequest(
@@ -66,19 +69,14 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     }
     String tokenJson = azureAttestationService.fetchTokenFromMetadataService(request, loginInput);
     if (tokenJson == null) {
-      logger.debug("Could not fetch Azure token.");
-      return null;
+      throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Could not fetch Azure token.");
     }
     String token = extractTokenFromJson(tokenJson);
     if (token == null) {
-      logger.error("No access token found in Azure response.");
-      return null;
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No access token found in Azure response.");
     }
     SubjectAndIssuer claims = extractClaimsWithoutVerifyingSignature(token);
-    if (claims == null) {
-      logger.error("Could not extract claims from token");
-      return null;
-    }
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AZURE, token, claims.toMap());
   }
@@ -91,13 +89,15 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
     }
   }
 
-  private String extractTokenFromJson(String tokenJson) {
+  private String extractTokenFromJson(String tokenJson) throws SFException {
     try {
       JsonNode jsonNode = objectMapper.readTree(tokenJson);
       return jsonNode.get("access_token").asText();
     } catch (Exception e) {
-      logger.error("Unable to extract token from Azure metadata response: {}", e.getMessage());
-      return null;
+      logger.error("Unable to extract token from Azure metadata response", e);
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Unable to extract token from Azure metadata response: " + e.getMessage());
     }
   }
 

@@ -2,12 +2,13 @@ package net.snowflake.client.core.auth.wif;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
@@ -102,7 +103,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   private static final String HTTP_ERROR_MAPPINGS = SCENARIOS_BASE_DIR + "/http_error.json";
 
   @Test
-  public void successfulFlowBasicScenario() {
+  public void successfulFlowBasicScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_BASIC_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceMock = createAttestationServiceSpyForBasicFLow();
@@ -110,7 +111,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void successfulFlowV2IssuerScenario() {
+  public void successfulFlowV2IssuerScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_V2_ISSUER_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceMock = createAttestationServiceSpyForBasicFLow();
@@ -121,7 +122,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void successfulFlowAzureFunctionsScenario() {
+  public void successfulFlowAzureFunctionsScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
@@ -135,7 +136,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void successfulFlowAzureFunctionsWithV2IssuerScenario() {
+  public void successfulFlowAzureFunctionsWithV2IssuerScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_V2_ISSUER_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
@@ -152,7 +153,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void successfulFlowAzureFunctionsNoClientIdScenario() {
+  public void successfulFlowAzureFunctionsNoClientIdScenario() throws SFException {
     importMappingFromResources(SUCCESSFUL_FLOW_AZURE_FUNCTIONS_NO_CLIENT_ID_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceSpy = Mockito.spy(AzureAttestationService.class);
@@ -166,7 +167,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void successfulFlowAzureFunctionsCustomEntraResourceScenario() {
+  public void successfulFlowAzureFunctionsCustomEntraResourceScenario() throws SFException {
     importMappingFromResources(
         SUCCESSFUL_FLOW_AZURE_FUNCTIONS_CUSTOM_ENTRA_RESOURCE_SCENARIO_MAPPINGS);
     SFLoginInput loginInput = createLoginInputStub();
@@ -190,40 +191,40 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     Mockito.when(attestationServiceMock.getIdentityHeader()).thenReturn(null);
     Mockito.when(attestationServiceMock.getClientId()).thenReturn(null);
 
-    executeAndAssertNullAttestation(attestationServiceMock, loginInput);
+    executeAndAssertExceptionThrown(attestationServiceMock, loginInput);
   }
 
   @Test
   public void basicFlowErrorMissingIssuer() {
-    executeErrorScenarioAndAssertNullAttestation(MISSING_ISSUER_SCENARIO_MAPPINGS);
+    executeErrorScenarioAndAssertExceptionThrown(MISSING_ISSUER_SCENARIO_MAPPINGS);
   }
 
   @Test
   public void basicFlowErrorMissingSub() {
-    executeErrorScenarioAndAssertNullAttestation(MISSING_SUB_SCENARIO_MAPPINGS);
+    executeErrorScenarioAndAssertExceptionThrown(MISSING_SUB_SCENARIO_MAPPINGS);
   }
 
   @Test
   public void basicFlowErrorUnparsableToken() {
-    executeErrorScenarioAndAssertNullAttestation(TOKEN_PARSE_ERROR_SCENARIO_MAPPINGS);
+    executeErrorScenarioAndAssertExceptionThrown(TOKEN_PARSE_ERROR_SCENARIO_MAPPINGS);
   }
 
   @Test
   public void basicFlowUnparsableJsonError() {
-    executeErrorScenarioAndAssertNullAttestation(JSON_PARSE_ERROR_SCENARIO_MAPPINGS);
+    executeErrorScenarioAndAssertExceptionThrown(JSON_PARSE_ERROR_SCENARIO_MAPPINGS);
   }
 
   @Test
   public void basicFlowHttpError() {
-    executeErrorScenarioAndAssertNullAttestation(HTTP_ERROR_MAPPINGS);
+    executeErrorScenarioAndAssertExceptionThrown(HTTP_ERROR_MAPPINGS);
   }
 
-  private void executeErrorScenarioAndAssertNullAttestation(
+  private void executeErrorScenarioAndAssertExceptionThrown(
       String tokenParseErrorScenarioMappings) {
     importMappingFromResources(tokenParseErrorScenarioMappings);
     SFLoginInput loginInput = createLoginInputStub();
     AzureAttestationService attestationServiceSpy = createAttestationServiceSpyForBasicFLow();
-    executeAndAssertNullAttestation(attestationServiceSpy, loginInput);
+    executeAndAssertExceptionThrown(attestationServiceSpy, loginInput);
   }
 
   private static AzureAttestationService createAttestationServiceSpyForBasicFLow() {
@@ -235,7 +236,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   private void executeAndAssertCorrectAttestation(
-      AzureAttestationService attestationServiceMock, SFLoginInput loginInput) {
+      AzureAttestationService attestationServiceMock, SFLoginInput loginInput) throws SFException {
     executeAndAssertCorrectAttestationWithIssuer(
         attestationServiceMock,
         loginInput,
@@ -245,7 +246,8 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   private void executeAndAssertCorrectAttestationWithIssuer(
       AzureAttestationService attestationServiceMock,
       SFLoginInput loginInput,
-      String expectedIssuer) {
+      String expectedIssuer)
+      throws SFException {
     AzureIdentityAttestationCreator attestationCreator =
         new AzureIdentityAttestationCreator(attestationServiceMock, loginInput, getBaseUrl());
 
@@ -259,13 +261,12 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     assertNotNull(attestation.getCredential());
   }
 
-  private void executeAndAssertNullAttestation(
+  private void executeAndAssertExceptionThrown(
       AzureAttestationService attestationServiceMock, SFLoginInput loginInput) {
     AzureIdentityAttestationCreator attestationCreator =
         new AzureIdentityAttestationCreator(attestationServiceMock, loginInput, getBaseUrl());
 
-    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
-    assertNull(attestation);
+    assertThrows(SFException.class, attestationCreator::createAttestation);
   }
 
   private String getBaseUrl() {

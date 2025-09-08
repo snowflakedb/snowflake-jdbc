@@ -142,6 +142,7 @@ public class SnowflakeResultSetSerializableV1
   // Below fields are from session or statement
   SnowflakeConnectString snowflakeConnectionString;
   OCSPMode ocspMode;
+  String serverUrl;
   HttpClientSettingsKey httpClientKey;
   int networkTimeoutInMilli;
   int authTimeout;
@@ -220,6 +221,7 @@ public class SnowflakeResultSetSerializableV1
     // Below fields are from session or statement
     this.snowflakeConnectionString = toCopy.snowflakeConnectionString;
     this.ocspMode = toCopy.ocspMode;
+    this.serverUrl = toCopy.serverUrl;
     this.httpClientKey = toCopy.httpClientKey;
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.authTimeout = toCopy.authTimeout;
@@ -428,6 +430,7 @@ public class SnowflakeResultSetSerializableV1
 
     // setup fields from sessions.
     this.ocspMode = sfSession.getOCSPMode();
+    this.serverUrl = sfSession.getServerUrl();
     this.httpClientKey = sfSession.getHttpClientKey();
     this.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     this.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
@@ -521,6 +524,10 @@ public class SnowflakeResultSetSerializableV1
 
   public OCSPMode getOCSPMode() {
     return ocspMode;
+  }
+
+  public String getServerURL() {
+    return serverUrl;
   }
 
   public HttpClientSettingsKey getHttpClientKey() {
