@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Strings;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -437,7 +438,16 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
-    poolDataSource.setPassword(properties.get("password"));
+    
+    // Use private key authentication if available, otherwise password
+    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+      poolDataSource.setPrivateKeyFile(
+          properties.get("private_key_file"), 
+          properties.get("private_key_pwd"));
+    } else {
+      poolDataSource.setPassword(properties.get("password"));
+    }
+    
     poolDataSource.setDatabaseName(properties.get("database"));
     poolDataSource.setSchema(properties.get("schema"));
     poolDataSource.setWarehouse(properties.get("warehouse"));

@@ -7,6 +7,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.base.Strings;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -34,7 +35,15 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
-    poolDataSource.setPassword(properties.get("password"));
+    
+    // Use private key authentication if available, otherwise password
+    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+      poolDataSource.setPrivateKeyFile(
+          properties.get("private_key_file"), 
+          properties.get("private_key_pwd"));
+    } else {
+      poolDataSource.setPassword(properties.get("password"));
+    }
 
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     TestingConnectionListener listener = new TestingConnectionListener();
