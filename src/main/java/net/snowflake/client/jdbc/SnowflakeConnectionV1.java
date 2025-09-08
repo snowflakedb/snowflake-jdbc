@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -1046,12 +1045,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
-
-    // We cannot match whole sourceFileName since it may be different e.g. for git repositories so
-    // we match only raw filename
-    String[] split = sourceFileName.split("/");
-    String fileName = Pattern.quote(split[split.length - 1]);
-    getCommand.append(" PATTERN=\".*").append(fileName).append("$\"");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getSFBaseStatement());
