@@ -1,5 +1,8 @@
 package net.snowflake.client.jdbc.telemetry;
 
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+
+@SnowflakeJdbcInternalApi
 public class RevocationCheckTelemetryData {
   private String crlUrl;
   private long timeParsingCrl;

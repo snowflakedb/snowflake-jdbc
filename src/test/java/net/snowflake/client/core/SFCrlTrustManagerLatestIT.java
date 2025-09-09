@@ -14,7 +14,6 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.stream.Stream;
-import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.crl.CRLCacheConfig;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
@@ -65,9 +64,9 @@ public class SFCrlTrustManagerLatestIT extends BaseJDBCTest {
     accessHost(host, client);
   }
 
-  private static void accessHost(String host, HttpClient client)
-      throws IOException, InterruptedException {
-    HttpResponse response = executeWithRetries(host, client);
+  private static void accessHost(String host, HttpClient client) throws IOException {
+    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
+    HttpResponse response = client.execute(httpRequest);
 
     await()
         .atMost(Duration.ofSeconds(10))
@@ -77,25 +76,6 @@ public class SFCrlTrustManagerLatestIT extends BaseJDBCTest {
         String.format("response code for %s", host),
         response.getStatusLine().getStatusCode(),
         anyOf(equalTo(200), equalTo(400), equalTo(403), equalTo(404), equalTo(513)));
-  }
-
-  private static HttpResponse executeWithRetries(String host, HttpClient client)
-      throws IOException, InterruptedException {
-    int maxRetries = 2;
-    int retries = 0;
-    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
-    while (true) {
-      try {
-        return client.execute(httpRequest);
-      } catch (SSLHandshakeException e) {
-        logger.warn("SSL handshake failed (host = {}, retries={}}", host, retries, e);
-        ++retries;
-        if (retries >= maxRetries) {
-          throw e;
-        }
-        Thread.sleep(retries * 1000);
-      }
-    }
   }
 
   @Test

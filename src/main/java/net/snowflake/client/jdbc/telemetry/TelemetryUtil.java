@@ -5,6 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.common.core.LoginInfoDTO;
 
@@ -73,6 +74,7 @@ public class TelemetryUtil {
     return ibValue;
   }
 
+  @SnowflakeJdbcInternalApi
   public static TelemetryData buildCrlData(
       String crlUrl, long crlBytes, int revokedCertificates, long downloadTime, long parseTime) {
     ObjectNode obj = mapper.createObjectNode();

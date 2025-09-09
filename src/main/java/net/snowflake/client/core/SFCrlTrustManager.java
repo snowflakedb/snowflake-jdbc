@@ -1,9 +1,6 @@
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
-import com.amazonaws.Protocol;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -25,20 +22,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.telemetry.BufferedTelemetryClient;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLInitializationException;
 
 public class SFCrlTrustManager extends X509ExtendedTrustManager {
@@ -62,8 +46,7 @@ public class SFCrlTrustManager extends X509ExtendedTrustManager {
               CRLCacheConfig.getOnDiskCacheRemovalDelay(),
               CRLCacheConfig.getCacheValidityTime());
     } catch (SnowflakeSQLLoggedException e) {
-      logger.error("Cannot instantiate CRL cache manager.", e);
-      throw new IllegalStateException("Cannot instantiate CRL cache manager.", e);
+      throw new ExceptionInInitializerError(e);
     }
   }
 
@@ -76,7 +59,7 @@ public class SFCrlTrustManager extends X509ExtendedTrustManager {
       logger.debug("Standard X509TrustManager is used instead of X509ExtendedTrustManager.");
       this.exTrustManager = null;
     }
-    CloseableHttpClient httpClient = getHttpClient(key);
+    CloseableHttpClient httpClient = HttpUtil.getHttpClientForCrl(key);
     this.certPathBuilder = new VerifiedCertPathBuilder(this.trustManager);
     this.crlValidator =
         new CRLValidator(
@@ -178,53 +161,5 @@ public class SFCrlTrustManager extends X509ExtendedTrustManager {
     } catch (NoSuchAlgorithmException | KeyStoreException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
     }
-  }
-
-  private static CloseableHttpClient getHttpClient(HttpClientSettingsKey key) {
-    int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
-    RequestConfig config =
-        RequestConfig.custom()
-            .setConnectTimeout(timeout)
-            .setConnectionRequestTimeout(timeout)
-            .setSocketTimeout(timeout)
-            .build();
-
-    Registry<ConnectionSocketFactory> registry =
-        RegistryBuilder.<ConnectionSocketFactory>create()
-            .register("http", new HttpUtil.SFConnectionSocketFactory())
-            .build();
-
-    // Build a connection manager with enough connections
-    PoolingHttpClientConnectionManager connectionManager =
-        new PoolingHttpClientConnectionManager(registry);
-    connectionManager.setMaxTotal(1);
-    connectionManager.setDefaultMaxPerRoute(10);
-
-    HttpClientBuilder httpClientBuilder =
-        HttpClientBuilder.create()
-            .setDefaultRequestConfig(config)
-            .setConnectionManager(connectionManager)
-            // Support JVM proxy settings
-            .useSystemProperties()
-            .setRedirectStrategy(new DefaultRedirectStrategy())
-            .disableCookieManagement();
-
-    if (key.usesProxy()) {
-      // use the custom proxy properties
-      HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
-      SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(
-              key.getProxyHost(), key.getProxyPort(), Protocol.HTTP, key.getNonProxyHosts());
-      httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
-        Credentials credentials =
-            new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
-        AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(authScope, credentials);
-        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-      }
-    }
-    return httpClientBuilder.build();
   }
 }

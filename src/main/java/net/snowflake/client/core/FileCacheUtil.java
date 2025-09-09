@@ -5,20 +5,25 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.File;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
 public class FileCacheUtil {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(FileCacheUtil.class);
+
   public static File getDefaultCacheDir() {
     if (Constants.getOS() == Constants.OS.LINUX) {
-      String xdgCacheHome = getXdgCacheHome();
+      String xdgCacheHome = getDir(systemGetEnv("XDG_CACHE_HOME"));
       if (xdgCacheHome != null) {
         return new File(xdgCacheHome, "snowflake");
       }
+      logger.debug("XDG cache home directory is not set or not writable.");
     }
 
-    String homeDir = getHomeDirProperty();
+    String homeDir = getDir(systemGetProperty("user.home"));
     if (homeDir == null) {
-      // if still home directory is null, no cache dir is set.
+      logger.debug("Home directory is not set or not writable, no cache dir is set.");
       return null;
     }
     if (Constants.getOS() == Constants.OS.WINDOWS) {
@@ -31,18 +36,9 @@ public class FileCacheUtil {
     }
   }
 
-  private static String getXdgCacheHome() {
-    String xdgCacheHome = systemGetEnv("XDG_CACHE_HOME");
-    if (xdgCacheHome != null && isWritable(xdgCacheHome)) {
-      return xdgCacheHome;
-    }
-    return null;
-  }
-
-  private static String getHomeDirProperty() {
-    String homeDir = systemGetProperty("user.home");
-    if (homeDir != null && isWritable(homeDir)) {
-      return homeDir;
+  private static String getDir(String dir) {
+    if (dir != null && isWritable(dir)) {
+      return dir;
     }
     return null;
   }

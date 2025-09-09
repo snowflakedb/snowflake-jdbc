@@ -101,7 +101,7 @@ public class HttpClientSettingsKey implements Serializable {
                 + this.proxyPassword
                 + this.proxyProtocol)
             .hashCode()
-        + Objects.hash(this.revocationCheckMode, this.gzipDisabled);
+        + Objects.hash(this.revocationCheckMode, this.allowCertificatesWithoutCrlUrl);
   }
 
   public OCSPMode getOcspMode() {

@@ -1297,7 +1297,7 @@ public class SFSession extends SFBaseSession {
       // Provide the real telemetry client to the CRL validator for this session's
       // HttpClientSettingsKey
       try {
-        CRLValidator.provideTelemetryClientForKey(getHttpClientKey(), telemetryClient);
+        CRLValidator.setTelemetryClientForKey(getHttpClientKey(), telemetryClient);
       } catch (Exception e) {
         logger.warn("Failed to provide telemetry client to CRL trust manager: {}", e.getMessage());
       }

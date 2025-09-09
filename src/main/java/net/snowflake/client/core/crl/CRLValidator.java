@@ -355,7 +355,7 @@ public class CRLValidator {
    * Multiple sessions may share the same HttpClientSettingsKey thus CRL telemetry might be sent for
    * wrong session. We accept this limitation.
    */
-  public static void provideTelemetryClientForKey(
+  public static void setTelemetryClientForKey(
       HttpClientSettingsKey key, Telemetry telemetryClient) {
     CRLValidator result =
         validatorRegistryForTelemetry.computeIfPresent(

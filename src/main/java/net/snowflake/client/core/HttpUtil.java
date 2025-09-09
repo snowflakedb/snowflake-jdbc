@@ -6,6 +6,8 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -1383,5 +1385,54 @@ public class HttpUtil {
     if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
       additionalHeaders.forEach(request::addHeader);
     }
+  }
+
+  @SnowflakeJdbcInternalApi
+  static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
+    int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
+    RequestConfig config =
+        RequestConfig.custom()
+            .setConnectTimeout(timeout)
+            .setConnectionRequestTimeout(timeout)
+            .setSocketTimeout(timeout)
+            .build();
+
+    Registry<ConnectionSocketFactory> registry =
+        RegistryBuilder.<ConnectionSocketFactory>create()
+            .register("http", new HttpUtil.SFConnectionSocketFactory())
+            .build();
+
+    // Build a connection manager with enough connections
+    PoolingHttpClientConnectionManager connectionManager =
+        new PoolingHttpClientConnectionManager(registry);
+    connectionManager.setMaxTotal(1);
+    connectionManager.setDefaultMaxPerRoute(3);
+
+    HttpClientBuilder httpClientBuilder =
+        HttpClientBuilder.create()
+            .setDefaultRequestConfig(config)
+            .setConnectionManager(connectionManager)
+            // Support JVM proxy settings
+            .useSystemProperties()
+            .setRedirectStrategy(new DefaultRedirectStrategy())
+            .disableCookieManagement();
+
+    if (key.usesProxy()) {
+      // use the custom proxy properties
+      HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
+      SdkProxyRoutePlanner sdkProxyRoutePlanner =
+          new SdkProxyRoutePlanner(
+              key.getProxyHost(), key.getProxyPort(), Protocol.HTTP, key.getNonProxyHosts());
+      httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+      if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
+        Credentials credentials =
+            new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
+        AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(authScope, credentials);
+        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+      }
+    }
+    return httpClientBuilder.build();
   }
 }
