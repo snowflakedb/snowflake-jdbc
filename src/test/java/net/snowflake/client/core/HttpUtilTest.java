@@ -98,7 +98,7 @@ public class HttpUtilTest {
 
     TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
     assertNotNull(result);
-    assertInstanceOf(SFCrlTrustManager.class, result[0]);
+    assertInstanceOf(SFExtendedCrlTrustManager.class, result[0]);
   }
 
   @Test

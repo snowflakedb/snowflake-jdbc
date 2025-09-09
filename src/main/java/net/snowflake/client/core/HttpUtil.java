@@ -454,7 +454,7 @@ public class HttpUtil {
     } else if (key != null && !crlRevocationChecksDisabled(key)) {
       try {
         logger.debug("Instantiating trust manager with CRL based revocation checks");
-        return new TrustManager[] {new SFCrlTrustManager(key)};
+        return new TrustManager[] {SFCrlTrustManagerFactory.createCrlTrustManager(key)};
       } catch (CertificateException e) {
         throw new SSLInitializationException(e.getMessage(), e);
       }
@@ -1388,7 +1388,7 @@ public class HttpUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
+  public static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
     int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
     RequestConfig config =
         RequestConfig.custom()
