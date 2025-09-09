@@ -258,6 +258,12 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     if (parameters.get("port") != null) {
       properties.put("port", parameters.get("port"));
     }
+    if (parameters.get("database") != null) {
+      properties.put("db", parameters.get("database"));
+    }
+    if (parameters.get("schema") != null) {
+      properties.put("schema", parameters.get("schema"));
+    }
     
     connection = DriverManager.getConnection(uri, properties);
     assertNotNull(connection);
@@ -298,6 +304,12 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
     if (parameters.get("port") != null) {
       properties.put("port", parameters.get("port"));
+    }
+    if (parameters.get("database") != null) {
+      properties.put("db", parameters.get("database"));
+    }
+    if (parameters.get("schema") != null) {
+      properties.put("schema", parameters.get("schema"));
     }
 
     // test correct private key one

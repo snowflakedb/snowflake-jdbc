@@ -21,7 +21,7 @@ def init_connection_params():
     if private_key_file:
         workspace = os.getenv("WORKSPACE")
         if workspace:
-            key_path = workspace + "/" + private_key_file
+            key_path = os.path.join(workspace, private_key_file)
         else:
             key_path = private_key_file
             

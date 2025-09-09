@@ -202,6 +202,7 @@ public abstract class BaseWiremockTest {
     }
     props.put("warehouse", params.get("warehouse"));
     props.put("db", params.get("database"));
+    props.put("schema", params.get("schema"));
     props.put("ssl", params.get("ssl"));
     props.put("insecureMode", true); // OCSP disabled for wiremock proxy tests
     return props;

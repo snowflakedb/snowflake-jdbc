@@ -86,6 +86,7 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
 
     props.put("warehouse", params.get("warehouse"));
     props.put("db", params.get("database"));
+    props.put("schema", params.get("schema"));
     props.put("ssl", params.get("ssl"));
     if (disableOCSPChecks != null) {
       props.put("disableOCSPChecks", disableOCSPChecks);

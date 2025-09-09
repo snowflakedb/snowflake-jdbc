@@ -111,7 +111,8 @@ public class AbstractDriverIT {
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
       String workspace = System.getenv("WORKSPACE");
       if (workspace != null) {
-        params.put("private_key_file", workspace + "/" + privateKeyFile);
+        params.put(
+            "private_key_file", java.nio.file.Paths.get(workspace, privateKeyFile).toString());
       } else {
         params.put("private_key_file", privateKeyFile);
       }
