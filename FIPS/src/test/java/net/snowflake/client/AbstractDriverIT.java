@@ -286,13 +286,21 @@ public class AbstractDriverIT {
       properties.put("role", "accountadmin");
       properties.put("account", "snowflake");
     } else {
-      properties.put("user", params.get("user"));
-      properties.put("role", params.get("role"));
-      properties.put("account", params.get("account"));
+      if (params.get("user") != null) {
+        properties.put("user", params.get("user"));
+      }
+      if (params.get("role") != null) {
+        properties.put("role", params.get("role"));
+      }
+      if (params.get("account") != null) {
+        properties.put("account", params.get("account"));
+      }
 
       if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
         properties.put("private_key_file", params.get("private_key_file"));
-        properties.put("authenticator", params.get("authenticator"));
+        if (params.get("authenticator") != null) {
+          properties.put("authenticator", params.get("authenticator"));
+        }
         if (!Strings.isNullOrEmpty(params.get("private_key_pwd"))) {
           properties.put("private_key_pwd", params.get("private_key_pwd"));
         }
@@ -300,10 +308,19 @@ public class AbstractDriverIT {
         properties.put("password", params.get("password"));
       }
     }
-    properties.put("db", params.get("database"));
-    properties.put("schema", params.get("schema"));
-    properties.put("warehouse", params.get("warehouse"));
-    properties.put("ssl", params.get("ssl"));
+    
+    if (params.get("database") != null) {
+      properties.put("db", params.get("database"));
+    }
+    if (params.get("schema") != null) {
+      properties.put("schema", params.get("schema"));
+    }
+    if (params.get("warehouse") != null) {
+      properties.put("warehouse", params.get("warehouse"));
+    }
+    if (params.get("ssl") != null) {
+      properties.put("ssl", params.get("ssl"));
+    }
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 
