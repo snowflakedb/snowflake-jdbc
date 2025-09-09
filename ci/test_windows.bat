@@ -29,10 +29,10 @@ gpg --quiet --batch --yes --decrypt --passphrase=%JDBC_PRIVATE_KEY_SECRET% --out
 REM DON'T FORGET TO include @echo off here or the password may be leaked!
 echo @echo off>parameters.bat
 jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.json >> parameters.bat
-REM Set the private key file path to the decrypted key file and authenticator
-echo set SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%GITHUB_WORKSPACE%\rsa_key_jdbc.p8 >> parameters.bat
-echo set SNOWFLAKE_TEST_AUTHENTICATOR=SNOWFLAKE_JWT >> parameters.bat
 call parameters.bat
+REM Set the private key file path directly to avoid encoding issues
+set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%GITHUB_WORKSPACE%\rsa_key_jdbc.p8"
+set "SNOWFLAKE_TEST_AUTHENTICATOR=SNOWFLAKE_JWT"
 if %ERRORLEVEL% NEQ 0 (
     echo === failed to set the test parameters
     exit /b 1
