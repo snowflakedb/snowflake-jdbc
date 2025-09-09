@@ -245,11 +245,20 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     // PKCS8 private key file. No PKCS1 is supported.
     String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
+    
+    // Create Properties with simple null checks to avoid NullPointerException
     Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
     properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
+    if (parameters.get("account") != null) {
+      properties.put("account", parameters.get("account"));
+    }
+    if (parameters.get("ssl") != null) {
+      properties.put("ssl", parameters.get("ssl"));
+    }
+    if (parameters.get("port") != null) {
+      properties.put("port", parameters.get("port"));
+    }
+    
     connection = DriverManager.getConnection(uri, properties);
     assertNotNull(connection);
     connection.close();
@@ -280,10 +289,16 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     String uri = parameters.get("uri");
 
     Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
     properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
+    if (parameters.get("account") != null) {
+      properties.put("account", parameters.get("account"));
+    }
+    if (parameters.get("ssl") != null) {
+      properties.put("ssl", parameters.get("ssl"));
+    }
+    if (parameters.get("port") != null) {
+      properties.put("port", parameters.get("port"));
+    }
 
     // test correct private key one
     properties.put("privateKey", privateKey);

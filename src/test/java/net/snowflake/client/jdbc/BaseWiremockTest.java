@@ -189,7 +189,7 @@ public abstract class BaseWiremockTest {
     props.put("account", params.get("account"));
     props.put("user", params.get("user"));
     props.put("role", params.get("role"));
-    props.put("password", params.get("password"));
+    props.put("password", "dummy_password_for_wiremock_tests"); // dummy password to avoid NPE
     props.put("warehouse", params.get("warehouse"));
     props.put("db", params.get("database"));
     props.put("ssl", params.get("ssl"));

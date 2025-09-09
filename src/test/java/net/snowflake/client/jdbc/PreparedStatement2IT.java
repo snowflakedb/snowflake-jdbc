@@ -51,11 +51,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       int[] countResult;
 
       try {
-        statement.execute(
-            "CREATE OR REPLACE TABLE " + uniqueTableName + "_date (id INTEGER, d DATE)");
+        statement.execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
         try (PreparedStatement prepStatement =
-            connection.prepareStatement(
-                "INSERT INTO " + uniqueTableName + "_date(id, d)  VALUES(?,?)")) {
+            connection.prepareStatement("INSERT INTO test_prepst_date(id, d)  VALUES(?,?)")) {
 
           // First, run with non-stage binding
           statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
@@ -71,15 +69,14 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
           Date[] nonStageResult = new Date[dates.length];
           try (ResultSet rsNonStage =
-              statement.executeQuery(
-                  "SELECT * FROM " + uniqueTableName + "_date ORDER BY id ASC")) {
+              statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
 
             for (int i = 0; i < nonStageResult.length; i++) {
               assertTrue(rsNonStage.next());
               nonStageResult[i] = rsNonStage.getDate(2);
             }
           }
-          statement.execute("DELETE FROM " + uniqueTableName + "_date WHERE 1=1");
+          statement.execute("DELETE FROM test_prepst_date WHERE 1=1");
 
           // Now, run with stage binding
           statement.execute(
@@ -97,8 +94,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
           Date[] stageResult = new Date[dates.length];
           try (ResultSet rsStage =
-              statement.executeQuery(
-                  "SELECT * FROM " + uniqueTableName + "_date ORDER BY id ASC")) {
+              statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
               assertTrue(rsStage.next());
               stageResult[i] = rsStage.getDate(2);
@@ -113,7 +109,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           }
         }
       } finally {
-        statement.execute("DROP TABLE IF EXISTS " + uniqueTableName + "_date");
+        statement.execute("DROP TABLE IF EXISTS test_prepst_date");
       }
     }
   }
@@ -729,7 +725,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
             .execute(
                 "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = "
                     + threshold); // enable stage bind
-        String sql = "insert into " + uniqueTableName + "(col, colB) values(?,?)";
+        String sql = "insert into TEST_PREPST(col, colB) values(?,?)";
 
         // Null NUMERIC followed by FLOAT.
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {

@@ -893,7 +893,18 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     props.put("ssl", params.get("ssl"));
     props.put("role", params.get("role"));
     props.put("user", params.get("user"));
-    props.put("password", params.get("password"));
+
+    // Handle authentication - prioritize private key, fallback to password
+    if (params.get("private_key_file") != null) {
+      props.put("private_key_file", params.get("private_key_file"));
+      props.put("authenticator", params.get("authenticator"));
+      if (params.get("private_key_pwd") != null) {
+        props.put("private_key_pwd", params.get("private_key_pwd"));
+      }
+    } else if (params.get("password") != null) {
+      props.put("password", params.get("password"));
+    }
+
     props.put("db", params.get("database"));
     props.put("schema", params.get("schema"));
     props.put("warehouse", params.get("warehouse"));
