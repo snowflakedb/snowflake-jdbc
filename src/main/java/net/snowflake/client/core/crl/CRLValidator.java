@@ -5,6 +5,7 @@ import static net.snowflake.client.core.crl.CRLValidationUtils.getCertChainSubje
 import static net.snowflake.client.core.crl.CRLValidationUtils.isShortLived;
 import static net.snowflake.client.core.crl.CRLValidationUtils.verifyIssuingDistributionPoint;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -36,6 +37,7 @@ import net.snowflake.client.jdbc.telemetry.RevocationCheckTelemetryData;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -331,10 +333,11 @@ public class CRLValidator {
       long start = System.currentTimeMillis();
       try (CloseableHttpResponse response = this.httpClient.execute(get)) {
         try (InputStream inputStream = response.getEntity().getContent()) {
+          byte[] crlData = IOUtils.toByteArray(inputStream);
           revocationTelemetry.setTimeDownloadingCrl(System.currentTimeMillis() - start);
           start = System.currentTimeMillis();
-          X509CRL crl = (X509CRL) cf.generateCRL(inputStream);
-          long crlBytes = crl.getEncoded().length; // TODO: check if this is fast
+          X509CRL crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(crlData));
+          long crlBytes = crl.getEncoded().length;
           revocationTelemetry.setTimeParsingCrl(System.currentTimeMillis() - start);
           revocationTelemetry.setCrlBytes(crlBytes);
           return crl;

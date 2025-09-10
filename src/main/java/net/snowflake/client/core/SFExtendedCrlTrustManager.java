@@ -21,7 +21,7 @@ public class SFExtendedCrlTrustManager extends X509ExtendedTrustManager {
   @Override
   public void checkClientTrusted(X509Certificate[] chain, String authType)
       throws CertificateException {
-    exTrustManager.checkServerTrusted(chain, authType);
+    exTrustManager.checkClientTrusted(chain, authType);
   }
 
   @Override

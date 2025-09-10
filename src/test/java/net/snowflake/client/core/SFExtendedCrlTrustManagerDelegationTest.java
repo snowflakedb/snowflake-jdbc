@@ -40,7 +40,7 @@ public class SFExtendedCrlTrustManagerDelegationTest {
 
     trustManager.checkClientTrusted(certChain, authType);
 
-    verify(mockTrustManager).checkServerTrusted(certChain, authType);
+    verify(mockTrustManager).checkClientTrusted(certChain, authType);
   }
 
   @Test

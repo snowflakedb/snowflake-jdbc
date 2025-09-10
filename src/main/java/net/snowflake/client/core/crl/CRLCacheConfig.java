@@ -29,7 +29,7 @@ public class CRLCacheConfig {
 
   public static Duration getCacheValidityTime() {
     String validityTime = SnowflakeUtil.systemGetProperty(SF_CRL_VALIDITY_TIME);
-    if (validityTime != null && validityTime.isEmpty()) {
+    if (validityTime != null && !validityTime.isEmpty()) {
       try {
         long seconds = Long.parseLong(validityTime);
         if (seconds <= 0) {
@@ -61,7 +61,7 @@ public class CRLCacheConfig {
 
   public static Duration getOnDiskCacheRemovalDelay() {
     String removalDelay = SnowflakeUtil.systemGetProperty(ON_DISK_CACHE_REMOVAL_DELAY);
-    if (removalDelay != null && removalDelay.isEmpty()) {
+    if (removalDelay != null && !removalDelay.isEmpty()) {
       try {
         long seconds = Long.parseLong(removalDelay);
         if (seconds <= 0) {
