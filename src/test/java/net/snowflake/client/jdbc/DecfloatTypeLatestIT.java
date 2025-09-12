@@ -7,9 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -147,8 +151,8 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           new BigDecimal("-1"),
           new BigDecimal("-1.5"),
           new BigDecimal("123.4567"),
-          new BigDecimal("-123.45"), // -1.2345e2 = -123.45 (decimal notation)
-          new BigDecimal("123.456"), // 1.23456e2 = 123.456 (decimal notation)
+          new BigDecimal("-123.45"),
+          new BigDecimal("123.456"),
           new BigDecimal(
               "-9.8765432099999998623226732747455716901E-250"), // Very small negative number with
           // precision
@@ -164,6 +168,168 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           BigDecimal expected = expectedValues[i];
 
           assertEquals(expected, actual, "Failed for value: " + testValues[i]);
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testDecfloatBindingBasicTypes(String queryResultFormat) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement ignored = createStatement(con, queryResultFormat)) {
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT")) {
+
+          ps.setBigDecimal(1, new BigDecimal("1234567890.1234567890123456789012345678"));
+          ps.setDouble(2, 123.45);
+          ps.setString(3, "678.9");
+          ps.setInt(4, 1);
+          ps.setFloat(5, 2.5f);
+          ps.setLong(6, 123456789L);
+          ps.setShort(7, (short) 45);
+          ps.setObject(8, new BigDecimal("1.2345e4"), SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+          ps.setNull(9, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            assertTrue(rs.next());
+            assertEquals(
+                new BigDecimal("1234567890.1234567890123456789012345678"), rs.getBigDecimal(1));
+            assertEquals(123.45, rs.getDouble(2), 0.001);
+            assertEquals("678.9", rs.getString(3));
+            assertEquals(1, rs.getInt(4));
+            assertEquals(2.5f, rs.getFloat(5), 0.001f);
+            assertEquals(123456789L, rs.getLong(6));
+            assertEquals((short) 45, rs.getShort(7));
+            assertEquals(new BigDecimal("1.2345e4"), rs.getObject(8));
+            assertNull(rs.getObject(9));
+          }
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testDecfloatBindingExtremeValues(String queryResultFormat) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement ignored = createStatement(con, queryResultFormat)) {
+        try (PreparedStatement ps =
+            con.prepareStatement("SELECT ?::DECFLOAT, ?::DECFLOAT, ?::DECFLOAT")) {
+
+          BigDecimal veryLargeValue = new BigDecimal("1.2345678901234567890123456789012345678e120");
+          BigDecimal verySmallValue =
+              new BigDecimal("-9.8765432099999998623226732747455716901E-250");
+          BigDecimal expValue = new BigDecimal("-1.2345e2"); // -123.45
+
+          ps.setObject(1, veryLargeValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(2, verySmallValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(3, expValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            assertTrue(rs.next());
+            BigDecimal result1 = rs.getBigDecimal(1);
+            BigDecimal result2 = rs.getBigDecimal(2);
+            BigDecimal result3 = rs.getBigDecimal(3);
+
+            assertEquals(veryLargeValue, result1);
+            assertEquals(verySmallValue, result2);
+            assertEquals(expValue, result3);
+          }
+        }
+      }
+    }
+  }
+
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @ParameterizedTest
+  public void testDecfloatBindingArray(String queryResultString) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = createStatement(con, queryResultString)) {
+        try {
+          stmt.execute("CREATE OR REPLACE TABLE test_decfloat (value DECFLOAT)");
+
+          List<BigDecimal> firstArray =
+              Arrays.asList(
+                  new BigDecimal("123.45"),
+                  new BigDecimal("1234567890.1234567890123456789012345678"),
+                  new BigDecimal("1.2345678901234567890123456789012345678e120"));
+
+          try (PreparedStatement ps =
+              con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
+            for (BigDecimal value : firstArray) {
+              ps.setObject(1, value, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+              ps.addBatch();
+            }
+            ps.executeBatch();
+          }
+
+          try (ResultSet rs =
+              stmt.executeQuery("SELECT * FROM test_decfloat order by value desc")) {
+            assertTrue(rs.next());
+            BigDecimal firstValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("1.2345678901234567890123456789012345678e120"), firstValue);
+
+            assertTrue(rs.next());
+            BigDecimal secondValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("1234567890.1234567890123456789012345678"), secondValue);
+
+            assertTrue(rs.next());
+            BigDecimal thirdValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("123.45"), thirdValue);
+          }
+        } finally {
+          // Cleanup
+          stmt.execute("DROP TABLE IF EXISTS test_decfloat");
+        }
+      }
+    }
+  }
+
+  @DontRunOnGithubActions
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  @ParameterizedTest
+  public void testDecfloatBindingBatchInserts(String queryResultString) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = createStatement(con, queryResultString)) {
+        try {
+          stmt.execute("CREATE OR REPLACE TABLE test_decfloat (value DECFLOAT)");
+
+          List<BigDecimal> secondArray =
+              Arrays.asList(
+                  new BigDecimal("-987.45e-4"),
+                  new BigDecimal("-1234.423e3"),
+                  new BigDecimal("-9.8765432099999998623226732747455716901E-250"));
+
+          stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+          try (PreparedStatement ps =
+              con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
+            for (BigDecimal value : secondArray) {
+              ps.setObject(1, value, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+              ps.addBatch();
+            }
+            ps.executeBatch();
+          }
+
+          try (ResultSet rs =
+              stmt.executeQuery("SELECT * FROM test_decfloat order by value desc")) {
+            assertTrue(rs.next());
+            BigDecimal firstValue = rs.getBigDecimal(1);
+            assertEquals(
+                new BigDecimal("-9.8765432099999998623226732747455716901E-250"), firstValue);
+
+            assertTrue(rs.next());
+            BigDecimal fourthValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("-0.098745"), fourthValue);
+
+            assertTrue(rs.next());
+            BigDecimal fifthValue = rs.getBigDecimal(1);
+            assertEquals(new BigDecimal("-1234.423e3"), fifthValue);
+          }
+        } finally {
+          // Cleanup
+          stmt.execute("DROP TABLE IF EXISTS test_decfloat");
         }
       }
     }
