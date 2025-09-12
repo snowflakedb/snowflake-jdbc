@@ -83,7 +83,7 @@ class SessionUtilKeyPair {
       String userName)
       throws SFException {
     this.userName = userName.toUpperCase();
-    this.accountName = accountName.toUpperCase();
+    this.accountName = excludeRegionInformation(accountName).toUpperCase();
     String enableBouncyCastleJvm =
         System.getProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
     if (enableBouncyCastleJvm != null) {
@@ -340,5 +340,10 @@ class SessionUtilKeyPair {
         return keyFactory.generatePrivate(encodedKeySpec);
       }
     }
+  }
+
+  private static String excludeRegionInformation(String accountName) {
+    int dotIndex = accountName.indexOf('.');
+    return dotIndex > 0 ? accountName.substring(0, dotIndex) : accountName;
   }
 }
