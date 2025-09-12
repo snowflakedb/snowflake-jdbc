@@ -272,7 +272,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
         // returned ResultSet value should match the value inserted into the table with no offset
         // (with
         // exceptions for getTimestamp() on date and time objects).
-        try (ResultSet rs = statement.executeQuery("select * from datetimetypes")) {
+        try (ResultSet rs =
+            statement.executeQuery("select * from datetimetypes ORDER BY colE DESC")) {
           assertTrue(rs.next());
           // Assert date has no offset. When flag is false, timestamp_ltz and timestamp_ntz will
           // show

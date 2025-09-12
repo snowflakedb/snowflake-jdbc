@@ -19,7 +19,6 @@ else
     PARAMETER_FILE=$SOURCE_ROOT/src/test/resources/parameters.json
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
-eval $(jq -r '.orgconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action
@@ -62,7 +61,7 @@ if [[ "${ENABLE_CLIENT_LOG_ANALYZE}" == "true" ]]; then
     fi
 fi
 
-env | grep SNOWFLAKE_ | grep -v PASS | sort
+env | grep SNOWFLAKE_ | grep -v -E "(PASS|KEY|SECRET|TOKEN)" | sort
 
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true

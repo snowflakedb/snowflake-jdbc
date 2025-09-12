@@ -8,6 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 
 /** Prepared statement integration tests */
 abstract class PreparedStatement0IT extends BaseJDBCTest {
+  // Unique table name per test class to prevent race conditions
+  protected final String uniqueTableName =
+      "test_prepst_"
+          + this.getClass().getSimpleName().toLowerCase()
+          + "_"
+          + System.currentTimeMillis()
+          + "_"
+          + (int) (Math.random() * 1000);
+
   Connection init() throws SQLException {
     return BaseJDBCTest.getConnection();
   }
@@ -20,16 +29,18 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
     return conn;
   }
 
-  final String insertSQL = "insert into TEST_PREPST values(?, ?, ?, ?, ?, ?)";
-  final String selectAllSQL = "select * from TEST_PREPST";
-  final String updateSQL = "update TEST_PREPST set COLC = 'newString' where ID = ?";
-  final String deleteSQL = "delete from TEST_PREPST where ID = ?";
-  final String selectSQL = "select * from TEST_PREPST where ID = ?";
+  final String insertSQL = "insert into " + uniqueTableName + " values(?, ?, ?, ?, ?, ?)";
+  final String selectAllSQL = "select * from " + uniqueTableName;
+  final String updateSQL = "update " + uniqueTableName + " set COLC = 'newString' where ID = ?";
+  final String deleteSQL = "delete from " + uniqueTableName + " where ID = ?";
+  final String selectSQL = "select * from " + uniqueTableName + " where ID = ?";
   final String createTableSQL =
-      "create or replace table test_prepst(id INTEGER, "
+      "create or replace table "
+          + uniqueTableName
+          + "(id INTEGER, "
           + "colA DOUBLE, colB FLOAT, colC String,  "
           + "colD NUMBER, col INTEGER)";
-  final String deleteTableSQL = "drop table if exists TEST_PREPST";
+  final String deleteTableSQL = "drop table if exists " + uniqueTableName;
   final String enableCacheReuse = "alter session set USE_CACHED_RESULT=true";
   final String tableFuncSQL = "select 1 from table(generator(rowCount => ?))";
 
