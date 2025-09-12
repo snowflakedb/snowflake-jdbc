@@ -21,6 +21,13 @@ public enum TelemetryField {
   TIME_WAITING_FOR_CHUNKS("client_time_waiting_for_chunks"),
   TIME_DOWNLOADING_CHUNKS("client_time_downloading_chunks"),
   TIME_PARSING_CHUNKS("client_time_parsing_chunks"),
+  TIME_DOWNLOADING_CRL("client_time_downloading_crl"),
+  TIME_PARSING_CRL("client_time_parsing_crl"),
+
+  CLIENT_CRL_STATS("client_crl_stats"),
+  CRL_URL("client_crl_url"),
+  CRL_BYTES("client_crl_bytes"),
+  CRL_REVOKED_CERTIFICATES("client_revoked_certificates"),
 
   FAILED_BIND_SERIALIZATION("client_failed_bind_serialization"),
   FAILED_BIND_UPLOAD("client_failed_bind_upload"),

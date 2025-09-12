@@ -3,6 +3,8 @@ package net.snowflake.client.core;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import java.io.Serializable;
+import java.util.Objects;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
 
 /**
  * This class defines all non-static parameters needed to create an HttpClient object. It is used as
@@ -11,6 +13,8 @@ import java.io.Serializable;
 public class HttpClientSettingsKey implements Serializable {
 
   private OCSPMode ocspMode;
+  private CertRevocationCheckMode revocationCheckMode;
+  private boolean allowCertificatesWithoutCrlUrl;
   private boolean useProxy;
   private String proxyHost = "";
   private int proxyPort = 0;
@@ -62,20 +66,24 @@ public class HttpClientSettingsKey implements Serializable {
     if (obj instanceof HttpClientSettingsKey) {
       HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) obj;
       if (comparisonKey.ocspMode.getValue() == this.ocspMode.getValue()) {
-        if (comparisonKey.gzipDisabled.equals(this.gzipDisabled)) {
-          if (comparisonKey.userAgentSuffix.equalsIgnoreCase(this.userAgentSuffix)) {
-            if (!comparisonKey.useProxy && !this.useProxy) {
-              return true;
-            } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
-                && comparisonKey.proxyPort == this.proxyPort
-                && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
-                && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
-                && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
-              // update nonProxyHost if changed
-              if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
-                comparisonKey.nonProxyHosts = this.nonProxyHosts;
+        if (comparisonKey.revocationCheckMode == this.revocationCheckMode
+            && comparisonKey.allowCertificatesWithoutCrlUrl
+                == this.allowCertificatesWithoutCrlUrl) {
+          if (comparisonKey.gzipDisabled.equals(this.gzipDisabled)) {
+            if (comparisonKey.userAgentSuffix.equalsIgnoreCase(this.userAgentSuffix)) {
+              if (!comparisonKey.useProxy && !this.useProxy) {
+                return true;
+              } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
+                  && comparisonKey.proxyPort == this.proxyPort
+                  && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
+                  && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
+                  && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
+                // update nonProxyHost if changed
+                if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
+                  comparisonKey.nonProxyHosts = this.nonProxyHosts;
+                }
+                return true;
               }
-              return true;
             }
           }
         }
@@ -92,7 +100,8 @@ public class HttpClientSettingsKey implements Serializable {
                 + this.proxyUser
                 + this.proxyPassword
                 + this.proxyProtocol)
-            .hashCode();
+            .hashCode()
+        + Objects.hash(this.revocationCheckMode, this.allowCertificatesWithoutCrlUrl);
   }
 
   public OCSPMode getOcspMode() {
@@ -152,11 +161,31 @@ public class HttpClientSettingsKey implements Serializable {
     return gzipDisabled;
   }
 
+  public CertRevocationCheckMode getRevocationCheckMode() {
+    return revocationCheckMode;
+  }
+
+  public boolean isAllowCertificatesWithoutCrlUrl() {
+    return allowCertificatesWithoutCrlUrl;
+  }
+
+  public void setRevocationCheckMode(CertRevocationCheckMode revocationCheckMode) {
+    this.revocationCheckMode = revocationCheckMode;
+  }
+
+  public void setAllowCertificatesWithoutCrlUrl(boolean allowCertificatesWithoutCrlUrl) {
+    this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
+  }
+
   @Override
   public String toString() {
     return "HttpClientSettingsKey["
         + "ocspMode="
         + ocspMode
+        + ", revocationCheckMode="
+        + revocationCheckMode
+        + ", allowCertificatesWithoutCrlUrl="
+        + allowCertificatesWithoutCrlUrl
         + ", useProxy="
         + useProxy
         + ", proxyHost='"

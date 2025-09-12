@@ -7,7 +7,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -72,18 +71,17 @@ class CRLFileCache implements CRLCache {
       cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
 
-      Files.write(
-          crlFilePath,
-          entry.getCrl().getEncoded(),
-          StandardOpenOption.CREATE,
-          StandardOpenOption.WRITE,
-          StandardOpenOption.TRUNCATE_EXISTING);
+      if (Constants.getOS() != Constants.OS.WINDOWS) {
+        Files.deleteIfExists(crlFilePath);
+        Files.createFile(
+            crlFilePath,
+            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        Files.write(crlFilePath, entry.getCrl().getEncoded());
+      } else {
+        Files.write(crlFilePath, entry.getCrl().getEncoded());
+      }
 
       Files.setLastModifiedTime(crlFilePath, FileTime.from(entry.getDownloadTime()));
-
-      if (Constants.getOS() != Constants.OS.WINDOWS) {
-        Files.setPosixFilePermissions(crlFilePath, PosixFilePermissions.fromString("rw-------"));
-      }
 
       logger.debug("Updated disk cache for {}", crlUrl);
     } catch (Exception e) {
@@ -162,8 +160,14 @@ class CRLFileCache implements CRLCache {
     try {
       boolean exists = Files.exists(cacheDir);
       if (!exists) {
-        Files.createDirectories(cacheDir);
-        logger.debug("Initialized CRL cache directory: {}", cacheDir);
+        if (Constants.getOS() != Constants.OS.WINDOWS) {
+          Files.createDirectories(
+              cacheDir,
+              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+          logger.debug("Initialized CRL cache directory: {}", cacheDir);
+        } else {
+          Files.createDirectories(cacheDir);
+        }
       }
 
       if (Constants.getOS() != Constants.OS.WINDOWS && !ownerOnlyPermissions(cacheDir)) {

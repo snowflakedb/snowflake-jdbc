@@ -5,6 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.common.core.LoginInfoDTO;
 
@@ -71,5 +72,18 @@ public class TelemetryUtil {
       ibValue.put(TelemetryField.REASON.toString(), reason);
     }
     return ibValue;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static TelemetryData buildCrlData(
+      String crlUrl, long crlBytes, int revokedCertificates, long downloadTime, long parseTime) {
+    ObjectNode obj = mapper.createObjectNode();
+    obj.put(TelemetryField.TYPE.toString(), TelemetryField.CLIENT_CRL_STATS.toString());
+    obj.put(TelemetryField.CRL_URL.toString(), crlUrl);
+    obj.put(TelemetryField.CRL_BYTES.toString(), crlBytes);
+    obj.put(TelemetryField.CRL_REVOKED_CERTIFICATES.toString(), revokedCertificates);
+    obj.put(TelemetryField.TIME_DOWNLOADING_CRL.toString(), downloadTime);
+    obj.put(TelemetryField.TIME_PARSING_CRL.toString(), parseTime);
+    return new TelemetryData(obj, System.currentTimeMillis());
   }
 }

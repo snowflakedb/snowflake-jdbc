@@ -6,6 +6,8 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -18,6 +20,7 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.RestRequest;
@@ -80,7 +84,7 @@ public class HttpUtil {
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-lived clients. Key =
-   * proxy host + proxy port + nonProxyHosts, Value = Map of [OCSPMode, HttpClient]
+   * proxy host + proxy port + nonProxyHosts, Value = Map of [ClientSettings, HttpClient]
    */
   public static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
       new ConcurrentHashMap<>();
@@ -88,7 +92,7 @@ public class HttpUtil {
   /**
    * The unique httpClient map shared by all connections that don't want decompression. This will
    * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value = Map
-   * [OCSPMode, HttpClient]
+   * [ClientSettings, HttpClient]
    */
   private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClientWithoutDecompression =
       new ConcurrentHashMap<>();
@@ -326,34 +330,7 @@ public class HttpUtil {
       initDefaultRequestConfig(connectTimeout, socketTimeout);
     }
 
-    TrustManager[] trustManagers = null;
-    if (key != null && key.getOcspMode() != OCSPMode.DISABLE_OCSP_CHECKS) {
-      // A custom TrustManager is required only if disableOCSPChecks is disabled,
-      // which is by default in the production. disableOCSPChecks can be enabled
-      // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
-      // care OCSP checks.
-      // OCSP FailOpen is ON by default
-      try {
-        if (ocspCacheFile == null) {
-          logger.debug("Instantiating trust manager with default ocsp cache file");
-        } else {
-          logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
-        }
-        TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
-        trustManagers = tm;
-      } catch (Exception | Error err) {
-        // dump error stack
-        StringWriter errors = new StringWriter();
-        err.printStackTrace(new PrintWriter(errors));
-        logger.error(errors.toString(), true);
-        throw new RuntimeException(err); // rethrow the exception
-      }
-    } else if (key != null) {
-      logger.debug(
-          "Omitting trust manager instantiation as OCSP mode is set to {}", key.getOcspMode());
-    } else {
-      logger.debug("Omitting trust manager instantiation as configuration is not provided");
-    }
+    TrustManager[] trustManagers = configureTrustManagerIfNeeded(key, ocspCacheFile);
     try {
       logger.debug(
           "Registering https connection socket factory with socks proxy disabled: {} and http "
@@ -445,6 +422,50 @@ public class HttpUtil {
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
     }
+  }
+
+  static TrustManager[] configureTrustManagerIfNeeded(
+      HttpClientSettingsKey key, File ocspCacheFile) {
+    if (key != null && key.getOcspMode() != OCSPMode.DISABLE_OCSP_CHECKS) {
+      // A custom TrustManager is required only if disableOCSPChecks is disabled,
+      // which is by default in the production. disableOCSPChecks can be enabled
+      // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
+      // care OCSP checks.
+      // OCSP FailOpen is ON by default
+      try {
+        if (ocspCacheFile == null) {
+          logger.debug("Instantiating trust manager with default ocsp cache file");
+        } else {
+          logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
+        }
+        return new TrustManager[] {new SFTrustManager(key, ocspCacheFile)};
+      } catch (Exception | Error err) {
+        // dump error stack
+        StringWriter errors = new StringWriter();
+        err.printStackTrace(new PrintWriter(errors));
+        logger.error(errors.toString(), true);
+        throw new RuntimeException(err); // rethrow the exception
+      }
+    } else if (key != null
+        && key.getOcspMode() == OCSPMode.DISABLE_OCSP_CHECKS
+        && crlRevocationChecksDisabled(key)) {
+      logger.debug(
+          "Omitting trust manager instantiation as OCSP mode is set to {}", key.getOcspMode());
+    } else if (key != null && !crlRevocationChecksDisabled(key)) {
+      try {
+        logger.debug("Instantiating trust manager with CRL based revocation checks");
+        return new TrustManager[] {SFCrlTrustManagerFactory.createCrlTrustManager(key)};
+      } catch (CertificateException e) {
+        throw new SSLInitializationException(e.getMessage(), e);
+      }
+    }
+    logger.debug("Omitting trust manager instantiation as configuration is not provided");
+    return null;
+  }
+
+  private static boolean crlRevocationChecksDisabled(HttpClientSettingsKey key) {
+    return key.getRevocationCheckMode() == null
+        || key.getRevocationCheckMode() == CertRevocationCheckMode.DISABLED;
   }
 
   private static void initDefaultRequestConfig(long connectTimeout, long socketTimeout) {
@@ -1364,5 +1385,54 @@ public class HttpUtil {
     if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
       additionalHeaders.forEach(request::addHeader);
     }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
+    int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
+    RequestConfig config =
+        RequestConfig.custom()
+            .setConnectTimeout(timeout)
+            .setConnectionRequestTimeout(timeout)
+            .setSocketTimeout(timeout)
+            .build();
+
+    Registry<ConnectionSocketFactory> registry =
+        RegistryBuilder.<ConnectionSocketFactory>create()
+            .register("http", new HttpUtil.SFConnectionSocketFactory())
+            .build();
+
+    // Build a connection manager with enough connections
+    PoolingHttpClientConnectionManager connectionManager =
+        new PoolingHttpClientConnectionManager(registry);
+    connectionManager.setMaxTotal(1);
+    connectionManager.setDefaultMaxPerRoute(3);
+
+    HttpClientBuilder httpClientBuilder =
+        HttpClientBuilder.create()
+            .setDefaultRequestConfig(config)
+            .setConnectionManager(connectionManager)
+            // Support JVM proxy settings
+            .useSystemProperties()
+            .setRedirectStrategy(new DefaultRedirectStrategy())
+            .disableCookieManagement();
+
+    if (key.usesProxy()) {
+      // use the custom proxy properties
+      HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
+      SdkProxyRoutePlanner sdkProxyRoutePlanner =
+          new SdkProxyRoutePlanner(
+              key.getProxyHost(), key.getProxyPort(), Protocol.HTTP, key.getNonProxyHosts());
+      httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+      if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
+        Credentials credentials =
+            new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
+        AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(authScope, credentials);
+        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+      }
+    }
+    return httpClientBuilder.build();
   }
 }
