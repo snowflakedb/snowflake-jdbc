@@ -13,11 +13,11 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class CRLCacheConfig {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheConfig.class);
-  public static final String ENABLE_CRL_IN_MEMORY_CACHING = "EnableCRLInMemoryCaching";
-  public static final String ENABLE_CRL_DISK_CACHING = "EnableCRLDiskCaching";
-  public static final String SF_CRL_VALIDITY_TIME = "SF_CRL_VALIDITY_TIME";
-  public static final String SF_CRL_RESPONSE_CACHE_DIR = "SF_CRL_RESPONSE_CACHE_DIR";
-  public static final String ON_DISK_CACHE_REMOVAL_DELAY = "onDiskCacheRemovalDelay";
+  public static final String ENABLE_CRL_IN_MEMORY_CACHING = "ENABLE_CRL_IN_MEMORY_CACHING";
+  public static final String ENABLE_CRL_DISK_CACHING = "ENABLE_CRL_DISK_CACHING";
+  public static final String CRL_CACHE_VALIDITY_TIME = "CRL_CACHE_VALIDITY_TIME";
+  public static final String CRL_RESPONSE_CACHE_DIR = "CRL_RESPONSE_CACHE_DIR";
+  public static final String CRL_ON_DISK_CACHE_REMOVAL_DELAY = "CRL_ON_DISK_CACHE_REMOVAL_DELAY";
 
   public static boolean getInMemoryCacheEnabled() {
     return SnowflakeUtil.convertSystemPropertyToBooleanValue(ENABLE_CRL_IN_MEMORY_CACHING, true);
@@ -28,7 +28,7 @@ public class CRLCacheConfig {
   }
 
   public static Duration getCacheValidityTime() {
-    String validityTime = SnowflakeUtil.systemGetProperty(SF_CRL_VALIDITY_TIME);
+    String validityTime = SnowflakeUtil.systemGetProperty(CRL_CACHE_VALIDITY_TIME);
     if (validityTime != null && !validityTime.isEmpty()) {
       try {
         long seconds = Long.parseLong(validityTime);
@@ -45,7 +45,7 @@ public class CRLCacheConfig {
   }
 
   public static Path getOnDiskCacheDir() {
-    String cacheDir = SnowflakeUtil.systemGetProperty(SF_CRL_RESPONSE_CACHE_DIR);
+    String cacheDir = SnowflakeUtil.systemGetProperty(CRL_RESPONSE_CACHE_DIR);
     if (cacheDir == null || cacheDir.isEmpty()) {
       File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
       if (defaultCacheDir != null) {
@@ -59,8 +59,8 @@ public class CRLCacheConfig {
     }
   }
 
-  public static Duration getOnDiskCacheRemovalDelay() {
-    String removalDelay = SnowflakeUtil.systemGetProperty(ON_DISK_CACHE_REMOVAL_DELAY);
+  public static Duration getCrlOnDiskCacheRemovalDelay() {
+    String removalDelay = SnowflakeUtil.systemGetProperty(CRL_ON_DISK_CACHE_REMOVAL_DELAY);
     if (removalDelay != null && !removalDelay.isEmpty()) {
       try {
         long seconds = Long.parseLong(removalDelay);

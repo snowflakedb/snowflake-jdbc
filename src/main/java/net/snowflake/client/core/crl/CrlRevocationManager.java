@@ -25,7 +25,7 @@ public class CrlRevocationManager {
               CRLCacheConfig.getInMemoryCacheEnabled(),
               CRLCacheConfig.getOnDiskCacheEnabled(),
               CRLCacheConfig.getOnDiskCacheDir(),
-              CRLCacheConfig.getOnDiskCacheRemovalDelay(),
+              CRLCacheConfig.getCrlOnDiskCacheRemovalDelay(),
               CRLCacheConfig.getCacheValidityTime());
     } catch (SnowflakeSQLLoggedException e) {
       throw new ExceptionInInitializerError(e);

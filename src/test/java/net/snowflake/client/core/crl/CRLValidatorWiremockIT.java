@@ -44,7 +44,7 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
             CRLCacheConfig.getInMemoryCacheEnabled(),
             CRLCacheConfig.getOnDiskCacheEnabled(),
             Paths.get(cacheDir.getAbsolutePath()),
-            CRLCacheConfig.getOnDiskCacheRemovalDelay(),
+            CRLCacheConfig.getCrlOnDiskCacheRemovalDelay(),
             CRLCacheConfig.getCacheValidityTime());
     telemetry = Mockito.mock(Telemetry.class);
     resetWiremock();

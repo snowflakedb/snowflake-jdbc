@@ -56,7 +56,7 @@ public class SFCrlTrustManagerLatestIT extends BaseJDBCTest {
   @ParameterizedTest
   @ArgumentsSource(HostProvider.class)
   public void testCrl(String host) throws Throwable {
-    System.setProperty(CRLCacheConfig.SF_CRL_RESPONSE_CACHE_DIR, tmpFolder.getAbsolutePath());
+    System.setProperty(CRLCacheConfig.CRL_RESPONSE_CACHE_DIR, tmpFolder.getAbsolutePath());
     HttpClientSettingsKey httpClientSettings =
         new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS);
     httpClientSettings.setRevocationCheckMode(CertRevocationCheckMode.ENABLED);
