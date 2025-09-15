@@ -57,7 +57,8 @@ public class Prober {
 
   enum Scope {
     LOGIN,
-    PUT_FETCH_GET
+    PUT_FETCH_GET,
+    PUT_FETCH_GET_FAIL_CLOSED
   }
 
   public static void main(String[] args) throws Exception {
@@ -79,6 +80,9 @@ public class Prober {
     }
     if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
       testPutFetchGet(url, props);
+    }
+    if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
+      testPutFetchGetFailClosed(url, props);
     }
   }
 
@@ -105,77 +109,103 @@ public class Prober {
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(1000);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
-      createWarehouse(statement, properties);
-      createDatabase(statement, properties);
-      createSchema(statement, properties);
-      createDataTable(statement);
-      createDataStage(statement);
+      createWarehouse(statement, properties, "cloudprober_driver_java_create_warehouse");
+      createDatabase(statement, properties, "cloudprober_driver_java_create_database");
+      createSchema(statement, properties, "cloudprober_driver_java_create_schema");
+      createDataTable(statement, "cloudprober_driver_java_create_table");
+      createDataStage(statement, "cloudprober_driver_java_create_stage");
 
-      uploadFile(sfConnection, csvFile);
-      loadFileIntoTable(statement);
-      fetchAndVerifyRows(statement);
-      downloadFile(sfConnection);
-      compareFetchedDataAndFile(statement, csv);
+      uploadFile(sfConnection, csvFile, "cloudprober_driver_java_perform_put");
+      loadFileIntoTable(statement, "cloudprober_driver_java_copy_data_from_stage_into_table");
+      fetchAndVerifyRows(statement, "cloudprober_driver_java_data_transferred_completely");
+      downloadFile(sfConnection, "cloudprober_driver_java_perform_get");
+      compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
-      cleanupResources(statement);
+      cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
     } catch (SQLException e) {
       System.err.println(e.getMessage());
       System.exit(1);
     }
   }
 
-  private static void createDatabase(Statement statement, Properties properties) throws SQLException {
+  private static void testPutFetchGetFailClosed(String url, Properties properties) {
+    properties.put("ocspFailOpen", "false");
+    try (Connection connection = DriverManager.getConnection(url, properties);
+         Statement statement = connection.createStatement()) {
+      SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
+      List<String> csv = generateCsv(1000);
+      String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
+      createWarehouse(statement, properties, "cloudprober_driver_java_create_warehouse_fail_closed");
+      createDatabase(statement, properties, "cloudprober_driver_java_create_database_fail_closed");
+      createSchema(statement, properties, "cloudprober_driver_java_create_schema_fail_closed");
+      createDataTable(statement, "cloudprober_driver_java_create_table_fail_closed");
+      createDataStage(statement, "cloudprober_driver_java_create_stage_fail_closed");
+
+      uploadFile(sfConnection, csvFile, "cloudprober_driver_java_perform_put_fail_closed");
+      loadFileIntoTable(statement, "cloudprober_driver_java_copy_data_from_stage_into_table_fail_closed");
+      fetchAndVerifyRows(statement, "cloudprober_driver_java_data_transferred_completely_fail_closed");
+      downloadFile(sfConnection, "cloudprober_driver_java_perform_get_fail_closed");
+      compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
+
+      cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
+    } catch (SQLException e) {
+      System.err.println(e.getMessage());
+      System.exit(1);
+    }
+  }
+
+  private static void createDatabase(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String databaseName = properties.getProperty("database", "test_db");
       statement.executeQuery("CREATE DATABASE IF NOT EXISTS " + databaseName);
       statement.executeQuery("USE database " + databaseName);
-      logMetric("cloudprober_driver_java_create_database", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating database: " + e.getMessage());
-      logMetric("cloudprober_driver_java_create_database", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void createSchema(Statement statement, Properties properties) throws SQLException {
+  private static void createSchema(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String schemaName = properties.getProperty("schema", "test_schema");
       statement.executeQuery("CREATE SCHEMA IF NOT EXISTS " + schemaName);
       statement.executeQuery("USE SCHEMA " + schemaName);
-      logMetric("cloudprober_driver_java_create_schema", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating schema: " + e.getMessage());
-      logMetric("cloudprober_driver_java_create_schema", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void createWarehouse(Statement statement, Properties properties) throws SQLException {
+  private static void createWarehouse(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String warehouseName = properties.getProperty("warehouse", "test_wh");
       statement.executeQuery("CREATE WAREHOUSE IF NOT EXISTS " + warehouseName + " WAREHOUSE_SIZE='X-SMALL';");
       statement.executeQuery("USE WAREHOUSE " + warehouseName);
-      logMetric("cloudprober_driver_java_create_warehouse", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating warehouse: " + e.getMessage());
-      logMetric("cloudprober_driver_java_create_warehouse", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void cleanupResources(Statement statement) {
+  private static void cleanupResources(Statement statement, String metricName) {
     try {
       statement.executeQuery("REMOVE @" + stageName);
       statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
-      logMetric("cloudprober_driver_java_cleanup_resources", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during cleanup: " + e.getMessage());
-      logMetric("cloudprober_driver_java_cleanup_resources", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void compareFetchedDataAndFile(Statement statement, List<String> csv) throws SQLException {
+  private static void compareFetchedDataAndFile(Statement statement, List<String> csv, String metricName) throws SQLException {
     ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id");
     for (int i = 1; i < csv.size(); i++) {
       String csvRow = csv.get(i);
@@ -185,7 +215,7 @@ public class Prober {
       String listEmail = csvValues[2];
 
       if (!resultSet.next()) {
-        logMetric("cloudprober_driver_java_data_integrity", Status.FAILURE);
+        logMetric(metricName, Status.FAILURE);
         return;
       }
       int dbId = resultSet.getInt(1);
@@ -196,86 +226,86 @@ public class Prober {
       boolean nameMatch = dbName.equals(listName);
       boolean emailMatch = dbEmail.equals(listEmail);
       if (!(idMatch && nameMatch && emailMatch)) {
-        logMetric("cloudprober_driver_java_data_integrity", Status.FAILURE);
+        logMetric(metricName, Status.FAILURE);
         return;
       }
     }
-    logMetric("cloudprober_driver_java_data_integrity", Status.SUCCESS);
+    logMetric(metricName, Status.SUCCESS);
   }
 
-  private static String downloadFile(SnowflakeConnection sfConnection) throws SQLException {
+  private static String downloadFile(SnowflakeConnection sfConnection, String metricName) throws SQLException {
     InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
     BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
     List<String> lines = reader.lines().collect(Collectors.toList());
     if (lines.size() == 1001) {
-      logMetric("cloudprober_driver_java_perform_get", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } else {
-      logMetric("cloudprober_driver_java_perform_get", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
     }
     return lines.stream().collect(Collectors.joining(System.lineSeparator()));
   }
 
-  private static void fetchAndVerifyRows(Statement statement) throws SQLException {
+  private static void fetchAndVerifyRows(Statement statement, String metricName) throws SQLException {
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
     if (resultSet.next()) {
       int rowCount = resultSet.getInt(1);
       boolean success = rowCount == 1000;
-      logMetric("cloudprober_driver_java_data_transferred_completely", success ? Status.SUCCESS : Status.FAILURE);
+      logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
     } else {
-      logMetric("cloudprober_driver_java_data_transferred_completely", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
     }
   }
 
-  private static void loadFileIntoTable(Statement statement) throws SQLException {
+  private static void loadFileIntoTable(Statement statement, String metricName) throws SQLException {
     try {
       statement.executeQuery("copy into " + tableName + " from @" + stageName + "/" + stageFilePath + " FILE_FORMAT = (TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '\"' SKIP_HEADER = 1);");
-      logMetric("cloudprober_driver_java_copy_data_from_stage_into_table", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during copy into table: " + e.getMessage());
-      logMetric("cloudprober_driver_java_copy_data_from_stage_into_table", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void uploadFile(SnowflakeConnection sfConnection, String fileContent) throws SQLException {
+  private static void uploadFile(SnowflakeConnection sfConnection, String fileContent, String metricName) throws SQLException {
     try {
       sfConnection.uploadStream("@" + stageName, "", new ByteArrayInputStream(fileContent.getBytes()), stageFilePath, false);
-      logMetric("cloudprober_driver_java_perform_put", Status.SUCCESS);
+      logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during file upload: " + e.getMessage());
-      logMetric("cloudprober_driver_java_perform_put", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void createDataTable(Statement statement) throws SQLException {
+  private static void createDataTable(Statement statement, String metricName) throws SQLException {
     try {
       ResultSet resultSet = statement.executeQuery("CREATE OR REPLACE TABLE " + tableName + " (id int, name text, email text)");
       if (resultSet.next()) {
         boolean result = resultSet.getString(1).equals("Table " + tableName.toUpperCase() + " successfully created.");
-        logMetric("cloudprober_driver_java_create_table", result ? Status.SUCCESS : Status.FAILURE);
+        logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
       } else {
-        logMetric("cloudprober_driver_java_create_table", Status.FAILURE);
+        logMetric(metricName, Status.FAILURE);
       }
     } catch (SQLException e) {
       System.err.println(e.getMessage());
-      logMetric("cloudprober_driver_java_create_table", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
 
-  private static void createDataStage(Statement statement) throws SQLException {
+  private static void createDataStage(Statement statement, String metricName) throws SQLException {
     try {
       ResultSet createStageResult = statement.executeQuery("CREATE OR REPLACE STAGE " + stageName);
       if (createStageResult.next()) {
         boolean result = createStageResult.getString(1).equals("Stage area " + stageName.toUpperCase() + " successfully created.");
-        logMetric("cloudprober_driver_java_create_stage", result ? Status.SUCCESS : Status.FAILURE);
+        logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
       } else {
-        logMetric("cloudprober_driver_java_create_stage", Status.FAILURE);
+        logMetric(metricName, Status.FAILURE);
       }
     } catch (SQLException e) {
       System.err.println(e.getMessage());
-      logMetric("cloudprober_driver_java_create_stage", Status.FAILURE);
+      logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
   }
