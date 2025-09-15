@@ -6,7 +6,7 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, unlabeled]
     branches:
-      - main
+      - master
 
 jobs:
   check_change_log:
