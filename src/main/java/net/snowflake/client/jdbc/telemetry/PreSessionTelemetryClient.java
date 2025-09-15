@@ -16,8 +16,8 @@ import net.snowflake.client.log.SFLoggerFactory;
  * during SSL/TLS setup and certificate validation.
  */
 @SnowflakeJdbcInternalApi
-public class BufferedTelemetryClient implements Telemetry {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(BufferedTelemetryClient.class);
+public class PreSessionTelemetryClient implements Telemetry {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(PreSessionTelemetryClient.class);
 
   private final List<TelemetryData> bufferedData = new ArrayList<>();
   private final Lock lock = new ReentrantLock();
@@ -57,7 +57,7 @@ public class BufferedTelemetryClient implements Telemetry {
     lock.lock();
     try {
       if (closed) {
-        logger.debug("BufferedTelemetryClient is closed, ignoring real client");
+        logger.debug("PreSessionTelemetryClient is closed, ignoring real client");
         return;
       }
       this.realTelemetryClient = realClient;
@@ -111,7 +111,7 @@ public class BufferedTelemetryClient implements Telemetry {
 
       if (!bufferedData.isEmpty()) {
         logger.debug(
-            "Closing BufferedTelemetryClient with {} unflushed entries", bufferedData.size());
+            "Closing PreSessionTelemetryClient with {} unflushed entries", bufferedData.size());
       }
 
       bufferedData.clear();

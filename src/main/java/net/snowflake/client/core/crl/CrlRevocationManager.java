@@ -9,7 +9,7 @@ import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.telemetry.BufferedTelemetryClient;
+import net.snowflake.client.jdbc.telemetry.PreSessionTelemetryClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 @SnowflakeJdbcInternalApi
@@ -42,7 +42,7 @@ public class CrlRevocationManager {
             key.isAllowCertificatesWithoutCrlUrl(),
             httpClient,
             crlCacheManager,
-            new BufferedTelemetryClient());
+            new PreSessionTelemetryClient());
     CRLValidator.registerValidator(key, this.crlValidator);
   }
 

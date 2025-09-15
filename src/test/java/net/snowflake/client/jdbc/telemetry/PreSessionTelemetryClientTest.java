@@ -11,29 +11,29 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
-class BufferedTelemetryClientTest {
-  private BufferedTelemetryClient bufferedClient;
+class PreSessionTelemetryClientTest {
+  private PreSessionTelemetryClient preSessionTelemetryClient;
   private Telemetry mockRealTelemetryClient;
   private TelemetryData mockTelemetryData;
 
   @BeforeEach
   void setUp() {
-    bufferedClient = new BufferedTelemetryClient();
+    preSessionTelemetryClient = new PreSessionTelemetryClient();
     mockRealTelemetryClient = mock(Telemetry.class);
     mockTelemetryData = mock(TelemetryData.class);
   }
 
   @Test
   void shouldFlushBufferedDataAndPassThroughAfterRealClientSet() {
-    bufferedClient.addLogToBatch(mockTelemetryData);
-    bufferedClient.addLogToBatch(mockTelemetryData);
+    preSessionTelemetryClient.addLogToBatch(mockTelemetryData);
+    preSessionTelemetryClient.addLogToBatch(mockTelemetryData);
 
-    bufferedClient.setRealTelemetryClient(mockRealTelemetryClient);
+    preSessionTelemetryClient.setRealTelemetryClient(mockRealTelemetryClient);
 
-    assertTrue(bufferedClient.hasRealTelemetryClient());
+    assertTrue(preSessionTelemetryClient.hasRealTelemetryClient());
     verify(mockRealTelemetryClient, times(2)).addLogToBatch(mockTelemetryData);
 
-    bufferedClient.addLogToBatch(mockTelemetryData);
+    preSessionTelemetryClient.addLogToBatch(mockTelemetryData);
     verify(mockRealTelemetryClient, times(3)).addLogToBatch(mockTelemetryData);
   }
 }

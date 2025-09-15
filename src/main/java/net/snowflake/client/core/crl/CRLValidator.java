@@ -32,7 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.telemetry.BufferedTelemetryClient;
+import net.snowflake.client.jdbc.telemetry.PreSessionTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.RevocationCheckTelemetryData;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
@@ -379,9 +379,10 @@ public class CRLValidator {
 
   private void provideTelemetryClient(Telemetry telemetryClient) {
     try {
-      BufferedTelemetryClient bufferedClient = (BufferedTelemetryClient) this.telemetryClient;
-      if (!bufferedClient.hasRealTelemetryClient()) {
-        bufferedClient.setRealTelemetryClient(telemetryClient);
+      PreSessionTelemetryClient preSessionTelemetryClient =
+          (PreSessionTelemetryClient) this.telemetryClient;
+      if (!preSessionTelemetryClient.hasRealTelemetryClient()) {
+        preSessionTelemetryClient.setRealTelemetryClient(telemetryClient);
       }
     } catch (Exception e) {
       logger.warn("Failed to set real telemetry client for trust manager: {}", e.getMessage());
