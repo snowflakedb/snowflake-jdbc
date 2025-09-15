@@ -91,8 +91,10 @@ public class SFClientConfigParserTest {
 
   @Test
   public void testLoadSFClientConfigWithDriverLocation() throws IOException {
+    systemUnsetEnv(SF_CLIENT_CONFIG_ENV_NAME);
     String configLocation =
         Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
+    System.out.println("here is the location = " + configLocation);
     configFilePath = Paths.get(configLocation);
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
