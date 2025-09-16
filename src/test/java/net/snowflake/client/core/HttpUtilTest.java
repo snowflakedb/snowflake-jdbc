@@ -1,5 +1,7 @@
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -9,6 +11,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.TrustManager;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.Configurable;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,6 +20,8 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 public class HttpUtilTest {
 
@@ -52,6 +58,56 @@ public class HttpUtilTest {
       AbstractMap.SimpleEntry<Thread, Throwable> failure = failures.remove();
       fail(failure.getKey().getName() + " failed", failure.getValue());
     }
+  }
+
+  @Test
+  void testConfigureTrustManagerIfNeededWithNullKey() {
+    TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(null, null);
+    assertNull(result);
+  }
+
+  @Test
+  void testConfigureTrustManagerIfNeededWithOcspDisabledAndNoCrlChecks() {
+    HttpClientSettingsKey key = new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS);
+
+    TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
+    assertNull(result);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = OCSPMode.class,
+      names = {"DISABLE_OCSP_CHECKS"},
+      mode = EnumSource.Mode.EXCLUDE)
+  void testConfigureTrustManagerIfNeededForOcsp(OCSPMode mode) {
+    HttpClientSettingsKey key = new HttpClientSettingsKey(mode);
+
+    TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
+    assertNotNull(result);
+    assertInstanceOf(SFTrustManager.class, result[0]);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = CertRevocationCheckMode.class,
+      names = {"DISABLED"},
+      mode = EnumSource.Mode.EXCLUDE)
+  void testConfigureTrustManagerIfNeededWithCrlModes(CertRevocationCheckMode mode) {
+    HttpClientSettingsKey key = new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS);
+    key.setRevocationCheckMode(mode);
+
+    TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
+    assertNotNull(result);
+    assertInstanceOf(SFExtendedCrlTrustManager.class, result[0]);
+  }
+
+  @Test
+  void testConfigureTrustManagerWithOcspAndCrlDisabled() {
+    HttpClientSettingsKey key = new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS);
+    key.setRevocationCheckMode(CertRevocationCheckMode.DISABLED);
+
+    TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
+    assertNull(result);
   }
 
   private static void verifyProxyUsage(

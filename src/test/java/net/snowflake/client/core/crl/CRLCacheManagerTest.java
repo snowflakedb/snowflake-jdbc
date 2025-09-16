@@ -50,7 +50,8 @@ class CRLCacheManagerTest {
     testDownloadTime = Instant.now().minus(30, ChronoUnit.MINUTES);
     testCacheEntry = new CRLCacheEntry(testCrl, testDownloadTime);
 
-    cacheManager = new CRLCacheManager(mockMemoryCache, mockFileCache, Duration.ZERO);
+    cacheManager =
+        new CRLCacheManager(mockMemoryCache, mockFileCache, Duration.ZERO, Duration.ZERO);
   }
 
   @Test
