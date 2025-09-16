@@ -62,27 +62,38 @@ public class Prober {
   }
 
   public static void main(String[] args) throws Exception {
-    Map<String, String> arguments = parseArguments(args);
+    long startTime = System.currentTimeMillis();
+    
+    try {
+      Map<String, String> arguments = parseArguments(args);
 
-    String url = "jdbc:snowflake://" + arguments.get("host");
-    Properties props = new Properties();
-    for (Map.Entry<String, String> entry : arguments.entrySet()) {
-      props.setProperty(entry.getKey(), entry.getValue());
-    }
-    setPrivateKey(props);
-    setupLogging(props);
+      String url = "jdbc:snowflake://" + arguments.get("host");
+      Properties props = new Properties();
+      for (Map.Entry<String, String> entry : arguments.entrySet()) {
+        props.setProperty(entry.getKey(), entry.getValue());
+      }
+      setPrivateKey(props);
+      setupLogging(props);
 
-    javaVersion = props.getProperty("java_version");
-    driverVersion = props.getProperty("driver_version");
+      javaVersion = props.getProperty("java_version");
+      driverVersion = props.getProperty("driver_version");
+      
 
-    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testLogin(url, props);
-    }
-    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testPutFetchGet(url, props);
-    }
-    if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testPutFetchGetFailClosed(url, props);
+      if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testLogin(url, props);
+      }
+      if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testPutFetchGet(url, props);
+      }
+      if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testPutFetchGetFailClosed(url, props);
+      }
+      
+      long duration = System.currentTimeMillis() - startTime;
+    } catch (Exception e) {
+      long duration = System.currentTimeMillis() - startTime;
+      e.printStackTrace();
+      throw e;
     }
   }
 
