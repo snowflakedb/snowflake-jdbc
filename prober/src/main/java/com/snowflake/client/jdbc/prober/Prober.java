@@ -129,15 +129,17 @@ public class Prober {
   }
 
   private static void testPutFetchGetFailClosed(String url, Properties properties) {
-    properties.put("ocspFailOpen", "false");
-    try (Connection connection = DriverManager.getConnection(url, properties);
+    Properties connectionProperties = new Properties();
+    connectionProperties.putAll(properties);
+    connectionProperties.put("ocspFailOpen", "false");
+    try (Connection connection = DriverManager.getConnection(url, connectionProperties);
          Statement statement = connection.createStatement()) {
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(1000);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
-      createWarehouse(statement, properties, "cloudprober_driver_java_create_warehouse_fail_closed");
-      createDatabase(statement, properties, "cloudprober_driver_java_create_database_fail_closed");
-      createSchema(statement, properties, "cloudprober_driver_java_create_schema_fail_closed");
+      createWarehouse(statement, connectionProperties, "cloudprober_driver_java_create_warehouse_fail_closed");
+      createDatabase(statement, connectionProperties, "cloudprober_driver_java_create_database_fail_closed");
+      createSchema(statement, connectionProperties, "cloudprober_driver_java_create_schema_fail_closed");
       createDataTable(statement, "cloudprober_driver_java_create_table_fail_closed");
       createDataStage(statement, "cloudprober_driver_java_create_stage_fail_closed");
 
