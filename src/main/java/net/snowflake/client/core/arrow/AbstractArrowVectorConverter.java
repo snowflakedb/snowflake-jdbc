@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Period;
+import java.time.Duration;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
@@ -157,6 +159,24 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
+  }
+
+  @Override
+  public Period toPeriod(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    throw new SFException(
+      ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.PERIOD_STR, "");
+  }
+
+  @Override
+  public Duration toDuration(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    throw new SFException(
+      ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.DURATION_STR, "");
   }
 
   /**
