@@ -34,9 +34,12 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static final String stageName = "test_stage_" + generateRandomString(10);
-  private static final String stageFilePath = "test_file_" + generateRandomString(10) + ".txt";
-  private static final String tableName = "test_table_" + generateRandomString(10);
+  private static final long PROCESS_ID = ProcessHandle.current().pid();
+  private static final long START_TIME = System.currentTimeMillis();
+  private static final String UNIQUE_SUFFIX = PROCESS_ID + "_" + START_TIME + "_" + generateRandomString(6);
+  private static final String stageName = "test_stage_" + UNIQUE_SUFFIX;
+  private static final String stageFilePath = "test_file_" + UNIQUE_SUFFIX + ".txt";
+  private static final String tableName = "test_table_" + UNIQUE_SUFFIX;
   private static String javaVersion;
   private static String driverVersion;
 
@@ -70,8 +73,19 @@ public class Prober {
     for (Map.Entry<String, String> entry : arguments.entrySet()) {
       props.setProperty(entry.getKey(), entry.getValue());
     }
-    setPrivateKey(props);
-    setupLogging(props);
+    try {
+      setPrivateKey(props);
+    } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+      System.err.println("Private key authentication failed: " + e.getMessage());
+      logMetric("cloudprober_driver_java_authentication_setup", Status.FAILURE);
+      System.exit(1);
+    }
+    
+    try {
+      setupLogging(props);
+    } catch (IOException e) {
+      System.err.println("Logging setup failed: " + e.getMessage());
+    }
 
       javaVersion = props.getProperty("java_version");
       driverVersion = props.getProperty("driver_version");
@@ -98,13 +112,14 @@ public class Prober {
 
   private static void testLogin(String url, Properties properties) {
     boolean success;
-    try (Connection connection = DriverManager.getConnection(url, properties)) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = DriverManager.getConnection(url, properties);
+         Statement statement = connection.createStatement()) {
       statement.setQueryTimeout(30);
-      ResultSet resultSet = statement.executeQuery("select 1");
-      resultSet.next();
-      int result = resultSet.getInt(1);
-      success = result == 1;
+      try (ResultSet resultSet = statement.executeQuery("select 1")) {
+        resultSet.next();
+        int result = resultSet.getInt(1);
+        success = result == 1;
+      }
     } catch (SQLException e) {
       success = false;
       System.err.println("Login failed: " + e.getMessage());
