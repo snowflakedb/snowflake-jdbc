@@ -34,12 +34,10 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static final long PROCESS_ID = ProcessHandle.current().pid();
-  private static final long START_TIME = System.currentTimeMillis();
-  private static final String UNIQUE_SUFFIX = PROCESS_ID + "_" + START_TIME + "_" + generateRandomString(6);
-  private static final String stageName = "test_stage_" + UNIQUE_SUFFIX;
-  private static final String stageFilePath = "test_file_" + UNIQUE_SUFFIX + ".txt";
-  private static final String tableName = "test_table_" + UNIQUE_SUFFIX;
+  
+  private static String stageName;
+  private static String stageFilePath; 
+  private static String tableName;
   private static String javaVersion;
   private static String driverVersion;
 
@@ -87,8 +85,14 @@ public class Prober {
       System.err.println("Logging setup failed: " + e.getMessage());
     }
 
-      javaVersion = props.getProperty("java_version");
-      driverVersion = props.getProperty("driver_version");
+      javaVersion = props.getProperty("java_version", "unknown");
+      driverVersion = props.getProperty("driver_version", "unknown");
+      
+      // Generate unique resource names for this test execution (same logic as before, but dynamic)
+      String uniqueSuffix = ProcessHandle.current().pid() + "_" + System.currentTimeMillis() + "_" + generateRandomString(6);
+      stageName = "test_stage_" + uniqueSuffix;
+      stageFilePath = "test_file_" + uniqueSuffix + ".txt";
+      tableName = "test_table_" + uniqueSuffix;
       
       props.setProperty("loginTimeout", "30");
       props.setProperty("networkTimeout", "60000");
