@@ -4,6 +4,7 @@ import java.time.Period;
 import java.time.Duration;
 
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
@@ -22,6 +23,19 @@ class IntervalDayTimeToDurationConverter extends AbstractArrowVectorConverter {
         if (isNull(index)) {
             return null;
         }
-        long numNanos = toLong(index);
-        return new Duration ofNanos(numNanos);
+        return Duration.ofNanos((long) index);
     }
+
+    @Override
+    public String toString(int index) throws SFException {
+        if (isNull(index)) {
+            return null;
+        }
+        return toDuration(index).toString();
+    }
+
+    @Override
+    public Object toObject(int index) throws SFException {
+        return toDuration(index);
+    }
+}

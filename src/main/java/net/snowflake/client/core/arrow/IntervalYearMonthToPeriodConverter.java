@@ -4,6 +4,7 @@ import java.time.Period;
 import java.time.Duration;
 
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
@@ -22,6 +23,19 @@ class IntervalYearMonthToPeriodConverter extends AbstractArrowVectorConverter {
         if (isNull(index)) {
             return null;
         }
-        long numMonths = toLong(index);
-        return new Period ofMonths(numMonths);
+        return Period.ofMonths(index);
     }
+
+    @Override
+    public String toString(int index) throws SFException {
+        if (isNull(index)) {
+            return null;
+        }
+        return toPeriod(index).toString();
+    }
+
+    @Override
+    public Object toObject(int index) throws SFException {
+        return toPeriod(index);
+    }
+}

@@ -265,7 +265,7 @@ public class SnowflakeUtil {
                 EXTRA_TYPES_YMINTERVAL_PERIOD, defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"), baseType);
             break;
 
-      case INTERVAL_YEAR_MONTH:
+      case INTERVAL_DAY_TIME:
         columnTypeInfo =
             new ColumnTypeInfo(
                 EXTRA_TYPES_DTINTERVAL_DURATION, defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"), baseType);
