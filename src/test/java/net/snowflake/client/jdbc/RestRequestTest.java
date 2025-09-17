@@ -287,8 +287,8 @@ public class RestRequestTest {
     testCases.add(new TestCase(302, false, true));
     testCases.add(new TestCase(303, false, true));
     testCases.add(new TestCase(304, false, true));
-    testCases.add(new TestCase(307, false, false)); // internal IP redirects retry
-    testCases.add(new TestCase(308, false, false));
+    testCases.add(new TestCase(307, false, true));
+    testCases.add(new TestCase(308, false, true));
     testCases.add(new TestCase(400, false, true));
     testCases.add(new TestCase(401, false, true));
     testCases.add(new TestCase(403, false, true)); // no retry on HTTP 403
@@ -341,8 +341,8 @@ public class RestRequestTest {
     testCases.add(new TestCase(302, true, true));
     testCases.add(new TestCase(303, true, true));
     testCases.add(new TestCase(304, true, true));
-    testCases.add(new TestCase(307, true, false));
-    testCases.add(new TestCase(308, true, false));
+    testCases.add(new TestCase(307, true, true));
+    testCases.add(new TestCase(308, true, true));
     testCases.add(new TestCase(400, true, true));
     testCases.add(new TestCase(401, true, true));
     testCases.add(new TestCase(403, true, false)); // do retry on HTTP 403

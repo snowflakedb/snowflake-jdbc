@@ -59,6 +59,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
@@ -368,7 +369,8 @@ public class HttpUtil {
               .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
-              .setRedirectStrategy(new DefaultRedirectStrategy())
+              .setRedirectStrategy(
+                  new LaxRedirectStrategy()) // handle /POST redirects and retry if failed
               .setUserAgent(buildUserAgent(userAgentSuffix)) // needed for Okta
               .disableCookieManagement() // SNOW-39748
               .setDefaultRequestConfig(DefaultRequestConfig);

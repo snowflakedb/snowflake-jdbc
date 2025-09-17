@@ -627,11 +627,7 @@ public class RestRequest {
         && // retry
         response.getStatusLine().getStatusCode() != 429
         && // request timeout
-        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403)
-        &&
-        // redirects to unreachable GS internal IP
-        response.getStatusLine().getStatusCode() != 307
-        && response.getStatusLine().getStatusCode() != 308;
+        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex) {

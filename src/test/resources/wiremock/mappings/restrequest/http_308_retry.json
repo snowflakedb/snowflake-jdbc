@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "HTTP 307 and 308 retry",
+      "scenarioName": "HTTP 308 retry",
       "newScenarioState": "Successful login",
       "request": {
         "urlPathPattern": "/session/v1/login-request.*",
@@ -40,32 +40,36 @@
       }
     },
     {
-      "scenarioName": "HTTP 307 and 308 retry",
+      "scenarioName": "HTTP 308 retry",
       "requiredScenarioState": "Successful login",
-      "newScenarioState": "Query attempt with HTTP 307 response",
-      "request": {
-        "urlPathPattern": "/queries/v1/query-request.*",
-        "method": "POST"
-      },
-      "response": {
-        "status": 307
-      }
-    },
-    {
-      "scenarioName": "HTTP 307 and 308 retry",
-      "requiredScenarioState": "Query attempt with HTTP 307 response",
       "newScenarioState": "Query attempt with HTTP 308 response",
       "request": {
         "urlPathPattern": "/queries/v1/query-request.*",
         "method": "POST"
       },
       "response": {
-        "status": 308
+        "status": 308,
+        "headers": {
+          "Location": "/temp-redirect-1"
+        }
       }
     },
     {
-      "scenarioName": "HTTP 307 and 308 retry",
+      "scenarioName": "HTTP 308 retry",
       "requiredScenarioState": "Query attempt with HTTP 308 response",
+      "newScenarioState": "308 redirect followed and times out",
+        "request": {
+            "urlPathPattern": "/temp-redirect-1",
+            "method": "POST"
+        },
+        "response": {
+          "fixedDelayMilliseconds": 65000
+        }
+    },
+    {
+      "scenarioName": "HTTP 308 retry",
+      "requiredScenarioState": "308 redirect followed and times out",
+      "newScenarioState": "Retry attempt successful",
       "request": {
         "urlPathPattern": "/queries/v1/query-request.*",
         "method": "POST"

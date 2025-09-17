@@ -81,14 +81,32 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   }
 
   @Test
-  public void testHttpClientSuccessAfter307And308Retry() {
-    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_307_and_308_retry.json");
+  public void testHttpClientSuccessAfter307Retry() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_307_retry.json");
     try {
       Properties props = getWiremockProps();
+      props.setProperty("injectSocketTimeout", "200");
       executeServerRequest(props);
-      verifyRequestCount(3, "/queries/v1/query-request.*");
+      verifyRequestCount(2, "/queries/v1/query-request.*");
     } catch (SQLException e) {
       throw new RuntimeException(e);
+    } finally {
+      System.clearProperty("injectSocketTimeout");
+    }
+  }
+
+  @Test
+  public void testHttpClientSuccessAfter308Retry() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_308_retry.json");
+    try {
+      Properties props = getWiremockProps();
+      props.setProperty("injectSocketTimeout", "200");
+      executeServerRequest(props);
+      verifyRequestCount(2, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } finally {
+      System.clearProperty("injectSocketTimeout");
     }
   }
 
