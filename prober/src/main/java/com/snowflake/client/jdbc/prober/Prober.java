@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static final String stageName = "test_stage_" + generateRandomString(10);
-  private static final String stageFilePath = "test_file_" + generateRandomString(10) + ".txt";
-  private static final String tableName = "test_table" + generateRandomString(10);
+  private static String stageName;
+  private static String stageFilePath;
+  private static String tableName;
   private static String javaVersion;
   private static String driverVersion;
 
@@ -61,8 +61,9 @@ public class Prober {
     PUT_FETCH_GET_FAIL_CLOSED
   }
 
-  public static void main(String[] args) throws Exception {
-    Map<String, String> arguments = parseArguments(args);
+  public static void main(String[] args) {
+    try {
+      Map<String, String> arguments = parseArguments(args);
 
     String url = "jdbc:snowflake://" + arguments.get("host");
     Properties props = new Properties();
@@ -72,17 +73,31 @@ public class Prober {
     setPrivateKey(props);
     setupLogging(props);
 
-    javaVersion = props.getProperty("java_version");
-    driverVersion = props.getProperty("driver_version");
+      javaVersion = props.getProperty("java_version");
+      driverVersion = props.getProperty("driver_version");
+      
+      props.setProperty("loginTimeout", "30");
+      props.setProperty("networkTimeout", "60000");
+      props.setProperty("queryTimeout", "300");
+      
+      String testId = generateRandomString(10) + "_" + System.currentTimeMillis();
+      stageName = "test_stage_" + testId;
+      stageFilePath = "test_file_" + testId + ".txt";
+      tableName = "test_table_" + testId;
 
-    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testLogin(url, props);
-    }
-    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testPutFetchGet(url, props);
-    }
-    if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
-      testPutFetchGetFailClosed(url, props);
+      if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testLogin(url, props);
+      }
+      if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testPutFetchGet(url, props);
+      }
+      if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
+        testPutFetchGetFailClosed(url, props);
+      }
+    } catch (Exception e) {
+      System.err.println("Unexpected error in main: " + e.getMessage());
+      e.printStackTrace();
+      System.exit(1);
     }
   }
 
@@ -90,13 +105,14 @@ public class Prober {
     boolean success;
     try (Connection connection = DriverManager.getConnection(url, properties)) {
       Statement statement = connection.createStatement();
+      statement.setQueryTimeout(30);
       ResultSet resultSet = statement.executeQuery("select 1");
       resultSet.next();
       int result = resultSet.getInt(1);
       success = result == 1;
     } catch (SQLException e) {
       success = false;
-      System.err.println(e.getMessage());
+      System.err.println("Login failed: " + e.getMessage());
       logMetric("cloudprober_driver_java_perform_login", Status.FAILURE);
       System.exit(1);
     }
@@ -106,6 +122,8 @@ public class Prober {
   private static void testPutFetchGet(String url, Properties properties) {
     try (Connection connection = DriverManager.getConnection(url, properties);
          Statement statement = connection.createStatement()) {
+      statement.setQueryTimeout(300);
+      
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(1000);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
@@ -123,7 +141,7 @@ public class Prober {
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
     } catch (SQLException e) {
-      System.err.println(e.getMessage());
+      System.err.println("PUT_FETCH_GET test failed: " + e.getMessage());
       System.exit(1);
     }
   }
@@ -134,6 +152,7 @@ public class Prober {
     connectionProperties.put("ocspFailOpen", "false");
     try (Connection connection = DriverManager.getConnection(url, connectionProperties);
          Statement statement = connection.createStatement()) {
+      statement.setQueryTimeout(300);
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(1000);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
@@ -151,7 +170,7 @@ public class Prober {
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
     } catch (SQLException e) {
-      System.err.println(e.getMessage());
+      System.err.println("PUT_FETCH_GET_FAIL_CLOSED test failed: " + e.getMessage());
       System.exit(1);
     }
   }

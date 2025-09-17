@@ -31,6 +31,14 @@ CURRENT_CLASSPATH="${PROBER_APP_DIR}:${JDBC_DRIVER_JAR_PATH}"
 
 exec java -cp "${CURRENT_CLASSPATH}" \
           --add-opens=java.base/java.nio=ALL-UNNAMED \
+          -Xmx512m \
+          -Xms256m \
+          -XX:+UseG1GC \
+          -XX:MaxGCPauseMillis=100 \
+          -XX:+PrintGCDetails \
+          -XX:+PrintGCTimeStamps \
+          -Djava.awt.headless=true \
+          -Duser.timezone=UTC \
           com.snowflake.client.jdbc.prober.Prober \
           "${PROBER_ARGS[@]}"
 
