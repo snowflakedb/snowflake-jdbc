@@ -38,7 +38,6 @@ exec java -cp "${CURRENT_CLASSPATH}" \
           -XX:MaxGCPauseMillis=100 \
           -XX:+HeapDumpOnOutOfMemoryError \
           -XX:HeapDumpPath=/tmp \
-          -XX:+ExitOnOutOfMemoryError \
           -Djava.awt.headless=true \
           -Duser.timezone=UTC \
           -Dfile.encoding=UTF-8 \
