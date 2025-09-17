@@ -81,6 +81,18 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
   }
 
   @Test
+  public void testHttpClientSuccessAfter307And308Retry() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_307_and_308_retry.json");
+    try {
+      Properties props = getWiremockProps();
+      executeServerRequest(props);
+      verifyRequestCount(3, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
   public void testHttpClientSuccessWithoutRetries() {
     importMappingFromResources(SCENARIOS_BASE_DIR + "/correct_response.json");
     try {
