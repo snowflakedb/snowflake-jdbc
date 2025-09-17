@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static String stageName;
-  private static String stageFilePath;
-  private static String tableName;
+  private static final String stageName = "test_stage_" + generateRandomString(10);
+  private static final String stageFilePath = "test_file_" + generateRandomString(10) + ".txt";
+  private static final String tableName = "test_table_" + generateRandomString(10);
   private static String javaVersion;
   private static String driverVersion;
 
@@ -79,11 +79,6 @@ public class Prober {
       props.setProperty("loginTimeout", "30");
       props.setProperty("networkTimeout", "60000");
       props.setProperty("queryTimeout", "300");
-      
-      String testId = generateRandomString(10) + "_" + System.currentTimeMillis();
-      stageName = "test_stage_" + testId;
-      stageFilePath = "test_file_" + testId + ".txt";
-      tableName = "test_table_" + testId;
 
       if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
         testLogin(url, props);
