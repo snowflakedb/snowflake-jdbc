@@ -7,13 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.logging.Level;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class JDK14LoggerTest {
 
   @Test
-  @Disabled
   public void testLegacyLoggerInit() throws IOException {
     System.setProperty("snowflake.jdbc.log.size", "100000");
     System.setProperty("snowflake.jdbc.log.count", "3");
@@ -29,5 +27,6 @@ public class JDK14LoggerTest {
         Paths.get(systemGetProperty("java.io.tmpdir"), "snowflake_jdbc.log").toString();
     JDK14Logger.instantiateLogger(tracingLevel, logOutputPath);
     assertTrue(logger.isDebugEnabled());
+    assertTrue(logger.isTraceEnabled());
   }
 }

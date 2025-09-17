@@ -17,8 +17,15 @@ tmp_file_with_version=${file_with_version}.tmp
 sed -E "s/( implementVersion = )(.+)(;)/\1\"${version_without_snapshot}\"\3/" src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java > $tmp_file_with_version
 mv $tmp_file_with_version $file_with_version
 
+if [[ "$version" == *-SNAPSHOT ]]; then
+sed -i '' '3a\
+- v'"$version
+" DESCRIPTION.md
+fi
+
 # add changelog entry but only when releasing version without snapshot
 if [[ "$version" == "$version_without_snapshot" ]]; then
+  sed -i '' "4s/.*/- v$version/" DESCRIPTION.md
   changelog_file=CHANGELOG.rst
   tmp_changelog_file=${changelog_file}.bck
   echo "**JDBC Driver ${version}**" > $tmp_changelog_file
