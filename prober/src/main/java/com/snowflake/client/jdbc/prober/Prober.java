@@ -149,10 +149,16 @@ public class Prober {
       downloadFile(sfConnection, "cloudprober_driver_java_perform_get");
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
-      cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
     } catch (SQLException e) {
       System.err.println("PUT_FETCH_GET test failed: " + e.getMessage());
       System.exit(1);
+    } finally {
+      try (Connection cleanupConnection = DriverManager.getConnection(url, properties);
+           Statement cleanupStatement = cleanupConnection.createStatement()) {
+        cleanupResources(cleanupStatement, "cloudprober_driver_java_cleanup_resources");
+      } catch (SQLException cleanupError) {
+        System.err.println("Cleanup connection failed: " + cleanupError.getMessage());
+      }
     }
   }
 
@@ -178,10 +184,16 @@ public class Prober {
       downloadFile(sfConnection, "cloudprober_driver_java_perform_get_fail_closed");
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
 
-      cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
     } catch (SQLException e) {
       System.err.println("PUT_FETCH_GET_FAIL_CLOSED test failed: " + e.getMessage());
       System.exit(1);
+    } finally {
+      try (Connection cleanupConnection = DriverManager.getConnection(url, connectionProperties);
+           Statement cleanupStatement = cleanupConnection.createStatement()) {
+        cleanupResources(cleanupStatement, "cloudprober_driver_java_cleanup_resources_fail_closed");
+      } catch (SQLException cleanupError) {
+        System.err.println("Cleanup connection failed: " + cleanupError.getMessage());
+      }
     }
   }
 
@@ -225,25 +237,55 @@ public class Prober {
   }
 
   private static void cleanupResources(Statement statement, String metricName) {
+    boolean allCleanupSucceeded = true;
+    
+    // First remove files from stage BEFORE dropping the stage
     try {
-      statement.executeQuery("REMOVE @" + stageName);
-      statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
-      logMetric(metricName, Status.SUCCESS);
+      statement.executeQuery("REMOVE @" + stageName + "/" + stageFilePath);
+      System.err.println("Successfully removed file: " + stageFilePath);
     } catch (SQLException e) {
-      System.err.println("Error during cleanup: " + e.getMessage());
+      System.err.println("Warning: Could not remove file " + stageFilePath + ": " + e.getMessage());
+      allCleanupSucceeded = false;
+    }
+    
+    try {
+      statement.executeQuery("DROP STAGE IF EXISTS " + stageName);
+      System.err.println("Successfully dropped stage: " + stageName);
+    } catch (SQLException e) {
+      System.err.println("Warning: Could not drop stage " + stageName + ": " + e.getMessage());
+      allCleanupSucceeded = false;
+    }
+    
+    try {
+      statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
+      System.err.println("Successfully dropped table: " + tableName);
+    } catch (SQLException e) {
+      System.err.println("Warning: Could not drop table " + tableName + ": " + e.getMessage());
+      allCleanupSucceeded = false;
+    }
+    
+    if (allCleanupSucceeded) {
+      System.err.println("All cleanup operations completed successfully");
+      logMetric(metricName, Status.SUCCESS);
+    } else {
+      System.err.println("Some cleanup operations failed, but test was successful");
       logMetric(metricName, Status.FAILURE);
-      System.exit(1);
     }
   }
 
   private static void compareFetchedDataAndFile(Statement statement, List<String> csv, String metricName) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id");
-    for (int i = 1; i < csv.size(); i++) {
-      String csvRow = csv.get(i);
-      String[] csvValues = csvRow.split(",", 3);
-      int listId = Integer.parseInt(csvValues[0]);
-      String listName = csvValues[1];
-      String listEmail = csvValues[2];
+    try (ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id")) {
+      for (int i = 1; i < csv.size(); i++) {
+        String csvRow = csv.get(i);
+        String[] csvValues = csvRow.split(",", 3);
+        if (csvValues.length < 3) {
+          System.err.println("Invalid CSV row: " + csvRow);
+          logMetric(metricName, Status.FAILURE);
+          return;
+        }
+        int listId = Integer.parseInt(csvValues[0]);
+        String listName = csvValues[1];
+        String listEmail = csvValues[2];
 
       if (!resultSet.next()) {
         logMetric(metricName, Status.FAILURE);
@@ -256,34 +298,41 @@ public class Prober {
       boolean idMatch = (dbId == listId);
       boolean nameMatch = dbName.equals(listName);
       boolean emailMatch = dbEmail.equals(listEmail);
-      if (!(idMatch && nameMatch && emailMatch)) {
-        logMetric(metricName, Status.FAILURE);
-        return;
+        if (!(idMatch && nameMatch && emailMatch)) {
+          logMetric(metricName, Status.FAILURE);
+          return;
+        }
       }
+      logMetric(metricName, Status.SUCCESS);
     }
-    logMetric(metricName, Status.SUCCESS);
   }
 
   private static String downloadFile(SnowflakeConnection sfConnection, String metricName) throws SQLException {
-    InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
-    List<String> lines = reader.lines().collect(Collectors.toList());
-    if (lines.size() == 1001) {
-      logMetric(metricName, Status.SUCCESS);
-    } else {
+    try (InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
+         BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8))) {
+      List<String> lines = reader.lines().collect(Collectors.toList());
+      if (lines.size() == 1001) {
+        logMetric(metricName, Status.SUCCESS);
+      } else {
+        logMetric(metricName, Status.FAILURE);
+      }
+      return lines.stream().collect(Collectors.joining(System.lineSeparator()));
+    } catch (Exception e) {
+      System.err.println("Error downloading file: " + e.getMessage());
       logMetric(metricName, Status.FAILURE);
+      throw new SQLException("Download failed", e);
     }
-    return lines.stream().collect(Collectors.joining(System.lineSeparator()));
   }
 
   private static void fetchAndVerifyRows(Statement statement, String metricName) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
-    if (resultSet.next()) {
-      int rowCount = resultSet.getInt(1);
-      boolean success = rowCount == 1000;
-      logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
-    } else {
-      logMetric(metricName, Status.FAILURE);
+    try (ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+      if (resultSet.next()) {
+        int rowCount = resultSet.getInt(1);
+        boolean success = rowCount == 1000;
+        logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
+      } else {
+        logMetric(metricName, Status.FAILURE);
+      }
     }
   }
 
