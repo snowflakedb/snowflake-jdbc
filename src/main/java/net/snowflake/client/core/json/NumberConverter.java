@@ -3,8 +3,8 @@ package net.snowflake.client.core.json;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Types;
-import java.time.Period;
 import java.time.Duration;
+import java.time.Period;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -30,35 +30,35 @@ public class NumberConverter {
 
   public Period getPeriod(Object obj, int columnType) throws SFException {
     if (obj == null) {
-        return null;
+      return null;
     }
     try {
-        if (obj instanceof String) {
-            String objString = (String) obj;
-            return Period.ofMonths(Integer.parseInt(objString));
-        } else {
-            return Period.ofMonths(((Number) obj).intValue());
-        }
+      if (obj instanceof String) {
+        String objString = (String) obj;
+        return Period.ofMonths(Integer.parseInt(objString));
+      } else {
+        return Period.ofMonths(((Number) obj).intValue());
+      }
     } catch (NumberFormatException ex) {
-        throw new SFException(
-                ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.PERIOD_STR, obj);
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.PERIOD_STR, obj);
     }
   }
 
   public Duration getDuration(Object obj, int columnType) throws SFException {
     if (obj == null) {
-        return null;
+      return null;
     }
     try {
-        if (obj instanceof String) {
-            String objString = (String) obj;
-            return Duration.ofNanos(Long.parseLong(objString));
-        } else {
-            return Duration.ofNanos(((Number) obj).longValue());
-        }
+      if (obj instanceof String) {
+        String objString = (String) obj;
+        return Duration.ofNanos(Long.parseLong(objString));
+      } else {
+        return Duration.ofNanos(((Number) obj).longValue());
+      }
     } catch (NumberFormatException nfe) {
-        throw new SFException(
-                ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.DURATION_STR, obj);
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.DURATION_STR, obj);
     }
   }
 

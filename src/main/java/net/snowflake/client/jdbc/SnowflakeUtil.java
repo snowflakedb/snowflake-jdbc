@@ -262,14 +262,18 @@ public class SnowflakeUtil {
       case INTERVAL_YEAR_MONTH:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_YMINTERVAL_PERIOD, defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"), baseType);
-            break;
+                EXTRA_TYPES_YMINTERVAL_PERIOD,
+                defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"),
+                baseType);
+        break;
 
       case INTERVAL_DAY_TIME:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_DTINTERVAL_DURATION, defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"), baseType);
-            break;
+                EXTRA_TYPES_DTINTERVAL_DURATION,
+                defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"),
+                baseType);
+        break;
 
       case TIMESTAMP_NTZ:
         // if the column type is changed to EXTRA_TYPES_TIMESTAMP_NTZ, update also JsonSqlInput

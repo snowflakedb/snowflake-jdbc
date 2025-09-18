@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.Period;
 import java.time.Duration;
+import java.time.Period;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 
@@ -165,7 +165,7 @@ public interface ArrowVectorConverter {
    * @return Duration converted from arrow vector
    * @throws SFException invalid data conversion
    */
-    Duration toDuration(int index) throws SFException;
+  Duration toDuration(int index) throws SFException;
 
   /**
    * Convert value in arrow vector to Object
