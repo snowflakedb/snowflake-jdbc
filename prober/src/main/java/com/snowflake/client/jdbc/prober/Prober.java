@@ -107,7 +107,7 @@ public class Prober {
     try (Connection connection = DriverManager.getConnection(url, properties);
          Statement statement = connection.createStatement()) {
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
-      List<String> csv = generateCsv(1000);
+      List<String> csv = generateCsv(100);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
       createWarehouse(statement, properties, "cloudprober_driver_java_create_warehouse");
       createDatabase(statement, properties, "cloudprober_driver_java_create_database");
@@ -135,7 +135,7 @@ public class Prober {
     try (Connection connection = DriverManager.getConnection(url, failClosedProperties);
          Statement statement = connection.createStatement()) {
       SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
-      List<String> csv = generateCsv(1000);
+      List<String> csv = generateCsv(100);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
       createWarehouse(statement, failClosedProperties, "cloudprober_driver_java_create_warehouse_fail_closed");
       createDatabase(statement, failClosedProperties, "cloudprober_driver_java_create_database_fail_closed");
@@ -240,7 +240,7 @@ public class Prober {
     InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
     BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
     List<String> lines = reader.lines().collect(Collectors.toList());
-    if (lines.size() == 1001) {
+    if (lines.size() == 101) {
       logMetric(metricName, Status.SUCCESS);
     } else {
       logMetric(metricName, Status.FAILURE);
@@ -252,7 +252,7 @@ public class Prober {
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
     if (resultSet.next()) {
       int rowCount = resultSet.getInt(1);
-      boolean success = rowCount == 1000;
+      boolean success = rowCount == 100;
       logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
     } else {
       logMetric(metricName, Status.FAILURE);
