@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -44,6 +45,30 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
         assertEquals(Duration.ofNanos(100_000_000), durationValueSB8);
         Duration nullDurationSB8 = rsSB8.getObject(2, Duration.class);
         assertNull(nullDurationSB8);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testIntervalDayTimeBindingBasicTypes(String queryResultFormat) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement ignored = createStatement(con, queryResultFormat)) {
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL SECOND, ?::INTERVAL DAY TO SECOND")) {
+
+          ps.setObject(1, "0 0:0:1.2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(2, "1", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setNull(3, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            assertTrue(rs.next());
+            assertEquals(Duration.ofNanos(1_200_000_000), rs.getObject(1, Duration.class));
+            assertEquals(Duration.ofNanos(1_000_000_000), rs.getObject(2, Duration.class));
+            assertNull(rs.getObject(3));
+          }
+        }
       }
     }
   }

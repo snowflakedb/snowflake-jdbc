@@ -80,9 +80,9 @@ public class SnowflakeUtil {
 
   public static final int EXTRA_TYPES_DECFLOAT = 50004;
 
-  public static final int EXTRA_TYPES_YMINTERVAL_PERIOD = 50005;
+  public static final int EXTRA_TYPES_YEAR_MONTH_INTERVAL = 50005;
 
-  public static final int EXTRA_TYPES_DTINTERVAL_DURATION = 50006;
+  public static final int EXTRA_TYPES_DAY_TIME_INTERVAL = 50006;
 
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
@@ -262,7 +262,7 @@ public class SnowflakeUtil {
       case INTERVAL_YEAR_MONTH:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_YMINTERVAL_PERIOD,
+                EXTRA_TYPES_YEAR_MONTH_INTERVAL,
                 defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"),
                 baseType);
         break;
@@ -270,7 +270,7 @@ public class SnowflakeUtil {
       case INTERVAL_DAY_TIME:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_DTINTERVAL_DURATION,
+                EXTRA_TYPES_DAY_TIME_INTERVAL,
                 defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"),
                 baseType);
         break;

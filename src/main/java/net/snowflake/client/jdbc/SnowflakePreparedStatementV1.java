@@ -472,6 +472,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DECFLOAT) {
       setDecfloat(parameterIndex, (BigDecimal) x);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL) {
+      setYearMonthInterval(parameterIndex, (String) x);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL) {
+      setDayTimeInterval(parameterIndex, (String) x);
     } else {
       logger.trace(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -482,6 +486,30 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSFBaseSession()),
               String.valueOf(x));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setYearMonthInterval(int parameterIndex, String x) throws SQLException {
+    logger.trace("setYearMonthInterval(parameterIndex: {}, String x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.INTERVAL_YEAR_MONTH.name(), x);
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setDayTimeInterval(int parameterIndex, String x) throws SQLException {
+    logger.trace("setDayTimeInterval(parameterIndex: {}, String x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.INTERVAL_DAY_TIME.name(), x);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }

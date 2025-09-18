@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -54,6 +55,32 @@ public class IntervalYearMonthTypeLatestIT extends BaseJDBCTest {
         assertEquals(Period.ofMonths(14), periodValueSB2);
         Period nullPeriodSB2 = rsSB2.getObject(2, Period.class);
         assertNull(nullPeriodSB2);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testIntervalYearMonthBindingBasicTypes(String queryResultFormat) throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement ignored = createStatement(con, queryResultFormat)) {
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT ?::INTERVAL YEAR TO MONTH, ?::INTERVAL YEAR, ?::INTERVAL MONTH, ?::INTERVAL YEAR TO MONTH")) {
+
+          ps.setObject(1, "1-2", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(2, "2", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(3, "5", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setNull(4, SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            assertTrue(rs.next());
+            assertEquals(Period.ofMonths(14), rs.getObject(1, Period.class));
+            assertEquals(Period.ofMonths(24), rs.getObject(2, Period.class));
+            assertEquals(Period.ofMonths(5), rs.getObject(3, Period.class));
+            assertNull(rs.getObject(4));
+          }
+        }
       }
     }
   }

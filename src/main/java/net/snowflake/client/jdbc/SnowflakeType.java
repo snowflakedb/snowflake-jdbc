@@ -200,10 +200,10 @@ public enum SnowflakeType {
         retval = Types.TIMESTAMP_WITH_TIMEZONE;
         break;
       case "interval_year_month":
-        retval = SnowflakeUtil.EXTRA_TYPES_YMINTERVAL_PERIOD;
+        retval = SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL;
         break;
       case "interval_day_time":
-        retval = SnowflakeUtil.EXTRA_TYPES_DTINTERVAL_DURATION;
+        retval = SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL;
         break;
       case "variant":
         retval = Types.OTHER;
