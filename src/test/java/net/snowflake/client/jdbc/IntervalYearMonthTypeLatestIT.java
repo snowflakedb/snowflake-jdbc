@@ -23,15 +23,37 @@ public class IntervalYearMonthTypeLatestIT extends BaseJDBCTest {
   public void testIntervalYearMonthConversions(String queryResultFormat) throws SQLException {
     try (Connection con = getConnection()) {
       try (Statement stmt = createStatement(con, queryResultFormat)) {
-        ResultSet rs =
+        // Test Period conversions with Interval Year-Month SB8
+        ResultSet rsSB8 =
             stmt.executeQuery("SELECT '1-2'::INTERVAL YEAR TO MONTH, NULL::INTERVAL YEAR TO MONTH");
-        assertTrue(rs.next());
+        assertTrue(rsSB8.next());
 
-        // Test Period conversions
-        Period periodValue = rs.getObject(1, Period.class);
-        assertEquals(Period.ofMonths(14), periodValue);
-        Period nullPeriod = rs.getObject(2, Period.class);
-        assertNull(nullPeriod);
+        Period periodValueSB8 = rsSB8.getObject(1, Period.class);
+        assertEquals(Period.ofMonths(14), periodValueSB8);
+        Period nullPeriodSB8 = rsSB8.getObject(2, Period.class);
+        assertNull(nullPeriodSB8);
+
+        // Test Period conversions with Interval Year-Month SB4
+        ResultSet rsSB4 =
+            stmt.executeQuery(
+                "SELECT '1-2'::INTERVAL YEAR(7) TO MONTH, NULL::INTERVAL YEAR(7) TO MONTH");
+        assertTrue(rsSB4.next());
+
+        Period periodValueSB4 = rsSB4.getObject(1, Period.class);
+        assertEquals(Period.ofMonths(14), periodValueSB4);
+        Period nullPeriodSB4 = rsSB4.getObject(2, Period.class);
+        assertNull(nullPeriodSB4);
+
+        // Test Period conversions with Interval Year-Month SB2
+        ResultSet rsSB2 =
+            stmt.executeQuery(
+                "SELECT '1-2'::INTERVAL YEAR(2) TO MONTH, NULL::INTERVAL YEAR(2) TO MONTH");
+        assertTrue(rsSB2.next());
+
+        Period periodValueSB2 = rsSB2.getObject(1, Period.class);
+        assertEquals(Period.ofMonths(14), periodValueSB2);
+        Period nullPeriodSB2 = rsSB2.getObject(2, Period.class);
+        assertNull(nullPeriodSB2);
       }
     }
   }
