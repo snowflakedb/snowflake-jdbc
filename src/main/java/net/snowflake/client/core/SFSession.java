@@ -773,6 +773,9 @@ public class SFSession extends SFBaseSession {
         .setWorkloadIdentityEntraResource(
             (String)
                 connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_ENTRA_RESOURCE))
+        .setWorkloadIdentityImpersonationPath(
+            (String)
+                connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_IMPERSONATION_PATH))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(

@@ -65,6 +65,7 @@ public class SFLoginInput {
   private String workloadIdentityProvider;
   private WorkloadIdentityAttestation workloadIdentityAttestation;
   private String workloadIdentityEntraResource;
+  private String workloadIdentityImpersonationPath;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -626,6 +627,16 @@ public class SFLoginInput {
 
   public SFLoginInput setWorkloadIdentityEntraResource(String workloadIdentityEntraResource) {
     this.workloadIdentityEntraResource = workloadIdentityEntraResource;
+    return this;
+  }
+
+  public String getWorkloadIdentityImpersonationPath() {
+    return workloadIdentityImpersonationPath;
+  }
+
+  public SFLoginInput setWorkloadIdentityImpersonationPath(
+      String workloadIdentityImpersonationPath) {
+    this.workloadIdentityImpersonationPath = workloadIdentityImpersonationPath;
     return this;
   }
 
