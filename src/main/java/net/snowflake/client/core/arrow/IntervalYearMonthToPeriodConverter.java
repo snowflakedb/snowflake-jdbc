@@ -36,11 +36,14 @@ class IntervalYearMonthToPeriodConverter extends AbstractArrowVectorConverter {
       return null;
     }
     if (smallIntVector != null) {
-      return Period.ofMonths(smallIntVector.get(index));
+      short value = smallIntVector.get(index);
+      return Period.of(value / 12, value % 12, 0);
     } else if (intVector != null) {
-      return Period.ofMonths(intVector.get(index));
+      int value = intVector.get(index);
+      return Period.of(value / 12, value % 12, 0);
     } else {
-      return Period.ofMonths((int) bigIntVector.get(index));
+      long value = bigIntVector.get(index);
+      return Period.of((int) (value / 12), (int) (value % 12), 0);
     }
   }
 

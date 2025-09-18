@@ -33,12 +33,14 @@ public class NumberConverter {
       return null;
     }
     try {
+      long value;
       if (obj instanceof String) {
         String objString = (String) obj;
-        return Period.ofMonths(Integer.parseInt(objString));
+        value = Long.parseLong(objString);
       } else {
-        return Period.ofMonths(((Number) obj).intValue());
+        value = ((Number) obj).longValue();
       }
+      return Period.of((int) (value / 12), (int) (value % 12), 0);
     } catch (NumberFormatException ex) {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.PERIOD_STR, obj);
