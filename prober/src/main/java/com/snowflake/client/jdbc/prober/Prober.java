@@ -88,9 +88,9 @@ public class Prober {
 
   private static void testLogin(String url, Properties properties) {
     boolean success;
-    try (Connection connection = DriverManager.getConnection(url, properties)) {
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery("select 1");
+    try (Connection connection = DriverManager.getConnection(url, properties);
+         Statement statement = connection.createStatement();
+         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       int result = resultSet.getInt(1);
       success = result == 1;
@@ -122,9 +122,14 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
+      
+      csv.clear();
+      csvFile = null;
     } catch (SQLException e) {
       System.err.println(e.getMessage());
       System.exit(1);
+    } finally {
+      System.gc();
     }
   }
 
@@ -150,9 +155,14 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
+      
+      csv.clear();
+      csvFile = null;
     } catch (SQLException e) {
       System.err.println(e.getMessage());
       System.exit(1);
+    } finally {
+      System.gc();
     }
   }
 
@@ -160,8 +170,9 @@ public class Prober {
   private static void createDatabase(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String databaseName = properties.getProperty("database", "test_db");
-      statement.executeQuery("CREATE DATABASE IF NOT EXISTS " + databaseName);
-      statement.executeQuery("USE database " + databaseName);
+      try (ResultSet rs1 = statement.executeQuery("CREATE DATABASE IF NOT EXISTS " + databaseName);
+           ResultSet rs2 = statement.executeQuery("USE database " + databaseName)) {
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating database: " + e.getMessage());
@@ -173,8 +184,9 @@ public class Prober {
   private static void createSchema(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String schemaName = properties.getProperty("schema", "test_schema");
-      statement.executeQuery("CREATE SCHEMA IF NOT EXISTS " + schemaName);
-      statement.executeQuery("USE SCHEMA " + schemaName);
+      try (ResultSet rs1 = statement.executeQuery("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+           ResultSet rs2 = statement.executeQuery("USE SCHEMA " + schemaName)) {
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating schema: " + e.getMessage());
@@ -186,8 +198,9 @@ public class Prober {
   private static void createWarehouse(Statement statement, Properties properties, String metricName) throws SQLException {
     try {
       String warehouseName = properties.getProperty("warehouse", "test_wh");
-      statement.executeQuery("CREATE WAREHOUSE IF NOT EXISTS " + warehouseName + " WAREHOUSE_SIZE='X-SMALL';");
-      statement.executeQuery("USE WAREHOUSE " + warehouseName);
+      try (ResultSet rs1 = statement.executeQuery("CREATE WAREHOUSE IF NOT EXISTS " + warehouseName + " WAREHOUSE_SIZE='X-SMALL';");
+           ResultSet rs2 = statement.executeQuery("USE WAREHOUSE " + warehouseName)) {
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error creating warehouse: " + e.getMessage());
@@ -198,8 +211,9 @@ public class Prober {
 
   private static void cleanupResources(Statement statement, String metricName) {
     try {
-      statement.executeQuery("REMOVE @" + stageName);
-      statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
+      try (ResultSet rs1 = statement.executeQuery("REMOVE @" + stageName);
+           ResultSet rs2 = statement.executeQuery("DROP TABLE IF EXISTS " + tableName)) {
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during cleanup: " + e.getMessage());
@@ -209,59 +223,64 @@ public class Prober {
   }
 
   private static void compareFetchedDataAndFile(Statement statement, List<String> csv, String metricName) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id");
-    for (int i = 1; i < csv.size(); i++) {
-      String csvRow = csv.get(i);
-      String[] csvValues = csvRow.split(",", 3);
-      int listId = Integer.parseInt(csvValues[0]);
-      String listName = csvValues[1];
-      String listEmail = csvValues[2];
+    try (ResultSet resultSet = statement.executeQuery("select id,name,email from " + tableName + " order by id")) {
+      for (int i = 1; i < csv.size(); i++) {
+        String csvRow = csv.get(i);
+        String[] csvValues = csvRow.split(",", 3);
+        int listId = Integer.parseInt(csvValues[0]);
+        String listName = csvValues[1];
+        String listEmail = csvValues[2];
 
-      if (!resultSet.next()) {
-        logMetric(metricName, Status.FAILURE);
-        return;
-      }
-      int dbId = resultSet.getInt(1);
-      String dbName = resultSet.getString(2);
-      String dbEmail = resultSet.getString(3);
+        if (!resultSet.next()) {
+          logMetric(metricName, Status.FAILURE);
+          return;
+        }
+        int dbId = resultSet.getInt(1);
+        String dbName = resultSet.getString(2);
+        String dbEmail = resultSet.getString(3);
 
-      boolean idMatch = (dbId == listId);
-      boolean nameMatch = dbName.equals(listName);
-      boolean emailMatch = dbEmail.equals(listEmail);
-      if (!(idMatch && nameMatch && emailMatch)) {
-        logMetric(metricName, Status.FAILURE);
-        return;
+        boolean idMatch = (dbId == listId);
+        boolean nameMatch = dbName.equals(listName);
+        boolean emailMatch = dbEmail.equals(listEmail);
+        if (!(idMatch && nameMatch && emailMatch)) {
+          logMetric(metricName, Status.FAILURE);
+          return;
+        }
       }
+      logMetric(metricName, Status.SUCCESS);
     }
-    logMetric(metricName, Status.SUCCESS);
   }
 
   private static String downloadFile(SnowflakeConnection sfConnection, String metricName) throws SQLException {
-    InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8));
-    List<String> lines = reader.lines().collect(Collectors.toList());
-    if (lines.size() == 101) {
-      logMetric(metricName, Status.SUCCESS);
-    } else {
-      logMetric(metricName, Status.FAILURE);
+    try (InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
+         BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8))) {
+      List<String> lines = reader.lines().collect(Collectors.toList());
+      if (lines.size() == 101) {
+        logMetric(metricName, Status.SUCCESS);
+      } else {
+        logMetric(metricName, Status.FAILURE);
+      }
+      return lines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
-    return lines.stream().collect(Collectors.joining(System.lineSeparator()));
   }
 
   private static void fetchAndVerifyRows(Statement statement, String metricName) throws SQLException {
-    ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName);
-    if (resultSet.next()) {
-      int rowCount = resultSet.getInt(1);
-      boolean success = rowCount == 100;
-      logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
-    } else {
-      logMetric(metricName, Status.FAILURE);
+    try (ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+      if (resultSet.next()) {
+        int rowCount = resultSet.getInt(1);
+        boolean success = rowCount == 100;
+        logMetric(metricName, success ? Status.SUCCESS : Status.FAILURE);
+      } else {
+        logMetric(metricName, Status.FAILURE);
+      }
     }
   }
 
   private static void loadFileIntoTable(Statement statement, String metricName) throws SQLException {
     try {
-      statement.executeQuery("copy into " + tableName + " from @" + stageName + "/" + stageFilePath + " FILE_FORMAT = (TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '\"' SKIP_HEADER = 1);");
+      try (ResultSet rs = statement.executeQuery("copy into " + tableName + " from @" + stageName + "/" + stageFilePath + " FILE_FORMAT = (TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '\"' SKIP_HEADER = 1);")) {
+        // ResultSet automatically closed by try-with-resources
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during copy into table: " + e.getMessage());
@@ -283,12 +302,13 @@ public class Prober {
 
   private static void createDataTable(Statement statement, String metricName) throws SQLException {
     try {
-      ResultSet resultSet = statement.executeQuery("CREATE OR REPLACE TABLE " + tableName + " (id int, name text, email text)");
-      if (resultSet.next()) {
-        boolean result = resultSet.getString(1).equals("Table " + tableName.toUpperCase() + " successfully created.");
-        logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
-      } else {
-        logMetric(metricName, Status.FAILURE);
+      try (ResultSet resultSet = statement.executeQuery("CREATE OR REPLACE TABLE " + tableName + " (id int, name text, email text)")) {
+        if (resultSet.next()) {
+          boolean result = resultSet.getString(1).equals("Table " + tableName.toUpperCase() + " successfully created.");
+          logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
+        } else {
+          logMetric(metricName, Status.FAILURE);
+        }
       }
     } catch (SQLException e) {
       System.err.println(e.getMessage());
@@ -299,12 +319,13 @@ public class Prober {
 
   private static void createDataStage(Statement statement, String metricName) throws SQLException {
     try {
-      ResultSet createStageResult = statement.executeQuery("CREATE OR REPLACE STAGE " + stageName);
-      if (createStageResult.next()) {
-        boolean result = createStageResult.getString(1).equals("Stage area " + stageName.toUpperCase() + " successfully created.");
-        logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
-      } else {
-        logMetric(metricName, Status.FAILURE);
+      try (ResultSet createStageResult = statement.executeQuery("CREATE OR REPLACE STAGE " + stageName)) {
+        if (createStageResult.next()) {
+          boolean result = createStageResult.getString(1).equals("Stage area " + stageName.toUpperCase() + " successfully created.");
+          logMetric(metricName, result ? Status.SUCCESS : Status.FAILURE);
+        } else {
+          logMetric(metricName, Status.FAILURE);
+        }
       }
     } catch (SQLException e) {
       System.err.println(e.getMessage());
