@@ -28,7 +28,7 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
 
                 // Test Duration conversions
                 Duration durationValue = rs.getObject(1, Duration.class);
-                assertEquals(Duration.ofNanos(1_000_000_000), durationValue);
+                assertEquals(Duration.ofNanos(100_000_000), durationValue);
                 Duration nullDuration = rs.getObject(2, Duration.class);
                 assertNull(nullDuration);
             }

@@ -41,6 +41,9 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import java.time.Period;
+import java.time.Duration;
+
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
@@ -1449,6 +1452,22 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (T) getTimestamp(columnIndex);
     } else if (BigDecimal.class.isAssignableFrom(type)) {
       return (T) getBigDecimal(columnIndex);
+    } else if (Period.class.isAssignableFrom(type)) {
+        try {
+            return (T) sfBaseResultSet.getPeriod(columnIndex);
+        } catch (SFException e) {
+            throw new SQLException(
+                    "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                            + type.getName());
+        }
+    } else if (Duration.class.isAssignableFrom(type)) {
+        try {
+            return (T) sfBaseResultSet.getDuration(columnIndex);
+        } catch (SFException e) {
+            throw new SQLException(
+                    "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                            + type.getName());
+        }
     } else {
       logger.debug(
           "Unsupported type passed to getObject(int columnIndex,Class<T> type): " + type.getName());

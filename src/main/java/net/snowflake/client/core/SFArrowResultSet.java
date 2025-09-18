@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Array;
 import java.sql.Date;
+import java.time.Period;
+import java.time.Duration;
 import java.sql.SQLException;
 import java.sql.SQLInput;
 import java.sql.Time;
@@ -483,6 +485,22 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     return converter.toBoolean(index);
+  }
+
+  @Override
+  public Period getPeriod(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    return converter.toPeriod(index);
+  }
+
+  @Override
+  public Duration getDuration(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    return converter.toDuration(index);
   }
 
   @Override
