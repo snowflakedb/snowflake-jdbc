@@ -261,6 +261,9 @@ public class Prober {
         logMetric(metricName, Status.FAILURE);
       }
       return lines.stream().collect(Collectors.joining(System.lineSeparator()));
+    } catch (IOException e) {
+      logMetric(metricName, Status.FAILURE);
+      throw new SQLException("Error downloading file", e);
     }
   }
 
