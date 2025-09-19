@@ -18,7 +18,7 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +37,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setUser(properties.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
@@ -105,7 +105,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
 
     PooledConnection pooledConnection;
     // Use private key authentication if available, otherwise username/password method
-    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setUser(properties.get("user"));
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));

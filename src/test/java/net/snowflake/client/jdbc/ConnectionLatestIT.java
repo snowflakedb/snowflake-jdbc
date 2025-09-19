@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -1017,7 +1018,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setUser(params.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!SnowflakeUtil.isNullOrEmpty(params.get("private_key_file"))) {
+    if (!isNullOrEmpty(params.get("private_key_file"))) {
       ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
     } else {
       ds.setPassword(params.get("password"));
