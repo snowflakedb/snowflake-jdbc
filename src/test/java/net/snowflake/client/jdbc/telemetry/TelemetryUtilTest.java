@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc.telemetry;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,5 +41,21 @@ public class TelemetryUtilTest {
         TelemetryUtil.createIBValue(null, sqlState, errorNumber, type, errorMessage, null);
     assertNull(on.get(TelemetryField.QUERY_ID.toString()));
     assertNull(on.get(TelemetryField.REASON.toString()));
+  }
+
+  @Test
+  public void testBuildCrlData() {
+    TelemetryData telemetryData = TelemetryUtil.buildCrlData("url", 123, 1, 100, 25);
+
+    ObjectNode message = telemetryData.getMessage();
+    assertNotNull(message);
+    assertEquals(
+        TelemetryField.CLIENT_CRL_STATS.toString(),
+        message.get(TelemetryField.TYPE.toString()).asText());
+    assertEquals("url", message.get(TelemetryField.CRL_URL.toString()).asText());
+    assertEquals(123, message.get(TelemetryField.CRL_BYTES.toString()).asInt());
+    assertEquals(1, message.get(TelemetryField.CRL_REVOKED_CERTIFICATES.toString()).asInt());
+    assertEquals(100, message.get(TelemetryField.TIME_DOWNLOADING_CRL.toString()).asInt());
+    assertEquals(25, message.get(TelemetryField.TIME_PARSING_CRL.toString()).asInt());
   }
 }

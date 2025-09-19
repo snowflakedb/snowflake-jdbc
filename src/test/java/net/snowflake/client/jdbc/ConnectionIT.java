@@ -17,7 +17,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -843,71 +842,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
               DriverManager.getConnection(params.get("uri"), finalProps);
             });
     assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
-  }
-
-  /**
-   * This is a manual test to check that making connections with the new regionless URL setup
-   * (org-account.snowflake.com) works correctly in the driver. Currently dev/reg do not support
-   * this format so the test must be manually run with a qa account.
-   *
-   * @throws SQLException
-   */
-  @Disabled
-  @Test
-  public void testOrgAccountUrl() throws SQLException {
-    Properties props = new Properties();
-    props.put("user", "admin");
-    props.put("password", "Password1");
-    props.put("role", "accountadmin");
-    props.put("timezone", "UTC");
-    try (Connection con =
-            DriverManager.getConnection(
-                "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com",
-                props);
-        Statement statement = con.createStatement()) {
-      statement.execute("select 1");
-    }
-  }
-
-  /**
-   * * This is a manual test to check that making connections with the new regionless URL setup
-   * (org-account.snowflake.com) works correctly with key/pair authentication in the driver.
-   * Currently dev/reg do not support this format so the test must be manually run with a qa
-   * account.
-   *
-   * @throws SQLException
-   * @throws NoSuchAlgorithmException
-   */
-  @Disabled
-  @Test
-  public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
-
-    String uri =
-        "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com";
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-    keyPairGenerator.initialize(2048, random);
-
-    KeyPair keyPair = keyPairGenerator.generateKeyPair();
-    PublicKey publicKey = keyPair.getPublic();
-    PrivateKey privateKey = keyPair.getPrivate();
-
-    Properties props = new Properties();
-    props.put("user", "admin");
-    props.put("password", "Password1");
-    props.put("role", "accountadmin");
-    props.put("timezone", "UTC");
-    try (Connection connection = DriverManager.getConnection(uri, props);
-        Statement statement = connection.createStatement()) {
-      String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
-      statement.execute(
-          String.format("alter user %s set rsa_public_key='%s'", "admin", encodePublicKey));
-    }
-
-    props.remove("password");
-    // test correct private key one
-    props.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, props)) {}
   }
 
   private Properties kvMap2Properties(
