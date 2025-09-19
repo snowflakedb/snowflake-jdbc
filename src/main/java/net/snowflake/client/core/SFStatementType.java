@@ -46,6 +46,7 @@ public enum SFStatementType {
 
   /** Data Definition Language */
   DDL(0x6000, false),
+  ALTER_USER_MANAGE_PATS(0x6000 + 0x200 + 0x44, true),
 
   /** Stage-related commands (other than LIST) */
   GET(0x7000 + 0x100 + 0x01, true),

@@ -7,6 +7,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -473,6 +474,34 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             sfrs.getStatusV2().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+      }
+    }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  public void testCreatingPatReturnsResultSetForExecute() throws SQLException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    String testToken = "TOKEN_" + SnowflakeUtil.randomAlphaNumeric(5);
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      boolean execute =
+          statement.execute(
+              "ALTER USER "
+                  + testUser
+                  + " ADD PROGRAMMATIC ACCESS TOKEN "
+                  + testToken
+                  + " ROLE_RESTRICTION = 'PUBLIC'");
+      assertTrue(execute);
+      try (ResultSet rs = statement.getResultSet()) {
+        assertTrue(rs.next());
+        assertEquals(testToken, rs.getString(1));
+        assertNotNull(rs.getString(2));
+        assertFalse(rs.getString(2).isEmpty());
+      } finally {
+        statement.execute(
+            "ALTER USER " + testUser + " REMOVE PROGRAMMATIC ACCESS TOKEN " + testToken);
       }
     }
   }
