@@ -1,6 +1,8 @@
 package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -13,6 +15,10 @@ import org.apache.arrow.vector.ValueVector;
  */
 public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter {
   protected DecimalVector decimalVector;
+  private static final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
+  private static final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
+  private static final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
+  private static final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
 
   /**
    * @param fieldVector ValueVector
@@ -174,6 +180,42 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter 
     } else {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Boolean", val.toPlainString());
+    }
+  }
+
+  @Override
+  public Duration toDuration(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    BigDecimal numNanos = toBigDecimal(index);
+    try {
+      int sign = numNanos.signum();
+      if (sign < 0) {
+        numNanos = numNanos.abs();
+      }
+      long numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
+      long numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
+      long numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+      long numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+      long numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+      String ISODuration = (sign < 0) ? "-P" : "P";
+      ISODuration =
+          ISODuration
+              + Long.toString(numDay)
+              + "DT"
+              + Long.toString(numHour)
+              + "H"
+              + Long.toString(numMinute)
+              + "M"
+              + Long.toString(numSecond)
+              + "."
+              + Long.toString(numNanoSecond)
+              + "S";
+      return Duration.parse(ISODuration);
+    } catch (ArithmeticException e) {
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Duration", numNanos.toPlainString());
     }
   }
 }

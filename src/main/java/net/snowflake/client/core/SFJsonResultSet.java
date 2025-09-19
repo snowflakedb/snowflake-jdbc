@@ -10,6 +10,8 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Period;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
@@ -150,6 +152,22 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     logger.trace("short getByte(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     return converters.getNumberConverter().getByte(obj);
+  }
+
+  @Override
+  public Period getPeriod(int columnIndex) throws SFException {
+    logger.trace("Period getPeriod(int columnIndex)", false);
+    Object obj = getObjectInternal(columnIndex);
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    return converters.getNumberConverter().getPeriod(obj, columnType);
+  }
+
+  @Override
+  public Duration getDuration(int columnIndex) throws SFException {
+    logger.trace("Duration getDuration(int columnIndex)", false);
+    Object obj = getObjectInternal(columnIndex);
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    return converters.getNumberConverter().getDuration(obj, columnType);
   }
 
   @Override

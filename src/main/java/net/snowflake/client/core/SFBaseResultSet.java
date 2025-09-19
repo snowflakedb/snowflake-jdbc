@@ -14,6 +14,8 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -88,6 +90,10 @@ public abstract class SFBaseResultSet {
   public abstract boolean getBoolean(int columnIndex) throws SFException;
 
   public abstract byte getByte(int columnIndex) throws SFException;
+
+  public abstract Period getPeriod(int columnIndex) throws SFException;
+
+  public abstract Duration getDuration(int columnIndex) throws SFException;
 
   public abstract short getShort(int columnIndex) throws SFException;
 
