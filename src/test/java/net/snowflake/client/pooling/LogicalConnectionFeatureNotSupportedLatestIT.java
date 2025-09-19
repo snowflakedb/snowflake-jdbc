@@ -1,5 +1,7 @@
 package net.snowflake.client.pooling;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,7 +12,6 @@ import java.util.Map;
 import javax.sql.PooledConnection;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

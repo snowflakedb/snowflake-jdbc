@@ -1,5 +1,6 @@
 package net.snowflake.client.pooling;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -18,7 +19,6 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestTags;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

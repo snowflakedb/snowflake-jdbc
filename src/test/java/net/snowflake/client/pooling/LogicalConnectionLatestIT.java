@@ -1,5 +1,6 @@
 package net.snowflake.client.pooling;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -27,7 +28,6 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
