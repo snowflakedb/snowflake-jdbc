@@ -27,12 +27,13 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
         // Test Duration conversions with Interval Day-Time SB16
         ResultSet rsSB16 =
             stmt.executeQuery(
-                "SELECT '0 0:0:0.1'::INTERVAL DAY TO SECOND, NULL::INTERVAL DAY TO SECOND");
+                "SELECT '999999999 23:59:59.999999999'::INTERVAL DAY TO SECOND, '-999999999 23:59:59.999999999'::INTERVAL DAY TO SECOND, NULL::INTERVAL DAY TO SECOND");
         assertTrue(rsSB16.next());
-
-        Duration durationValueSB16 = rsSB16.getObject(1, Duration.class);
-        assertEquals(Duration.ofNanos(100_000_000), durationValueSB16);
-        Duration nullDurationSB16 = rsSB16.getObject(2, Duration.class);
+        Duration durationValueMaxSB16 = rsSB16.getObject(1, Duration.class);
+        assertEquals(Duration.parse("P999999999DT23H59M59.999999999S"), durationValueMaxSB16);
+        Duration durationValueMinSB16 = rsSB16.getObject(2, Duration.class);
+        assertEquals(Duration.parse("-P999999999DT23H59M59.999999999S"), durationValueMinSB16);
+        Duration nullDurationSB16 = rsSB16.getObject(3, Duration.class);
         assertNull(nullDurationSB16);
 
         // Test Duration conversions with Interval Day-Time SB8
@@ -56,7 +57,7 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
       try (Statement ignored = createStatement(con, queryResultFormat)) {
         try (PreparedStatement ps =
             con.prepareStatement(
-                "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL SECOND, ?::INTERVAL DAY TO SECOND")) {
+                "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL DAY, ?::INTERVAL DAY TO SECOND")) {
 
           ps.setObject(1, "0 0:0:1.2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
           ps.setObject(2, "1", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
@@ -65,7 +66,7 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());
             assertEquals(Duration.ofNanos(1_200_000_000), rs.getObject(1, Duration.class));
-            assertEquals(Duration.ofNanos(1_000_000_000), rs.getObject(2, Duration.class));
+            assertEquals(Duration.parse("P1D"), rs.getObject(2, Duration.class));
             assertNull(rs.getObject(3));
           }
         }

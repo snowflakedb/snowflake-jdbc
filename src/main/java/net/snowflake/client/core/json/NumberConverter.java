@@ -52,11 +52,51 @@ public class NumberConverter {
       return null;
     }
     try {
+      BigDecimal numNanos;
       if (obj instanceof String) {
         String objString = (String) obj;
-        return Duration.ofNanos(Long.parseLong(objString));
+        numNanos = new BigDecimal(objString);
       } else {
-        return Duration.ofNanos(((Number) obj).longValue());
+        numNanos = getBigDecimal(obj, columnType);
+      }
+      long nanoInSecond = 1_000_000_000;
+      long nanoInMinute = nanoInSecond * 60;
+      long nanoInHour = nanoInMinute * 60;
+      long nanoInDay = nanoInHour * 24;
+      try {
+        int sign = numNanos.signum();
+        if (sign < 0) {
+          numNanos = numNanos.abs();
+        }
+        long numDay =
+            numNanos.divide(BigDecimal.valueOf(nanoInDay), RoundingMode.FLOOR).longValueExact();
+        long numHour =
+            (numNanos.divide(BigDecimal.valueOf(nanoInHour), RoundingMode.FLOOR).longValueExact())
+                % 24;
+        long numMinute =
+            (numNanos.divide(BigDecimal.valueOf(nanoInMinute), RoundingMode.FLOOR).longValueExact())
+                % 60;
+        long numSecond =
+            (numNanos.divide(BigDecimal.valueOf(nanoInSecond), RoundingMode.FLOOR).longValueExact())
+                % 60;
+        long numNanoSecond = numNanos.remainder(BigDecimal.valueOf(nanoInSecond)).longValueExact();
+        String ISODuration = (sign < 0) ? "-P" : "P";
+        ISODuration =
+            ISODuration
+                + Long.toString(numDay)
+                + "DT"
+                + Long.toString(numHour)
+                + "H"
+                + Long.toString(numMinute)
+                + "M"
+                + Long.toString(numSecond)
+                + "."
+                + Long.toString(numNanoSecond)
+                + "S";
+        return Duration.parse(ISODuration);
+      } catch (ArithmeticException e) {
+        throw new SFException(
+            ErrorCode.INVALID_VALUE_CONVERT, columnType, "Duration", numNanos.toPlainString());
       }
     } catch (NumberFormatException nfe) {
       throw new SFException(
