@@ -59,7 +59,7 @@ public class AbstractDriverIT {
    *     like below and these key/values have been flattened to a bunch of env variables of these
    *     junit tests.
    *     <p>"testconnection": { "SNOWFLAKE_TEST_ACCOUNT": "...", ... "SNOWFLAKE_TEST_ROLE": ".." },
-   *     "orgconnection": { "SNOWFLAKE_ORG_ACCOUNT": "...", ... "SNOWFLAKE_ORG_PORT": "443" } }
+   *     }
    */
   public static Map<String, String> getConnectionParameters(
       String accountName, String connectionType) {
@@ -107,10 +107,31 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
-    assertThat(
-        "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
-    params.put("password", password);
+    String privateKeyFile = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_FILE");
+    if (!Strings.isNullOrEmpty(privateKeyFile)) {
+      String workspace = System.getenv("WORKSPACE");
+      if (workspace != null) {
+        params.put(
+            "private_key_file", java.nio.file.Paths.get(workspace, privateKeyFile).toString());
+      } else {
+        params.put("private_key_file", privateKeyFile);
+      }
+      params.put("authenticator", "SNOWFLAKE_JWT");
+
+      String privateKeyPwd = getConnPropValueFromEnv(connectionType, "PRIVATE_KEY_PWD");
+      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
+        params.put("private_key_pwd", privateKeyPwd);
+      }
+
+    } else {
+      String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
+      if (!Strings.isNullOrEmpty(password)) {
+        params.put("password", password);
+      } else {
+        throw new IllegalStateException(
+            "Neither SNOWFLAKE_TEST_PRIVATE_KEY_FILE nor SNOWFLAKE_TEST_PASSWORD environment variable is set. Please configure one of them for authentication.");
+      }
+    }
 
     String port = getConnPropValueFromEnv(connectionType, "PORT");
     if (Strings.isNullOrEmpty(port)) {
@@ -304,9 +325,18 @@ public class AbstractDriverIT {
       properties.put("account", "snowflake");
     } else {
       properties.put("user", params.get("user"));
-      properties.put("password", params.get("password"));
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
+
+      if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
+        properties.put("private_key_file", params.get("private_key_file"));
+        properties.put("authenticator", params.get("authenticator"));
+        if (!Strings.isNullOrEmpty(params.get("private_key_pwd"))) {
+          properties.put("private_key_pwd", params.get("private_key_pwd"));
+        }
+      } else if (!Strings.isNullOrEmpty(params.get("password"))) {
+        properties.put("password", params.get("password"));
+      }
     }
     properties.put("db", params.get("database"));
     properties.put("schema", params.get("schema"));

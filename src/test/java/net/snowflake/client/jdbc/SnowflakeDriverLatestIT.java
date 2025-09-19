@@ -1508,7 +1508,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             statement.execute(
                 "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"),
             "Failed to get files");
-        assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
+        assertTrue(
+            isFileContentEqual(
+                srcPath,
+                false,
+                java.nio.file.Paths.get(destFolderCanonicalPath, "file1.gz").toString(),
+                true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
@@ -1580,7 +1585,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                 "Failed to get files with down-scoped token");
             assertTrue(
                 isFileContentEqual(
-                    srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
+                    srcPath,
+                    false,
+                    java.nio.file.Paths.get(destFolderCanonicalPath, targetFileName).toString(),
+                    true));
           }
         }
       } finally {
@@ -1755,7 +1763,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute(getCall);
 
         InputStream downloadedFileStream =
-            new FileInputStream(destFolderCanonicalPath + "/" + fileName);
+            new FileInputStream(
+                java.nio.file.Paths.get(destFolderCanonicalPath, fileName).toString());
         String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
         assertTrue(
             content.equals(downloadedFile), "downloaded content does not equal uploaded content");

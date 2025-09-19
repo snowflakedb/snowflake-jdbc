@@ -1015,7 +1015,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
-    ds.setPassword(params.get("password"));
+
+    // Use private key authentication if available, otherwise password
+    if (params.get("private_key_file") != null && !params.get("private_key_file").isEmpty()) {
+      ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
+    } else {
+      ds.setPassword(params.get("password"));
+    }
 
     connectAndExecuteSelect1(ds);
 
