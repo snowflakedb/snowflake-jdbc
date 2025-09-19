@@ -2,7 +2,6 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -1018,7 +1017,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setUser(params.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!isNullOrEmpty(params.get("private_key_file"))) {
+    if (params.get("private_key_file") != null && !params.get("private_key_file").isEmpty()) {
       ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
     } else {
       ds.setPassword(params.get("password"));

@@ -1,6 +1,5 @@
 package net.snowflake.client.pooling;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -37,7 +36,8 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setUser(properties.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!isNullOrEmpty(properties.get("private_key_file"))) {
+    if (properties.get("private_key_file") != null
+        && !properties.get("private_key_file").isEmpty()) {
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
@@ -105,7 +105,8 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
 
     PooledConnection pooledConnection;
     // Use private key authentication if available, otherwise username/password method
-    if (!isNullOrEmpty(properties.get("private_key_file"))) {
+    if (properties.get("private_key_file") != null
+        && !properties.get("private_key_file").isEmpty()) {
       poolDataSource.setUser(properties.get("user"));
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
