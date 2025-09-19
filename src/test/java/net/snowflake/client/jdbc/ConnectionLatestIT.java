@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

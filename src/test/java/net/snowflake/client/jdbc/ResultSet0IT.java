@@ -25,9 +25,11 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  protected final String uniqueTableName = "orders_jdbc_resultset0it_" + SnowflakeUtil.randomAlphaNumeric(10);
+  protected final String uniqueTableName =
+      "orders_jdbc_resultset0it_" + SnowflakeUtil.randomAlphaNumeric(10);
 
-  protected final String uniqueTestRsTableName = "test_rs_resultset0it_" + SnowflakeUtil.randomAlphaNumeric(10);
+  protected final String uniqueTestRsTableName =
+      "test_rs_resultset0it_" + SnowflakeUtil.randomAlphaNumeric(10);
 
   @BeforeEach
   public void setUp() throws SQLException {

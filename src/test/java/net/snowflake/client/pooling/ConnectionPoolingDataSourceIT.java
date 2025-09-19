@@ -7,7 +7,6 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,6 +18,7 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
