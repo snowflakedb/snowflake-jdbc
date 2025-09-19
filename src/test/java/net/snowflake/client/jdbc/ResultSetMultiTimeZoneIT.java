@@ -119,11 +119,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     return connection;
   }
 
-  private final String uniqueTableName =
-      "orders_jdbc_multitimezone_"
-          + System.currentTimeMillis()
-          + "_"
-          + (int) (Math.random() * 1000);
+  private final String uniqueTableName = "orders_jdbc_multitimezone_" + SnowflakeUtil.randomAlphaNumeric(10);
 
   @BeforeEach
   public void setUp() throws SQLException {

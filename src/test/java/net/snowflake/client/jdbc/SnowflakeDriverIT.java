@@ -50,6 +50,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -68,11 +69,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final String getCurrenTransactionStmt = "SELECT CURRENT_TRANSACTION()";
   private static Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
 
-  private static final String ORDERS_JDBC_TABLE =
-      "orders_jdbc_snowflakedriver_"
-          + System.currentTimeMillis()
-          + "_"
-          + (int) (Math.random() * 1000);
+  private static final String ORDERS_JDBC_TABLE = "orders_jdbc_snowflakedriver_" + SnowflakeUtil.randomAlphaNumeric(10);
   private static String ORDERS_JDBC = ORDERS_JDBC_TABLE.toUpperCase();
 
   @TempDir private File tmpFolder;

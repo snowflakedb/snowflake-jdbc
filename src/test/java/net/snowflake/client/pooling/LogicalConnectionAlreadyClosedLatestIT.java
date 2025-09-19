@@ -1,6 +1,6 @@
 package net.snowflake.client.pooling;
 
-import com.google.common.base.Strings;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
     poolDataSource.setUser(properties.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {

@@ -7,7 +7,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.base.Strings;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -37,7 +37,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     poolDataSource.setUser(properties.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
@@ -105,7 +105,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
 
     PooledConnection pooledConnection;
     // Use private key authentication if available, otherwise username/password method
-    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setUser(properties.get("user"));
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));

@@ -1016,11 +1016,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     String originalMaxJsonStringLength =
         System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
     System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
-    String tableName =
-        "maxJsonStringLength_table_"
-            + System.currentTimeMillis()
-            + "_"
-            + (int) (Math.random() * 1000);
+    String tableName = "maxJsonStringLength_table_" + SnowflakeUtil.randomAlphaNumeric(10);
     int colLength = 16777216;
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {

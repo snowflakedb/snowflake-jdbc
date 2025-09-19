@@ -9,13 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 /** Prepared statement integration tests */
 abstract class PreparedStatement0IT extends BaseJDBCTest {
   // Unique table name per test class to prevent race conditions
-  protected final String uniqueTableName =
-      "test_prepst_"
-          + this.getClass().getSimpleName().toLowerCase()
-          + "_"
-          + System.currentTimeMillis()
-          + "_"
-          + (int) (Math.random() * 1000);
+  protected final String uniqueTableName = "test_prepst_" + SnowflakeUtil.randomAlphaNumeric(10);
 
   Connection init() throws SQLException {
     return BaseJDBCTest.getConnection();

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Strings;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -440,7 +440,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource.setUser(properties.get("user"));
 
     // Use private key authentication if available, otherwise password
-    if (!Strings.isNullOrEmpty(properties.get("private_key_file"))) {
+    if (!SnowflakeUtil.isNullOrEmpty(properties.get("private_key_file"))) {
       poolDataSource.setPrivateKeyFile(
           properties.get("private_key_file"), properties.get("private_key_pwd"));
     } else {
