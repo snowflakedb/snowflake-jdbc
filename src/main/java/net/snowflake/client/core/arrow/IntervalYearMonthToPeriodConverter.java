@@ -14,6 +14,7 @@ class IntervalYearMonthToPeriodConverter extends AbstractArrowVectorConverter {
   private SmallIntVector smallIntVector;
   private IntVector intVector;
   private BigIntVector bigIntVector;
+  private static final int monthsInYear = 12;
 
   public IntervalYearMonthToPeriodConverter(
       ValueVector vector, int idx, DataConversionContext context) {
@@ -37,13 +38,13 @@ class IntervalYearMonthToPeriodConverter extends AbstractArrowVectorConverter {
     }
     if (smallIntVector != null) {
       short value = smallIntVector.get(index);
-      return Period.of(value / 12, value % 12, 0);
+      return Period.of(value / monthsInYear, value % monthsInYear, 0);
     } else if (intVector != null) {
       int value = intVector.get(index);
-      return Period.of(value / 12, value % 12, 0);
+      return Period.of(value / monthsInYear, value % monthsInYear, 0);
     } else {
       long value = bigIntVector.get(index);
-      return Period.of((int) (value / 12), (int) (value % 12), 0);
+      return Period.of((int) (value / monthsInYear), (int) (value % monthsInYear), 0);
     }
   }
 

@@ -15,6 +15,11 @@ public class NumberConverter {
 
   private static final BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
   private static final BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
+  private static final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
+  private static final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
+  private static final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
+  private static final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
+  private static final int monthsInYear = 12;
 
   public byte getByte(Object obj) {
     if (obj == null) {
@@ -40,7 +45,7 @@ public class NumberConverter {
       } else {
         value = ((Number) obj).longValue();
       }
-      return Period.of((int) (value / 12), (int) (value % 12), 0);
+      return Period.of((int) (value / monthsInYear), (int) (value % monthsInYear), 0);
     } catch (NumberFormatException ex) {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.PERIOD_STR, obj);
@@ -59,27 +64,16 @@ public class NumberConverter {
       } else {
         numNanos = getBigDecimal(obj, columnType);
       }
-      long nanoInSecond = 1_000_000_000;
-      long nanoInMinute = nanoInSecond * 60;
-      long nanoInHour = nanoInMinute * 60;
-      long nanoInDay = nanoInHour * 24;
       try {
         int sign = numNanos.signum();
         if (sign < 0) {
           numNanos = numNanos.abs();
         }
-        long numDay =
-            numNanos.divide(BigDecimal.valueOf(nanoInDay), RoundingMode.FLOOR).longValueExact();
-        long numHour =
-            (numNanos.divide(BigDecimal.valueOf(nanoInHour), RoundingMode.FLOOR).longValueExact())
-                % 24;
-        long numMinute =
-            (numNanos.divide(BigDecimal.valueOf(nanoInMinute), RoundingMode.FLOOR).longValueExact())
-                % 60;
-        long numSecond =
-            (numNanos.divide(BigDecimal.valueOf(nanoInSecond), RoundingMode.FLOOR).longValueExact())
-                % 60;
-        long numNanoSecond = numNanos.remainder(BigDecimal.valueOf(nanoInSecond)).longValueExact();
+        long numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
+        long numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
+        long numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+        long numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+        long numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
         String ISODuration = (sign < 0) ? "-P" : "P";
         ISODuration =
             ISODuration
