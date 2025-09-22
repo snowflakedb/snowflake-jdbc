@@ -4,4 +4,4 @@
 - v3.26.2-SNAPSHOT
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
     - Added HTTP 307 & 308 retries in case of internal IP redirects
-  
+    - Make PAT creation return `ResultSet` when using `execute` method
