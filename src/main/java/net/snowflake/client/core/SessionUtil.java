@@ -1073,7 +1073,7 @@ public class SessionUtil {
     clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
     clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
     clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
-    clientEnv.put("CRL_REVOCATION_CHECK_MODE", getCrlRevocationMode(loginInput));
+    clientEnv.put("CERT_REVOCATION_CHECK_MODE", getCertRevocationMode(loginInput));
 
     if (loginInput.getApplication() != null) {
       clientEnv.put("APPLICATION", loginInput.getApplication());
@@ -1180,7 +1180,7 @@ public class SessionUtil {
     return clientEnv;
   }
 
-  private static String getCrlRevocationMode(SFLoginInput loginInput) {
+  private static String getCertRevocationMode(SFLoginInput loginInput) {
     HttpClientSettingsKey httpClientSettings = loginInput.getHttpClientSettingsKey();
     if (httpClientSettings == null) {
       return null;
