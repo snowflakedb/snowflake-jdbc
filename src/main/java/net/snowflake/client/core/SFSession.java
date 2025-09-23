@@ -798,7 +798,11 @@ public class SFSession extends SFBaseSession {
         .setPlatformDetectionTimeoutMs(
             connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
                 ? (Integer) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
-                : 200); // Default to 200ms
+                : 200) // Default to 200ms
+        .setDisablePlatformDetection(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
+                ? getBooleanValue(connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
+                : false); // Default to false (platform detection enabled)
 
     logger.info(
         "Connecting to {} Snowflake domain",

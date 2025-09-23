@@ -155,7 +155,9 @@ public enum SFSessionProperty {
 
   ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class),
 
-  PLATFORM_DETECTION_TIMEOUT_MS("platformDetectionTimeoutMs", false, Integer.class);
+  PLATFORM_DETECTION_TIMEOUT_MS("platformDetectionTimeoutMs", false, Integer.class),
+
+  DISABLE_PLATFORM_DETECTION("disablePlatformDetection", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

@@ -15,8 +15,6 @@ import java.util.concurrent.TimeoutException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 
 import net.snowflake.client.core.auth.wif.PlatformDetectionUtil;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -53,12 +51,36 @@ public class PlatformDetector {
     private static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
     private static final String DEFAULT_GCP_METADATA_BASE_URL = "http://metadata.google.internal";
     
-    // Metadata service headers
+    // Metadata service headers and values
     private static final String AWS_METADATA_TOKEN_TTL_HEADER = "X-aws-ec2-metadata-token-ttl-seconds";
     private static final String AWS_METADATA_TOKEN_HEADER = "X-aws-ec2-metadata-token";
+    private static final String AWS_METADATA_TOKEN_TTL_VALUE = "21600";
     private static final String AZURE_METADATA_HEADER = "Metadata";
+    private static final String AZURE_METADATA_VALUE = "true";
     private static final String GCP_METADATA_FLAVOR_HEADER = "Metadata-Flavor";
     private static final String GCP_METADATA_FLAVOR_VALUE = "Google";
+    
+    // Metadata service endpoints paths
+    private static final String AWS_TOKEN_ENDPOINT_PATH = "/latest/api/token";
+    private static final String AWS_INSTANCE_IDENTITY_ENDPOINT_PATH = "/latest/dynamic/instance-identity/document";
+    private static final String AZURE_INSTANCE_ENDPOINT_PATH = "/metadata/instance?api-version=2021-02-01";
+    private static final String AZURE_IDENTITY_ENDPOINT_PATH = "/metadata/identity/oauth2/token?api-version=2018-02-01&resource=";
+    private static final String GCP_INSTANCE_ENDPOINT_PATH = "/computeMetadata/v1/instance";
+    private static final String GCP_SERVICE_ACCOUNT_ENDPOINT_PATH = "/computeMetadata/v1/instance/service-accounts/default/email";
+    
+    // Azure managed identity resource URL
+    private static final String AZURE_MANAGEMENT_RESOURCE_URL = "https://management.azure.com";
+    
+    // Response content patterns
+    private static final String AWS_INSTANCE_ID_PATTERN = "instanceId";
+    private static final String AZURE_VM_ID_PATTERN = "vmId";
+    private static final String AZURE_ACCESS_TOKEN_PATTERN = "access_token";
+    private static final String GCP_COMPUTE_METADATA_PATTERN = "computeMetadata";
+    private static final String GCP_VERSION_PATTERN = "0.1/";
+    private static final String GCP_EMAIL_PATTERN = "@";
+    
+    // Timeout suffix for platform names
+    private static final String TIMEOUT_SUFFIX = "_timeout";
 
     // Instance fields for configurable URLs and environment provider (for testing)
     private final String awsMetadataBaseUrl;
@@ -177,7 +199,7 @@ public class PlatformDetector {
             if (state == DetectionState.DETECTED) {
                 detectedPlatforms.add(platform.getValue());
             } else if (state == DetectionState.TIMEOUT) {
-                detectedPlatforms.add(platform.getValue() + "_timeout");
+                detectedPlatforms.add(platform.getValue() + TIMEOUT_SUFFIX);
             }
             // NOT_DETECTED platforms are not included in the result list
         }
@@ -209,7 +231,7 @@ public class PlatformDetector {
     }
     
 
-    private static String executeHttpGet(String uri, Map<String, String> headers, int timeoutMs, String method) 
+    private static String executeHttpGet(String uri, Map<String, String> headers, int timeoutMs)
         throws SnowflakeSQLException, IOException {
         HttpGet request = new HttpGet(uri);
         
@@ -221,15 +243,6 @@ public class PlatformDetector {
         return PlatformDetectionUtil.performPlatformDetectionRequest(request, timeoutMs / 1000.0);
     }
 
-    private static boolean checkHttpGetSuccess(String uri, int timeoutMs, Map<String, String> headers) {
-        try {
-            executeHttpGet(uri, headers, timeoutMs, "GET");
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private DetectionState isEc2Instance(int timeoutMs) {
         try {
             // First try to get IMDSv2 token
@@ -237,9 +250,9 @@ public class PlatformDetector {
             try {
                 String tokenResponse = executeHttpGet(
                     getAwsMetadataTokenEndpoint(),
-                    Collections.singletonMap("X-aws-ec2-metadata-token-ttl-seconds", "21600"),
-                    timeoutMs,
-                    "PUT");
+                    Collections.singletonMap(AWS_METADATA_TOKEN_TTL_HEADER, AWS_METADATA_TOKEN_TTL_VALUE),
+                    timeoutMs
+                );
                 if (tokenResponse != null && !tokenResponse.trim().isEmpty()) {
                     token = tokenResponse.trim();
                     logger.debug("Successfully obtained IMDSv2 token");
@@ -251,11 +264,11 @@ public class PlatformDetector {
             // Try to get instance identity document
             Map<String, String> headers = new HashMap<>();
             if (token != null) {
-                headers.put("X-aws-ec2-metadata-token", token);
+                headers.put(AWS_METADATA_TOKEN_HEADER, token);
             }
 
-            String response = executeHttpGet(getAwsMetadataIdentityEndpoint(), headers, timeoutMs, "GET");
-            if (response != null && response.contains("instanceId")) {
+            String response = executeHttpGet(getAwsMetadataIdentityEndpoint(), headers, timeoutMs);
+            if (response != null && response.contains(AWS_INSTANCE_ID_PATTERN)) {
                 logger.debug("Successfully detected EC2 instance via metadata service");
                 return DetectionState.DETECTED;
             }
@@ -282,9 +295,9 @@ public class PlatformDetector {
 
     private DetectionState isAzureVm(int timeoutMs) {
         try {
-            Map<String, String> headers = Collections.singletonMap("Metadata", "true");
-            String response = executeHttpGet(getAzureMetadataInstanceEndpoint(), headers, timeoutMs, "GET");
-            if (response != null && response.contains("vmId")) {
+            Map<String, String> headers = Collections.singletonMap(AZURE_METADATA_HEADER, AZURE_METADATA_VALUE);
+            String response = executeHttpGet(getAzureMetadataInstanceEndpoint(), headers, timeoutMs);
+            if (response != null && response.contains(AZURE_VM_ID_PATTERN)) {
                 logger.debug("Successfully detected Azure VM via metadata service");
                 return DetectionState.DETECTED;
             }
@@ -306,8 +319,8 @@ public class PlatformDetector {
     private DetectionState isManagedIdentityAvailableOnAzureVm(int timeoutMs, String resource) {
         try {
             String endpoint = getAzureManagedIdentityEndpoint(resource);
-            String response = executeHttpGet(endpoint, Collections.emptyMap(), timeoutMs, "GET");
-            if (response != null && response.contains("access_token")) {
+            String response = executeHttpGet(endpoint, Collections.emptyMap(), timeoutMs);
+            if (response != null && response.contains(AZURE_ACCESS_TOKEN_PATTERN)) {
                 logger.debug("Successfully detected Azure managed identity");
                 return DetectionState.DETECTED;
             }
@@ -322,20 +335,20 @@ public class PlatformDetector {
 
     private DetectionState hasAzureManagedIdentity(int timeoutMs) {
         // Check environment variable first (for Azure Functions)
-        if (checkAllEnvironmentVariables("IDENTITY_HEADER")) {
+        if (checkAllEnvironmentVariables(AZURE_IDENTITY_HEADER)) {
             logger.debug("Detected Azure managed identity via IDENTITY_HEADER environment variable");
             return DetectionState.DETECTED;
         }
 
         // Check via metadata service (for Azure VMs)
-        return isManagedIdentityAvailableOnAzureVm(timeoutMs, "https://management.azure.com");
+        return isManagedIdentityAvailableOnAzureVm(timeoutMs, AZURE_MANAGEMENT_RESOURCE_URL);
     }
 
     private DetectionState isGceVm(int timeoutMs) {
         try {
-            Map<String, String> headers = Collections.singletonMap("Metadata-Flavor", "Google");
-            String response = executeHttpGet(getGcpMetadataBaseEndpoint(), headers, timeoutMs, "GET");
-            if (response != null && (response.contains("computeMetadata") || response.contains("0.1/"))) {
+            Map<String, String> headers = Collections.singletonMap(GCP_METADATA_FLAVOR_HEADER, GCP_METADATA_FLAVOR_VALUE);
+            String response = executeHttpGet(getGcpMetadataBaseEndpoint(), headers, timeoutMs);
+            if (response != null && (response.contains(GCP_COMPUTE_METADATA_PATTERN) || response.contains(GCP_VERSION_PATTERN))) {
                 logger.debug("Successfully detected GCE VM via metadata service");
                 return DetectionState.DETECTED;
             }
@@ -362,9 +375,9 @@ public class PlatformDetector {
 
     private DetectionState hasGcpIdentity(int timeoutMs) {
         try {
-            Map<String, String> headers = Collections.singletonMap("Metadata-Flavor", "Google");
-            String response = executeHttpGet(getGcpServiceAccountEndpoint(), headers, timeoutMs, "GET");
-            if (response != null && response.contains("@")) {
+            Map<String, String> headers = Collections.singletonMap(GCP_METADATA_FLAVOR_HEADER, GCP_METADATA_FLAVOR_VALUE);
+            String response = executeHttpGet(getGcpServiceAccountEndpoint(), headers, timeoutMs);
+            if (response != null && response.contains(GCP_EMAIL_PATTERN)) {
                 logger.debug("Successfully detected GCP identity via metadata service");
                 return DetectionState.DETECTED;
             }
@@ -402,26 +415,26 @@ public class PlatformDetector {
 
 
     private String getAwsMetadataTokenEndpoint() {
-        return awsMetadataBaseUrl + "/latest/api/token";
+        return awsMetadataBaseUrl + AWS_TOKEN_ENDPOINT_PATH;
     }
 
     private String getAwsMetadataIdentityEndpoint() {
-        return awsMetadataBaseUrl + "/latest/dynamic/instance-identity/document";
+        return awsMetadataBaseUrl + AWS_INSTANCE_IDENTITY_ENDPOINT_PATH;
     }
 
     private String getAzureMetadataInstanceEndpoint() {
-        return azureMetadataBaseUrl + "/metadata/instance?api-version=2021-02-01";
+        return azureMetadataBaseUrl + AZURE_INSTANCE_ENDPOINT_PATH;
     }
 
     private String getAzureManagedIdentityEndpoint(String resource) {
-        return azureMetadataBaseUrl + "/metadata/identity/oauth2/token?api-version=2018-02-01&resource=" + resource;
+        return azureMetadataBaseUrl + AZURE_IDENTITY_ENDPOINT_PATH + resource;
     }
 
     private String getGcpMetadataBaseEndpoint() {
-        return gcpMetadataBaseUrl + "/computeMetadata/v1/instance";
+        return gcpMetadataBaseUrl + GCP_INSTANCE_ENDPOINT_PATH;
     }
 
     private String getGcpServiceAccountEndpoint() {
-        return gcpMetadataBaseUrl + "/computeMetadata/v1/instance/service-accounts/default/email";
+        return gcpMetadataBaseUrl + GCP_SERVICE_ACCOUNT_ENDPOINT_PATH;
     }
 } 

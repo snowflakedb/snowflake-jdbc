@@ -1145,16 +1145,20 @@ public class SessionUtil {
 
     clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
 
-    // Add platform detection
-    try {
-      PlatformDetector platformDetector = new PlatformDetector();
-      AwsAttestationService awsAttestationService = new AwsAttestationService();
-      List<String> detectedPlatforms = platformDetector.detectPlatforms(
-          loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
-      clientEnv.put("PLATFORM", detectedPlatforms);
-    } catch (Exception e) {
-      logger.debug("Platform detection failed: {}", e.getMessage());
-      // Continue without platform information
+    // Add platform detection (if not disabled)
+    if (!loginInput.isDisablePlatformDetection()) {
+      try {
+        PlatformDetector platformDetector = new PlatformDetector();
+        AwsAttestationService awsAttestationService = new AwsAttestationService();
+        List<String> detectedPlatforms = platformDetector.detectPlatforms(
+            loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
+        clientEnv.put("PLATFORM", detectedPlatforms);
+      } catch (Exception e) {
+        logger.debug("Platform detection failed: {}", e.getMessage());
+        // Continue without platform information
+      }
+    } else {
+      logger.debug("Platform detection is disabled");
     }
 
     // OAuth metrics data

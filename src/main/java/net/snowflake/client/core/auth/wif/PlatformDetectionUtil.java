@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.HttpClientSettingsKey;
