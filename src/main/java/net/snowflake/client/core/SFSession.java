@@ -794,7 +794,11 @@ public class SFSession extends SFBaseSession {
                 : false)
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
-        .setBrowserResponseTimeout(browserResponseTimeout);
+        .setBrowserResponseTimeout(browserResponseTimeout)
+        .setPlatformDetectionTimeoutMs(
+            connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
+                ? (Integer) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
+                : 200); // Default to 200ms
 
     logger.info(
         "Connecting to {} Snowflake domain",

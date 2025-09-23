@@ -1,0 +1,14 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/.*",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "0.1/\ncomputeMetadata/\n"
+      }
+    }
+  ]
+} 

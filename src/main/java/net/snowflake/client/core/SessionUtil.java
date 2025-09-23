@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,6 +55,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.PlatformDetector;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.client.util.ThrowingFunction;
@@ -1142,6 +1144,18 @@ public class SessionUtil {
     }
 
     clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+
+    // Add platform detection
+    try {
+      PlatformDetector platformDetector = new PlatformDetector();
+      AwsAttestationService awsAttestationService = new AwsAttestationService();
+      List<String> detectedPlatforms = platformDetector.detectPlatforms(
+          loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
+      clientEnv.put("PLATFORM", detectedPlatforms);
+    } catch (Exception e) {
+      logger.debug("Platform detection failed: {}", e.getMessage());
+      // Continue without platform information
+    }
 
     // OAuth metrics data
     if (authenticatorType == AuthenticatorType.OAUTH
