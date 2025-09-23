@@ -163,11 +163,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   @Override
-  public Duration getDuration(int columnIndex) throws SFException {
-    logger.trace("Duration getDuration(int columnIndex)", false);
+  public Duration getDuration(int columnIndex, int scale) throws SFException {
+    logger.trace("Duration getDuration(int columnIndex, int scale)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    return converters.getNumberConverter().getDuration(obj, columnType);
+    return converters.getNumberConverter().getDuration(obj, columnType, scale);
   }
 
   @Override

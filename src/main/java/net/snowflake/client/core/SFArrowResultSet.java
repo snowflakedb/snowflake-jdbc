@@ -496,11 +496,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public Duration getDuration(int columnIndex) throws SFException {
+  public Duration getDuration(int columnIndex, int scale) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toDuration(index);
+    return converter.toDuration(index, scale);
   }
 
   @Override

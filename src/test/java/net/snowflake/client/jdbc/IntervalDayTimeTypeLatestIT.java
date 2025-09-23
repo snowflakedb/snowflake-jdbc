@@ -39,7 +39,7 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
         // Test Duration conversions with Interval Day-Time SB8
         ResultSet rsSB8 =
             stmt.executeQuery(
-                "SELECT '0 0:0:0.1'::INTERVAL DAY(6) TO SECOND, NULL::INTERVAL DAY(6) TO SECOND");
+                "SELECT '0 0:0:0.1'::INTERVAL DAY(3) TO SECOND, NULL::INTERVAL DAY(3) TO SECOND");
         assertTrue(rsSB8.next());
 
         Duration durationValueSB8 = rsSB8.getObject(1, Duration.class);
@@ -57,17 +57,33 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
       try (Statement ignored = createStatement(con, queryResultFormat)) {
         try (PreparedStatement ps =
             con.prepareStatement(
-                "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL DAY, ?::INTERVAL DAY TO SECOND")) {
+                "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL DAY TO MINUTE, ?::INTERVAL DAY TO HOUR, ?::INTERVAL DAY, ?::INTERVAL HOUR TO SECOND, ?::INTERVAL HOUR TO MINUTE, ?::INTERVAL HOUR, ?::INTERVAL MINUTE TO SECOND, ?::INTERVAL MINUTE, ?::INTERVAL SECOND, ?::INTERVAL DAY TO SECOND")) {
 
           ps.setObject(1, "0 0:0:1.2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(2, "1", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setNull(3, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(2, "-999999999 2:3", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(3, "999999999 2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(4, "1", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(5, "999999999:1:3.56", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(6, "-999999999:3", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(7, "5", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(8, "-999999999:2.999999", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(9, "4", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(10, "-999999999.999999", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setNull(11, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
 
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());
             assertEquals(Duration.ofNanos(1_200_000_000), rs.getObject(1, Duration.class));
-            assertEquals(Duration.parse("P1D"), rs.getObject(2, Duration.class));
-            assertNull(rs.getObject(3));
+            assertEquals(Duration.parse("-P999999999DT2H3M"), rs.getObject(2, Duration.class));
+            assertEquals(Duration.parse("P999999999DT2H"), rs.getObject(3, Duration.class));
+            assertEquals(Duration.parse("P1D"), rs.getObject(4, Duration.class));
+            assertEquals(Duration.parse("PT999999999H1M3.56S"), rs.getObject(5, Duration.class));
+            assertEquals(Duration.parse("-PT999999999H3M"), rs.getObject(6, Duration.class));
+            assertEquals(Duration.parse("PT5H"), rs.getObject(7, Duration.class));
+            assertEquals(Duration.parse("-PT999999999M2.999999S"), rs.getObject(8, Duration.class));
+            assertEquals(Duration.parse("PT4M"), rs.getObject(9, Duration.class));
+            assertEquals(Duration.parse("-PT999999999.999999S"), rs.getObject(10, Duration.class));
+            assertNull(rs.getObject(11));
           }
         }
       }

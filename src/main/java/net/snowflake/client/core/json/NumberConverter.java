@@ -52,7 +52,7 @@ public class NumberConverter {
     }
   }
 
-  public Duration getDuration(Object obj, int columnType) throws SFException {
+  public Duration getDuration(Object obj, int columnType, int scale) throws SFException {
     if (obj == null) {
       return null;
     }
@@ -69,23 +69,45 @@ public class NumberConverter {
         if (sign < 0) {
           numNanos = numNanos.abs();
         }
-        long numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
-        long numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
-        long numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-        long numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-        long numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+        long numDay = 0;
+        long numHour = 0;
+        long numMinute = 0;
+        long numSecond = 0;
+        long numNanoSecond = 0;
+        if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
+          // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
+          numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
+          numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
+          numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+        } else if (scale == 7 || scale == 8 || scale == 9) {
+          // INTERVAL HOUR TO {SECOND|MINUTE|HOUR}
+          numHour = numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact();
+          numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+        } else if (scale == 10 || scale == 11) {
+          // INTERVAL MINUTE TO {SECOND|MINUTE}
+          numMinute = numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact();
+          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+        } else if (scale == 12) {
+          numSecond = numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact();
+          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+        }
         String ISODuration = (sign < 0) ? "-P" : "P";
         ISODuration =
             ISODuration
-                + Long.toString(numDay)
+                + numDay
                 + "DT"
-                + Long.toString(numHour)
+                + numHour
                 + "H"
-                + Long.toString(numMinute)
+                + numMinute
                 + "M"
-                + Long.toString(numSecond)
+                + numSecond
                 + "."
-                + Long.toString(numNanoSecond)
+                + numNanoSecond
                 + "S";
         return Duration.parse(ISODuration);
       } catch (ArithmeticException e) {

@@ -1461,7 +1461,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       }
     } else if (Duration.class.isAssignableFrom(type)) {
       try {
-        return (T) sfBaseResultSet.getDuration(columnIndex);
+        int scale = resultSetMetaData.getScale(columnIndex);
+        return (T) sfBaseResultSet.getDuration(columnIndex, scale);
       } catch (SFException e) {
         throw new SQLException(
             "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "

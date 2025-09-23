@@ -1,62 +1,83 @@
 package net.snowflake.client.core.arrow;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
-import org.apache.arrow.vector.DecimalVector;
+import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 class IntervalDayTimeToDurationConverter extends AbstractArrowVectorConverter {
 
-  private DecimalVector vector;
-  private static final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
-  private static final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
-  private static final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
-  private static final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
+  private BigIntVector vector;
+  private static final long nanoInSecond = 1_000_000_000;
+  private static final long nanoInMinute = nanoInSecond * 60;
+  private static final long nanoInHour = nanoInMinute * 60;
+  private static final long nanoInDay = nanoInHour * 24;
+  protected int sfScale;
 
   public IntervalDayTimeToDurationConverter(
       ValueVector vector, int idx, DataConversionContext context) {
     super(SnowflakeType.INTERVAL_DAY_TIME.name(), vector, idx, context);
-    this.vector = (DecimalVector) vector;
+    this.sfScale = context.getScale(idx + 1);
+    this.vector = (BigIntVector) vector;
   }
 
   @Override
-  public Duration toDuration(int index) throws SFException {
+  public Duration toDuration(int index, int scale) throws SFException {
     if (isNull(index)) {
       return null;
     }
-    BigDecimal numNanos = vector.getObject(index);
+    long numNanos = vector.getObject(index);
     try {
-      int sign = numNanos.signum();
+      int sign = Long.signum(numNanos);
       if (sign < 0) {
-        numNanos = numNanos.abs();
+        numNanos = Math.abs(numNanos);
       }
-      long numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
-      long numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
-      long numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-      long numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-      long numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+      long numDay = 0;
+      long numHour = 0;
+      long numMinute = 0;
+      long numSecond = 0;
+      long numNanoSecond = 0;
+      if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
+        // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
+        numDay = numNanos / nanoInDay;
+        numHour = (numNanos / nanoInHour) % 24;
+        numMinute = (numNanos / nanoInMinute) % 60;
+        numSecond = (numNanos / nanoInSecond) % 60;
+        numNanoSecond = numNanos % nanoInSecond;
+      } else if (scale == 7 || scale == 8 || scale == 9) {
+        // INTERVAL HOUR TO {SECOND|MINUTE|HOUR}
+        numHour = numNanos / nanoInHour;
+        numMinute = (numNanos / nanoInMinute) % 60;
+        numSecond = (numNanos / nanoInSecond) % 60;
+        numNanoSecond = numNanos % nanoInSecond;
+      } else if (scale == 10 || scale == 11) {
+        // INTERVAL MINUTE TO {SECOND|MINUTE}
+        numMinute = numNanos / nanoInMinute;
+        numSecond = (numNanos / nanoInSecond) % 60;
+        numNanoSecond = numNanos % nanoInSecond;
+      } else if (scale == 12) {
+        numSecond = numNanos / nanoInSecond;
+        numNanoSecond = numNanos % nanoInSecond;
+      }
       String ISODuration = (sign < 0) ? "-P" : "P";
       ISODuration =
           ISODuration
-              + Long.toString(numDay)
+              + numDay
               + "DT"
-              + Long.toString(numHour)
+              + numHour
               + "H"
-              + Long.toString(numMinute)
+              + numMinute
               + "M"
-              + Long.toString(numSecond)
+              + numSecond
               + "."
-              + Long.toString(numNanoSecond)
+              + numNanoSecond
               + "S";
       return Duration.parse(ISODuration);
     } catch (ArithmeticException e) {
-      throw new SFException(
-          ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Duration", numNanos.toPlainString());
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Duration", numNanos);
     }
   }
 
@@ -65,11 +86,11 @@ class IntervalDayTimeToDurationConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-    return toDuration(index).toString();
+    return toDuration(index, sfScale).toString();
   }
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toDuration(index);
+    return toDuration(index, sfScale);
   }
 }

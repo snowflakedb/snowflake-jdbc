@@ -165,7 +165,7 @@ public interface ArrowVectorConverter {
    * @return Duration converted from arrow vector
    * @throws SFException invalid data conversion
    */
-  Duration toDuration(int index) throws SFException;
+  Duration toDuration(int index, int scale) throws SFException;
 
   /**
    * Convert value in arrow vector to Object
