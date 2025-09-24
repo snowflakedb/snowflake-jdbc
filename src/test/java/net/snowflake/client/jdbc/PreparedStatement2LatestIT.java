@@ -30,10 +30,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
-  PreparedStatement2LatestIT() {
-    super("2LatestIT");
-  }
-
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareUDTF(String queryResultFormat) throws Exception {

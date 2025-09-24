@@ -35,10 +35,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement2IT extends PreparedStatement0IT {
-  PreparedStatement2IT() {
-    super("2IT");
-  }
-
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions

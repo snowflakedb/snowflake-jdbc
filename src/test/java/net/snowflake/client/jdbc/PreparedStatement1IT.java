@@ -34,10 +34,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement1IT extends PreparedStatement0IT {
 
-  PreparedStatement1IT() {
-    super("1IT");
-  }
-
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetParameterMetaData(String queryResultFormat) throws SQLException {

@@ -32,10 +32,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
-  PreparedStatement1LatestIT() {
-    super("1LatestIT");
-  }
-
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepStWithCacheEnabled(String queryResultFormat) throws SQLException {

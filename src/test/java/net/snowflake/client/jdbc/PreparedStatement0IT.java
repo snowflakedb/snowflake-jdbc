@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -30,9 +31,9 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
   protected String selectSQL = "";
   protected String createTableSQL = "";
 
-  PreparedStatement0IT(String tablePostfix) {
-    // prefixes distinguish tables from subordinate classes allowing them to run in parallel to prevent race conditions
-    initQueries(tablePostfix);
+  PreparedStatement0IT() {
+    // prefixes distinguish tables within subordinate classes allowing them to run in parallel and preventing race conditions
+    initQueries(RandomStringUtils.randomAlphanumeric(8));
   }
 
   Connection init() throws SQLException {
