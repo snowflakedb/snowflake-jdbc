@@ -12,7 +12,8 @@
       },
       "response": {
         "status": 200,
-        "body": "0.1/\ncomputeMetadata/\n"
+        "body": "0.1/\ncomputeMetadata/\n",
+        "fixedDelayMilliseconds": 1000
       }
     }
   ]

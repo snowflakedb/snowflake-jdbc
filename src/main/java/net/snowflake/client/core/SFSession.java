@@ -797,11 +797,13 @@ public class SFSession extends SFBaseSession {
         .setBrowserResponseTimeout(browserResponseTimeout)
         .setPlatformDetectionTimeoutMs(
             connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
-                ? (Integer) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
+                ? (Integer)
+                    connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
                 : 200) // Default to 200ms
         .setDisablePlatformDetection(
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
-                ? getBooleanValue(connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
                 : false); // Default to false (platform detection enabled)
 
     logger.info(

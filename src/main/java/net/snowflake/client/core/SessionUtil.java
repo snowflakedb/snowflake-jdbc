@@ -1150,8 +1150,9 @@ public class SessionUtil {
       try {
         PlatformDetector platformDetector = new PlatformDetector();
         AwsAttestationService awsAttestationService = new AwsAttestationService();
-        List<String> detectedPlatforms = platformDetector.detectPlatforms(
-            loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
+        List<String> detectedPlatforms =
+            platformDetector.detectPlatforms(
+                loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
         clientEnv.put("PLATFORM", detectedPlatforms);
       } catch (Exception e) {
         logger.debug("Platform detection failed: {}", e.getMessage());
