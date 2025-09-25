@@ -64,6 +64,7 @@ jobs:
               shell: cmd
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
@@ -99,6 +100,7 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
@@ -124,6 +126,7 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
@@ -148,6 +151,7 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
