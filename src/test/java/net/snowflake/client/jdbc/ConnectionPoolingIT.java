@@ -196,7 +196,19 @@ public class ConnectionPoolingIT {
     Properties properties = new Properties();
     // use the default connection string if it is not set in environment
     properties.put("user", this.user);
-    properties.put("password", this.password);
+
+    // Handle authentication - prioritize private key, fallback to password
+    Map<String, String> params = BaseJDBCTest.getConnectionParameters();
+    if (params.get("private_key_file") != null) {
+      properties.put("private_key_file", params.get("private_key_file"));
+      properties.put("authenticator", params.get("authenticator"));
+      if (params.get("private_key_pwd") != null) {
+        properties.put("private_key_pwd", params.get("private_key_pwd"));
+      }
+    } else if (this.password != null) {
+      properties.put("password", this.password);
+    }
+
     properties.put("account", this.account);
     properties.put("db", this.database);
     properties.put("schema", this.schema);

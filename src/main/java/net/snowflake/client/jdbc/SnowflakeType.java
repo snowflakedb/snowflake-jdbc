@@ -23,6 +23,7 @@ public enum SnowflakeType {
   BOOLEAN,
   CHAR,
   DATE,
+  DECFLOAT,
   FIXED,
   INTEGER,
   OBJECT,
@@ -66,6 +67,7 @@ public enum SnowflakeType {
       case INTEGER:
         return JavaDataType.JAVA_LONG;
       case FIXED:
+      case DECFLOAT:
         return JavaDataType.JAVA_BIGDECIMAL;
       case REAL:
         return JavaDataType.JAVA_DOUBLE;
@@ -123,6 +125,9 @@ public enum SnowflakeType {
       case "number":
       case "numeric":
         retval = Types.NUMERIC;
+        break;
+      case "decfloat":
+        retval = SnowflakeUtil.EXTRA_TYPES_DECFLOAT;
         break;
       case "decimal":
         retval = Types.DECIMAL;

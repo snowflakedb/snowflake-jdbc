@@ -8,6 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -142,5 +143,64 @@ public class SFClientConfigParserTest {
     assertEquals(
         mockCloudPrefix + resultWindowsPath,
         convertToWindowsPath(mockCloudPrefix + mockWindowsPath));
+  }
+
+  @Test
+  void testSFClientConfigConstructorAndAccessors() {
+    SFClientConfig.CommonProps props = new SFClientConfig.CommonProps();
+    props.setLogLevel("DEBUG");
+    props.setLogPath("/tmp/logs");
+    SFClientConfig config = new SFClientConfig(props);
+    config.setConfigFilePath("/etc/snowflake/config.json");
+
+    assertEquals(props, config.getCommonProps());
+    assertEquals("/etc/snowflake/config.json", config.getConfigFilePath());
+  }
+
+  @Test
+  void testCommonPropsConstructorAndAccessors() {
+    SFClientConfig.CommonProps props = new SFClientConfig.CommonProps();
+    props.setLogLevel("DEBUG");
+    props.setLogPath("/var/logs/snowflake.log");
+
+    assertEquals("DEBUG", props.getLogLevel());
+    assertEquals("/var/logs/snowflake.log", props.getLogPath());
+  }
+
+  @Test
+  void testSFClientConfigEqualsAndHashCode() {
+    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps();
+    props1.setLogLevel("INFO");
+    props1.setLogPath("/tmp");
+
+    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps();
+    props2.setLogLevel("INFO");
+    props2.setLogPath("/tmp");
+    SFClientConfig config1 = new SFClientConfig(props1);
+    SFClientConfig config2 = new SFClientConfig(props2);
+
+    assertEquals(config1, config2);
+    assertEquals(config1.hashCode(), config2.hashCode());
+
+    // Negative test
+    props2.setLogLevel("DEBUG");
+    assertNotEquals(config1, new SFClientConfig(props2));
+  }
+
+  @Test
+  void testCommonPropsEqualsAndHashCode() {
+    SFClientConfig.CommonProps props1 = new SFClientConfig.CommonProps();
+    props1.setLogLevel("WARN");
+    props1.setLogPath("/opt/logs");
+    SFClientConfig.CommonProps props2 = new SFClientConfig.CommonProps();
+    props2.setLogLevel("WARN");
+    props2.setLogPath("/opt/logs");
+
+    assertEquals(props1, props2);
+    assertEquals(props1.hashCode(), props2.hashCode());
+
+    // Negative test
+    props2.setLogLevel("ERROR");
+    assertNotEquals(props1, props2);
   }
 }
