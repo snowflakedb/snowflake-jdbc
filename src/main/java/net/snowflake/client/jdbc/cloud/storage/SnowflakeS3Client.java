@@ -5,46 +5,13 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.createDefaultExecutorServi
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.AmazonClientException;
-//import software.amazon.awssdk.core.exception.SdkException;
-import com.amazonaws.AmazonServiceException;
-//import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.client.builder.ExecutorFactory;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
-import com.amazonaws.services.s3.AmazonS3;
-//import software.amazon.awssdk.services.s3.DefaultS3Client;
-import com.amazonaws.services.s3.AmazonS3Builder;
-//import software.amazon.awssdk.services.s3.DefaultS3BaseClientBuilder;
-import com.amazonaws.services.s3.AmazonS3Client;
-//import software.amazon.awssdk.services.s3.DefaultS3Client;
-import com.amazonaws.services.s3.AmazonS3EncryptionClient;
-//import software.amazon.awssdk.services.s3.EncrptionClient;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-//import software.amazon.awssdk.services.s3.model.S3Exception;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
-//import software.amazon.awssdk.services.s3.model.CrytpoConfiguration;
 import com.amazonaws.services.s3.model.CryptoMode;
-//import software.amazon.awssdk.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
-//import software.amazon.awssdk.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.ObjectListing;
-//import software.amazon.awssdk.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-//import software.amazon.awssdk.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-//import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-//import software.amazon.awssdk.services.s3.model.S3Object;
-//import software.amazon.awssdk.services.s3.model.S3ObjectBuilder;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-//import software.amazon.awssdk.services.s3.model.StaticEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
@@ -90,37 +57,77 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsSyncClientBuilder;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Builder;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3EncryptionClient;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
+
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
+
   private static final String localFileSep = systemGetProperty("file.separator");
+
   private static final String AES = "AES";
+
   private static final String AMZ_KEY = "x-amz-key";
+
   private static final String AMZ_IV = "x-amz-iv";
+
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
+
   private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
 
   // expired AWS token error code
+
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
 
   private int encryptionKeySize = 0; // used for PUTs
-  private AmazonS3 amazonClient = null;
+
+  private S3Client amazonClient = null;
+
   private RemoteStoreFileEncryptionMaterial encMat = null;
-  private ClientConfiguration clientConfig = null;
+
+  private ClientOverrideConfiguration clientConfig = null;
+
   private Properties proxyProperties = null;
+
   private String stageRegion = null;
+
   private String stageEndPoint = null; // FIPS endpoint, if needed
+
   private SFBaseSession session = null;
+
   private boolean isClientSideEncrypted = true;
+
   private boolean isUseS3RegionalUrl = false;
 
   // socket factory used by s3 client's http client.
+
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
 
   public SnowflakeS3Client(
       Map<?, ?> stageCredentials,
-      ClientConfiguration clientConfig,
+      ClientOverrideConfiguration clientConfig,
       RemoteStoreFileEncryptionMaterial encMat,
       Properties proxyProperties,
       String stageRegion,
@@ -129,12 +136,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       SFBaseSession session,
       boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
+
     logger.debug(
         "Initializing Snowflake S3 client with encryption: {}, client side encrypted: {}",
         encMat != null,
         isClientSideEncrypted);
+
     this.session = session;
+
     this.isUseS3RegionalUrl = useS3RegionalUrl;
+
     setupSnowflakeS3Client(
         stageCredentials,
         clientConfig,
@@ -148,7 +159,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   private void setupSnowflakeS3Client(
       Map<?, ?> stageCredentials,
-      ClientConfiguration clientConfig,
+      ClientOverrideConfiguration clientConfig,
       RemoteStoreFileEncryptionMaterial encMat,
       Properties proxyProperties,
       String stageRegion,
@@ -156,62 +167,95 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       boolean isClientSideEncrypted,
       SFBaseSession session)
       throws SnowflakeSQLException {
+
     // Save the client creation parameters so that we can reuse them,
+
     // to reset the AWS client. We won't save the awsCredentials since
+
     // we will be refreshing that, every time we reset the AWS client
+
     this.clientConfig = clientConfig;
+
     this.stageRegion = stageRegion;
+
     this.encMat = encMat;
+
     this.proxyProperties = proxyProperties;
+
     this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
+
     this.session = session;
+
     this.isClientSideEncrypted = isClientSideEncrypted;
 
     logger.debug("Setting up AWS client ", false);
 
     // Retrieve S3 stage credentials
+
     String awsID = (String) stageCredentials.get("AWS_KEY_ID");
+
     String awsKey = (String) stageCredentials.get("AWS_SECRET_KEY");
+
     String awsToken = (String) stageCredentials.get("AWS_TOKEN");
 
     // initialize aws credentials
-    AWSCredentials awsCredentials =
-        (awsToken != null)
-            ? new BasicSessionCredentials(awsID, awsKey, awsToken)
-            : new BasicAWSCredentials(awsID, awsKey);
 
-    clientConfig.withSignerOverride("AWSS3V4SignerType");
+    AwsCredentials awsCredentials =
+        (awsToken != null)
+            ? AwsSessionCredentials.create(awsID, awsKey, awsToken)
+            : AwsBasicCredentials.create(awsID, awsKey);
+
+    clientConfig.signerOverride("AWSS3V4SignerType");
+
     clientConfig.getApacheHttpClientConfig().setSslSocketFactory(getSSLConnectionSocketFactory());
+
     if (session != null) {
+
       S3HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
+
     } else {
+
       S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
     }
-    AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
+
+    S3Builder<?, ?> amazonS3Builder = S3Client.builder();
+
     if (encMat != null) {
+
       byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
+
       encryptionKeySize = decodedKey.length * 8;
 
       if (encryptionKeySize == 256) {
+
         SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
+
         EncryptionMaterials encryptionMaterials = new EncryptionMaterials(queryStageMasterKey);
+
         encryptionMaterials.addDescription("queryId", encMat.getQueryId());
+
         encryptionMaterials.addDescription("smkId", Long.toString(encMat.getSmkId()));
+
         CryptoConfiguration cryptoConfig = new CryptoConfiguration(CryptoMode.EncryptionOnly);
 
         amazonS3Builder =
-            AmazonS3EncryptionClient.encryptionBuilder()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .withEncryptionMaterials(new StaticEncryptionMaterialsProvider(encryptionMaterials))
-                .withClientConfiguration(clientConfig)
-                .withCryptoConfiguration(cryptoConfig);
+            S3EncryptionClient.encryptionBuilder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .encryptionMaterials(new StaticEncryptionMaterialsProvider(encryptionMaterials))
+                .httpClientBuilder(ApacheHttpClient.builder())
+                .overrideConfiguration(clientConfig)
+                .cryptoConfiguration(cryptoConfig);
 
       } else if (encryptionKeySize == 128) {
+
         amazonS3Builder =
-            AmazonS3Client.builder()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .withClientConfiguration(clientConfig);
+            S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .httpClientBuilder(ApacheHttpClient.builder())
+                .overrideConfiguration(clientConfig);
+
       } else {
+
         throw new SnowflakeSQLLoggedException(
             QueryIdHelper.queryIdFromEncMatOr(encMat, null),
             session,
@@ -220,80 +264,109 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "unsupported key size",
             encryptionKeySize);
       }
+
     } else {
+
       amazonS3Builder =
-          AmazonS3Client.builder()
-              .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-              .withClientConfiguration(clientConfig);
+          S3Client.builder()
+              .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+              .httpClientBuilder(ApacheHttpClient.builder())
+              .overrideConfiguration(clientConfig);
     }
 
     Region region = RegionUtils.getRegion(stageRegion);
+
     if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null") {
-      amazonS3Builder.withEndpointConfiguration(
-          new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+
+      amazonS3Builder.endpointOverride(
+          new AwsSyncClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+
     } else {
+
       if (region != null) {
+
         if (this.isUseS3RegionalUrl) {
+
           String domainSuffixForRegionalUrl = getDomainSuffixForRegionalUrl(region.getName());
-          amazonS3Builder.withEndpointConfiguration(
-              new AwsClientBuilder.EndpointConfiguration(
+
+          amazonS3Builder.endpointOverride(
+              new AwsSyncClientBuilder.EndpointConfiguration(
                   "s3." + region.getName() + "." + domainSuffixForRegionalUrl, region.getName()));
+
         } else {
-          amazonS3Builder.withRegion(region.getName());
+
+          amazonS3Builder.region(Region.of(region.getName()));
         }
       }
     }
+
     // Explicitly force to use virtual address style
-    amazonS3Builder.withPathStyleAccessEnabled(false);
+
+    amazonS3Builder.pathStyleAccessEnabled(false);
 
     if (session instanceof SFSession) {
+
       List<HttpHeadersCustomizer> headersCustomizers =
           ((SFSession) session).getHttpHeadersCustomizers();
+
       if (headersCustomizers != null && !headersCustomizers.isEmpty()) {
-        amazonS3Builder.withRequestHandlers(
+
+        amazonS3Builder.requestHandlers(
             new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
       }
     }
 
-    amazonClient = (AmazonS3) amazonS3Builder.build();
+    amazonClient = (S3Client) amazonS3Builder.build();
   }
 
   static String getDomainSuffixForRegionalUrl(String regionName) {
+
     return regionName.toLowerCase().startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
   }
 
   // Returns the Max number of retry attempts
+
   @Override
   public int getMaxRetries() {
+
     if (session != null
         && session
             .getConnectionPropertiesMap()
             .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+
       return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
     }
+
     return 25;
   }
 
   // Returns the max exponent for multiplying backoff with the power of 2, the value
+
   // of 4 will give us 16secs as the max number of time to sleep before retry
+
   @Override
   public int getRetryBackoffMaxExponent() {
+
     return 4;
   }
 
   // Returns the min number of milliseconds to sleep before retry
+
   @Override
   public int getRetryBackoffMin() {
+
     return 1000;
   }
 
   @Override
   public boolean isEncrypting() {
+
     return encryptionKeySize > 0 && isClientSideEncrypted;
   }
 
   @Override
   public int getEncryptionKeySize() {
+
     return encryptionKeySize;
   }
 
@@ -301,13 +374,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    * Renew the S3 client with fresh AWS credentials/access token
    *
    * @param stageCredentials a Map of new AWS credential properties, to refresh the client with (as
-   *     returned by GS)
+   *     <p>returned by GS)
    * @throws SnowflakeSQLException if any error occurs
    */
   @Override
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
+
     logger.debug("Renewing the Snowflake S3 client");
+
     // We renew the client with fresh credentials and with its original parameters
+
     setupSnowflakeS3Client(
         stageCredentials,
         this.clientConfig,
@@ -321,22 +397,29 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void shutdown() {
+
     logger.debug("Shutting down the Snowflake S3 client");
-    amazonClient.shutdown();
+
+    amazonClient.close();
   }
 
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
-    ObjectListing objListing = amazonClient.listObjects(remoteStorageLocation, prefix);
 
-    return new StorageObjectSummaryCollection(objListing.getObjectSummaries());
+    ListObjectsResponse objListing =
+        amazonClient.listObjects(
+            ListObjectsRequest.builder().bucket(remoteStorageLocation).prefix(prefix).build());
+
+    return new StorageObjectSummaryCollection(objListing.objectSummaries());
   }
 
   @Override
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
-    return new S3ObjectMetadata(amazonClient.getObjectMetadata(remoteStorageLocation, prefix));
+
+    return new S3ObjectMetadata(
+        amazonClient.headObject(new HeadObjectRequest(remoteStorageLocation, prefix)));
   }
 
   /**
@@ -369,27 +452,39 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+
     Stopwatch stopwatch = new Stopwatch();
+
     stopwatch.start();
+
     String localFilePath = localLocation + localFileSep + destFileName;
+
     logger.debug(
         "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
+
     TransferManager tx = null;
+
     int retryCount = 0;
+
     do {
+
       try {
+
         File localFile = new File(localFilePath);
 
         logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
         // download files from s3
+
         tx =
             TransferManagerBuilder.standard()
                 .withS3Client(amazonClient)
                 .withExecutorFactory(
                     new ExecutorFactory() {
+
                       @Override
                       public ExecutorService newExecutor() {
+
                         return createDefaultExecutorService(
                             "s3-transfer-manager-downloader-", parallelism);
                       }
@@ -399,22 +494,35 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         Download myDownload = tx.download(remoteStorageLocation, stageFilePath, localFile);
 
         // Pull object metadata from S3
-        ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
-        Map<String, String> metaMap =
-            SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
+        HeadObjectResponse meta =
+            amazonClient.headObject(
+                HeadObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build());
+
+        Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap();
+
         String key = metaMap.get(AMZ_KEY);
+
         String iv = metaMap.get(AMZ_IV);
 
         myDownload.waitForCompletion();
+
         SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
             localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+
         stopwatch.stop();
+
         long downloadMillis = stopwatch.elapsedMillis();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
+
           stopwatch.restart();
+
           if (key == null || iv == null) {
+
             throw new SnowflakeSQLLoggedException(
                 queryId,
                 session,
@@ -424,10 +532,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           }
 
           // Decrypt file
+
           try {
+
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+
             stopwatch.stop();
+
             long decryptMillis = stopwatch.elapsedMillis();
+
             logger.info(
                 "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
@@ -436,11 +549,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 downloadMillis,
                 decryptMillis,
                 retryCount);
+
           } catch (Exception ex) {
+
             logger.error("Error decrypting file", ex);
+
             throw ex;
           }
+
         } else {
+
           logger.info(
               "S3 file {} downloaded to {}. It took {} ms with {} retries",
               stageFilePath,
@@ -452,14 +570,18 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
 
       } catch (Exception ex) {
+
         handleS3Exception(
             ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
+
         if (tx != null) {
+
           tx.shutdownNow(false);
         }
       }
+
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
@@ -495,26 +617,51 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+
     logger.debug("Staring download of file from S3 stage path: {} to input stream", stageFilePath);
+
     Stopwatch stopwatch = new Stopwatch();
+
     stopwatch.start();
+
     int retryCount = 0;
+
     do {
+
       try {
-        S3Object file = amazonClient.getObject(remoteStorageLocation, stageFilePath);
-        ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
-        InputStream stream = file.getObjectContent();
+
+        ResponseInputStream<GetObjectResponse> file =
+            amazonClient.getObject(
+                GetObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build());
+
+        HeadObjectResponse meta =
+            amazonClient.headObject(
+                HeadObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build());
+
+        InputStream stream = file;
+
         stopwatch.stop();
+
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> metaMap =
-            SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
+
+        Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap();
 
         String key = metaMap.get(AMZ_KEY);
+
         String iv = metaMap.get(AMZ_IV);
 
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
+
           stopwatch.restart();
+
           if (key == null || iv == null) {
+
             throw new SnowflakeSQLLoggedException(
                 queryId,
                 session,
@@ -524,9 +671,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           }
 
           try {
+
             InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
+
             stopwatch.stop();
+
             long decryptMillis = stopwatch.elapsedMillis();
+
             logger.info(
                 "S3 file {} downloaded to input stream. It took {} ms "
                     + "(download: {} ms, decryption: {} ms) with {} retries",
@@ -535,24 +686,33 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 downloadMillis,
                 decryptMillis,
                 retryCount);
+
             return is;
 
           } catch (Exception ex) {
+
             logger.error("Error in decrypting file", ex);
+
             throw ex;
           }
+
         } else {
+
           logger.info(
               "S3 file {} downloaded to input stream. Download took {} ms with {} retries",
               stageFilePath,
               downloadMillis,
               retryCount);
         }
+
         return stream;
+
       } catch (Exception ex) {
+
         handleS3Exception(
             ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
+
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
@@ -597,12 +757,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+
     logger.info(
         StorageHelper.getStartUploadLog(
             "S3", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
 
     final long originalContentLength = meta.getContentLength();
+
     final List<FileInputStream> toClose = new ArrayList<>();
+
     SFPair<InputStream, Boolean> uploadStreamInfo =
         createUploadStream(
             srcFile,
@@ -614,30 +777,43 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             toClose,
             queryId);
 
-    ObjectMetadata s3Meta;
+    HeadObjectResponse s3Meta;
+
     if (meta instanceof S3ObjectMetadata) {
+
       s3Meta = ((S3ObjectMetadata) meta).getS3ObjectMetadata();
+
     } else {
+
       throw new IllegalArgumentException("Unexpected metadata object type");
     }
 
     TransferManager tx = null;
+
     int retryCount = 0;
+
     Stopwatch stopwatch = new Stopwatch();
+
     stopwatch.start();
+
     do {
+
       try {
+
         logger.debug(
             "Creating executor service for transfer" + "manager with {} threads", parallelism);
 
         // upload files to s3
+
         tx =
             TransferManagerBuilder.standard()
                 .withS3Client(amazonClient)
                 .withExecutorFactory(
                     new ExecutorFactory() {
+
                       @Override
                       public ExecutorService newExecutor() {
+
                         return createDefaultExecutorService(
                             "s3-transfer-manager-uploader-", parallelism);
                       }
@@ -646,38 +822,48 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         final Upload myUpload;
 
-        if (!this.isClientSideEncrypted) {
-          // since we're not client-side encrypting, make sure we're server-side encrypting with
-          // SSE-S3
-          s3Meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-        }
+        if (!this.isClientSideEncrypted) {}
 
         if (uploadStreamInfo.right) {
+
           myUpload = tx.upload(remoteStorageLocation, destFileName, uploadStreamInfo.left, s3Meta);
+
         } else {
+
           PutObjectRequest putRequest =
-              new PutObjectRequest(remoteStorageLocation, destFileName, srcFile);
-          putRequest.setMetadata(s3Meta);
+              PutObjectRequest.builder().bucket(remoteStorageLocation).key(destFileName).build();
+
+          putRequest =
+              putRequest.toBuilder()
+                  .serverSideEncryption("HeadObjectResponse.AES_256_SERVER_SIDE_ENCRYPTION")
+                  .build();
 
           myUpload = tx.upload(putRequest);
         }
 
         myUpload.waitForCompletion();
+
         stopwatch.stop();
+
         long uploadMillis = stopwatch.elapsedMillis();
 
         // get out
+
         for (FileInputStream is : toClose) {
+
           IOUtils.closeQuietly(is);
         }
 
         if (uploadFromStream) {
+
           logger.info(
               "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
               destFileName,
               uploadMillis,
               retryCount);
+
         } else {
+
           logger.info(
               "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
               srcFile.getAbsolutePath(),
@@ -685,11 +871,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               uploadMillis,
               retryCount);
         }
+
         return;
+
       } catch (Exception ex) {
 
         handleS3Exception(ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
+
         if (uploadFromStream && fileBackedOutputStream == null) {
+
           throw new SnowflakeSQLException(
               queryId,
               ex,
@@ -699,6 +889,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                   + ex.getMessage()
                   + "\nCannot retry upload from stream.");
         }
+
         uploadStreamInfo =
             createUploadStream(
                 srcFile,
@@ -709,14 +900,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 originalContentLength,
                 toClose,
                 queryId);
+
       } finally {
+
         if (tx != null) {
+
           tx.shutdownNow(false);
         }
       }
+
     } while (retryCount <= getMaxRetries());
 
     for (FileInputStream is : toClose) {
+
       IOUtils.closeQuietly(is);
     }
 
@@ -733,11 +929,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       boolean uploadFromStream,
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutputStream,
-      ObjectMetadata meta,
+      HeadObjectResponse meta,
       long originalContentLength,
       List<FileInputStream> toClose,
       String queryId)
       throws SnowflakeSQLException {
+
     logger.debug(
         "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize: {}",
         this,
@@ -748,26 +945,42 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         meta,
         toClose,
         this.getEncryptionKeySize());
+
     final InputStream result;
+
     FileInputStream srcFileStream = null;
+
     if (isEncrypting() && getEncryptionKeySize() < 256) {
+
       try {
+
         final InputStream uploadStream =
             uploadFromStream
                 ? (fileBackedOutputStream != null
                     ? fileBackedOutputStream.asByteSource().openStream()
                     : inputStream)
                 : (srcFileStream = new FileInputStream(srcFile));
+
         toClose.add(srcFileStream);
 
         // Encrypt
+
         S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(meta);
+
         result =
             EncryptionProvider.encrypt(
-                s3Metadata, originalContentLength, uploadStream, this.encMat, this);
+                (StorageObjectMetadata) s3Metadata,
+                originalContentLength,
+                uploadStream,
+                this.encMat,
+                this);
+
         uploadFromStream = true;
+
       } catch (Exception ex) {
+
         logger.error("Failed to encrypt input", ex);
+
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -777,13 +990,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "Failed to encrypt input",
             ex.getMessage());
       }
+
     } else {
+
       try {
-        if (!isClientSideEncrypted) {
-          // since we're not client-side encrypting, make sure we're server-side encrypting with
-          // SSE-S3
-          meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-        }
+
+        if (!isClientSideEncrypted) {}
 
         result =
             uploadFromStream
@@ -791,10 +1003,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     ? fileBackedOutputStream.asByteSource().openStream()
                     : inputStream)
                 : (srcFileStream = new FileInputStream(srcFile));
+
         toClose.add(srcFileStream);
 
       } catch (FileNotFoundException ex) {
+
         logger.error("Failed to open input file", ex);
+
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -803,8 +1018,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             ex,
             "Failed to open input file",
             ex.getMessage());
+
       } catch (IOException ex) {
+
         logger.error("Failed to open input stream", ex);
+
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -815,6 +1033,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             ex.getMessage());
       }
     }
+
     return SFPair.of(result, uploadFromStream);
   }
 
@@ -827,6 +1046,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String command,
       String queryId)
       throws SnowflakeSQLException {
+
     handleS3Exception(ex, retryCount, operation, session, command, this, queryId);
   }
 
@@ -839,39 +1059,61 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       SnowflakeS3Client s3Client,
       String queryId)
       throws SnowflakeSQLException {
+
     // no need to retry if it is invalid key exception
+
     if (ex.getCause() instanceof InvalidKeyException) {
+
       // Most likely cause is that the unlimited strength policy files are not installed
+
       // Log the error and throw a message that explains the cause
+
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex, queryId);
     }
 
     // If there is no space left in the download location, java.io.IOException is thrown.
+
     // Don't retry.
+
     if (getRootCause(ex) instanceof IOException) {
+
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
     // Don't retry if max retries has been reached or the error code is 404/400
-    if (ex instanceof AmazonClientException) {
+
+    if (ex instanceof SdkException) {
+
       logger.debug("AmazonClientException: " + ex.getMessage());
+
       if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException400Or404(ex)) {
+
         String extendedRequestId = "none";
 
-        if (ex instanceof AmazonS3Exception) {
-          AmazonS3Exception ex1 = (AmazonS3Exception) ex;
-          extendedRequestId = ex1.getExtendedRequestId();
+        if (ex instanceof S3Exception) {
+
+          S3Exception ex1 = (S3Exception) ex;
+
+          extendedRequestId = ex1.extendedRequestId();
         }
 
-        if (ex instanceof AmazonServiceException) {
-          AmazonServiceException ex1 = (AmazonServiceException) ex;
+        if (ex instanceof AwsServiceException) {
+
+          AwsServiceException ex1 = (AwsServiceException) ex;
 
           // The AWS credentials might have expired when server returns error 400 and
+
           // does not return the ExpiredToken error code.
+
           // If session is null we cannot renew the token so throw the exception
-          if (ex1.getStatusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
+
+          if (ex1.awsErrorDetails().sdkHttpResponse().statusCode() == HttpStatus.SC_BAD_REQUEST
+              && session != null) {
+
             SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+
           } else {
+
             throw new SnowflakeSQLLoggedException(
                 queryId,
                 session,
@@ -879,14 +1121,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 StorageHelper.getOperationException(operation).getMessageCode(),
                 ex1,
                 operation,
-                ex1.getErrorType().toString(),
-                ex1.getErrorCode(),
+                ex1 /*AWS SDK for Java v2 migration: getErrorType is not supported in v2. AwsServiceException is a service error in v2. Consider removing it.*/.getErrorType()
+                    .toString(),
+                ex1.awsErrorDetails().errorCode(),
                 ex1.getMessage(),
-                ex1.getRequestId(),
+                ex1.requestId(),
                 extendedRequestId);
           }
 
         } else {
+
           throw new SnowflakeSQLLoggedException(
               queryId,
               session,
@@ -896,51 +1140,73 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               operation,
               ex.getMessage());
         }
+
       } else {
+
         logger.debug(
             "Encountered exception ({}) during {}, retry count: {}",
             ex.getMessage(),
             operation,
             retryCount);
+
         logger.debug("Stack trace: ", ex);
 
         // exponential backoff up to a limit
+
         int backoffInMillis = s3Client.getRetryBackoffMin();
 
         if (retryCount > 1) {
+
           backoffInMillis <<= (Math.min(retryCount - 1, s3Client.getRetryBackoffMaxExponent()));
         }
 
         try {
+
           logger.debug("Sleep for {} milliseconds before retry", backoffInMillis);
 
           Thread.sleep(backoffInMillis);
+
         } catch (InterruptedException ex1) {
+
           // ignore
+
         }
 
         // If the exception indicates that the AWS token has expired,
+
         // we need to refresh our S3 client with the new token
-        if (ex instanceof AmazonS3Exception) {
-          AmazonS3Exception s3ex = (AmazonS3Exception) ex;
-          if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
+
+        if (ex instanceof S3Exception) {
+
+          S3Exception s3ex = (S3Exception) ex;
+
+          if (s3ex.awsErrorDetails().errorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
+
             // If session is null we cannot renew the token so throw the ExpiredToken exception
+
             if (session != null) {
+
               SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+
             } else {
+
               throw new SnowflakeSQLException(
                   queryId,
-                  s3ex.getErrorCode(),
+                  s3ex.awsErrorDetails().errorCode(),
                   CLOUD_STORAGE_CREDENTIALS_EXPIRED,
                   "S3 credentials have expired");
             }
           }
         }
       }
+
     } else {
+
       if (ex instanceof InterruptedException
           || getRootCause(ex) instanceof SocketTimeoutException) {
+
         if (retryCount > s3Client.getMaxRetries()) {
+
           throw new SnowflakeSQLLoggedException(
               queryId,
               session,
@@ -948,14 +1214,18 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               StorageHelper.getOperationException(operation).getMessageCode(),
               ex,
               "Encountered exception during " + operation + ": " + ex.getMessage());
+
         } else {
+
           logger.debug(
               "Encountered exception ({}) during {}, retry count: {}",
               ex.getMessage(),
               operation,
               retryCount);
         }
+
       } else {
+
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -974,21 +1244,28 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    * @return true if it's a 400 or 404 status code
    */
   public boolean isClientException400Or404(Exception ex) {
-    if (ex instanceof AmazonServiceException) {
-      AmazonServiceException asEx = (AmazonServiceException) (ex);
-      return asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND
-          || asEx.getStatusCode() == HttpStatus.SC_BAD_REQUEST;
+
+    if (ex instanceof AwsServiceException) {
+
+      AwsServiceException asEx = (AwsServiceException) (ex);
+
+      return asEx.awsErrorDetails().sdkHttpResponse().statusCode() == HttpStatus.SC_NOT_FOUND
+          || asEx.awsErrorDetails().sdkHttpResponse().statusCode() == HttpStatus.SC_BAD_REQUEST;
     }
+
     return false;
   }
 
   /* Returns the material descriptor key */
+
   @Override
   public String getMatdescKey() {
+
     return "x-amz-matdesc";
   }
 
   /* Adds encryption metadata to the StorageObjectMetadata object */
+
   @Override
   public void addEncryptionMetadata(
       StorageObjectMetadata meta,
@@ -996,34 +1273,50 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       byte[] ivData,
       byte[] encryptedKey,
       long contentLength) {
+
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
+
     meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
+
     meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
+
     meta.setContentLength(contentLength);
   }
 
   /* Adds digest metadata to the StorageObjectMetadata object */
+
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
+
     meta.addUserMetadata("sfc-digest", digest);
   }
 
   /* Gets digest metadata to the StorageObjectMetadata object */
+
   @Override
   public String getDigestMetadata(StorageObjectMetadata meta) {
+
     return meta.getUserMetadata().get("sfc-digest");
   }
 
   protected static SSLConnectionSocketFactory getSSLConnectionSocketFactory() {
+
     if (s3ConnectionSocketFactory == null) {
+
       synchronized (SnowflakeS3Client.class) {
         if (s3ConnectionSocketFactory == null) {
+
           try {
+
             // trust manager is set to null, which will use default ones
+
             // instead of SFTrustManager (which enables ocsp checking)
+
             s3ConnectionSocketFactory =
                 new SFSSLConnectionSocketFactory(null, HttpUtil.isSocksProxyDisabled());
+
           } catch (KeyManagementException | NoSuchAlgorithmException e) {
+
             throw new SSLInitializationException(e.getMessage(), e);
           }
         }
@@ -1034,23 +1327,31 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   }
 
   /*
-   * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
-   * per client billing calculation
-   */
+
+  * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
+
+  * per client billing calculation
+
+  */
+
   @Override
   public void addStreamingIngestMetadata(
       StorageObjectMetadata meta, String clientName, String clientKey) {
+
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_NAME, clientName);
+
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
+
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_NAME);
   }
 
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
+
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_KEY);
   }
 }

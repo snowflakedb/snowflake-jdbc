@@ -15,6 +15,7 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+// import software.amazon.awssdk.auth.AwsCredentials;
 
 @SnowflakeJdbcInternalApi
 public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {

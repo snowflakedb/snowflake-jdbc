@@ -5,8 +5,6 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
-import com.amazonaws.ClientConfiguration;
-// import software.amazon.awssdk.ClientConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -59,6 +57,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 
 /** HttpUtil class */
 public class HttpUtil {
@@ -158,11 +157,12 @@ public class HttpUtil {
    *
    * @param key key to HttpClient map containing OCSP and proxy info
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @deprecated Use {@link S3HttpUtil#setProxyForS3(HttpClientSettingsKey, ClientConfiguration)}
-   *     instead
+   * @deprecated Use {@link S3HttpUtil#setProxyForS3(HttpClientSettingsKey,
+   *     ClientOverrideConfiguration)} instead
    */
   @Deprecated
-  public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
+  public static void setProxyForS3(
+      HttpClientSettingsKey key, ClientOverrideConfiguration clientConfig) {
     S3HttpUtil.setProxyForS3(key, clientConfig);
   }
 
@@ -173,12 +173,13 @@ public class HttpUtil {
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
    * @throws SnowflakeSQLException when exception encountered
-   * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties, ClientConfiguration)}
-   *     instead
+   * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties,
+   *     ClientOverrideConfiguration)} instead
    */
   @Deprecated
   public static void setSessionlessProxyForS3(
-      Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
+      Properties proxyProperties, ClientOverrideConfiguration clientConfig)
+      throws SnowflakeSQLException {
     S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
   }
 

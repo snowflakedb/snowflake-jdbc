@@ -2,17 +2,16 @@ package net.snowflake.client.core.auth.wif;
 
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWS4Signer;
-//import software.amazon.awssdk.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
-//import software.amazon.awssdk.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-//import software.amazon.awssdk.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.InstanceMetadataRegionProvider;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+// import software.amazon.awssdk.auth.AwsCredentials;
+// import software.amazon.awssdk.auth.DefaultCredentialsProvider;
 
 @SnowflakeJdbcInternalApi
 public class AwsAttestationService {

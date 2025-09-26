@@ -17,6 +17,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 
 @SnowflakeJdbcInternalApi
 public class S3HttpUtil {
@@ -28,7 +29,8 @@ public class S3HttpUtil {
    * @param key key to HttpClient map containing OCSP and proxy info
    * @param clientConfig the configuration needed by S3 to set the proxy
    */
-  public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
+  public static void setProxyForS3(
+      HttpClientSettingsKey key, ClientOverrideConfiguration clientConfig) {
     if (key != null && key.usesProxy()) {
       clientConfig.setProxyProtocol(
           key.getProxyHttpProtocol() == HttpProtocol.HTTPS ? Protocol.HTTPS : Protocol.HTTP);
