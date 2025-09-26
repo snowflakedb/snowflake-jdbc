@@ -153,7 +153,11 @@ public enum SFSessionProperty {
 
   CERT_REVOCATION_CHECK_MODE("CERT_REVOCATION_CHECK_MODE", false, String.class),
 
-  ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class);
+  ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class),
+
+  PLATFORM_DETECTION_TIMEOUT_MS("platformDetectionTimeoutMs", false, Integer.class),
+
+  DISABLE_PLATFORM_DETECTION("disablePlatformDetection", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

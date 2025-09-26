@@ -8,3 +8,5 @@
     - Renamed CRL_REVOCATION_CHECK_MODE to CERT_REVOCATION_CHECK_MODE in CLIENT_ENVIRONMENT metrics
     - Test coverage for multistatement jdbc.
     - Fixed permission check for .toml config file.
+    - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
+  

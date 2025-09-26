@@ -1,0 +1,35 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/latest/dynamic/instance-identity/document",
+        "method": "GET",
+        "headers": {
+          "X-aws-ec2-metadata-token": {
+            "equalTo": "mock-token-12345"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "devpayProductCodes": null,
+          "marketplaceProductCodes": null,
+          "availabilityZone": "us-west-2a",
+          "privateIp": "10.0.0.1",
+          "version": "2017-09-30",
+          "instanceId": "i-1234567890abcdef0",
+          "billingProducts": null,
+          "instanceType": "t3.micro",
+          "accountId": "123456789012",
+          "imageId": "ami-12345678",
+          "pendingTime": "2021-10-01T00:00:00Z",
+          "architecture": "x86_64",
+          "kernelId": null,
+          "ramdiskId": null,
+          "region": "us-west-2"
+        }
+      }
+    }
+  ]
+} 
