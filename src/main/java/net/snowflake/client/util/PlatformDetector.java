@@ -139,7 +139,7 @@ public class PlatformDetector {
               Platform.IS_EC2_INSTANCE,
               CompletableFuture.supplyAsync(() -> isEc2Instance(timeoutMs), executor));
           futures.put(
-              Platform.HAS_AWS_IDENTITY,
+              Platform.HAS_AWS_IDENTITY_ARN_UNKNOWN,
               CompletableFuture.supplyAsync(() -> hasAwsIdentity(attestationService), executor));
           futures.put(
               Platform.IS_AZURE_VM,
@@ -301,6 +301,7 @@ public class PlatformDetector {
   }
 
   private static DetectionState hasAwsIdentity(AwsAttestationService attestationService) {
+    // TODO: Check ARN after AWS SDK upgrade due to vulnerabilities in older SDK versions
     return PlatformDetectionUtil.hasValidAwsIdentityForWif(attestationService)
         ? DetectionState.DETECTED
         : DetectionState.NOT_DETECTED;

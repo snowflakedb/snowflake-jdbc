@@ -33,7 +33,6 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
 
     // Default behavior for AWS attestation service (return null/empty unless overridden)
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(null);
-    when(mockAwsAttestationService.getArn()).thenReturn(null);
     resetWiremock();
   }
 
@@ -277,12 +276,10 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   @Test
   @DisplayName("Should detect AWS identity when AWS attestation service returns valid identity")
   public void testDetectAwsIdentity() {
-    // Arrange - Mock AWS attestation service to return valid credentials and ARN
+    // Arrange - Mock AWS attestation service to return valid credentials
     BasicAWSCredentials awsCredentials =
         new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
-    when(mockAwsAttestationService.getArn())
-        .thenReturn("arn:aws:iam::123456789012:user/ExampleUser");
 
     PlatformDetector detector =
         new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
@@ -293,7 +290,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Assert
     assertEquals(1, platforms.size(), "Should detect exactly 1 platform");
     assertTrue(
-        platforms.contains("has_aws_identity"),
+        platforms.contains("has_aws_identity_arn_unknown"),
         "Should detect AWS identity when attestation service returns valid credentials and ARN");
   }
 
@@ -307,12 +304,10 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
 
-    // Set up AWS identity mock - Mock attestation service to return valid credentials and ARN
+    // Set up AWS identity mock - Mock attestation service to return valid credentials
     BasicAWSCredentials awsCredentials =
         new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
-    when(mockAwsAttestationService.getArn())
-        .thenReturn("arn:aws:iam::123456789012:user/ExampleUser");
 
     PlatformDetector detector =
         new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
@@ -326,7 +321,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         platforms.contains("is_aws_lambda"), "Should detect AWS Lambda from environment variables");
     assertTrue(platforms.contains("is_ec2_instance"), "Should detect EC2 instance from wiremock");
     assertTrue(
-        platforms.contains("has_aws_identity"),
+        platforms.contains("has_aws_identity_arn_unknown"),
         "Should detect AWS identity from attestation service");
   }
 

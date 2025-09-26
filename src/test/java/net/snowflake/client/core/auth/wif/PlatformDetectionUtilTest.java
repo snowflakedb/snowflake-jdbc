@@ -28,39 +28,19 @@ public class PlatformDetectionUtilTest {
   class HasValidAwsIdentityForWifTests {
 
     @Test
-    @DisplayName("Should return true for valid user ARN with valid credentials")
-    public void testValiCredentialsAndUserArn() {
+    @DisplayName("Should return true for valid credentials")
+    public void testValidCredentials() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
       when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
       when(mockCredentials.getAWSSecretKey())
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn())
-          .thenReturn("arn:aws:iam::123456789012:user/ExampleUser");
 
       // Act
       boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
 
       // Assert
-      assertTrue(result, "Should return true for valid user ARN with valid credentials");
-    }
-
-    @Test
-    @DisplayName("Should return true for valid assumed role ARN with valid credentials")
-    public void testValidCredentialsAndAssumedRoleArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn())
-          .thenReturn("arn:aws:sts::123456789012:assumed-role/MyRole/MySession");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertTrue(result, "Should return true for valid assumed role ARN with valid credentials");
+      assertTrue(result, "Should return true for valid credentials");
     }
 
     @Test
@@ -155,109 +135,6 @@ public class PlatformDetectionUtilTest {
     }
 
     @Test
-    @DisplayName("Should return false when ARN is null")
-    public void testNullArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenReturn(null);
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false when ARN is null");
-    }
-
-    @Test
-    @DisplayName("Should return false when ARN is empty")
-    public void testEmptyArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenReturn("");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false when ARN is empty");
-    }
-
-    @Test
-    @DisplayName("Should return false when ARN is whitespace only")
-    public void testWhitespaceArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenReturn("   ");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false when ARN is whitespace only");
-    }
-
-    @Test
-    @DisplayName("Should return false for invalid ARN format")
-    public void testInvalidArnFormat() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenReturn("invalid-arn-format");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false for invalid ARN format");
-    }
-
-    @Test
-    @DisplayName("Should return false for unsupported ARN type (EC2 instance)")
-    public void testUnsupportedEc2InstanceArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn())
-          .thenReturn("arn:aws:ec2::123456789012:instance/i-1234567890abcdef0");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false for unsupported EC2 instance ARN");
-    }
-
-    @Test
-    @DisplayName("Should return false for unsupported ARN type (S3 bucket)")
-    public void testUnsupportedS3BucketArn() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenReturn("arn:aws:s3:::my-bucket");
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false for unsupported S3 bucket ARN");
-    }
-
-    @Test
     @DisplayName("Should return false when getAWSCredentials throws exception")
     public void testGetCredentialsException() {
       // Arrange
@@ -272,23 +149,6 @@ public class PlatformDetectionUtilTest {
     }
 
     @Test
-    @DisplayName("Should return false when getArn throws exception")
-    public void testGetArnException() {
-      // Arrange
-      when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE");
-      when(mockCredentials.getAWSSecretKey())
-          .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      when(mockAttestationService.getArn()).thenThrow(new RuntimeException("ARN error"));
-
-      // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
-
-      // Assert
-      assertFalse(result, "Should return false when getArn throws exception");
-    }
-
-    @Test
     @DisplayName("Should work with BasicAWSCredentials implementation")
     public void testWithBasicAWSCredentials() {
       // Arrange
@@ -296,7 +156,6 @@ public class PlatformDetectionUtilTest {
           new BasicAWSCredentials(
               "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
       when(mockAttestationService.getAWSCredentials()).thenReturn(basicCredentials);
-      when(mockAttestationService.getArn()).thenReturn("arn:aws:iam::123456789012:user/TestUser");
 
       // Act
       boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService);
@@ -363,89 +222,6 @@ public class PlatformDetectionUtilTest {
 
       // Assert
       assertFalse(result, "Should return false for null credentials");
-    }
-  }
-
-  @Nested
-  @DisplayName("isValidArnForWif Tests")
-  class IsValidArnForWifTests {
-
-    @Test
-    @DisplayName("Should return true for valid IAM user ARN")
-    public void testValidIamUserArn() {
-      // Act & Assert
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif("arn:aws:iam::123456789012:user/ExampleUser"));
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif("arn:aws:iam::123456789012:user/path/to/user"));
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif("arn:aws-us-gov:iam::123456789012:user/GovUser"));
-    }
-
-    @Test
-    @DisplayName("Should return true for valid STS assumed role ARN")
-    public void testValidStsAssumedRoleArn() {
-      // Act & Assert
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role/MyRole/MySession"));
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role/path/to/role/session"));
-      assertTrue(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws-us-gov:sts::123456789012:assumed-role/GovRole/GovSession"));
-    }
-
-    @Test
-    @DisplayName("Should return false for invalid ARN formats")
-    public void testInvalidArnFormats() {
-      // Act & Assert
-      assertFalse(PlatformDetectionUtil.isValidArnForWif(null));
-      assertFalse(PlatformDetectionUtil.isValidArnForWif(""));
-      assertFalse(PlatformDetectionUtil.isValidArnForWif("   "));
-      assertFalse(PlatformDetectionUtil.isValidArnForWif("invalid-arn"));
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:ec2::123456789012:instance/i-1234567890abcdef0"));
-      assertFalse(PlatformDetectionUtil.isValidArnForWif("arn:aws:s3:::my-bucket"));
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:lambda:us-east-1:123456789012:function:my-function"));
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:iam::123456789012:role/MyRole")); // role, not assumed-role
-    }
-
-    @Test
-    @DisplayName("Should return false for malformed user ARNs")
-    public void testMalformedUserArns() {
-      // Act & Assert
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:iam::123456789012:user/")); // empty user name
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:iam::123456789012:user")); // missing user name
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:iam:123456789012:user/MyUser")); // missing region separator
-    }
-
-    @Test
-    @DisplayName("Should return false for malformed assumed role ARNs")
-    public void testMalformedAssumedRoleArns() {
-      // Act & Assert
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role/")); // empty role/session
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role")); // missing role/session
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts:123456789012:assumed-role/MyRole/MySession")); // missing region
-      // separator
     }
   }
 }
