@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+// import software.amazon.awssdk.auth.AwsCredentials;
 
 @SnowflakeJdbcInternalApi
 public class AwsSdkGCPSigner extends AWS4Signer {

@@ -1,12 +1,12 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import software.amazon.awssdk.services.kms.model.UnsupportedOperationException;
 
 /**
  * Iterator class for ObjectSummary objects on Azure Returns platform-independent instances

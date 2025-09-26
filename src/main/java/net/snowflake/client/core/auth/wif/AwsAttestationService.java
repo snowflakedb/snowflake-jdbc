@@ -10,6 +10,8 @@ import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+// import software.amazon.awssdk.auth.AwsCredentials;
+// import software.amazon.awssdk.auth.DefaultCredentialsProvider;
 
 @SnowflakeJdbcInternalApi
 public class AwsAttestationService {

@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.ClientConfiguration;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.core.HttpUtil;
@@ -10,10 +9,12 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 
 /**
  * Factory object for abstracting the creation of storage client objects: SnowflakeStorageClient and
- * StorageObjectMetadata
+ *
+ * <p>StorageObjectMetadata
  */
 public class StorageClientFactory {
 
@@ -29,7 +30,9 @@ public class StorageClientFactory {
    * @return the storage client instance
    */
   public static StorageClientFactory getFactory() {
+
     if (factory == null) {
+
       factory = new StorageClientFactory();
     }
 
@@ -49,6 +52,7 @@ public class StorageClientFactory {
   public SnowflakeStorageClient createClient(
       StageInfo stage, int parallel, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
+
     logger.debug("Creating storage client. Client type: {}", stage.getStageType().name());
 
     switch (stage.getStageType()) {
@@ -57,6 +61,7 @@ public class StorageClientFactory {
             stage.getUseS3RegionalUrl()
                 || stage.getUseRegionalUrl()
                 || session != null && session.getUseRegionalS3EndpointsForPresignedURL();
+
         return createS3Client(
             stage.getCredentials(),
             parallel,
@@ -75,9 +80,13 @@ public class StorageClientFactory {
         return createGCSClient(stage, encMat, session);
 
       default:
+
         // We don't create a storage client for FS_LOCAL,
+
         // so we should only find ourselves here if an unsupported
+
         // remote storage client type is specified
+
         throw new IllegalArgumentException(
             "Unsupported storage client specified: " + stage.getStageType().name());
     }
@@ -108,22 +117,31 @@ public class StorageClientFactory {
       SFBaseSession session,
       boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
+
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
     logger.debug("Creating S3 client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeS3Client s3Client;
 
-    ClientConfiguration clientConfig = new ClientConfiguration();
+    ClientOverrideConfiguration clientConfig = ClientOverrideConfiguration.builder().build();
+
     clientConfig.setMaxConnections(parallel + 1);
+
     clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
+
     clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
 
     // If proxy is set via connection properties or JVM settings these will be overridden later.
+
     // This is to prevent the aws client builder from reading proxy environment variables.
+
     clientConfig.setProxyHost("");
+
     clientConfig.setProxyPort(0);
+
     clientConfig.setProxyUsername("");
+
     clientConfig.setProxyPassword("");
 
     logger.debug(
@@ -135,6 +153,7 @@ public class StorageClientFactory {
         clientConfig.getMaxErrorRetry());
 
     try {
+
       s3Client =
           new SnowflakeS3Client(
               stageCredentials,
@@ -146,10 +165,14 @@ public class StorageClientFactory {
               isClientSideEncrypted,
               session,
               useS3RegionalUrl);
+
     } catch (Exception ex) {
+
       logger.debug("Exception creating s3 client", ex);
+
       throw ex;
     }
+
     logger.debug("S3 Storage client created", false);
 
     return s3Client;
@@ -157,26 +180,36 @@ public class StorageClientFactory {
 
   /**
    * Creates a storage provider specific metadata object, accessible via the platform independent
-   * interface
+   *
+   * <p>interface
    *
    * @param stageType determines the implementation to be created
    * @return the implementation of StorageObjectMetadata
    */
   public StorageObjectMetadata createStorageMetadataObj(StageInfo.StageType stageType) {
+
     switch (stageType) {
       case S3:
         return new S3ObjectMetadata();
 
       case AZURE:
+
       case GCS:
+
         // GCS's metadata object looks just like Azure's (Map<String, String>),
+
         // so for now we'll use the same class.
+
         return new CommonObjectMetadata();
 
       default:
+
         // An unsupported remote storage client type was specified
+
         // We don't create/implement a storage client for FS_LOCAL,
+
         // so we should never end up here while running on local file system
+
         throw new IllegalArgumentException("Unsupported stage type specified: " + stageType.name());
     }
   }
@@ -192,16 +225,22 @@ public class StorageClientFactory {
   private SnowflakeAzureClient createAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFBaseSession session)
       throws SnowflakeSQLException {
+
     logger.debug("Creating Azure client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeAzureClient azureClient;
 
     try {
+
       azureClient = SnowflakeAzureClient.createSnowflakeAzureClient(stage, encMat, session);
+
     } catch (Exception ex) {
+
       logger.debug("Exception creating Azure Storage client", ex);
+
       throw ex;
     }
+
     logger.debug("Azure Storage client created", false);
 
     return azureClient;
@@ -217,16 +256,22 @@ public class StorageClientFactory {
   private SnowflakeGCSClient createGCSClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
+
     logger.debug("Creating GCS client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeGCSClient gcsClient;
 
     try {
+
       gcsClient = SnowflakeGCSClient.createSnowflakeGCSClient(stage, encMat, session);
+
     } catch (Exception ex) {
+
       logger.debug("Exception creating GCS Storage client", ex);
+
       throw ex;
     }
+
     logger.debug("GCS Storage client created", false);
 
     return gcsClient;
