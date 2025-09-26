@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
@@ -197,6 +198,15 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
     assertFalse(telemetry.sendBatchAsync().get());
+  }
+
+  @Test
+  public void testSettingPropertyDisablesClientTelemetry() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_TELEMETRY_ENABLED", false);
+    Connection connection1 = getConnection(properties);
+    TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection1);
+    assertFalse(telemetry.isTelemetryEnabled());
   }
 
   // Helper function to create a sessionless telemetry
