@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Period;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 
@@ -146,6 +148,25 @@ public interface ArrowVectorConverter {
    * @throws SFException invalid data conversion
    */
   BigDecimal toBigDecimal(int index) throws SFException;
+
+  /**
+   * Convert value in arrow vector to Period
+   *
+   * @param index index of the value to be converted in the vector
+   * @return Period converted from arrow vector
+   * @throws SFException invalid data conversion
+   */
+  Period toPeriod(int index) throws SFException;
+
+  /**
+   * Convert value in arrow vector to Duration
+   *
+   * @param index index of the value to be converted in the vector
+   * @param scale corresponding scale of Snowflake column
+   * @return Duration converted from arrow vector
+   * @throws SFException invalid data conversion
+   */
+  Duration toDuration(int index, int scale) throws SFException;
 
   /**
    * Convert value in arrow vector to Object

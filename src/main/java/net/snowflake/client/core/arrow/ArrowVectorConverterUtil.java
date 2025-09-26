@@ -144,6 +144,12 @@ public final class ArrowVectorConverterUtil {
         case DECFLOAT:
           return new DecfloatToDecimalConverter(vector, idx, context);
 
+        case INTERVAL_YEAR_MONTH:
+          return new IntervalYearMonthToPeriodConverter(vector, idx, context);
+
+        case INTERVAL_DAY_TIME:
+          return new IntervalDayTimeToDurationConverter(vector, idx, context);
+
         case REAL:
           return new DoubleToRealConverter(vector, idx, context);
 
