@@ -17,7 +17,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -295,8 +294,20 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     ds.setUrl(connectStr);
     ds.setAccount(account);
     ds.setSsl("on".equals(ssl));
+    ds.setUser(user);
 
-    try (Connection connection = ds.getConnection(user, password);
+    // Handle authentication - prioritize private key, fallback to password
+    if (params.get("private_key_file") != null) {
+      ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
+    } else if (password != null) {
+      ds.setPassword(password);
+    } else {
+      // Skip test if no authentication method is available
+      org.junit.jupiter.api.Assumptions.assumeTrue(
+          false, "No authentication method available - missing both private key and password");
+    }
+
+    try (Connection connection = ds.getConnection();
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
@@ -310,7 +321,20 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     ds.setSsl("on".equals(ssl));
     ds.setAccount(account);
     ds.setPortNumber(Integer.parseInt(port));
-    try (Connection connection = ds.getConnection(params.get("user"), params.get("password"));
+    ds.setUser(user);
+
+    // Handle authentication for second DataSource instance
+    if (params.get("private_key_file") != null) {
+      ds.setPrivateKeyFile(params.get("private_key_file"), params.get("private_key_pwd"));
+    } else if (password != null) {
+      ds.setPassword(password);
+    } else {
+      // Skip test if no authentication method is available
+      org.junit.jupiter.api.Assumptions.assumeTrue(
+          false, "No authentication method available - missing both private key and password");
+    }
+
+    try (Connection connection = ds.getConnection();
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
@@ -820,71 +844,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
   }
 
-  /**
-   * This is a manual test to check that making connections with the new regionless URL setup
-   * (org-account.snowflake.com) works correctly in the driver. Currently dev/reg do not support
-   * this format so the test must be manually run with a qa account.
-   *
-   * @throws SQLException
-   */
-  @Disabled
-  @Test
-  public void testOrgAccountUrl() throws SQLException {
-    Properties props = new Properties();
-    props.put("user", "admin");
-    props.put("password", "Password1");
-    props.put("role", "accountadmin");
-    props.put("timezone", "UTC");
-    try (Connection con =
-            DriverManager.getConnection(
-                "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com",
-                props);
-        Statement statement = con.createStatement()) {
-      statement.execute("select 1");
-    }
-  }
-
-  /**
-   * * This is a manual test to check that making connections with the new regionless URL setup
-   * (org-account.snowflake.com) works correctly with key/pair authentication in the driver.
-   * Currently dev/reg do not support this format so the test must be manually run with a qa
-   * account.
-   *
-   * @throws SQLException
-   * @throws NoSuchAlgorithmException
-   */
-  @Disabled
-  @Test
-  public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
-
-    String uri =
-        "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com";
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-    keyPairGenerator.initialize(2048, random);
-
-    KeyPair keyPair = keyPairGenerator.generateKeyPair();
-    PublicKey publicKey = keyPair.getPublic();
-    PrivateKey privateKey = keyPair.getPrivate();
-
-    Properties props = new Properties();
-    props.put("user", "admin");
-    props.put("password", "Password1");
-    props.put("role", "accountadmin");
-    props.put("timezone", "UTC");
-    try (Connection connection = DriverManager.getConnection(uri, props);
-        Statement statement = connection.createStatement()) {
-      String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
-      statement.execute(
-          String.format("alter user %s set rsa_public_key='%s'", "admin", encodePublicKey));
-    }
-
-    props.remove("password");
-    // test correct private key one
-    props.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, props)) {}
-  }
-
   private Properties kvMap2Properties(
       Map<String, String> params, boolean validateDefaultParameters) {
     Properties props = new Properties();
@@ -893,7 +852,18 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     props.put("ssl", params.get("ssl"));
     props.put("role", params.get("role"));
     props.put("user", params.get("user"));
-    props.put("password", params.get("password"));
+
+    // Handle authentication - prioritize private key, fallback to password
+    if (params.get("private_key_file") != null) {
+      props.put("private_key_file", params.get("private_key_file"));
+      props.put("authenticator", params.get("authenticator"));
+      if (params.get("private_key_pwd") != null) {
+        props.put("private_key_pwd", params.get("private_key_pwd"));
+      }
+    } else if (params.get("password") != null) {
+      props.put("password", params.get("password"));
+    }
+
     props.put("db", params.get("database"));
     props.put("schema", params.get("schema"));
     props.put("warehouse", params.get("warehouse"));
@@ -906,6 +876,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
+  @Disabled("Requires ORG connection parameters")
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
     assumeRunningOnGithubActions();

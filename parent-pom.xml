@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.25.2-SNAPSHOT</version>
+  <version>3.26.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -43,7 +43,7 @@
     <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
     <google.cloud.core.version>2.47.0</google.cloud.core.version>
     <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
-    <google.code.gson.version>2.11.0</google.code.gson.version>
+    <google.code.gson.version>2.13.1</google.code.gson.version>
     <google.errorprone.version>2.35.1</google.errorprone.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
     <google.gax.version>2.57.0</google.gax.version>
@@ -67,8 +67,8 @@
     <metrics.version>2.2.0</metrics.version>
     <mockito.version>4.11.0</mockito.version>
     <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
-    <netty.version>4.1.118.Final</netty.version>
-    <nimbusds.version>9.40</nimbusds.version>
+    <netty.version>4.1.124.Final</netty.version>
+    <nimbusds.version>10.3.1</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
     <plexus.utils.version>3.4.2</plexus.utils.version>

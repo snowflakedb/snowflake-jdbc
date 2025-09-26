@@ -4,6 +4,7 @@ import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaFor
 import static net.snowflake.client.core.FieldSchemaCreator.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
@@ -12,24 +13,31 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.Map;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 
 @SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
 
-  private String text;
-  private int baseType;
-  private Object elements;
+  private final String text;
+  private final int baseType;
+  private final Object elements;
   private String jsonStringFromElements;
+  private final ObjectMapper objectMapper;
 
-  public SfSqlArray(String text, int baseType, Object elements) {
+  public SfSqlArray(
+      String text,
+      int baseType,
+      Object elements,
+      SFBaseSession session,
+      ObjectMapper objectMapper) {
     this.text = text;
     this.baseType = baseType;
     this.elements = elements;
+    this.objectMapper = objectMapper;
   }
 
-  public SfSqlArray(int baseType, Object elements) {
-    this(null, baseType, elements);
+  public SfSqlArray(
+      int baseType, Object elements, SFBaseSession session, ObjectMapper objectMapper) {
+    this(null, baseType, elements, session, objectMapper);
   }
 
   @Override
@@ -104,9 +112,9 @@ public class SfSqlArray implements Array {
     return jsonStringFromElements;
   }
 
-  private static String buildJsonStringFromElements(Object elements) throws SQLException {
+  private String buildJsonStringFromElements(Object elements) throws SQLException {
     try {
-      return SnowflakeUtil.mapJson(elements);
+      return objectMapper.writeValueAsString(elements);
     } catch (JsonProcessingException e) {
       throw new SQLException("There is exception during array to json string.", e);
     }

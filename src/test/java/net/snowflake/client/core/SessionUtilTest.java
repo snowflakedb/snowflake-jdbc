@@ -1,32 +1,29 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.MockConnectionTest;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 public class SessionUtilTest {
   private static String originalUrlValue;
@@ -250,48 +247,6 @@ public class SessionUtilTest {
     assertEquals("value", result.get("TIMEZONE"));
   }
 
-  @Test
-  public void shouldProperlyCheckIfExperimentalAuthEnabled() {
-    try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic = mockStatic(SnowflakeUtil.class)) {
-      snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
-          .thenReturn(null);
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
-      assertThrows(
-          SFException.class,
-          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
-
-      snowflakeUtilMockedStatic
-          .when(() -> SnowflakeUtil.systemGetEnv("SF_ENABLE_EXPERIMENTAL_AUTHENTICATION"))
-          .thenReturn("true");
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_AUTHORIZATION_CODE));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.OAUTH_CLIENT_CREDENTIALS));
-      assertDoesNotThrow(
-          () ->
-              SessionUtil.checkIfExperimentalAuthnEnabled(
-                  AuthenticatorType.PROGRAMMATIC_ACCESS_TOKEN));
-      assertDoesNotThrow(
-          () -> SessionUtil.checkIfExperimentalAuthnEnabled(AuthenticatorType.WORKLOAD_IDENTITY));
-    }
-  }
-
   private void resetOcspConfiguration() {
     SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = null;
     SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
@@ -328,5 +283,79 @@ public class SessionUtilTest {
     assertThat(
         "New retry strategy (designed to serve login-like requests) should be used for okta authn endpoint authentication.",
         SessionUtil.isNewRetryStrategyRequest(postRequest));
+  }
+
+  @Test
+  public void testCreateClientEnvironmentInfo() {
+    // GIVEN
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setOCSPMode(OCSPMode.FAIL_OPEN);
+    loginInput.setApplication("TestApp");
+
+    Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+    connectionPropertiesMap.put(SFSessionProperty.USER, "testuser");
+    connectionPropertiesMap.put(SFSessionProperty.PASSWORD, "testpass");
+    connectionPropertiesMap.put(
+        SFSessionProperty.SERVER_URL, "https://test.snowflakecomputing.com");
+    connectionPropertiesMap.put(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT, 30000);
+    connectionPropertiesMap.put(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT, 10000);
+
+    String tracingLevel = "INFO";
+    AuthenticatorType authenticatorType = AuthenticatorType.SNOWFLAKE;
+
+    // WHEN
+    Map<String, Object> clientEnv =
+        SessionUtil.createClientEnvironmentInfo(
+            loginInput, connectionPropertiesMap, tracingLevel, authenticatorType);
+
+    // THEN
+    // Verify basic environment properties
+    assertThat("OS should be set", clientEnv.containsKey("OS"));
+    assertThat("OS_VERSION should be set", clientEnv.containsKey("OS_VERSION"));
+    assertThat("JAVA_VERSION should be set", clientEnv.containsKey("JAVA_VERSION"));
+    assertThat("JAVA_RUNTIME should be set", clientEnv.containsKey("JAVA_RUNTIME"));
+    assertThat("JAVA_VM should be set", clientEnv.containsKey("JAVA_VM"));
+    assertThat("OCSP_MODE should be set", clientEnv.containsKey("OCSP_MODE"));
+    assertThat("JDBC_JAR_NAME should be set", clientEnv.containsKey("JDBC_JAR_NAME"));
+
+    // Verify application path is set
+    assertThat("APPLICATION_PATH should be set", clientEnv.containsKey("APPLICATION_PATH"));
+    assertThat("APPLICATION_PATH should not be null", clientEnv.get("APPLICATION_PATH") != null);
+    assertThat(
+        "APPLICATION_PATH should be a string", clientEnv.get("APPLICATION_PATH") instanceof String);
+
+    // Verify application name is set from loginInput
+    assertThat(
+        "APPLICATION should be set to TestApp", "TestApp".equals(clientEnv.get("APPLICATION")));
+
+    // Verify OCSP mode is set correctly
+    assertThat("OCSP_MODE should be FAIL_OPEN", "FAIL_OPEN".equals(clientEnv.get("OCSP_MODE")));
+
+    // Verify connection parameters are included (with masked values)
+    assertThat("User parameter should be included", clientEnv.containsKey("user"));
+    assertThat("User has correct value", clientEnv.get("user").toString().contains("testuser"));
+    assertThat("Server URL should be included", clientEnv.containsKey("serverURL"));
+    assertThat(
+        "Socket timeout should be included", clientEnv.containsKey("HTTP_CLIENT_SOCKET_TIMEOUT"));
+    assertThat(
+        "Connection timeout should be included",
+        clientEnv.containsKey("HTTP_CLIENT_CONNECTION_TIMEOUT"));
+
+    // Verify tracing level is set
+    assertThat("Tracing should be set to INFO", "INFO".equals(clientEnv.get("tracing")));
+
+    // Verify APPLICATION_PATH is a valid file path
+    String applicationPath = (String) clientEnv.get("APPLICATION_PATH");
+    assertThat("APPLICATION_PATH should not be empty", !applicationPath.isEmpty());
+    assertThat("APPLICATION_PATH should contain file path", isValidPath(applicationPath));
+  }
+
+  private static boolean isValidPath(String path) {
+    try {
+      Paths.get(path);
+    } catch (InvalidPathException | NullPointerException ex) {
+      return false;
+    }
+    return true;
   }
 }
