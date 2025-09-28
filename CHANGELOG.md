@@ -8,3 +8,4 @@
     - Renamed CRL_REVOCATION_CHECK_MODE to CERT_REVOCATION_CHECK_MODE in CLIENT_ENVIRONMENT metrics
     - Test coverage for multistatement jdbc.
     - Fixed permission check for .toml config file.
+    - Updated netty version to 4.1.125.Final to address CVE-2025-58056.
