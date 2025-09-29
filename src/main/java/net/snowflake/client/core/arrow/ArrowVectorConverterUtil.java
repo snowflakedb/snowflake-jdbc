@@ -1,5 +1,8 @@
 package net.snowflake.client.core.arrow;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -239,5 +242,53 @@ public final class ArrowVectorConverterUtil {
       FieldVector vector, DataConversionContext context, int columnIndex)
       throws SnowflakeSQLException {
     return initConverter(vector, context, context.getSession(), columnIndex);
+  }
+
+  public static Duration getDurationFromNanos(BigDecimal numNanos, int scale) {
+    final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
+    final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
+    final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
+    final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
+    int sign = numNanos.signum();
+    if (sign < 0) {
+      numNanos = numNanos.abs();
+    }
+    long numDay = 0, numHour = 0, numMinute = 0, numSecond = 0, numNanoSecond = 0;
+    if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
+      // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
+      numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
+      numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
+      numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+    } else if (scale == 7 || scale == 8 || scale == 9) {
+      // INTERVAL HOUR TO {SECOND|MINUTE|HOUR}
+      numHour = numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact();
+      numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
+      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+    } else if (scale == 10 || scale == 11) {
+      // INTERVAL MINUTE TO {SECOND|MINUTE}
+      numMinute = numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact();
+      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
+      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+    } else if (scale == 12) {
+      numSecond = numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact();
+      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
+    }
+    String ISODuration = (sign < 0) ? "-P" : "P";
+    ISODuration =
+        ISODuration
+            + numDay
+            + "DT"
+            + numHour
+            + "H"
+            + numMinute
+            + "M"
+            + numSecond
+            + "."
+            + numNanoSecond
+            + "S";
+    return Duration.parse(ISODuration);
   }
 }

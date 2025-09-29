@@ -6,6 +6,7 @@ import java.sql.Types;
 import java.time.Duration;
 import java.time.Period;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.ArrowVectorConverterUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
@@ -15,10 +16,6 @@ public class NumberConverter {
 
   private static final BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
   private static final BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
-  private static final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
-  private static final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
-  private static final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
-  private static final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
   private static final int monthsInYear = 12;
 
   public byte getByte(Object obj) {
@@ -65,51 +62,7 @@ public class NumberConverter {
         numNanos = getBigDecimal(obj, columnType);
       }
       try {
-        int sign = numNanos.signum();
-        if (sign < 0) {
-          numNanos = numNanos.abs();
-        }
-        long numDay = 0;
-        long numHour = 0;
-        long numMinute = 0;
-        long numSecond = 0;
-        long numNanoSecond = 0;
-        if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
-          // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
-          numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
-          numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
-          numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-        } else if (scale == 7 || scale == 8 || scale == 9) {
-          // INTERVAL HOUR TO {SECOND|MINUTE|HOUR}
-          numHour = numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact();
-          numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-        } else if (scale == 10 || scale == 11) {
-          // INTERVAL MINUTE TO {SECOND|MINUTE}
-          numMinute = numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact();
-          numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-        } else if (scale == 12) {
-          numSecond = numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact();
-          numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-        }
-        String ISODuration = (sign < 0) ? "-P" : "P";
-        ISODuration =
-            ISODuration
-                + numDay
-                + "DT"
-                + numHour
-                + "H"
-                + numMinute
-                + "M"
-                + numSecond
-                + "."
-                + numNanoSecond
-                + "S";
-        return Duration.parse(ISODuration);
+        return ArrowVectorConverterUtil.getDurationFromNanos(numNanos, scale);
       } catch (ArithmeticException e) {
         throw new SFException(
             ErrorCode.INVALID_VALUE_CONVERT, columnType, "Duration", numNanos.toPlainString());
