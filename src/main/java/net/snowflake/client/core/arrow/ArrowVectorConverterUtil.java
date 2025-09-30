@@ -253,6 +253,12 @@ public final class ArrowVectorConverterUtil {
     if (sign < 0) {
       numNanos = numNanos.abs();
     }
+    // `Duration.ofSeconds(long seconds, long nanoAdjustment)`
+    // results in overflow for `'-999999999 23:59:59.999999999'::INTERVAL DAY TO SECOND`. The
+    // expected output is `numNanos=-86399999999999999999999`, but
+    // `numNanos.divide(BigDecimal.valueOf(nanoInSecond), RoundingMode.FLOOR).longValueExact()`
+    // results in `numNanos=-86400000000000`. To avoid overflows, we extract each individual
+    // component of the Duration and use `Duration.parse(CharSequence text)` instead.
     long numDay = 0, numHour = 0, numMinute = 0, numSecond = 0, numNanoSecond = 0;
     if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
       // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
