@@ -162,11 +162,10 @@ public interface ArrowVectorConverter {
    * Convert value in arrow vector to Duration
    *
    * @param index index of the value to be converted in the vector
-   * @param scale corresponding scale of Snowflake column
    * @return Duration converted from arrow vector
    * @throws SFException invalid data conversion
    */
-  Duration toDuration(int index, int scale) throws SFException;
+  Duration toDuration(int index) throws SFException;
 
   /**
    * Convert value in arrow vector to Object

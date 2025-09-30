@@ -244,57 +244,20 @@ public final class ArrowVectorConverterUtil {
     return initConverter(vector, context, context.getSession(), columnIndex);
   }
 
-  public static Duration getDurationFromNanos(BigDecimal numNanos, int scale) {
+  public static Duration getDurationFromNanos(BigDecimal numNanos) {
     final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
-    final BigDecimal nanoInMinute = nanoInSecond.multiply(BigDecimal.valueOf(60));
-    final BigDecimal nanoInHour = nanoInMinute.multiply(BigDecimal.valueOf(60));
-    final BigDecimal nanoInDay = nanoInHour.multiply(BigDecimal.valueOf(24));
     int sign = numNanos.signum();
-    if (sign < 0) {
-      numNanos = numNanos.abs();
+    numNanos = numNanos.abs();
+    // Duration.ofSeconds() with passed in negative second value results in overflow
+    // so instead we identify the sign of numNanos and use Duration.negated() accordingly
+    Duration duration =
+        Duration.ofSeconds(
+            numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact(),
+            numNanos.remainder(nanoInSecond).longValueExact());
+    if (sign >= 0) {
+      return duration;
+    } else {
+      return duration.negated();
     }
-    // `Duration.ofSeconds(long seconds, long nanoAdjustment)`
-    // results in overflow for `'-999999999 23:59:59.999999999'::INTERVAL DAY TO SECOND`. The
-    // expected output is `numNanos=-86399999999999999999999`, but
-    // `numNanos.divide(BigDecimal.valueOf(nanoInSecond), RoundingMode.FLOOR).longValueExact()`
-    // results in `numNanos=-86400000000000`. To avoid overflows, we extract each individual
-    // component of the Duration and use `Duration.parse(CharSequence text)` instead.
-    long numDay = 0, numHour = 0, numMinute = 0, numSecond = 0, numNanoSecond = 0;
-    if (scale == 3 || scale == 4 || scale == 5 || scale == 6) {
-      // INTERVAL DAY TO {SECOND|MINUTE|HOUR|DAY}
-      numDay = numNanos.divide(nanoInDay, RoundingMode.FLOOR).longValueExact();
-      numHour = (numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact()) % 24;
-      numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-    } else if (scale == 7 || scale == 8 || scale == 9) {
-      // INTERVAL HOUR TO {SECOND|MINUTE|HOUR}
-      numHour = numNanos.divide(nanoInHour, RoundingMode.FLOOR).longValueExact();
-      numMinute = (numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact()) % 60;
-      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-    } else if (scale == 10 || scale == 11) {
-      // INTERVAL MINUTE TO {SECOND|MINUTE}
-      numMinute = numNanos.divide(nanoInMinute, RoundingMode.FLOOR).longValueExact();
-      numSecond = (numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact()) % 60;
-      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-    } else if (scale == 12) {
-      numSecond = numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact();
-      numNanoSecond = numNanos.remainder(nanoInSecond).longValueExact();
-    }
-    String ISODuration = (sign < 0) ? "-P" : "P";
-    ISODuration =
-        ISODuration
-            + numDay
-            + "DT"
-            + numHour
-            + "H"
-            + numMinute
-            + "M"
-            + numSecond
-            + "."
-            + numNanoSecond
-            + "S";
-    return Duration.parse(ISODuration);
   }
 }

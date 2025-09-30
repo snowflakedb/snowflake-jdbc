@@ -93,7 +93,7 @@ public abstract class SFBaseResultSet {
 
   public abstract Period getPeriod(int columnIndex) throws SFException;
 
-  public abstract Duration getDuration(int columnIndex, int scale) throws SFException;
+  public abstract Duration getDuration(int columnIndex) throws SFException;
 
   public abstract short getShort(int columnIndex) throws SFException;
 

@@ -49,7 +49,7 @@ public class NumberConverter {
     }
   }
 
-  public Duration getDuration(Object obj, int columnType, int scale) throws SFException {
+  public Duration getDuration(Object obj, int columnType) throws SFException {
     if (obj == null) {
       return null;
     }
@@ -62,7 +62,7 @@ public class NumberConverter {
         numNanos = getBigDecimal(obj, columnType);
       }
       try {
-        return ArrowVectorConverterUtil.getDurationFromNanos(numNanos, scale);
+        return ArrowVectorConverterUtil.getDurationFromNanos(numNanos);
       } catch (ArithmeticException e) {
         throw new SFException(
             ErrorCode.INVALID_VALUE_CONVERT, columnType, "Duration", numNanos.toPlainString());

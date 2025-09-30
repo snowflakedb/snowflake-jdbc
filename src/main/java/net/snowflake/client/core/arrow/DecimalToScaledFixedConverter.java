@@ -179,13 +179,13 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter 
   }
 
   @Override
-  public Duration toDuration(int index, int scale) throws SFException {
+  public Duration toDuration(int index) throws SFException {
     if (isNull(index)) {
       return null;
     }
     BigDecimal numNanos = toBigDecimal(index);
     try {
-      return ArrowVectorConverterUtil.getDurationFromNanos(numNanos, scale);
+      return ArrowVectorConverterUtil.getDurationFromNanos(numNanos);
     } catch (ArithmeticException e) {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Duration", numNanos.toPlainString());

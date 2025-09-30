@@ -171,7 +171,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   }
 
   @Override
-  public Duration toDuration(int index, int scale) throws SFException {
+  public Duration toDuration(int index) throws SFException {
     if (isNull(index)) {
       return null;
     }
