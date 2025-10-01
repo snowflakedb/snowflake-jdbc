@@ -162,14 +162,14 @@ public class ConnectionFipsIT extends AbstractDriverIT {
       }
     }
 
-    // Configure FIPS-compliant SSL context for all HTTPS connections
+    // SSL-context
     try {
-      SSLContext sslContext = SSLContext.getInstance("TLSv1.2", "BCFIPS");
+      SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, null, null);
       SSLContext.setDefault(sslContext);
       HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
     } catch (Exception e) {
-      throw new RuntimeException("Failed to configure FIPS SSL context", e);
+      throw new RuntimeException("Failed to configure SSL context", e);
     }
 
     // attempts an SSL connection to Google
