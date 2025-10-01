@@ -164,7 +164,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
     // Configure FIPS-compliant SSL context for all HTTPS connections
     try {
-      SSLContext sslContext = SSLContext.getInstance("TLS", "BCFIPS");
+      SSLContext sslContext = SSLContext.getInstance("TLSv1.2", "BCFIPS");
       sslContext.init(null, null, null);
       SSLContext.setDefault(sslContext);
       HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
