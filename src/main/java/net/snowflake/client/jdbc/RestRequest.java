@@ -229,7 +229,7 @@ public class RestRequest {
    *     State Exception i.e. connection is already shutdown etc
    */
   @Deprecated
-  public static CloseableHttpResponse exewcute(
+  public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
