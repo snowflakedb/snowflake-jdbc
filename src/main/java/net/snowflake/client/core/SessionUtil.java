@@ -40,6 +40,7 @@ import net.snowflake.client.core.auth.wif.GcpIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
@@ -1070,6 +1071,7 @@ public class SessionUtil {
     clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
     clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
     clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
+    clientEnv.put("CERT_REVOCATION_CHECK_MODE", getCertRevocationMode(loginInput));
 
     if (loginInput.getApplication() != null) {
       clientEnv.put("APPLICATION", loginInput.getApplication());
@@ -1158,6 +1160,18 @@ public class SessionUtil {
       clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
     }
     return clientEnv;
+  }
+
+  private static String getCertRevocationMode(SFLoginInput loginInput) {
+    HttpClientSettingsKey httpClientSettings = loginInput.getHttpClientSettingsKey();
+    if (httpClientSettings == null) {
+      return null;
+    }
+    CertRevocationCheckMode revocationCheckMode = httpClientSettings.getRevocationCheckMode();
+    if (revocationCheckMode == null) {
+      return null;
+    }
+    return revocationCheckMode.name();
   }
 
   private static void clearAccessTokenCache(SFLoginInput loginInput) throws SFException {

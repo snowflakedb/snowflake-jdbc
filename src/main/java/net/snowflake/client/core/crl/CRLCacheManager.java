@@ -1,5 +1,6 @@
 package net.snowflake.client.core.crl;
 
+import java.nio.file.Path;
 import java.security.cert.X509CRL;
 import java.time.Duration;
 import java.time.Instant;
@@ -7,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -15,7 +17,8 @@ import net.snowflake.client.log.SFLoggerFactory;
  * Cache manager that coordinates between in-memory and file-based CRL caches. Provides automatic
  * cleanup of expired entries and proper lifecycle management.
  */
-class CRLCacheManager {
+@SnowflakeJdbcInternalApi
+public class CRLCacheManager {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheManager.class);
 
@@ -24,11 +27,17 @@ class CRLCacheManager {
   private final ScheduledExecutorService cleanupScheduler;
   private final Runnable cleanupTask;
   private final long cleanupIntervalInMs;
+  private final Duration cacheValidityTime;
 
-  CRLCacheManager(CRLCache memoryCache, CRLCache fileCache, Duration cleanupInterval) {
+  CRLCacheManager(
+      CRLCache memoryCache,
+      CRLCache fileCache,
+      Duration cleanupInterval,
+      Duration cacheValidityTime) {
     this.memoryCache = memoryCache;
     this.fileCache = fileCache;
     this.cleanupIntervalInMs = cleanupInterval.toMillis();
+    this.cacheValidityTime = cacheValidityTime;
 
     this.cleanupTask =
         () -> {
@@ -51,28 +60,34 @@ class CRLCacheManager {
     this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
   }
 
-  static CRLCacheManager fromConfig(CRLValidationConfig config) throws SnowflakeSQLLoggedException {
+  public static CRLCacheManager build(
+      boolean inMemoryCacheEnabled,
+      boolean onDiskCacheEnabled,
+      Path onDiskCacheDir,
+      Duration onDiskCacheRemovalDelay,
+      Duration cacheValidityTime)
+      throws SnowflakeSQLLoggedException {
     CRLCache memoryCache;
-    if (config.isInMemoryCacheEnabled()) {
+    if (inMemoryCacheEnabled) {
       logger.debug("Enabling in-memory CRL cache");
-      memoryCache = new CRLInMemoryCache(config.getCacheValidityTime());
+      memoryCache = new CRLInMemoryCache(cacheValidityTime);
     } else {
       logger.debug("In-memory CRL cache disabled");
       memoryCache = NoopCRLCache.INSTANCE;
     }
 
     CRLCache fileCache;
-    if (config.isOnDiskCacheEnabled()) {
+    if (onDiskCacheEnabled) {
       logger.debug("Enabling file based CRL cache");
-      fileCache = new CRLFileCache(config.getOnDiskCacheDir(), config.getOnDiskCacheRemovalDelay());
+      fileCache = new CRLFileCache(onDiskCacheDir, onDiskCacheRemovalDelay);
     } else {
       logger.debug("File based CRL cache disabled");
       fileCache = NoopCRLCache.INSTANCE;
     }
 
     CRLCacheManager manager =
-        new CRLCacheManager(memoryCache, fileCache, config.getOnDiskCacheRemovalDelay());
-    if (config.isInMemoryCacheEnabled() || config.isOnDiskCacheEnabled()) {
+        new CRLCacheManager(memoryCache, fileCache, onDiskCacheRemovalDelay, cacheValidityTime);
+    if (inMemoryCacheEnabled || onDiskCacheEnabled) {
       manager.startPeriodicCleanup();
     }
     return manager;
@@ -107,5 +122,9 @@ class CRLCacheManager {
 
     logger.debug(
         "Scheduled CRL cache cleanup task to run every {} seconds.", cleanupIntervalInMs / 1000.0);
+  }
+
+  public Duration getCacheValidityTime() {
+    return cacheValidityTime;
   }
 }
