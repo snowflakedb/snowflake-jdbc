@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Test;
 public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings/restrequest";
-  private static String originalHost;
-  private static String originalPort;
-  private static String originalProtocol;
 
   @BeforeEach
   public void setUp() throws IOException {

@@ -843,7 +843,7 @@ public class HttpUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  public static String executeGeneralRequestOmitRequestGuid(
+  public static String executeGeneralRequestOmitSnowflakeHeaders(
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
@@ -1214,7 +1214,7 @@ public class HttpUtil {
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
    * @param includeRetryParameters whether to include retry parameters in retried requests
-   * @param includeRequestGuid whether to include request_guid
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
    * @param retryContextManager RetryContext used to customize retry handling functionality
@@ -1237,7 +1237,7 @@ public class HttpUtil {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
       ExecTimeTelemetryData execTimeData,
@@ -1266,7 +1266,7 @@ public class HttpUtil {
             .canceling(canceling)
             .withoutCookies(withoutCookies)
             .includeRetryParameters(includeRetryParameters)
-            .includeRequestGuid(includeRequestGuid)
+            .includeSnowflakeHeaders(includeSnowflakeHeaders)
             .retryHTTP403(retryOnHTTP403)
             .unpackResponse(true)
             .noRetry(false)

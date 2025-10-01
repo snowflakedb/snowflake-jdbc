@@ -18,7 +18,7 @@ public class HttpExecutingContextBuilder {
   private AtomicBoolean canceling;
   private boolean withoutCookies;
   private boolean includeRetryParameters;
-  private boolean includeRequestGuid;
+  private boolean includeSnowflakeHeaders;
   private boolean retryHTTP403;
   private boolean noRetry;
   private boolean unpackResponse;
@@ -52,7 +52,7 @@ public class HttpExecutingContextBuilder {
     this.canceling = context.getCanceling();
     this.withoutCookies = context.isWithoutCookies();
     this.includeRetryParameters = context.isIncludeRetryParameters();
-    this.includeRequestGuid = context.isIncludeRequestGuid();
+    this.includeSnowflakeHeaders = context.isIncludeSnowflakeHeaders();
     this.retryHTTP403 = context.isRetryHTTP403();
     this.noRetry = context.isNoRetry();
     this.unpackResponse = context.isUnpackResponse();
@@ -69,7 +69,7 @@ public class HttpExecutingContextBuilder {
   public static HttpExecutingContextBuilder forLogin(String requestId, String requestInfoScrubbed) {
     return new HttpExecutingContextBuilder(requestId, requestInfoScrubbed)
         .loginRequest(true)
-        .includeRequestGuid(true)
+        .includeSnowflakeHeaders(true)
         .retryHTTP403(true);
   }
 
@@ -83,7 +83,7 @@ public class HttpExecutingContextBuilder {
   public static HttpExecutingContextBuilder forQuery(String requestId, String requestInfoScrubbed) {
     return new HttpExecutingContextBuilder(requestId, requestInfoScrubbed)
         .includeRetryParameters(true)
-        .includeRequestGuid(true)
+        .includeSnowflakeHeaders(true)
         .unpackResponse(true);
   }
 
@@ -98,7 +98,7 @@ public class HttpExecutingContextBuilder {
       String requestId, String requestInfoScrubbed) {
     return new HttpExecutingContextBuilder(requestId, requestInfoScrubbed)
         .noRetry(true)
-        .includeRequestGuid(true);
+        .includeSnowflakeHeaders(true);
   }
 
   /**
@@ -204,11 +204,11 @@ public class HttpExecutingContextBuilder {
   /**
    * Sets whether to include request GUID.
    *
-   * @param includeRequestGuid true to include request GUID
+   * @param includeSnowflakeHeaders true to include request GUID and other Snowflake headers
    * @return this builder instance
    */
-  public HttpExecutingContextBuilder includeRequestGuid(boolean includeRequestGuid) {
-    this.includeRequestGuid = includeRequestGuid;
+  public HttpExecutingContextBuilder includeSnowflakeHeaders(boolean includeSnowflakeHeaders) {
+    this.includeSnowflakeHeaders = includeSnowflakeHeaders;
     return this;
   }
 
@@ -282,7 +282,7 @@ public class HttpExecutingContextBuilder {
     context.setCanceling(canceling);
     context.setWithoutCookies(withoutCookies);
     context.setIncludeRetryParameters(includeRetryParameters);
-    context.setIncludeRequestGuid(includeRequestGuid);
+    context.setIncludeSnowflakeHeaders(includeSnowflakeHeaders);
     context.setRetryHTTP403(retryHTTP403);
     context.setNoRetry(noRetry);
     context.setUnpackResponse(unpackResponse);

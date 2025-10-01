@@ -151,6 +151,11 @@ public abstract class SFBaseSession {
 
   private Map<String, Object> commonParameters;
 
+  // Headers that once they are returned from Snowflake, will then be added to each subsequent HTTP
+  // request
+  // e.g. x-snowflake-session header
+  private Map<String, String> stickyHttpHeaders = new HashMap<>();
+
   private boolean isJdbcArrowTreatDecimalAsInt = true;
 
   private boolean implicitServerSideQueryTimeout = false;
@@ -1436,5 +1441,13 @@ public abstract class SFBaseSession {
 
   public void setAllowCertificatesWithoutCrlUrl(boolean allowCertificatesWithoutCrlUrl) {
     this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
+  }
+
+  public Map<String, String> getStickyHttpHeaders() {
+    return stickyHttpHeaders;
+  }
+
+  public void setStickyHttpHeaders(Map<String, String> stickyHttpHeaders) {
+    this.stickyHttpHeaders = stickyHttpHeaders;
   }
 }

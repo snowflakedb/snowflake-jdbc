@@ -22,6 +22,7 @@ public class SFLoginOutput {
   private String sessionRole;
   private String sessionWarehouse;
   private Map<String, Object> commonParams;
+  private Map<String, String> stickyHttpHeaders;
 
   private String sessionId;
 
@@ -45,7 +46,8 @@ public class SFLoginOutput {
       String sessionRole,
       String sessionWarehouse,
       String sessionId,
-      Map<String, Object> commonParams) {
+      Map<String, Object> commonParams,
+      Map<String, String> stickyHttpHeaders) {
     this.sessionToken = sessionToken;
     this.masterToken = masterToken;
     this.idToken = idToken;
@@ -64,6 +66,7 @@ public class SFLoginOutput {
     this.commonParams = commonParams;
     this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
     this.sessionId = sessionId;
+    this.stickyHttpHeaders = stickyHttpHeaders;
   }
 
   public boolean getAutoCommit() {
@@ -150,5 +153,9 @@ public class SFLoginOutput {
 
   long getMasterTokenValidityInSeconds() {
     return masterTokenValidityInSeconds;
+  }
+
+  public Map<String, String> getStickyHttpHeaders() {
+    return stickyHttpHeaders;
   }
 }
