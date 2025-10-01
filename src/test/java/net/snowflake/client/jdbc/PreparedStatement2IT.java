@@ -722,9 +722,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       for (int threshold = 0; threshold < 2; ++threshold) {
         connection
             .createStatement()
-            .execute(
-                "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = "
-                    + threshold);
+            .execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = " + threshold);
         String sql = "insert into " + uniqueTableName + "(col, colB) values(?,?)";
 
         // Null NUMERIC followed by FLOAT.
