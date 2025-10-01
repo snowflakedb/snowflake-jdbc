@@ -482,7 +482,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
           Time[] stageResult = new Time[times.length];
           try (ResultSet rsStage =
-              statement.executeQuery("SELECT * FROM test_prepst_time ORDER BY id ASC")) {
+              statement.executeQuery(
+                  "SELECT * FROM " + uniqueTableName + "_time ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
               assertTrue(rsStage.next());
               stageResult[i] = rsStage.getTime(2);
