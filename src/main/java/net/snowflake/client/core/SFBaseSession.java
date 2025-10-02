@@ -8,12 +8,16 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.QueryStatusV2;
@@ -44,6 +48,8 @@ import net.snowflake.client.log.SFLoggerFactory;
  * which signals whether to enable client telemetry
  */
 public abstract class SFBaseSession {
+  private static final Set<String> STICKY_HEADERS_NAMES =
+      new HashSet<>(Collections.singletonList("x-snowflake-session"));
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
@@ -154,7 +160,7 @@ public abstract class SFBaseSession {
   // Headers that once they are returned from Snowflake, will then be added to each subsequent HTTP
   // request
   // e.g. x-snowflake-session header
-  private Map<String, String> stickyHttpHeaders = new HashMap<>();
+  private final Map<String, String> stickyHttpHeaders = new HashMap<>();
 
   private boolean isJdbcArrowTreatDecimalAsInt = true;
 
@@ -1447,7 +1453,13 @@ public abstract class SFBaseSession {
     return stickyHttpHeaders;
   }
 
-  public void setStickyHttpHeaders(Map<String, String> stickyHttpHeaders) {
-    this.stickyHttpHeaders = stickyHttpHeaders;
+  public void extractAndUpdateStickyHttpHeaders(Map<String, String> allHeaders) {
+    this.stickyHttpHeaders.putAll(filterStickyHeaders(allHeaders));
+  }
+
+  private static Map<String, String> filterStickyHeaders(Map<String, String> headers) {
+    return headers.entrySet().stream()
+        .filter(entry -> STICKY_HEADERS_NAMES.contains(entry.getKey().toLowerCase()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }

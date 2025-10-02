@@ -621,9 +621,7 @@ public class SessionUtil {
     }
 
     HttpPost postRequest = null;
-    // Dummy session to collect sticky headers from login response, proper session object is
-    // established after login
-    SFSession dummySession = new SFSession();
+    HttpResponseWithHeaders response = null;
 
     try {
       Map<String, Object> data = new HashMap<>();
@@ -766,15 +764,16 @@ public class SessionUtil {
 
       while (true) {
         try {
-          theString =
-              HttpUtil.executeGeneralRequest(
+          response =
+              HttpUtil.executeGeneralRequestWithContext(
                   postRequest,
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
                   leftsocketTimeout,
                   retryCount,
                   loginInput.getHttpClientSettingsKey(),
-                  dummySession);
+                  null);
+          theString = response.getResponseBody();
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
@@ -1024,7 +1023,7 @@ public class SessionUtil {
             sessionWarehouse,
             sessionId,
             commonParams,
-            dummySession.getStickyHttpHeaders());
+            response != null ? response.getHeaders() : new HashMap<>());
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       if (consentCacheIdToken) {

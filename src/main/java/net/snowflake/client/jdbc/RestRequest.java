@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,6 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -1098,13 +1096,8 @@ public class RestRequest {
   private static void updateSessionWithStickyHeaders(
       SFBaseSession sfSession, CloseableHttpResponse response) {
     if (sfSession != null && response != null) {
-      if (sfSession.getStickyHttpHeaders() == null) {
-        sfSession.setStickyHttpHeaders(new HashMap<>());
-      }
-      Header header = response.getFirstHeader("x-snowflake-session");
-      if (header != null) {
-        sfSession.getStickyHttpHeaders().put(header.getName(), header.getValue());
-      }
+      Map<String, String> responseHeaders = HttpUtil.extractHeadersAsMap(response);
+      sfSession.extractAndUpdateStickyHttpHeaders(responseHeaders);
     }
   }
 
