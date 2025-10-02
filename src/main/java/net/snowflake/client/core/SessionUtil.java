@@ -1422,14 +1422,15 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest,
-              loginInput.getLoginTimeout(),
-              0,
-              loginInput.getSocketTimeoutInMillis(),
-              0,
-              loginInput.getHttpClientSettingsKey(),
-              session);
+          HttpUtil.executeGeneralRequestWithContext(
+                  postRequest,
+                  loginInput.getLoginTimeout(),
+                  0,
+                  loginInput.getSocketTimeoutInMillis(),
+                  0,
+                  loginInput.getHttpClientSettingsKey(),
+                  session)
+              .getResponseBody();
 
       JsonNode rootNode;
 
