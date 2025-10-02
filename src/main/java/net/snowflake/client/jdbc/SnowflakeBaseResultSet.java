@@ -28,6 +28,8 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Period;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -1449,6 +1451,22 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (T) getTimestamp(columnIndex);
     } else if (BigDecimal.class.isAssignableFrom(type)) {
       return (T) getBigDecimal(columnIndex);
+    } else if (Period.class.isAssignableFrom(type)) {
+      try {
+        return (T) sfBaseResultSet.getPeriod(columnIndex);
+      } catch (SFException e) {
+        throw new SQLException(
+            "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                + type.getName());
+      }
+    } else if (Duration.class.isAssignableFrom(type)) {
+      try {
+        return (T) sfBaseResultSet.getDuration(columnIndex);
+      } catch (SFException e) {
+        throw new SQLException(
+            "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                + type.getName());
+      }
     } else {
       logger.debug(
           "Unsupported type passed to getObject(int columnIndex,Class<T> type): " + type.getName());
