@@ -9,3 +9,4 @@
     - Test coverage for multistatement jdbc.
     - Fixed permission check for .toml config file.
     - Bumped netty to 4.1.127.Final to address CVE-2025-58056 and  CVE-2025-58057
+    - Added support for Interval Year-Month and Day-Time types in JDBC.
