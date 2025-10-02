@@ -621,6 +621,7 @@ public class SessionUtil {
     }
 
     HttpPost postRequest = null;
+    HttpResponseWithHeaders response = null;
 
     try {
       Map<String, Object> data = new HashMap<>();
@@ -763,8 +764,8 @@ public class SessionUtil {
 
       while (true) {
         try {
-          theString =
-              HttpUtil.executeGeneralRequest(
+          response =
+              HttpUtil.executeGeneralRequestWithContext(
                   postRequest,
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
@@ -772,6 +773,7 @@ public class SessionUtil {
                   retryCount,
                   loginInput.getHttpClientSettingsKey(),
                   null);
+          theString = response.getResponseBody();
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
@@ -1020,7 +1022,8 @@ public class SessionUtil {
             sessionRole,
             sessionWarehouse,
             sessionId,
-            commonParams);
+            commonParams,
+            response != null ? response.getHeaders() : new HashMap<>());
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       if (consentCacheIdToken) {
@@ -1419,14 +1422,15 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest,
-              loginInput.getLoginTimeout(),
-              0,
-              loginInput.getSocketTimeoutInMillis(),
-              0,
-              loginInput.getHttpClientSettingsKey(),
-              session);
+          HttpUtil.executeGeneralRequestWithContext(
+                  postRequest,
+                  loginInput.getLoginTimeout(),
+                  0,
+                  loginInput.getSocketTimeoutInMillis(),
+                  0,
+                  loginInput.getHttpClientSettingsKey(),
+                  session)
+              .getResponseBody();
 
       JsonNode rootNode;
 

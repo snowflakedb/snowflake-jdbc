@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
@@ -143,7 +144,7 @@ public class SessionUtilExternalBrowserTest {
       mockedHttpUtil
           .when(
               () ->
-                  HttpUtil.executeGeneralRequest(
+                  HttpUtil.executeGeneralRequestWithContext(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
@@ -152,12 +153,14 @@ public class SessionUtilExternalBrowserTest {
                       Mockito.nullable(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
-              "{\"success\":\"true\",\"data\":{\"proofKey\":\""
-                  + MOCK_PROOF_KEY
-                  + "\","
-                  + " \"ssoUrl\":\""
-                  + MOCK_SSO_URL
-                  + "\"}}");
+              new HttpResponseWithHeaders(
+                  "{\"success\":\"true\",\"data\":{\"proofKey\":\""
+                      + MOCK_PROOF_KEY
+                      + "\","
+                      + " \"ssoUrl\":\""
+                      + MOCK_SSO_URL
+                      + "\"}}",
+                  new HashMap<>()));
 
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
@@ -204,7 +207,7 @@ public class SessionUtilExternalBrowserTest {
       mockedHttpUtil
           .when(
               () ->
-                  HttpUtil.executeGeneralRequest(
+                  HttpUtil.executeGeneralRequestWithContext(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
@@ -212,7 +215,10 @@ public class SessionUtilExternalBrowserTest {
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
-          .thenReturn("{\"success\":\"false\",\"code\":\"123456\",\"message\":\"errormes\"}");
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"success\":\"false\",\"code\":\"123456\",\"message\":\"errormes\"}",
+                  new HashMap<>()));
 
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
