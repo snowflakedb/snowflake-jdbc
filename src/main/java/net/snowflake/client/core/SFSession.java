@@ -844,6 +844,7 @@ public class SFSession extends SFBaseSession {
     setWarehouse(loginOutput.getSessionWarehouse());
     setSessionId(loginOutput.getSessionId());
     setAutoCommit(loginOutput.getAutoCommit());
+    extractAndUpdateStickyHttpHeaders(loginOutput.getLoginResponseHeaders());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);

@@ -24,8 +24,10 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpResponseWithHeaders;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -226,7 +228,7 @@ public class SSOConnectionTest {
     mockedHttpUtil
         .when(
             () ->
-                HttpUtil.executeGeneralRequest(
+                HttpUtil.executeGeneralRequestWithContext(
                     any(HttpPost.class),
                     anyInt(),
                     anyInt(),
@@ -235,11 +237,12 @@ public class SSOConnectionTest {
                     nullable(HttpClientSettingsKey.class),
                     nullable(SFBaseSession.class)))
         .thenAnswer(
-            new Answer<String>() {
+            new Answer<HttpResponseWithHeaders>() {
               int callCount = 0;
 
               @Override
-              public String answer(InvocationOnMock invocation) throws IOException {
+              public HttpResponseWithHeaders answer(InvocationOnMock invocation)
+                  throws IOException {
                 String resp = "";
                 final Object[] args = invocation.getArguments();
                 JsonNode jsonNode;
@@ -278,7 +281,7 @@ public class SSOConnectionTest {
                 }
 
                 callCount++;
-                return resp;
+                return new HttpResponseWithHeaders(resp, new HashMap<>());
               }
             });
   }

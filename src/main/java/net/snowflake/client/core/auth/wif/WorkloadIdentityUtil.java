@@ -36,7 +36,7 @@ public class WorkloadIdentityUtil {
    */
   public static String performIdentityRequest(HttpRequestBase tokenRequest, SFLoginInput loginInput)
       throws SnowflakeSQLException, IOException {
-    return HttpUtil.executeGeneralRequestOmitRequestGuid(
+    return HttpUtil.executeGeneralRequestOmitSnowflakeHeaders(
         tokenRequest,
         loginInput.getLoginTimeout(),
         3, // 3s timeout
