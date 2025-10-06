@@ -2,6 +2,8 @@
 
 # Changelog
 - v3.27.1-SNAPSHOT
+    - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
+  
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
     - Added HTTP 307 & 308 retries in case of internal IP redirects

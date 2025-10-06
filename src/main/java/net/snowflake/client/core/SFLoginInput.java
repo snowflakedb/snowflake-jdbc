@@ -51,6 +51,8 @@ public class SFLoginInput {
   private String privateKeyBase64;
   private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
+  private int platformDetectionTimeoutMs = 200; // Default 200ms timeout for platform detection
+  private boolean disablePlatformDetection = false; // Default false - platform detection enabled
 
   private SFOauthLoginInput oauthLoginInput;
 
@@ -636,5 +638,23 @@ public class SFLoginInput {
   public void setBrowserHandler(
       SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler) {
     this.browserHandler = browserHandler;
+  }
+
+  public int getPlatformDetectionTimeoutMs() {
+    return platformDetectionTimeoutMs;
+  }
+
+  public SFLoginInput setPlatformDetectionTimeoutMs(int platformDetectionTimeoutMs) {
+    this.platformDetectionTimeoutMs = platformDetectionTimeoutMs;
+    return this;
+  }
+
+  public boolean isDisablePlatformDetection() {
+    return disablePlatformDetection;
+  }
+
+  public SFLoginInput setDisablePlatformDetection(boolean disablePlatformDetection) {
+    this.disablePlatformDetection = disablePlatformDetection;
+    return this;
   }
 }

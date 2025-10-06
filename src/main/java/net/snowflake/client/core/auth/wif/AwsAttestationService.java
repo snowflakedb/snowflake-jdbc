@@ -29,8 +29,13 @@ public class AwsAttestationService {
     aws4Signer.setRegionName(getAWSRegion());
   }
 
-  AWSCredentials getAWSCredentials() {
-    return DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
+  public AWSCredentials getAWSCredentials() {
+    try {
+      return DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
+    } catch (Exception e) {
+      logger.debug("Failed to retrieve AWS credentials: {}", e.getMessage());
+      return null;
+    }
   }
 
   String getAWSRegion() {
