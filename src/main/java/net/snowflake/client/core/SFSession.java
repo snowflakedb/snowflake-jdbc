@@ -795,11 +795,7 @@ public class SFSession extends SFBaseSession {
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
         .setBrowserResponseTimeout(browserResponseTimeout)
-        .setPlatformDetectionTimeoutMs(
-            connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
-                ? (Integer)
-                    connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
-                : 200) // Default to 200ms
+        .setPlatformDetectionTimeoutMs((int) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS))
         .setDisablePlatformDetection(
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
                 ? getBooleanValue(

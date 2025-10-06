@@ -18,7 +18,7 @@ public class PlatformDetectionUtil {
 
   public static String performPlatformDetectionRequest(HttpRequestBase httpRequest, int timeoutMs)
       throws SnowflakeSQLException, IOException {
-    return HttpUtil.executeGeneralRequestOmitRequestGuid(
+    return HttpUtil.executeGeneralRequestOmitSnowflakeHeaders(
         httpRequest,
         1,
         timeoutMs / 1000,
