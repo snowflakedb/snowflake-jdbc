@@ -35,7 +35,7 @@
   <properties>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <awssdk.version>1.12.655</awssdk.version>
+    <awssdk.version>1.12.792</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
@@ -133,6 +133,10 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sts</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
