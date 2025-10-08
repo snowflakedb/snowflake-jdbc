@@ -299,9 +299,9 @@ public class TelemetryIT extends AbstractDriverIT {
       String role = parameters.get("role");
       try (ResultSet resultSet =
           statement.executeQuery(
-              "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
-                  + role
-                  + "')")) {
+              String.format(
+                  "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', 'session:role:%s');",
+                  role))) {
         assertTrue(resultSet.next());
         token = resultSet.getString(1);
       }
