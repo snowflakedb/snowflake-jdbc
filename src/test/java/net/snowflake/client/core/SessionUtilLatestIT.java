@@ -136,7 +136,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
       // Both mocks the call _and_ verifies that the headers are forwarded.
       Verification httpCalledWithHeaders =
           () ->
-              HttpUtil.executeGeneralRequest(
+              HttpUtil.executeGeneralRequestWithContext(
                   Mockito.argThat(
                       arg -> {
                         for (Entry<String, String> definedHeader : additionalHeaders.entrySet()) {
@@ -160,7 +160,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
-          .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}",
+                  new HashMap<>()));
 
       mockedHttpUtil
           .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
@@ -191,7 +194,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
       // Both mocks the call _and_ verifies that the headers are forwarded.
       Verification httpCalledWithHeaders =
           () ->
-              HttpUtil.executeGeneralRequest(
+              HttpUtil.executeGeneralRequestWithContext(
                   Mockito.argThat(
                       arg -> {
                         try {
@@ -216,7 +219,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
           .when(httpCalledWithHeaders)
-          .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}",
+                  new HashMap<>()));
 
       mockedHttpUtil
           .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
@@ -474,6 +480,22 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
 
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequestWithContext(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}",
+                  new HashMap<>()));
+
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     }
   }
@@ -536,6 +558,22 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(RetryContextManager.class),
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequestWithContext(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}",
+                  new HashMap<>()));
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     }

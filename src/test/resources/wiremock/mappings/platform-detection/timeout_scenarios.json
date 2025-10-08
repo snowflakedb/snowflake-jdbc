@@ -1,0 +1,47 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/latest/api/token",
+        "method": "PUT"
+      },
+      "response": {
+        "status": 200,
+        "body": "mock-token",
+        "fixedDelayMilliseconds": 2000
+      }
+    },
+    {
+      "request": {
+        "url": "/metadata/instance?api-version=2021-02-01",
+        "method": "GET",
+        "headers": {
+          "Metadata": {
+            "equalTo": "True"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {"test": "response"},
+        "fixedDelayMilliseconds": 2000
+      }
+    },
+    {
+      "request": {
+        "url": "/computeMetadata/v1/instance/service-accounts/default/email",
+        "method": "GET",
+        "headers": {
+          "Metadata-Flavor": {
+            "equalTo": "Google"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": "test@example.com",
+        "fixedDelayMilliseconds": 2000
+      }
+    }
+  ]
+} 

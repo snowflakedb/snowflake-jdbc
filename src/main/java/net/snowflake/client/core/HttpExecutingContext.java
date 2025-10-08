@@ -49,7 +49,7 @@ public class HttpExecutingContext {
   private boolean skipRetriesBecauseOf200; // todo create skip retry reason enum
   private boolean withoutCookies;
   private boolean includeRetryParameters;
-  private boolean includeRequestGuid;
+  private boolean includeSnowflakeHeaders;
   private boolean unpackResponse;
   private AtomicBoolean canceling;
   private SFBaseSession sfSession;
@@ -253,12 +253,12 @@ public class HttpExecutingContext {
     this.canceling = canceling;
   }
 
-  public boolean isIncludeRequestGuid() {
-    return includeRequestGuid;
+  public boolean isIncludeSnowflakeHeaders() {
+    return includeSnowflakeHeaders;
   }
 
-  public void setIncludeRequestGuid(boolean includeRequestGuid) {
-    this.includeRequestGuid = includeRequestGuid;
+  public void setIncludeSnowflakeHeaders(boolean includeSnowflakeHeaders) {
+    this.includeSnowflakeHeaders = includeSnowflakeHeaders;
   }
 
   public boolean isWithoutCookies() {
