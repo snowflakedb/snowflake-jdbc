@@ -7,12 +7,18 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.QueryStatusV2;
 import net.snowflake.client.jdbc.SFConnectionHandler;
@@ -42,6 +48,8 @@ import net.snowflake.client.log.SFLoggerFactory;
  * which signals whether to enable client telemetry
  */
 public abstract class SFBaseSession {
+  private static final Set<String> STICKY_HEADERS_NAMES =
+      new HashSet<>(Collections.singletonList("x-snowflake-session"));
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
@@ -149,6 +157,11 @@ public abstract class SFBaseSession {
 
   private Map<String, Object> commonParameters;
 
+  // Headers that once they are returned from Snowflake, will then be added to each subsequent HTTP
+  // request
+  // e.g. x-snowflake-session header
+  private final Map<String, String> stickyHttpHeaders = new HashMap<>();
+
   private boolean isJdbcArrowTreatDecimalAsInt = true;
 
   private boolean implicitServerSideQueryTimeout = false;
@@ -159,6 +172,8 @@ public abstract class SFBaseSession {
   private boolean treatTimeAsWallClockTime = false;
 
   private boolean ownerOnlyStageFilePermissionsEnabled = false;
+
+  private boolean allowCertificatesWithoutCrlUrl = false;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -518,6 +533,12 @@ public abstract class SFBaseSession {
     }
 
     OCSPMode ocspMode = getOCSPMode();
+    CertRevocationCheckMode certRevocationCheckMode = getCertRevocationCheckMode();
+
+    if (certRevocationCheckMode != CertRevocationCheckMode.DISABLED
+        && ocspMode != OCSPMode.DISABLE_OCSP_CHECKS) {
+      throw new SnowflakeSQLException(ErrorCode.BOTH_OCSP_AND_CERT_REVOCATION_CHECK);
+    }
 
     Boolean gzipDisabled = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.GZIP_DISABLED)) {
@@ -563,8 +584,6 @@ public abstract class SFBaseSession {
               gzipDisabled);
 
       logHttpClientInitInfo(ocspAndProxyAndGzipKey);
-
-      return ocspAndProxyAndGzipKey;
     }
     // If JVM proxy parameters are specified, proxies need to go through the JDBC driver's
     // HttpClientSettingsKey logic in order to work properly.
@@ -684,6 +703,8 @@ public abstract class SFBaseSession {
         logHttpClientInitInfo(ocspAndProxyAndGzipKey);
       }
     }
+    ocspAndProxyAndGzipKey.setRevocationCheckMode(certRevocationCheckMode);
+    ocspAndProxyAndGzipKey.setAllowCertificatesWithoutCrlUrl(allowCertificatesWithoutCrlUrl);
     return ocspAndProxyAndGzipKey;
   }
 
@@ -759,6 +780,24 @@ public abstract class SFBaseSession {
       ret = OCSPMode.FAIL_CLOSED;
     }
     return ret;
+  }
+
+  public CertRevocationCheckMode getCertRevocationCheckMode() throws SnowflakeSQLException {
+    String certRevocationCheckModeStr =
+        (String)
+            connectionPropertiesMap.getOrDefault(
+                SFSessionProperty.CERT_REVOCATION_CHECK_MODE,
+                CertRevocationCheckMode.DISABLED.name());
+    try {
+      return CertRevocationCheckMode.valueOf(certRevocationCheckModeStr);
+    } catch (IllegalArgumentException e) {
+      throw new SnowflakeSQLException(
+          ErrorCode.UNKNOWN_CERT_REVOCATION_CHECK_MODE,
+          "The value passed for "
+              + SFSessionProperty.CERT_REVOCATION_CHECK_MODE
+              + " is invalid. Possible values are "
+              + Arrays.toString(CertRevocationCheckMode.values()));
+    }
   }
 
   /**
@@ -1400,5 +1439,27 @@ public abstract class SFBaseSession {
 
   public void setOwnerOnlyStageFilePermissionsEnabled(boolean booleanValue) {
     this.ownerOnlyStageFilePermissionsEnabled = booleanValue;
+  }
+
+  public boolean isAllowCertificatesWithoutCrlUrl() {
+    return allowCertificatesWithoutCrlUrl;
+  }
+
+  public void setAllowCertificatesWithoutCrlUrl(boolean allowCertificatesWithoutCrlUrl) {
+    this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
+  }
+
+  public Map<String, String> getStickyHttpHeaders() {
+    return stickyHttpHeaders;
+  }
+
+  public void extractAndUpdateStickyHttpHeaders(Map<String, String> allHeaders) {
+    this.stickyHttpHeaders.putAll(filterStickyHeaders(allHeaders));
+  }
+
+  private static Map<String, String> filterStickyHeaders(Map<String, String> headers) {
+    return headers.entrySet().stream()
+        .filter(entry -> STICKY_HEADERS_NAMES.contains(entry.getKey().toLowerCase()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }

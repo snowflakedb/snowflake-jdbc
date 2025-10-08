@@ -17,6 +17,8 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -53,7 +55,6 @@ import org.apache.arrow.vector.util.JsonStringHashMap;
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** iterator over current arrow result chunk */
   private ArrowChunkIterator currentChunkIterator;
@@ -112,6 +113,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean formatDateWithTimezone;
 
   @SnowflakeJdbcInternalApi protected Converters converters;
+
+  private final ObjectMapper objectMapper;
 
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
@@ -212,6 +215,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
     this.useSessionTimezone = resultSetSerializable.getUseSessionTimezone();
+    objectMapper = ObjectMapperFactory.getObjectMapperForSession(session);
 
     // sort result set if needed
     String rowsetBase64 = resultSetSerializable.getFirstChunkStringData();
@@ -484,6 +488,22 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
+  public Period getPeriod(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    return converter.toPeriod(index);
+  }
+
+  @Override
+  public Duration getDuration(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    return converter.toDuration(index);
+  }
+
+  @Override
   public short getShort(int columnIndex) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
@@ -595,7 +615,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           JsonSqlInput jsonSqlInput = createJsonSqlInput(columnIndex, obj);
           return new StructObjectWrapper(jsonSqlInput.getText(), jsonSqlInput);
         } else if (type == Types.ARRAY) {
-          SfSqlArray sfArray = getJsonArray((String) obj, columnIndex);
+          SfSqlArray sfArray = getJsonArray((String) obj, columnIndex, objectMapper);
           return new StructObjectWrapper(sfArray.getText(), sfArray);
         } else {
           throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
@@ -637,7 +657,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         return null;
       }
       String text = (String) obj;
-      JsonNode jsonNode = OBJECT_MAPPER.readTree(text);
+      JsonNode jsonNode = objectMapper.readTree(text);
       return new JsonSqlInput(
           text,
           jsonNode,
@@ -660,7 +680,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       return null;
     }
     if (converter instanceof VarCharConverter) {
-      return getJsonArray((String) obj, columnIndex);
+      return getJsonArray((String) obj, columnIndex, objectMapper);
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
       String jsonString = converter.toString(index);
       return getArrowArray(jsonString, (List<Object>) obj, columnIndex);
@@ -686,109 +706,96 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
       switch (columnType) {
         case Types.INTEGER:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.integerConverter(columnType))
-                  .toArray(Integer[]::new),
-              session);
+                  .toArray(Integer[]::new));
         case Types.SMALLINT:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.smallIntConverter(columnType))
-                  .toArray(Short[]::new),
-              session);
+                  .toArray(Short[]::new));
         case Types.TINYINT:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.tinyIntConverter(columnType)).toArray(Byte[]::new),
-              session);
+              mapAndConvert(elements, converters.tinyIntConverter(columnType))
+                  .toArray(Byte[]::new));
         case Types.BIGINT:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new),
-              session);
+              mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new));
         case Types.DECIMAL:
         case Types.NUMERIC:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.bigDecimalConverter(columnType))
-                  .toArray(BigDecimal[]::new),
-              session);
+                  .toArray(BigDecimal[]::new));
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale))
-                  .toArray(String[]::new),
-              session);
+                  .toArray(String[]::new));
         case Types.BINARY:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.bytesConverter(columnType, scale))
-                  .toArray(Byte[][]::new),
-              session);
+                  .toArray(Byte[][]::new));
         case Types.FLOAT:
         case Types.REAL:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new),
-              session);
+              mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new));
         case Types.DOUBLE:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.doubleConverter(columnType))
-                  .toArray(Double[]::new),
-              session);
+                  .toArray(Double[]::new));
         case Types.DATE:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.dateFromIntConverter(sessionTimeZone))
-                  .toArray(Date[]::new),
-              session);
+                  .toArray(Date[]::new));
         case Types.TIME:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
-              mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new),
-              session);
+              mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new));
         case Types.TIMESTAMP:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(
                       elements,
                       converters.timestampFromStructConverter(
                           columnType, columnSubType, sessionTimeZone, scale))
-                  .toArray(Timestamp[]::new),
-              session);
+                  .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, converters.booleanConverter(columnType))
-                  .toArray(Boolean[]::new),
-              session);
+                  .toArray(Boolean[]::new));
         case Types.STRUCT:
-          return new SfSqlArray(
-              text, columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new), session);
+          return getSfSqlArray(
+              text, columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new));
         case Types.ARRAY:
-          return new SfSqlArray(
+          return getSfSqlArray(
               text,
               columnSubType,
               mapAndConvert(elements, e -> ((List) e).stream().toArray(Map[]::new))
-                  .toArray(Map[][]::new),
-              session);
+                  .toArray(Map[][]::new));
         default:
           throw new SFException(
               queryId,
@@ -798,6 +805,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } catch (RuntimeException e) {
       throw new SFException(queryId, e, ErrorCode.INVALID_STRUCT_DATA);
     }
+  }
+
+  private SfSqlArray getSfSqlArray(String text, int columnSubType, Object[] array) {
+    return new SfSqlArray(text, columnSubType, array, session, objectMapper);
   }
 
   private <T> Stream<T> mapAndConvert(List<Object> elements, Converter<T> converter) {

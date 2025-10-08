@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Test;
 public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = "/wiremock/mappings/restrequest";
-  private static String originalHost;
-  private static String originalPort;
-  private static String originalProtocol;
 
   @BeforeEach
   public void setUp() throws IOException {
@@ -77,6 +74,36 @@ public class RestRequestTestRetriesWiremockIT extends BaseWiremockTest {
       throw new RuntimeException(e);
     } finally {
       System.clearProperty("maxHttpRetries");
+    }
+  }
+
+  @Test
+  public void testHttpClientSuccessAfter307Retry() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_307_retry.json");
+    try {
+      Properties props = getWiremockProps();
+      props.setProperty("injectSocketTimeout", "200");
+      executeServerRequest(props);
+      verifyRequestCount(2, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } finally {
+      System.clearProperty("injectSocketTimeout");
+    }
+  }
+
+  @Test
+  public void testHttpClientSuccessAfter308Retry() {
+    importMappingFromResources(SCENARIOS_BASE_DIR + "/http_308_retry.json");
+    try {
+      Properties props = getWiremockProps();
+      props.setProperty("injectSocketTimeout", "200");
+      executeServerRequest(props);
+      verifyRequestCount(2, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } finally {
+      System.clearProperty("injectSocketTimeout");
     }
   }
 

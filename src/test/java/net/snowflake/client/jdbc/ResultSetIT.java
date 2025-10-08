@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 /** Test ResultSet */
 @Tag(TestTags.RESULT_SET)
 public class ResultSetIT extends ResultSet0IT {
-  private final String selectAllSQL = "select * from test_rs";
+  private final String selectAllSQL = "select * from " + uniqueTestRsTableName;
 
   private static final byte[] byteArrayTestCase1 = new byte[0];
   private static final byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
@@ -915,7 +915,7 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testIsLast(String queryResultFormat) throws Exception {
     try (Statement statement = createStatement(queryResultFormat)) {
-      try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
+      try (ResultSet ret = statement.executeQuery("select * from " + uniqueTableName)) {
         assertTrue(ret.isBeforeFirst(), "should be before the first");
         assertFalse(ret.isFirst(), "should not be the first");
 

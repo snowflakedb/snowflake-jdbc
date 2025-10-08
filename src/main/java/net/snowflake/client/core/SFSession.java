@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.crl.CRLValidator;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
@@ -141,6 +142,8 @@ public class SFSession extends SFBaseSession {
    * <p>Default: 300
    */
   private int retryTimeout = 300;
+
+  private int defaultPlatformDetectionTimeoutMs = 200;
 
   private boolean enableClientStoreTemporaryCredential = true;
   private boolean enableClientRequestMfaToken = true;
@@ -603,6 +606,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ALLOW_CERTIFICATES_WITHOUT_CRL_URL:
+          if (propertyValue != null) {
+            setAllowCertificatesWithoutCrlUrl(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -787,7 +796,16 @@ public class SFSession extends SFBaseSession {
                 : false)
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
-        .setBrowserResponseTimeout(browserResponseTimeout);
+        .setBrowserResponseTimeout(browserResponseTimeout)
+        .setPlatformDetectionTimeoutMs(
+            connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
+                ? (int) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
+                : defaultPlatformDetectionTimeoutMs)
+        .setDisablePlatformDetection(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
+                : false); // Default to false (platform detection enabled)
 
     logger.info(
         "Connecting to {} Snowflake domain",
@@ -827,6 +845,7 @@ public class SFSession extends SFBaseSession {
     setWarehouse(loginOutput.getSessionWarehouse());
     setSessionId(loginOutput.getSessionId());
     setAutoCommit(loginOutput.getAutoCommit());
+    extractAndUpdateStickyHttpHeaders(loginOutput.getLoginResponseHeaders());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
@@ -882,6 +901,7 @@ public class SFSession extends SFBaseSession {
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
+    this.getTelemetryClient();
     stopwatch.stop();
     logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
@@ -1285,6 +1305,14 @@ public class SFSession extends SFBaseSession {
         return null;
       }
       telemetryClient = TelemetryClient.createTelemetry(this);
+
+      // Provide the real telemetry client to the CRL validator for this session's
+      // HttpClientSettingsKey
+      try {
+        CRLValidator.setTelemetryClientForKey(getHttpClientKey(), telemetryClient);
+      } catch (Exception e) {
+        logger.warn("Failed to provide telemetry client to CRL trust manager: {}", e.getMessage());
+      }
     }
     return telemetryClient;
   }

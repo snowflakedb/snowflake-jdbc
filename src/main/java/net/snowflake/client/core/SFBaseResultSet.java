@@ -14,6 +14,8 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -88,6 +90,10 @@ public abstract class SFBaseResultSet {
   public abstract boolean getBoolean(int columnIndex) throws SFException;
 
   public abstract byte getByte(int columnIndex) throws SFException;
+
+  public abstract Period getPeriod(int columnIndex) throws SFException;
+
+  public abstract Duration getDuration(int columnIndex) throws SFException;
 
   public abstract short getShort(int columnIndex) throws SFException;
 
@@ -272,7 +278,8 @@ public abstract class SFBaseResultSet {
   }
 
   @SnowflakeJdbcInternalApi
-  protected SfSqlArray getJsonArray(String arrayString, int columnIndex) throws SFException {
+  protected SfSqlArray getJsonArray(String arrayString, int columnIndex, ObjectMapper objectMapper)
+      throws SFException {
     try {
       List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
       if (fieldMetadataList.size() != 1) {
@@ -297,28 +304,32 @@ public abstract class SFBaseResultSet {
               columnSubType,
               getStream(nodeElements, getConverters().integerConverter(columnType))
                   .toArray(Integer[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.SMALLINT:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().smallIntConverter(columnType))
                   .toArray(Short[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.TINYINT:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().tinyIntConverter(columnType))
                   .toArray(Byte[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.BIGINT:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().bigIntConverter(columnType))
                   .toArray(Long[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.DECIMAL:
         case Types.NUMERIC:
           return new SfSqlArray(
@@ -326,7 +337,8 @@ public abstract class SFBaseResultSet {
               columnSubType,
               convertToFixedArray(
                   getStream(nodeElements, getConverters().bigDecimalConverter(columnType))),
-              session);
+              session,
+              objectMapper);
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
@@ -337,14 +349,16 @@ public abstract class SFBaseResultSet {
                       nodeElements,
                       getConverters().varcharConverter(columnType, columnSubType, scale))
                   .toArray(String[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.BINARY:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().bytesConverter(columnType, scale))
                   .toArray(Byte[][]::new),
-              session);
+              session,
+              objectMapper);
         case Types.FLOAT:
         case Types.REAL:
           return new SfSqlArray(
@@ -352,28 +366,32 @@ public abstract class SFBaseResultSet {
               columnSubType,
               getStream(nodeElements, getConverters().floatConverter(columnType))
                   .toArray(Float[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.DOUBLE:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().doubleConverter(columnType))
                   .toArray(Double[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.DATE:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().dateStringConverter(session))
                   .toArray(Date[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.TIME:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().timeFromStringConverter(session))
                   .toArray(Time[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.TIMESTAMP:
           return new SfSqlArray(
               arrayString,
@@ -384,28 +402,32 @@ public abstract class SFBaseResultSet {
                           .timestampFromStringConverter(
                               columnSubType, columnType, scale, session, null, sessionTimeZone))
                   .toArray(Timestamp[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.BOOLEAN:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().booleanConverter(columnType))
                   .toArray(Boolean[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.STRUCT:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().structConverter(OBJECT_MAPPER))
                   .toArray(Map[]::new),
-              session);
+              session,
+              objectMapper);
         case Types.ARRAY:
           return new SfSqlArray(
               arrayString,
               columnSubType,
               getStream(nodeElements, getConverters().arrayConverter(OBJECT_MAPPER))
                   .toArray(Map[][]::new),
-              session);
+              session,
+              objectMapper);
         default:
           throw new SFException(
               ErrorCode.FEATURE_UNSUPPORTED,

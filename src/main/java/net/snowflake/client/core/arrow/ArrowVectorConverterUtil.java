@@ -1,5 +1,8 @@
 package net.snowflake.client.core.arrow;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -141,6 +144,15 @@ public final class ArrowVectorConverterUtil {
           }
           break;
 
+        case DECFLOAT:
+          return new DecfloatToDecimalConverter(vector, idx, context);
+
+        case INTERVAL_YEAR_MONTH:
+          return new IntervalYearMonthToPeriodConverter(vector, idx, context);
+
+        case INTERVAL_DAY_TIME:
+          return new IntervalDayTimeToDurationConverter(vector, idx, context);
+
         case REAL:
           return new DoubleToRealConverter(vector, idx, context);
 
@@ -230,5 +242,22 @@ public final class ArrowVectorConverterUtil {
       FieldVector vector, DataConversionContext context, int columnIndex)
       throws SnowflakeSQLException {
     return initConverter(vector, context, context.getSession(), columnIndex);
+  }
+
+  public static Duration getDurationFromNanos(BigDecimal numNanos) {
+    final BigDecimal nanoInSecond = BigDecimal.valueOf(1_000_000_000);
+    int sign = numNanos.signum();
+    numNanos = numNanos.abs();
+    // Duration.ofSeconds() with passed in negative second value results in overflow
+    // so instead we identify the sign of numNanos and use Duration.negated() accordingly
+    Duration duration =
+        Duration.ofSeconds(
+            numNanos.divide(nanoInSecond, RoundingMode.FLOOR).longValueExact(),
+            numNanos.remainder(nanoInSecond).longValueExact());
+    if (sign >= 0) {
+      return duration;
+    } else {
+      return duration.negated();
+    }
   }
 }

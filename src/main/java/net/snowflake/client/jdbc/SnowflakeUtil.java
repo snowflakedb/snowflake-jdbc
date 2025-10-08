@@ -78,6 +78,12 @@ public class SnowflakeUtil {
 
   public static final int EXTRA_TYPES_VECTOR = 50003;
 
+  public static final int EXTRA_TYPES_DECFLOAT = 50004;
+
+  public static final int EXTRA_TYPES_YEAR_MONTH_INTERVAL = 50005;
+
+  public static final int EXTRA_TYPES_DAY_TIME_INTERVAL = 50006;
+
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
@@ -89,10 +95,12 @@ public class SnowflakeUtil {
   public static final String BIG_DECIMAL_STR = "big decimal";
   public static final String FLOAT_STR = "float";
   public static final String DOUBLE_STR = "double";
+  public static final String DURATION_STR = "duration";
   public static final String BOOLEAN_STR = "boolean";
   public static final String SHORT_STR = "short";
   public static final String INT_STR = "int";
   public static final String LONG_STR = "long";
+  public static final String PERIOD_STR = "period";
   public static final String TIME_STR = "time";
   public static final String TIMESTAMP_STR = "timestamp";
   public static final String DATE_STR = "date";
@@ -206,7 +214,7 @@ public class SnowflakeUtil {
       boolean isVectorType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
-    ColumnTypeInfo columnTypeInfo = null;
+    ColumnTypeInfo columnTypeInfo;
 
     switch (baseType) {
       case TEXT:
@@ -220,6 +228,9 @@ public class SnowflakeUtil {
       case INTEGER:
         columnTypeInfo =
             new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
+        break;
+      case DECFLOAT:
+        columnTypeInfo = new ColumnTypeInfo(Types.DECIMAL, "DECFLOAT", baseType);
         break;
       case FIXED:
         if (isVectorType) {
@@ -246,6 +257,22 @@ public class SnowflakeUtil {
         columnTypeInfo =
             new ColumnTypeInfo(
                 EXTRA_TYPES_TIMESTAMP_LTZ, defaultIfNull(extColTypeName, "TIMESTAMPLTZ"), baseType);
+        break;
+
+      case INTERVAL_YEAR_MONTH:
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_YEAR_MONTH_INTERVAL,
+                defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"),
+                baseType);
+        break;
+
+      case INTERVAL_DAY_TIME:
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_DAY_TIME_INTERVAL,
+                defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"),
+                baseType);
         break;
 
       case TIMESTAMP_NTZ:

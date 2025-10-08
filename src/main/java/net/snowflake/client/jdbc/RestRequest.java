@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,6 +25,7 @@ import javax.net.ssl.SSLProtocolException;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpExecutingContext;
 import net.snowflake.client.core.HttpExecutingContextBuilder;
 import net.snowflake.client.core.HttpResponseContextDto;
@@ -102,7 +104,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @return HttpResponse Object get from server
@@ -121,7 +123,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
@@ -136,7 +138,7 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         execTimeTelemetryData,
         (SFBaseSession) null);
@@ -156,7 +158,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @param sfSession the session associated with the request
@@ -176,7 +178,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       ExecTimeTelemetryData execTimeTelemetryData,
       SFBaseSession sfSession)
@@ -192,12 +194,15 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         false, // noRetry
         execTimeTelemetryData,
         null,
-        sfSession);
+        sfSession,
+        null,
+        null,
+        false);
   }
 
   /**
@@ -214,7 +219,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @return HttpResponse Object get from server
@@ -233,7 +238,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean noRetry,
       ExecTimeTelemetryData execTimeData)
@@ -249,7 +254,7 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         noRetry,
         execTimeData,
@@ -270,7 +275,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @param sfSession the session associated with the request
@@ -290,7 +295,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean noRetry,
       ExecTimeTelemetryData execTimeData,
@@ -307,12 +312,15 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         noRetry,
         execTimeData,
         null,
-        sfSession);
+        sfSession,
+        null,
+        null,
+        false);
   }
 
   /**
@@ -329,7 +337,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @return HttpResponse Object get from server
@@ -348,7 +356,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager)
@@ -364,7 +372,7 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         execTimeData,
         retryContextManager,
@@ -385,7 +393,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @param sfSession the session associated with the request
@@ -405,7 +413,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryContextManager,
@@ -422,12 +430,15 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         false, // noRetry
         execTimeData,
         retryContextManager,
-        sfSession);
+        sfSession,
+        null,
+        null,
+        false);
   }
 
   /**
@@ -444,7 +455,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
@@ -466,7 +477,7 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean noRetry,
       ExecTimeTelemetryData execTimeData,
@@ -483,14 +494,16 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         noRetry,
         execTimeData,
         retryManager,
-        null);
+        null,
+        null,
+        null,
+        false);
   }
-
   /**
    * Execute an HTTP request with retry logic.
    *
@@ -505,13 +518,17 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
    * @param execTimeData ExecTimeTelemetryData
    * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
    *     should be executed before and/or after the retry
    * @param sfSession the session associated with the request
+   * @param key HttpClientSettingsKey object
+   * @param httpHeaderCustomizer HttpHeadersCustomizer object for customization of HTTP headers for
+   *     requests sent by the Snowflake JDBC driver.
+   * @param isHttpClientWithoutDecompression flag for create client without Decompression
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
@@ -528,12 +545,15 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean noRetry,
       ExecTimeTelemetryData execTimeData,
       RetryContextManager retryManager,
-      SFBaseSession sfSession)
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException {
     return executeWithRetries(
             httpClient,
@@ -546,11 +566,14 @@ public class RestRequest {
             canceling, // no canceling
             withoutCookies, // no cookie
             includeRetryParameters, // no retry
-            includeRequestGuid, // no request_guid
+            includeSnowflakeHeaders,
             retryHTTP403, // retry on HTTP 403
             noRetry,
             new ExecTimeTelemetryData(),
-            sfSession)
+            sfSession,
+            key,
+            httpHeaderCustomizer,
+            isHttpClientWithoutDecompression)
         .getHttpResponse();
   }
 
@@ -666,7 +689,7 @@ public class RestRequest {
       HttpRequestBase httpRequest,
       String requestIdStr,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       int retryCount,
       String lastStatusCodeForRetry,
       long startTime,
@@ -691,7 +714,7 @@ public class RestRequest {
       updateRetryParameters(builder, retryCount, lastStatusCodeForRetry, startTime);
     }
 
-    if (includeRequestGuid) {
+    if (includeSnowflakeHeaders) {
       UUID guid = UUIDUtils.getUUID();
       logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
       // Add request_guid for better tracing
@@ -715,7 +738,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
@@ -734,11 +757,14 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData,
-      SFBaseSession sfSession)
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException {
     return executeWithRetries(
         httpClient,
@@ -751,12 +777,15 @@ public class RestRequest {
         canceling,
         withoutCookies,
         includeRetryParameters,
-        includeRequestGuid,
+        includeSnowflakeHeaders,
         retryHTTP403,
         false,
         unpackResponse,
         execTimeTelemetryData,
-        sfSession);
+        sfSession,
+        key,
+        httpHeaderCustomizer,
+        isHttpClientWithoutDecompression);
   }
 
   /**
@@ -773,7 +802,7 @@ public class RestRequest {
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
    * @param includeRetryParameters whether to include retry parameters in retried requests. Only
    *     needs to be true for JDBC statement execution (query requests to Snowflake server).
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeTelemetryData ExecTimeTelemetryData should be executed before and/or after the
    *     retry
@@ -794,12 +823,15 @@ public class RestRequest {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
       boolean retryHTTP403,
       boolean noRetry,
       boolean unpackResponse,
       ExecTimeTelemetryData execTimeTelemetryData,
-      SFBaseSession sfSession)
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException {
     String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
@@ -813,14 +845,22 @@ public class RestRequest {
             .canceling(canceling)
             .withoutCookies(withoutCookies)
             .includeRetryParameters(includeRetryParameters)
-            .includeRequestGuid(includeRequestGuid)
+            .includeSnowflakeHeaders(includeSnowflakeHeaders)
             .retryHTTP403(retryHTTP403)
             .noRetry(noRetry)
             .unpackResponse(unpackResponse)
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .withSfSession(sfSession)
             .build();
-    return executeWithRetries(httpClient, httpRequest, context, execTimeTelemetryData, null);
+    return executeWithRetries(
+        httpClient,
+        httpRequest,
+        context,
+        execTimeTelemetryData,
+        null,
+        key,
+        httpHeaderCustomizer,
+        isHttpClientWithoutDecompression);
   }
 
   /**
@@ -840,7 +880,10 @@ public class RestRequest {
       HttpRequestBase httpRequest,
       HttpExecutingContext httpExecutingContext,
       ExecTimeTelemetryData execTimeData,
-      RetryContextManager retryManager)
+      RetryContextManager retryManager,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException {
     Stopwatch networkComunnicationStapwatch = null;
     Stopwatch requestReponseStopWatch = null;
@@ -862,7 +905,7 @@ public class RestRequest {
           httpExecutingContext.getCanceling(),
           httpExecutingContext.isWithoutCookies(),
           httpExecutingContext.isIncludeRetryParameters(),
-          httpExecutingContext.isIncludeRequestGuid(),
+          httpExecutingContext.isIncludeSnowflakeHeaders(),
           httpExecutingContext.isRetryHTTP403(),
           httpExecutingContext.isNoRetry());
     }
@@ -897,18 +940,46 @@ public class RestRequest {
             httpRequest,
             httpExecutingContext.getRequestId(),
             httpExecutingContext.isIncludeRetryParameters(),
-            httpExecutingContext.isIncludeRequestGuid(),
+            httpExecutingContext.isIncludeSnowflakeHeaders(),
             httpExecutingContext.getRetryCount(),
             httpExecutingContext.getLastStatusCodeForRetry(),
             httpExecutingContext.getStartTime(),
             httpExecutingContext.getRequestInfoScrubbed());
+
+        SFBaseSession session = httpExecutingContext.getSfSession();
+        if (httpExecutingContext.isIncludeSnowflakeHeaders() && session != null) {
+          if (session.getStickyHttpHeaders() != null) {
+            for (Map.Entry<String, String> entry : session.getStickyHttpHeaders().entrySet()) {
+              httpRequest.setHeader(entry.getKey(), entry.getValue());
+            }
+          }
+        }
 
         execTimeData.setHttpClientStart();
         CloseableHttpResponse response = httpClient.execute(httpRequest);
         responseDto.setHttpResponse(response);
         execTimeData.setHttpClientEnd();
       } catch (Exception ex) {
-        responseDto.setSavedEx(handlingNotRetryableException(ex, httpExecutingContext));
+        if (ex instanceof IllegalStateException) {
+          // if exception is caused by illegal state, e.g shutdown of http client
+          // because of closing of connection, then recreate the http client and remove existing
+          // from the cache.
+          logger.warn(
+              "IllegalStateException encountered while processing the HTTP request."
+                  + " The HttpClient was shut down due to connection closure. "
+                  + "Attempting to rebuild the HttpClient and retry the request.");
+          // Clear the httpClient cache.
+          HttpUtil.httpClient.remove(key);
+          // rebuild the http client.
+          if (isHttpClientWithoutDecompression) {
+            httpClient = HttpUtil.getHttpClientWithoutDecompression(key, httpHeaderCustomizer);
+          } else {
+            httpClient = HttpUtil.getHttpClient(key, httpHeaderCustomizer);
+          }
+          continue;
+        } else {
+          responseDto.setSavedEx(handlingNotRetryableException(ex, httpExecutingContext));
+        }
       } finally {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
@@ -1010,6 +1081,7 @@ public class RestRequest {
     try {
       String responseText;
       responseText = verifyAndUnpackResponse(response, execTimeData);
+      updateSessionWithStickyHeaders(httpExecutingContext.getSfSession(), response);
       httpExecutingContext.setShouldRetry(false);
       responseDto.setUnpackedCloseableHttpResponse(responseText);
     } catch (IOException ex) {
@@ -1018,6 +1090,14 @@ public class RestRequest {
           !httpExecutingContext.isShouldRetry() && skipRetriesBecauseOf200;
       httpExecutingContext.setShouldRetry(retryReasonDifferentThan200);
       responseDto.setSavedEx(ex);
+    }
+  }
+
+  private static void updateSessionWithStickyHeaders(
+      SFBaseSession sfSession, CloseableHttpResponse response) {
+    if (sfSession != null && response != null) {
+      Map<String, String> responseHeaders = HttpUtil.extractHeadersAsMap(response);
+      sfSession.extractAndUpdateStickyHttpHeaders(responseHeaders);
     }
   }
 
@@ -1111,7 +1191,7 @@ public class RestRequest {
               httpExecutingContext.getCanceling(),
               httpExecutingContext.isWithoutCookies(),
               httpExecutingContext.isIncludeRetryParameters(),
-              httpExecutingContext.isIncludeRequestGuid(),
+              httpExecutingContext.isIncludeSnowflakeHeaders(),
               dto.getHttpResponse(),
               dto.getSavedEx(),
               httpExecutingContext.getBreakRetryReason(),
@@ -1150,7 +1230,7 @@ public class RestRequest {
             httpExecutingContext.getCanceling(),
             httpExecutingContext.isWithoutCookies(),
             httpExecutingContext.isIncludeRetryParameters(),
-            httpExecutingContext.isIncludeRequestGuid(),
+            httpExecutingContext.isIncludeSnowflakeHeaders(),
             response,
             savedEx,
             httpExecutingContext.getBreakRetryReason(),
@@ -1397,7 +1477,7 @@ public class RestRequest {
             httpExecutingContext.getCanceling(),
             httpExecutingContext.isWithoutCookies(),
             httpExecutingContext.isIncludeRetryParameters(),
-            httpExecutingContext.isIncludeRequestGuid(),
+            httpExecutingContext.isIncludeSnowflakeHeaders(),
             response,
             savedEx,
             httpExecutingContext.getBreakRetryReason(),

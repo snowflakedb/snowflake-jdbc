@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.FieldSchemaCreator;
 import net.snowflake.client.core.JsonSqlOutput;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -99,6 +101,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private int batchSize = 0;
 
   private boolean alreadyDescribed = false;
+  private final ObjectMapper objectMapper;
 
   /**
    * Construct SnowflakePreparedStatementV1
@@ -124,6 +127,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     this.sql = sql;
     this.preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
     showStatementParameters = connection.getShowStatementParameters();
+    objectMapper = ObjectMapperFactory.getObjectMapperForSession(connection.getSFBaseSession());
   }
 
   /**
@@ -466,6 +470,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
         || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DECFLOAT) {
+      setDecfloat(parameterIndex, (BigDecimal) x);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL) {
+      setYearMonthInterval(parameterIndex, (String) x);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL) {
+      setDayTimeInterval(parameterIndex, (String) x);
     } else {
       logger.trace(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -476,6 +486,42 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           new ParameterBindingDTO(
               SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSFBaseSession()),
               String.valueOf(x));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setYearMonthInterval(int parameterIndex, String x) throws SQLException {
+    logger.trace("setYearMonthInterval(parameterIndex: {}, String x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.INTERVAL_YEAR_MONTH.name(), x);
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setDayTimeInterval(int parameterIndex, String x) throws SQLException {
+    logger.trace("setDayTimeInterval(parameterIndex: {}, String x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.INTERVAL_DAY_TIME.name(), x);
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
+  }
+
+  private void setDecfloat(int parameterIndex, BigDecimal x) throws SQLException {
+    logger.trace("setDecfloat(parameterIndex: {}, BigDecimal x)", parameterIndex);
+
+    if (x == null) {
+      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+    } else {
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(SnowflakeType.DECFLOAT.name(), String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -645,7 +691,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               sfArray.getSchema());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
-      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession());
+      SfSqlArray sfArray =
+          new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession(), objectMapper);
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               "json",

@@ -48,7 +48,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.execute();
       }
 
-      try (ResultSet resultSet = statement.executeQuery("select * from test_prepst")) {
+      try (ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
         assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 1);
         assertTrue(resultSet.next());
@@ -58,7 +58,8 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
 
       try (PreparedStatement prepStatement =
-          connection.prepareStatement("select id, id + ? from test_prepst where id  = ?")) {
+          connection.prepareStatement(
+              "select id, id + ? from " + uniqueTableName + " where id  = ?")) {
         prepStatement.setInt(1, 1);
         prepStatement.setInt(2, 1);
         try (ResultSet resultSet = prepStatement.executeQuery()) {

@@ -7,6 +7,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
+import java.time.Duration;
+import java.time.Period;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -23,6 +25,7 @@ public enum SnowflakeType {
   BOOLEAN,
   CHAR,
   DATE,
+  DECFLOAT,
   FIXED,
   INTEGER,
   OBJECT,
@@ -34,6 +37,8 @@ public enum SnowflakeType {
   TIMESTAMP_LTZ,
   TIMESTAMP_NTZ,
   TIMESTAMP_TZ,
+  INTERVAL_YEAR_MONTH,
+  INTERVAL_DAY_TIME,
   VARIANT,
   GEOGRAPHY,
   GEOMETRY,
@@ -66,6 +71,7 @@ public enum SnowflakeType {
       case INTEGER:
         return JavaDataType.JAVA_LONG;
       case FIXED:
+      case DECFLOAT:
         return JavaDataType.JAVA_BIGDECIMAL;
       case REAL:
         return JavaDataType.JAVA_DOUBLE;
@@ -76,6 +82,10 @@ public enum SnowflakeType {
       case TIMESTAMP_TZ:
       case DATE:
         return JavaDataType.JAVA_TIMESTAMP;
+      case INTERVAL_YEAR_MONTH:
+        return JavaDataType.JAVA_PERIOD;
+      case INTERVAL_DAY_TIME:
+        return JavaDataType.JAVA_DURATION;
       case BOOLEAN:
         return JavaDataType.JAVA_BOOLEAN;
       case ARRAY:
@@ -123,6 +133,9 @@ public enum SnowflakeType {
       case "number":
       case "numeric":
         retval = Types.NUMERIC;
+        break;
+      case "decfloat":
+        retval = SnowflakeUtil.EXTRA_TYPES_DECFLOAT;
         break;
       case "decimal":
         retval = Types.DECIMAL;
@@ -186,6 +199,12 @@ public enum SnowflakeType {
       case "timestamp_tz":
         retval = Types.TIMESTAMP_WITH_TIMEZONE;
         break;
+      case "interval_year_month":
+        retval = SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL;
+        break;
+      case "interval_day_time":
+        retval = SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL;
+        break;
       case "variant":
         retval = Types.OTHER;
         break;
@@ -211,6 +230,8 @@ public enum SnowflakeType {
     JAVA_DOUBLE(Double.class),
     JAVA_BIGDECIMAL(BigDecimal.class),
     JAVA_TIMESTAMP(Timestamp.class),
+    JAVA_PERIOD(Period.class),
+    JAVA_DURATION(Duration.class),
     JAVA_BYTES(byte[].class),
     JAVA_BOOLEAN(Boolean.class),
     JAVA_OBJECT(Object.class);
@@ -374,6 +395,14 @@ public enum SnowflakeType {
     }
 
     if (c == Integer.class) {
+      return o.toString();
+    }
+
+    if (c == Period.class) {
+      return o.toString();
+    }
+
+    if (c == Duration.class) {
       return o.toString();
     }
 

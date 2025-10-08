@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.crl.CertificateGeneratorUtil.CertificateChain;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -20,31 +21,17 @@ import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
 class CRLValidatorTest {
-  private static final CRLValidationConfig CRL_CONFIG_DISABLED =
-      CRLValidationConfig.builder()
-          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.DISABLED)
-          .build();
-  private static final CRLValidationConfig CRL_CONFIG_ENABLED_URL_DISALLOWED =
-      CRLValidationConfig.builder()
-          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
-          .build();
-  private static final CRLValidationConfig CRL_CONFIG_ENABLED_URL_ALLOWED =
-      CRLValidationConfig.builder()
-          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ENABLED)
-          .allowCertificatesWithoutCrlUrl(true)
-          .build();
-  private static final CRLValidationConfig CRL_CONFIG_ADVISORY_URL_DISALLOWED =
-      CRLValidationConfig.builder()
-          .certRevocationCheckMode(CRLValidationConfig.CertRevocationCheckMode.ADVISORY)
-          .build();
-
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient mockHttpClient;
+  private CRLCacheManager mockCacheManager;
+  private Telemetry mockTelemetry;
 
   @BeforeEach
   void setUp() {
     certGen = new CertificateGeneratorUtil();
     mockHttpClient = mock(CloseableHttpClient.class);
+    mockCacheManager = mock(CRLCacheManager.class);
+    mockTelemetry = mock(Telemetry.class);
   }
 
   @Test
@@ -53,14 +40,22 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_DISABLED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.DISABLED,
+            false,
+            mockHttpClient,
+            mockCacheManager,
+            mockTelemetry);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
 
   @Test
   void shouldFailWithNullOrEmptyCertificateChains() {
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.ENABLED, true, mockHttpClient, mockCacheManager, mockTelemetry);
 
     assertThrows(IllegalArgumentException.class, () -> validator.validateCertificateChains(null));
 
@@ -75,7 +70,13 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.ENABLED,
+            false,
+            mockHttpClient,
+            mockCacheManager,
+            mockTelemetry);
 
     assertFalse(validator.validateCertificateChains(chains));
   }
@@ -86,7 +87,9 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.ENABLED, true, mockHttpClient, mockCacheManager, mockTelemetry);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
@@ -97,14 +100,19 @@ class CRLValidatorTest {
     List<X509Certificate[]> chains = new ArrayList<>();
     chains.add(new X509Certificate[] {chain.leafCert, chain.intermediateCert, chain.rootCert});
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ADVISORY_URL_DISALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.ADVISORY,
+            false,
+            mockHttpClient,
+            mockCacheManager,
+            mockTelemetry);
 
     assertTrue(validator.validateCertificateChains(chains));
   }
 
   @Test
   void shouldValidateMultipleChainsAndReturnFirstValid() throws Exception {
-
     Date beforeMarch2024 =
         Date.from(LocalDate.of(2024, 2, 1).atStartOfDay(ZoneId.of("UTC")).toInstant());
     X509Certificate invalidCert =
@@ -119,7 +127,9 @@ class CRLValidatorTest {
           validChain.leafCert, validChain.intermediateCert, validChain.rootCert
         });
 
-    CRLValidator validator = new CRLValidator(CRL_CONFIG_ENABLED_URL_ALLOWED, mockHttpClient);
+    CRLValidator validator =
+        new CRLValidator(
+            CertRevocationCheckMode.ENABLED, true, mockHttpClient, mockCacheManager, mockTelemetry);
 
     assertTrue(
         validator.validateCertificateChains(chains),

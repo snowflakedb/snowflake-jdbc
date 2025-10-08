@@ -3,10 +3,12 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpResponseWithHeaders;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
@@ -95,7 +97,7 @@ public class ServiceNameTest {
       mockedHttpUtil
           .when(
               () ->
-                  HttpUtil.executeGeneralRequest(
+                  HttpUtil.executeGeneralRequestWithContext(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
@@ -103,7 +105,7 @@ public class ServiceNameTest {
                       Mockito.anyInt(),
                       Mockito.any(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
-          .thenReturn(responseLogin());
+          .thenReturn(new HttpResponseWithHeaders(responseLogin(), new HashMap<>()));
       mockedHttpUtil
           .when(
               () ->

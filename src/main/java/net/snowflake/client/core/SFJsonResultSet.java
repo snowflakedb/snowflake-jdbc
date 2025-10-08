@@ -2,6 +2,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Date;
@@ -9,6 +10,8 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Period;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
@@ -24,10 +27,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   protected final Converters converters;
+  protected final ObjectMapper objectMapper;
 
   protected SFJsonResultSet(TimeZone sessionTimeZone, Converters converters) {
     this.sessionTimeZone = sessionTimeZone;
     this.converters = converters;
+    this.objectMapper = ObjectMapperFactory.getObjectMapperForSession(session);
   }
 
   /**
@@ -122,7 +127,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     if (obj == null) {
       return null;
     }
-    return getJsonArray((String) obj, columnIndex);
+    return getJsonArray((String) obj, columnIndex, objectMapper);
   }
 
   @Override
@@ -147,6 +152,22 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     logger.trace("short getByte(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     return converters.getNumberConverter().getByte(obj);
+  }
+
+  @Override
+  public Period getPeriod(int columnIndex) throws SFException {
+    logger.trace("Period getPeriod(int columnIndex)", false);
+    Object obj = getObjectInternal(columnIndex);
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    return converters.getNumberConverter().getPeriod(obj, columnType);
+  }
+
+  @Override
+  public Duration getDuration(int columnIndex) throws SFException {
+    logger.trace("Duration getDuration(int columnIndex)", false);
+    Object obj = getObjectInternal(columnIndex);
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    return converters.getNumberConverter().getDuration(obj, columnType);
   }
 
   @Override

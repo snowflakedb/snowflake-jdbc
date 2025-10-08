@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
@@ -102,7 +103,7 @@ public class SnowflakeMFACacheTest {
       mockedHttpUtil
           .when(
               () ->
-                  HttpUtil.executeGeneralRequest(
+                  HttpUtil.executeGeneralRequestWithContext(
                       any(HttpPost.class),
                       anyInt(),
                       anyInt(),
@@ -111,11 +112,12 @@ public class SnowflakeMFACacheTest {
                       any(HttpClientSettingsKey.class),
                       nullable(SFBaseSession.class)))
           .thenAnswer(
-              new Answer<String>() {
+              new Answer<HttpResponseWithHeaders>() {
                 int callCount = 0;
 
                 @Override
-                public String answer(InvocationOnMock invocation) throws Throwable {
+                public HttpResponseWithHeaders answer(InvocationOnMock invocation)
+                    throws Throwable {
                   String res;
                   JsonNode jsonNode;
                   final Object[] args = invocation.getArguments();
@@ -190,7 +192,7 @@ public class SnowflakeMFACacheTest {
                   }
 
                   callCount += 1; // this will be incremented on both connecting and closing
-                  return res;
+                  return new HttpResponseWithHeaders(res, new HashMap<>());
                 }
               });
 
@@ -251,7 +253,7 @@ public class SnowflakeMFACacheTest {
       mockedHttpUtil
           .when(
               () ->
-                  HttpUtil.executeGeneralRequest(
+                  HttpUtil.executeGeneralRequestWithContext(
                       any(HttpPost.class),
                       anyInt(),
                       anyInt(),
@@ -260,7 +262,7 @@ public class SnowflakeMFACacheTest {
                       any(HttpClientSettingsKey.class),
                       nullable(SFBaseSession.class)))
           .thenAnswer(
-              new Answer<String>() {
+              new Answer<HttpResponseWithHeaders>() {
                 int callCount = 0;
 
                 private String validationHelper(Object[] args) throws IOException {
@@ -276,7 +278,8 @@ public class SnowflakeMFACacheTest {
                 }
 
                 @Override
-                public String answer(InvocationOnMock invocation) throws Throwable {
+                public HttpResponseWithHeaders answer(InvocationOnMock invocation)
+                    throws Throwable {
                   String res = "";
                   final Object[] args = invocation.getArguments();
 
@@ -294,7 +297,7 @@ public class SnowflakeMFACacheTest {
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   }
                   callCount += 1; // this will be incremented on both connecting and closing
-                  return res;
+                  return new HttpResponseWithHeaders(res, new HashMap<>());
                 }
               });
 
