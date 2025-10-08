@@ -31,7 +31,7 @@ class WorkloadIdentityAttestationProviderTest {
   public void shouldCreateProperAttestationCreatorByType() throws SFException {
     WorkloadIdentityAttestationProvider provider =
         new WorkloadIdentityAttestationProvider(
-            new AwsIdentityAttestationCreator(null),
+            new AwsIdentityAttestationCreator(null, null),
             new GcpIdentityAttestationCreator(null),
             new AzureIdentityAttestationCreator(null, new SFLoginInput()),
             new OidcIdentityAttestationCreator(null));

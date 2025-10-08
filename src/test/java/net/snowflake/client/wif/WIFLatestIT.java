@@ -16,6 +16,7 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 /**
@@ -49,7 +50,7 @@ public class WIFLatestIT {
   }
 
   @Test
-  @EnabledIf("isProviderGCP")
+  @DisabledIf("isProviderAzure")
   void shouldAuthenticateUsingWIFWithImpersonation() {
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);
@@ -73,6 +74,10 @@ public class WIFLatestIT {
 
   private static boolean isProviderGCP() {
     return Objects.equals(PROVIDER, "GCP");
+  }
+
+  private static boolean isProviderAzure() {
+    return Objects.equals(PROVIDER, "AZURE");
   }
 
   private String getGCPAccessToken() {

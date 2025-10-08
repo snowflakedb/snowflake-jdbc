@@ -397,7 +397,7 @@ public class SessionUtil {
       throws SFException {
     WorkloadIdentityAttestationProvider attestationProvider =
         new WorkloadIdentityAttestationProvider(
-            new AwsIdentityAttestationCreator(new AwsAttestationService()),
+            new AwsIdentityAttestationCreator(new AwsAttestationService(), loginInput),
             new GcpIdentityAttestationCreator(loginInput),
             new AzureIdentityAttestationCreator(new AzureAttestationService(), loginInput),
             new OidcIdentityAttestationCreator(loginInput.getToken()));
