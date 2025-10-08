@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.Collections;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
@@ -25,16 +26,27 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   public static final String GET_CALLER_IDENTITY_ACTION = "GetCallerIdentity";
 
   private final AwsAttestationService attestationService;
+  private final SFLoginInput loginInput;
 
-  public AwsIdentityAttestationCreator(AwsAttestationService attestationService) {
+  public AwsIdentityAttestationCreator(
+      AwsAttestationService attestationService, SFLoginInput loginInput) {
     this.attestationService = attestationService;
+    this.loginInput = loginInput;
   }
 
   @Override
   public WorkloadIdentityAttestation createAttestation() throws SFException {
-    logger.debug("Creating AWS identity attestation...");
     attestationService.initializeSignerRegion();
-    AWSCredentials awsCredentials = attestationService.getAWSCredentials();
+    AWSCredentials awsCredentials;
+
+    if (loginInput.getWorkloadIdentityImpersonationPath().isEmpty()) {
+      logger.debug("Creating AWS identity attestation...");
+      awsCredentials = attestationService.getAWSCredentials();
+    } else {
+      logger.debug("Creating AWS identity attestation with impersonation...");
+      awsCredentials = getCredentialsViaRoleChaining();
+    }
+
     if (awsCredentials == null) {
       throw new SFException(
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS credentials were found");
@@ -51,6 +63,26 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     String credential = createBase64EncodedRequestCredential(request);
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
+  }
+
+  private AWSCredentials getCredentialsViaRoleChaining() throws SFException {
+    AWSCredentials currentCredentials = attestationService.getAWSCredentials();
+    if (currentCredentials == null) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "No initial AWS credentials found for role chaining");
+    }
+
+    for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
+      logger.debug("Assuming role: {}", roleArn);
+      currentCredentials = attestationService.assumeRole(currentCredentials, roleArn);
+      if (currentCredentials == null) {
+        throw new SFException(
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);
+      }
+    }
+
+    return currentCredentials;
   }
 
   private String getStsHostname(String region) {

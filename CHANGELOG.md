@@ -3,7 +3,8 @@
 # Changelog
 - v3.27.1-SNAPSHOT
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
-    - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348)
+    - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation for GCP (snowflakedb/snowflake-jdbc#2348)
+    - Added support for authentication as a different identity through transitive service account impersonation for AWS (snowflakedb/snowflake-jdbc#2364)
   
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
