@@ -12,7 +12,6 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
-import java.util.UUID;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.EnvironmentVariables;
@@ -78,13 +77,10 @@ public class AwsAttestationService {
               .withRegion(getAWSRegion())
               .build();
 
-      String sessionName = "snowflake-wif-" + UUID.randomUUID();
-
-      // Use 1 hour (3600 seconds) as the session duration
       AssumeRoleRequest assumeRoleRequest =
           new AssumeRoleRequest()
               .withRoleArn(roleArn)
-              .withRoleSessionName(sessionName)
+              .withRoleSessionName("identity-federation-session")
               .withDurationSeconds(3600);
 
       AssumeRoleResult assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);

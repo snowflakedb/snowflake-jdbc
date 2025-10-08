@@ -67,6 +67,11 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
           createAzureFunctionsIdentityRequest(
               identityEndpoint, identityHeader, azureAttestationService.getClientId());
     }
+    if (!loginInput.getWorkloadIdentityImpersonationPath().isEmpty()) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Property 'workloadIdentityImpersonationPath' is not empty. Identity impersonation is not available on Azure.");
+    }
     String tokenJson = azureAttestationService.fetchTokenFromMetadataService(request, loginInput);
     if (tokenJson == null) {
       throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Could not fetch Azure token.");
