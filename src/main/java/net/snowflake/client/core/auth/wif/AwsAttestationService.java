@@ -3,10 +3,20 @@ package net.snowflake.client.core.auth.wif;
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.InstanceMetadataRegionProvider;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
+import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
+import com.amazonaws.services.securitytoken.model.Credentials;
+import java.util.UUID;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.EnvironmentVariables;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -56,5 +66,42 @@ public class AwsAttestationService {
   void signRequestWithSigV4(Request<Void> signableRequest, AWSCredentials awsCredentials) {
     aws4Signer.setServiceName(signableRequest.getServiceName());
     aws4Signer.sign(signableRequest, awsCredentials);
+  }
+
+  AWSCredentials assumeRole(AWSCredentials currentCredentials, String roleArn) throws SFException {
+    try {
+      logger.debug("Attempting to assume role: {}", roleArn);
+
+      AWSSecurityTokenService stsClient =
+          AWSSecurityTokenServiceClientBuilder.standard()
+              .withCredentials(new AWSStaticCredentialsProvider(currentCredentials))
+              .withRegion(getAWSRegion())
+              .build();
+
+      String sessionName = "snowflake-wif-" + UUID.randomUUID();
+
+      // Use 1 hour (3600 seconds) as the session duration
+      AssumeRoleRequest assumeRoleRequest =
+          new AssumeRoleRequest()
+              .withRoleArn(roleArn)
+              .withRoleSessionName(sessionName)
+              .withDurationSeconds(3600);
+
+      AssumeRoleResult assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
+      Credentials credentials = assumeRoleResult.getCredentials();
+
+      logger.debug("Successfully assumed role: {}", roleArn);
+
+      return new BasicSessionCredentials(
+          credentials.getAccessKeyId(),
+          credentials.getSecretAccessKey(),
+          credentials.getSessionToken());
+
+    } catch (Exception e) {
+      logger.error("Failed to assume role: {} - {}", roleArn, e.getMessage());
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Failed to assume AWS role " + roleArn + ": " + e.getMessage());
+    }
   }
 }
