@@ -237,8 +237,10 @@ public class SnowflakeDriver implements Driver {
       String url, Properties info) throws SnowflakeSQLException {
     if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
       // Connect using connection configuration file
+      logger.debug(
+          "JDBC connection initialized with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
       ConnectionParameters connectionParameters =
-          SFConnectionConfigParser.buildConnectionParameters();
+          SFConnectionConfigParser.buildConnectionParameters(url);
       if (connectionParameters == null) {
         throw new SnowflakeSQLException(
             "Unavailable connection configuration parameters expected for auto configuration using file");
