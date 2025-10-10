@@ -96,9 +96,6 @@ public class SFConnectionConfigParser {
   }
 
   static String parseParams(String url) throws SnowflakeSQLException {
-    if (!url.startsWith("jdbc:snowflake:auto")) {
-      throw new SnowflakeSQLException("Invalid URL: must start with jdbc:snowflake:auto");
-    }
     // Extract query string
     int idx = url.indexOf('?');
     if (idx == -1 || idx == url.length() - 1) {

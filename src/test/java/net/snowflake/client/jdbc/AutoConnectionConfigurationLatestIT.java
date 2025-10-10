@@ -10,9 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** This test could be run only on environment where file connection.toml is configured */
+@Disabled
 public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
 
   @AfterEach
