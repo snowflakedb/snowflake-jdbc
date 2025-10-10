@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -48,7 +49,7 @@ public class SFConnectionConfigParser {
   public static ConnectionParameters buildConnectionParameters(String conUrl)
       throws SnowflakeSQLException {
     String defaultConnectionName = parseParams(conUrl);
-    if (defaultConnectionName.isBlank()) {
+    if (SnowflakeUtil.isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
     }
@@ -102,19 +103,16 @@ public class SFConnectionConfigParser {
       logger.debug("'connection' parameter is not configured");
       return "";
     }
-    String query = url.substring(idx + 1); // Only allow one parameter
+    // Only allow one parameter
+    String query = url.substring(idx + 1);
     if (!query.startsWith("connection=")) {
       throw new SnowflakeSQLException("Only 'connection' parameter is supported");
     }
     String[] kv = query.split("=", 2);
-    if (kv.length != 2 || kv[1].isEmpty() || kv[1].isBlank()) {
+    if (kv.length != 2 || SnowflakeUtil.isBlank(kv[1]) || kv[1].isEmpty()) {
       throw new SnowflakeSQLException("Parameter 'connection' must have a value");
     }
-    String key = kv[0];
-    String value = kv[1].trim(); // Validate key
-    if (!"connection".equals(key)) {
-      throw new SnowflakeSQLException("Unsupported parameter: " + key);
-    }
+    String value = kv[1].trim();
     logger.debug("'connection' parameter is configured. The value is " + value);
     return value;
   }
