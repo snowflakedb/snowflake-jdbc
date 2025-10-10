@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,6 +55,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.PlatformDetector;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.client.util.ThrowingFunction;
@@ -621,6 +623,7 @@ public class SessionUtil {
     }
 
     HttpPost postRequest = null;
+    HttpResponseWithHeaders response = null;
 
     try {
       Map<String, Object> data = new HashMap<>();
@@ -763,8 +766,8 @@ public class SessionUtil {
 
       while (true) {
         try {
-          theString =
-              HttpUtil.executeGeneralRequest(
+          response =
+              HttpUtil.executeGeneralRequestWithContext(
                   postRequest,
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
@@ -772,6 +775,7 @@ public class SessionUtil {
                   retryCount,
                   loginInput.getHttpClientSettingsKey(),
                   null);
+          theString = response.getResponseBody();
         } catch (SnowflakeSQLException ex) {
           lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
@@ -1020,7 +1024,8 @@ public class SessionUtil {
             sessionRole,
             sessionWarehouse,
             sessionId,
-            commonParams);
+            commonParams,
+            response != null ? response.getHeaders() : new HashMap<>());
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       if (consentCacheIdToken) {
@@ -1142,6 +1147,23 @@ public class SessionUtil {
     }
 
     clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+
+    // Add platform detection (if not disabled)
+    if (!loginInput.isDisablePlatformDetection()) {
+      try {
+        PlatformDetector platformDetector = new PlatformDetector();
+        AwsAttestationService awsAttestationService = new AwsAttestationService();
+        List<String> detectedPlatforms =
+            platformDetector.detectPlatforms(
+                loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
+        clientEnv.put("PLATFORM", detectedPlatforms);
+      } catch (Exception e) {
+        logger.debug("Platform detection failed: {}", e.getMessage());
+        // Continue without platform information
+      }
+    } else {
+      logger.debug("Platform detection is disabled");
+    }
 
     // OAuth metrics data
     if (authenticatorType == AuthenticatorType.OAUTH
@@ -1419,14 +1441,15 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest,
-              loginInput.getLoginTimeout(),
-              0,
-              loginInput.getSocketTimeoutInMillis(),
-              0,
-              loginInput.getHttpClientSettingsKey(),
-              session);
+          HttpUtil.executeGeneralRequestWithContext(
+                  postRequest,
+                  loginInput.getLoginTimeout(),
+                  0,
+                  loginInput.getSocketTimeoutInMillis(),
+                  0,
+                  loginInput.getHttpClientSettingsKey(),
+                  session)
+              .getResponseBody();
 
       JsonNode rootNode;
 

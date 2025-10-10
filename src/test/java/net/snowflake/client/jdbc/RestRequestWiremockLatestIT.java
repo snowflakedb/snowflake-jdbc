@@ -1,5 +1,10 @@
 package net.snowflake.client.jdbc;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ExecTimeTelemetryData;
@@ -76,5 +81,93 @@ public class RestRequestWiremockLatestIT extends BaseWiremockTest {
       CloseableHttpResponse response = httpClient.execute(request);
       assert (response.getStatusLine().getStatusCode() == 200);
     }
+  }
+
+  @Test
+  public void testStickyHeaderPropagatedFromLogin() throws Exception {
+    importMappingFromResources("/wiremock/mappings/restrequest/sticky_header_from_login.json");
+    Properties props = getWiremockProps();
+
+    try {
+      String connectStr = String.format("jdbc:snowflake://%s:%s", WIREMOCK_HOST, wiremockHttpPort);
+      Connection conn = DriverManager.getConnection(connectStr, props);
+      Statement stmt = conn.createStatement();
+      // Execute first query - should have sticky header from login
+      stmt.executeQuery("SELECT 1");
+      // Execute second query - should also have sticky header from login
+      stmt.executeQuery("SELECT 1");
+
+      verifyRequestCount(1, "/session/v1/login-request.*");
+      verifyRequestCount(2, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testStickyHeaderPropagatedFromFirstQuery() throws Exception {
+    importMappingFromResources(
+        "/wiremock/mappings/restrequest/sticky_header_from_first_query.json");
+    Properties props = getWiremockProps();
+
+    try {
+      String connectStr = String.format("jdbc:snowflake://%s:%s", WIREMOCK_HOST, wiremockHttpPort);
+      Connection conn = DriverManager.getConnection(connectStr, props);
+      Statement stmt = conn.createStatement();
+      // Execute first query - should get the sticky header from response
+      stmt.executeQuery("SELECT 1");
+      // Execute second query - should send the sticky header in request
+      stmt.executeQuery("SELECT 1");
+
+      // Verify login request was made
+      verifyRequestCount(1, "/session/v1/login-request.*");
+      // Verify two query requests were made, second one with the sticky header
+      verifyRequestCount(2, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testStickyHeaderValueUpdated() throws Exception {
+    importMappingFromResources("/wiremock/mappings/restrequest/sticky_header_updated.json");
+    Properties props = getWiremockProps();
+
+    try {
+      String connectStr = String.format("jdbc:snowflake://%s:%s", WIREMOCK_HOST, wiremockHttpPort);
+      Connection conn = DriverManager.getConnection(connectStr, props);
+      Statement stmt = conn.createStatement();
+      // Execute first query - should send session-ABC from login
+      stmt.executeQuery("SELECT 1");
+      // Execute second query - should send session-ABC, receive session-XYZ
+      stmt.executeQuery("SELECT 1");
+      // Execute third query - should send updated session-XYZ
+      stmt.executeQuery("SELECT 1");
+
+      verifyRequestCount(1, "/session/v1/login-request.*");
+      verifyRequestCount(3, "/queries/v1/query-request.*");
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static Properties getWiremockProps() {
+    Properties props = new Properties();
+    props.put("account", "testaccount");
+    props.put("user", "testuser");
+    props.put("password", "testpassword");
+    props.put("warehouse", "testwh");
+    props.put("database", "testdb");
+    props.put("schema", "testschema");
+    props.put("ssl", "off");
+    props.put("insecureMode", "true");
+    return props;
+  }
+
+  private static void executeServerRequest(Properties properties) throws SQLException {
+    String connectStr = String.format("jdbc:snowflake://%s:%s", WIREMOCK_HOST, wiremockHttpPort);
+    Connection conn = DriverManager.getConnection(connectStr, properties);
+    Statement stmt = conn.createStatement();
+    stmt.executeQuery("SELECT 1");
   }
 }

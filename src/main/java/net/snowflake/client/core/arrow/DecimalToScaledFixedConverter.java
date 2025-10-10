@@ -1,6 +1,7 @@
 package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -174,6 +175,20 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter 
     } else {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Boolean", val.toPlainString());
+    }
+  }
+
+  @Override
+  public Duration toDuration(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    BigDecimal numNanos = toBigDecimal(index);
+    try {
+      return ArrowVectorConverterUtil.getDurationFromNanos(numNanos);
+    } catch (ArithmeticException e) {
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Duration", numNanos.toPlainString());
     }
   }
 }

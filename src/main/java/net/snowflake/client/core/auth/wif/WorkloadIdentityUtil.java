@@ -8,25 +8,35 @@ import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
 
-class WorkloadIdentityUtil {
+/**
+ * Utility class for Workload Identity Federation (WIF) specific operations. This class contains
+ * functions that are used exclusively within the WIF package.
+ */
+@SnowflakeJdbcInternalApi
+public class WorkloadIdentityUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(WorkloadIdentityUtil.class);
 
-  static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
-  static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
-
   // Address commonly used by AWS, Azure & GCP to host instance metadata service
-  static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
+  public static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
 
-  static String performIdentityRequest(HttpRequestBase tokenRequest, SFLoginInput loginInput)
+  public static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
+  public static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
+
+  /**
+   * Performs an HTTP request for WIF identity token retrieval. This method is used by WIF
+   * authentication flows to communicate with cloud metadata services.
+   */
+  public static String performIdentityRequest(HttpRequestBase tokenRequest, SFLoginInput loginInput)
       throws SnowflakeSQLException, IOException {
-    return HttpUtil.executeGeneralRequestOmitRequestGuid(
+    return HttpUtil.executeGeneralRequestOmitSnowflakeHeaders(
         tokenRequest,
         loginInput.getLoginTimeout(),
         3, // 3s timeout
@@ -36,7 +46,12 @@ class WorkloadIdentityUtil {
         null);
   }
 
-  static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token) throws SFException {
+  /**
+   * Extracts claims (subject and issuer) from a JWT token without verifying the signature. This is
+   * used in WIF flows where signature verification is handled elsewhere.
+   */
+  public static SubjectAndIssuer extractClaimsWithoutVerifyingSignature(String token)
+      throws SFException {
     Map<String, Object> claims = extractClaimsMap(token);
     if (claims == null) {
       throw new SFException(
@@ -65,11 +80,15 @@ class WorkloadIdentityUtil {
     }
   }
 
-  static class SubjectAndIssuer {
+  /**
+   * Container class for JWT subject and issuer claims. Used in WIF authentication flows to pass
+   * extracted token claims.
+   */
+  public static class SubjectAndIssuer {
     private final String subject;
     private final String issuer;
 
-    SubjectAndIssuer(String subject, String issuer) {
+    public SubjectAndIssuer(String subject, String issuer) {
       this.issuer = issuer;
       this.subject = subject;
     }
