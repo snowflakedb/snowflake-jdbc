@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -45,9 +46,14 @@ public class SFConnectionConfigParser {
   private static final List<PosixFilePermission> REQUIRED_PERMISSIONS =
       Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
 
-  public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
-    String defaultConnectionName =
-        Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
+  public static ConnectionParameters buildConnectionParameters(String conUrl)
+      throws SnowflakeSQLException {
+    String defaultConnectionName = parseParams(conUrl);
+    if (SnowflakeUtil.isBlank(defaultConnectionName)) {
+      defaultConnectionName =
+          Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
+    }
+    logger.debug("Attempting to load the configuration {} from toml file." + defaultConnectionName);
     Map<String, String> fileConnectionConfiguration =
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
@@ -90,6 +96,27 @@ public class SFConnectionConfigParser {
     }
   }
 
+  static String parseParams(String url) throws SnowflakeSQLException {
+    // Extract query string
+    int idx = url.indexOf('?');
+    if (idx == -1 || idx == url.length() - 1) {
+      logger.debug("'connection' parameter is not configured");
+      return "";
+    }
+    // Only allow one parameter
+    String query = url.substring(idx + 1);
+    if (!query.startsWith("connection=")) {
+      throw new SnowflakeSQLException("Only 'connection' parameter is supported");
+    }
+    String[] kv = query.split("=", 2);
+    if (kv.length != 2 || SnowflakeUtil.isBlank(kv[1]) || kv[1].isEmpty()) {
+      throw new SnowflakeSQLException("Parameter 'connection' must have a value");
+    }
+    String value = kv[1].trim();
+    logger.debug("'connection' parameter is configured. The value is " + value);
+    return value;
+  }
+
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
     String configDirectory =
@@ -104,6 +131,11 @@ public class SFConnectionConfigParser {
           defaultConnectionName);
       Map<String, Map> parametersMap = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
+      if (defaultConnectionParametersMap == null) {
+        logger.debug("The Connection {} not found in connections.toml." + defaultConnectionName);
+      } else {
+        logger.debug("The Connection {} found in connections.toml." + defaultConnectionName);
+      }
       return defaultConnectionParametersMap;
     } else {
       logger.debug("Connection configuration file does not exist");
