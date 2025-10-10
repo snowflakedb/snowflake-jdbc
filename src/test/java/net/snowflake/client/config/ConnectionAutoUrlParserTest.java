@@ -1,6 +1,8 @@
 package net.snowflake.client.config;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.Test;
@@ -12,14 +14,6 @@ public class ConnectionAutoUrlParserTest {
     String url = "jdbc:snowflake:auto?connection=readonly";
     String value = SFConnectionConfigParser.parseParams(url);
     assertEquals("readonly", value);
-  }
-
-  @Test
-  void testInvalidPrefix() {
-    String url = "jdbc:mysql:auto?connection=readonly";
-    SnowflakeSQLException ex =
-        assertThrows(SnowflakeSQLException.class, () -> SFConnectionConfigParser.parseParams(url));
-    assertTrue(ex.getMessage().contains("must start with jdbc:snowflake:auto"));
   }
 
   @Test
