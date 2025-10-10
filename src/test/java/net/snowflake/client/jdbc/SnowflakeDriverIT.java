@@ -67,6 +67,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String getCurrenTransactionStmt = "SELECT CURRENT_TRANSACTION()";
   private static Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
+  private static final String OAUTH_SCOPE_FORMAT = "session:role:%s";
 
   private static final String ORDERS_JDBC_TABLE =
       "orders_jdbc_snowflakedriver_" + SnowflakeUtil.randomAlphaNumeric(10);
@@ -154,7 +155,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testOauthConnection() throws SQLException {
     Map<String, String> params = getConnectionParameters();
-    String role = null;
+    String role = params.get("role");
     String token = null;
 
     try (Connection con = getConnection("s3testaccount");
@@ -168,11 +169,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
               + "  oauth_issue_refresh_tokens=true\n"
               + "  enabled=true oauth_refresh_token_validity=86400;");
-      role = params.get("role");
+
+      String scope = String.format(OAUTH_SCOPE_FORMAT, role);
       try (ResultSet rs =
           statement.executeQuery(
               "select system$it('create_oauth_access_token', 'JDBC_OAUTH_INTEGRATION', '"
-                  + role
+                  + scope
                   + "')")) {
         assertTrue(rs.next());
         token = rs.getString(1);
