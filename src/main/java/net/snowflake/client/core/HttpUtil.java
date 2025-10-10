@@ -22,6 +22,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -44,7 +45,9 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -843,7 +846,7 @@ public class HttpUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  public static String executeGeneralRequestOmitRequestGuid(
+  public static String executeGeneralRequestOmitSnowflakeHeaders(
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
@@ -915,6 +918,86 @@ public class HttpUtil {
         new ExecTimeTelemetryData(),
         retryContextManager,
         sfSession);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake and returns response with headers. This variant allows
+   * access to both the response body and HTTP headers as a simple map.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
+   *     only retryTimeout will determine when to end the retries
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
+   * @param sfSession the session associated with the request
+   * @return HttpResponseWithHeaders containing response body and headers as a map
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  @SnowflakeJdbcInternalApi
+  public static HttpResponseWithHeaders executeGeneralRequestWithContext(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      SFBaseSession sfSession)
+      throws SnowflakeSQLException, IOException {
+    // Set up telemetry with OCSP status
+    boolean ocspEnabled =
+        !(ocspAndProxyAndGzipKey.getOcspMode().equals(OCSPMode.DISABLE_OCSP_CHECKS));
+    logger.debug("Executing general request with OCSP enabled: {}", ocspEnabled);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    execTimeData.setOCSPStatus(ocspEnabled);
+
+    // Delegate to common internal method with appropriate defaults
+    HttpResponseContextDto responseContext =
+        executeRequestInternalWithContext(
+            httpRequest,
+            retryTimeout,
+            authTimeout,
+            socketTimeout,
+            retryCount,
+            0, // no inject socket timeout
+            null, // no canceling
+            false, // with cookie
+            false, // no retry parameters
+            true, // include request GUID
+            false, // no retry on HTTP 403
+            getHttpClient(ocspAndProxyAndGzipKey, null),
+            execTimeData,
+            null, // no retry context manager
+            sfSession,
+            ocspAndProxyAndGzipKey,
+            null, // no custom headers
+            false); // no decompression
+
+    // Convert to clean response object with headers as map
+    return convertToHttpResponseWithHeaders(responseContext);
+  }
+
+  private static HttpResponseWithHeaders convertToHttpResponseWithHeaders(
+      HttpResponseContextDto responseContext) {
+    String responseBody = responseContext.getUnpackedCloseableHttpResponse();
+    return new HttpResponseWithHeaders(
+        responseBody, extractHeadersAsMap(responseContext.getHttpResponse()));
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> extractHeadersAsMap(HttpResponse httpResponse) {
+    Map<String, String> headersMap = new HashMap<>();
+    if (httpResponse != null) {
+      Header[] headers = httpResponse.getAllHeaders();
+      if (headers != null) {
+        for (Header header : headers) {
+          headersMap.put(header.getName(), header.getValue());
+        }
+      }
+    }
+    return headersMap;
   }
 
   /**
@@ -1214,7 +1297,7 @@ public class HttpUtil {
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
    * @param includeRetryParameters whether to include retry parameters in retried requests
-   * @param includeRequestGuid whether to include request_guid
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
    * @param retryOnHTTP403 whether to retry on HTTP 403
    * @param httpClient client object used to communicate with other machine
    * @param retryContextManager RetryContext used to customize retry handling functionality
@@ -1237,7 +1320,78 @@ public class HttpUtil {
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
+      boolean includeSnowflakeHeaders,
+      boolean retryOnHTTP403,
+      CloseableHttpClient httpClient,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
+      throws SnowflakeSQLException, IOException {
+    // Delegate to common method and extract string from response context
+    HttpResponseContextDto responseContext =
+        executeRequestInternalWithContext(
+            httpRequest,
+            retryTimeout,
+            authTimeout,
+            socketTimeout,
+            maxRetries,
+            injectSocketTimeout,
+            canceling,
+            withoutCookies,
+            includeRetryParameters,
+            includeSnowflakeHeaders,
+            retryOnHTTP403,
+            httpClient,
+            execTimeData,
+            retryContextManager,
+            sfSession,
+            key,
+            httpHeaderCustomizer,
+            isHttpClientWithoutDecompression);
+    return responseContext.getUnpackedCloseableHttpResponse();
+  }
+
+  /**
+   * Common internal method to execute HTTP requests and return full response context. This method
+   * contains the shared logic for building the request context and executing the request with
+   * retries.
+   *
+   * @param httpRequest request object contains all the information
+   * @param retryTimeout retry timeout (in seconds)
+   * @param authTimeout authenticator specific timeout (in seconds)
+   * @param socketTimeout socket timeout (in ms)
+   * @param maxRetries retry count for the request
+   * @param injectSocketTimeout simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether this request should ignore cookies
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
+   * @param retryOnHTTP403 whether to retry on HTTP 403
+   * @param httpClient client object used to communicate with other machine
+   * @param execTimeData execution time telemetry data
+   * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param sfSession the session associated with the request
+   * @param key HttpClientSettingsKey object
+   * @param httpHeaderCustomizer HttpHeadersCustomizer object for customization of HTTP headers
+   * @param isHttpClientWithoutDecompression flag for create client without Decompression
+   * @return HttpResponseContextDto containing both response body and headers
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  private static HttpResponseContextDto executeRequestInternalWithContext(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeSnowflakeHeaders,
       boolean retryOnHTTP403,
       CloseableHttpClient httpClient,
       ExecTimeTelemetryData execTimeData,
@@ -1248,7 +1402,6 @@ public class HttpUtil {
       boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException, IOException {
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-    String responseText = "";
 
     logger.debug(
         "Pool: {} Executing: {}", (ArgSupplier) HttpUtil::getHttpClientStats, requestInfoScrubbed);
@@ -1266,24 +1419,24 @@ public class HttpUtil {
             .canceling(canceling)
             .withoutCookies(withoutCookies)
             .includeRetryParameters(includeRetryParameters)
-            .includeRequestGuid(includeRequestGuid)
+            .includeSnowflakeHeaders(includeSnowflakeHeaders)
             .retryHTTP403(retryOnHTTP403)
             .unpackResponse(true)
             .noRetry(false)
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .withSfSession(sfSession)
             .build();
-    responseText =
+
+    HttpResponseContextDto responseContext =
         RestRequest.executeWithRetries(
-                httpClient,
-                httpRequest,
-                context,
-                execTimeData,
-                retryContextManager,
-                key,
-                httpHeaderCustomizer,
-                isHttpClientWithoutDecompression)
-            .getUnpackedCloseableHttpResponse();
+            httpClient,
+            httpRequest,
+            context,
+            execTimeData,
+            retryContextManager,
+            key,
+            httpHeaderCustomizer,
+            isHttpClientWithoutDecompression);
 
     logger.debug(
         "Pool: {} Request returned for: {} took {} ms",
@@ -1291,7 +1444,7 @@ public class HttpUtil {
         requestInfoScrubbed,
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
-    return responseText;
+    return responseContext;
   }
 
   // This is a workaround for JDK-7036144.
