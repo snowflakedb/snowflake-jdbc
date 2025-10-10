@@ -4,7 +4,9 @@
 - v3.27.1-SNAPSHOT
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
-	- Ability to choose connection configuration in auto configuration file by a parameter in JDBC url.
+    - Fix IT tests to construct OAuth scopes correctly
+    - Fix exponential backoff retry time for non-auth requests
+    - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url.
   
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
