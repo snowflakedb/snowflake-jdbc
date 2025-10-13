@@ -4,8 +4,10 @@
 - v3.27.1-SNAPSHOT
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
-    - Add rockylinux9 CI tests as part of RHEL 9 support
-  
+    - Fix IT tests to construct OAuth scopes correctly
+    - Fix exponential backoff retry time for non-auth requests
+    - Add rockylinux9 CI tests as part of RHEL 9 support  
+    
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
     - Added HTTP 307 & 308 retries in case of internal IP redirects
