@@ -6,6 +6,7 @@
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
     - Fix IT tests to construct OAuth scopes correctly
     - Fix exponential backoff retry time for non-auth requests
+    - Bumped grpc to 1.76.0 to address CVE-2025-58056 from transient dep
   
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
