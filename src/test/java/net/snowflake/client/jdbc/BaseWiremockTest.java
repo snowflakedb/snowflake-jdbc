@@ -93,7 +93,12 @@ public abstract class BaseWiremockTest {
               try {
                 wiremockHttpPort = findFreePort();
                 wiremockHttpsPort = findFreePort();
-                String javaExecutable = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+                String javaExecutable =
+                    System.getProperty("java.home")
+                        + File.separator
+                        + "bin"
+                        + File.separator
+                        + "java";
                 wiremockStandalone =
                     new ProcessBuilder(
                             javaExecutable,
