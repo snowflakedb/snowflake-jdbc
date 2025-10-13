@@ -6,6 +6,7 @@
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
     - Fix IT tests to construct OAuth scopes correctly
     - Fix exponential backoff retry time for non-auth requests
+    - Upgrade aws-sdk to 1.12.792 and add STS dependency
     - Add rockylinux9 CI tests as part of RHEL 9 support  
     
 - v3.27.0
