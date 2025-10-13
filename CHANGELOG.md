@@ -6,6 +6,7 @@
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
     - Fix IT tests to construct OAuth scopes correctly
     - Fix exponential backoff retry time for non-auth requests
+    - Upgrade aws-sdk to 1.12.792 and add STS dependency
   
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
