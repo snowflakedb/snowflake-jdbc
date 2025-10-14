@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
@@ -132,6 +133,7 @@ public class AwsIdentityAttestationCreatorTest {
         new BasicSessionCredentials("initial-key", "initial-secret", "initial-token");
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
+    Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
 
     BasicSessionCredentials assumedCredentials =
         new BasicSessionCredentials("assumed-key", "assumed-secret", "assumed-token");
@@ -143,7 +145,7 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.doNothing().when(attestationServiceMock).initializeSignerRegion();
     Mockito.doNothing()
         .when(attestationServiceMock)
-        .signRequestWithSigV4(Mockito.any(), Mockito.eq(assumedCredentials));
+        .signRequestWithSigV4(any(), Mockito.eq(assumedCredentials));
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setWorkloadIdentityImpersonationPath("arn:aws:iam::123456789012:role/TestRole");

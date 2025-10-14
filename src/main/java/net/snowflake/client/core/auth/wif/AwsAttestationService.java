@@ -13,6 +13,7 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.EnvironmentVariables;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -69,8 +70,6 @@ public class AwsAttestationService {
 
   AWSCredentials assumeRole(AWSCredentials currentCredentials, String roleArn) throws SFException {
     try {
-      logger.debug("Attempting to assume role: {}", roleArn);
-
       AWSSecurityTokenService stsClient =
           AWSSecurityTokenServiceClientBuilder.standard()
               .withCredentials(new AWSStaticCredentialsProvider(currentCredentials))
@@ -80,8 +79,7 @@ public class AwsAttestationService {
       AssumeRoleRequest assumeRoleRequest =
           new AssumeRoleRequest()
               .withRoleArn(roleArn)
-              .withRoleSessionName("identity-federation-session")
-              .withDurationSeconds(3600);
+              .withRoleSessionName("identity-federation-session");
 
       AssumeRoleResult assumeRoleResult = stsClient.assumeRole(assumeRoleRequest);
       Credentials credentials = assumeRoleResult.getCredentials();
@@ -99,5 +97,25 @@ public class AwsAttestationService {
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
           "Failed to assume AWS role " + roleArn + ": " + e.getMessage());
     }
+  }
+
+  AWSCredentials getCredentialsViaRoleChaining(SFLoginInput loginInput) throws SFException {
+    AWSCredentials currentCredentials = getAWSCredentials();
+    if (currentCredentials == null) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "No initial AWS credentials found for role chaining");
+    }
+
+    for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
+      logger.debug("Assuming role: {}", roleArn);
+      currentCredentials = assumeRole(currentCredentials, roleArn);
+      if (currentCredentials == null) {
+        throw new SFException(
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);
+      }
+    }
+
+    return currentCredentials;
   }
 }

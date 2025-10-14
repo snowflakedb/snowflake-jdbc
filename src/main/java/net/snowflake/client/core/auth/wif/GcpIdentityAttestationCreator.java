@@ -117,7 +117,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
     List<String> fullServiceAccountPaths =
         loginInput.getWorkloadIdentityImpersonationPath().stream()
-            .map(arn -> "projects/-/serviceAccounts/" + arn)
+            .map(sa -> "projects/-/serviceAccounts/" + sa)
             .collect(Collectors.toList());
 
     String targetServiceAccount = fullServiceAccountPaths.get(fullServiceAccountPaths.size() - 1);

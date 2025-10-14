@@ -220,7 +220,7 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  public void basicFlowInvalidJsonError() {
+  public void azureCreatorDoesNotSupportImpersonationPath() {
     SFLoginInput loginInput = createLoginInputStub();
     loginInput.setWorkloadIdentityImpersonationPath("notEmpty");
     AzureAttestationService attestationServiceMock = Mockito.mock(AzureAttestationService.class);

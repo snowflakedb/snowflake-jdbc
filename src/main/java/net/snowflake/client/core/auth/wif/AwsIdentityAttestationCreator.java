@@ -44,7 +44,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       awsCredentials = attestationService.getAWSCredentials();
     } else {
       logger.debug("Creating AWS identity attestation with impersonation...");
-      awsCredentials = getCredentialsViaRoleChaining();
+      awsCredentials = attestationService.getCredentialsViaRoleChaining(loginInput);
     }
 
     if (awsCredentials == null) {
@@ -63,26 +63,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     String credential = createBase64EncodedRequestCredential(request);
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
-  }
-
-  private AWSCredentials getCredentialsViaRoleChaining() throws SFException {
-    AWSCredentials currentCredentials = attestationService.getAWSCredentials();
-    if (currentCredentials == null) {
-      throw new SFException(
-          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
-          "No initial AWS credentials found for role chaining");
-    }
-
-    for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
-      logger.debug("Assuming role: {}", roleArn);
-      currentCredentials = attestationService.assumeRole(currentCredentials, roleArn);
-      if (currentCredentials == null) {
-        throw new SFException(
-            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);
-      }
-    }
-
-    return currentCredentials;
   }
 
   private String getStsHostname(String region) {
