@@ -6,6 +6,9 @@
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
     - Fix IT tests to construct OAuth scopes correctly
     - Fix exponential backoff retry time for non-auth requests
+    - Upgrade aws-sdk to 1.12.792 and add STS dependency
+    - Add rockylinux9 CI tests as part of RHEL 9 support
+    - Bumped grpc-java to 1.76.0 to address CVE-2025-58056 from transient dep   
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url.
   
 - v3.27.0

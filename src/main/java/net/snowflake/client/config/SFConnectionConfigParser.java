@@ -53,7 +53,7 @@ public class SFConnectionConfigParser {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
     }
-    logger.debug("Attempting to load the configuration {} from toml file." + defaultConnectionName);
+    logger.debug("Attempting to load the configuration {} from toml file.", defaultConnectionName);
     Map<String, String> fileConnectionConfiguration =
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
@@ -126,15 +126,15 @@ public class SFConnectionConfigParser {
 
     if (Files.exists(configFilePath)) {
       logger.debug(
-          "Reading connection parameters from file using key: {} []",
+          "Reading connection parameters from file {} using key: {}",
           configFilePath,
           defaultConnectionName);
       Map<String, Map> parametersMap = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
       if (defaultConnectionParametersMap == null) {
-        logger.debug("The Connection {} not found in connections.toml." + defaultConnectionName);
+        logger.debug("The Connection {} not found in connections.toml.", defaultConnectionName);
       } else {
-        logger.debug("The Connection {} found in connections.toml." + defaultConnectionName);
+        logger.debug("The Connection {} found in connections.toml.", defaultConnectionName);
       }
       return defaultConnectionParametersMap;
     } else {
