@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +16,6 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
@@ -58,7 +56,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
   public WorkloadIdentityAttestation createAttestation() throws SFException {
     String token;
 
-    if (SnowflakeUtil.isNullOrEmpty(loginInput.getWorkloadIdentityImpersonationPath())) {
+    if (loginInput.getWorkloadIdentityImpersonationPath().isEmpty()) {
       logger.debug("Creating GCP identity attestation...");
       token = getGcpIdentityTokenFromMetadataService();
     } else {
@@ -116,12 +114,10 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   private String getGcpIdentityTokenViaImpersonation() throws SFException {
     String accessToken = fetchTokenFromMetadataService();
-    List<String> impersonationPath =
-        Arrays.asList(loginInput.getWorkloadIdentityImpersonationPath().split(","));
 
     List<String> fullServiceAccountPaths =
-        impersonationPath.stream()
-            .map(arn -> "projects/-/serviceAccounts/" + arn)
+        loginInput.getWorkloadIdentityImpersonationPath().stream()
+            .map(sa -> "projects/-/serviceAccounts/" + sa)
             .collect(Collectors.toList());
 
     String targetServiceAccount = fullServiceAccountPaths.get(fullServiceAccountPaths.size() - 1);
