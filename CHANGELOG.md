@@ -8,7 +8,10 @@
     - Fix exponential backoff retry time for non-auth requests
     - Upgrade aws-sdk to 1.12.792 and add STS dependency
     - Add rockylinux9 CI tests as part of RHEL 9 support
-    - Bumped grpc-java to 1.76.0 to address CVE-2025-58056 from transient dep   
+    - Bumped grpc-java to 1.76.0 to address CVE-2025-58056 from transient dep
+    - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348) - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348)
+    - Added support for authentication as a different identity through transitive IAM role impersonation for AWS (snowflakedb/snowflake-jdbc#2364)
+  
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url.
   
 - v3.27.0
