@@ -222,7 +222,7 @@ public class LoaderLatestIT extends LoaderBase {
       loader.start();
 
       loader.submitRow(new Object[] {"[12, 14.0, 100]"});
-      loader.setVectorColumnType("float");
+      loader.setVectorColumnType("FLOAT");
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
@@ -254,6 +254,7 @@ public class LoaderLatestIT extends LoaderBase {
       loader.start();
 
       loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]"});
+      loader.setVectorColumnType("FLOAT");
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
@@ -285,7 +286,7 @@ public class LoaderLatestIT extends LoaderBase {
       loader.start();
 
       loader.submitRow(new Object[] {"[12, 14, 100]", "[12, 14, 100]"});
-      loader.setVectorColumnType("int");
+      loader.setVectorColumnType("INT");
       loader.finish();
       int submitted = listener.getSubmittedRowCount();
       assertThat("submitted rows", submitted, equalTo(1));
@@ -316,7 +317,7 @@ public class LoaderLatestIT extends LoaderBase {
       TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
       loader.start();
 
-      loader.setVectorColumnType("float");
+      loader.setVectorColumnType("FLOAT");
       loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]", 10, "abc", new Date()});
       loader.finish();
       int submitted = listener.getSubmittedRowCount();

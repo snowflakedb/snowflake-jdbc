@@ -87,8 +87,8 @@ public class StreamLoader implements Loader, Runnable {
 
   private Map<String, Integer> _vectorColumnsNameAndSize = new HashMap<String, Integer>();
 
-  // Set vector type to float by default.
-  private String _vectorType = "float";
+  // Vector type can be FLOAT  or INT
+  private String _vectorType;
 
   private List<String> _keys;
 
@@ -947,6 +947,10 @@ public class StreamLoader implements Loader, Runnable {
     // table.
     if (_vectorColumnsNameAndSize.isEmpty()) {
       return "*";
+    }
+    if (_vectorType == null) {
+      throw new IllegalArgumentException(
+          "Target table with vector columns must use setVectorColumnType with \"INT\" or \"FLOAT\"");
     }
 
     StringBuilder sb = new StringBuilder();
