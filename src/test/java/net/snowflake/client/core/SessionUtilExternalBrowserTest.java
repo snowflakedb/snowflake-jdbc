@@ -53,6 +53,12 @@ class MockAuthExternalBrowserHandlers
   public void output(String msg) {
     // nop. No output
   }
+
+  @Override
+  public String input() {
+    // nop. No input
+    return null;
+  }
 }
 
 /** Simulates SessionUtilExternalBrower without popping up a browser window */
