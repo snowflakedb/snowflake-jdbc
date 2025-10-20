@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import com.google.common.base.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -108,7 +109,16 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
     configurationParams.put("account", params.get("account"));
     configurationParams.put("user", params.get("user"));
     configurationParams.put("port", params.get("port"));
-    configurationParams.put("password", params.get("password"));
+
+    if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
+      configurationParams.put("private_key_file", params.get("private_key_file"));
+      configurationParams.put("authenticator", params.get("authenticator"));
+      if (!Strings.isNullOrEmpty(params.get("private_key_pwd"))) {
+        configurationParams.put("private_key_pwd", params.get("private_key_pwd"));
+      }
+    } else if (!Strings.isNullOrEmpty(params.get("password"))) {
+      configurationParams.put("password", params.get("password"));
+    }
 
     configuration.put("default", configurationParams);
     configuration.put("readOnly", configurationParams);
