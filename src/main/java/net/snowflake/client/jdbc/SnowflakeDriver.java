@@ -238,7 +238,7 @@ public class SnowflakeDriver implements Driver {
     if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
       // Connect using connection configuration file
       logger.debug(
-          "JDBC connection initialized with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
+          "JDBC connection initializing with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
       ConnectionParameters connectionParameters =
           SFConnectionConfigParser.buildConnectionParameters(url);
       if (connectionParameters == null) {

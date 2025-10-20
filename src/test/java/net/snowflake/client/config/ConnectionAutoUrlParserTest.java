@@ -12,14 +12,14 @@ public class ConnectionAutoUrlParserTest {
   @Test
   void testValidConnection() throws SnowflakeSQLException {
     String url = "jdbc:snowflake:auto?connection=readonly";
-    String value = SFConnectionConfigParser.parseParams(url);
+    String value = SFConnectionConfigParser.getConnectionNameFromUrl(url);
     assertEquals("readonly", value);
   }
 
   @Test
   void testMissingQueryString() throws SnowflakeSQLException {
     String url = "jdbc:snowflake:auto";
-    String value = SFConnectionConfigParser.parseParams(url);
+    String value = SFConnectionConfigParser.getConnectionNameFromUrl(url);
     assertEquals("", value);
   }
 
@@ -27,7 +27,9 @@ public class ConnectionAutoUrlParserTest {
   void testUnsupportedParameterKey() {
     String url = "jdbc:snowflake:auto?foo=bar";
     SnowflakeSQLException ex =
-        assertThrows(SnowflakeSQLException.class, () -> SFConnectionConfigParser.parseParams(url));
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SFConnectionConfigParser.getConnectionNameFromUrl(url));
     assertTrue(ex.getMessage().contains("Only 'connection' parameter is supported"));
   }
 
@@ -35,7 +37,9 @@ public class ConnectionAutoUrlParserTest {
   void testMissingValueForConnection() {
     String url = "jdbc:snowflake:auto?connection=";
     SnowflakeSQLException ex =
-        assertThrows(SnowflakeSQLException.class, () -> SFConnectionConfigParser.parseParams(url));
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> SFConnectionConfigParser.getConnectionNameFromUrl(url));
     assertTrue(ex.getMessage().contains("must have a value"));
   }
 }

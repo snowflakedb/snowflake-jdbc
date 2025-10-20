@@ -48,7 +48,7 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String conUrl)
       throws SnowflakeSQLException {
-    String defaultConnectionName = parseParams(conUrl);
+    String defaultConnectionName = getConnectionNameFromUrl(conUrl);
     if (SnowflakeUtil.isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
@@ -96,7 +96,7 @@ public class SFConnectionConfigParser {
     }
   }
 
-  static String parseParams(String url) throws SnowflakeSQLException {
+  static String getConnectionNameFromUrl(String url) throws SnowflakeSQLException {
     // Extract query string
     int idx = url.indexOf('?');
     if (idx == -1 || idx == url.length() - 1) {
