@@ -229,7 +229,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       int[] thresholds = {0, 6}; // disabled, enabled
 
       for (int threshold : thresholds) {
-        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute("DELETE FROM " + uniqueTableName + " WHERE 1=1"); // clear table
         statement.execute(
             String.format(
                 "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
@@ -246,7 +246,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           assertEquals(1, countResult[0]);
         }
 
-        try (ResultSet resultSet = statement.executeQuery("SELECT * FROM TEST_PREPST")) {
+        try (ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
           assertTrue(resultSet.next());
           String errorMessage =
               "Column should be null (" + (threshold > 0 ? "stage" : "non-stage") + ")";
@@ -279,7 +279,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       };
 
       for (int threshold : thresholds) {
-        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute("DELETE FROM " + uniqueTableName + " WHERE 1=1"); // clear table
         statement.execute(
             String.format(
                 "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
@@ -291,7 +291,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           prepStatement.executeBatch();
 
           try (ResultSet resultSet =
-              statement.executeQuery("SELECT colC FROM TEST_PREPST ORDER BY id ASC")) {
+              statement.executeQuery("SELECT colC FROM " + uniqueTableName + " ORDER BY id ASC")) {
             String errorMessage =
                 "Strings should match (" + (threshold > 0 ? "stage" : "non-stage") + ")";
             for (String row : rows) {
@@ -313,7 +313,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       int[] thresholds = {0, 6}; // disabled, enabled
 
       for (int threshold : thresholds) {
-        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute("DELETE FROM " + uniqueTableName + " WHERE 1=1"); // clear table
         statement.execute(
             String.format(
                 "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
@@ -356,9 +356,11 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           statement.execute("ALTER SESSION SET TIMESTAMP_TYPE_MAPPING = " + tsType);
           statement.execute("ALTER SESSION SET CLIENT_TIMESTAMP_TYPE_MAPPING = " + tsType);
 
-          statement.execute("CREATE OR REPLACE TABLE test_prepst_ts (id INTEGER, tz TIMESTAMP)");
+          statement.execute(
+              "CREATE OR REPLACE TABLE " + uniqueTableName + "_ts (id INTEGER, tz TIMESTAMP)");
           try (PreparedStatement prepStatement =
-              connection.prepareStatement("INSERT INTO test_prepst_ts(id, tz) VALUES(?,?)")) {
+              connection.prepareStatement(
+                  "INSERT INTO " + uniqueTableName + "_ts(id, tz) VALUES(?,?)")) {
             // First, run with non-stage binding
             statement.executeQuery("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
             for (int i = 0; i < timestamps.length; i++) {
@@ -373,13 +375,14 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
             Timestamp[] nonStageResult = new Timestamp[timestamps.length];
             try (ResultSet rsNonStage =
-                statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
+                statement.executeQuery(
+                    "SELECT * FROM " + uniqueTableName + "_ts ORDER BY id ASC")) {
               for (int i = 0; i < nonStageResult.length; i++) {
                 assertTrue(rsNonStage.next());
                 nonStageResult[i] = rsNonStage.getTimestamp(2);
               }
             }
-            statement.execute("DELETE FROM test_prepst_ts WHERE 1=1");
+            statement.execute("DELETE FROM " + uniqueTableName + "_ts WHERE 1=1");
 
             // Now, run with stage binding
             statement.execute(
@@ -397,7 +400,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
             Timestamp[] stageResult = new Timestamp[timestamps.length];
             try (ResultSet rsStage =
-                statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
+                statement.executeQuery(
+                    "SELECT * FROM " + uniqueTableName + "_ts ORDER BY id ASC")) {
               for (int i = 0; i < stageResult.length; i++) {
                 assertTrue(rsStage.next());
                 stageResult[i] = rsStage.getTimestamp(2);
@@ -415,7 +419,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           }
         }
       } finally {
-        statement.execute("DROP TABLE IF EXISTS test_prepst_ts");
+        statement.execute("DROP TABLE IF EXISTS " + uniqueTableName + "_ts");
       }
     }
   }
@@ -434,9 +438,11 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       Time[] times = new Time[] {tMidnight, tNeg, tPos, tNow, tNoon, null};
       int[] countResult;
       try {
-        statement.execute("CREATE OR REPLACE TABLE test_prepst_time (id INTEGER, tod TIME)");
+        statement.execute(
+            "CREATE OR REPLACE TABLE " + uniqueTableName + "_time (id INTEGER, tod TIME)");
         try (PreparedStatement prepStatement =
-            connection.prepareStatement("INSERT INTO test_prepst_time(id, tod) VALUES(?,?)")) {
+            connection.prepareStatement(
+                "INSERT INTO " + uniqueTableName + "_time(id, tod) VALUES(?,?)")) {
 
           // First, run with non-stage binding
           statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
@@ -452,13 +458,13 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
           Time[] nonStageResult = new Time[times.length];
           ResultSet rsNonStage =
-              statement.executeQuery("SELECT * FROM test_prepst_time ORDER BY id ASC");
+              statement.executeQuery("SELECT * FROM " + uniqueTableName + "_time ORDER BY id ASC");
           for (int i = 0; i < nonStageResult.length; i++) {
             assertTrue(rsNonStage.next());
             nonStageResult[i] = rsNonStage.getTime(2);
           }
 
-          statement.execute("DELETE FROM test_prepst_time WHERE 1=1");
+          statement.execute("DELETE FROM " + uniqueTableName + "_time WHERE 1=1");
 
           // Now, run with stage binding
           statement.execute(
@@ -476,7 +482,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
           Time[] stageResult = new Time[times.length];
           try (ResultSet rsStage =
-              statement.executeQuery("SELECT * FROM test_prepst_time ORDER BY id ASC")) {
+              statement.executeQuery(
+                  "SELECT * FROM " + uniqueTableName + "_time ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
               assertTrue(rsStage.next());
               stageResult[i] = rsStage.getTime(2);
@@ -491,7 +498,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           }
         }
       } finally {
-        statement.execute("DROP TABLE IF EXISTS test_prepst_time");
+        statement.execute("DROP TABLE IF EXISTS " + uniqueTableName + "_time");
       }
     }
   }
@@ -559,7 +566,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   public void testInsertOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
-      statement.execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
+      statement.execute(
+          "CREATE OR REPLACE TABLE " + uniqueTableName + "_date (id INTEGER, d DATE)");
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         assertEquals(1, prepStatement.executeUpdate());
@@ -581,7 +589,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   public void testUpdateOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
-      statement.execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
+      statement.execute(
+          "CREATE OR REPLACE TABLE " + uniqueTableName + "_date (id INTEGER, d DATE)");
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         prepStatement.addBatch();
@@ -617,7 +626,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   public void testDeleteOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
-      statement.execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
+      statement.execute(
+          "CREATE OR REPLACE TABLE " + uniqueTableName + "_date (id INTEGER, d DATE)");
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         prepStatement.addBatch();

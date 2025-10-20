@@ -1,0 +1,26 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com",
+        "method": "GET",
+        "headers": {
+          "Metadata": {
+            "equalTo": "True"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5HVEZ2ZEstZnl0aEV1Q...",
+          "expires_in": "3599",
+          "expires_on": "1635337800",
+          "not_before": "1635334200",
+          "resource": "https://management.azure.com/",
+          "token_type": "Bearer"
+        }
+      }
+    }
+  ]
+} 

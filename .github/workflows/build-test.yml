@@ -64,6 +64,7 @@ jobs:
               shell: cmd
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
@@ -99,10 +100,37 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: /usr/local/bin/bash ./ci/test_mac.sh
+
+    test-rocky:
+        needs: build
+        name: ${{ matrix.runConfig.cloud }} Rocky9 java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                runConfig: [ {cloud: 'AWS', javaVersion: '8', image: 'jdbc-rockylinux9-openjdk8'}, {cloud: 'GCP', javaVersion: '11', image: 'jdbc-rockylinux9-openjdk11'}, {cloud: 'AZURE', javaVersion: '17', image: 'jdbc-rockylinux9-openjdk17'}, {cloud: 'AWS', javaVersion: '21', image: 'jdbc-rockylinux9-openjdk21'}]
+                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                additionalMavenProfile: ['']
+        steps:
+            - uses: actions/checkout@v4
+            - name: Tests
+              shell: bash
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.runConfig.image }}
+                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+              run: ./ci/test.sh
 
     test-linux:
         needs: build
@@ -124,6 +152,7 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
@@ -148,6 +177,7 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}

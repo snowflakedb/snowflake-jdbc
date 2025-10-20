@@ -143,6 +143,8 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
+  private int defaultPlatformDetectionTimeoutMs = 200;
+
   private boolean enableClientStoreTemporaryCredential = true;
   private boolean enableClientRequestMfaToken = true;
 
@@ -772,6 +774,9 @@ public class SFSession extends SFBaseSession {
         .setWorkloadIdentityEntraResource(
             (String)
                 connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_ENTRA_RESOURCE))
+        .setWorkloadIdentityImpersonationPath(
+            (String)
+                connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_IMPERSONATION_PATH))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -795,7 +800,16 @@ public class SFSession extends SFBaseSession {
                 : false)
         .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
         .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
-        .setBrowserResponseTimeout(browserResponseTimeout);
+        .setBrowserResponseTimeout(browserResponseTimeout)
+        .setPlatformDetectionTimeoutMs(
+            connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
+                ? (int) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
+                : defaultPlatformDetectionTimeoutMs)
+        .setDisablePlatformDetection(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
+                : false); // Default to false (platform detection enabled)
 
     logger.info(
         "Connecting to {} Snowflake domain",
@@ -835,6 +849,7 @@ public class SFSession extends SFBaseSession {
     setWarehouse(loginOutput.getSessionWarehouse());
     setSessionId(loginOutput.getSessionId());
     setAutoCommit(loginOutput.getAutoCommit());
+    extractAndUpdateStickyHttpHeaders(loginOutput.getLoginResponseHeaders());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);

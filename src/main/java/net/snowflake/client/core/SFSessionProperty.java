@@ -31,6 +31,7 @@ public enum SFSessionProperty {
   OAUTH_ENABLE_SINGLE_USE_REFRESH_TOKENS("oauthEnableSingleUseRefreshTokens", false, Boolean.class),
   WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
   WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
+  WORKLOAD_IDENTITY_IMPERSONATION_PATH("workloadIdentityImpersonationPath", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
@@ -153,7 +154,11 @@ public enum SFSessionProperty {
 
   CERT_REVOCATION_CHECK_MODE("CERT_REVOCATION_CHECK_MODE", false, String.class),
 
-  ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class);
+  ALLOW_CERTIFICATES_WITHOUT_CRL_URL("ALLOW_CERTIFICATES_WITHOUT_CRL_URL", false, Boolean.class),
+
+  PLATFORM_DETECTION_TIMEOUT_MS("platformDetectionTimeoutMs", false, Integer.class),
+
+  DISABLE_PLATFORM_DETECTION("disablePlatformDetection", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

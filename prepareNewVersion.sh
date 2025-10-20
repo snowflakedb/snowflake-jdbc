@@ -20,18 +20,10 @@ mv $tmp_file_with_version $file_with_version
 if [[ "$version" == *-SNAPSHOT ]]; then
 sed -i '' '3a\
 - v'"$version
-" DESCRIPTION.md
+" CHANGELOG.md
 fi
 
 # add changelog entry but only when releasing version without snapshot
 if [[ "$version" == "$version_without_snapshot" ]]; then
-  sed -i '' "4s/.*/- v$version/" DESCRIPTION.md
-  changelog_file=CHANGELOG.rst
-  tmp_changelog_file=${changelog_file}.bck
-  echo "**JDBC Driver ${version}**" > $tmp_changelog_file
-  echo "" >> $tmp_changelog_file
-  echo "- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc" >> $tmp_changelog_file
-  echo "" >> $tmp_changelog_file
-  cat $changelog_file >> $tmp_changelog_file
-  mv $tmp_changelog_file $changelog_file
+  sed -i '' "4s/.*/- v$version/" CHANGELOG.md
 fi

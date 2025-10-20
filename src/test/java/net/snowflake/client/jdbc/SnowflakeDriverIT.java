@@ -67,8 +67,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String getCurrenTransactionStmt = "SELECT CURRENT_TRANSACTION()";
   private static Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
+  private static final String OAUTH_SCOPE_FORMAT = "session:role:%s";
 
-  private static String ORDERS_JDBC = "ORDERS_JDBC";
+  private static final String ORDERS_JDBC_TABLE =
+      "orders_jdbc_snowflakedriver_" + SnowflakeUtil.randomAlphaNumeric(10);
+  private static String ORDERS_JDBC = ORDERS_JDBC_TABLE.toUpperCase();
 
   @TempDir private File tmpFolder;
   private ObjectMapper mapper = new ObjectMapper();
@@ -84,7 +87,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       try (Statement statement = connection.createStatement()) {
 
         statement.execute(
-            "create or replace table orders_jdbc"
+            "create or replace table "
+                + ORDERS_JDBC_TABLE
                 + "(C1 STRING NOT NULL COMMENT 'JDBC', "
                 + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
                 + "C7 STRING, C8 STRING, C9 STRING) "
@@ -97,14 +101,20 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // put files
         assertTrue(
             statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
+                "PUT file://"
+                    + getFullPathFileInResource(TEST_DATA_FILE)
+                    + " @%"
+                    + ORDERS_JDBC_TABLE),
             "Failed to put a file");
         assertTrue(
             statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
+                "PUT file://"
+                    + getFullPathFileInResource(TEST_DATA_FILE_2)
+                    + " @%"
+                    + ORDERS_JDBC_TABLE),
             "Failed to put a file");
 
-        int numRows = statement.executeUpdate("copy into orders_jdbc");
+        int numRows = statement.executeUpdate("copy into " + ORDERS_JDBC_TABLE);
 
         assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
       }
@@ -116,7 +126,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       statement.execute("drop table if exists clustered_jdbc");
-      statement.execute("drop table if exists orders_jdbc");
+      statement.execute("drop table if exists " + ORDERS_JDBC_TABLE);
     }
   }
 
@@ -145,7 +155,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testOauthConnection() throws SQLException {
     Map<String, String> params = getConnectionParameters();
-    String role = null;
+    String role = params.get("role");
     String token = null;
 
     try (Connection con = getConnection("s3testaccount");
@@ -159,11 +169,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
               + "  oauth_issue_refresh_tokens=true\n"
               + "  enabled=true oauth_refresh_token_validity=86400;");
-      role = params.get("role");
+
+      String scope = String.format(OAUTH_SCOPE_FORMAT, role);
       try (ResultSet rs =
           statement.executeQuery(
               "select system$it('create_oauth_access_token', 'JDBC_OAUTH_INTEGRATION', '"
-                  + role
+                  + scope
                   + "')")) {
         assertTrue(rs.next());
         token = rs.getString(1);
@@ -252,7 +263,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       connection.createStatement().execute("alter session set rows_per_resultset=2048");
 
       try (Statement statement = connection.createStatement();
-          ResultSet resultSet = statement.executeQuery("SELECT * FROM orders_jdbc")) {
+          ResultSet resultSet = statement.executeQuery("SELECT * FROM " + ORDERS_JDBC_TABLE)) {
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
         int numColumns = resultSetMetaData.getColumnCount();
         assertEquals(9, numColumns);
@@ -529,7 +540,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       statement.setMaxRows(maxRows);
-      try (ResultSet resultSet = statement.executeQuery("SELECT * FROM orders_jdbc")) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * FROM " + ORDERS_JDBC_TABLE)) {
 
         // assert column count
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -621,7 +632,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
               "schema should be " + connection.getSchema());
           assertTrue(
-              ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)), "table should be orders_jdbc");
+              ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)),
+              "table should be " + ORDERS_JDBC);
         }
       }
 
@@ -657,7 +669,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // assert column count
         assertEquals(10, resultSetMetaData.getColumnCount());
 
-        // assert we get orders_jdbc
+        // assert we get our unique orders table
         boolean found = false;
         while (tableMetaDataResultSet.next()) {
           // assert the table name
@@ -666,7 +678,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             break;
           }
         }
-        assertTrue(found, "orders_jdbc not found");
+        assertTrue(found, "orders table not found");
       }
 
       // get column metadata
@@ -1106,7 +1118,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         // test explain plan: sorry not available for general but debugging purpose only
         ResultSet resultSet =
-            statement.executeQuery("EXPLAIN PLAN FOR SELECT c1 FROM orders_jdbc")) {
+            statement.executeQuery("EXPLAIN PLAN FOR SELECT c1 FROM " + ORDERS_JDBC_TABLE)) {
 
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
       assertTrue(resultSetMetaData.getColumnCount() >= 4, "must return more than 4 columns");
@@ -1120,7 +1132,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement();
         ResultSet resultSet =
             statement.executeQuery(
-                "select to_timestamp('2013-05-08T15:39:20.123-07:00') from orders_jdbc")) {
+                "select to_timestamp('2013-05-08T15:39:20.123-07:00') from " + ORDERS_JDBC_TABLE)) {
 
       assertTrue(resultSet.next());
       assertEquals("Wed, 08 May 2013 15:39:20 -0700", resultSet.getString(1));
@@ -1143,7 +1155,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();
         ResultSet resultSet =
-            statement.executeQuery("select to_time('15:39:20.123') from orders_jdbc")) {
+            statement.executeQuery("select to_time('15:39:20.123') from " + ORDERS_JDBC_TABLE)) {
       assertTrue(resultSet.next());
       assertEquals("15:39:20", resultSet.getString(1));
     }
@@ -1159,7 +1171,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // turn on sorting mode
       statement.execute("set-sf-property sort on");
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT c3 FROM orders_jdbc")) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT c3 FROM " + ORDERS_JDBC_TABLE)) {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
@@ -1177,7 +1189,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       statement.execute("set-sf-property sort off");
 
       try (ResultSet resultSet =
-          statement.executeQuery("SELECT c3 FROM orders_jdbc order by c3 desc")) {
+          statement.executeQuery("SELECT c3 FROM " + ORDERS_JDBC_TABLE + " order by c3 desc")) {
 
         resultSetMetaData = resultSet.getMetaData();
 
@@ -1431,7 +1443,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       }
       // bind in where clause
       try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * FROM orders_jdbc WHERE to_number(c1) = ?")) {
+          connection.prepareStatement(
+              "SELECT * FROM " + ORDERS_JDBC_TABLE + " WHERE to_number(c1) = ?")) {
 
         preparedStatement.setInt(1, 100);
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
