@@ -92,7 +92,7 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
       try (Connection con = DriverManager.getConnection(connectionString, null)) {
         assertNotNull(con);
       } catch (Exception e) {
-        fail("Should not fail.");
+        fail("Should not fail." + e.getMessage());
       }
     }
   }
