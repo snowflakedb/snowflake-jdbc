@@ -9,7 +9,8 @@ on:
     pull_request:
         branches:
             - master
-            - prep-**
+            - SNOW-**
+            - NO-SNOW-**
     workflow_dispatch:
         inputs:
           logLevel:
