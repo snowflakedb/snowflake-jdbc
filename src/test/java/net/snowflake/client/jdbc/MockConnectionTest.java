@@ -1,14 +1,31 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.QueryContextDTO;
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFBaseStatement;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFJsonResultSet;
+import net.snowflake.client.core.SFPreparedStatementMetaData;
+import net.snowflake.client.core.SFResultSetMetaData;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatementType;
+import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.common.core.SFBinaryFormat;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,27 +48,10 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import net.snowflake.client.core.ExecTimeTelemetryData;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.QueryContextDTO;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFBaseStatement;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFJsonResultSet;
-import net.snowflake.client.core.SFPreparedStatementMetaData;
-import net.snowflake.client.core.SFResultSetMetaData;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatementType;
-import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.jdbc.telemetry.TelemetryData;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -720,11 +720,6 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
-      return null;
-    }
-
-    @Override
-    public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
       return null;
     }
 

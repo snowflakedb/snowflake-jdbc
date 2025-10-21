@@ -1,17 +1,16 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
-import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.DontRunOnJenkins;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.bind.BindUploader;
+import net.snowflake.common.core.SqlState;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.net.URL;
@@ -31,18 +30,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.TestUtil;
-import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.annotations.DontRunOnJenkins;
-import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.bind.BindUploader;
-import net.snowflake.common.core.SqlState;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+
+import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -323,10 +323,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .until(() -> sfrs.getStatus().getStatus() == QueryStatus.Status.FAILED_WITH_ERROR);
 
         assertTrue(
-            sfrs.getStatusV2()
+            sfrs.getStatus()
                 .getErrorMessage()
                 .contains(
                     "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
@@ -436,10 +436,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .until(() -> sfrs.getStatus().getStatus() == QueryStatus.Status.FAILED_WITH_ERROR);
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            sfrs.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
       }
@@ -468,10 +468,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .until(() -> sfrs.getStatus().getStatus() == QueryStatus.Status.FAILED_WITH_ERROR);
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            sfrs.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
       }

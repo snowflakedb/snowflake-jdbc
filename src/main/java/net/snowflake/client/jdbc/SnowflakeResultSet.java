@@ -2,7 +2,6 @@ package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
 import java.util.List;
-import net.snowflake.client.core.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
 public interface SnowflakeResultSet {
@@ -11,18 +10,6 @@ public interface SnowflakeResultSet {
    * @throws SQLException if an error is encountered
    */
   String getQueryID() throws SQLException;
-
-  /**
-   * This function retrieves the status of an asynchronous query. An empty ResultSet object has
-   * already been returned but the query may still be running. This function can be used to poll to
-   * see if it is possible to retrieve results from the ResultSet yet. See
-   * Client/src/main/java/net/snowflake/client/core/QueryStatus.java for the list of all possible
-   * query statuses. QueryStatus = SUCCESS means results can be retrieved.
-   *
-   * @return QueryStatus enum showing status of query
-   * @throws SQLException if an error is encountered
-   */
-  QueryStatus getStatus() throws SQLException;
 
   /**
    * This function retrieves the error message recorded from the error status of an asynchronous
@@ -44,7 +31,7 @@ public interface SnowflakeResultSet {
    * @return an instance containing query metadata
    * @throws SQLException if an error is encountered
    */
-  QueryStatusV2 getStatusV2() throws SQLException;
+  QueryStatus getStatus() throws SQLException;
 
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing

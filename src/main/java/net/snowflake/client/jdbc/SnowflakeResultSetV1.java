@@ -1,5 +1,11 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -24,12 +30,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.StructObjectWrapper;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
@@ -63,18 +63,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   public QueryStatus getStatus() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
-  }
-
-  /**
-   * This function is not supported for synchronous queries
-   *
-   * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
-   */
-  @Override
-  public QueryStatusV2 getStatusV2() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(
-        session, "This function is only supported for asynchronous queries.");
   }
 
   /**

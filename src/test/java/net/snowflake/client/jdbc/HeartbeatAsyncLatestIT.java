@@ -1,9 +1,9 @@
 package net.snowflake.client.jdbc;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -12,11 +12,10 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
-import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.QueryStatus;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
@@ -56,9 +55,9 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
       await()
           .atMost(Duration.ofSeconds(60))
-          .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
+          .until(() -> !rs.getStatus().isStillRunning());
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.SUCCESS, qs);
+      assertTrue(qs.isSuccess());
 
       // assert we get 1 row
       assertTrue(resultSet.next());

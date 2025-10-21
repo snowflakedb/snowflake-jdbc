@@ -1,7 +1,11 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.QueryStatus.NO_DATA;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -13,13 +17,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 /** SFAsyncResultSet implementation. Note: For Snowflake internal use */
 public class SFAsyncResultSet extends SnowflakeBaseResultSet
@@ -31,8 +30,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
   private String queryID;
   private SFBaseSession session;
   private Statement extraStatement;
-  private QueryStatus lastQueriedStatus = NO_DATA;
-  private QueryStatusV2 lastQueriedStatusV2 = QueryStatusV2.empty();
+  private QueryStatus lastQueriedStatus = QueryStatus.empty();
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -92,6 +90,11 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
   }
 
   @Override
+  public String getQueryErrorMessage() throws SQLException {
+    return this.lastQueriedStatus.getErrorMessage();
+  }
+
+  @Override
   public QueryStatus getStatus() throws SQLException {
     if (session == null) {
       throw new SQLException("Session not set");
@@ -99,35 +102,13 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    if (this.lastQueriedStatus == QueryStatus.SUCCESS) {
+    if (this.lastQueriedStatus.isSuccess()) {
       return this.lastQueriedStatus;
     }
-    // if query has completed successfully, cache its success status to avoid unnecessary future
-    // server calls
     this.lastQueriedStatus = session.getQueryStatus(this.queryID);
-    return this.lastQueriedStatus;
-  }
-
-  @Override
-  public String getQueryErrorMessage() throws SQLException {
-    return this.lastQueriedStatus.getErrorMessage();
-  }
-
-  @Override
-  public QueryStatusV2 getStatusV2() throws SQLException {
-    if (session == null) {
-      throw new SQLException("Session not set");
-    }
-    if (this.queryID == null) {
-      throw new SQLException("QueryID unknown");
-    }
-    if (this.lastQueriedStatusV2.isSuccess()) {
-      return this.lastQueriedStatusV2;
-    }
-    this.lastQueriedStatusV2 = session.getQueryStatusV2(this.queryID);
     // if query has completed successfully, cache its metadata to avoid unnecessary future server
     // calls
-    return this.lastQueriedStatusV2;
+    return this.lastQueriedStatus;
   }
 
   /**
@@ -139,17 +120,17 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
       // If query has already succeeded, go straight to result scan to get results
-      if (this.lastQueriedStatus != QueryStatus.SUCCESS) {
+      if (this.lastQueriedStatus.isSuccess()) {
         QueryStatus qs = this.getStatus();
         int noDataRetry = 0;
         final int noDataMaxRetries = 30;
         final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
         final int maxIndex = retryPattern.length - 1;
         int retry = 0;
-        while (qs != QueryStatus.SUCCESS) {
+        while (!qs.isSuccess()) {
           // if query is not running due to a failure (Aborted, failed with error, etc), generate
           // exception
-          if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
+          if (!qs.isStillRunning()) {
             String errorMessage = qs.getErrorMessage();
             if (isNullOrEmpty(errorMessage)) {
               errorMessage = "No error message available";
@@ -162,7 +143,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
                     + " Results not generated.");
           }
           // if no data about the query is returned after about 2 minutes, give up
-          if (qs == NO_DATA) {
+          if (qs.getStatus() == QueryStatus.Status.NO_DATA) {
             noDataRetry++;
             if (noDataRetry >= noDataMaxRetries) {
               throw new SQLException(

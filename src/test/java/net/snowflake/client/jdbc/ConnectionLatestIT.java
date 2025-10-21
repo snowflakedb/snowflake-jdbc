@@ -1,24 +1,36 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnAWS;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SecurityUtil;
+import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.core.auth.ClientAuthnDTO;
+import net.snowflake.client.core.auth.ClientAuthnParameter;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -44,35 +56,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLHandshakeException;
-import net.snowflake.client.TestUtil;
-import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.annotations.RunOnAWS;
-import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.core.SecurityUtil;
-import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.core.auth.AuthenticatorType;
-import net.snowflake.client.core.auth.ClientAuthnDTO;
-import net.snowflake.client.core.auth.ClientAuthnParameter;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.StringEntity;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -292,11 +292,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
       await()
           .atMost(Duration.ofSeconds(5))
-          .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
-      QueryStatusV2 statusV2 = sfrs.getStatusV2();
+          .until(() -> sfrs.getStatus().getStatus(), not(equalTo(QueryStatus.Status.NO_DATA)));
       // Query should take 60 seconds so should be running
-      assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
-      assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+      assertEquals(QueryStatus.Status.RUNNING, sfrs.getStatus().getStatus());
+      assertEquals(QueryStatus.Status.RUNNING.name(), sfrs.getStatus().getName());
       // close connection and wait for 1 minute while query finishes running
     }
 
@@ -312,11 +311,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                       .close());
       assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
-        QueryStatusV2 statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
         // Assert status of query is a success
-        assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
-        assertEquals("No error reported", statusV2.getErrorMessage());
-        assertEquals(0, statusV2.getErrorCode());
+        assertEquals(QueryStatus.Status.SUCCESS, status.getStatus());
+        assertEquals("No error reported", status.getErrorMessage());
+        assertEquals(0, status.getErrorCode());
         assertEquals(1, getSizeOfResultSet(rs));
         try (Statement statement = con.createStatement();
             // Create another query that will not be successful (querying table that does not exist)
@@ -328,13 +327,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
           await()
               .atMost(Duration.ofSeconds(10))
-              .until(() -> sfrs1.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
-          statusV2 = sfrs1.getStatusV2();
-          assertEquals(2003, statusV2.getErrorCode());
+              .until(() -> sfrs1.getStatus().getStatus() == QueryStatus.Status.FAILED_WITH_ERROR);
+          status = sfrs1.getStatus();
+          assertEquals(2003, status.getErrorCode());
           assertEquals(
               "SQL compilation error:\n"
                   + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-              statusV2.getErrorMessage());
+              status.getErrorMessage());
         }
       }
     }
@@ -421,7 +420,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  /** Can be used in > 3.14.4 (when {@link QueryStatusV2} was added) */
+  /** Can be used in > 3.14.4 (when {@link QueryStatus} was added) */
   @Test
   public void testQueryStatusErrorMessageAndErrorCodeChangeOnAsyncQuery() throws SQLException {
     try (Connection con = getConnection();
@@ -434,12 +433,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // status should change state to RUNNING and then to SUCCESS
       await()
           .atMost(Duration.ofSeconds(10))
-          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+          .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.RUNNING));
 
       // it may take more time to finish the test when running in parallel in CI builds
       await()
           .atMost(Duration.ofSeconds(360))
-          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
+          .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.SUCCESS));
     }
   }
 
@@ -474,54 +473,58 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testIsStillRunning() {
-    QueryStatus[] runningStatuses = {
-      QueryStatus.RUNNING,
-      QueryStatus.RESUMING_WAREHOUSE,
-      QueryStatus.QUEUED,
-      QueryStatus.QUEUED_REPAIRING_WAREHOUSE,
-      QueryStatus.NO_DATA,
-      QueryStatus.BLOCKED
+    QueryStatus.Status[] runningStatuses = {
+      QueryStatus.Status.RUNNING,
+      QueryStatus.Status.RESUMING_WAREHOUSE,
+      QueryStatus.Status.QUEUED,
+      QueryStatus.Status.QUEUED_REPAIRING_WAREHOUSE,
+      QueryStatus.Status.NO_DATA,
+      QueryStatus.Status.BLOCKED
     };
 
-    QueryStatus[] otherStatuses = {
-      QueryStatus.ABORTED,
-      QueryStatus.ABORTING,
-      QueryStatus.SUCCESS,
-      QueryStatus.FAILED_WITH_ERROR,
-      QueryStatus.FAILED_WITH_INCIDENT,
-      QueryStatus.DISCONNECTED,
-      QueryStatus.RESTARTED
+    QueryStatus.Status[] otherStatuses = {
+      QueryStatus.Status.ABORTED,
+      QueryStatus.Status.ABORTING,
+      QueryStatus.Status.SUCCESS,
+      QueryStatus.Status.FAILED_WITH_ERROR,
+      QueryStatus.Status.FAILED_WITH_INCIDENT,
+      QueryStatus.Status.DISCONNECTED,
+      QueryStatus.Status.RESTARTED
     };
 
-    for (QueryStatus qs : runningStatuses) {
-      assertEquals(true, QueryStatus.isStillRunning(qs));
+    for (QueryStatus.Status status : runningStatuses) {
+      QueryStatus queryStatus = new QueryStatus(0, 0, "", "", status.name(), 0, "", 0, "", 0, "", 0, "", "");
+      assertTrue(queryStatus.isStillRunning());
     }
 
-    for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isStillRunning(qs));
+    for (QueryStatus.Status status : otherStatuses) {
+      QueryStatus queryStatus = new QueryStatus(0, 0, "", "", status.name(), 0, "", 0, "", 0, "", 0, "", "");
+      assertFalse(queryStatus.isStillRunning());
     }
   }
 
   @Test
   public void testIsAnError() {
-    QueryStatus[] otherStatuses = {
-      QueryStatus.RUNNING, QueryStatus.RESUMING_WAREHOUSE, QueryStatus.QUEUED,
-      QueryStatus.QUEUED_REPAIRING_WAREHOUSE, QueryStatus.SUCCESS, QueryStatus.RESTARTED,
-      QueryStatus.NO_DATA
+    QueryStatus.Status[] otherStatuses = {
+      QueryStatus.Status.RUNNING, QueryStatus.Status.RESUMING_WAREHOUSE, QueryStatus.Status.QUEUED,
+      QueryStatus.Status.QUEUED_REPAIRING_WAREHOUSE, QueryStatus.Status.SUCCESS, QueryStatus.Status.RESTARTED,
+      QueryStatus.Status.NO_DATA
     };
 
-    QueryStatus[] errorStatuses = {
-      QueryStatus.ABORTED, QueryStatus.ABORTING,
-      QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
-      QueryStatus.DISCONNECTED, QueryStatus.BLOCKED
+    QueryStatus.Status[] errorStatuses = {
+      QueryStatus.Status.ABORTED, QueryStatus.Status.ABORTING,
+      QueryStatus.Status.FAILED_WITH_ERROR, QueryStatus.Status.FAILED_WITH_INCIDENT,
+      QueryStatus.Status.DISCONNECTED, QueryStatus.Status.BLOCKED
     };
 
-    for (QueryStatus qs : errorStatuses) {
-      assertEquals(true, QueryStatus.isAnError(qs));
+    for (QueryStatus.Status status : errorStatuses) {
+      QueryStatus queryStatus = new QueryStatus(0, 0, "", "", status.name(), 0, "", 0, "", 0, "", 0, "", "");
+      assertEquals(true, queryStatus.isAnError());
     }
 
-    for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isAnError(qs));
+    for (QueryStatus.Status status : otherStatuses) {
+      QueryStatus queryStatus = new QueryStatus(0, 0, "", "", status.name(), 0, "", 0, "", 0, "", 0, "", "");
+      assertFalse(queryStatus.isAnError());
     }
   }
 
@@ -544,7 +547,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       Thread.sleep(100);
       QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
       // Since warehouse has just been restarted, warehouse should still be booting
-      assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
+      assertEquals(QueryStatus.Status.RESUMING_WAREHOUSE, status.getStatus());
 
       // now try to get QUEUED status
       try (ResultSet rs1 =
@@ -567,7 +570,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         Thread.sleep(100);
         status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
         // Since 4 queries were started at once, status is most likely QUEUED
-        assertEquals(QueryStatus.QUEUED, status);
+        assertEquals(QueryStatus.Status.QUEUED, status.getStatus());
       }
     }
   }
@@ -1053,7 +1056,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   private void waitForAsyncQueryDone(Connection connection, String queryID) throws Exception {
     SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     QueryStatus qs = session.getQueryStatus(queryID);
-    while (QueryStatus.isStillRunning(qs)) {
+    while (qs.isStillRunning()) {
       Thread.sleep(1000);
       qs = session.getQueryStatus(queryID);
     }

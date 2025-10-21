@@ -1,8 +1,15 @@
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.QueryStatus;
+import net.snowflake.client.jdbc.SFConnectionHandler;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -18,16 +25,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.crl.CertRevocationCheckMode;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.QueryStatusV2;
-import net.snowflake.client.jdbc.SFConnectionHandler;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -1281,19 +1282,10 @@ public abstract class SFBaseSession {
 
   /**
    * @param queryID query ID of the query whose status is being investigated
-   * @return enum of type QueryStatus indicating the query's status
-   * @deprecated Use {@link #getQueryStatusV2(String)}
-   * @throws SQLException if error encountered
-   */
-  @Deprecated
-  public abstract QueryStatus getQueryStatus(String queryID) throws SQLException;
-
-  /**
-   * @param queryID query ID of the query whose status is being investigated
    * @return QueryStatusV2 indicating the query's status
    * @throws SQLException if error encountered
    */
-  public abstract QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException;
+  public abstract QueryStatus getQueryStatus(String queryID) throws SQLException;
 
   /**
    * Validates the connection properties used by this session, and returns a list of missing

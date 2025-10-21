@@ -1,28 +1,11 @@
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
-import static net.snowflake.client.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
-import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.QueryStatus;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -36,6 +19,24 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
+import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
@@ -662,7 +663,7 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
-    QueryStatusV2 qs = session.getQueryStatusV2(queryID);
+    QueryStatus qs = session.getQueryStatus(queryID);
     if (qs.isStillRunning()) {
       throw new SQLException(
           "Status of query associated with resultSet is "
