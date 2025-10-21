@@ -1,7 +1,6 @@
 package net.snowflake.client.jdbc;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,7 +13,6 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.QueryStatus;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -54,11 +52,9 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
       SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
-      await()
-          .atMost(Duration.ofSeconds(60))
-          .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
+      await().atMost(Duration.ofSeconds(60)).until(() -> !rs.getStatus().isStillRunning());
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.SUCCESS, qs);
+      assertTrue(qs.isSuccess());
 
       // assert we get 1 row
       assertTrue(resultSet.next());

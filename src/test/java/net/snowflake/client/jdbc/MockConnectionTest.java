@@ -34,7 +34,6 @@ import java.util.stream.IntStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryContextDTO;
-import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
@@ -720,11 +719,6 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
-      return null;
-    }
-
-    @Override
-    public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
       return null;
     }
 
