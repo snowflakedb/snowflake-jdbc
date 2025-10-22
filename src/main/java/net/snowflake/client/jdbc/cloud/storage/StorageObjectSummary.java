@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
@@ -11,6 +10,7 @@ import java.net.URISyntaxException;
 import java.util.Base64;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /** Storage platform agnostic class that encapsulates remote storage object properties */
 public class StorageObjectSummary {
@@ -39,18 +39,19 @@ public class StorageObjectSummary {
    * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param objSummary the AWS S3 ObjectSummary object to copy from
+   * @param bucket the AWS S3 bucket name
    * @return the ObjectSummary object created
    */
-  public static StorageObjectSummary createFromS3ObjectSummary(S3ObjectSummary objSummary) {
+  public static StorageObjectSummary createFromS3ObjectSummary(S3Object objSummary, String bucket) {
 
     return new StorageObjectSummary(
-        objSummary.getBucketName(),
-        objSummary.getKey(),
+        bucket,
+        objSummary.key(),
         // S3 ETag is not always MD5, but since this code path is only
         // used in skip duplicate files in PUT command, It's not
         // critical to guarantee that it's MD5
-        objSummary.getETag(),
-        objSummary.getSize());
+        objSummary.eTag(),
+        objSummary.size());
   }
 
   /**

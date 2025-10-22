@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.util.Iterator;

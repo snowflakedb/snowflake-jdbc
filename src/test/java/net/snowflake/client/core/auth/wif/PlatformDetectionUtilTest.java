@@ -5,22 +5,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 public class PlatformDetectionUtilTest {
 
   private AwsAttestationService mockAttestationService;
-  private AWSCredentials mockCredentials;
+  private AwsCredentials mockCredentials;
 
   @BeforeEach
   public void setUp() {
     mockAttestationService = mock(AwsAttestationService.class);
-    mockCredentials = mock(AWSCredentials.class);
+    mockCredentials = mock(AwsCredentials.class);
   }
 
   @Nested
@@ -46,8 +46,8 @@ public class PlatformDetectionUtilTest {
     public void testNullAccessKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn(null);
-      when(mockCredentials.getAWSSecretKey())
+      when(mockCredentials.accessKeyId()).thenReturn(null);
+      when(mockCredentials.secretAccessKey())
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
@@ -60,12 +60,12 @@ public class PlatformDetectionUtilTest {
 
     @Test
     @DisplayName("Should return false when secret key is null")
-    public void testNullSecretKey() {
+    public void testNullsecretAccessKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId())
+      when(mockCredentials.accessKeyId())
           .thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
-      when(mockCredentials.getAWSSecretKey()).thenReturn(null);
+      when(mockCredentials.secretAccessKey()).thenReturn(null);
 
       // Act
       boolean result =
@@ -80,8 +80,8 @@ public class PlatformDetectionUtilTest {
     public void testEmptyAccessKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("");
-      when(mockCredentials.getAWSSecretKey())
+      when(mockCredentials.accessKeyId()).thenReturn("");
+      when(mockCredentials.secretAccessKey())
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
@@ -94,12 +94,12 @@ public class PlatformDetectionUtilTest {
 
     @Test
     @DisplayName("Should return false when secret key is empty")
-    public void testEmptySecretKey() {
+    public void testEmptysecretAccessKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId())
+      when(mockCredentials.accessKeyId())
           .thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
-      when(mockCredentials.getAWSSecretKey()).thenReturn("");
+      when(mockCredentials.secretAccessKey()).thenReturn("");
 
       // Act
       boolean result =
@@ -114,8 +114,8 @@ public class PlatformDetectionUtilTest {
     public void testWhitespaceAccessKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("   ");
-      when(mockCredentials.getAWSSecretKey())
+      when(mockCredentials.accessKeyId()).thenReturn("   ");
+      when(mockCredentials.secretAccessKey())
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
@@ -145,8 +145,8 @@ public class PlatformDetectionUtilTest {
     @DisplayName("Should return false when region is null")
     public void testNullRegion() {
       // Arrange
-      BasicAWSCredentials basicCredentials =
-          new BasicAWSCredentials(
+      AwsBasicCredentials basicCredentials =
+          AwsBasicCredentials.create(
               // pragma: allowlist nextline secret
               "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
       when(mockAttestationService.getAWSCredentials()).thenReturn(basicCredentials);
@@ -164,12 +164,12 @@ public class PlatformDetectionUtilTest {
     @DisplayName("Should return false when region is empty")
     public void testEmptyRegion() {
       // Arrange
-      BasicAWSCredentials basicCredentials =
-          new BasicAWSCredentials(
+      AwsBasicCredentials basicCredentials =
+          AwsBasicCredentials.create(
               // pragma: allowlist nextline secret
               "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
       when(mockAttestationService.getAWSCredentials()).thenReturn(basicCredentials);
-      when(mockAttestationService.getAWSRegion()).thenReturn("");
+      when(mockAttestationService.getAWSRegion()).thenReturn(null);
 
       // Act
       boolean result =

@@ -3,10 +3,6 @@ package net.snowflake.client.jdbc;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.google.cloud.storage.StorageException;
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +11,7 @@ import java.security.InvalidKeyException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.CompletionException;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
@@ -29,6 +26,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /** Test for SnowflakeS3Client handle exception function */
 @Tag(TestTags.OTHERS)
@@ -54,7 +55,8 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     SnowflakeFileTransferAgent agent =
         new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
     StageInfo info = agent.getStageInfo();
-    ClientConfiguration clientConfig = new ClientConfiguration();
+    SnowflakeS3Client.ClientConfiguration clientConfig =
+        new SnowflakeS3Client.ClientConfiguration();
     SnowflakeS3Client client =
         new SnowflakeS3Client(
             info.getCredentials(),
@@ -74,8 +76,13 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void errorRenewExpired() throws SQLException, InterruptedException {
-    AmazonS3Exception ex = new AmazonS3Exception("unauthenticated");
-    ex.setErrorCode(EXPIRED_AWS_TOKEN_ERROR_CODE);
+    CompletionException ex =
+        new CompletionException(
+            S3Exception.builder()
+                .message("unauthenticated")
+                .awsErrorDetails(
+                    AwsErrorDetails.builder().errorCode(EXPIRED_AWS_TOKEN_ERROR_CODE).build())
+                .build());
     spyingClient.handleStorageException(ex, 0, "upload", sfSession, command, null);
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
 
@@ -108,7 +115,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new AmazonS3Exception("Not found"),
+                S3Exception.builder().message("Not found").build(),
                 overMaxRetry,
                 "upload",
                 sfSession,
@@ -119,15 +126,13 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void errorBadRequestTokenExpired() throws SQLException {
-    AmazonServiceException ex = new AmazonServiceException("Bad Request");
-    ex.setServiceName("Amazon S3");
-    ex.setStatusCode(400);
-    ex.setErrorCode("400 Bad Request");
-    ex.setErrorType(AmazonServiceException.ErrorType.Client);
-    Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex);
+    CompletionException ex =
+        new CompletionException(
+            SdkServiceException.builder().message("Bad Request").statusCode(400).build());
+    Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex.getCause());
     spyingClient.handleStorageException(ex, 0, "download", sfSession, command, null);
     // renew token
-    Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex);
+    Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex.getCause());
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
   }
 
@@ -138,7 +143,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new AmazonClientException("Not found", new IOException()),
+                SdkClientException.create("Not found", new IOException()),
                 overMaxRetry,
                 "upload",
                 sfSession,
@@ -201,8 +206,13 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @DontRunOnGithubActions
   public void errorRenewExpiredNullSession() {
     // Unauthenticated, renew is called.
-    AmazonS3Exception ex = new AmazonS3Exception("unauthenticated");
-    ex.setErrorCode(EXPIRED_AWS_TOKEN_ERROR_CODE);
+    CompletionException ex =
+        new CompletionException(
+            S3Exception.builder()
+                .message("unauthenticated")
+                .awsErrorDetails(
+                    AwsErrorDetails.builder().errorCode(EXPIRED_AWS_TOKEN_ERROR_CODE).build())
+                .build());
     assertThrows(
         SnowflakeSQLException.class,
         () -> spyingClient.handleStorageException(ex, 0, "upload", null, command, null));

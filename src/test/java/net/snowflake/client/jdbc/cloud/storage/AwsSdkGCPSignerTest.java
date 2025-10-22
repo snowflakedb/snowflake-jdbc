@@ -1,35 +1,30 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.amazonaws.DefaultRequest;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.http.HttpMethodName;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.http.SdkHttpFullRequest;
+import software.amazon.awssdk.http.SdkHttpMethod;
 
 class AwsSdkGCPSignerTest {
-
   @Test
   void testSign() {
-    AWSCredentials creds = new BasicAWSCredentials("access_key", "");
-    AwsSdkGCPSigner signer = new AwsSdkGCPSigner();
+    AwsSdkGCPSigner signer = new AwsSdkGCPSigner("test_token");
 
-    DefaultRequest request = new DefaultRequest("S3");
+    SdkHttpFullRequest.Builder request =
+        SdkHttpFullRequest.builder().protocol("https").host("localhost").method(SdkHttpMethod.GET);
 
-    HashMap<String, String> headers = new HashMap<>();
-    headers.put("x-amz-storage-class", "storage_class");
-    headers.put("x-amz-meta-custom", "custom_meta");
+    request.putHeader("x-amz-storage-class", "storage_class");
+    request.putHeader("x-amz-meta-custom", "custom_meta");
 
-    request.setHttpMethod(HttpMethodName.GET);
-    request.setHeaders(headers);
+    SdkHttpFullRequest signed = signer.sign(request.build(), null);
+    Map<String, List<String>> changedHeaders = signed.headers();
 
-    signer.sign(request, creds);
-
-    assertTrue(request.getHeaders().get("Authorization").equals("Bearer access_key"));
-    assertTrue(request.getHeaders().get("Accept-Encoding").equals("gzip,deflate"));
-    assertTrue(request.getHeaders().get("x-goog-storage-class").equals("storage_class"));
-    assertTrue(request.getHeaders().get("x-goog-meta-custom").equals("custom_meta"));
+    assertEquals("Bearer test_token", changedHeaders.get("Authorization").get(0));
+    assertEquals("gzip,deflate", changedHeaders.get("Accept-Encoding").get(0));
+    assertEquals("storage_class", changedHeaders.get("x-goog-storage-class").get(0));
+    assertEquals("custom_meta", changedHeaders.get("x-goog-meta-custom").get(0));
   }
 }
