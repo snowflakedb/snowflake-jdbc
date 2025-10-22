@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import com.amazonaws.ClientConfiguration;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -114,17 +113,11 @@ public class StorageClientFactory {
 
     SnowflakeS3Client s3Client;
 
-    ClientConfiguration clientConfig = new ClientConfiguration();
+    SnowflakeS3Client.ClientConfiguration clientConfig =
+        new SnowflakeS3Client.ClientConfiguration();
     clientConfig.setMaxConnections(parallel + 1);
     clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
     clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
-
-    // If proxy is set via connection properties or JVM settings these will be overridden later.
-    // This is to prevent the aws client builder from reading proxy environment variables.
-    clientConfig.setProxyHost("");
-    clientConfig.setProxyPort(0);
-    clientConfig.setProxyUsername("");
-    clientConfig.setProxyPassword("");
 
     logger.debug(
         "S3 client configuration: maxConnection: {}, connectionTimeout: {}, "

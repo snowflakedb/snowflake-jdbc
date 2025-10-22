@@ -3,8 +3,6 @@ package net.snowflake.client.internal.jdbc.cloud.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +20,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 
 @Tag(TestTags.OTHERS)
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
@@ -39,7 +38,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
           new RemoteStoreFileEncryptionMaterial(
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);
       StageInfo info = sfAgent.getStageInfo();
-      ClientConfiguration config = new ClientConfiguration();
+      SnowflakeS3Client.ClientConfiguration config = new SnowflakeS3Client.ClientConfiguration();
       // AmazonS3EncryptionClient builder will create the client
       SnowflakeS3Client client =
           new SnowflakeS3Client(
@@ -100,12 +99,8 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testIsClientException400Or404() throws SQLException {
-    AmazonServiceException servEx = new AmazonServiceException("S3 operation failed");
-    servEx.setServiceName("Amazon S3");
-    servEx.setErrorMessage("Bad Request");
-    servEx.setStatusCode(400);
-    servEx.setErrorCode("400 Bad Request");
-    servEx.setErrorType(AmazonServiceException.ErrorType.Client);
+    SdkServiceException servEx =
+        SdkServiceException.builder().message("S3 operation failed").statusCode(400).build();
 
     try (Connection connection = getConnection("s3testaccount")) {
       SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
@@ -116,7 +111,8 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
           new RemoteStoreFileEncryptionMaterial(
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);
       StageInfo info = agent.getStageInfo();
-      ClientConfiguration clientConfig = new ClientConfiguration();
+      SnowflakeS3Client.ClientConfiguration clientConfig =
+          new SnowflakeS3Client.ClientConfiguration();
       SnowflakeS3Client client =
           new SnowflakeS3Client(
               info.getCredentials(),
@@ -143,7 +139,8 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
       SnowflakeFileTransferAgent agent =
           new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
       StageInfo info = agent.getStageInfo();
-      ClientConfiguration clientConfig = new ClientConfiguration();
+      SnowflakeS3Client.ClientConfiguration clientConfig =
+          new SnowflakeS3Client.ClientConfiguration();
       RemoteStoreFileEncryptionMaterial content =
           new RemoteStoreFileEncryptionMaterial(
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);

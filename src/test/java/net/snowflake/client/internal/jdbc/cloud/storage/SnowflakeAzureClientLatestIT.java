@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 
-import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
