@@ -39,6 +39,7 @@ import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.ParameterBindingDTO;
 import net.snowflake.client.internal.core.QueryContextDTO;
@@ -57,7 +58,6 @@ import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
-import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.jupiter.api.Test;
 
