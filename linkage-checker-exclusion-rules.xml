@@ -70,6 +70,69 @@
         <Source><Package name="com.nimbusds"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <!-- AWS CRT exclusions - CRT is excluded from dependencies and not used in runtime -->
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.services.s3.internal.crt"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.http.auth.aws.crt.internal"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.crtcore"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.transfer"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
+    <!-- AWS SDK SignerProperty fields - false positives from linkage checker 1.5.13 -->
+    <!-- These fields exist in the actual JARs and are resolvable in IDEs, but linkage checker incorrectly reports them as missing -->
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="SERVICE_SIGNING_NAME"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="SERVICE_SIGNING_NAME"/></Target>
+        <Source><Package name="net.snowflake.client.internal.core.auth.wif"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="DOUBLE_URL_ENCODE"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="PAYLOAD_SIGNING_ENABLED"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="NORMALIZE_PATH"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner" name="CHUNK_ENCODING_ENABLED"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4aHttpSigner" name="DOUBLE_URL_ENCODE"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Field className="software.amazon.awssdk.http.auth.aws.signer.AwsV4aHttpSigner" name="SERVICE_SIGNING_NAME"/></Target>
+        <Source><Package name="software.amazon.awssdk.services"/></Source>
+        <Reason>False positive from linkage checker - field exists in actual JAR</Reason>
+    </LinkageError>
     <LinkageError>
         <Target><Package name="io.micrometer"/></Target>
         <Source><Package name="reactor.core"/></Source>

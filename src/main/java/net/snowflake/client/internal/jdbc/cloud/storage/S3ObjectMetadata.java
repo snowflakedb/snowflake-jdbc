@@ -1,61 +1,77 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
- * s3 implementation of platform independent StorageObjectMetadata interface, wraps an S3
- * ObjectMetadata class
+ * s3 implementation of platform independent StorageObjectMetadata interface
  *
  * <p>It only supports a limited set of metadata properties currently used by the JDBC client
  */
 public class S3ObjectMetadata implements StorageObjectMetadata {
-  private ObjectMetadata objectMetadata;
+  private Map<String, String> userMetadata = new HashMap<>();
+  private Long contentLength;
+  private String contentEncoding;
 
-  S3ObjectMetadata() {
-    objectMetadata = new ObjectMetadata();
+  S3ObjectMetadata() {}
+
+  public S3ObjectMetadata(HeadObjectResponse meta) {
+    userMetadata = meta.metadata();
+    contentLength = meta.contentLength();
+    contentEncoding = meta.contentEncoding();
   }
 
-  // Construct from an AWS S3 ObjectMetadata object
-  S3ObjectMetadata(ObjectMetadata meta) {
-    objectMetadata = meta;
+  public S3ObjectMetadata(PutObjectRequest meta) {
+    userMetadata = meta.metadata();
+    contentLength = meta.contentLength();
+    contentEncoding = meta.contentEncoding();
   }
 
   @Override
   public Map<String, String> getUserMetadata() {
-    return SnowflakeUtil.createCaseInsensitiveMap(objectMetadata.getUserMetadata());
+    return SnowflakeUtil.createCaseInsensitiveMap(userMetadata);
+  }
+
+  public Map<String, String> setUserMetadata(Map<String, String> metadata) {
+    return this.userMetadata = metadata;
   }
 
   @Override
   public long getContentLength() {
-    return objectMetadata.getContentLength();
+    return this.contentLength;
   }
 
   @Override
   public void setContentLength(long contentLength) {
-    objectMetadata.setContentLength(contentLength);
+    this.contentLength = contentLength;
   }
 
   @Override
   public void addUserMetadata(String key, String value) {
-    objectMetadata.addUserMetadata(key, value);
+    userMetadata.put(key, value);
   }
 
   @Override
   public void setContentEncoding(String encoding) {
-    objectMetadata.setContentEncoding(encoding);
+    this.contentEncoding = encoding;
   }
 
   @Override
   public String getContentEncoding() {
-    return objectMetadata.getContentEncoding();
+    return contentEncoding;
   }
 
   /**
-   * @return Returns the encapsulated AWS S3 metadata object
+   * @return Returns the encapsulated AWS S3 metadata request
    */
-  ObjectMetadata getS3ObjectMetadata() {
-    return objectMetadata;
+  PutObjectRequest getS3PutObjectRequest() {
+    return PutObjectRequest.builder()
+        .metadata(userMetadata)
+        .contentLength(contentLength)
+        .contentEncoding(contentEncoding)
+        .build();
   }
 }
