@@ -11,8 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.Request;
-import com.amazonaws.http.HttpMethodName;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -33,13 +31,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
 
 class HeaderCustomizerHttpRequestInterceptorTest {
   private HttpHeadersCustomizer mockCustomizer1;
   private HttpHeadersCustomizer mockCustomizer2;
   private HttpRequest mockHttpRequest;
   private RequestLine mockRequestLine;
-  private Request<?> mockAwsRequest;
+  private Context.ModifyHttpRequest mockAwsRequestContext;
+  private SdkHttpRequest mockAwsRequest;
+  private ExecutionAttributes mockAwsRequestAttributes;
+  private SdkHttpRequest.Builder mockAwsRequestContextBuilder;
 
   private HttpContext httpContext;
   private HeaderCustomizerHttpRequestInterceptor interceptor;
@@ -61,18 +66,24 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     mockCustomizer2 = mock();
     mockHttpRequest = mock();
     mockRequestLine = mock();
+    mockAwsRequestContext = mock();
     mockAwsRequest = mock();
+    mockAwsRequestAttributes = mock();
+    mockAwsRequestContextBuilder = mock();
 
     lenient().when(mockHttpRequest.getRequestLine()).thenReturn(mockRequestLine);
     lenient().when(mockHttpRequest.getAllHeaders()).thenReturn(new Header[0]);
     lenient().when(mockRequestLine.getMethod()).thenReturn(TEST_METHOD_GET);
     lenient().when(mockRequestLine.getUri()).thenReturn(TEST_URI_STRING);
 
-    lenient().when(mockAwsRequest.getHttpMethod()).thenReturn(HttpMethodName.GET);
-    lenient().when(mockAwsRequest.getEndpoint()).thenReturn(TEST_URI);
+    lenient().when(mockAwsRequest.method()).thenReturn(SdkHttpMethod.GET);
+    lenient().when(mockAwsRequest.getUri()).thenReturn(TEST_URI);
     lenient()
-        .when(mockAwsRequest.getHeaders())
+        .when(mockAwsRequest.headers())
         .thenReturn(new HashMap<>()); // Mutable map for testing adds
+
+    lenient().when(mockAwsRequestContext.httpRequest()).thenReturn(mockAwsRequest);
+    lenient().when(mockAwsRequest.toBuilder()).thenReturn(mockAwsRequestContextBuilder);
   }
 
   @Test
@@ -204,8 +215,8 @@ class HeaderCustomizerHttpRequestInterceptorTest {
   @Test
   void testAWSInterceptorWithoutCustomizersDoesNothing() {
     interceptor = new HeaderCustomizerHttpRequestInterceptor(Collections.emptyList());
-    interceptor.beforeRequest(mockAwsRequest);
-    verify(mockAwsRequest, never()).addHeader(anyString(), anyString());
+    interceptor.modifyHttpRequest(mockAwsRequestContext, mockAwsRequestAttributes);
+    verify(mockAwsRequestContextBuilder, never()).appendHeader(anyString(), anyString());
   }
 
   @Test
@@ -214,11 +225,11 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     customizersList.add(mockCustomizer1);
     interceptor = new HeaderCustomizerHttpRequestInterceptor(customizersList);
 
-    interceptor.beforeRequest(mockAwsRequest);
+    interceptor.modifyHttpRequest(mockAwsRequestContext, mockAwsRequestAttributes);
 
     verify(mockCustomizer1).applies(eq(TEST_METHOD_GET), eq(TEST_URI_STRING), anyMap());
     verify(mockCustomizer1, never()).newHeaders();
-    verify(mockAwsRequest, never()).addHeader(anyString(), anyString());
+    verify(mockAwsRequestContextBuilder, never()).appendHeader(anyString(), anyString());
   }
 
   @Test
@@ -230,18 +241,18 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     customizersList.add(mockCustomizer1);
     interceptor = new HeaderCustomizerHttpRequestInterceptor(customizersList);
 
-    interceptor.beforeRequest(mockAwsRequest);
+    interceptor.modifyHttpRequest(mockAwsRequestContext, mockAwsRequestAttributes);
 
     verify(mockCustomizer1).newHeaders();
-    verify(mockAwsRequest).addHeader("X-AWS-Custom", "AwsValue1");
+    verify(mockAwsRequestContextBuilder).appendHeader("X-AWS-Custom", "AwsValue1");
   }
 
   @Test
   void testAWSInterceptorDoesNotAllowCustomizerToOverrideHeader() {
     // Simulate driver adding User-Agent initially
-    Map<String, String> initialAwsHeaders = new HashMap<>();
-    initialAwsHeaders.put("User-Agent", "SnowflakeAWSClient/1.0");
-    when(mockAwsRequest.getHeaders()).thenReturn(initialAwsHeaders); // Return mutable map for test
+    Map<String, List<String>> initialAwsHeaders = new HashMap<>();
+    initialAwsHeaders.put("User-Agent", Collections.singletonList("SnowflakeAWSClient/1.0"));
+    when(mockAwsRequest.headers()).thenReturn(initialAwsHeaders); // Return mutable map for test
 
     Map<String, List<String>> newHeaders = new HashMap<>();
     newHeaders.put("User-Agent", Collections.singletonList("MaliciousAgent/3.0"));
@@ -250,11 +261,11 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     customizersList.add(mockCustomizer1);
     interceptor = new HeaderCustomizerHttpRequestInterceptor(customizersList);
 
-    interceptor.beforeRequest(mockAwsRequest);
+    interceptor.modifyHttpRequest(mockAwsRequestContext, mockAwsRequestAttributes);
 
     // Verify the original map wasn't modified with the bad header
-    assertEquals("SnowflakeAWSClient/1.0", mockAwsRequest.getHeaders().get("User-Agent"));
-    verify(mockHttpRequest, never()).addHeader(eq("User-Agent"), anyString());
+    assertEquals("SnowflakeAWSClient/1.0", mockAwsRequest.headers().get("User-Agent").get(0));
+    verify(mockAwsRequestContextBuilder, never()).appendHeader(eq("User-Agent"), anyString());
   }
 
   @Test
@@ -266,10 +277,10 @@ class HeaderCustomizerHttpRequestInterceptorTest {
     customizersList.add(mockCustomizer1);
     interceptor = new HeaderCustomizerHttpRequestInterceptor(customizersList);
 
-    interceptor.beforeRequest(mockAwsRequest);
+    interceptor.modifyHttpRequest(mockAwsRequestContext, mockAwsRequestAttributes);
 
     verify(mockCustomizer1).newHeaders();
-    verify(mockAwsRequest).addHeader("X-Multi", "ValA");
-    verify(mockAwsRequest).addHeader("X-Multi", "ValB");
+    verify(mockAwsRequestContextBuilder).appendHeader("X-Multi", "ValA");
+    verify(mockAwsRequestContextBuilder).appendHeader("X-Multi", "ValB");
   }
 }
