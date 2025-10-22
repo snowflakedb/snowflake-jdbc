@@ -1,7 +1,5 @@
 package net.snowflake.client.core;
 
-import com.amazonaws.Request;
-import com.amazonaws.handlers.RequestHandler2;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,9 +15,13 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.http.SdkHttpRequest;
 
 /**
- * Implements Apache HttpClient's {@link HttpRequestInterceptor} and {@link RequestHandler2} to
+ * Implements Apache HttpClient's {@link HttpRequestInterceptor} and {@link ExecutionInterceptor} to
  * provide a mechanism for adding custom HTTP headers to outgoing requests made by the Snowflake
  * JDBC driver.
  *
@@ -36,8 +38,8 @@ import org.apache.http.protocol.HttpContext;
  * @see HttpHeadersCustomizer
  */
 @SnowflakeJdbcInternalApi
-public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
-    implements HttpRequestInterceptor {
+public class HeaderCustomizerHttpRequestInterceptor
+    implements HttpRequestInterceptor, ExecutionInterceptor {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(HeaderCustomizerHttpRequestInterceptor.class);
   private final List<HttpHeadersCustomizer> headersCustomizers;
@@ -109,21 +111,26 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
   }
 
   /**
-   * Processes an AWS HTTP {@link Request} before it is sent. It iterates through registered {@link
+   * Modifies an AWS HTTP {@link SdkHttpRequest}. It iterates through registered {@link
    * HttpHeadersCustomizer}s, checks applicability, retrieves new headers, verifies against
    * overriding driver headers, and adds them to the request. Ignores the {@code invokeOnce()} flag.
    *
-   * @param request The AWS request to process.
+   * @param context The AWS request context to process.
+   * @param executionAttributes The AWS execution attributes.
    */
   @Override
-  public void beforeRequest(Request<?> request) {
-    super.beforeRequest(request);
+  public SdkHttpRequest modifyHttpRequest(
+      Context.ModifyHttpRequest context, ExecutionAttributes executionAttributes) {
     if (this.headersCustomizers.isEmpty()) {
-      return;
+      return context.httpRequest();
     }
-    String httpMethod = request.getHttpMethod().name();
-    String uri = request.getEndpoint().toString();
-    Map<String, List<String>> currentHeaders = extractHeaders(request);
+
+    SdkHttpRequest httpRequest = context.httpRequest();
+    SdkHttpRequest.Builder requestBuilder = context.httpRequest().toBuilder();
+
+    String httpMethod = httpRequest.method().name();
+    String uri = httpRequest.getUri().toString();
+    Map<String, List<String>> currentHeaders = httpRequest.headers();
     Set<String> protectedHeaders =
         currentHeaders.keySet().stream()
             .map(String::toLowerCase)
@@ -145,12 +152,14 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
                 entry.getKey());
           } else {
             for (String value : entry.getValue()) {
-              request.addHeader(entry.getKey(), value);
+              requestBuilder.appendHeader(entry.getKey(), value);
             }
           }
         }
       }
     }
+
+    return requestBuilder.build();
   }
 
   private static boolean isTryingToOverrideDriverHeader(
@@ -162,14 +171,6 @@ public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     Map<String, List<String>> headerMap = new HashMap<>();
     for (Header header : request.getAllHeaders()) {
       headerMap.computeIfAbsent(header.getName(), k -> new ArrayList<>()).add(header.getValue());
-    }
-    return headerMap;
-  }
-
-  private static Map<String, List<String>> extractHeaders(Request<?> request) {
-    Map<String, List<String>> headerMap = new HashMap<>();
-    for (Map.Entry<String, String> entry : request.getHeaders().entrySet()) {
-      headerMap.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(entry.getValue());
     }
     return headerMap;
   }

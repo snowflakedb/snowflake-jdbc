@@ -7,7 +7,6 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import java.io.IOException;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 
 @Tag(TestTags.CONNECTION)
 public class PlatformDetectorLatestIT extends BaseWiremockTest {
@@ -279,9 +279,10 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   @DisplayName("Should detect AWS identity when AWS attestation service returns valid identity")
   public void testDetectAwsIdentity() {
     // Arrange - Mock AWS attestation service to return valid credentials and ARN
-    BasicAWSCredentials awsCredentials =
+    AwsBasicCredentials awsCredentials =
         // pragma: allowlist nextline secret
-        new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+        AwsBasicCredentials.create(
+            "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
     when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 200))
         .thenReturn("arn:aws:iam::123456789012:user/testuser");
@@ -309,9 +310,10 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
 
-    BasicAWSCredentials awsCredentials =
+    AwsBasicCredentials awsCredentials =
         // pragma: allowlist nextline secret
-        new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+        AwsBasicCredentials.create(
+            "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
     when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 100))
         .thenReturn("arn:aws:sts::123456789012:assumed-role/test-role/session");

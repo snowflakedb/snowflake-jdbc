@@ -4,33 +4,19 @@ import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPI
 import static net.snowflake.client.jdbc.SnowflakeUtil.createDefaultExecutorService;
 import static net.snowflake.client.jdbc.cloud.storage.SnowflakeS3Client.EXPIRED_AWS_TOKEN_ERROR_CODE;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.Download;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -41,10 +27,33 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpStatus;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
+import software.amazon.awssdk.transfer.s3.model.FileDownload;
+import software.amazon.awssdk.transfer.s3.model.Upload;
+import software.amazon.awssdk.transfer.s3.model.UploadRequest;
 
 class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSAccessStrategyAwsSdk.class);
-  private final AmazonS3 amazonClient;
+  private final S3AsyncClient amazonClient;
 
   GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
@@ -60,71 +69,84 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     if (stage.getStorageAccount() != null && endpoint.startsWith(stage.getStorageAccount())) {
       endpoint = endpoint.replaceFirst(stage.getStorageAccount() + ".", "");
     }
+    S3AsyncClientBuilder clientBuilder;
+    try {
+      clientBuilder =
+          S3AsyncClient.builder().forcePathStyle(false).endpointOverride(new URI(endpoint));
+    } catch (URISyntaxException e) {
+      throw new SnowflakeSQLException(
+          ErrorCode.FILE_TRANSFER_ERROR, "Could not parse Google storage endpoint: " + endpoint);
+    }
 
-    AmazonS3ClientBuilder amazonS3Builder =
-        AmazonS3Client.builder()
-            .withPathStyleAccessEnabled(false)
-            .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(endpoint, "auto"));
+    ClientOverrideConfiguration.Builder overrideConfiguration =
+        ClientOverrideConfiguration.builder();
+    overrideConfiguration.addExecutionInterceptor(new AwsSdkGCPSigner());
 
-    ClientConfiguration clientConfig = new ClientConfiguration();
-
-    SignerFactory.registerSigner(
-        "net.snowflake.client.jdbc.cloud.storage.AwsSdkGCPSigner",
-        net.snowflake.client.jdbc.cloud.storage.AwsSdkGCPSigner.class);
-    clientConfig.setSignerOverride("net.snowflake.client.jdbc.cloud.storage.AwsSdkGCPSigner");
-
-    clientConfig
-        .getApacheHttpClientConfig()
-        .setSslSocketFactory(SnowflakeS3Client.getSSLConnectionSocketFactory());
+    ProxyConfiguration proxyConfiguration;
     if (session != null) {
-      S3HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
+      proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(session.getHttpClientKey());
     } else {
-      S3HttpUtil.setSessionlessProxyForS3(stage.getProxyProperties(), clientConfig);
+      proxyConfiguration =
+          S3HttpUtil.createSessionlessProxyConfigurationForS3(stage.getProxyProperties());
     }
 
     if (session instanceof SFSession) {
       List<HttpHeadersCustomizer> headersCustomizers =
           ((SFSession) session).getHttpHeadersCustomizers();
       if (headersCustomizers != null && !headersCustomizers.isEmpty()) {
-        amazonS3Builder.withRequestHandlers(
+        overrideConfiguration.addExecutionInterceptor(
             new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
       }
     }
 
+    clientBuilder.overrideConfiguration(overrideConfiguration.build());
+
     if (accessToken != null) {
-      amazonS3Builder.withCredentials(
-          new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessToken, "")));
+      clientBuilder.credentialsProvider(
+          StaticCredentialsProvider.create(AwsBasicCredentials.create(accessToken, "")));
     } else {
       logger.debug("no credentials provided, configuring bucket client without credentials");
-      amazonS3Builder.withCredentials(
-          new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
+      clientBuilder.credentialsProvider(
+          StaticCredentialsProvider.create(AwsBasicCredentials.create("", "")));
     }
 
-    amazonClient = amazonS3Builder.withClientConfiguration(clientConfig).build();
+    clientBuilder.httpClientBuilder(
+        NettyNioAsyncHttpClient.builder().proxyConfiguration(proxyConfiguration));
+
+    amazonClient = clientBuilder.build();
   }
 
   @Override
-  public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix) {
-    ObjectListing objListing = amazonClient.listObjects(remoteStorageLocation, prefix);
+  public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
+      throws StorageProviderException {
+    ListObjectsResponse objListing =
+        amazonClient
+            .listObjects(
+                ListObjectsRequest.builder().bucket(remoteStorageLocation).prefix(prefix).build())
+            .join();
 
-    return new StorageObjectSummaryCollection(objListing.getObjectSummaries());
+    return new StorageObjectSummaryCollection(objListing.contents(), remoteStorageLocation);
   }
 
   @Override
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix) {
-    ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, prefix);
+    HeadObjectResponse response =
+        amazonClient
+            .headObject(
+                HeadObjectRequest.builder().bucket(remoteStorageLocation).key(prefix).build())
+            .join();
+
+    S3ObjectMetadata metadata = new S3ObjectMetadata(response);
 
     Map<String, String> userMetadata =
-        meta.getRawMetadata().entrySet().stream()
+        response.metadata().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith("x-goog-meta-"))
             .collect(
                 Collectors.toMap(
-                    e -> e.getKey().replaceFirst("x-goog-meta-", ""),
-                    e -> e.getValue().toString()));
+                    e -> e.getKey().replaceFirst("x-goog-meta-", ""), Map.Entry::getValue));
 
-    meta.setUserMetadata(userMetadata);
-    return new S3ObjectMetadata(meta);
+    metadata.setUserMetadata(userMetadata);
+    return metadata;
   }
 
   @Override
@@ -137,43 +159,53 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
         stageFilePath,
         localFile.getAbsolutePath());
 
-    TransferManager tx = null;
     logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
-    try {
-
+    try (S3TransferManager tx =
+        S3TransferManager.builder()
+            .s3Client(amazonClient)
+            .executor(createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
+            .build()) {
       // download files from s3
-      tx =
-          TransferManagerBuilder.standard()
-              .withS3Client(amazonClient)
-              .withDisableParallelDownloads(true)
-              .withExecutorFactory(
-                  () ->
-                      createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
-              .build();
 
-      Download myDownload = tx.download(remoteStorageLocation, stageFilePath, localFile);
+      FileDownload fileDownload =
+          tx.downloadFile(
+              DownloadFileRequest.builder()
+                  .getObjectRequest(
+                      GetObjectRequest.builder()
+                          .bucket(remoteStorageLocation)
+                          .key(stageFilePath)
+                          .build())
+                  .destination(localFile.toPath())
+                  .build());
 
       // Pull object metadata from S3
       StorageObjectMetadata meta = this.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
       Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
-      myDownload.waitForCompletion();
+      fileDownload.completionFuture().join();
       return metaMap;
-    } finally {
-      if (tx != null) {
-        tx.shutdownNow(false);
-      }
     }
   }
 
   @Override
   public SFPair<InputStream, Map<String, String>> downloadToStream(
       String remoteStorageLocation, String stageFilePath, boolean isEncrypting) {
-    S3Object file = amazonClient.getObject(remoteStorageLocation, stageFilePath);
-    ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
-    InputStream stream = file.getObjectContent();
+    InputStream stream =
+        amazonClient
+            .getObject(
+                GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
+                AsyncResponseTransformer.toBlockingInputStream())
+            .join();
+    HeadObjectResponse meta =
+        amazonClient
+            .headObject(
+                HeadObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build())
+            .join();
 
-    Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
+    Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
 
     return SFPair.of(stream, metaMap);
   }
@@ -187,47 +219,45 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       Map<String, String> metadata,
       long contentLength,
       InputStream content,
-      String queryId)
-      throws InterruptedException {
-    // we need to assemble an ObjectMetadata object here, as we are not using S3ObjectMatadata for
-    // GCS
-    ObjectMetadata s3Meta = new ObjectMetadata();
-    if (contentEncoding != null) {
-      s3Meta.setContentEncoding(contentEncoding);
-    }
-    s3Meta.setContentLength(contentLength);
-    s3Meta.setUserMetadata(metadata);
+      String queryId) {
+    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+    s3ObjectMetadata.setContentEncoding(contentEncoding);
+    s3ObjectMetadata.setContentLength(contentLength);
+    s3ObjectMetadata.setUserMetadata(metadata);
 
-    TransferManager tx = null;
+    PutObjectRequest request =
+        (s3ObjectMetadata)
+            .getS3PutObjectRequest().toBuilder()
+                .bucket(remoteStorageLocation)
+                .key(destFileName)
+                .build();
+
     logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
-    try {
+    ThreadPoolExecutor executorService =
+        createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
+    try (S3TransferManager tx =
+        S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build()) {
       // upload files to s3
-      tx =
-          TransferManagerBuilder.standard()
-              .withS3Client(amazonClient)
-              .withExecutorFactory(
-                  () -> createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism))
-              .build();
 
-      final Upload myUpload;
-
-      myUpload = tx.upload(remoteStorageLocation, destFileName, content, s3Meta);
-      myUpload.waitForCompletion();
+      final Upload upload =
+          tx.upload(
+              UploadRequest.builder()
+                  .putObjectRequest(request)
+                  .requestBody(
+                      AsyncRequestBody.fromInputStream(
+                          content, request.contentLength(), executorService))
+                  .build());
+      upload.completionFuture().join();
 
       logger.info("Uploaded data from input stream to S3 location: {}.", destFileName);
-
-    } finally {
-      if (tx != null) {
-        tx.shutdownNow(false);
-      }
     }
   }
 
   private static boolean isClientException400Or404(Exception ex) {
-    if (ex instanceof AmazonServiceException) {
-      AmazonServiceException asEx = (AmazonServiceException) (ex);
-      return asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND
-          || asEx.getStatusCode() == HttpStatus.SC_BAD_REQUEST;
+    if (ex instanceof SdkServiceException) {
+      SdkServiceException asEx = (SdkServiceException) (ex);
+      return asEx.statusCode() == HttpStatus.SC_NOT_FOUND
+          || asEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
     }
     return false;
   }
@@ -242,24 +272,24 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException {
-    if (ex instanceof AmazonClientException) {
+    if (ex instanceof SdkException) {
       logger.debug("GCSAccessStrategyAwsSdk: " + ex.getMessage());
 
       if (retryCount > gcsClient.getMaxRetries() || isClientException400Or404(ex)) {
         String extendedRequestId = "none";
 
-        if (ex instanceof AmazonS3Exception) {
-          AmazonS3Exception ex1 = (AmazonS3Exception) ex;
-          extendedRequestId = ex1.getExtendedRequestId();
+        if (ex instanceof S3Exception) {
+          S3Exception ex1 = (S3Exception) ex;
+          extendedRequestId = ex1.extendedRequestId();
         }
 
-        if (ex instanceof AmazonServiceException) {
-          AmazonServiceException ex1 = (AmazonServiceException) ex;
+        if (ex instanceof SdkServiceException) {
+          SdkServiceException ex1 = (SdkServiceException) ex;
 
           // The AWS credentials might have expired when server returns error 400 and
           // does not return the ExpiredToken error code.
           // If session is null we cannot renew the token so throw the exception
-          if (ex1.getStatusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
+          if (ex1.statusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
             SnowflakeFileTransferAgent.renewExpiredToken(session, command, gcsClient);
           } else {
             throw new SnowflakeSQLLoggedException(
@@ -269,13 +299,10 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
                 StorageHelper.getOperationException(operation).getMessageCode(),
                 ex1,
                 operation,
-                ex1.getErrorType().toString(),
-                ex1.getErrorCode(),
                 ex1.getMessage(),
-                ex1.getRequestId(),
+                ex1.requestId(),
                 extendedRequestId);
           }
-
         } else {
           throw new SnowflakeSQLLoggedException(
               queryId,
@@ -311,16 +338,16 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
 
         // If the exception indicates that the AWS token has expired,
         // we need to refresh our S3 client with the new token
-        if (ex instanceof AmazonS3Exception) {
-          AmazonS3Exception s3ex = (AmazonS3Exception) ex;
-          if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
+        if (ex instanceof S3Exception) {
+          S3Exception s3ex = (S3Exception) ex;
+          if (s3ex.awsErrorDetails().errorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
             // If session is null we cannot renew the token so throw the ExpiredToken exception
             if (session != null) {
               SnowflakeFileTransferAgent.renewExpiredToken(session, command, gcsClient);
             } else {
               throw new SnowflakeSQLException(
                   queryId,
-                  s3ex.getErrorCode(),
+                  s3ex.awsErrorDetails().errorCode(),
                   CLOUD_STORAGE_CREDENTIALS_EXPIRED,
                   "S3 credentials have expired");
             }
@@ -336,7 +363,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   @Override
   public void shutdown() {
     if (this.amazonClient != null) {
-      this.amazonClient.shutdown();
+      this.amazonClient.close();
     }
   }
 }
