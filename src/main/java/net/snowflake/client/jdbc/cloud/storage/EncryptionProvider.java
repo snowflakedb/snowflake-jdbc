@@ -131,12 +131,10 @@ public class EncryptionProvider {
     }
   }
 
-  /*
-   * encrypt
-   * Encrypts a file using AES encryption. The key and iv are generated.
-   * The matdesc field is added to the metadata object.
-   * The key and iv are added to the JSON block in the encryptionData
-   * metadata object.
+  /**
+   * encrypt Encrypts a file using AES encryption. The key and iv are generated. The matdesc field
+   * is added to the metadata object. The key and iv are added to the JSON block in the
+   * encryptionData metadata object.
    */
   public static CipherInputStream encrypt(
       StorageObjectMetadata meta,
@@ -188,6 +186,7 @@ public class EncryptionProvider {
       // Sizes that are multiples of the block size need to be padded to next
       // multiple
       long contentLength = ((originalContentLength + blockSize) / blockSize) * blockSize;
+      // THIS MUTATES METADATA TO ADD ENCRYPTION DATA
       client.addEncryptionMetadata(meta, matDesc, ivData, encryptedKey, contentLength);
     }
 
