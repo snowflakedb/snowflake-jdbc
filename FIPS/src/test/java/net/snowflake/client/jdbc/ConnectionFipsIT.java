@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.DontRunOnGCP;
 import net.snowflake.client.DontRunOnGithubActions;
@@ -159,6 +160,16 @@ public class ConnectionFipsIT extends AbstractDriverIT {
         throw new RuntimeException(
             "FIPS is not ready to be enabled and FIPS " + "mode is required for this test to run");
       }
+    }
+
+    // SSL-context
+    try {
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, null, null);
+      SSLContext.setDefault(sslContext);
+      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to configure SSL context", e);
     }
 
     // attempts an SSL connection to Google
