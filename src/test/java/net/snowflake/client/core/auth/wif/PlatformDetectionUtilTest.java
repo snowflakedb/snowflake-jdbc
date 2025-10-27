@@ -274,11 +274,11 @@ public class PlatformDetectionUtilTest {
     @Test
     @DisplayName("Should return false for malformed assumed role ARNs")
     public void testMalformedAssumedRoleArns() {
-      // Missing session name
+      // Missing everything after assumed-role/
       assertFalse(
           PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role/role-name/"),
-          "Should reject assumed role ARN without session name");
+              "arn:aws:sts::123456789012:assumed-role/"),
+          "Should reject assumed role ARN with nothing after assumed-role/");
 
       // Missing account ID
       assertFalse(

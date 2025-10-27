@@ -37,24 +37,29 @@ public class PlatformDetectionUtil {
 
   public static boolean hasValidAwsIdentityForWif(
       AwsAttestationService attestationService, int timeoutMs) {
-    AWSCredentials credentials = attestationService.getAWSCredentials();
-    if (!hasValidAwsCredentials(credentials)) {
-      logger.debug("No valid AWS credentials available for identity validation");
-      return false;
-    }
-    String arn = attestationService.getCallerIdentityArn(credentials, timeoutMs);
-    if (arn == null) {
-      logger.debug("Failed to retrieve caller identity ARN");
-      return false;
-    }
+    try {
+      AWSCredentials credentials = attestationService.getAWSCredentials();
+      if (!hasValidAwsCredentials(credentials)) {
+        logger.debug("No valid AWS credentials available for identity validation");
+        return false;
+      }
+      String arn = attestationService.getCallerIdentityArn(credentials, timeoutMs);
+      if (arn == null) {
+        logger.debug("Failed to retrieve caller identity ARN");
+        return false;
+      }
 
-    boolean isValid = isValidArnForWif(arn);
-    if (isValid) {
-      logger.debug("Valid AWS identity found with ARN: {}", arn);
-    } else {
-      logger.debug("ARN is not valid for WIF: {}", arn);
+      boolean isValid = isValidArnForWif(arn);
+      if (isValid) {
+        logger.debug("Valid AWS identity found with ARN: {}", arn);
+      } else {
+        logger.debug("ARN is not valid for WIF: {}", arn);
+      }
+      return isValid;
+    } catch (Exception e) {
+      logger.debug("Failed to validate AWS identity: {}", e.getMessage());
+      return false;
     }
-    return isValid;
   }
 
   public static boolean isValidArnForWif(String arn) {
