@@ -34,7 +34,8 @@ public class PlatformDetectionUtilTest {
       when(mockAttestationService.getAWSCredentials()).thenReturn(null);
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when credentials are null");
@@ -50,7 +51,8 @@ public class PlatformDetectionUtilTest {
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when access key is null");
@@ -61,11 +63,13 @@ public class PlatformDetectionUtilTest {
     public void testNullSecretKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
+      when(mockCredentials.getAWSAccessKeyId())
+          .thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
       when(mockCredentials.getAWSSecretKey()).thenReturn(null);
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when secret key is null");
@@ -81,7 +85,8 @@ public class PlatformDetectionUtilTest {
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when access key is empty");
@@ -92,11 +97,13 @@ public class PlatformDetectionUtilTest {
     public void testEmptySecretKey() {
       // Arrange
       when(mockAttestationService.getAWSCredentials()).thenReturn(mockCredentials);
-      when(mockCredentials.getAWSAccessKeyId()).thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
+      when(mockCredentials.getAWSAccessKeyId())
+          .thenReturn("AKIAIOSFODNN7EXAMPLE"); // pragma: allowlist secret
       when(mockCredentials.getAWSSecretKey()).thenReturn("");
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when secret key is empty");
@@ -112,7 +119,8 @@ public class PlatformDetectionUtilTest {
           .thenReturn("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when access key is whitespace only");
@@ -126,7 +134,8 @@ public class PlatformDetectionUtilTest {
           .thenThrow(new RuntimeException("Credentials error"));
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when getAWSCredentials throws exception");
@@ -144,7 +153,8 @@ public class PlatformDetectionUtilTest {
       when(mockAttestationService.getAWSRegion()).thenReturn(null);
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when region is null");
@@ -156,13 +166,14 @@ public class PlatformDetectionUtilTest {
       // Arrange
       BasicAWSCredentials basicCredentials =
           new BasicAWSCredentials(
-                // pragma: allowlist nextline secret
+              // pragma: allowlist nextline secret
               "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
       when(mockAttestationService.getAWSCredentials()).thenReturn(basicCredentials);
       when(mockAttestationService.getAWSRegion()).thenReturn("");
 
       // Act
-      boolean result = PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
+      boolean result =
+          PlatformDetectionUtil.hasValidAwsIdentityForWif(mockAttestationService, 1000);
 
       // Assert
       assertFalse(result, "Should return false when region is empty");
@@ -183,8 +194,7 @@ public class PlatformDetectionUtilTest {
           PlatformDetectionUtil.isValidArnForWif("arn:aws:iam::123456789012:user/path/to/user"),
           "Should accept IAM user ARN with path");
       assertTrue(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws-cn:iam::123456789012:user/testuser"),
+          PlatformDetectionUtil.isValidArnForWif("arn:aws-cn:iam::123456789012:user/testuser"),
           "Should accept IAM user ARN in China partition");
     }
 
@@ -208,15 +218,12 @@ public class PlatformDetectionUtilTest {
     @Test
     @DisplayName("Should return false for invalid ARN patterns")
     public void testInvalidArnPatterns() {
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(null), "Should reject null ARN");
-      assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(""), "Should reject empty ARN");
+      assertFalse(PlatformDetectionUtil.isValidArnForWif(null), "Should reject null ARN");
+      assertFalse(PlatformDetectionUtil.isValidArnForWif(""), "Should reject empty ARN");
       assertFalse(
           PlatformDetectionUtil.isValidArnForWif("   "), "Should reject whitespace-only ARN");
       assertFalse(
-          PlatformDetectionUtil.isValidArnForWif("not-an-arn"),
-          "Should reject non-ARN string");
+          PlatformDetectionUtil.isValidArnForWif("not-an-arn"), "Should reject non-ARN string");
     }
 
     @Test
@@ -275,10 +282,8 @@ public class PlatformDetectionUtilTest {
 
       // Missing account ID
       assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts:::assumed-role/role-name/session"),
+          PlatformDetectionUtil.isValidArnForWif("arn:aws:sts:::assumed-role/role-name/session"),
           "Should reject assumed role ARN without account ID");
     }
   }
-
 }

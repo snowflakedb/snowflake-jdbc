@@ -85,4 +85,3 @@ public class PlatformDetectionUtil {
     return true;
   }
 }
-
