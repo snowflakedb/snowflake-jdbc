@@ -276,8 +276,7 @@ public class PlatformDetectionUtilTest {
     public void testMalformedAssumedRoleArns() {
       // Missing everything after assumed-role/
       assertFalse(
-          PlatformDetectionUtil.isValidArnForWif(
-              "arn:aws:sts::123456789012:assumed-role/"),
+          PlatformDetectionUtil.isValidArnForWif("arn:aws:sts::123456789012:assumed-role/"),
           "Should reject assumed role ARN with nothing after assumed-role/");
 
       // Missing account ID
