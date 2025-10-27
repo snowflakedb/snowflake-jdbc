@@ -1,14 +1,6 @@
 package net.snowflake.client.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.auth.BasicAWSCredentials;
-import java.io.IOException;
-import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.jdbc.BaseWiremockTest;
@@ -16,6 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Tag(TestTags.CONNECTION)
 public class PlatformDetectorLatestIT extends BaseWiremockTest {

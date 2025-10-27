@@ -129,9 +129,12 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static Duration getSocketTimeout() {
-    return socketTimeout != null
-        ? socketTimeout
-        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
+    Duration duration =
+        socketTimeout != null
+            ? socketTimeout
+            : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
+    System.out.println("HttpUtil.getSocketTimeout: " + duration);
+    return duration;
   }
 
   @SnowflakeJdbcInternalApi
@@ -474,6 +477,10 @@ public class HttpUtil {
   }
 
   private static void initDefaultRequestConfig(long connectTimeout, long socketTimeout) {
+    if (DefaultRequestConfig == null || DefaultRequestConfig.getSocketTimeout() != socketTimeout) {
+      System.out.println("dumping stack trace for DefaultRequestConfig rebuild");
+      Thread.dumpStack();
+    }
     RequestConfig.Builder builder =
         RequestConfig.custom()
             .setConnectTimeout((int) connectTimeout)
@@ -484,6 +491,14 @@ public class HttpUtil {
         connectTimeout,
         connectTimeout,
         socketTimeout);
+    System.out.println(
+        "Rebuilding request config. Connect timeout: "
+            + connectTimeout
+            + " ms, connection request timeout: "
+            + connectTimeout
+            + " ms, socket timeout: "
+            + socketTimeout
+            + " ms");
     DefaultRequestConfig = builder.build();
   }
 
@@ -637,6 +652,7 @@ public class HttpUtil {
   public static RequestConfig getDefaultRequestConfigWithSocketAndConnectTimeout(
       int requestSocketAndConnectTimeout, boolean withoutCookies) {
     final String cookieSpec = withoutCookies ? IGNORE_COOKIES : DEFAULT;
+    System.out.println("requestSocketAndConnectTimeout: " + requestSocketAndConnectTimeout);
     return RequestConfig.copy(DefaultRequestConfig)
         .setSocketTimeout(requestSocketAndConnectTimeout)
         .setConnectTimeout(requestSocketAndConnectTimeout)

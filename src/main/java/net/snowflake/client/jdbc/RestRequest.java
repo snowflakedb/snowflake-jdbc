@@ -10,10 +10,12 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,7 +51,9 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
@@ -675,6 +679,7 @@ public class RestRequest {
 
     // When the auth timeout is set, set the socket timeout as the authTimeout
     // so that it can be renewed in time and pass it to the http request configuration.
+    System.out.println("authTimeoutInMilli: " + authTimeoutInMilli);
     if (authTimeoutInMilli > 0) {
       int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
       logger.debug(
@@ -956,10 +961,33 @@ public class RestRequest {
         }
 
         execTimeData.setHttpClientStart();
+        System.out.println("starting http request execution at " + LocalDateTime.now());
+        System.out.println(
+            LocalDateTime.now()
+                + " requestId: "
+                + httpExecutingContext.getRequestId()
+                + ", connectTimeout: "
+                + Optional.ofNullable(httpRequest.getConfig())
+                    .map(RequestConfig::getConnectTimeout)
+                    .orElse(-2)
+                + ", socketTimeout: "
+                + Optional.ofNullable(httpRequest.getConfig())
+                    .map(RequestConfig::getSocketTimeout)
+                    .orElse(-2)
+                + ", connectionRequestTimeout: "
+                + Optional.ofNullable(httpRequest.getConfig())
+                    .map(RequestConfig::getConnectionRequestTimeout)
+                    .orElse(-2));
         CloseableHttpResponse response = httpClient.execute(httpRequest);
         responseDto.setHttpResponse(response);
         execTimeData.setHttpClientEnd();
       } catch (Exception ex) {
+        System.out.println(
+            LocalDateTime.now()
+                + " "
+                + ex.getClass().getName()
+                + " occurred during HTTP request execution: "
+                + ex);
         if (ex instanceof IllegalStateException) {
           // if exception is caused by illegal state, e.g shutdown of http client
           // because of closing of connection, then recreate the http client and remove existing
@@ -995,6 +1023,35 @@ public class RestRequest {
       boolean shouldSkipRetry =
           shouldSkipRetryWithLoggedReason(httpRequest, responseDto, httpExecutingContext);
       httpExecutingContext.setShouldRetry(!shouldSkipRetry);
+      System.out.println(
+          LocalDateTime.now()
+              + " requestId: "
+              + httpExecutingContext.getRequestId()
+              + ", connectTimeout: "
+              + Optional.ofNullable(httpRequest.getConfig())
+                  .map(RequestConfig::getConnectTimeout)
+                  .orElse(-3)
+              + ", socketTimeout: "
+              + Optional.ofNullable(httpRequest.getConfig())
+                  .map(RequestConfig::getSocketTimeout)
+                  .orElse(-3)
+              + ", connectionRequestTimeout: "
+              + Optional.ofNullable(httpRequest.getConfig())
+                  .map(RequestConfig::getConnectionRequestTimeout)
+                  .orElse(-3));
+      System.out.println(
+          "shouldSkipRetry: "
+              + shouldSkipRetry
+              + ", isUnpackResponse: "
+              + httpExecutingContext.isUnpackResponse()
+              + ", response exists: "
+              + (responseDto.getHttpResponse() != null ? "yes" : "no")
+              + ", status code: "
+              + (responseDto.getHttpResponse() != null
+                  ? responseDto.getHttpResponse().getStatusLine().getStatusCode()
+                  : "n/a")
+              + ", savedEx: "
+              + responseDto.getSavedEx());
 
       if (httpExecutingContext.isUnpackResponse()
           && responseDto.getHttpResponse() != null
@@ -1054,6 +1111,24 @@ public class RestRequest {
             : networkComunnicationStapwatch.elapsedMillis(),
         httpExecutingContext.getRetryCount());
 
+    System.out.println(
+        LocalDateTime.now()
+            + " "
+            + httpExecutingContext.getRequestId()
+            + " path = "
+            + httpRequest.getURI()
+            + ", response line = "
+            + Optional.ofNullable(responseDto)
+                .map(HttpResponseContextDto::getHttpResponse)
+                .map(HttpResponse::getStatusLine)
+                .orElse(null)
+            + ", took = "
+            + (networkComunnicationStapwatch == null
+                ? "n/a"
+                : networkComunnicationStapwatch.elapsedMillis())
+            + ", retries = "
+            + httpExecutingContext.getRetryCount());
+
     httpExecutingContext.resetRetryCount();
     if (logger.isDebugEnabled() && networkComunnicationStapwatch != null) {
       networkComunnicationStapwatch.stop();
@@ -1078,6 +1153,7 @@ public class RestRequest {
       ExecTimeTelemetryData execTimeData,
       HttpResponseContextDto responseDto) {
     CloseableHttpResponse response = responseDto.getHttpResponse();
+    System.out.println("processing HTTP response");
     try {
       String responseText;
       responseText = verifyAndUnpackResponse(response, execTimeData);
@@ -1085,9 +1161,12 @@ public class RestRequest {
       httpExecutingContext.setShouldRetry(false);
       responseDto.setUnpackedCloseableHttpResponse(responseText);
     } catch (IOException ex) {
+      System.out.println(ex.getMessage());
       boolean skipRetriesBecauseOf200 = httpExecutingContext.isSkipRetriesBecauseOf200();
+      System.out.println("skipRetiresBecauseOf200: " + skipRetriesBecauseOf200);
       boolean retryReasonDifferentThan200 =
           !httpExecutingContext.isShouldRetry() && skipRetriesBecauseOf200;
+      System.out.println("retryReasonDifferentThan200: " + retryReasonDifferentThan200);
       httpExecutingContext.setShouldRetry(retryReasonDifferentThan200);
       responseDto.setSavedEx(ex);
     }

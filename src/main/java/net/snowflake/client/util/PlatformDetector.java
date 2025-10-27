@@ -120,7 +120,7 @@ public class PlatformDetector {
   public List<String> detectPlatforms(
       Integer platformDetectionTimeoutMs, AwsAttestationService attestationService) {
     try {
-      int timeoutMs = platformDetectionTimeoutMs != null ? platformDetectionTimeoutMs : 200;
+      int timeoutMs = platformDetectionTimeoutMs != null ? platformDetectionTimeoutMs : 2000;
 
       // Run environment-only checks synchronously (no network calls)
       Map<Platform, DetectionState> platforms = new HashMap<>();
