@@ -830,9 +830,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
 
-    regularStatement.execute(
-        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
-
     try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo")) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
@@ -933,9 +930,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       throws Throwable {
 
     regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
-
-    regularStatement.execute(
-        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
 
     try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo2")) {
 
