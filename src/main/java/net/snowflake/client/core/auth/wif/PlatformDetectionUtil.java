@@ -8,6 +8,7 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -79,10 +80,7 @@ public class PlatformDetectionUtil {
     String accessKey = awsCredentials.getAWSAccessKeyId();
     String secretKey = awsCredentials.getAWSSecretKey();
 
-    if (accessKey == null
-        || accessKey.trim().isEmpty()
-        || secretKey == null
-        || secretKey.trim().isEmpty()) {
+    if (SnowflakeUtil.isNullOrEmpty(accessKey) || SnowflakeUtil.isNullOrEmpty(secretKey)) {
       logger.debug("AWS credentials are incomplete");
       return false;
     }
