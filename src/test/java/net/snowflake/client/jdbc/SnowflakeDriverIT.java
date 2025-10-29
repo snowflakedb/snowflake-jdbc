@@ -759,6 +759,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             getConnection(
                 DONT_INJECT_SOCKET_TIMEOUT, _connectionProperties, false, false, "gcpaccount");
         Statement statement = connection.createStatement()) {
+      String stageName = "wildcard_stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       try {
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
         // replace file name with wildcard character
@@ -769,16 +770,16 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
         statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
-        statement.execute("CREATE OR REPLACE STAGE wildcard_stage");
+        statement.execute("CREATE OR REPLACE STAGE " + stageName);
         assertTrue(
-            statement.execute("PUT file://" + sourceFilePath + " @wildcard_stage"),
+            statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
             "Failed to put a file");
 
-        findFile(statement, "ls @wildcard_stage/");
+        findFile(statement, "ls @" + stageName + "/");
 
         assertTrue(
             statement.execute(
-                "GET @wildcard_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+                "GET @" + stageName + " 'file://" + destFolderCanonicalPath + "' parallel=8"),
             "Failed to get files");
 
         File downloaded;
@@ -801,7 +802,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assertTrue(FileUtils.contentEquals(original, unzipped));
         }
       } finally {
-        statement.execute("DROP STAGE IF EXISTS wildcard_stage");
+        statement.execute("DROP STAGE IF EXISTS " + stageName);
       }
     } finally {
       SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
@@ -946,30 +947,31 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       }
       try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
+        String stageName = "overwrite_stage_" + SnowflakeUtil.randomAlphaNumeric(10);
         try {
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
 
           // create a stage to put the file in
-          statement.execute("CREATE OR REPLACE STAGE testing_stage");
+          statement.execute("CREATE OR REPLACE STAGE " + stageName);
           assertTrue(
-              statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"),
+              statement.execute("PUT file://" + sourceFilePathOriginal + " @" + stageName),
               "Failed to put a file");
           // check that file exists in stage after PUT
-          findFile(statement, "ls @testing_stage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // put another file in same stage with same filename with overwrite = true
           assertTrue(
               statement.execute(
-                  "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=true"),
+                  "PUT file://" + sourceFilePathOverwrite + " @" + stageName + " overwrite=true"),
               "Failed to put a file");
 
           // check that file exists in stage after PUT
-          findFile(statement, "ls @testing_stage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // get file from new stage
           assertTrue(
               statement.execute(
-                  "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+                  "GET @" + stageName + " 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get files");
 
           // Make sure that the downloaded file exists; it should be gzip compressed
@@ -986,6 +988,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assertTrue(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+          statement.execute("DROP STAGE IF EXISTS " + stageName);
         }
       } finally {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
@@ -2670,6 +2673,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       }
       try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
+        String stageName = "testGetPut_stage_" + SnowflakeUtil.randomAlphaNumeric(10);
         try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
@@ -2679,18 +2683,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
-          statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+          statement.execute("CREATE OR REPLACE STAGE " + stageName);
 
           assertTrue(
-              statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"),
+              statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
               "Failed to put a file");
 
-          findFile(statement, "ls @testPutGet_stage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // download the file we just uploaded to stage
           assertTrue(
               statement.execute(
-                  "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+                  "GET @" + stageName + " 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get a file");
 
           // Make sure that the downloaded file exists, it should be gzip compressed
@@ -2706,7 +2710,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
           assertEquals(original.length(), unzipped.length());
         } finally {
-          statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
+          statement.execute("DROP STAGE IF EXISTS " + stageName);
         }
       } finally {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
