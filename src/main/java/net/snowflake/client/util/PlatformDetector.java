@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.core.auth.wif.PlatformDetectionUtil;
@@ -29,8 +28,8 @@ public class PlatformDetector {
 
   private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
 
-  private static final AtomicReference<List<String>> cachedDetectedPlatforms =
-      new AtomicReference<>(null);
+  private static volatile List<String> cachedDetectedPlatforms = null;
+  private static final Object cacheLock = new Object();
 
   // AWS platform detection constants
   private static final String AWS_LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT";
@@ -124,22 +123,23 @@ public class PlatformDetector {
 
   static List<String> getCachedPlatformDetection(
       PlatformDetector detector, AwsAttestationService attestationService) {
-    List<String> cached = cachedDetectedPlatforms.get();
-    if (cached != null) {
-      return cached;
+    if (cachedDetectedPlatforms != null) {
+      return cachedDetectedPlatforms;
     }
 
-    logger.debug(
-        "Platform detection cache miss. Initializing with default timeout: {}ms",
-        DEFAULT_DETECTION_TIMEOUT_MS);
-    List<String> result = detectPlatforms(detector, attestationService);
-    if (cachedDetectedPlatforms.compareAndSet(null, result)) {
+    synchronized (cacheLock) {
+      if (cachedDetectedPlatforms != null) {
+        return cachedDetectedPlatforms;
+      }
+
+      logger.debug(
+          "Platform detection cache miss. Initializing with default timeout: {}ms",
+          DEFAULT_DETECTION_TIMEOUT_MS);
+      List<String> result = detectPlatforms(detector, attestationService);
+      cachedDetectedPlatforms = result;
       logger.debug("Platform detection cache initialized: {}", result);
-    } else {
-      result = cachedDetectedPlatforms.get();
-      logger.debug("Platform detection cache already initialized by another thread");
+      return result;
     }
-    return result;
   }
 
   private static List<String> detectPlatforms(
@@ -155,8 +155,10 @@ public class PlatformDetector {
 
   /** This method is for testing purposes to allow re-detection in tests. */
   static void clearCache() {
-    cachedDetectedPlatforms.set(null);
-    logger.debug("Platform detection cache cleared");
+    synchronized (cacheLock) {
+      cachedDetectedPlatforms = null;
+      logger.debug("Platform detection cache cleared");
+    }
   }
 
   /**
