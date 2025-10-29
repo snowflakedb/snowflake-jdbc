@@ -28,8 +28,7 @@ public class PlatformDetector {
 
   private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
 
-  private static volatile List<String> cachedDetectedPlatforms = null;
-  private static final Object cacheLock = new Object();
+  private static List<String> cachedDetectedPlatforms = null;
 
   // AWS platform detection constants
   private static final String AWS_LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT";
@@ -121,25 +120,19 @@ public class PlatformDetector {
     return getCachedPlatformDetection(null, null);
   }
 
-  static List<String> getCachedPlatformDetection(
+  static synchronized List<String> getCachedPlatformDetection(
       PlatformDetector detector, AwsAttestationService attestationService) {
     if (cachedDetectedPlatforms != null) {
       return cachedDetectedPlatforms;
     }
 
-    synchronized (cacheLock) {
-      if (cachedDetectedPlatforms != null) {
-        return cachedDetectedPlatforms;
-      }
-
-      logger.debug(
-          "Platform detection cache miss. Initializing with default timeout: {}ms",
-          DEFAULT_DETECTION_TIMEOUT_MS);
-      List<String> result = detectPlatforms(detector, attestationService);
-      cachedDetectedPlatforms = result;
-      logger.debug("Platform detection cache initialized: {}", result);
-      return result;
-    }
+    logger.debug(
+        "Platform detection cache miss. Initializing with default timeout: {}ms",
+        DEFAULT_DETECTION_TIMEOUT_MS);
+    List<String> result = detectPlatforms(detector, attestationService);
+    cachedDetectedPlatforms = result;
+    logger.debug("Platform detection cache initialized: {}", result);
+    return result;
   }
 
   private static List<String> detectPlatforms(
@@ -154,11 +147,9 @@ public class PlatformDetector {
   }
 
   /** This method is for testing purposes to allow re-detection in tests. */
-  static void clearCache() {
-    synchronized (cacheLock) {
-      cachedDetectedPlatforms = null;
-      logger.debug("Platform detection cache cleared");
-    }
+  static synchronized void clearCache() {
+    cachedDetectedPlatforms = null;
+    logger.debug("Platform detection cache cleared");
   }
 
   /**
