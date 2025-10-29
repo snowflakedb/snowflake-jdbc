@@ -1151,11 +1151,8 @@ public class SessionUtil {
     // Add platform detection (if not disabled)
     if (!loginInput.isDisablePlatformDetection()) {
       try {
-        PlatformDetector platformDetector = new PlatformDetector();
-        AwsAttestationService awsAttestationService = new AwsAttestationService();
-        List<String> detectedPlatforms =
-            platformDetector.detectPlatforms(
-                loginInput.getPlatformDetectionTimeoutMs(), awsAttestationService);
+        // Use cached platform detection results (initialized once on first use)
+        List<String> detectedPlatforms = PlatformDetector.getCachedPlatformDetection();
         clientEnv.put("PLATFORM", detectedPlatforms);
       } catch (Exception e) {
         logger.debug("Platform detection failed: {}", e.getMessage());
