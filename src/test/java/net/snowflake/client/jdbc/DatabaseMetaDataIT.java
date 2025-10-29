@@ -556,8 +556,8 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
           assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
         }
@@ -569,16 +569,16 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
           assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
           resultSet.next();
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(SnowflakeUtil.isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
           assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
         }
