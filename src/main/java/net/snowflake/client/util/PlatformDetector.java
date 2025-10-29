@@ -29,12 +29,6 @@ public class PlatformDetector {
 
   private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
 
-  /**
-   * Atomic reference for cached platform detection results. Using AtomicReference provides
-   * thread-safe lazy initialization without complex locking. The compareAndSet operation ensures
-   * only one thread performs initialization, while other threads either help with initialization or
-   * wait for the result.
-   */
   private static final AtomicReference<List<String>> cachedDetectedPlatforms =
       new AtomicReference<>(null);
 
