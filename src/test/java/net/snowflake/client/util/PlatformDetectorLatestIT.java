@@ -35,8 +35,6 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Default behavior for AWS attestation service (return null/empty unless overridden)
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(null);
 
-    PlatformDetector.clearCache();
-
     resetWiremock();
   }
 
@@ -452,17 +450,15 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
 
     long startTime1 = System.currentTimeMillis();
     List<String> platforms1 =
-        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+        PlatformDetector.detectPlatformsAndCache(detector, mockAwsAttestationService);
     long duration1 = System.currentTimeMillis() - startTime1;
 
     long startTime2 = System.currentTimeMillis();
-    List<String> platforms2 =
-        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+    List<String> platforms2 = PlatformDetector.getCachedPlatformDetection();
     long duration2 = System.currentTimeMillis() - startTime2;
 
     long startTime3 = System.currentTimeMillis();
-    List<String> platforms3 =
-        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+    List<String> platforms3 = PlatformDetector.getCachedPlatformDetection();
     long duration3 = System.currentTimeMillis() - startTime3;
 
     assertSame(platforms1, platforms2, "Second call should return cached instance");

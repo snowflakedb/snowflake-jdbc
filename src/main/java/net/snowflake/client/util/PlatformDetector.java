@@ -116,12 +116,7 @@ public class PlatformDetector {
    * Get cached platform detection results. If platform detection has not been performed yet,
    * initializes the cache.
    */
-  public static List<String> getCachedPlatformDetection() {
-    return getCachedPlatformDetection(null, null);
-  }
-
-  static synchronized List<String> getCachedPlatformDetection(
-      PlatformDetector detector, AwsAttestationService attestationService) {
+  public static synchronized List<String> getCachedPlatformDetection() {
     if (cachedDetectedPlatforms != null) {
       return cachedDetectedPlatforms;
     }
@@ -129,27 +124,22 @@ public class PlatformDetector {
     logger.debug(
         "Platform detection cache miss. Initializing with default timeout: {}ms",
         DEFAULT_DETECTION_TIMEOUT_MS);
-    List<String> result = detectPlatforms(detector, attestationService);
-    cachedDetectedPlatforms = result;
+
+    PlatformDetector detector = new PlatformDetector();
+    AwsAttestationService attestationService = new AwsAttestationService();
+    List<String> result = detectPlatformsAndCache(detector, attestationService);
+
     logger.debug("Platform detection cache initialized: {}", result);
     return result;
   }
 
-  private static List<String> detectPlatforms(
+  static synchronized List<String> detectPlatformsAndCache(
       PlatformDetector detector, AwsAttestationService attestationService) {
-    PlatformDetector detectorToUse = detector != null ? detector : new PlatformDetector();
-    AwsAttestationService attestationToUse =
-        attestationService != null ? attestationService : new AwsAttestationService();
-
     List<String> detectedPlatforms =
-        detectorToUse.detectPlatforms(DEFAULT_DETECTION_TIMEOUT_MS, attestationToUse);
-    return Collections.unmodifiableList(new ArrayList<>(detectedPlatforms));
-  }
+        detector.detectPlatforms(DEFAULT_DETECTION_TIMEOUT_MS, attestationService);
 
-  /** This method is for testing purposes to allow re-detection in tests. */
-  static synchronized void clearCache() {
-    cachedDetectedPlatforms = null;
-    logger.debug("Platform detection cache cleared");
+    cachedDetectedPlatforms = Collections.unmodifiableList(detectedPlatforms);
+    return cachedDetectedPlatforms;
   }
 
   /**
@@ -157,7 +147,8 @@ public class PlatformDetector {
    * exceptions and returns an empty list if any exception occurs.
    *
    * @param platformDetectionTimeoutMs Timeout value for platform detection requests in
-   *     milliseconds. If null, defaults to 200 milliseconds. If 0, skips network-dependent checks.
+   *     milliseconds. If null, defaults to DEFAULT_DETECTION_TIMEOUT_MS. If 0, skips
+   *     network-dependent checks.
    * @return List of detected platform names. Platforms that timed out will have "_timeout" suffix
    *     appended to their name. Returns empty list if any exception occurs during detection.
    */
