@@ -1,6 +1,7 @@
 package net.snowflake.client.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,9 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
 
     // Default behavior for AWS attestation service (return null/empty unless overridden)
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(null);
+
+    PlatformDetector.clearCache();
+
     resetWiremock();
   }
 
@@ -436,6 +440,48 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   private String loadMappingFile(String mappingName) throws IOException {
     String mappingFile = "src/test/resources/wiremock/mappings/" + mappingName + ".json";
     return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(mappingFile)));
+  }
+
+  @Test
+  @DisplayName("Should cache platform detection results")
+  public void testCachedPlatformDetections() {
+    when(mockEnvironmentProvider.getEnv("LAMBDA_TASK_ROOT")).thenReturn("/var/task");
+
+    PlatformDetector detector =
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+
+    long startTime1 = System.currentTimeMillis();
+    List<String> platforms1 =
+        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+    long duration1 = System.currentTimeMillis() - startTime1;
+
+    long startTime2 = System.currentTimeMillis();
+    List<String> platforms2 =
+        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+    long duration2 = System.currentTimeMillis() - startTime2;
+
+    long startTime3 = System.currentTimeMillis();
+    List<String> platforms3 =
+        PlatformDetector.getCachedPlatformDetection(detector, mockAwsAttestationService);
+    long duration3 = System.currentTimeMillis() - startTime3;
+
+    assertSame(platforms1, platforms2, "Second call should return cached instance");
+    assertSame(platforms2, platforms3, "Third call should return cached instance");
+
+    assertTrue(
+        duration2 < duration1 || duration2 < 10,
+        "Cached call should be faster than initial detection. First: "
+            + duration1
+            + "ms, Second: "
+            + duration2
+            + "ms");
+    assertTrue(
+        duration3 < duration1 || duration3 < 10,
+        "Cached call should be faster than initial detection. First: "
+            + duration1
+            + "ms, Third: "
+            + duration3
+            + "ms");
   }
 
   /** Get the base URL for wiremock */

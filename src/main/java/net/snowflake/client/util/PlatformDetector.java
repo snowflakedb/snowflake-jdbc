@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.core.auth.wif.PlatformDetectionUtil;
@@ -25,6 +26,17 @@ import org.apache.http.client.methods.HttpPut;
 public class PlatformDetector {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(PlatformDetector.class);
+
+  private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
+
+  /**
+   * Atomic reference for cached platform detection results. Using AtomicReference provides
+   * thread-safe lazy initialization without complex locking. The compareAndSet operation ensures
+   * only one thread performs initialization, while other threads either help with initialization or
+   * wait for the result.
+   */
+  private static final AtomicReference<List<String>> cachedDetectedPlatforms =
+      new AtomicReference<>(null);
 
   // AWS platform detection constants
   private static final String AWS_LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT";
@@ -109,6 +121,51 @@ public class PlatformDetector {
   }
 
   /**
+   * Get cached platform detection results. If platform detection has not been performed yet,
+   * initializes the cache.
+   */
+  public static List<String> getCachedPlatformDetection() {
+    return getCachedPlatformDetection(null, null);
+  }
+
+  static List<String> getCachedPlatformDetection(
+      PlatformDetector detector, AwsAttestationService attestationService) {
+    List<String> cached = cachedDetectedPlatforms.get();
+    if (cached != null) {
+      return cached;
+    }
+
+    logger.debug(
+        "Platform detection cache miss. Initializing with default timeout: {}ms",
+        DEFAULT_DETECTION_TIMEOUT_MS);
+    List<String> result = detectPlatforms(detector, attestationService);
+    if (cachedDetectedPlatforms.compareAndSet(null, result)) {
+      logger.debug("Platform detection cache initialized: {}", result);
+    } else {
+      result = cachedDetectedPlatforms.get();
+      logger.debug("Platform detection cache already initialized by another thread");
+    }
+    return result;
+  }
+
+  private static List<String> detectPlatforms(
+      PlatformDetector detector, AwsAttestationService attestationService) {
+    PlatformDetector detectorToUse = detector != null ? detector : new PlatformDetector();
+    AwsAttestationService attestationToUse =
+        attestationService != null ? attestationService : new AwsAttestationService();
+
+    List<String> detectedPlatforms =
+        detectorToUse.detectPlatforms(DEFAULT_DETECTION_TIMEOUT_MS, attestationToUse);
+    return Collections.unmodifiableList(new ArrayList<>(detectedPlatforms));
+  }
+
+  /** This method is for testing purposes to allow re-detection in tests. */
+  static void clearCache() {
+    cachedDetectedPlatforms.set(null);
+    logger.debug("Platform detection cache cleared");
+  }
+
+  /**
    * Detect all potential platforms that the current environment may be running on. Swallows all
    * exceptions and returns an empty list if any exception occurs.
    *
@@ -117,10 +174,13 @@ public class PlatformDetector {
    * @return List of detected platform names. Platforms that timed out will have "_timeout" suffix
    *     appended to their name. Returns empty list if any exception occurs during detection.
    */
-  public List<String> detectPlatforms(
+  List<String> detectPlatforms(
       Integer platformDetectionTimeoutMs, AwsAttestationService attestationService) {
     try {
-      int timeoutMs = platformDetectionTimeoutMs != null ? platformDetectionTimeoutMs : 200;
+      int timeoutMs =
+          platformDetectionTimeoutMs != null
+              ? platformDetectionTimeoutMs
+              : DEFAULT_DETECTION_TIMEOUT_MS;
 
       // Run environment-only checks synchronously (no network calls)
       Map<Platform, DetectionState> platforms = new HashMap<>();
@@ -354,7 +414,7 @@ public class PlatformDetector {
     return DetectionState.NOT_DETECTED;
   }
 
-  private DetectionState hasAzureManagedIdentity(int timeoutMs) { // TODO: Fix logic
+  private DetectionState hasAzureManagedIdentity(int timeoutMs) {
     // Check environment variable first (for Azure Functions)
     if (isAzureFunction() == DetectionState.DETECTED) {
       if (checkAllEnvironmentVariables(AZURE_IDENTITY_HEADER)) {
