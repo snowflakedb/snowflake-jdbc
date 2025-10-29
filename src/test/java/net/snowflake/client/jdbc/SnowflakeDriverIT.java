@@ -775,7 +775,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
             "Failed to put a file");
 
-        findFile(statement, "ls @/" + stageName + "/");
+        findFile(statement, "ls @" + stageName + "/");
 
         assertTrue(
             statement.execute(
@@ -2689,7 +2689,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
               "Failed to put a file");
 
-          findFile(statement, "ls @testPutGet_stage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // download the file we just uploaded to stage
           assertTrue(
