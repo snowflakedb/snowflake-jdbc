@@ -282,7 +282,6 @@
               <ignoreNonCompile>true</ignoreNonCompile>
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
-                <ignoredUnusedDeclaredDependency>software.amazon.awssdk.crt:aws-crt</ignoredUnusedDeclaredDependency>
               </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
@@ -1068,10 +1067,6 @@
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>VersionInfo.java</exclude>
                         <exclude>project.properties</exclude>
-                        <exclude>windows/x86_32/cruntime/aws-crt-jni.dll</exclude>
-                        <exclude>windows/x86_64/cruntime/aws-crt-jni.dll</exclude>
-                        <exclude>osx/armv8/cruntime/libaws-crt-jni.dylib</exclude>
-                        <exclude>osx/x86_64/cruntime/libaws-crt-jni.dylib</exclude>
                       </excludes>
                     </filter>
                     <filter>
