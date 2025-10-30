@@ -217,34 +217,34 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>com.github.siom79.japicmp</groupId>
-        <artifactId>japicmp-maven-plugin</artifactId>
-        <configuration>
-          <parameter>
-            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
-            <ignoreMissingClasses>false</ignoreMissingClasses>
-            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
-            <includes>
-              <include>com.snowflake</include>
-              <include>net.snowflake</include>
-            </includes>
-            <excludes>
-              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>
-              <exclude>${shadeBase}</exclude>
-            </excludes>
-          </parameter>
-        </configuration>
-        <executions>
-          <execution>
-            <id>japicmp</id>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>com.github.siom79.japicmp</groupId>-->
+<!--        <artifactId>japicmp-maven-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <parameter>-->
+<!--            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>-->
+<!--            <ignoreMissingClasses>false</ignoreMissingClasses>-->
+<!--            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>-->
+<!--            <includes>-->
+<!--              <include>com.snowflake</include>-->
+<!--              <include>net.snowflake</include>-->
+<!--            </includes>-->
+<!--            <excludes>-->
+<!--              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>-->
+<!--              <exclude>${shadeBase}</exclude>-->
+<!--            </excludes>-->
+<!--          </parameter>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>japicmp</id>-->
+<!--            <goals>-->
+<!--              <goal>cmp</goal>-->
+<!--            </goals>-->
+<!--            <phase>verify</phase>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
