@@ -161,38 +161,42 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       // set timestamp mapping to default value
       try {
         statement.execute("ALTER SESSION UNSET CLIENT_TIMESTAMP_TYPE_MAPPING");
-        statement.execute("create or replace table TS (ntz TIMESTAMP_NTZ, ltz TIMESTAMP_LTZ)");
-        PreparedStatement prepst = connection.prepareStatement("insert into TS values (?, ?)");
+        statement.execute(
+            "create or replace table TS (id INTEGER, ntz TIMESTAMP_NTZ, ltz TIMESTAMP_LTZ)");
+        PreparedStatement prepst = connection.prepareStatement("insert into TS values (?, ?, ?)");
         String date1 = "2014-01-01 16:00:00";
         String date2 = "1945-11-12 5:25:00";
         Timestamp[] testTzs = {Timestamp.valueOf(date1), Timestamp.valueOf(date2)};
+        int rowId = 0;
         for (int i = 0; i < testTzs.length; i++) {
           // Disable stage array binding and insert the timestamp values
           statement.execute(
               "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
-          prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.setInt(1, rowId++);
+          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(3, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
           prepst.addBatch();
           prepst.executeBatch();
           // Enable stage array binding and insert the same timestamp values as above
           statement.execute(
               "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
-          prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.setInt(1, rowId++);
+          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(3, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
           prepst.addBatch();
           prepst.executeBatch();
         }
-        try (ResultSet rs = statement.executeQuery("select * from TS")) {
+        try (ResultSet rs = statement.executeQuery("select * from TS ORDER BY id ASC")) {
           // Get results for each timestamp value tested
           for (int i = 0; i < testTzs.length; i++) {
             // Assert that the first row of inserts with payload binding matches the second row of
             // inserts that used stage array binding
             assertTrue(rs.next());
-            Timestamp expectedNTZTs = rs.getTimestamp(1);
-            Timestamp expectedLTZTs = rs.getTimestamp(2);
+            Timestamp expectedNTZTs = rs.getTimestamp(2);
+            Timestamp expectedLTZTs = rs.getTimestamp(3);
             assertTrue(rs.next());
-            assertEquals(expectedNTZTs, rs.getTimestamp(1));
-            assertEquals(expectedLTZTs, rs.getTimestamp(2));
+            assertEquals(expectedNTZTs, rs.getTimestamp(2));
+            assertEquals(expectedLTZTs, rs.getTimestamp(3));
           }
         }
       } finally {
