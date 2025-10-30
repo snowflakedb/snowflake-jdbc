@@ -21,7 +21,7 @@
     <junit.version>5.11.1</junit.version>
     <surefire.version>3.5.1</surefire.version>
     <mockito.version>3.5.6</mockito.version>
-    <netty.version>4.1.127.Final</netty.version>
+    <netty.version>4.1.128.Final</netty.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
