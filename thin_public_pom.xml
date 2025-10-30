@@ -37,7 +37,7 @@
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>1.12.792</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
-    <bouncycastle.version>1.78.1</bouncycastle.version>
+    <bouncycastle.version>1.81</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>

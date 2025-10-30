@@ -26,9 +26,9 @@
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.792</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
-    <bouncycastle.version>1.78.1</bouncycastle.version>
-    <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
-    <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
+    <bouncycastle.version>1.81</bouncycastle.version>
+    <bouncycastle.bcfips.version>2.1.1</bouncycastle.bcfips.version>
+    <bouncycastle.bcpkixfips.version>2.1.9</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.48.2</checkerframework.version>
