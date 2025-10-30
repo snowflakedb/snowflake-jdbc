@@ -24,7 +24,7 @@
     <asm.version>9.7.1</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <awssdk.version>2.35.10</awssdk.version>
+    <awssdk.version>2.36.2</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
@@ -590,6 +590,26 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
+      <exclusions>
+        <!-- aws-crt cannot be shaded https://github.com/awslabs/aws-crt-java/issues/166 -->
+        <!-- We are not using it indirectly or directly so we can exclude this -->
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3-transfer-manager</artifactId>
+      <exclusions>
+        <!-- aws-crt cannot be shaded https://github.com/awslabs/aws-crt-java/issues/166 -->
+        <!-- We are not using it indirectly or directly so we can exclude this -->
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -618,6 +638,12 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>http-auth-aws</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -630,15 +656,6 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sts</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3-transfer-manager</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk.crt</groupId>
-      <artifactId>aws-crt</artifactId>
-      <version>0.39.4</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.encryption.s3</groupId>

@@ -619,10 +619,6 @@
                         <exclude>dependencies.properties</exclude>
                         <exclude>VersionInfo.java</exclude>
                         <exclude>project.properties</exclude>
-                        <exclude>windows/x86_32/cruntime/aws-crt-jni.dll</exclude>
-                        <exclude>windows/x86_64/cruntime/aws-crt-jni.dll</exclude>
-                        <exclude>osx/armv8/cruntime/libaws-crt-jni.dylib</exclude>
-                        <exclude>osx/x86_64/cruntime/libaws-crt-jni.dylib</exclude>
                       </excludes>
                     </filter>
                     <filter>
