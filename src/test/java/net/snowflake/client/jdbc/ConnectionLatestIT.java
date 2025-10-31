@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
@@ -74,6 +75,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -1645,36 +1648,29 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
-  
-  @Test
-  public void testConnectionAndSocketTimeouts() throws Exception {
+
+  static Stream<Properties> timeoutPropertiesProvider() {
+    Properties connTimeoutProps = new Properties();
+    connTimeoutProps.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 1);
+    connTimeoutProps.put("loginTimeout", "50"); // to stop the request retry after 50 sec.
+
+    Properties socketTimeoutProps = new Properties();
+    socketTimeoutProps.put("HTTP_CLIENT_SOCKET_TIMEOUT", 1);
+    socketTimeoutProps.put("loginTimeout", "50");
+
+    return Stream.of(connTimeoutProps, socketTimeoutProps);
+  }
+
+  @ParameterizedTest
+  @MethodSource("timeoutPropertiesProvider")
+  public void testConnectionAndSocketTimeoutsByProperties(Properties props) {
     Duration origConnectionTimeout = HttpUtil.getConnectionTimeout();
     Duration origSocketTimeout = HttpUtil.getSocketTimeout();
-    Properties paramPropertiesConn = new Properties();
-    Properties paramPropertiesSoc = new Properties();
-    paramPropertiesConn.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 1);
-    paramPropertiesConn.put("retryTimeout", "50");
-    
-    
+
     try {
-    SQLException exConnTimeout =
-            assertThrows(
-                SQLException.class,
-                () -> {
-                  getConnection(paramPropertiesConn);
-                });
-    assertEquals(exConnTimeout.getCause(), instanceOf(ConnectTimeoutException.class));
-    
-	/*
-	 * paramPropertiesSoc.put("HTTP_CLIENT_SOCKET_TIMEOUT", 1); SQLException
-	 * exSocketTimeout = assertThrows( SQLException.class, () -> {
-	 * getConnection(paramPropertiesSoc); });
-	 * 
-	 * assertEquals(exSocketTimeout.getCause(),
-	 * instanceOf(SSLHandshakeException.class));
-	 */
+      SQLException ex = assertThrows(SQLException.class, () -> getConnection(props));
+      assertEquals(ConnectTimeoutException.class, ex.getCause().getClass());
     } finally {
-      // reset to original values
       HttpUtil.setConnectionTimeout((int) origConnectionTimeout.toMillis());
       HttpUtil.setSocketTimeout((int) origSocketTimeout.toMillis());
     }
