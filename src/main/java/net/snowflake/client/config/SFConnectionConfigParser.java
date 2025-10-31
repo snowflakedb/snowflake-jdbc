@@ -8,9 +8,9 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -121,14 +121,18 @@ public class SFConnectionConfigParser {
     }
 
     String query = connectionUrl.substring(queryStart + 1);
-    String[] pairs = query.split("&");
+    String[] propertyPairs = query.split("&");
 
-    for (String pair : pairs) {
-      String[] kv = pair.split("=", 2);
-      if (kv.length == 2) {
-        String key = URLDecoder.decode(kv[0], StandardCharsets.UTF_8);
-        String value = URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
-        paramMap.put(key, value);
+    for (String peoperty : propertyPairs) {
+      String[] peopertyKeyVal = peoperty.split("=", 2);
+      if (peopertyKeyVal.length == 2) {
+        try {
+          String key = URLDecoder.decode(peopertyKeyVal[0], "UTF-8");
+          String value = URLDecoder.decode(peopertyKeyVal[1], "UTF-8");
+          paramMap.put(key, value);
+        } catch (UnsupportedEncodingException e) {
+          logger.warn("Failed to decode a parameter {}. Ignored.", peoperty);
+        }
       }
     }
 
