@@ -72,16 +72,15 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "unknown");
     prepareConnectionConfigurationTomlFile();
-    ConnectionParameters connectionParameters =
-        SFConnectionConfigParser.buildConnectionParameters();
-    assertNull(connectionParameters);
+    assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
   public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, Paths.get("unknownPath").toString());
     prepareConnectionConfigurationTomlFile();
-    assertNull(SFConnectionConfigParser.buildConnectionParameters());
+    assertNull(SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
@@ -93,7 +92,7 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()));
 
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
     assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
   }
@@ -107,7 +106,7 @@ public class SFConnectionConfigParserTest {
         Collections.singletonMap("token_file_path", tokenFile.toString()), false, false);
     assumeRunningOnLinuxMac();
     assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
@@ -118,7 +117,7 @@ public class SFConnectionConfigParserTest {
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
     assumeRunningOnLinuxMac();
     assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
@@ -131,7 +130,7 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
 
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
     assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
   }
@@ -147,7 +146,7 @@ public class SFConnectionConfigParserTest {
     extraparams.put("port", "8082");
     extraparams.put("token", "testToken");
     prepareConnectionConfigurationTomlFile(extraparams);
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
     assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
     assertEquals("oauth", data.getParams().get("authenticator"));
@@ -163,7 +162,7 @@ public class SFConnectionConfigParserTest {
     extraparams.put("account", null);
     prepareConnectionConfigurationTomlFile(extraparams);
     assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
@@ -176,7 +175,7 @@ public class SFConnectionConfigParserTest {
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false, "");
 
     assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   private void prepareConnectionConfigurationTomlFile() throws IOException {
