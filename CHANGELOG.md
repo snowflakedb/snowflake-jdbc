@@ -1,7 +1,7 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v3.27.1-SNAPSHOT
+- v3.27.1
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
     - Fix IT tests to construct OAuth scopes correctly

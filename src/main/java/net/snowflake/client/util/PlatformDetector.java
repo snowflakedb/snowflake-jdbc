@@ -26,6 +26,10 @@ public class PlatformDetector {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(PlatformDetector.class);
 
+  private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
+
+  private static List<String> cachedDetectedPlatforms = null;
+
   // AWS platform detection constants
   private static final String AWS_LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT";
 
@@ -109,18 +113,52 @@ public class PlatformDetector {
   }
 
   /**
+   * Get cached platform detection results. If platform detection has not been performed yet,
+   * initializes the cache.
+   */
+  public static synchronized List<String> getCachedPlatformDetection() {
+    if (cachedDetectedPlatforms != null) {
+      return cachedDetectedPlatforms;
+    }
+
+    logger.debug(
+        "Platform detection cache miss. Initializing with default timeout: {}ms",
+        DEFAULT_DETECTION_TIMEOUT_MS);
+
+    PlatformDetector detector = new PlatformDetector();
+    AwsAttestationService attestationService = new AwsAttestationService();
+    List<String> result = detectPlatformsAndCache(detector, attestationService);
+
+    logger.debug("Platform detection cache initialized: {}", result);
+    return result;
+  }
+
+  static synchronized List<String> detectPlatformsAndCache(
+      PlatformDetector detector, AwsAttestationService attestationService) {
+    List<String> detectedPlatforms =
+        detector.detectPlatforms(DEFAULT_DETECTION_TIMEOUT_MS, attestationService);
+
+    cachedDetectedPlatforms = Collections.unmodifiableList(detectedPlatforms);
+    return cachedDetectedPlatforms;
+  }
+
+  /**
    * Detect all potential platforms that the current environment may be running on. Swallows all
    * exceptions and returns an empty list if any exception occurs.
    *
    * @param platformDetectionTimeoutMs Timeout value for platform detection requests in
-   *     milliseconds. If null, defaults to 200 milliseconds. If 0, skips network-dependent checks.
+   *     milliseconds. If null, defaults to DEFAULT_DETECTION_TIMEOUT_MS. If 0, skips
+   *     network-dependent checks.
    * @return List of detected platform names. Platforms that timed out will have "_timeout" suffix
    *     appended to their name. Returns empty list if any exception occurs during detection.
    */
-  public List<String> detectPlatforms(
+  List<String> detectPlatforms(
       Integer platformDetectionTimeoutMs, AwsAttestationService attestationService) {
     try {
-      int timeoutMs = platformDetectionTimeoutMs != null ? platformDetectionTimeoutMs : 200;
+      int timeoutMs =
+          platformDetectionTimeoutMs != null
+              ? platformDetectionTimeoutMs
+              : DEFAULT_DETECTION_TIMEOUT_MS;
 
       // Run environment-only checks synchronously (no network calls)
       Map<Platform, DetectionState> platforms = new HashMap<>();
@@ -354,7 +392,7 @@ public class PlatformDetector {
     return DetectionState.NOT_DETECTED;
   }
 
-  private DetectionState hasAzureManagedIdentity(int timeoutMs) { // TODO: Fix logic
+  private DetectionState hasAzureManagedIdentity(int timeoutMs) {
     // Check environment variable first (for Azure Functions)
     if (isAzureFunction() == DetectionState.DETECTED) {
       if (checkAllEnvironmentVariables(AZURE_IDENTITY_HEADER)) {
