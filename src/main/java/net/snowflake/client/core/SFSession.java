@@ -653,7 +653,7 @@ public class SFSession extends SFBaseSession {
     stopwatch.start();
     performSanityCheckOnProperties();
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-    logger.info(
+    logger.debug(
         "Opening session with server: {}, account: {}, user: {}, password is {}, role: {}, database: {}, schema: {},"
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
@@ -810,7 +810,7 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
                 : false); // Default to false (platform detection enabled)
 
-    logger.info(
+    logger.debug(
         "Connecting to {} Snowflake domain",
         loginInput.getHostFromServerUrl().toLowerCase().endsWith(".cn") ? "CHINA" : "GLOBAL");
 
