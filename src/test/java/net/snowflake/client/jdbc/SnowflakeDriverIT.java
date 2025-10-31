@@ -916,6 +916,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testPutOverwrite() throws Throwable {
+    System.out.println("testPutOverwrite started");
     // create 2 files: an original, and one that will overwrite the original
     File file1 = new File(tmpFolder, "testfile.csv");
     file1.createNewFile();
@@ -994,6 +995,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
+    System.out.println("testPutOverwrite finished");
   }
 
   @Test
@@ -2662,6 +2664,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testPutGet() throws Throwable {
+    System.out.println("PUT/GET test started");
 
     List<String> accounts =
         Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
@@ -2671,6 +2674,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         accountName = "gcpaccount";
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
       }
+      System.out.println("Testing account: " + accountName);
       try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         String stageName = "testGetPut_stage_" + SnowflakeUtil.randomAlphaNumeric(10);
@@ -2685,12 +2689,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute("CREATE OR REPLACE STAGE " + stageName);
 
+          System.out.println("PUTTING file to stage: " + stageName + " from " + sourceFilePath);
           assertTrue(
               statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
               "Failed to put a file");
 
           findFile(statement, "ls @" + stageName + "/");
 
+          System.out.println(
+              "GETTING file from stage: " + stageName + " to " + destFolderCanonicalPath);
           // download the file we just uploaded to stage
           assertTrue(
               statement.execute(
@@ -2716,6 +2723,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
+    System.out.println("PUT/GET test finished");
   }
 
   /**
@@ -2727,6 +2735,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testPutGetToUnencryptedStage() throws Throwable {
+    System.out.println("PUT/GET to unencrypted stage test started");
 
     List<String> accounts =
         Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
@@ -2782,6 +2791,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
       }
     }
+    System.out.println("PUT/GET to unencrypted stage test finished");
   }
 
   /** Prepare statement will fail if the connection is already closed. */
