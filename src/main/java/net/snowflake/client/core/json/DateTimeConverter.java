@@ -5,6 +5,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFTime;
+import net.snowflake.client.common.core.SFTimestamp;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -14,8 +16,6 @@ import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
 
 public class DateTimeConverter {
   private final TimeZone sessionTimeZone;

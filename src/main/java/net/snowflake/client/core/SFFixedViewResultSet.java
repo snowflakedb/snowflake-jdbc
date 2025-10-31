@@ -2,6 +2,8 @@ package net.snowflake.client.core;
 
 import java.sql.SQLException;
 import java.util.List;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
@@ -12,8 +14,6 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SqlState;
 
 /**
  * Fixed view result set. This class iterates through any fixed view implementation and return the

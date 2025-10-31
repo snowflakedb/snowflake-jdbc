@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFBaseSession;
@@ -31,7 +32,6 @@ import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);

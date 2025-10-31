@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.common.core.SqlState;
+import net.snowflake.client.common.core.SqlState;
 
 /** Internal JDBC driver error codes */
 public enum ErrorCode {

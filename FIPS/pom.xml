@@ -370,10 +370,6 @@
                 <configuration>
                   <relocations>
                     <relocation>
-                      <pattern>net.snowflake.common</pattern>
-                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>org.apache</pattern>
                       <shadedPattern>${shadeBase}.apache</shadedPattern>
                     </relocation>

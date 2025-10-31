@@ -5,11 +5,11 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.common.core.ResourceBundleManager;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.UUIDUtils;
 import net.snowflake.client.util.SFTimestamp;
 import net.snowflake.client.util.SecretDetector;
-import net.snowflake.common.core.ResourceBundleManager;
 
 /** Telemetry Event Class */
 public class TelemetryEvent extends JSONObject {

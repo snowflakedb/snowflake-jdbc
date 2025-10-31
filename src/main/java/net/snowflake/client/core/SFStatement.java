@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -34,7 +35,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
 /** Snowflake statement */

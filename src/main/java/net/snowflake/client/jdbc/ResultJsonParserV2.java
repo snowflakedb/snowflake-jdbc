@@ -2,8 +2,8 @@ package net.snowflake.client.jdbc;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.common.core.SqlState;
 
 /** This is the Java version of the ODBC's ResultJsonParserV2 class */
 public class ResultJsonParserV2 {

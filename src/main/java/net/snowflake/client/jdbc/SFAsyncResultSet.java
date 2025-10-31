@@ -13,13 +13,13 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation. Note: For Snowflake internal use */
 public class SFAsyncResultSet extends SnowflakeBaseResultSet

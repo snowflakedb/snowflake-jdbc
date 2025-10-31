@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -47,7 +48,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */
 public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {

@@ -4,8 +4,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class SfTimestampUtil {

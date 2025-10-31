@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);

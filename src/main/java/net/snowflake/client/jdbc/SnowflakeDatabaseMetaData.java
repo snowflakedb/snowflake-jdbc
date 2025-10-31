@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import net.snowflake.client.common.core.SqlState;
+import net.snowflake.client.common.util.Wildcard;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -43,8 +45,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-import net.snowflake.common.util.Wildcard;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 

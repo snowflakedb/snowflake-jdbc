@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ChunkDownloader;
 import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpClientSettingsKey;
@@ -41,7 +42,6 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 
 /** Class for managing async download of offline result chunks */

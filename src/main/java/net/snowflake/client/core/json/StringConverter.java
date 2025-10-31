@@ -3,6 +3,11 @@ package net.snowflake.client.core.json;
 import java.sql.Date;
 import java.sql.Types;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFBinary;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SFTime;
+import net.snowflake.client.common.core.SFTimestamp;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -11,11 +16,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 public class StringConverter {
   private static final SFLogger logger = SFLoggerFactory.getLogger(StringConverter.class);

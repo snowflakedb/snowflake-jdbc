@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */

@@ -5,8 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.common.core.LoginInfoDTO;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.common.core.LoginInfoDTO;
 import org.junit.Test;
 
 public class TelemetryUtilTest {

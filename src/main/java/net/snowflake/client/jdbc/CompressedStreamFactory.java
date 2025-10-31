@@ -1,14 +1,14 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.common.core.FileCompressionType.GZIP;
+import static net.snowflake.client.common.core.FileCompressionType.ZSTD;
 import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.common.core.FileCompressionType.GZIP;
-import static net.snowflake.common.core.FileCompressionType.ZSTD;
 
 import com.github.luben.zstd.ZstdInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.common.core.SqlState;
+import net.snowflake.client.common.core.SqlState;
 import org.apache.http.Header;
 
 class CompressedStreamFactory {

@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.common.core.ResourceBundleManager;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
@@ -17,8 +19,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.ResourceBundleManager;
-import net.snowflake.common.core.SqlState;
 
 /**
  * JDBC Driver implementation of Snowflake for production. To use this driver, specify the following

@@ -22,14 +22,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFTimestamp;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingBiFunction;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput extends BaseSqlInput {

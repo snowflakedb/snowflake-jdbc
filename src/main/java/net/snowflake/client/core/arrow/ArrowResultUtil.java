@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.CalendarCache;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -13,7 +14,6 @@ import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.CalendarCache;
 
 /** Result utility methods specifically for Arrow format */
 public class ArrowResultUtil {

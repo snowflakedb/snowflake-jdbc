@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
+import net.snowflake.client.common.core.LoginInfoDTO;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.config.SFClientConfigParser;
 import net.snowflake.client.core.Constants;
@@ -38,7 +39,6 @@ import net.snowflake.client.log.SFLogLevel;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFToJavaLogMapper;
-import net.snowflake.common.core.LoginInfoDTO;
 
 /**
  * The default ConnectionHandler used by SnowflakeConnectionV(x). Unless a separate implementation

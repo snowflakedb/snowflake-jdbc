@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.common.core.LoginInfoDTO;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -25,8 +27,6 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.LoginInfoDTO;
-import net.snowflake.common.core.SqlState;
 
 /**
  * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB

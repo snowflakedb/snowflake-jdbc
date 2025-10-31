@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.CancellationReason;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
@@ -28,7 +29,6 @@ import net.snowflake.client.core.StmtUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
-import net.snowflake.common.core.SqlState;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
