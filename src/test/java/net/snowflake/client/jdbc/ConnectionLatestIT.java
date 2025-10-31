@@ -66,6 +66,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1643,5 +1644,39 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         e.getMessage()
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+  }
+  
+  @Test
+  public void testConnectionAndSocketTimeouts() throws Exception {
+    Duration origConnectionTimeout = HttpUtil.getConnectionTimeout();
+    Duration origSocketTimeout = HttpUtil.getSocketTimeout();
+    Properties paramPropertiesConn = new Properties();
+    Properties paramPropertiesSoc = new Properties();
+    paramPropertiesConn.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 1);
+    paramPropertiesConn.put("retryTimeout", "50");
+    
+    
+    try {
+    SQLException exConnTimeout =
+            assertThrows(
+                SQLException.class,
+                () -> {
+                  getConnection(paramPropertiesConn);
+                });
+    assertEquals(exConnTimeout.getCause(), instanceOf(ConnectTimeoutException.class));
+    
+	/*
+	 * paramPropertiesSoc.put("HTTP_CLIENT_SOCKET_TIMEOUT", 1); SQLException
+	 * exSocketTimeout = assertThrows( SQLException.class, () -> {
+	 * getConnection(paramPropertiesSoc); });
+	 * 
+	 * assertEquals(exSocketTimeout.getCause(),
+	 * instanceOf(SSLHandshakeException.class));
+	 */
+    } finally {
+      // reset to original values
+      HttpUtil.setConnectionTimeout((int) origConnectionTimeout.toMillis());
+      HttpUtil.setSocketTimeout((int) origSocketTimeout.toMillis());
+    }
   }
 }

@@ -675,8 +675,8 @@ public class RestRequest {
 
     // When the auth timeout is set, set the socket timeout as the authTimeout
     // so that it can be renewed in time and pass it to the http request configuration.
-    if (authTimeoutInMilli > 0) {
-      int requestSocketAndConnectTimeout = (int) authTimeoutInMilli;
+    if (authTimeoutInMilli > 0 ) {
+      int requestSocketAndConnectTimeout = (int) 1;
       logger.debug(
           "{}Setting auth timeout as the socket timeout: {} ms", requestIdStr, authTimeoutInMilli);
       httpRequest.setConfig(
@@ -956,6 +956,9 @@ public class RestRequest {
         }
 
         execTimeData.setHttpClientStart();
+        if(httpRequest.getURI().getPath().contains("/session/v1/login-request")) {
+        	
+        }
         CloseableHttpResponse response = httpClient.execute(httpRequest);
         responseDto.setHttpResponse(response);
         execTimeData.setHttpClientEnd();
