@@ -70,25 +70,24 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
       throws IOException, SQLException {
     prepareConnectionConfigurationTomlFile(true);
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    final String connectionString;
 
     if (null != connectionName && connectionName.equals("systemEnvConfig")) {
       SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, connectionName);
+      connectionString = SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX;
+    } else {
+      connectionString =
+          connectionName != null
+              ? SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX + "?connectionName=" + connectionName
+              : SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX;
     }
-
-    final String connectionString =
-        connectionName != null
-            ? SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX + "?connection=" + connectionName
-            : SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX;
 
     if (shouldThrow) {
       SnowflakeSQLException ex =
           assertThrows(
               SnowflakeSQLException.class,
               () -> DriverManager.getConnection(connectionString, null));
-      assertTrue(
-          ex.getMessage()
-              .contains(
-                  "Unavailable connection configuration parameters expected for auto configuration"));
+      assertTrue(ex.getMessage().contains("not found in connections.toml file."));
     } else {
       try (Connection con = DriverManager.getConnection(connectionString, null)) {
         assertNotNull(con);

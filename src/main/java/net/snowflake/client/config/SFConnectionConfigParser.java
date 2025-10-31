@@ -8,7 +8,9 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,9 +48,9 @@ public class SFConnectionConfigParser {
   private static final List<PosixFilePermission> REQUIRED_PERMISSIONS =
       Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
 
-  public static ConnectionParameters buildConnectionParameters(String conUrl)
+  public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
-    String defaultConnectionName = getConnectionNameFromUrl(conUrl);
+    String defaultConnectionName = getConnectionNameFromUrl(connectionUrl);
     if (SnowflakeUtil.isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
@@ -96,25 +98,38 @@ public class SFConnectionConfigParser {
     }
   }
 
-  static String getConnectionNameFromUrl(String url) throws SnowflakeSQLException {
-    // Extract query string
-    int idx = url.indexOf('?');
-    if (idx == -1 || idx == url.length() - 1) {
-      logger.debug("'connection' parameter is not configured");
+  static String getConnectionNameFromUrl(String connectionUrl) {
+
+    Map<String, String> autoConfigJdbcUrlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
+    String connectionNameValue = autoConfigJdbcUrlParameters.get("connectionName");
+    if (SnowflakeUtil.isBlank(connectionNameValue) || connectionNameValue.isEmpty()) {
+      logger.debug("'connectionName' parameter is not configured");
       return "";
+    } else {
+      logger.debug("'connectionName' parameter is configured. The value is " + connectionNameValue);
+      return connectionNameValue;
     }
-    // Only allow one parameter
-    String query = url.substring(idx + 1);
-    if (!query.startsWith("connection=")) {
-      throw new SnowflakeSQLException("Only 'connection' parameter is supported");
+  }
+
+  private static Map<String, String> parseAutoConfigJdbcUrlParameters(String connectionUrl) {
+    Map<String, String> paramMap = new HashMap<>();
+
+    int queryStart = connectionUrl.indexOf('?');
+    if (queryStart == -1) return paramMap;
+
+    String query = connectionUrl.substring(queryStart + 1);
+    String[] pairs = query.split("&");
+
+    for (String pair : pairs) {
+      String[] kv = pair.split("=", 2);
+      if (kv.length == 2) {
+        String key = URLDecoder.decode(kv[0], StandardCharsets.UTF_8);
+        String value = URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+        paramMap.put(key, value);
+      }
     }
-    String[] kv = query.split("=", 2);
-    if (kv.length != 2 || SnowflakeUtil.isBlank(kv[1]) || kv[1].isEmpty()) {
-      throw new SnowflakeSQLException("Parameter 'connection' must have a value");
-    }
-    String value = kv[1].trim();
-    logger.debug("'connection' parameter is configured. The value is " + value);
-    return value;
+
+    return paramMap;
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
@@ -133,6 +148,8 @@ public class SFConnectionConfigParser {
       Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
       if (defaultConnectionParametersMap == null) {
         logger.debug("The Connection {} not found in connections.toml.", defaultConnectionName);
+        throw new SnowflakeSQLException(
+            "The Connection " + defaultConnectionName + " not found in connections.toml file.");
       } else {
         logger.debug("The Connection {} found in connections.toml.", defaultConnectionName);
       }
