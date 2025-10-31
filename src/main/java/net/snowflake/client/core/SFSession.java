@@ -819,10 +819,9 @@ public class SFSession extends SFBaseSession {
     TelemetryService.disableOOBTelemetry();
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
-    HttpUtil.initHttpClient(httpClientSettingsKey, null, httpHeadersCustomizers);
     HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
     HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
-
+    HttpUtil.initHttpClient(httpClientSettingsKey, null, httpHeadersCustomizers);
     runDiagnosticsIfEnabled();
 
     SFLoginOutput loginOutput =
