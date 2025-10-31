@@ -3,8 +3,8 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.SnowflakeSQLLoggedException.sendTelemetryData;
 
 import java.sql.SQLFeatureNotSupportedException;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.common.core.SqlState;
 
 public class SnowflakeLoggedFeatureNotSupportedException extends SQLFeatureNotSupportedException {
 

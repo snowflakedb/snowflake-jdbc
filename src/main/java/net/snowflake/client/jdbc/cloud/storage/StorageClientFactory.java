@@ -3,13 +3,13 @@ package net.snowflake.client.jdbc.cloud.storage;
 import com.amazonaws.ClientConfiguration;
 import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 /**
  * Factory object for abstracting the creation of storage client objects: SnowflakeStorageClient and

@@ -23,8 +23,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 class GcmEncryptionProvider {
   private static final int TAG_LENGTH_IN_BITS = 128;

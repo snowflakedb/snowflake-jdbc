@@ -11,6 +11,9 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SFTimestamp;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SfTimestampUtil;
@@ -19,9 +22,6 @@ import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.Converter;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 public class Converters {
   private final BooleanConverter booleanConverter;

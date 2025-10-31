@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
@@ -39,7 +40,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpStatus;
 
 class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {

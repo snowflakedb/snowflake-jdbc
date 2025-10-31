@@ -6,12 +6,12 @@ import static org.mockito.Mockito.mock;
 import java.sql.Types;
 import java.time.ZoneId;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

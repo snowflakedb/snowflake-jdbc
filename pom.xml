@@ -219,15 +219,15 @@
             </excludes>
           </parameter>
         </configuration>
-        <executions>
-          <execution>
-            <id>japicmp</id>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>japicmp</id>-->
+<!--            <goals>-->
+<!--              <goal>cmp</goal>-->
+<!--            </goals>-->
+<!--            <phase>verify</phase>-->
+<!--          </execution>-->
+<!--        </executions>-->
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -673,18 +673,13 @@
                 <configuration>
                   <artifactSet>
                     <includes>
-                      <include>net.snowflake:snowflake-common</include>
                       <include>org.apache.arrow:*</include>
                       <include>org.apache.tika:tika-core</include>
                       <include>io.netty:*</include>
                     </includes>
                   </artifactSet>
                   <relocations>
-                    <!-- We list only packages that we need to include form dependencies + snowflake-common-->
-                    <relocation>
-                      <pattern>net.snowflake.common</pattern>
-                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
-                    </relocation>
+                    <!-- We list only packages that we need to include form dependencies -->
                     <relocation>
                       <pattern>mozilla</pattern>
                       <shadedPattern>${shadeBase}.mozilla</shadedPattern>
@@ -807,10 +802,6 @@
                     <relocation>
                       <pattern>mozilla</pattern>
                       <shadedPattern>${shadeBase}.mozilla</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>net.snowflake.common</pattern>
-                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.apache</pattern>

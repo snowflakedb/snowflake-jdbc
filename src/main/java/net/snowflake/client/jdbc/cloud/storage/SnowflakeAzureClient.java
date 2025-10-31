@@ -40,6 +40,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
@@ -55,8 +57,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.client.util.Stopwatch;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 
 /** Encapsulates the Azure Storage client and all Azure Storage operations and logic */

@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -47,7 +48,6 @@ import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {

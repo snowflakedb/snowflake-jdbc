@@ -25,8 +25,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 /** Handles encryption and decryption using AES CBC (for files) and ECB (for keys). */
 public class EncryptionProvider {

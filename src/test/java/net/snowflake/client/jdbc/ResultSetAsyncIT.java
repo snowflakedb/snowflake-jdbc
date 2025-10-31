@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.common.core.SqlState;
+import net.snowflake.client.common.core.SqlState;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

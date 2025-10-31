@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -21,7 +22,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 /** Snowflake ResultSet implementation */
 public class SFResultSet extends SFJsonResultSet {

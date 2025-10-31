@@ -9,15 +9,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFTime;
+import net.snowflake.client.common.core.SFTimestamp;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Snowflake ResultSetMetaData */
 public class SFResultSetMetaData {

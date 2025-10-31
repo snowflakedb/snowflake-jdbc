@@ -1,8 +1,8 @@
 package net.snowflake.client.core;
 
 import java.util.TimeZone;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 
 /**
  * This class contains formatter info about each data type and related flags etc. And it is scoped

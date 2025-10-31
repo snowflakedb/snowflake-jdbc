@@ -12,11 +12,11 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   ResultSet showObjectResultSet;

@@ -12,10 +12,10 @@ import java.time.Period;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import net.snowflake.client.common.core.SFBinary;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
 
 /** Type converters */
 public enum SnowflakeType {

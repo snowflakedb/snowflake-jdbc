@@ -27,6 +27,8 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import net.snowflake.client.common.core.SFBinaryFormat;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -36,8 +38,6 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.Converter;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Base class for query result set and metadata result set */
 public abstract class SFBaseResultSet {

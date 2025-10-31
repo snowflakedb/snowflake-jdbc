@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 
 class QueryIdHelper {
   static String queryIdFromEncMatOr(RemoteStoreFileEncryptionMaterial encMat, String queryId) {

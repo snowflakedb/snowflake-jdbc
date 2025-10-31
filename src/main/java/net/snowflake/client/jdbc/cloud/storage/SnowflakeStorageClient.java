@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -11,7 +12,6 @@ import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.common.core.SqlState;
 
 /** Interface for storage client provider implementations */
 public interface SnowflakeStorageClient {

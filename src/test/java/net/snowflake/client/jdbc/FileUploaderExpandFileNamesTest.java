@@ -20,8 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.OCSPMode;
-import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import net.snowflake.client.common.core.SFBinary;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.FieldSchemaCreator;
 import net.snowflake.client.core.JsonSqlOutput;
@@ -49,8 +51,6 @@ import net.snowflake.client.core.StmtUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {

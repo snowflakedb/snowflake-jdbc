@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.util.Map;
+import net.snowflake.client.common.core.SqlState;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -26,7 +27,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
 
 class GCSDefaultAccessStrategy implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSDefaultAccessStrategy.class);

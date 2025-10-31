@@ -4,9 +4,9 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import net.snowflake.client.common.util.ClassUtil;
+import net.snowflake.client.common.util.FixedViewColumn;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.common.util.ClassUtil;
-import net.snowflake.common.util.FixedViewColumn;
 
 /**
  * Base class for file transfers: given a SnowflakeConnection, files may be uploaded or downloaded

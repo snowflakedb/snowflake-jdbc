@@ -31,6 +31,10 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.common.core.SFBinary;
+import net.snowflake.client.common.core.SFTime;
+import net.snowflake.client.common.core.SFTimestamp;
+import net.snowflake.client.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumn;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
@@ -39,10 +43,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingTriCallable;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class JsonSqlOutput implements SQLOutput {

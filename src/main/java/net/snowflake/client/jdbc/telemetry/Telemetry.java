@@ -25,7 +25,7 @@ public interface Telemetry {
    * additional error handling.
    *
    * @param queryId The query id
-   * @param sqlState The SQL state as defined in net.snowflake.common.core.SqlState
+   * @param sqlState The SQL state as defined in {@link net.snowflake.client.common.core.SqlState}
    * @param vendorCode The vendor code for localized messages
    * @param ex The throwable that caused this.
    */

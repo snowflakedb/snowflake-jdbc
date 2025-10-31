@@ -4,9 +4,9 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import net.snowflake.client.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 /**
  * A class to manage metadata for upload or download files. It is introduced for distributed data

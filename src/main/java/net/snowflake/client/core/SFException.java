@@ -1,9 +1,9 @@
 package net.snowflake.client.core;
 
+import net.snowflake.client.common.core.ResourceBundleManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.ResourceBundleManager;
 
 public class SFException extends Throwable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);

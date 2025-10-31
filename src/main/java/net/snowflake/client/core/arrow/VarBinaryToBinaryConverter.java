@@ -1,10 +1,10 @@
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.common.core.SFBinary;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 

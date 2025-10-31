@@ -4,10 +4,10 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.common.core.LoginInfoDTO;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.common.core.LoginInfoDTO;
 
 public class TelemetryUtil {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
