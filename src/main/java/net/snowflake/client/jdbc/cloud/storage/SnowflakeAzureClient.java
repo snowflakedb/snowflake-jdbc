@@ -374,6 +374,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           }
 
           // Decrypt file
+          System.out.println("DECRYPT FROM AZURE");
           try {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
@@ -387,6 +388,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
                 decryptMillis,
                 retryCount);
           } catch (Exception ex) {
+            System.out.println("ERROR DECRYPTING FROM AZURE");
             logger.error("Error decrypting file", ex);
             throw ex;
           }
@@ -720,6 +722,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
                   : (srcFileStream = new FileInputStream(srcFile));
           toClose.add(srcFileStream);
 
+          System.out.println("ENCRYPT FROM AZURE");
           // Encrypt
           stream =
               EncryptionProvider.encrypt(

@@ -409,6 +409,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
           // Decrypt file
           try {
+            System.out.println("DECRYPT FROM S3");
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
@@ -421,6 +422,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 decryptMillis,
                 retryCount);
           } catch (Exception ex) {
+            System.out.println("ERROR DECRYPTING FROM S3");
             logger.error("Error decrypting file", ex);
             throw ex;
           }
@@ -744,6 +746,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 : (srcFileStream = new FileInputStream(srcFile));
         toClose.add(srcFileStream);
 
+        System.out.println("ENCRYPT FROM AWS");
         // Encrypt
         S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(meta);
         result =

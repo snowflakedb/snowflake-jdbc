@@ -340,6 +340,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // Decrypt file
           try {
             stopwatch.start();
+            System.out.println("DECRYPT FROM GCP");
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
@@ -352,6 +353,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 decryptMillis,
                 retryCount);
           } catch (Exception ex) {
+            System.out.println("ERROR DECRYPTING FROM GCP");
+            System.out.println(ex.getMessage());
+            ex.printStackTrace();
             logger.error("Error decrypting file", ex);
             throw new SnowflakeSQLLoggedException(
                 queryId,
@@ -1030,6 +1034,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   : (srcFileStream = new FileInputStream(srcFile));
           toClose.add(srcFileStream);
 
+          System.out.println("ENCRYPT FROM GCP");
           // Encrypt
           stream =
               EncryptionProvider.encrypt(

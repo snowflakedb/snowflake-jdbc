@@ -67,6 +67,14 @@ public class EncryptionProvider {
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.DECRYPT_MODE, kek);
     byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
+    System.out.println(
+        "DECRYPT STREAM: QSMK: "
+            + encMat.getQueryStageMasterKey()
+            + ", SMK ID: "
+            + encMat.getSmkId()
+            + ", Query ID: "
+            + encMat.getQueryId());
+    System.out.println("DECRYPT STREAM: Encrypted Key: " + keyBase64 + ", IV: " + ivBase64);
     SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
     Cipher dataCipher = Cipher.getInstance(FILE_CIPHER);
     IvParameterSpec ivy = new IvParameterSpec(ivBytes);
@@ -104,6 +112,15 @@ public class EncryptionProvider {
       // See: SnowflakeDriverLatestIt.testS3PutInGs
       fileKey = new SecretKeySpec(fileKeyBytes, AES);
     }
+
+    System.out.println(
+        "DECRYPT FILE: QSMK: "
+            + encMat.getQueryStageMasterKey()
+            + ", SMK ID: "
+            + encMat.getSmkId()
+            + ", Query ID: "
+            + encMat.getQueryId());
+    System.out.println("DECRYPT FILE: Encrypted Key: " + keyBase64 + ", IV: " + ivBase64);
 
     // Decrypt file
     {
@@ -181,6 +198,19 @@ public class EncryptionProvider {
       // Init cipher
       keyCipher.init(Cipher.ENCRYPT_MODE, queryStageMasterKey);
       byte[] encryptedKey = keyCipher.doFinal(fileKeyBytes);
+
+      System.out.println(
+          "ENCRYPT: QSMK: "
+              + encMat.getQueryStageMasterKey()
+              + ", SMK ID: "
+              + encMat.getSmkId()
+              + ", Query ID: "
+              + encMat.getQueryId());
+      System.out.println(
+          "ENCRYPT: Encrypted Key: "
+              + Base64.getEncoder().encodeToString(encryptedKey)
+              + ", IV: "
+              + Base64.getEncoder().encodeToString(ivData));
 
       // Store metadata
       MatDesc matDesc = new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
