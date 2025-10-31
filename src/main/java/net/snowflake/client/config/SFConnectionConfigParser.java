@@ -116,7 +116,9 @@ public class SFConnectionConfigParser {
     Map<String, String> paramMap = new HashMap<>();
 
     int queryStart = connectionUrl.indexOf('?');
-    if (queryStart == -1) return paramMap;
+    if (queryStart == -1) {
+      return paramMap;
+    }
 
     String query = connectionUrl.substring(queryStart + 1);
     String[] pairs = query.split("&");
