@@ -100,7 +100,8 @@ public class SFConnectionConfigParser {
 
   static String getConnectionNameFromUrl(String connectionUrl) {
 
-    Map<String, String> autoConfigJdbcUrlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
+    Map<String, String> autoConfigJdbcUrlParameters =
+        parseAutoConfigJdbcUrlParameters(connectionUrl);
     String connectionNameValue = autoConfigJdbcUrlParameters.get("connectionName");
     if (SnowflakeUtil.isBlank(connectionNameValue) || connectionNameValue.isEmpty()) {
       logger.debug("'connectionName' parameter is not configured");
