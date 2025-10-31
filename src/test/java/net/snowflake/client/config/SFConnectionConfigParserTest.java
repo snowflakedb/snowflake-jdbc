@@ -72,9 +72,8 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "unknown");
     prepareConnectionConfigurationTomlFile();
-    ConnectionParameters connectionParameters =
-        SFConnectionConfigParser.buildConnectionParameters("");
-    assertNull(connectionParameters);
+    assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
   @Test
