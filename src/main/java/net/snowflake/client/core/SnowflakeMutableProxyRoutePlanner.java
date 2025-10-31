@@ -1,40 +1,23 @@
 package net.snowflake.client.core;
 
-import com.amazonaws.Protocol;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import java.io.Serializable;
-import org.apache.http.HttpException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.routing.HttpRoutePlanner;
+import org.apache.http.impl.conn.DefaultRoutePlanner;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.protocol.HttpContext;
 
 /**
  * This class defines a ProxyRoutePlanner (used for creating HttpClients) that has the ability to
  * change the nonProxyHosts setting.
  */
-public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Serializable {
-
-  private SdkProxyRoutePlanner proxyRoutePlanner = null;
-  private String host;
-  private int proxyPort;
+public class SnowflakeMutableProxyRoutePlanner extends DefaultRoutePlanner
+    implements HttpRoutePlanner, Serializable {
+  private HttpHost proxy;
   private String nonProxyHosts;
-  private HttpProtocol protocol;
-
-  /**
-   * @deprecated Use {@link #SnowflakeMutableProxyRoutePlanner(String, int, HttpProtocol, String)}
-   *     instead
-   * @param host host
-   * @param proxyPort proxy port
-   * @param proxyProtocol proxy protocol
-   * @param nonProxyHosts non-proxy hosts
-   */
-  @Deprecated
-  public SnowflakeMutableProxyRoutePlanner(
-      String host, int proxyPort, Protocol proxyProtocol, String nonProxyHosts) {
-    this(host, proxyPort, toSnowflakeProtocol(proxyProtocol), nonProxyHosts);
-  }
+  private String[] hostPatterns;
 
   /**
    * @param host host
@@ -44,12 +27,33 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
    */
   public SnowflakeMutableProxyRoutePlanner(
       String host, int proxyPort, HttpProtocol proxyProtocol, String nonProxyHosts) {
-    proxyRoutePlanner =
-        new SdkProxyRoutePlanner(host, proxyPort, toAwsProtocol(proxyProtocol), nonProxyHosts);
-    this.host = host;
-    this.proxyPort = proxyPort;
+    super(DefaultSchemePortResolver.INSTANCE);
+    this.proxy = new HttpHost(host, proxyPort, proxyProtocol.toString());
     this.nonProxyHosts = nonProxyHosts;
-    this.protocol = proxyProtocol;
+    parseNonProxyHosts(nonProxyHosts);
+  }
+
+  private void parseNonProxyHosts(String nonProxyHosts) {
+    if (!SnowflakeUtil.isNullOrEmpty(nonProxyHosts)) {
+      String[] hosts = nonProxyHosts.split("\\|");
+      hostPatterns = new String[hosts.length];
+      for (int i = 0; i < hosts.length; ++i) {
+        hostPatterns[i] = hosts[i].toLowerCase().replace("*", ".*?");
+      }
+    }
+  }
+
+  boolean doesTargetMatchNonProxyHosts(HttpHost target) {
+    if (hostPatterns == null) {
+      return false;
+    }
+    String targetHost = target.getHostName().toLowerCase();
+    for (String pattern : hostPatterns) {
+      if (targetHost.matches(pattern)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -59,8 +63,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
    */
   public void setNonProxyHosts(String nonProxyHosts) {
     this.nonProxyHosts = nonProxyHosts;
-    proxyRoutePlanner =
-        new SdkProxyRoutePlanner(host, proxyPort, toAwsProtocol(protocol), nonProxyHosts);
+    parseNonProxyHosts(nonProxyHosts);
   }
 
   /**
@@ -71,16 +74,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   }
 
   @Override
-  public HttpRoute determineRoute(HttpHost target, HttpRequest request, HttpContext context)
-      throws HttpException {
-    return proxyRoutePlanner.determineRoute(target, request, context);
-  }
-
-  private static Protocol toAwsProtocol(HttpProtocol protocol) {
-    return protocol == HttpProtocol.HTTP ? Protocol.HTTP : Protocol.HTTPS;
-  }
-
-  private static HttpProtocol toSnowflakeProtocol(Protocol protocol) {
-    return protocol == Protocol.HTTP ? HttpProtocol.HTTP : HttpProtocol.HTTPS;
+  protected HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context) {
+    return doesTargetMatchNonProxyHosts(target) ? null : proxy;
   }
 }
