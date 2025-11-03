@@ -58,7 +58,6 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
   public void cleanUp() throws IOException {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
-    ;
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
     envVariables.forEach((key, value) -> SnowflakeUtil.systemSetEnv(key, value));

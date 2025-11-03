@@ -123,15 +123,15 @@ public class SFConnectionConfigParser {
     String query = connectionUrl.substring(queryStart + 1);
     String[] propertyPairs = query.split("&");
 
-    for (String peoperty : propertyPairs) {
-      String[] peopertyKeyVal = peoperty.split("=", 2);
+    for (String property : propertyPairs) {
+      String[] peopertyKeyVal = property.split("=", 2);
       if (peopertyKeyVal.length == 2) {
         try {
           String key = URLDecoder.decode(peopertyKeyVal[0], "UTF-8");
           String value = URLDecoder.decode(peopertyKeyVal[1], "UTF-8");
           paramMap.put(key, value);
         } catch (UnsupportedEncodingException e) {
-          logger.warn("Failed to decode a parameter {}. Ignored.", peoperty);
+          logger.warn("Failed to decode a parameter {}. Ignored.", property);
         }
       }
     }
