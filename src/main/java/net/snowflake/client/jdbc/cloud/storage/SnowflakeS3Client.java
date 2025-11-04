@@ -5,6 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.createDefaultExecutorServi
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -656,7 +657,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                       .putObjectRequest(request)
                       .requestBody(
                           AsyncRequestBody.fromInputStream(
-                              uploadStreamInfo.left, request.contentLength(), executorService))
+                              new BufferedInputStream(uploadStreamInfo.left),
+                              request.contentLength(),
+                              executorService))
                       .build());
         } else {
           myUpload =
