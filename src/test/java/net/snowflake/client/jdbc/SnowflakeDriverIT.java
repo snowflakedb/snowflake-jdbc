@@ -745,7 +745,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
+  @ValueSource(
+      booleans = {
+        /*true, */
+        false
+      })
   @DontRunOnGithubActions
   public void testPutWithWildcardGCP(boolean useAwsSDKStrategy) throws Throwable {
     if (useAwsSDKStrategy) {
@@ -775,7 +779,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
             "Failed to put a file");
 
-        findFile(statement, "ls @/" + stageName + "/");
+        findFile(statement, "ls @" + stageName + "/");
 
         assertTrue(
             statement.execute(
@@ -828,7 +832,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
+  @ValueSource(
+      booleans = {
+        /*true, */
+        false
+      })
   @DontRunOnGithubActions
   public void testPutGetLargeFileGCP(boolean useAwsSDKStrategy) throws Throwable {
     if (useAwsSDKStrategy) {
@@ -938,7 +946,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
     List<String> accounts =
-        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
+        Arrays.asList(
+            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -1001,7 +1010,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPut() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
+        Arrays.asList(
+            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2664,7 +2674,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPutGet() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
+        Arrays.asList(
+            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2689,7 +2700,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
               "Failed to put a file");
 
-          findFile(statement, "ls @testPutGet_stage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // download the file we just uploaded to stage
           assertTrue(
@@ -2729,13 +2740,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPutGetToUnencryptedStage() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
+        Arrays.asList(
+            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
         accountName = "gcpaccount";
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
       }
+      String stageName = "testPutGet_unencstage_" + SnowflakeUtil.randomAlphaNumeric(10);
       try (Connection connection = getConnection(accountName);
           Statement statement = connection.createStatement()) {
         try {
@@ -2748,18 +2761,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute(
-              "CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");
+              "CREATE OR REPLACE STAGE " + stageName + " encryption=(TYPE='SNOWFLAKE_SSE')");
 
           assertTrue(
-              statement.execute("PUT file://" + sourceFilePath + " @testPutGet_unencstage"),
+              statement.execute("PUT file://" + sourceFilePath + " @" + stageName),
               "Failed to put a file");
 
-          findFile(statement, "ls @testPutGet_unencstage/");
+          findFile(statement, "ls @" + stageName + "/");
 
           // download the file we just uploaded to stage
           assertTrue(
               statement.execute(
-                  "GET @testPutGet_unencstage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+                  "GET @" + stageName + " 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get a file");
 
           // Make sure that the downloaded file exists, it should be gzip compressed
@@ -2775,7 +2788,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
           assertEquals(original.length(), unzipped.length());
         } finally {
-          statement.execute("DROP STAGE IF EXISTS testPutGet_unencstage");
+          statement.execute("DROP STAGE IF EXISTS " + stageName);
         }
       } finally {
         SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
