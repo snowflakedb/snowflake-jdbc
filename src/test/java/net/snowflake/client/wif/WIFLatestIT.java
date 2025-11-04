@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 /**
  * Running tests locally:
@@ -51,6 +52,7 @@ public class WIFLatestIT {
 
   @Test
   @DisabledIf("isProviderAzure")
+  @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH", matches = ".+")
   void shouldAuthenticateUsingWIFWithImpersonation() {
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);
