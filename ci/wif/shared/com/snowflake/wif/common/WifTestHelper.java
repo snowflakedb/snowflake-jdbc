@@ -130,7 +130,7 @@ public class WifTestHelper {
             pb.environment().put("MAVEN_USER_HOME", mavenHome);
             pb.environment().put("HOME", tempDirectory);
             pb.environment().put("USER_HOME", tempDirectory);
-            pb.environment().put("MAVEN_OPTS", "-Duser.home=" + tempDirectory + " -Djava.io.tmpdir=" + tempDirectory);
+            pb.environment().put("MAVEN_OPTS", "-Xmx2g -Xms512m -Duser.home=" + tempDirectory + " -Djava.io.tmpdir=" + tempDirectory);
             
             pb.environment().put("SNOWFLAKE_TEST_WIF_HOST", queryParams.get("SNOWFLAKE_TEST_WIF_HOST"));
             pb.environment().put("SNOWFLAKE_TEST_WIF_ACCOUNT", queryParams.get("SNOWFLAKE_TEST_WIF_ACCOUNT"));
