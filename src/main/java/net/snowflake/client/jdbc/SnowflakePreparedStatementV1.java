@@ -1,4 +1,7 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

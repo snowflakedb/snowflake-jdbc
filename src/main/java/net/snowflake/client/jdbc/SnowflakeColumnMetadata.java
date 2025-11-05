@@ -1,4 +1,5 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getFieldMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;

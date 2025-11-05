@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
+import static net.snowflake.client.api.exception.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -3,7 +3,7 @@ package net.snowflake.client.core;
 import java.security.PrivateKey;
 import java.util.List;
 import java.util.regex.Pattern;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 
 /** session properties accepted for opening a new session. */

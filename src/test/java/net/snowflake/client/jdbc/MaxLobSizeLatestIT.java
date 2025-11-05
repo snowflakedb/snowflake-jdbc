@@ -16,6 +16,7 @@ import net.snowflake.client.category.TestTags;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 @Tag(TestTags.STATEMENT)
 public class MaxLobSizeLatestIT extends BaseJDBCTest {

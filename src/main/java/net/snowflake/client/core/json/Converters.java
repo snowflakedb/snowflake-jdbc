@@ -16,7 +16,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SfTimestampUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.Converter;
 import net.snowflake.common.core.SFBinaryFormat;

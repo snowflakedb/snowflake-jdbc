@@ -1,4 +1,7 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.core.Constants.GB;
 import static net.snowflake.client.core.Constants.MB;

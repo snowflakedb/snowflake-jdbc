@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 public class ConnectStringParseTest {
   @Test

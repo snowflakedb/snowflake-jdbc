@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;

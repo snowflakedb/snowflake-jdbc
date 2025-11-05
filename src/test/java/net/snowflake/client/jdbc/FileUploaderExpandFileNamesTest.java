@@ -24,6 +24,8 @@ import net.snowflake.client.core.OCSPMode;
 import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
 public class FileUploaderExpandFileNamesTest {

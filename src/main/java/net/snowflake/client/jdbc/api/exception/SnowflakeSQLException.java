@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.api.exception;
 
 import java.sql.SQLException;
 import net.snowflake.client.core.SFException;
@@ -263,3 +263,4 @@ public class SnowflakeSQLException extends SQLException {
     return elapsedSeconds;
   }
 }
+

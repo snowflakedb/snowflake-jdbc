@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** Driver unit test */
 public class SnowflakeDriverTest {

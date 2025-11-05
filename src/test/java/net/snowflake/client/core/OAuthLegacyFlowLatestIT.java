@@ -8,7 +8,7 @@ import java.util.HashMap;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.jdbc.BaseWiremockTest;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

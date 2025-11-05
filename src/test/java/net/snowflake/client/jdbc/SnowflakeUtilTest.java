@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {

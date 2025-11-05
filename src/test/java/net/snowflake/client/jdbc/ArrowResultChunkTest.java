@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 public class ArrowResultChunkTest {
   @Test

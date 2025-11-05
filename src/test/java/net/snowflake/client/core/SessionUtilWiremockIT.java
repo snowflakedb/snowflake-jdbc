@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseWiremockTest;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

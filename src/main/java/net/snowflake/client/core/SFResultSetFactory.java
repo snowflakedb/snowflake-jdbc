@@ -2,9 +2,9 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

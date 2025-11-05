@@ -1,4 +1,6 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
@@ -37,6 +39,7 @@ import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;

@@ -7,7 +7,7 @@ import com.nimbusds.oauth2.sdk.id.State;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

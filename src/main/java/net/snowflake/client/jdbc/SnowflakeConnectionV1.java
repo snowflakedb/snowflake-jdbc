@@ -1,7 +1,10 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
-import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
+import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

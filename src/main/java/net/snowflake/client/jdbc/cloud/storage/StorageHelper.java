@@ -2,7 +2,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.File;
 import java.io.InputStream;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;

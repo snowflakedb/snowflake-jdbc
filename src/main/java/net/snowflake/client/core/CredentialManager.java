@@ -5,7 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

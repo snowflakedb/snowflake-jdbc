@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.ValueVector;

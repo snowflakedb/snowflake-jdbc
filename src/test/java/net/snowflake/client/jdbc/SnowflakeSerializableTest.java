@@ -17,6 +17,7 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFStatementType;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 public class SnowflakeSerializableTest {
 

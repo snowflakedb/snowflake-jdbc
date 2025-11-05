@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TinyIntVector;

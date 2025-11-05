@@ -1,4 +1,6 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;

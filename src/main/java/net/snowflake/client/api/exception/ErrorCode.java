@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.exception;
 
 import net.snowflake.common.core.SqlState;
 

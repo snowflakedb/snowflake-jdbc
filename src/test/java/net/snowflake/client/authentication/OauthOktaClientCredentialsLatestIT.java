@@ -6,7 +6,7 @@ import static net.snowflake.client.authentication.AuthConnectionParameters.getOA
 import java.io.IOException;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

@@ -1,4 +1,6 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;

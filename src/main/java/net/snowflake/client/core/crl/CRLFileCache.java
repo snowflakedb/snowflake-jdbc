@@ -21,7 +21,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.core.Constants;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;

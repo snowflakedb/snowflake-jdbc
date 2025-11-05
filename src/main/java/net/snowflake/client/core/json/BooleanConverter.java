@@ -2,7 +2,7 @@ package net.snowflake.client.core.json;
 
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
 public class BooleanConverter {

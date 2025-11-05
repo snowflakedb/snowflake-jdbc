@@ -30,6 +30,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.ErrorCode;
 
 /** Database Metadata IT */
 @Tag(TestTags.OTHERS)

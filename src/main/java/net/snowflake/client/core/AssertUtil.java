@@ -1,6 +1,6 @@
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 
 public class AssertUtil {
   /**

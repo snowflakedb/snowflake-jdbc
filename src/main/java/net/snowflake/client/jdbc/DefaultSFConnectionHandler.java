@@ -1,4 +1,7 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.config.SFClientConfigParser.checkConfigFilePermissions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;

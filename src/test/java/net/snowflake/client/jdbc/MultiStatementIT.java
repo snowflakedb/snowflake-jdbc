@@ -17,6 +17,7 @@ import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.ErrorCode;
 
 /** Multi Statement tests */
 @Tag(TestTags.STATEMENT)

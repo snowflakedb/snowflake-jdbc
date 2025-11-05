@@ -14,7 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import org.apache.http.client.methods.HttpRequestBase;
 
 @SnowflakeJdbcInternalApi

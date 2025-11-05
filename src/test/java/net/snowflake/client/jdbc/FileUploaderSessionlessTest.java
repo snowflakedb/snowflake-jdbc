@@ -18,6 +18,8 @@ import java.util.Optional;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
 public class FileUploaderSessionlessTest extends FileUploaderPrep {

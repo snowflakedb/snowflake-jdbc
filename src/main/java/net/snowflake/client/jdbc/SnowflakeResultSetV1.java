@@ -1,4 +1,6 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.io.InputStream;
 import java.io.Reader;

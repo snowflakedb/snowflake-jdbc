@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 @Tag(TestTags.CORE)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {

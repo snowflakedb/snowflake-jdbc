@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;

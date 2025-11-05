@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

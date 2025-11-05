@@ -1,4 +1,5 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 

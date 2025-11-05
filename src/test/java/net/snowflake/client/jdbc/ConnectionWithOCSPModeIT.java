@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.NETWORK_ERROR;
+import static net.snowflake.client.api.exception.ErrorCode.NETWORK_ERROR;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /**
  * Tests for connection with OCSP mode mainly negative cases by injecting errors.

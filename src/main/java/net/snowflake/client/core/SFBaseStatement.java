@@ -3,7 +3,7 @@ package net.snowflake.client.core;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

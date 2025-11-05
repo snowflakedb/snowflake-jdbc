@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
 @Tag(TestTags.OTHERS)

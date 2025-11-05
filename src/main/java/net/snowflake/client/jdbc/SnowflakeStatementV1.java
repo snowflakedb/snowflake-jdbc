@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 
 import java.sql.BatchUpdateException;
 import java.sql.Connection;

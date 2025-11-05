@@ -12,6 +12,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Time;
 import java.sql.Types;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 
 public class SnowflakeTypeTest {
 

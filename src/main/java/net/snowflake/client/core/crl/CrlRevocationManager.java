@@ -8,7 +8,7 @@ import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.telemetry.PreSessionTelemetryClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 

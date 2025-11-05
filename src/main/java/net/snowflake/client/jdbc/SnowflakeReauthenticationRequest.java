@@ -1,4 +1,5 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** SnowflakeReauthenticationRequest signals the reauthentication used for SSO */
 public class SnowflakeReauthenticationRequest extends SnowflakeSQLException {

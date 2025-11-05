@@ -1,4 +1,6 @@
 package net.snowflake.client.jdbc;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.core.Constants.MB;
 import static net.snowflake.common.core.FileCompressionType.GZIP;
