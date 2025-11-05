@@ -23,6 +23,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;

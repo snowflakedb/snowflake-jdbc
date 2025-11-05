@@ -1,5 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getFieldMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
@@ -10,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.Serializable;
 import java.sql.Types;
 import java.util.List;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 

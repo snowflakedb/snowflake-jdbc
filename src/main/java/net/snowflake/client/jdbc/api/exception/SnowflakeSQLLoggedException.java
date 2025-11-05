@@ -389,4 +389,3 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(queryId, null, TelemetryUtil.NO_VENDOR_CODE, session, this);
   }
 }
-

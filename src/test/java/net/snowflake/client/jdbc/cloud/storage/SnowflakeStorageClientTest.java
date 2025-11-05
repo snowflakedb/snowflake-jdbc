@@ -9,12 +9,12 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

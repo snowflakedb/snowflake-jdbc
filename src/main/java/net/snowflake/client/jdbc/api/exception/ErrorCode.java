@@ -128,4 +128,3 @@ public enum ErrorCode {
     return "ErrorCode{" + "messageCode=" + messageCode + ", sqlState=" + sqlState + '}';
   }
 }
-

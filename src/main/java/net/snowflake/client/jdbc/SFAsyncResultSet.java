@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.core.QueryStatus.NO_DATA;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
@@ -15,6 +13,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.statement.SnowflakeStatementV1;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;

@@ -1,11 +1,11 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFResultSetMetaData;
@@ -13,7 +13,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake ResultSetMetaData */
-class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResultSetMetaData {
+public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResultSetMetaData {
 
   public enum QueryType {
     ASYNC,
@@ -28,7 +28,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   private QueryType queryType = QueryType.SYNC;
   private SFBaseSession session;
 
-  SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData) throws SnowflakeSQLException {
+  public SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData)
+      throws SnowflakeSQLException {
     this.resultSetMetaData = resultSetMetaData;
     this.queryId = resultSetMetaData.getQueryId();
     this.session = resultSetMetaData.getSession();

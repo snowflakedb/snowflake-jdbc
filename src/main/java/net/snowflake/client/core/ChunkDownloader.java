@@ -1,7 +1,7 @@
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeResultChunk;
 
 /** Provide offline result chunk (which contains result data) to back to result set */
 public interface ChunkDownloader {

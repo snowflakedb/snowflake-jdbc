@@ -1,7 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -15,6 +12,9 @@ import java.time.Period;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.common.core.SFBinary;

@@ -8,7 +8,7 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import javax.sql.StatementEventListener;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
@@ -9,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;

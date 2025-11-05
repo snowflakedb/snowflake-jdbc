@@ -2,6 +2,8 @@ package net.snowflake.client.log;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.statement.*;
 import org.junit.jupiter.api.Test;
 
 public class SFLoggerFactoryTest {

@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
@@ -36,6 +34,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -167,7 +168,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   private boolean exactSchemaSearchEnabled;
   private boolean enableWildcardsInShowMetadataCommands;
 
-  SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
+  public SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.trace("SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
     this.connection = connection;

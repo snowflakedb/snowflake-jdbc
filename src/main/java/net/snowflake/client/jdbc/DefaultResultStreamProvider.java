@@ -1,7 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +7,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;

@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.core.Constants.MB;
 import static net.snowflake.common.core.FileCompressionType.GZIP;
@@ -10,6 +8,8 @@ import com.github.luben.zstd.ZstdInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
 

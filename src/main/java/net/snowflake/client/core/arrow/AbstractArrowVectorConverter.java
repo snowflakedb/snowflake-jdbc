@@ -7,9 +7,9 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Period;
 import java.util.TimeZone;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
 

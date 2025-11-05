@@ -3,8 +3,8 @@ package net.snowflake.client.jdbc.cloud.storage;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.util.SFPair;
 
 interface GCSAccessStrategy {

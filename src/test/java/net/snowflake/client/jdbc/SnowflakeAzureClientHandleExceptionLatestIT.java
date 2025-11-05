@@ -14,6 +14,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
@@ -25,7 +28,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** Test for SnowflakeAzureClient handle exception function */
 @Tag(TestTags.OTHERS)

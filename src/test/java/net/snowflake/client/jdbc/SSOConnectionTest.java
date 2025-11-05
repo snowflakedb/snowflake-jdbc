@@ -26,6 +26,8 @@ import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpResponseWithHeaders;
 import net.snowflake.client.core.HttpUtil;

@@ -13,12 +13,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.util.ThrowingCallable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 @Tag(TestTags.STATEMENT)
 public class BatchExecutionLatestIT extends BaseJDBCTest {

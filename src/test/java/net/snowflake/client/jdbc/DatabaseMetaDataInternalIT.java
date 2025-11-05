@@ -14,13 +14,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.ErrorCode;
 
 /** Database Metadata IT */
 @Tag(TestTags.OTHERS)

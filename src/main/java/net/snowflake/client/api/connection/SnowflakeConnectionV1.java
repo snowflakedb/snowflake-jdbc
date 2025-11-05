@@ -1,7 +1,4 @@
-package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
+package net.snowflake.client.api.connection;
 
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
@@ -41,11 +38,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.statement.SnowflakeCallableStatementV1;
+import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.api.statement.SnowflakeStatementV1;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SfSqlArray;
+import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
+import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
+import net.snowflake.client.jdbc.SFConnectionHandler;
+import net.snowflake.client.jdbc.SnowflakeClob;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.SnowflakeDatabaseMetaData;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
@@ -809,15 +819,15 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return (T) this;
   }
 
-  int getDatabaseMajorVersion() {
+  public int getDatabaseMajorVersion() {
     return sfSession.getDatabaseMajorVersion();
   }
 
-  int getDatabaseMinorVersion() {
+  public int getDatabaseMinorVersion() {
     return sfSession.getDatabaseMinorVersion();
   }
 
-  String getDatabaseVersion() {
+  public String getDatabaseVersion() {
     return sfSession.getDatabaseVersion();
   }
 
@@ -1074,7 +1084,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     sfSession.setInjectedDelay(delay);
   }
 
-  void injectedDelay() throws SQLException {
+  public void injectedDelay() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
 
     int d = _injectedDelay.get();
@@ -1127,7 +1137,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return showStatementParameters;
   }
 
-  void removeClosedStatement(Statement stmt) {
+  public void removeClosedStatement(Statement stmt) {
     openStatements.remove(stmt);
   }
 }

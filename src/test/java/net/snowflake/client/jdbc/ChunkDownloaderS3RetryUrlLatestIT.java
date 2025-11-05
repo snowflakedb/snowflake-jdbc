@@ -9,6 +9,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;

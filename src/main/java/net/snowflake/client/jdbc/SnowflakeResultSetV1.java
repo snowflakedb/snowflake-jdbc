@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -26,6 +24,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.statement.SnowflakeStatementV1;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
@@ -401,10 +402,10 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   }
 
   /** Empty result set */
-  static class EmptyResultSet implements ResultSet {
+  public static class EmptyResultSet implements ResultSet {
     private boolean isClosed;
 
-    EmptyResultSet() {
+    public EmptyResultSet() {
       isClosed = false;
     }
 

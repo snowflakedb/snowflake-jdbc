@@ -1,9 +1,9 @@
 package net.snowflake.client.core.arrow;
 
 import java.time.Duration;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;

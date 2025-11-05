@@ -10,9 +10,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 

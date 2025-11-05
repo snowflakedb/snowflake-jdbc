@@ -1,8 +1,8 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.http.client.methods.HttpRequestBase;

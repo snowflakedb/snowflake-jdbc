@@ -23,6 +23,7 @@ import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Disabled;

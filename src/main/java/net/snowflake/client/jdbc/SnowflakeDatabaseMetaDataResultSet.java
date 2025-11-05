@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,6 +12,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;

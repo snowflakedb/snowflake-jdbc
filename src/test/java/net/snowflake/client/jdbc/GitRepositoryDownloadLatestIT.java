@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;

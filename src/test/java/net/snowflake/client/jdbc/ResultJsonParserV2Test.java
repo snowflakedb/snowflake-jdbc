@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** This is the unit tests for ResultJsonParserV2 */
 public class ResultJsonParserV2Test {

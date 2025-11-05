@@ -1,9 +1,10 @@
-package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
+package net.snowflake.client.api.connection;
 
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SFConnectionHandler;
 
 /** This interface defines Snowflake specific APIs for Connection */
 public interface SnowflakeConnection {

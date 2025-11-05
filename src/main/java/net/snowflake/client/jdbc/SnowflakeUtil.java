@@ -1,7 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static java.util.Arrays.stream;
 import static net.snowflake.client.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
@@ -45,6 +42,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
@@ -448,7 +448,7 @@ public class SnowflakeUtil {
     }
   }
 
-  static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
+  public static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }

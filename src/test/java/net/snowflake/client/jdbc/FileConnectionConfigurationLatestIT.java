@@ -9,10 +9,10 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /** This test could be run only on environment where file connection.toml is configured */
 @Disabled

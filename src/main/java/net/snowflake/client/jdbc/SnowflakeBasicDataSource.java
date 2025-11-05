@@ -1,5 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;

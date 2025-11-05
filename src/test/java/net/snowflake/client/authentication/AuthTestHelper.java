@@ -19,9 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.core.SessionUtil;
 
 public class AuthTestHelper {
 

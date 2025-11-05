@@ -1,7 +1,4 @@
-package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
+package net.snowflake.client.api.statement;
 
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -19,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.CancellationReason;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
@@ -28,20 +29,22 @@ import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.StmtUtil;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.QueryIdValidator;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
 
 /** Snowflake statement */
-class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
+public class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
   private static final String NOOP_MESSAGE =
       "This is a dummy SnowflakeStatement, " + "no member function should be called for it.";
   private static final long NO_UPDATES = -1;
 
-  protected final SnowflakeConnectionV1 connection;
+  public final SnowflakeConnectionV1 connection;
 
   protected final int resultSetType;
   protected final int resultSetConcurrency;
@@ -92,7 +95,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
-  SnowflakeStatementV1(
+  public SnowflakeStatementV1(
       SnowflakeConnectionV1 connection,
       int resultSetType,
       int resultSetConcurrency,
@@ -209,7 +212,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     return res;
   }
 
-  long executeUpdateInternal(
+  public long executeUpdateInternal(
       String sql,
       Map<String, ParameterBindingDTO> parameterBindings,
       boolean updateQueryRequired,

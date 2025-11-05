@@ -1,9 +1,10 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.statement;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.jdbc.*;
 
 /** This interface defines Snowflake specific APIs for Statement */
 public interface SnowflakeStatement {

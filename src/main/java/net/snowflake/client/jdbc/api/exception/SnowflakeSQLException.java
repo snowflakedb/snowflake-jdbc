@@ -263,4 +263,3 @@ public class SnowflakeSQLException extends SQLException {
     return elapsedSeconds;
   }
 }
-

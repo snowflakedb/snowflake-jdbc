@@ -5,9 +5,9 @@ import java.math.RoundingMode;
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Period;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowVectorConverterUtil;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
 public class NumberConverter {

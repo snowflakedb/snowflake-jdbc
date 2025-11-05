@@ -3,14 +3,14 @@ package net.snowflake.client.jdbc.cloud.storage;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 
 /** Interface for storage client provider implementations */

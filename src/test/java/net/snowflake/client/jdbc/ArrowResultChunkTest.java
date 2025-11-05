@@ -3,8 +3,8 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.jupiter.api.Test;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import org.junit.jupiter.api.Test;
 
 public class ArrowResultChunkTest {
   @Test

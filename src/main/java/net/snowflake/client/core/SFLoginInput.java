@@ -9,8 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpRequestBase;
 

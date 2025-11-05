@@ -34,6 +34,9 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnJenkins;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryStatus;
@@ -43,7 +46,6 @@ import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import net.snowflake.client.annotations.DontRunOnWindows;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.http.Header;
@@ -37,7 +38,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {

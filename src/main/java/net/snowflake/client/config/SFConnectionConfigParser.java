@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

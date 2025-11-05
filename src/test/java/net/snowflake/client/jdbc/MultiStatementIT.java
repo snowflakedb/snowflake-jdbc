@@ -11,13 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import net.snowflake.client.api.connection.*;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.statement.*;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.ErrorCode;
 
 /** Multi Statement tests */
 @Tag(TestTags.STATEMENT)

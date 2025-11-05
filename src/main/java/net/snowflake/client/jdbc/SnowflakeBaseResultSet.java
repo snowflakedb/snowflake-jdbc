@@ -1,6 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
@@ -39,6 +37,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.statement.SnowflakeStatementV1;
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -79,7 +81,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   private static SFBaseSession maybeGetSession(Statement statement) {
     try {
-      return statement.unwrap(SnowflakeStatementV1.class).connection.getSFBaseSession();
+      return ((SnowflakeConnectionV1) statement.getConnection()).getSFBaseSession();
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(

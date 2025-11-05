@@ -1,9 +1,10 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.statement;
 
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
+import net.snowflake.client.jdbc.*;
 
 public interface SnowflakePreparedStatement {
   /**

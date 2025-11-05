@@ -11,13 +11,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFStatementType;
 import org.junit.jupiter.api.Test;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 public class SnowflakeSerializableTest {
 

@@ -14,11 +14,11 @@ import net.snowflake.client.core.SFPreparedStatementMetaData;
  * <p>This class is backed by SFStatementMetadata class, where metadata information is stored as
  * describe sql response.
  */
-class SnowflakeParameterMetadata implements ParameterMetaData {
+public class SnowflakeParameterMetadata implements ParameterMetaData {
   private SFPreparedStatementMetaData sfPreparedStatementMetaData;
   private SFBaseSession session;
 
-  SnowflakeParameterMetadata(
+  public SnowflakeParameterMetadata(
       SFPreparedStatementMetaData sfStatementMetaData, SFBaseSession session) {
     this.sfPreparedStatementMetaData = sfStatementMetaData;
     this.session = session;

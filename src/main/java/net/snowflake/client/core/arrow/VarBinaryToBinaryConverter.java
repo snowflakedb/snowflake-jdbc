@@ -1,8 +1,8 @@
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.ValueVector;

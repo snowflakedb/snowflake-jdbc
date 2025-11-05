@@ -28,12 +28,12 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-import net.snowflake.client.api.exception.ErrorCode;
 
 /** Test ResultSet */
 @Tag(TestTags.RESULT_SET)

@@ -12,11 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.BaseWiremockTest;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

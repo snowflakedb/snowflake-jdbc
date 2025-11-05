@@ -1,7 +1,4 @@
-package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
+package net.snowflake.client.api.statement;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.FieldSchemaCreator;
 import net.snowflake.client.core.JsonSqlOutput;
@@ -49,13 +50,16 @@ import net.snowflake.client.core.SFPreparedStatementMetaData;
 import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.core.SfTimestampUtil;
 import net.snowflake.client.core.StmtUtil;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.SnowflakeParameterMetadata;
+import net.snowflake.client.jdbc.SnowflakeResultSetMetaDataV1;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
-class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
+public class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakePreparedStatementV1.class);
@@ -118,7 +122,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
-  SnowflakePreparedStatementV1(
+  public SnowflakePreparedStatementV1(
       SnowflakeConnectionV1 connection,
       String sql,
       boolean skipParsing,
@@ -1110,12 +1114,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   // For testing use only
-  Map<String, ParameterBindingDTO> getBatchParameterBindings() {
+  public Map<String, ParameterBindingDTO> getBatchParameterBindings() {
     return batchParameterBindings;
   }
 
   // package private for testing purpose only
-  Map<String, ParameterBindingDTO> getParameterBindings() {
+  public Map<String, ParameterBindingDTO> getParameterBindings() {
     return parameterBindings;
   }
 

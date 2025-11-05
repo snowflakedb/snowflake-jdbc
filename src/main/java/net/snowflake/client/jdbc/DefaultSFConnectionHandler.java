@@ -1,7 +1,4 @@
 package net.snowflake.client.jdbc;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 
 import static net.snowflake.client.config.SFClientConfigParser.checkConfigFilePermissions;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
@@ -25,6 +22,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.config.SFClientConfigParser;
 import net.snowflake.client.core.Constants;

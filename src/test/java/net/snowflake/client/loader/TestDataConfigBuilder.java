@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 
 class TestDataConfigBuilder {
   static final String TARGET_TABLE_NAME = "LOADER_test_TABLE";
