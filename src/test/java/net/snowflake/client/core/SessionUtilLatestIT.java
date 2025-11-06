@@ -156,6 +156,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
+                  Mockito.anyInt(),
                   Mockito.nullable(HttpClientSettingsKey.class),
                   Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
