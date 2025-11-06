@@ -2,8 +2,8 @@
 
 # Changelog
 - v4.0.0-SNAPSHOT
+    - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
     - Connection and socket timeout not propagated to HTTP client.
-	
 
 - v3.27.1
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT

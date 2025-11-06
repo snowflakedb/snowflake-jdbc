@@ -928,6 +928,43 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
+   * @param maxRetryCount max retry count for the request - if it is set to 0, it will be ignored
+   *     and only retryTimeout will determine when to end the retries
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
+   * @param sfSession the session associated with the request
+   * @return HttpResponseWithHeaders containing response body and headers as a map
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  @SnowflakeJdbcInternalApi
+  public static HttpResponseWithHeaders executeGeneralRequestWithContext(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey,
+      SFBaseSession sfSession)
+      throws SnowflakeSQLException, IOException {
+    return executeGeneralRequestWithContext(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetryCount,
+        0,
+        ocspAndProxyAndGzipKey,
+        sfSession);
+  }
+
+  /**
+   * Executes an HTTP request for Snowflake and returns response with headers. This variant allows
+   * access to both the response body and HTTP headers as a simple map.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
    * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
    *     only retryTimeout will determine when to end the retries
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
@@ -942,6 +979,7 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
+      int maxRetryCount,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey,
       SFBaseSession sfSession)
@@ -960,6 +998,7 @@ public class HttpUtil {
             retryTimeout,
             authTimeout,
             socketTimeout,
+            maxRetryCount,
             retryCount,
             0, // no inject socket timeout
             null, // no canceling
@@ -1401,6 +1440,50 @@ public class HttpUtil {
       List<HttpHeadersCustomizer> httpHeaderCustomizer,
       boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException, IOException {
+
+    return executeRequestInternalWithContext(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        0,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeSnowflakeHeaders,
+        retryOnHTTP403,
+        httpClient,
+        execTimeData,
+        retryContextManager,
+        sfSession,
+        key,
+        httpHeaderCustomizer,
+        isHttpClientWithoutDecompression);
+  }
+
+  private static HttpResponseContextDto executeRequestInternalWithContext(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int retriedCount,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeSnowflakeHeaders,
+      boolean retryOnHTTP403,
+      CloseableHttpClient httpClient,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
+      throws SnowflakeSQLException, IOException {
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
 
     logger.debug(
@@ -1426,7 +1509,7 @@ public class HttpUtil {
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .withSfSession(sfSession)
             .build();
-
+    context.setRetryCount(retriedCount);
     HttpResponseContextDto responseContext =
         RestRequest.executeWithRetries(
             httpClient,

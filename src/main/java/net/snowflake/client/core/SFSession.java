@@ -808,7 +808,8 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
-                : false); // Default to false (platform detection enabled)
+                : false) // Default to false (platform detection enabled)
+        .setMaxRetryCount(maxHttpRetries);
 
     logger.info(
         "Connecting to {} Snowflake domain",

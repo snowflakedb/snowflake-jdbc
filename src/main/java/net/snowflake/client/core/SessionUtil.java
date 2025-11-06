@@ -760,7 +760,8 @@ public class SessionUtil {
 
       int leftRetryTimeout = loginInput.getLoginTimeout();
       int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
-      int retryCount = 0;
+      int maxRetryCount = loginInput.getMaxRetryCount();
+      int retryedCount = 0;
 
       Exception lastRestException = null;
 
@@ -772,7 +773,8 @@ public class SessionUtil {
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
                   leftsocketTimeout,
-                  retryCount,
+                  maxRetryCount,
+                  retryedCount,
                   loginInput.getHttpClientSettingsKey(),
                   null);
           theString = response.getResponseBody();
@@ -810,6 +812,8 @@ public class SessionUtil {
               }
 
               long elapsedSeconds = ex.getElapsedSeconds();
+              long elapsedMiliSeconds = ex.getElapsedSeconds() * 1000;
+              logger.debug("***** elapsedSeconds {}", elapsedSeconds);
 
               if (loginInput.getLoginTimeout() > 0) {
                 if (leftRetryTimeout > elapsedSeconds) {
@@ -817,6 +821,7 @@ public class SessionUtil {
                 } else {
                   leftRetryTimeout = 1;
                 }
+                logger.debug("***** leftRetryTimeout {}", leftRetryTimeout);
               }
 
               // In RestRequest.execute(), socket timeout is replaced with auth timeout
@@ -826,8 +831,9 @@ public class SessionUtil {
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeoutInMillis() > 0) {
                 if (ex.issocketTimeoutNoBackoff()) {
-                  if (leftsocketTimeout > elapsedSeconds) {
-                    leftsocketTimeout -= elapsedSeconds;
+                  if (leftsocketTimeout > elapsedMiliSeconds) {
+                    logger.debug("***** elapsedMiliSeconds {}", elapsedMiliSeconds);
+                    leftsocketTimeout -= elapsedMiliSeconds;
                   } else {
                     leftsocketTimeout = 1;
                   }
@@ -835,11 +841,12 @@ public class SessionUtil {
                   // reset curl timeout for retry with backoff.
                   leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
                 }
+                logger.debug("***** leftsocketTimeout {}", leftsocketTimeout);
               }
 
               // JWT or Okta renew should not count as a retry, so we pass back the current retry
               // count.
-              retryCount = ex.getRetryCount();
+              retryedCount = ex.getRetryCount();
 
               continue;
             }
