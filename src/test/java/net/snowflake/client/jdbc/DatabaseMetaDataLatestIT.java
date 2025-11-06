@@ -1,12 +1,12 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.TestUtil.GENERATED_SCHEMA_PREFIX;
+import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
+import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.StringFunctionsSupported;
+import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +37,7 @@ import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
 import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.api.statement.SnowflakeStatement;

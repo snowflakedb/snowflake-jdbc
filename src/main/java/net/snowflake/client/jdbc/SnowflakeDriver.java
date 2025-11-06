@@ -34,14 +34,14 @@ import net.snowflake.common.core.SqlState;
 public class SnowflakeDriver implements Driver {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
   public static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
-  static SnowflakeDriver INSTANCE;
+  public static final SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
   public static String implementVersion = "3.27.1";
 
-  static int majorVersion = 0;
-  static int minorVersion = 0;
-  static long patchVersion = 0;
+  private static int majorVersion = 0;
+  private static int minorVersion = 0;
+  private static long patchVersion = 0;
 
   protected static boolean disableIncidents = false;
 
@@ -273,6 +273,16 @@ public class SnowflakeDriver implements Driver {
   @Override
   public int getMinorVersion() {
     return minorVersion;
+  }
+
+  /**
+   * Get the driver patch version number. This is not part of the standard JDBC Driver interface,
+   * but is needed for full version information.
+   *
+   * @return driver patch version number
+   */
+  public long getPatchVersion() {
+    return patchVersion;
   }
 
   @Override

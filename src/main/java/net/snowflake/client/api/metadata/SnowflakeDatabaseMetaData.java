@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.metadata;
 
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
@@ -40,6 +40,13 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.jdbc.DBMetadataResultSetMetadata;
+import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
+import net.snowflake.client.jdbc.SnowflakeDatabaseMetaDataQueryResultSet;
+import net.snowflake.client.jdbc.SnowflakeDatabaseMetaDataResultSet;
+import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -376,23 +383,23 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public String getDriverVersion() throws SQLException {
     logger.trace("String getDriverVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return SnowflakeDriver.majorVersion
+    return SnowflakeDriver.INSTANCE.getMajorVersion()
         + "."
-        + SnowflakeDriver.minorVersion
+        + SnowflakeDriver.INSTANCE.getMinorVersion()
         + "."
-        + SnowflakeDriver.patchVersion;
+        + SnowflakeDriver.INSTANCE.getPatchVersion();
   }
 
   @Override
   public int getDriverMajorVersion() {
     logger.trace("int getDriverMajorVersion()", false);
-    return SnowflakeDriver.majorVersion;
+    return SnowflakeDriver.INSTANCE.getMajorVersion();
   }
 
   @Override
   public int getDriverMinorVersion() {
     logger.trace("int getDriverMinorVersion()", false);
-    return SnowflakeDriver.minorVersion;
+    return SnowflakeDriver.INSTANCE.getMinorVersion();
   }
 
   @Override

@@ -22,9 +22,9 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
-  ResultSet showObjectResultSet;
-  Object[] nextRow;
+public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
+  protected ResultSet showObjectResultSet;
+  protected Object[] nextRow;
   private boolean wasNull = false;
   protected Object[][] rows;
   protected int row = -1;
@@ -44,7 +44,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
    * @param statement show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
-  SnowflakeDatabaseMetaDataResultSet(
+  public SnowflakeDatabaseMetaDataResultSet(
       final List<String> columnNames,
       final List<String> columnTypeNames,
       final List<Integer> columnTypes,
@@ -76,7 +76,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
    * @param statement show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
-  SnowflakeDatabaseMetaDataResultSet(
+  public SnowflakeDatabaseMetaDataResultSet(
       final List<String> columnNames,
       final List<String> columnTypeNames,
       final List<Integer> columnTypes,
@@ -98,7 +98,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.nextRow = new Object[columnNames.size()];
   }
 
-  protected SnowflakeDatabaseMetaDataResultSet(
+  public SnowflakeDatabaseMetaDataResultSet(
       DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
       throws SQLException {
     this(
@@ -109,7 +109,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
         statement);
   }
 
-  protected SnowflakeDatabaseMetaDataResultSet(
+  public SnowflakeDatabaseMetaDataResultSet(
       DBMetadataResultSetMetadata metadataType,
       Object[][] rows,
       Statement statement,
@@ -247,15 +247,15 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     }
   }
 
-  static ResultSet getEmptyResult(
+  public static ResultSet getEmptyResult(
       DBMetadataResultSetMetadata metadataType, Statement statement, String queryId)
       throws SQLException {
     return new SnowflakeDatabaseMetaDataResultSet(
         metadataType, new Object[][] {}, statement, queryId);
   }
 
-  static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)
-      throws SQLException {
+  public static ResultSet getEmptyResultSet(
+      DBMetadataResultSetMetadata metadataType, Statement statement) throws SQLException {
     return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][] {}, statement);
   }
 

@@ -5,9 +5,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /** Database Metadata query based result set. */
-class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataResultSet {
+public class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataResultSet {
 
-  SnowflakeDatabaseMetaDataQueryResultSet(
+  public SnowflakeDatabaseMetaDataQueryResultSet(
       DBMetadataResultSetMetadata metadataType, ResultSet resultSet, Statement statement)
       throws SQLException {
     super(
