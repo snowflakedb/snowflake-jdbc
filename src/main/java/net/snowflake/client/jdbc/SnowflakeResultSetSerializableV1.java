@@ -30,6 +30,7 @@ import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.core.ChunkDownloader;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.MetaDataOfBinds;

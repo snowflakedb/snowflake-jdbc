@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;

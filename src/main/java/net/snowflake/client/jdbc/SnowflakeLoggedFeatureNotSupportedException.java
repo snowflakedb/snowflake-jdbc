@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc;
 
-
 import static net.snowflake.client.api.exception.SnowflakeSQLLoggedException.sendTelemetryData;
 
 import java.sql.SQLFeatureNotSupportedException;

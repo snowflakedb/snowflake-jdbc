@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.config.SFClientConfigParser;
 import net.snowflake.client.core.Constants;

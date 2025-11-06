@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.resultset;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

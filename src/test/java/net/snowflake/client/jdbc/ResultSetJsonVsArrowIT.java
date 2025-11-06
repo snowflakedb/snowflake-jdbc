@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.apache.arrow.vector.BigIntVector;

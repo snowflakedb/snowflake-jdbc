@@ -15,6 +15,7 @@ import java.util.TimeZone;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;

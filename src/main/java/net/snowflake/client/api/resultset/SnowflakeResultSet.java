@@ -1,8 +1,9 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.resultset;
 
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.jdbc.QueryStatusV2;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
 public interface SnowflakeResultSet {

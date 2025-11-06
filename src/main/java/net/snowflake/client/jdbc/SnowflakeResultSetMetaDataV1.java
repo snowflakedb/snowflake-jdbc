@@ -6,6 +6,7 @@ import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFResultSetMetaData;
@@ -266,7 +267,7 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
     return resultSetMetaData.getColumnDisplaySize(column);
   }
 
-  boolean isStructuredTypeColumn(int column) {
+  public boolean isStructuredTypeColumn(int column) {
     return resultSetMetaData.isStructuredTypeColumn(column);
   }
 }

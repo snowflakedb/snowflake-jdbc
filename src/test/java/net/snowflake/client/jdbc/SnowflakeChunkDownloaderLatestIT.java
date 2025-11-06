@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeResultSet;
+import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

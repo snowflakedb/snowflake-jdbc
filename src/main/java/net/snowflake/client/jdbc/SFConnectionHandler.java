@@ -6,6 +6,7 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;

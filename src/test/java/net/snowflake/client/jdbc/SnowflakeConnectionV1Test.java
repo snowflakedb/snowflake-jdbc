@@ -6,8 +6,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.api.connection.*;
-import net.snowflake.client.api.statement.*;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeConnectionV1Test {

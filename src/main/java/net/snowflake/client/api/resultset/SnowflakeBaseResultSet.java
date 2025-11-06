@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.resultset;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
@@ -49,6 +49,12 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeClob;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.jdbc.SnowflakeResultSetMetaDataV1;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -70,7 +76,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   private final SnowflakeResultSetSerializableV1 serializable;
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  SnowflakeBaseResultSet(Statement statement) throws SQLException {
+  public SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;
     this.resultSetType = statement.getResultSetType();
     this.resultSetConcurrency = statement.getResultSetConcurrency();

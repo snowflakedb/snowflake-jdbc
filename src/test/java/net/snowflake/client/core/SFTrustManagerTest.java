@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.util.Base64;
 import java.util.Properties;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
+import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
