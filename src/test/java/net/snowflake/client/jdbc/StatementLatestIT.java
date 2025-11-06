@@ -314,22 +314,29 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
     try (Connection con = getConnection(p);
         Statement statement = con.createStatement()) {
-      statement.setQueryTimeout(3);
+      statement.setQueryTimeout(1);
 
-      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+      String sql = "select system$wait(100);";
 
       try (ResultSet resultSet =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .untilAsserted(
+                () -> {
+                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  assertThat(
+                      "Expected query to fail but status was: " + actualStatus,
+                      actualStatus,
+                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                });
 
         assertTrue(
             sfrs.getStatusV2()
                 .getErrorMessage()
                 .contains(
-                    "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+                    "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }
     }
   }
@@ -352,7 +359,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     p.put("IMPLICIT_SERVER_SIDE_QUERY_TIMEOUT", true);
     try (Connection con = getConnection(p)) {
 
-      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+      String sql = "select system$wait(100);";
 
       for (int i = 0; i < threads; ++i) {
         futures.add(
@@ -395,7 +402,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     p.put("queryTimeout", 3);
     try (Connection con = getConnection(p)) {
 
-      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+      String sql = "select system$wait(100);";
 
       for (int i = 0; i < threads; ++i) {
         futures.add(
@@ -428,20 +435,27 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       SnowflakeStatement sfStmt = statement.unwrap(SnowflakeStatement.class);
-      sfStmt.setAsyncQueryTimeout(3);
+      sfStmt.setAsyncQueryTimeout(1);
 
-      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+      String sql = "select system$wait(100);";
 
       try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .untilAsserted(
+                () -> {
+                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  assertThat(
+                      "Expected query to fail but status was: " + actualStatus,
+                      actualStatus,
+                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                });
 
         assertThat(
             sfrs.getStatusV2().getErrorMessage(),
             containsString(
-                "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+                "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }
     }
   }
@@ -460,20 +474,27 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Connection con = getConnection(p);
         Statement statement = con.createStatement()) {
       SnowflakeStatement sfStmt = statement.unwrap(SnowflakeStatement.class);
-      sfStmt.setAsyncQueryTimeout(3);
+      sfStmt.setAsyncQueryTimeout(1);
 
-      String sql = "select seq4() from table(generator(rowcount => 1000000000))";
+      String sql = "select system$wait(100);";
 
       try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
         SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> sfrs.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
+            .untilAsserted(
+                () -> {
+                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  assertThat(
+                      "Expected query to fail but status was: " + actualStatus,
+                      actualStatus,
+                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                });
 
         assertThat(
             sfrs.getStatusV2().getErrorMessage(),
             containsString(
-                "Statement reached its statement or warehouse timeout of 3 second(s) and was canceled"));
+                "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }
     }
   }
