@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
@@ -47,7 +48,6 @@ import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityAttestationPr
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.RetryContext;
 import net.snowflake.client.internal.jdbc.RetryContextManager;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;

@@ -24,9 +24,9 @@ import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

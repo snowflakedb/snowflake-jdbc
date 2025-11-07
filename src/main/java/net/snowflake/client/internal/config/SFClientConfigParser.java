@@ -12,9 +12,9 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 

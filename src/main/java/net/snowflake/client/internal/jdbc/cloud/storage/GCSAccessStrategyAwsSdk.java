@@ -72,7 +72,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     SignerFactory.registerSigner(
         "net.snowflake.client.internal.jdbc.cloud.storage.AwsSdkGCPSigner",
         net.snowflake.client.internal.jdbc.cloud.storage.AwsSdkGCPSigner.class);
-    clientConfig.setSignerOverride("net.snowflake.client.internal.jdbc.cloud.storage.AwsSdkGCPSigner");
+    clientConfig.setSignerOverride(
+        "net.snowflake.client.internal.jdbc.cloud.storage.AwsSdkGCPSigner");
 
     clientConfig
         .getApacheHttpClientConfig()

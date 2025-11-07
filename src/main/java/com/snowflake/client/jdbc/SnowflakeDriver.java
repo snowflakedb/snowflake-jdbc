@@ -10,4 +10,5 @@ import java.sql.Driver;
  * @deprecated Use {@link net.snowflake.client.api.driver.SnowflakeDriver} instead
  */
 @Deprecated
-public class SnowflakeDriver extends net.snowflake.client.api.driver.SnowflakeDriver implements Driver {}
+public class SnowflakeDriver extends net.snowflake.client.api.driver.SnowflakeDriver
+    implements Driver {}
