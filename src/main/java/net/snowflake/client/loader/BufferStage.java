@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
+import net.snowflake.client.api.loader.Loader;
+import net.snowflake.client.api.loader.Operation;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -247,7 +249,7 @@ public class BufferStage {
     }
   }
 
-  String getRemoteLocation() {
+  public String getRemoteLocation() {
     return remoteSeparator(_location);
   }
 

@@ -430,7 +430,7 @@ public class CustomProxyLatestIT {
     _connectionProperties.put("database", "SNOWHOUSE_IMPORT");
     _connectionProperties.put("schema", "DEV");
 
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver");
     long counter = 0;
     while (true) {
       try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
@@ -678,7 +678,7 @@ public class CustomProxyLatestIT {
       _connectionProperties.put("proxyPassword", "test");
     }
 
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver");
 
     String fileName = "test_copy.csv";
     try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);

@@ -44,7 +44,7 @@ import net.snowflake.client.jdbc.DBMetadataResultSetMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeDatabaseMetaDataQueryResultSet;
 import net.snowflake.client.jdbc.SnowflakeDatabaseMetaDataResultSet;
-import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;

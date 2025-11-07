@@ -40,6 +40,8 @@ import java.util.concurrent.Executors;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;

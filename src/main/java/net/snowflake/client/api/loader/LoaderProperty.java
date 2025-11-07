@@ -1,4 +1,4 @@
-package net.snowflake.client.loader;
+package net.snowflake.client.api.loader;
 
 /** Configuration parameters for Loader */
 public enum LoaderProperty {

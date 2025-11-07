@@ -47,7 +47,7 @@ import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
-import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;

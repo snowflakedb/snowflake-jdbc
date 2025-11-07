@@ -1,4 +1,4 @@
-package net.snowflake.client.loader;
+package net.snowflake.client.api.loader;
 
 /** Callback API for processing errors and statistics of upload operation */
 public interface LoadResultListener {

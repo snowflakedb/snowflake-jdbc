@@ -1,10 +1,10 @@
-package net.snowflake.client.pooling;
+package net.snowflake.client.api.pooling;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.PooledConnection;
-import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 
 public class SnowflakeConnectionPoolDataSource extends SnowflakeBasicDataSource
     implements ConnectionPoolDataSource {

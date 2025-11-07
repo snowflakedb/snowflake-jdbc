@@ -21,6 +21,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.Deflater;
+import net.snowflake.client.api.loader.Loader;
+import net.snowflake.client.api.loader.LoaderProperty;
+import net.snowflake.client.api.loader.LoadResultListener;
+import net.snowflake.client.api.loader.LoadingError;
+import net.snowflake.client.api.loader.Operation;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
@@ -755,7 +760,7 @@ public class StreamLoader implements Loader, Runnable {
     _stage = new BufferStage(this, _op, _csvFileBucketSize, _csvFileSize);
   }
 
-  String getTable() {
+  public String getTable() {
     return _table;
   }
 

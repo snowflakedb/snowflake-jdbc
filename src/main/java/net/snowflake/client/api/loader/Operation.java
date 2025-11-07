@@ -1,4 +1,4 @@
-package net.snowflake.client.loader;
+package net.snowflake.client.api.loader;
 
 /** Operations supported by Loader */
 public enum Operation {

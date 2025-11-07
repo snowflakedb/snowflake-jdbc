@@ -1,6 +1,9 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.datasource;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+
+import net.snowflake.client.api.driver.SnowflakeDriver;
+import net.snowflake.client.jdbc.HttpHeadersCustomizer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -48,7 +51,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   static {
     try {
-      Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+      Class.forName("net.snowflake.client.api.driver.SnowflakeDriver");
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException(
           "Unable to load "
@@ -258,7 +261,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     this.properties.put(SFSessionProperty.TRACING.getPropertyKey(), tracing);
   }
 
-  protected Properties getProperties() {
+  public Properties getProperties() {
     return this.properties;
   }
 

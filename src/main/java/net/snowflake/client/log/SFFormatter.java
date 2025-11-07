@@ -7,7 +7,6 @@ import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
-import net.snowflake.client.jdbc.SnowflakeDriver;
 
 /** SFFormatter */
 public class SFFormatter extends Formatter {
@@ -17,11 +16,9 @@ public class SFFormatter extends Formatter {
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
-  public static final String CLASS_NAME_PREFIX =
-      SnowflakeDriver.class
-          .getPackage()
-          .getName()
-          .substring(0, SnowflakeDriver.class.getPackage().getName().lastIndexOf('.'));
+  // Fixed to "net.snowflake.client" since SnowflakeDriver moved to api.driver package
+  // Previously calculated dynamically, but should always be the root client package
+  public static final String CLASS_NAME_PREFIX = "net.snowflake.client";
 
   public static final String INFORMATICA_V1_CLASS_NAME_PREFIX = "com.snowflake";
 

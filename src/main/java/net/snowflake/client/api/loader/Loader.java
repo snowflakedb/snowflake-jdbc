@@ -1,4 +1,4 @@
-package net.snowflake.client.loader;
+package net.snowflake.client.api.loader;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -61,15 +61,15 @@ public interface Loader {
   class DataError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    DataError(String msg) {
+    public DataError(String msg) {
       super(msg);
     }
 
-    DataError(String msg, Throwable ex) {
+    public DataError(String msg, Throwable ex) {
       super(msg, ex);
     }
 
-    DataError(Throwable ex) {
+    public DataError(Throwable ex) {
       super(ex);
     }
   }
@@ -78,16 +78,16 @@ public interface Loader {
   class ConnectionError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    ConnectionError(String msg) {
+    public ConnectionError(String msg) {
       super(msg);
     }
 
     // SNOW-22336: pass cause to connector
-    ConnectionError(String msg, Throwable ex) {
+    public ConnectionError(String msg, Throwable ex) {
       super(msg, ex);
     }
 
-    ConnectionError(Throwable ex) {
+    public ConnectionError(Throwable ex) {
       super(ex);
     }
   }

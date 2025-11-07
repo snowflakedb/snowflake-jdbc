@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeDriver.getClientVersionStringFromManifest;
-import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
+import static net.snowflake.client.api.driver.SnowflakeDriver.getClientVersionStringFromManifest;
+import static net.snowflake.client.api.driver.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1783,7 +1783,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   /** Added in > 3.17.0 */
   @Test
   public void shouldLoadDriverWithDisabledTelemetryOob() throws ClassNotFoundException {
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver");
 
     assertFalse(TelemetryService.getInstance().isEnabled());
     assertFalse(TelemetryService.getInstance().isHTAPEnabled());

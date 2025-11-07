@@ -13,6 +13,8 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import net.snowflake.client.api.loader.Loader;
+import net.snowflake.client.api.loader.Operation;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

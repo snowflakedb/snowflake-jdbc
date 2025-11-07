@@ -49,6 +49,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;

@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.api.driver;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -14,6 +14,8 @@ import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
@@ -87,7 +89,7 @@ public class SnowflakeDriver implements Driver {
     disableIllegalReflectiveAccessWarning();
   }
 
-  static void disableIllegalReflectiveAccessWarning() {
+  public static void disableIllegalReflectiveAccessWarning() {
     // The netty dependency of arrow will cause an illegal reflective access warning
     // This function try to eliminate the warning by setting
     // jdk.internal.module.IllegalAccessLogger's logger as null
@@ -152,7 +154,7 @@ public class SnowflakeDriver implements Driver {
    *
    * @return String with version from pom.xml file
    */
-  static String getClientVersionStringFromManifest() {
+  public static String getClientVersionStringFromManifest() {
     return versionResourceBundleManager.getLocalizedMessage("version");
   }
 

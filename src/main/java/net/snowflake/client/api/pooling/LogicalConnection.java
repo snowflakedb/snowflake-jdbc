@@ -1,4 +1,4 @@
-package net.snowflake.client.pooling;
+package net.snowflake.client.api.pooling;
 
 import java.sql.Array;
 import java.sql.Blob;

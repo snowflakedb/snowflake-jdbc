@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.loader.Loader;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;

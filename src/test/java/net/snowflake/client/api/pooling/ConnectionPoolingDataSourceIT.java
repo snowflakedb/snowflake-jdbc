@@ -1,4 +1,4 @@
-package net.snowflake.client.pooling;
+package net.snowflake.client.api.pooling;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;

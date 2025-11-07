@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.Test;
 

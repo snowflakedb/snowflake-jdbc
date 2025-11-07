@@ -1,9 +1,11 @@
-package net.snowflake.client.loader;
+package net.snowflake.client.api.loader;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import net.snowflake.client.loader.BufferStage;
+import net.snowflake.client.loader.StreamLoader;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 

@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;

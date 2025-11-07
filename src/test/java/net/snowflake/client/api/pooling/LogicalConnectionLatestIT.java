@@ -1,4 +1,4 @@
-package net.snowflake.client.pooling;
+package net.snowflake.client.api.pooling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +26,7 @@ import javax.sql.PooledConnection;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

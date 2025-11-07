@@ -9,6 +9,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
