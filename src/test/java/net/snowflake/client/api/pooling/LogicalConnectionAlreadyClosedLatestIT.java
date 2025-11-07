@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.PooledConnection;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.internal.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

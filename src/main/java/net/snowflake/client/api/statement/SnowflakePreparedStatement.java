@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.internal.jdbc.*;
 
 public interface SnowflakePreparedStatement {
   /**

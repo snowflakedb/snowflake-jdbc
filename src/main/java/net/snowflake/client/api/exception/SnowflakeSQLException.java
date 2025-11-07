@@ -1,9 +1,9 @@
 package net.snowflake.client.api.exception;
 
 import java.sql.SQLException;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 
 public class SnowflakeSQLException extends SQLException {

@@ -1,6 +1,6 @@
 package net.snowflake.client.api.loader;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.File;
 

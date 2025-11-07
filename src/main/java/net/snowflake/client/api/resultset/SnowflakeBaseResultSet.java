@@ -1,6 +1,6 @@
 package net.snowflake.client.api.resultset;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -41,22 +41,22 @@ import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.statement.SnowflakeStatementV1;
-import net.snowflake.client.core.ColumnTypeHelper;
-import net.snowflake.client.core.JsonSqlInput;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.StructObjectWrapper;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeClob;
-import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.jdbc.SnowflakeResultSetMetaDataV1;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.ColumnTypeHelper;
+import net.snowflake.client.internal.core.JsonSqlInput;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
+import net.snowflake.client.internal.core.SFBaseResultSet;
+import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.arrow.StructObjectWrapper;
+import net.snowflake.client.internal.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.internal.jdbc.FieldMetadata;
+import net.snowflake.client.internal.jdbc.SnowflakeClob;
+import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.internal.jdbc.SnowflakeResultSetMetaDataV1;
+import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */

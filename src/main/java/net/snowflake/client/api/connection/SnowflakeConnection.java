@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SFConnectionHandler;
+import net.snowflake.client.internal.jdbc.SFConnectionHandler;
 
 /** This interface defines Snowflake specific APIs for Connection */
 public interface SnowflakeConnection {

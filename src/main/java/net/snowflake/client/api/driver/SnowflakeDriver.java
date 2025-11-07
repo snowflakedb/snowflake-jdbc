@@ -14,15 +14,15 @@ import net.snowflake.client.api.connection.SnowflakeConnectionV1;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.config.ConnectionParameters;
-import net.snowflake.client.config.SFConnectionConfigParser;
-import net.snowflake.client.core.SecurityUtil;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
+import net.snowflake.client.internal.config.ConnectionParameters;
+import net.snowflake.client.internal.config.SFConnectionConfigParser;
+import net.snowflake.client.internal.core.SecurityUtil;
+import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -172,8 +172,8 @@ public class SnowflakeDriver implements Driver {
    * @return the title of the implementation, null is returned if it is not known.
    */
   public static String getImplementationTitle() {
-    Package pkg = Package.getPackage("net.snowflake.client.jdbc");
-    return pkg.getImplementationTitle();
+    Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
+    return pkg != null ? pkg.getImplementationTitle() : "snowflake-jdbc";
   }
 
   /**
@@ -328,7 +328,7 @@ public class SnowflakeDriver implements Driver {
 
   public static final void main(String[] args) {
     if (args.length > 0 && "--version".equals(args[0])) {
-      Package pkg = Package.getPackage("net.snowflake.client.jdbc");
+      Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
       if (pkg != null) {
         System.out.println(pkg.getImplementationVersion());
       }

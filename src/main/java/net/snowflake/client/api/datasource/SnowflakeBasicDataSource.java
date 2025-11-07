@@ -1,9 +1,9 @@
 package net.snowflake.client.api.datasource;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import net.snowflake.client.api.driver.SnowflakeDriver;
-import net.snowflake.client.jdbc.HttpHeadersCustomizer;
+import net.snowflake.client.internal.jdbc.HttpHeadersCustomizer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -19,10 +19,10 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.log.ArgSupplier;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.SFSessionProperty;
+import net.snowflake.client.internal.log.ArgSupplier;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
 public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;

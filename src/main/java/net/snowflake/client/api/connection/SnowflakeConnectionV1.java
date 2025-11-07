@@ -2,7 +2,7 @@ package net.snowflake.client.api.connection;
 
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -45,21 +45,21 @@ import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
 import net.snowflake.client.api.statement.SnowflakeCallableStatementV1;
 import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
 import net.snowflake.client.api.statement.SnowflakeStatementV1;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SfSqlArray;
-import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
-import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
-import net.snowflake.client.jdbc.SFConnectionHandler;
-import net.snowflake.client.jdbc.SnowflakeClob;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.log.SFLoggerUtil;
-import net.snowflake.client.util.Stopwatch;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
+import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSession;
+import net.snowflake.client.internal.core.SfSqlArray;
+import net.snowflake.client.internal.jdbc.DefaultSFConnectionHandler;
+import net.snowflake.client.internal.jdbc.SFBaseFileTransferAgent;
+import net.snowflake.client.internal.jdbc.SFConnectionHandler;
+import net.snowflake.client.internal.jdbc.SnowflakeClob;
+import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
+import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.log.SFLoggerUtil;
+import net.snowflake.client.internal.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */

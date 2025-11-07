@@ -1,6 +1,6 @@
 package net.snowflake.client.api.exception;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -14,18 +14,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
+import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.api.driver.SnowflakeDriver;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
+import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryEvent;
+import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 

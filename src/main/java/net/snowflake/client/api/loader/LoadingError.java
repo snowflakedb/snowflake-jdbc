@@ -4,10 +4,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import net.snowflake.client.loader.BufferStage;
-import net.snowflake.client.loader.StreamLoader;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.loader.BufferStage;
+import net.snowflake.client.internal.loader.StreamLoader;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /** Wrapper for data format errors returned by the COPY/validate command */
 public class LoadingError {

@@ -9,8 +9,8 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import javax.sql.StatementEventListener;
 import net.snowflake.client.api.connection.SnowflakeConnectionV1;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /** Snowflake implementation of pooled connection */
 public class SnowflakePooledConnection implements PooledConnection {
