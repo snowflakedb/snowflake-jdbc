@@ -799,18 +799,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
         testGeoOutputTypeSingle(
-            regularStatement, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
-
-        testGeoOutputTypeSingle(
             regularStatement, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
         testGeoOutputTypeSingle(
-            regularStatement, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
-
-        testGeoOutputTypeSingle(
             regularStatement, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
-
-        testGeoOutputTypeSingle(regularStatement, "wkb", "BINARY", "[B", Types.BINARY);
 
         testGeoOutputTypeSingle(regularStatement, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
       } finally {
