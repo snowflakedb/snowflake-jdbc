@@ -1,12 +1,13 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.TestUtil.systemGetEnv;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.base.Strings;
 import java.sql.DriverManager;
 import java.util.Properties;
 import java.util.stream.Stream;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -30,10 +31,31 @@ public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest 
     Properties props = new Properties();
     props.put("user", "testUser");
     props.put("account", "testaccount");
-    props.put("private_key_file", systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
-    props.put("private_key_file_pwd", systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD"));
-    props.put("authenticator", "SNOWFLAKE_JWT");
 
+    String privateKeyFile = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE");
+    if (!Strings.isNullOrEmpty(privateKeyFile)) {
+      String workspace = System.getenv("WORKSPACE");
+      if (workspace != null) {
+        props.put(
+            "private_key_file", java.nio.file.Paths.get(workspace, privateKeyFile).toString());
+      } else {
+        props.put("private_key_file", privateKeyFile);
+      }
+      props.put("authenticator", "SNOWFLAKE_JWT");
+
+      String privateKeyPwd = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD");
+      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
+        props.put("private_key_pwd", privateKeyPwd);
+      }
+    } else {
+      String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
+      if (!Strings.isNullOrEmpty(password)) {
+        props.put("password", password);
+      } else {
+        throw new IllegalStateException(
+            "Neither SNOWFLAKE_TEST_PRIVATE_KEY_FILE nor SNOWFLAKE_TEST_PASSWORD environment variable is set. Please configure one of them for authentication.");
+      }
+    }
     try {
       Exception ex =
           assertThrows(

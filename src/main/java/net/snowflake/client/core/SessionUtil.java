@@ -813,7 +813,6 @@ public class SessionUtil {
 
               long elapsedSeconds = ex.getElapsedSeconds();
               long elapsedMiliSeconds = ex.getElapsedSeconds() * 1000;
-              logger.debug("***** elapsedSeconds {}", elapsedSeconds);
 
               if (loginInput.getLoginTimeout() > 0) {
                 if (leftRetryTimeout > elapsedSeconds) {
@@ -821,7 +820,7 @@ public class SessionUtil {
                 } else {
                   leftRetryTimeout = 1;
                 }
-                logger.debug("***** leftRetryTimeout {}", leftRetryTimeout);
+                logger.debug("The remaining Retry timeout is {}", leftRetryTimeout);
               }
 
               // In RestRequest.execute(), socket timeout is replaced with auth timeout
@@ -832,7 +831,6 @@ public class SessionUtil {
               if (loginInput.getSocketTimeoutInMillis() > 0) {
                 if (ex.issocketTimeoutNoBackoff()) {
                   if (leftsocketTimeout > elapsedMiliSeconds) {
-                    logger.debug("***** elapsedMiliSeconds {}", elapsedMiliSeconds);
                     leftsocketTimeout -= elapsedMiliSeconds;
                   } else {
                     leftsocketTimeout = 1;
@@ -841,7 +839,7 @@ public class SessionUtil {
                   // reset curl timeout for retry with backoff.
                   leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
                 }
-                logger.debug("***** leftsocketTimeout {}", leftsocketTimeout);
+                logger.debug("The remaining socket timeout is {}", leftsocketTimeout);
               }
 
               // JWT or Okta renew should not count as a retry, so we pass back the current retry
