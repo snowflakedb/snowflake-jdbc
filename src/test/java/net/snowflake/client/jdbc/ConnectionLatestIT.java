@@ -1644,31 +1644,4 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
-
-  /*
-   * static Stream<Properties> timeoutPropertiesProvider() { Properties
-   * connTimeoutProps = new Properties();
-   * connTimeoutProps.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 1);
-   * connTimeoutProps.put("loginTimeout", "50"); // to stop the request retry
-   * after 50 sec.
-   *
-   * Properties socketTimeoutProps = new Properties();
-   * socketTimeoutProps.put("HTTP_CLIENT_SOCKET_TIMEOUT", 1);
-   * socketTimeoutProps.put("loginTimeout", "50");
-   *
-   * return Stream.of(connTimeoutProps, socketTimeoutProps); }
-   *
-   * @ParameterizedTest
-   *
-   * @MethodSource("timeoutPropertiesProvider") public void
-   * testConnectionAndSocketTimeoutsByProperties(Properties props) { Duration
-   * origConnectionTimeout = HttpUtil.getConnectionTimeout(); Duration
-   * origSocketTimeout = HttpUtil.getSocketTimeout();
-   *
-   * try { SQLException ex = assertThrows(SQLException.class, () ->
-   * getConnection(props)); assertEquals(ConnectTimeoutException.class,
-   * ex.getCause().getClass()); } finally { HttpUtil.setConnectionTimeout((int)
-   * origConnectionTimeout.toMillis()); HttpUtil.setSocketTimeout((int)
-   * origSocketTimeout.toMillis()); } }
-   */
 }
