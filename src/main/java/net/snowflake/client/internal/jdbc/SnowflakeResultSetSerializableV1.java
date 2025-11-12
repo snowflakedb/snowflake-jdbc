@@ -47,7 +47,6 @@ import net.snowflake.client.internal.core.SFResultSetMetaData;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatementType;
 import net.snowflake.client.internal.core.SessionUtil;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -769,7 +768,6 @@ public class SnowflakeResultSetSerializableV1
    * @return SnowflakeResultSetSerializableV1 with NoOpChunksDownloader
    * @throws SnowflakeSQLException if an error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {

@@ -36,7 +36,7 @@ import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
@@ -75,7 +75,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   @DontRunOnGithubActions
   public void testGetS3StageDataWithS3Session() throws SQLException {
     try (Connection con = getConnection("s3testaccount")) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       // Set UseRegionalS3EndpointsForPresignedURL to true in session
       sfSession.setUseRegionalS3EndpointsForPresignedURL(true);
 
@@ -104,7 +104,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
   @DontRunOnGithubActions
   public void testGetS3StageDataWithAzureSession() throws SQLException {
     try (Connection con = getConnection("azureaccount")) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       // Set UseRegionalS3EndpointsForPresignedURL to true in session. This is redundant since
       // session
       // is Azure
@@ -137,7 +137,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
         statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
         StageInfo info = sfAgent.getStageInfo();
@@ -171,7 +171,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
         statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
         StageInfo info = sfAgent.getStageInfo();
@@ -208,7 +208,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
         statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
         StageInfo info = sfAgent.getStageInfo();
@@ -236,7 +236,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
         assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
@@ -252,7 +252,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeSQLException thrown =
             assertThrows(
                 SnowflakeSQLException.class,
@@ -276,7 +276,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
@@ -322,7 +322,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
@@ -371,7 +371,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
@@ -415,7 +415,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
@@ -433,7 +433,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         String srcPath =
             getFullPathFileInResource(""); // will pull the resources directory without a file
         String command = "put file://" + srcPath + " @testStage";
@@ -456,7 +456,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
@@ -481,7 +481,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         SnowflakeSQLException thrown =
             assertThrows(
                 SnowflakeSQLException.class,
@@ -504,7 +504,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       try {
         statement.execute("create or replace stage testStage");
         statement.execute("set-sf-property sort on");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         // upload files orders_101.csv and orders_100.csv
         String command =
@@ -543,7 +543,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
@@ -598,7 +598,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
@@ -618,7 +618,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = con.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         String command =
             "PUT file://"
@@ -650,7 +650,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
         SnowflakeFileTransferAgent sfAgent =
@@ -728,7 +728,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
       try {
         statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         // Test put file with internal compression
         String putCommand = "put file:///dummy/path/file1.gz @" + OBJ_META_STAGE;
@@ -789,7 +789,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
 
   private void uploadFileToStageUsingStream(Connection connection, boolean overwrite)
       throws Exception {
-    SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
     String putCommand = "PUT file://" + sourceFilePath + " @testStage";
@@ -898,7 +898,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE " + stageName);
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         String command =
             "PUT file:///" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + stageName;
@@ -932,7 +932,7 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE " + stageName);
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         sfSession.setOwnerOnlyStageFilePermissionsEnabled(ownerOnlyStageFilePermissionsEnabled);
 
         String command =

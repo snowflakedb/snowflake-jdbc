@@ -23,7 +23,6 @@ import net.snowflake.client.internal.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringArrayList;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
-@SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
   private static final SFLogger logger = SFLoggerFactory.getLogger(ArrowSqlInput.class);
 

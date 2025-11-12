@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Map;
 import net.snowflake.client.internal.jdbc.BindingParameterMetadata;
 
-@SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
 
   private final String text;

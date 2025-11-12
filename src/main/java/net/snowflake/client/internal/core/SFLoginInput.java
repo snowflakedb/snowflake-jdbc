@@ -84,15 +84,12 @@ public class SFLoginInput {
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput() {}
 
-  @SnowflakeJdbcInternalApi
   public Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
   }
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput setBrowserResponseTimeout(Duration browserResponseTimeout) {
     this.browserResponseTimeout = browserResponseTimeout;
     return this;
@@ -102,7 +99,6 @@ public class SFLoginInput {
     return serverUrl;
   }
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
@@ -189,7 +185,6 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public int getLoginTimeout() {
     return loginTimeout;
   }
@@ -214,7 +209,6 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public int getAuthTimeout() {
     return authTimeout;
   }
@@ -269,12 +263,10 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public int getSocketTimeoutInMillis() {
     return (int) socketTimeout.toMillis();
   }
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
@@ -352,7 +344,6 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public String getOauthRefreshToken() {
     return oauthRefreshToken;
   }
@@ -371,7 +362,6 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public String getDPoPPublicKey() {
     return dpopPublicKey;
   }
@@ -381,13 +371,11 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public boolean isDPoPEnabled() {
     return dpopEnabled;
   }
 
   // Currently only used for testing purpose
-  @SnowflakeJdbcInternalApi
   public void setDPoPEnabled(boolean dpopEnabled) {
     this.dpopEnabled = dpopEnabled;
   }
@@ -470,12 +458,10 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public HttpClientSettingsKey getHttpClientSettingsKey() {
     return httpClientKey;
   }
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
     return this;
@@ -593,12 +579,10 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public SFOauthLoginInput getOauthLoginInput() {
     return oauthLoginInput;
   }
 
-  @SnowflakeJdbcInternalApi
   public SFLoginInput setOauthLoginInput(SFOauthLoginInput oauthLoginInput) {
     this.oauthLoginInput = oauthLoginInput;
     return this;
@@ -651,12 +635,10 @@ public class SFLoginInput {
     return this;
   }
 
-  @SnowflakeJdbcInternalApi
   public SessionUtilExternalBrowser.AuthExternalBrowserHandlers getBrowserHandler() {
     return browserHandler;
   }
 
-  @SnowflakeJdbcInternalApi
   public void setBrowserHandler(
       SessionUtilExternalBrowser.AuthExternalBrowserHandlers browserHandler) {
     this.browserHandler = browserHandler;

@@ -13,12 +13,10 @@ import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpProtocol;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
 
-@SnowflakeJdbcInternalApi
 public class S3HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 

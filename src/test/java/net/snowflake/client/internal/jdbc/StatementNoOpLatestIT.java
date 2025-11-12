@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 public class StatementNoOpLatestIT {
   @Test
   public void testSnowflakeNoOpStatement() throws SQLException {
-    SnowflakeStatementV1.NoOpSnowflakeStatementV1 statement =
-        new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    SnowflakeStatementImpl.NoOpSnowflakeStatementImpl statement =
+        new SnowflakeStatementImpl.NoOpSnowflakeStatementImpl();
     expectSQLException((() -> statement.executeQuery("select 1")));
     expectSQLException((() -> statement.executeUpdate("insert into a values(1)")));
     expectSQLException((() -> statement.executeLargeUpdate("insert into a values(1)")));
@@ -63,16 +63,16 @@ public class StatementNoOpLatestIT {
 
   @Test
   public void testGetQueryID() throws SQLException {
-    SnowflakeStatementV1.NoOpSnowflakeStatementV1 statement =
-        new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    SnowflakeStatementImpl.NoOpSnowflakeStatementImpl statement =
+        new SnowflakeStatementImpl.NoOpSnowflakeStatementImpl();
     assertEquals("invalid_query_id", statement.getQueryID());
     assertEquals(new ArrayList<>(), statement.getBatchQueryIDs());
   }
 
   @Test
   public void testSetNoOp() throws SQLException {
-    SnowflakeStatementV1.NoOpSnowflakeStatementV1 statement =
-        new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    SnowflakeStatementImpl.NoOpSnowflakeStatementImpl statement =
+        new SnowflakeStatementImpl.NoOpSnowflakeStatementImpl();
     expectNoOp(() -> statement.setMaxRows(2));
     expectNoOp(() -> statement.setCursorName("a"));
     expectNoOp(() -> statement.setEscapeProcessing(false));

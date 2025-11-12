@@ -9,7 +9,6 @@ import net.snowflake.client.internal.jdbc.SnowflakeType;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class FieldSchemaCreator {
   static final SFLogger logger = SFLoggerFactory.getLogger(FieldSchemaCreator.class);
   public static final int MAX_TEXT_COLUMN_SIZE = 134217728;

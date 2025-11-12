@@ -5,7 +5,6 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.internal.core.crl.CrlRevocationManager;
 
-@SnowflakeJdbcInternalApi
 public class SFBasicCrlTrustManager implements X509TrustManager {
   private final X509TrustManager trustManager;
   private final CrlRevocationManager revocationManager;

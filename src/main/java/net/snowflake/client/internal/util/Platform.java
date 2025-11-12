@@ -1,9 +1,7 @@
 package net.snowflake.client.internal.util;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 /** Enum representing all detectable cloud platforms and identity providers. */
-@SnowflakeJdbcInternalApi
 public enum Platform {
   IS_AWS_LAMBDA("is_aws_lambda"),
   IS_AZURE_FUNCTION("is_azure_function"),

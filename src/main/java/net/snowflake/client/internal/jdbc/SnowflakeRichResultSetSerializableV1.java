@@ -12,12 +12,10 @@ import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.QueryResultFormat;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFBaseStatement;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class SnowflakeRichResultSetSerializableV1 extends SnowflakeResultSetSerializableV1 {
 
   private static final SFLogger logger =
@@ -200,7 +198,6 @@ public class SnowflakeRichResultSetSerializableV1 extends SnowflakeResultSetSeri
     return richResultFirstChunkRowset;
   }
 
-  @SnowflakeJdbcInternalApi
   public static class SnowflakeRichResultsColumnMetadata extends SnowflakeColumnMetadata {
 
     private final int columnIndex;

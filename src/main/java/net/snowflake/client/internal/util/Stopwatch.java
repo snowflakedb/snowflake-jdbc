@@ -1,9 +1,7 @@
 package net.snowflake.client.internal.util;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 /** Stopwatch class used to calculate the time between start and stop. */
-@SnowflakeJdbcInternalApi
 public class Stopwatch {
   private boolean isStarted = false;
   private long startTime;

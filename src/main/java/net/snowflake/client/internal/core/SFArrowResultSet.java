@@ -112,7 +112,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
-  @SnowflakeJdbcInternalApi protected Converters converters;
+  private Converters converters;
 
   private final ObjectMapper objectMapper;
 
@@ -374,13 +374,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  @SnowflakeJdbcInternalApi
   public Converters getConverters() {
     return converters;
   }
 
   @Override
-  @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
       Object input,
       Class<?> parentObjectClass,
@@ -395,7 +393,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  @SnowflakeJdbcInternalApi
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
     if (object instanceof String) {
       return convertStringToDate((String) object, tz);
@@ -404,7 +401,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  @SnowflakeJdbcInternalApi
   public Time convertToTime(Object object, int scale) throws SFException {
     if (object instanceof String) {
       return convertStringToTime((String) object, scale);
@@ -413,7 +409,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  @SnowflakeJdbcInternalApi
   public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     if (object instanceof String) {
@@ -586,7 +581,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return getObjectRepresentation(columnIndex, true);
   }
 
-  @SnowflakeJdbcInternalApi
   @Override
   public Object getObjectWithoutString(int columnIndex) throws SFException {
     return getObjectRepresentation(columnIndex, false);

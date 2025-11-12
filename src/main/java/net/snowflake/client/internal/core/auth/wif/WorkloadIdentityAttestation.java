@@ -1,9 +1,7 @@
 package net.snowflake.client.internal.core.auth.wif;
 
 import java.util.Map;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class WorkloadIdentityAttestation {
 
   private final WorkloadIdentityProviderType provider;

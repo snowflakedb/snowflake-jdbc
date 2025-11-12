@@ -11,7 +11,6 @@ import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.SFBaseSession;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 public class SnowflakeColumnMetadata implements Serializable {
   private static final long serialVersionUID = 1L;
@@ -32,7 +31,6 @@ public class SnowflakeColumnMetadata implements Serializable {
   private boolean isAutoIncrement;
   private int dimension; // vector type contains dimension
 
-  @SnowflakeJdbcInternalApi
   public SnowflakeColumnMetadata(
       String name,
       int type,
@@ -114,7 +112,6 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.isAutoIncrement = isAutoIncrement;
   }
 
-  @SnowflakeJdbcInternalApi
   public SnowflakeColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLLoggedException {
@@ -232,12 +229,10 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
-  @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getFields() {
     return fields;
   }
 
-  @SnowflakeJdbcInternalApi
   public void setFields(List<FieldMetadata> fields) {
     this.fields = fields;
   }
@@ -262,7 +257,6 @@ public class SnowflakeColumnMetadata implements Serializable {
     isAutoIncrement = autoIncrement;
   }
 
-  @SnowflakeJdbcInternalApi
   public int getDimension() {
     return dimension;
   }

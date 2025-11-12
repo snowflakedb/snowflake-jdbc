@@ -6,7 +6,6 @@ import java.security.Security;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class SecurityUtil {
 
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SecurityUtil.class);

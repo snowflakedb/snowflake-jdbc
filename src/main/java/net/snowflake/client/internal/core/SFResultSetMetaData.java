@@ -492,7 +492,6 @@ public class SFResultSetMetaData {
     return isAutoIncrementList;
   }
 
-  @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getColumnFields(int column) throws SFException {
     if (column < 1 || column > columnMetadata.size()) {
       throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);

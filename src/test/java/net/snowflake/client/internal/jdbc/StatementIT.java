@@ -22,12 +22,12 @@ import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.statement.SnowflakeStatement;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
@@ -508,7 +508,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       }
 
       telemetryClient =
-          ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
+          ((SnowflakeStatementImpl) statement).connection.getSfSession().getTelemetryClient();
 
       // there should be logs ready to be sent
       assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
@@ -594,12 +594,12 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testUnwrapper() throws Throwable {
     try (Statement statement = connection.createStatement()) {
-      assertTrue(statement.isWrapperFor(SnowflakeStatementV1.class));
+      assertTrue(statement.isWrapperFor(SnowflakeStatementImpl.class));
       statement.execute("select 1");
       SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
       assertNotNull(sfstatement.getQueryID());
 
-      assertThrows(SQLException.class, () -> statement.unwrap(SnowflakeConnectionV1.class));
+      assertThrows(SQLException.class, () -> statement.unwrap(SnowflakeConnectionImpl.class));
     }
   }
 

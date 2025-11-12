@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
@@ -156,7 +156,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
 
       SFSession session =
-          statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+          statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
       String originalSchema = session.getSchema();
 
@@ -174,7 +174,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute(String.format("use schema %s; select 1", originalSchema));
       // current schema change should persist outside of the above statement
 
-      session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+      session = statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSfSession();
       assertEquals(originalSchema, session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select current_schema()")) {
@@ -189,7 +189,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
 
       SFSession session =
-          statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+          statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
       // we need an arbitrary parameter which is updated by the client after each query for this
       // test

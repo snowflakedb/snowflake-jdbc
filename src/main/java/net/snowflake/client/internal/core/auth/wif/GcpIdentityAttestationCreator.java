@@ -15,14 +15,12 @@ import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 
-@SnowflakeJdbcInternalApi
 public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
 
   private static final String METADATA_FLAVOR_HEADER_NAME = "Metadata-Flavor";

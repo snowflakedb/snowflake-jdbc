@@ -2,6 +2,7 @@ package net.snowflake.client.api.resultset;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import net.snowflake.client.internal.core.QueryStatus;
 import net.snowflake.client.internal.jdbc.QueryStatusV2;
 
@@ -60,4 +61,46 @@ public interface SnowflakeResultSet {
    */
   List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
       throws SQLException;
+
+  /**
+   * Get an array of elements from a structured type (ARRAY) column.
+   *
+   * <p>This method is used to retrieve array elements with proper type conversion for Snowflake
+   * structured types.
+   *
+   * @param <T> the type of array elements
+   * @param columnIndex the column index (1-based)
+   * @param type the class of array elements
+   * @return an array of elements, or null if the value was SQL NULL
+   * @throws SQLException if the column is not a structured type or conversion fails
+   */
+  <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException;
+
+  /**
+   * Get a list of elements from a structured type (ARRAY) column.
+   *
+   * <p>This method is used to retrieve array elements as a List with proper type conversion for
+   * Snowflake structured types.
+   *
+   * @param <T> the type of list elements
+   * @param columnIndex the column index (1-based)
+   * @param type the class of list elements
+   * @return a List of elements, or null if the value was SQL NULL
+   * @throws SQLException if the column is not a structured type or conversion fails
+   */
+  <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException;
+
+  /**
+   * Get a map of key-value pairs from a structured type (MAP or OBJECT) column.
+   *
+   * <p>This method is used to retrieve map entries with proper type conversion for Snowflake
+   * structured types.
+   *
+   * @param <T> the type of map values
+   * @param columnIndex the column index (1-based)
+   * @param type the class of map values
+   * @return a Map of String keys to typed values, or null if the value was SQL NULL
+   * @throws SQLException if the column is not a structured type or conversion fails
+   */
+  <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException;
 }

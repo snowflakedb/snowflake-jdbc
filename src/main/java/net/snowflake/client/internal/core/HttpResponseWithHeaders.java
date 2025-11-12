@@ -8,7 +8,6 @@ import java.util.Map;
  * interface for methods that need access to response headers without exposing internal HTTP client
  * implementation details.
  */
-@SnowflakeJdbcInternalApi
 public class HttpResponseWithHeaders {
   private final String responseBody;
   private final Map<String, String> headers;

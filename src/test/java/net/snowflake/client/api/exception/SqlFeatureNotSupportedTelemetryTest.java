@@ -82,12 +82,12 @@ public class SqlFeatureNotSupportedTelemetryTest {
     // Unmasked stacktrace for SQLFeatureNotSupportedException. Contains reason as well
     String featureNotSupportedStacktrace =
         "net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException: Not supported!\n"
-            + "\tat net.snowflake.client.jdbc.SnowflakeStatementV1.execute(SnowflakeStatementV1.java:344)\n";
+            + "\tat net.snowflake.client.jdbc.SnowflakeStatementImpl.execute(SnowflakeStatementImpl.java:344)\n";
 
     // Masked stacktrace
     String maskedFeatureNotSupportedStacktrace =
         "net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException\n"
-            + "\tat net.snowflake.client.jdbc.SnowflakeStatementV1.execute(SnowflakeStatementV1.java:344)\n";
+            + "\tat net.snowflake.client.jdbc.SnowflakeStatementImpl.execute(SnowflakeStatementImpl.java:344)\n";
 
     assertEquals(
         maskedFeatureNotSupportedStacktrace,

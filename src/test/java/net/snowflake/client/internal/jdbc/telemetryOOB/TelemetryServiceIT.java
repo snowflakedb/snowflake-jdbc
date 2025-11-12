@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.annotations.RunOnTestaccountNotOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.SFSession;
@@ -376,7 +376,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
               SnowflakeSQLLoggedException.class,
               () ->
                   generateDummyException(
-                      fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession()));
+                      fakeErrorCode, con.unwrap(SnowflakeConnectionImpl.class).getSfSession()));
       // The error response has the same code as the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
     }

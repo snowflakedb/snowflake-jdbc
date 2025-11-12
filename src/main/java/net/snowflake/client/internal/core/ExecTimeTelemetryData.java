@@ -171,7 +171,6 @@ public class ExecTimeTelemetryData {
     return "";
   }
 
-  @SnowflakeJdbcInternalApi
   public String getLogString() {
     return "Query id: "
         + this.queryId

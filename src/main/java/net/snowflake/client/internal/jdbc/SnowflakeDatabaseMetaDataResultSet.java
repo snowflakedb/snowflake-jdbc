@@ -11,11 +11,15 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
+import net.snowflake.client.internal.core.QueryStatus;
+import net.snowflake.client.internal.jdbc.QueryStatusV2;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFResultSetMetaData;
 import net.snowflake.client.internal.log.SFLogger;
@@ -55,7 +59,7 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.showObjectResultSet = showObjectResultSet;
 
     SFBaseSession session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+        statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
@@ -87,7 +91,7 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.rows = rows;
 
     SFBaseSession session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+        statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
@@ -538,5 +542,41 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
       default:
         throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
+  }
+
+  @Override
+  public QueryStatus getStatus() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public QueryStatusV2 getStatusV2() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public String getQueryErrorMessage() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
+      throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
+
+  @Override
+  public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 }

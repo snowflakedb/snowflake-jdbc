@@ -37,7 +37,6 @@ import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFOCSPException;
 import net.snowflake.client.internal.core.SessionUtil;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.core.URLUtil;
 import net.snowflake.client.internal.core.UUIDUtils;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
@@ -169,7 +168,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -286,7 +284,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -404,7 +401,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -536,7 +532,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -748,7 +743,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -814,7 +808,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
@@ -877,7 +870,6 @@ public class RestRequest {
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
    *     State Exception i.e. connection is already shutdown etc
    */
-  @SnowflakeJdbcInternalApi
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,

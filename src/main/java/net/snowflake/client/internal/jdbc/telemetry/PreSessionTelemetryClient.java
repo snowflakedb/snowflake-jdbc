@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -15,7 +14,6 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * Used for scenario where telemetry needs to be collected before a session is established, such as
  * during SSL/TLS setup and certificate validation.
  */
-@SnowflakeJdbcInternalApi
 public class PreSessionTelemetryClient implements Telemetry {
   private static final SFLogger logger = SFLoggerFactory.getLogger(PreSessionTelemetryClient.class);
 

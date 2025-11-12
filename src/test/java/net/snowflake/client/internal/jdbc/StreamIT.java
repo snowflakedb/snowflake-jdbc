@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
@@ -119,7 +119,7 @@ public class StreamIT extends BaseJDBCTest {
         // with name hello.txt
         // upload the data to user stage under testUploadStream with name hello.txt
         connection
-            .unwrap(SnowflakeConnectionV1.class)
+            .unwrap(SnowflakeConnectionImpl.class)
             .uploadStream(
                 "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", true);
 

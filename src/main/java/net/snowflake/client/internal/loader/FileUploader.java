@@ -3,7 +3,7 @@ package net.snowflake.client.internal.loader;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.loader.Loader;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.log.SFLogger;
@@ -73,13 +73,13 @@ public class FileUploader implements Runnable {
           if (attempt < 2) {
             _loader
                 .getPutConnection()
-                .unwrap(SnowflakeConnectionV1.class)
+                .unwrap(SnowflakeConnectionImpl.class)
                 .setInjectFileUploadFailure(_file.getName());
           } else {
             // so that retry now succeeds.
             _loader
                 .getPutConnection()
-                .unwrap(SnowflakeConnectionV1.class)
+                .unwrap(SnowflakeConnectionImpl.class)
                 .setInjectFileUploadFailure(null);
           }
         }

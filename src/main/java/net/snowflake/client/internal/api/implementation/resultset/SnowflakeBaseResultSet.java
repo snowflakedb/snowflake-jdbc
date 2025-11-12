@@ -1,4 +1,4 @@
-package net.snowflake.client.api.resultset;
+package net.snowflake.client.internal.api.implementation.resultset;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
@@ -37,10 +37,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.api.resultset.SnowflakeResultSet;
+import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.internal.core.ColumnTypeHelper;
 import net.snowflake.client.internal.core.JsonSqlInput;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -60,7 +62,7 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
-public abstract class SnowflakeBaseResultSet implements ResultSet {
+public abstract class SnowflakeBaseResultSet implements ResultSet, SnowflakeResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
   private final int resultSetType;
   private final int resultSetConcurrency;
@@ -87,11 +89,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   private static SFBaseSession maybeGetSession(Statement statement) {
     try {
-      return ((SnowflakeConnectionV1) statement.getConnection()).getSFBaseSession();
+      return ((SnowflakeConnectionImpl) statement.getConnection()).getSFBaseSession();
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(
-          "Unable to unwrap SnowflakeStatementV1 class to retrieve session. Session is null.",
+          "Unable to unwrap SnowflakeStatementImpl class to retrieve session. Session is null.",
           false);
       return null;
     }
@@ -107,7 +109,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
     // This is a sessionless result set, so there is no actual statement for it.
-    this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    this.statement = new SnowflakeStatementImpl.NoOpSnowflakeStatementImpl();
     this.resultSetType = resultSetSerializable.getResultSetType();
     this.resultSetConcurrency = resultSetSerializable.getResultSetConcurrency();
     this.resultSetHoldability = resultSetSerializable.getResultSetHoldability();
@@ -124,7 +126,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetType = 0;
     this.resultSetConcurrency = 0;
     this.resultSetHoldability = 0;
-    this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    this.statement = new SnowflakeStatementImpl.NoOpSnowflakeStatementImpl();
     this.session = null;
     this.serializable = null;
   }

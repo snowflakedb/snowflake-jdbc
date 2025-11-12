@@ -8,11 +8,9 @@ import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.telemetry.PreSessionTelemetryClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-@SnowflakeJdbcInternalApi
 public class CrlRevocationManager {
   private static final CRLCacheManager crlCacheManager;
   private final VerifiedCertPathBuilder certPathBuilder;

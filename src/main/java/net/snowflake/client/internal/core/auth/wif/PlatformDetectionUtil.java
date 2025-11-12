@@ -7,13 +7,11 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.OCSPMode;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
 
-@SnowflakeJdbcInternalApi
 public class PlatformDetectionUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(PlatformDetectionUtil.class);

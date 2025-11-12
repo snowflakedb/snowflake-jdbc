@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.core;
 
-@SnowflakeJdbcInternalApi
 public class PrivateLinkDetector {
   /**
    * We can only tell if private link is enabled for certain hosts when the hostname contains the

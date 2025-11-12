@@ -7,7 +7,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 import net.snowflake.client.internal.core.crl.CrlRevocationManager;
 
-@SnowflakeJdbcInternalApi
 public class SFExtendedCrlTrustManager extends X509ExtendedTrustManager {
   private final X509ExtendedTrustManager exTrustManager;
   private final CrlRevocationManager revocationManager;

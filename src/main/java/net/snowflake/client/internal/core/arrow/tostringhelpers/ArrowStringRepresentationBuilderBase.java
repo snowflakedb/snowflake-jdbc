@@ -3,7 +3,6 @@ package net.snowflake.client.internal.core.arrow.tostringhelpers;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringJoiner;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 
 /**
@@ -11,7 +10,6 @@ import net.snowflake.client.internal.jdbc.SnowflakeType;
  * structured types as JSON one-liners. Provides some additional snowflake-specific logic in order
  * to determine whether the value should be quoted or case should be changed.
  */
-@SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
   private final StringJoiner joiner;
   private static final Set<SnowflakeType> quotableTypes;

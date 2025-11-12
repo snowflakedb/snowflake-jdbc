@@ -22,11 +22,9 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class SFConnectionConfigParser {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFConnectionConfigParser.class);

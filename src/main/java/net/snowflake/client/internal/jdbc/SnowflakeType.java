@@ -16,7 +16,6 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.SFBaseSession;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -63,7 +62,6 @@ public enum SnowflakeType {
     return getJavaType(type, false);
   }
 
-  @SnowflakeJdbcInternalApi
   public static JavaDataType getJavaType(SnowflakeType type, boolean isStructuredType) {
     // TODO structuredType fill for Array and Map: SNOW-1234216, SNOW-1234214
     switch (type) {

@@ -8,7 +8,6 @@ import java.io.File;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class FileCacheUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(FileCacheUtil.class);
 

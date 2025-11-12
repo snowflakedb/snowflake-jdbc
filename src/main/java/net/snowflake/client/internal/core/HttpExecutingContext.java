@@ -3,7 +3,6 @@ package net.snowflake.client.internal.core;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 
-@SnowflakeJdbcInternalApi
 public class HttpExecutingContext {
 
   // min backoff in milli before we retry due to transient issues

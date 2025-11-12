@@ -34,12 +34,12 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnJenkins;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.api.statement.SnowflakeStatement;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ParameterBindingDTO;
 import net.snowflake.client.internal.core.QueryStatus;
@@ -197,7 +197,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         statement.getResultSet();
       }
 
-      assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      assertEquals(9, statement.unwrap(SnowflakeStatementImpl.class).getOpenResultSets().size());
     }
 
     try (Statement statement = connection.createStatement()) {
@@ -207,7 +207,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         resultSet.close();
       }
 
-      assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      assertEquals(0, statement.unwrap(SnowflakeStatementImpl.class).getOpenResultSets().size());
     }
   }
 
@@ -217,7 +217,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Connection con = getConnection();
         Statement stmt = con.createStatement()) {
       try {
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         sfSession.setPreparedStatementLogging(true);
 
         stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
@@ -241,7 +241,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         }
 
         Map<String, ParameterBindingDTO> bindings =
-            pstatement.unwrap(SnowflakePreparedStatementV1.class).getBatchParameterBindings();
+            pstatement.unwrap(SnowflakePreparedStatementImpl.class).getBatchParameterBindings();
         assertTrue(bindings.size() > 0);
         int bindValues = BindUploader.arrayBindValueCount(bindings);
         assertEquals(8008, bindValues);

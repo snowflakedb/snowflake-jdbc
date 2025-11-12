@@ -2,7 +2,6 @@ package net.snowflake.client.internal.core;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
-@SnowflakeJdbcInternalApi
 public class HttpResponseContextDto {
 
   private CloseableHttpResponse httpResponse;

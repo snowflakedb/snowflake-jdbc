@@ -16,8 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ParameterBindingDTO;
 import net.snowflake.client.internal.core.SFSession;
@@ -38,7 +38,7 @@ public class BindUploaderIT extends BaseJDBCTest {
   TimeZone prevTimeZone; // store last time zone and restore after tests
 
   // We don't insert to a table here, but the binds we test the upload with
-  // are constructed by SnowflakePreparedStatementV1.
+  // are constructed by SnowflakePreparedStatementImpl.
   // The class first typechecks the query to determine whether array bind is
   // supported, so we need this to force the class to construct array binds
   private static final String createTableSQL =
@@ -101,7 +101,7 @@ public class BindUploaderIT extends BaseJDBCTest {
   @BeforeEach
   public void setUp() throws Exception {
     conn = getConnection();
-    session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = conn.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -115,14 +115,14 @@ public class BindUploaderIT extends BaseJDBCTest {
   }
 
   static Map<String, ParameterBindingDTO> getBindings(Connection conn) throws SQLException {
-    SnowflakePreparedStatementV1 stmt =
-        (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
+    SnowflakePreparedStatementImpl stmt =
+        (SnowflakePreparedStatementImpl) conn.prepareStatement(dummyInsert);
     bind(stmt, row1);
     bind(stmt, row2);
     return stmt.getBatchParameterBindings();
   }
 
-  static void bind(SnowflakePreparedStatementV1 stmt, Object[] row) throws SQLException {
+  static void bind(SnowflakePreparedStatementImpl stmt, Object[] row) throws SQLException {
     stmt.setInt(1, (int) row[0]);
     stmt.setLong(2, (long) row[1]);
     stmt.setFloat(3, (float) row[2]);

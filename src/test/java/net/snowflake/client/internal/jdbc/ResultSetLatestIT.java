@@ -42,10 +42,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.category.TestTags;
@@ -140,7 +140,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       List<ResultSet> rsList = new ArrayList<>();
       // Set memory limit to low number
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setMemoryLimitForTesting(2000000);
       // open multiple statements concurrently to overwhelm current memory allocation
@@ -161,7 +161,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
       // set memory limit back to default invalid value so it does not get used
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
     }
@@ -175,11 +175,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
     int rowCount = 170000;
     try (Statement stmt = createStatement(queryResultFormat)) {
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setMemoryLimitForTesting(1 * 1024 * 1024);
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 1);
       // Set memory limit to low number
@@ -199,12 +199,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
       // reset retry to MAX_NUM_OF_RETRY, which is 10
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 10);
       // set memory limit back to default invalid value so it does not get used
       connection
-          .unwrap(SnowflakeConnectionV1.class)
+          .unwrap(SnowflakeConnectionImpl.class)
           .getSFBaseSession()
           .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
     }
@@ -224,7 +224,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     Statement stmt = createStatement(queryResultFormat);
     stmt.close();
     Telemetry telemetry =
-        connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+        connection.unwrap(SnowflakeConnectionImpl.class).getSfSession().getTelemetryClient();
     DatabaseMetaData metadata = connection.getMetaData();
     // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned
     // ResultSet
@@ -315,7 +315,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
       assertTrue(cnt >= 0);
       Telemetry telemetry =
-          connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+          connection.unwrap(SnowflakeConnectionImpl.class).getSfSession().getTelemetryClient();
       LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
 
       // there should be a log for each of the following fields
@@ -661,7 +661,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
         }
       }
-      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
       Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
       field.setAccessible(true);
       field.set(baseSession, false);
@@ -1028,7 +1028,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         Statement statement = con.createStatement()) {
       try {
         setQueryResultFormat(statement, queryResultFormat);
-        SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+        SFBaseSession session = con.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
         Integer maxVarcharSize =
             (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
         if (maxVarcharSize != null) {

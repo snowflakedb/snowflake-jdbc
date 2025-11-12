@@ -2,11 +2,9 @@ package net.snowflake.client.internal.core.auth.wif;
 
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class OidcIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
 
   private static final SFLogger logger =

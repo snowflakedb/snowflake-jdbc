@@ -15,12 +15,10 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 public class ObjectMapperFactory {
   private static final SFLogger log = SFLoggerFactory.getLogger(ObjectMapperFactory.class);
 
-  @SnowflakeJdbcInternalApi
   // Snowflake allows up to 128M (after updating Max LOB size) string size and returns base64
   // encoded value that makes it up to 180M
   public static final int DEFAULT_MAX_JSON_STRING_LEN = 180_000_000;
 
-  @SnowflakeJdbcInternalApi
   public static final String MAX_JSON_STRING_LENGTH_JVM =
       "net.snowflake.jdbc.objectMapper.maxJsonStringLength";
 
@@ -41,7 +39,6 @@ public class ObjectMapperFactory {
     return mapper;
   }
 
-  @SnowflakeJdbcInternalApi
   public static ObjectMapper getObjectMapperForSession(SFBaseSession session) {
     ObjectMapper mapper = getObjectMapper();
     if (session != null && session.getCommonParameters() != null) {

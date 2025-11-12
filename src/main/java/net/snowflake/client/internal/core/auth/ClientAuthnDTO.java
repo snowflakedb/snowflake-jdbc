@@ -2,9 +2,7 @@ package net.snowflake.client.internal.core.auth;
 
 import java.util.Map;
 import javax.annotation.Nullable;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class ClientAuthnDTO {
 
   // contains all the required data for current authn step

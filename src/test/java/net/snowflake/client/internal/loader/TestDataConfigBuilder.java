@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.loader.LoadResultListener;
 import net.snowflake.client.api.loader.LoaderFactory;
 import net.snowflake.client.api.loader.LoaderProperty;
@@ -283,7 +283,7 @@ class TestDataConfigBuilder {
     streamLoader.setTestMode(testMode);
 
     // Wait for 5 seconds on first put to buffer everything up.
-    putConnection.unwrap(SnowflakeConnectionV1.class).setInjectedDelay(5000);
+    putConnection.unwrap(SnowflakeConnectionImpl.class).setInjectedDelay(5000);
 
     return _resultListener;
   }

@@ -1,4 +1,4 @@
-package net.snowflake.client.api.connection;
+package net.snowflake.client.internal.api.implementation.connection;
 
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
@@ -38,13 +38,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
-import net.snowflake.client.api.statement.SnowflakeCallableStatementV1;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeCallableStatementImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
@@ -63,8 +65,8 @@ import net.snowflake.client.internal.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */
-public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionV1.class);
+public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionImpl.class);
 
   static {
     SFLoggerUtil.initializeSnowflakeLogger();
@@ -105,24 +107,24 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private ObjectMapper objectMapper;
 
   /**
-   * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
+   * Instantiates a SnowflakeConnectionImpl with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
-   * @throws SQLException if failed to instantiate a SnowflakeConnectionV1.
+   * @throws SQLException if failed to instantiate a SnowflakeConnectionImpl.
    */
-  public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler) throws SQLException {
+  public SnowflakeConnectionImpl(SFConnectionHandler sfConnectionHandler) throws SQLException {
     initConnectionWithImpl(sfConnectionHandler, null, null);
   }
 
   /**
-   * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
+   * Instantiates a SnowflakeConnectionImpl with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
    * @param url The URL string.
    * @param info Connection properties.
    * @throws SQLException if failed to instantiate connection.
    */
-  public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler, String url, Properties info)
+  public SnowflakeConnectionImpl(SFConnectionHandler sfConnectionHandler, String url, Properties info)
       throws SQLException {
     initConnectionWithImpl(sfConnectionHandler, url, info);
   }
@@ -135,7 +137,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * @throws SQLException if failed to create a snowflake connection i.e. username or password not
    *     specified
    */
-  public SnowflakeConnectionV1(String url, Properties info) throws SQLException {
+  public SnowflakeConnectionImpl(String url, Properties info) throws SQLException {
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid()) {
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
@@ -146,7 +148,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     isClosed = false;
   }
 
-  public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
+  public SnowflakeConnectionImpl(String url, Properties info, boolean fakeConnection)
       throws SQLException {
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid()) {
@@ -237,11 +239,12 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * @return An array of child query IDs
    * @throws SQLException If the query is running or the corresponding query is FAILED.
    */
+  @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     // execute the statement and auto-close it as well
     try (final Statement statement = this.createStatement()) {
-      return statement.unwrap(SnowflakeStatementV1.class).getChildQueryIds(queryID);
+      return statement.unwrap(SnowflakeStatementImpl.class).getChildQueryIds(queryID);
     }
   }
 
@@ -281,8 +284,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       }
       for (Statement stmt : openStatements) {
         if (stmt != null && !stmt.isClosed()) {
-          if (stmt.isWrapperFor(SnowflakeStatementV1.class)) {
-            stmt.unwrap(SnowflakeStatementV1.class).close(false);
+          if (stmt.isWrapperFor(SnowflakeStatementImpl.class)) {
+            stmt.unwrap(SnowflakeStatementImpl.class).close(false);
           } else {
             stmt.close();
           }
@@ -328,7 +331,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public DatabaseMetaData getMetaData() throws SQLException {
     logger.trace("DatabaseMetaData getMetaData()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return new SnowflakeDatabaseMetaData(this);
+    return new SnowflakeDatabaseMetaDataImpl(this);
   }
 
   @Override
@@ -344,7 +347,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.trace("CallableStatement prepareCall(String sql, boolean skipParsing)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     CallableStatement stmt =
-        new SnowflakeCallableStatementV1(
+        new SnowflakeCallableStatementImpl(
             this,
             sql,
             skipParsing,
@@ -373,7 +376,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       throws SQLException {
     logger.trace("CallableStatement prepareCall(String sql, int " + "resultSetType,", false);
     CallableStatement stmt =
-        new SnowflakeCallableStatementV1(
+        new SnowflakeCallableStatementImpl(
             this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
     openStatements.add(stmt);
     return stmt;
@@ -400,7 +403,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     if (isAutoCommit != currentAutoCommit) {
       sfSession.setAutoCommit(isAutoCommit);
       this.executeImmediate(
-          "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit="
+          "alter session /* JDBC:SnowflakeConnectionImpl.setAutoCommit*/ set autocommit="
               + isAutoCommit);
     }
   }
@@ -517,7 +520,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         false);
 
     Statement stmt =
-        new SnowflakeStatementV1(this, resultSetType, resultSetConcurrency, resultSetHoldability);
+        new SnowflakeStatementImpl(this, resultSetType, resultSetConcurrency, resultSetHoldability);
     openStatements.add(stmt);
     return stmt;
   }
@@ -577,7 +580,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.trace("PreparedStatement prepareStatement(String sql, " + "int resultSetType,", false);
 
     PreparedStatement stmt =
-        new SnowflakePreparedStatementV1(
+        new SnowflakePreparedStatementImpl(
             this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
     openStatements.add(stmt);
     return stmt;
@@ -587,7 +590,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.trace("PreparedStatement prepareStatement(String sql, boolean skipParsing)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     PreparedStatement stmt =
-        new SnowflakePreparedStatementV1(
+        new SnowflakePreparedStatementImpl(
             this,
             sql,
             skipParsing,
@@ -819,19 +822,24 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return (T) this;
   }
 
-  public int getDatabaseMajorVersion() {
+  @Override
+  public int getDatabaseMajorVersion() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getDatabaseMajorVersion();
   }
 
-  public int getDatabaseMinorVersion() {
+  @Override
+  public int getDatabaseMinorVersion() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getDatabaseMinorVersion();
   }
 
-  public String getDatabaseVersion() {
+  @Override
+  public String getDatabaseVersion() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getDatabaseVersion();
   }
 
-  @Override
   public SFConnectionHandler getHandler() {
     return sfConnectionHandler;
   }
@@ -957,7 +965,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           "stage name is null");
     }
 
-    SnowflakeStatementV1 stmt = this.createStatement().unwrap(SnowflakeStatementV1.class);
+    SnowflakeStatementImpl stmt = this.createStatement().unwrap(SnowflakeStatementImpl.class);
 
     StringBuilder destStage = new StringBuilder();
 
@@ -1023,8 +1031,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           "source file name is null or empty");
     }
 
-    SnowflakeStatementV1 stmt =
-        new SnowflakeStatementV1(
+    SnowflakeStatementImpl stmt =
+        new SnowflakeStatementImpl(
             this,
             ResultSet.TYPE_FORWARD_ONLY,
             ResultSet.CONCUR_READ_ONLY,

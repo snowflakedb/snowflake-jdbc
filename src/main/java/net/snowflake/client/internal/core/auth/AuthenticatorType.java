@@ -1,8 +1,6 @@
 package net.snowflake.client.internal.core.auth;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public enum AuthenticatorType {
   /*
    * regular login username+password via Snowflake, may or may not have MFA

@@ -631,7 +631,6 @@ public class SFSession extends SFBaseSession {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public void overrideConsoleHandlerWhenNecessary() {
     if (javaUtilLoggingConsoleOut) {
       JDK14Logger.useStdOutConsoleHandler(javaUtilLoggingConsoleOutThreshold);
@@ -1330,7 +1329,6 @@ public class SFSession extends SFBaseSession {
     return idToken;
   }
 
-  @SnowflakeJdbcInternalApi
   public String getAccessToken() {
     return oauthAccessToken;
   }

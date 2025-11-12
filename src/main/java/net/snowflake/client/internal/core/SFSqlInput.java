@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.TimeZone;
 
 /** This interface extends the standard {@link SQLInput} interface to provide additional methods. */
-@SnowflakeJdbcInternalApi
 public interface SFSqlInput extends SQLInput {
 
   /**

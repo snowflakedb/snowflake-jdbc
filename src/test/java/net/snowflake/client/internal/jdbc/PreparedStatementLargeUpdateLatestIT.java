@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import org.junit.jupiter.api.Tag;
@@ -40,7 +40,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
             PreparedStatement spyp = spy(st)) {
           // Mock internal method which returns rowcount
           Mockito.doReturn(expectedUpdateRows)
-              .when((SnowflakePreparedStatementV1) spyp)
+              .when((SnowflakePreparedStatementImpl) spyp)
               .executeUpdateInternal(
                   Mockito.any(String.class),
                   Mockito.any(Map.class),
@@ -73,7 +73,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
           long numRows = Integer.MAX_VALUE + 10L;
           // Mock internal method which returns rowcount
           Mockito.doReturn(numRows)
-              .when((SnowflakePreparedStatementV1) spyp)
+              .when((SnowflakePreparedStatementImpl) spyp)
               .executeUpdateInternal(
                   Mockito.any(String.class),
                   Mockito.any(Map.class),

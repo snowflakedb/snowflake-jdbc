@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.log;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import org.apache.commons.logging.Log;
 
 /**
@@ -8,7 +7,6 @@ import org.apache.commons.logging.Log;
  * (via java.util.logging or SLF4J) and mask secrets. Wrapper does not hide trace and debug
  * messages.
  */
-@SnowflakeJdbcInternalApi
 public class CommonsLoggingWrapper implements Log {
   private final SFLogger logger;
 

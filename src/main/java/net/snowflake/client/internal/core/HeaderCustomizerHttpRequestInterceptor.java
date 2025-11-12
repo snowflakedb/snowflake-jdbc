@@ -35,7 +35,6 @@ import org.apache.http.protocol.HttpContext;
  *
  * @see HttpHeadersCustomizer
  */
-@SnowflakeJdbcInternalApi
 public class HeaderCustomizerHttpRequestInterceptor extends RequestHandler2
     implements HttpRequestInterceptor {
   private static final SFLogger logger =

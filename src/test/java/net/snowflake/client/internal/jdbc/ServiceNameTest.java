@@ -6,8 +6,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpResponseWithHeaders;
@@ -131,16 +131,16 @@ public class ServiceNameTest {
       props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
       props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
       props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
-      try (SnowflakeConnectionV1 con =
-          new SnowflakeConnectionV1(
+      try (SnowflakeConnectionImpl con =
+          new SnowflakeConnectionImpl(
               "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props)) {
         assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
 
-        try (SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement()) {
+        try (SnowflakeStatementImpl stmt = (SnowflakeStatementImpl) con.createStatement()) {
           stmt.execute("SELECT 1");
           assertThat(
               stmt.getConnection()
-                  .unwrap(SnowflakeConnectionV1.class)
+                  .unwrap(SnowflakeConnectionImpl.class)
                   .getSfSession()
                   .getServiceName(),
               is(NEW_SERVICE_NAME));

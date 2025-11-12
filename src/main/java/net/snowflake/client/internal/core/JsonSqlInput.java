@@ -31,7 +31,6 @@ import net.snowflake.client.internal.util.ThrowingBiFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-@SnowflakeJdbcInternalApi
 public class JsonSqlInput extends BaseSqlInput {
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonSqlInput.class);
   private final String text;

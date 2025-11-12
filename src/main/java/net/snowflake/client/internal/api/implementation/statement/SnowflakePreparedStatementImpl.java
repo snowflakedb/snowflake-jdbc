@@ -1,4 +1,4 @@
-package net.snowflake.client.api.statement;
+package net.snowflake.client.internal.api.implementation.statement;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
@@ -59,10 +60,10 @@ import net.snowflake.client.internal.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
-public class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
+public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     implements PreparedStatement, SnowflakePreparedStatement {
   private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SnowflakePreparedStatementV1.class);
+      SFLoggerFactory.getLogger(SnowflakePreparedStatementImpl.class);
 
   /** Error code returned when describing a statement that is binding table name */
   private static final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
@@ -111,7 +112,7 @@ public class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private final ObjectMapper objectMapper;
 
   /**
-   * Construct SnowflakePreparedStatementV1
+   * Construct SnowflakePreparedStatementImpl
    *
    * @param connection connection object
    * @param sql sql
@@ -122,8 +123,8 @@ public class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
-  public SnowflakePreparedStatementV1(
-      SnowflakeConnectionV1 connection,
+  public SnowflakePreparedStatementImpl(
+      SnowflakeConnectionImpl connection,
       String sql,
       boolean skipParsing,
       int resultSetType,

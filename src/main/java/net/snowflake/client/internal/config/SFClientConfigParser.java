@@ -14,7 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.internal.core.Constants;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -123,7 +122,6 @@ public class SFClientConfigParser {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public static void checkConfigFilePermissions(String derivedConfigFilePath) throws IOException {
     try {
       if (Constants.getOS() != Constants.OS.WINDOWS) {

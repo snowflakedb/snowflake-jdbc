@@ -61,9 +61,38 @@ public interface SnowflakeConnection {
   ResultSet createResultSet(String queryID) throws SQLException;
 
   /**
-   * Returns the SnowflakeConnectionImpl from the connection object.
+   * Return an array of child query IDs for the given query ID.
    *
-   * @return SFConnectionHandler
+   * <p>If the given query ID is for a multiple statements query, it returns an array of its child
+   * statements, otherwise, it returns an array to include the given query ID.
+   *
+   * @param queryID The given query ID
+   * @return An array of child query IDs
+   * @throws SQLException If the query is running or the corresponding query is FAILED.
    */
-  SFConnectionHandler getHandler();
+  String[] getChildQueryIds(String queryID) throws SQLException;
+
+  /**
+   * Get the major version of the Snowflake database.
+   *
+   * @return database major version
+   * @throws SQLException if an error occurs
+   */
+  int getDatabaseMajorVersion() throws SQLException;
+
+  /**
+   * Get the minor version of the Snowflake database.
+   *
+   * @return database minor version
+   * @throws SQLException if an error occurs
+   */
+  int getDatabaseMinorVersion() throws SQLException;
+
+  /**
+   * Get the full version string of the Snowflake database.
+   *
+   * @return database version string
+   * @throws SQLException if an error occurs
+   */
+  String getDatabaseVersion() throws SQLException;
 }

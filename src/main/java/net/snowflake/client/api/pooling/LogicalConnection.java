@@ -17,20 +17,20 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /**
- * Logical connection is wrapper class on top of SnowflakeConnectionV1 Every method call will be
- * delegated to SnowflakeConnectionV1 except for close method
+ * Logical connection is wrapper class on top of SnowflakeConnectionImpl Every method call will be
+ * delegated to SnowflakeConnectionImpl except for close method
  */
 class LogicalConnection implements Connection {
   private static final SFLogger logger = SFLoggerFactory.getLogger(LogicalConnection.class);
 
-  /** physical connection to snowflake, instance SnowflakeConnectionV1 */
+  /** physical connection to snowflake, instance SnowflakeConnectionImpl */
   private final Connection physicalConnection;
 
   /** Pooled connection object that create this logical connection */
@@ -150,7 +150,7 @@ class LogicalConnection implements Connection {
     if (isClosed) {
       return;
     }
-    SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
+    SnowflakeConnectionImpl sfConnection = physicalConnection.unwrap(SnowflakeConnectionImpl.class);
     logger.debug("Closing logical connection with session id: {}", sfConnection.getSessionID());
     pooledConnection.fireConnectionCloseEvent();
     isClosed = true;

@@ -12,11 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class DiagnosticContext {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(DiagnosticContext.class);

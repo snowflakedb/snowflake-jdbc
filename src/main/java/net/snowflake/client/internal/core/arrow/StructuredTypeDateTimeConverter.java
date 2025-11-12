@@ -12,11 +12,9 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
-@SnowflakeJdbcInternalApi
 public class StructuredTypeDateTimeConverter {
 
   private final TimeZone sessionTimeZone;

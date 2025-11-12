@@ -1,9 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 /** RetryContext stores information about an ongoing request's retrying process. */
-@SnowflakeJdbcInternalApi
 public class RetryContext {
   static final int SECONDS_TO_MILLIS_FACTOR = 1000;
   private long elapsedTimeInMillis;

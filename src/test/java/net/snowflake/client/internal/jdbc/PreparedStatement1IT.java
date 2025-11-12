@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Disabled;
@@ -514,7 +514,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         prepStatement.clearParameters();
 
         int parameterSize =
-            ((SnowflakePreparedStatementV1) prepStatement).getParameterBindings().size();
+            ((SnowflakePreparedStatementImpl) prepStatement).getParameterBindings().size();
         assertThat(parameterSize, is(0));
 
         bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
@@ -542,7 +542,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         // clear batch should remove all batch parameters
         prepStatement.clearBatch();
         int batchSize =
-            ((SnowflakePreparedStatementV1) prepStatement).getBatchParameterBindings().size();
+            ((SnowflakePreparedStatementImpl) prepStatement).getBatchParameterBindings().size();
         assertThat(batchSize, is(0));
 
         bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
@@ -551,7 +551,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
         // executeBatch should remove batch as well
         batchSize =
-            ((SnowflakePreparedStatementV1) prepStatement).getBatchParameterBindings().size();
+            ((SnowflakePreparedStatementImpl) prepStatement).getBatchParameterBindings().size();
         assertThat(batchSize, is(0));
 
         try (ResultSet resultSet = connection.createStatement().executeQuery(selectAllSQL)) {

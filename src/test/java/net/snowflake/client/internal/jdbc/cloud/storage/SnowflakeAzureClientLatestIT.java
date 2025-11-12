@@ -11,7 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.category.TestTags;
@@ -29,7 +29,7 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testAzureClientSetupInvalidEncryptionKeySize() throws SQLException {
     try (Connection connection = getConnection("azureaccount")) {
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       String putCommand = "put file:///dummy/path/file1.gz @~";
       SnowflakeFileTransferAgent sfAgent =
           new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));

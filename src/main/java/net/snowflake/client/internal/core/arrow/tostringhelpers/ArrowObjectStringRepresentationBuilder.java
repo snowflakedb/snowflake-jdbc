@@ -1,10 +1,8 @@
 package net.snowflake.client.internal.core.arrow.tostringhelpers;
 
 import java.util.StringJoiner;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 
-@SnowflakeJdbcInternalApi
 public class ArrowObjectStringRepresentationBuilder extends ArrowStringRepresentationBuilderBase {
 
   public ArrowObjectStringRepresentationBuilder() {

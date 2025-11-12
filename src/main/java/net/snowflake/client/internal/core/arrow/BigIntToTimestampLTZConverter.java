@@ -9,7 +9,6 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.ResultUtil;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
@@ -107,7 +106,6 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
     return ResultUtil.adjustTimestamp(ts);
   }
 
-  @SnowflakeJdbcInternalApi
   public static Timestamp getTimestamp(
       long epoch, int scale, TimeZone sessionTimeZone, boolean useSessionTimezone)
       throws SFException {

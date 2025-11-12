@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
@@ -676,7 +676,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
           assertThat(key, value, equalTo("3600"));
         }
       }
-      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       assertEquals(3600, session.getHeartbeatFrequency());
     }
   }
@@ -721,9 +721,9 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testUnwrapper() throws Throwable {
     try (Connection connection = getConnection()) {
-      boolean canUnwrap = connection.isWrapperFor(SnowflakeConnectionV1.class);
+      boolean canUnwrap = connection.isWrapperFor(SnowflakeConnectionImpl.class);
       assertTrue(canUnwrap);
-      SnowflakeConnectionV1 sfconnection = connection.unwrap(SnowflakeConnectionV1.class);
+      SnowflakeConnectionImpl sfconnection = connection.unwrap(SnowflakeConnectionImpl.class);
       sfconnection.createStatement();
       assertThrows(
           SQLException.class,

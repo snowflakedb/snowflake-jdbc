@@ -10,14 +10,13 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
 import net.snowflake.client.internal.core.SecurityUtil;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -235,7 +234,7 @@ public class SnowflakeDriver implements Driver {
     if (!conStr.isValid()) {
       throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
     }
-    return new SnowflakeConnectionV1(
+    return new SnowflakeConnectionImpl(
         connectionParameters.getUrl(), connectionParameters.getParams());
   }
 
@@ -261,7 +260,6 @@ public class SnowflakeDriver implements Driver {
    * @return connection
    * @throws SQLException if failed to create a snowflake connection
    */
-  @SnowflakeJdbcInternalApi
   public Connection connect() throws SQLException {
     logger.debug("Execute internal method connect() without parameters");
     return connect(AUTO_CONNECTION_STRING_PREFIX, null);
@@ -298,9 +296,9 @@ public class SnowflakeDriver implements Driver {
       return retVal;
     }
 
-    Connection con = new SnowflakeConnectionV1(url, info, true);
+    Connection con = new SnowflakeConnectionImpl(url, info, true);
     List<DriverPropertyInfo> missingProperties =
-        ((SnowflakeConnectionV1) con).returnMissingProperties();
+        ((SnowflakeConnectionImpl) con).returnMissingProperties();
     con.close();
 
     retVal = new DriverPropertyInfo[missingProperties.size()];

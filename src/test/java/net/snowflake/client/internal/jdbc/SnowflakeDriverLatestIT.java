@@ -40,11 +40,11 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.statement.SnowflakeStatement;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.OCSPMode;
@@ -168,9 +168,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testPutThreshold() throws SQLException {
     try (Connection connection = getConnection()) {
       // assert that threshold equals default 200 from server side
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       try (Statement statement = connection.createStatement()) {
-        SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+        SFStatement sfStatement = statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
         statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
         String command =
             "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
@@ -214,7 +214,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         // Test put file with internal compression
         String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -299,7 +299,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
           // Test put file with internal compression
           String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -390,7 +390,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
         statement.execute("put file://" + srcPath + " @" + testStageName);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         File destFolder = new File(tmpFolder, "dest");
         destFolder.mkdirs();
@@ -1270,7 +1270,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
           // Test put file with internal compression
           String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -1380,7 +1380,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
           // Test put file with internal compression
           String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -1437,10 +1437,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
       try (Connection connection = getConnection(accountName)) {
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         try (Statement statement = connection.createStatement()) {
           try {
-            SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+            SFStatement sfStatement = statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
             statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
             statement.execute(
                 "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
@@ -1487,7 +1487,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         // Test put file with internal compression
         String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -1558,7 +1558,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
 
         // Test put file with internal compression
         String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -1625,7 +1625,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Create a normal connection and assert that database, schema, and warehouse have expected
       // values
       try (Connection con = getConnection()) {
-        SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSession session = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         assertTrue(
             TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
         assertTrue(

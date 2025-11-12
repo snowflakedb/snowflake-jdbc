@@ -23,7 +23,7 @@ import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.structs.SnowflakeObjectTypeFactories;

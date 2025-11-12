@@ -113,34 +113,29 @@ public class HttpUtil {
 
   private static boolean socksProxyDisabled = false;
 
-  @SnowflakeJdbcInternalApi
   public static void reset() {
     httpClient.clear();
     httpClientWithoutDecompression.clear();
     httpClientRoutePlanner.clear();
   }
 
-  @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
     return connectionTimeout != null
         ? connectionTimeout
         : Duration.ofMillis(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
   }
 
-  @SnowflakeJdbcInternalApi
   public static Duration getSocketTimeout() {
     return socketTimeout != null
         ? socketTimeout
         : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
   }
 
-  @SnowflakeJdbcInternalApi
   public static void setConnectionTimeout(int timeout) {
     connectionTimeout = Duration.ofMillis(timeout);
     initDefaultRequestConfig(connectionTimeout.toMillis(), getSocketTimeout().toMillis());
   }
 
-  @SnowflakeJdbcInternalApi
   public static void setSocketTimeout(int timeout) {
     socketTimeout = Duration.ofMillis(timeout);
     initDefaultRequestConfig(getConnectionTimeout().toMillis(), socketTimeout.toMillis());
@@ -824,7 +819,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -845,7 +839,6 @@ public class HttpUtil {
         sfSession);
   }
 
-  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequestOmitSnowflakeHeaders(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -892,7 +885,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -936,7 +928,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static HttpResponseWithHeaders executeGeneralRequestWithContext(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -986,7 +977,6 @@ public class HttpUtil {
         responseBody, extractHeadersAsMap(responseContext.getHttpResponse()));
   }
 
-  @SnowflakeJdbcInternalApi
   public static Map<String, String> extractHeadersAsMap(HttpResponse httpResponse) {
     Map<String, String> headersMap = new HashMap<>();
     if (httpResponse != null) {
@@ -1042,7 +1032,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static String executeGeneralRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1140,7 +1129,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1241,7 +1229,6 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  @SnowflakeJdbcInternalApi
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
@@ -1542,7 +1529,6 @@ public class HttpUtil {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
     int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
     RequestConfig config =

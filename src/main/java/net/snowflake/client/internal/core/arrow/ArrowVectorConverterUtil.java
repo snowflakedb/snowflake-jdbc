@@ -9,7 +9,6 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFBaseSession;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.vector.FieldVector;
@@ -21,7 +20,6 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 
-@SnowflakeJdbcInternalApi
 public final class ArrowVectorConverterUtil {
   private ArrowVectorConverterUtil() {}
 

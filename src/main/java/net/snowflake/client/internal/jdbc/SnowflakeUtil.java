@@ -52,7 +52,6 @@ import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.ThrowingCallable;
@@ -453,7 +452,6 @@ public class SnowflakeUtil {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  @SnowflakeJdbcInternalApi
   public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
@@ -858,7 +856,6 @@ public class SnowflakeUtil {
    * @param defaultValue default value used
    * @return the value of the system property as boolean, else the default value
    */
-  @SnowflakeJdbcInternalApi
   public static boolean convertSystemPropertyToBooleanValue(
       String systemProperty, boolean defaultValue) {
     String systemPropertyValue = systemGetProperty(systemProperty);
@@ -874,7 +871,6 @@ public class SnowflakeUtil {
    * @param defaultValue default value used
    * @return the value of the environment variable as boolean, else the default value
    */
-  @SnowflakeJdbcInternalApi
   public static boolean convertSystemGetEnvToBooleanValue(
       String envVariableKey, boolean defaultValue) {
     String environmentVariableValue = systemGetEnv(envVariableKey);
@@ -884,7 +880,6 @@ public class SnowflakeUtil {
     return defaultValue;
   }
 
-  @SnowflakeJdbcInternalApi
   public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
       throws SQLException {
     try {
@@ -908,7 +903,6 @@ public class SnowflakeUtil {
    * @param input map input
    * @return case insensitive map
    */
-  @SnowflakeJdbcInternalApi
   public static Map<String, String> createCaseInsensitiveMap(Map<String, String> input) {
     Map<String, String> caseInsensitiveMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     if (input != null) {
@@ -923,7 +917,6 @@ public class SnowflakeUtil {
    * @param headers array of headers
    * @return case insensitive map
    */
-  @SnowflakeJdbcInternalApi
   public static Map<String, String> createCaseInsensitiveMap(Header[] headers) {
     if (headers != null) {
       return createCaseInsensitiveMap(
@@ -935,7 +928,6 @@ public class SnowflakeUtil {
   }
 
   /** create a directory with Owner only permission (0600) */
-  @SnowflakeJdbcInternalApi
   public static boolean createOwnerOnlyPermissionDir(String location) {
     if (isWindows()) {
       File dir = new File(location);
@@ -956,7 +948,6 @@ public class SnowflakeUtil {
     return isDirCreated;
   }
 
-  @SnowflakeJdbcInternalApi
   public static void assureOnlyUserAccessibleFilePermissions(
       File file, boolean isOwnerOnlyStageFilePermissionsEnabled) throws IOException {
     if (isWindows()) {
@@ -991,7 +982,6 @@ public class SnowflakeUtil {
    *
    * @return boolean
    */
-  @SnowflakeJdbcInternalApi
   public static boolean isWindows() {
     return Constants.getOS() == Constants.OS.WINDOWS;
   }

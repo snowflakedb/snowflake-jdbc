@@ -32,10 +32,10 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.ParameterBindingDTO;
 import net.snowflake.client.internal.core.QueryContextDTO;
@@ -175,7 +175,7 @@ public class MockConnectionTest extends BaseJDBCTest {
   }
 
   public Connection initMockConnection(SFConnectionHandler implementation) throws SQLException {
-    return new SnowflakeConnectionV1(implementation);
+    return new SnowflakeConnectionImpl(implementation);
   }
 
   /**
@@ -295,7 +295,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     Connection mockConnection = initMockConnection(mockImpl);
 
     MockSnowflakeSFSession mockSession =
-        (MockSnowflakeSFSession) ((SnowflakeConnectionV1) mockConnection).getSFBaseSession();
+        (MockSnowflakeSFSession) ((SnowflakeConnectionImpl) mockConnection).getSFBaseSession();
 
     List<Pair> errors = new ArrayList<>();
     // First part is the error code, second is the reason/message
@@ -406,7 +406,7 @@ public class MockConnectionTest extends BaseJDBCTest {
   public void testMockTransferAgent() throws SQLException, IOException {
     SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl();
     SnowflakeConnection mockConnection =
-        initMockConnection(mockImpl).unwrap(SnowflakeConnectionV1.class);
+        initMockConnection(mockImpl).unwrap(SnowflakeConnectionImpl.class);
 
     byte[] inputBytes1 = new byte[] {0, 1, 2};
     InputStream uploadStream1 = new ByteArrayInputStream(inputBytes1);

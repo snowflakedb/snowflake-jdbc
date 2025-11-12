@@ -36,7 +36,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
 import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.SystemPropertyOverrider;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -293,7 +293,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "testPassword");
     props.setProperty(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey(), "1");
     try {
-      new SnowflakeConnectionV1(sfHost, props);
+      new SnowflakeConnectionImpl(sfHost, props);
     } catch (Exception e) {
       // do nothing, we don't want to connect, just check the value below
     }
@@ -318,7 +318,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
       props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "testPassword");
       props.setProperty(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey(), "1");
       try {
-        new SnowflakeConnectionV1(sfHost, props);
+        new SnowflakeConnectionImpl(sfHost, props);
       } catch (Exception e) {
         // do nothing, we don't want to connect, just check the value below
       }

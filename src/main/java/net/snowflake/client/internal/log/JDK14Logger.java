@@ -16,7 +16,6 @@ import java.util.logging.SimpleFormatter;
 import net.snowflake.client.internal.core.EventHandler;
 import net.snowflake.client.internal.core.EventUtil;
 import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.util.SecretDetector;
 
 /**
@@ -52,7 +51,6 @@ public class JDK14Logger implements SFLogger {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public static void useStdOutConsoleHandler(String threshold) {
     Level thresholdLevel = threshold != null ? tryParse(threshold) : null;
     Logger rootLogger = Logger.getLogger("");
@@ -77,7 +75,6 @@ public class JDK14Logger implements SFLogger {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   static void resetToDefaultConsoleHandler() {
     Logger rootLogger = Logger.getLogger("");
     for (Handler handler : rootLogger.getHandlers()) {

@@ -233,7 +233,7 @@ public class BindUploader implements Closeable {
 
   /**
    * Method to put data from a stream at a stage location. The data will be uploaded as one file. No
-   * splitting is done in this method. Similar to uploadStreamInternal() in SnowflakeConnectionV1.
+   * splitting is done in this method. Similar to uploadStreamInternal() in SnowflakeConnectionImpl.
    *
    * <p>Stream size must match the total size of data in the input stream unless compressData
    * parameter is set to true.

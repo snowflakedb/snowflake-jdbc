@@ -124,7 +124,6 @@ public abstract class SFBaseStatement {
    * @throws SFException if the statement is already closed.
    * @throws SQLException if there are server-side errors from trying to abort.
    */
-  @SnowflakeJdbcInternalApi
   public void cancel(CancellationReason cancellationReason) throws SFException, SQLException {
     cancel(); // default cancel is called to keep interface backward compatibility
   }

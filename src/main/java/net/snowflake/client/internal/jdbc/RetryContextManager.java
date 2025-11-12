@@ -3,7 +3,6 @@ package net.snowflake.client.internal.jdbc;
 import java.util.ArrayList;
 import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.util.ThrowingBiFunction;
 import org.apache.http.client.methods.HttpRequestBase;
 
@@ -11,7 +10,6 @@ import org.apache.http.client.methods.HttpRequestBase;
  * RetryContextManager lets you register logic (as callbacks) that will be re-executed during a
  * retry of a request.
  */
-@SnowflakeJdbcInternalApi
 public class RetryContextManager {
 
   // List of retry callbacks that will be executed in the order they were registered.

@@ -7,7 +7,6 @@ import java.util.TimeZone;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-@SnowflakeJdbcInternalApi
 public class SfTimestampUtil {
 
   static final long MS_IN_DAY = 86400 * 1000;

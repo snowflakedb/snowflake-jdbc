@@ -31,7 +31,6 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
 import net.snowflake.client.internal.core.SFOauthLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUseDPoPNonceException;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -39,7 +38,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-@SnowflakeJdbcInternalApi
 public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenProvider {
 
   private static final SFLogger logger =

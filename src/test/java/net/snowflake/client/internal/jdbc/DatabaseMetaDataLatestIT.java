@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.TestUtil.GENERATED_SCHEMA_PREFIX;
-import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
-import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.StringFunctionsSupported;
-import static net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
+import static net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl.NumericFunctionsSupported;
+import static net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl.StringFunctionsSupported;
+import static net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl.SystemFunctionsSupported;
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
@@ -36,9 +36,9 @@ import java.util.Set;
 import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
@@ -1230,7 +1230,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
       }
 
-      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
       Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
       field.setAccessible(true);
       field.set(baseSession, false);
@@ -1639,7 +1639,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
-      String owner = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
+      String owner = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession().getRole();
       String tableName = database + "." + schema + "." + targetTable;
 
       try {

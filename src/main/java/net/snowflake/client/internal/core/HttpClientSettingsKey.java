@@ -133,7 +133,6 @@ public class HttpClientSettingsKey implements Serializable {
    *
    * @return proxy password
    */
-  @SnowflakeJdbcInternalApi
   public String getProxyPassword() {
     return this.proxyPassword;
   }

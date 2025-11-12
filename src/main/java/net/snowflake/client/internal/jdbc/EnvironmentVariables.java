@@ -1,8 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public enum EnvironmentVariables {
   AWS_REGION("AWS_REGION");
 

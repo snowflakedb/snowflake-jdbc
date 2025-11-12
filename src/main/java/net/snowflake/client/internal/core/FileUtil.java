@@ -15,7 +15,6 @@ import java.util.Collection;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class FileUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(FileUtil.class);
   private static final Collection<PosixFilePermission> WRITE_BY_OTHERS =

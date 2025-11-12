@@ -26,7 +26,7 @@ import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.config.SFClientConfig;
 import net.snowflake.client.internal.config.SFClientConfigParser;
 import net.snowflake.client.internal.core.Constants;

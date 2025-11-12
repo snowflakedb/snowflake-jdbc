@@ -27,11 +27,11 @@ import java.util.Calendar;
 import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -342,8 +342,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         Statement stmt = conn.createStatement()) {
 
       String sqlText = "create or replace table identifier(?) (c1 number)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         t1 = "bindObjectTable1";
         // Bind the table name
         pStmt.setString(1, t1);
@@ -360,8 +360,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
       // Mix of object literal binds and value binds
       sqlText = "insert into identifier(?) values (1), (2), (3)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setParameter("resolve_object_ids", true);
         // Bind by object IDs
         pStmt.setLong(1, t1Id);
@@ -369,8 +369,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       }
       // Perform some selection
       sqlText = "select * from identifier(?) order by 1";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setString(1, t1);
         try (ResultSet result = pStmt.executeQuery()) {
           // Verify 3 rows have been inserted
@@ -382,8 +382,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       }
       // Alter Table
       sqlText = "alter table identifier(?) add column c2 number";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setParameter("resolve_object_ids", true);
         pStmt.setLong(1, t1Id);
         try (ResultSet result = pStmt.executeQuery()) {}
@@ -391,8 +391,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
       // Describe
       sqlText = "desc table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setString(1, t1);
         try (ResultSet result = pStmt.executeQuery()) {
           // Verify two columns have been created
@@ -406,8 +406,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       // Create another table
       String t2 = "bindObjectTable2";
       sqlText = "create or replace table identifier(?) (c1 number)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setString(1, t2);
         try (ResultSet result = pStmt.executeQuery()) {}
       }
@@ -422,8 +422,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
       // Mix object binds with value binds
       sqlText = "insert into identifier(?) values (?), (?), (?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setString(1, t2);
         pStmt.setInt(2, 1);
         pStmt.setInt(3, 2);
@@ -432,8 +432,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       }
       // Verify that 3 rows have been inserted
       sqlText = "select * from identifier(?) order by 1";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setParameter("resolve_object_ids", true);
         pStmt.setLong(1, t2Id);
         try (ResultSet result = pStmt.executeQuery()) {
@@ -448,8 +448,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       sqlText =
           "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
               + "where t1.c1 = t2.c1 and t1.c1 > (?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setParameter("resolve_object_ids", true);
         pStmt.setString(1, t1);
         pStmt.setLong(2, t2Id);
@@ -464,15 +464,15 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
       // Drop Tables
       sqlText = "drop table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setString(1, "bindObjectTable1");
         try (ResultSet result = pStmt.executeQuery()) {}
       }
 
       sqlText = "drop table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
+      try (SnowflakePreparedStatementImpl pStmt =
+          (SnowflakePreparedStatementImpl) conn.prepareStatement(sqlText)) {
         pStmt.setParameter("resolve_object_ids", true);
         pStmt.setLong(1, t2Id);
         try (ResultSet result = pStmt.executeQuery()) {}
@@ -660,7 +660,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   public void testPreparedStatementWithSkipParsing(String queryResultFormat) throws Exception {
     try (Connection con = getConn(queryResultFormat)) {
       PreparedStatement stmt =
-          con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select 1", true);
+          con.unwrap(SnowflakeConnectionImpl.class).prepareStatement("select 1", true);
       try (ResultSet rs = stmt.executeQuery()) {
         assertThat(rs.next(), is(true));
         assertThat(rs.getInt(1), is(1));
@@ -677,14 +677,14 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       statement.execute("create or replace table t(c1 int)");
       try {
         try (PreparedStatement stmt =
-            con.unwrap(SnowflakeConnectionV1.class)
+            con.unwrap(SnowflakeConnectionImpl.class)
                 .prepareStatement("insert into t(c1) values(?)", true)) {
           stmt.setInt(1, 123);
           int ret = stmt.executeUpdate();
           assertThat(ret, is(1));
         }
         try (PreparedStatement stmt =
-                con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select * from t", true);
+                con.unwrap(SnowflakeConnectionImpl.class).prepareStatement("select * from t", true);
             ResultSet rs = stmt.executeQuery()) {
           assertThat(rs.next(), is(true));
           assertThat(rs.getInt(1), is(123));
@@ -698,7 +698,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   /**
    * Test prepare mode for to_timestamp(?, 3), compiler right now can not handle this properly. A
    * workaround is added. More specifically, ErrorCode returned for this statement is caught in
-   * SnowflakePreparedStatementV1 so that execution can continue
+   * SnowflakePreparedStatementImpl so that execution can continue
    */
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)

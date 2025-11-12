@@ -3,13 +3,11 @@ package net.snowflake.client.internal.core.arrow;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.core.arrow.tostringhelpers.ArrowObjectStringRepresentationBuilder;
 import net.snowflake.client.internal.jdbc.SnowflakeType;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.StructVector;
 
-@SnowflakeJdbcInternalApi
 public class StructConverter extends AbstractArrowVectorConverter {
 
   private final StructVector structVector;

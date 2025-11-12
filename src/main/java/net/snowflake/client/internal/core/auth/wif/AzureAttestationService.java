@@ -3,13 +3,11 @@ package net.snowflake.client.internal.core.auth.wif;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
 
-@SnowflakeJdbcInternalApi
 public class AzureAttestationService {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(AzureAttestationService.class);

@@ -4,9 +4,7 @@ import java.sql.SQLData;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.function.Supplier;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class SQLDataCreationHelper {
   public static <T> T create(Class<T> type) throws SQLException {
     Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);

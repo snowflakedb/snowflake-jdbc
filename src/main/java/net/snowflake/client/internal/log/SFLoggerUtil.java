@@ -3,7 +3,6 @@ package net.snowflake.client.internal.log;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import org.apache.commons.logging.LogFactory;
 
 public class SFLoggerUtil {
@@ -42,7 +41,6 @@ public class SFLoggerUtil {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public static <T> String isVariableProvided(T variable) {
     if (variable instanceof String) {
       return (isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;

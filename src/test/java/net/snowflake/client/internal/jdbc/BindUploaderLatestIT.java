@@ -18,8 +18,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ParameterBindingDTO;
 import net.snowflake.client.internal.core.SFSession;
@@ -57,7 +57,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   @BeforeEach
   public void setUp() throws Exception {
     conn = getConnection();
-    session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = conn.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -115,8 +115,8 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     // create large batch so total bytes transferred are about 10 times the size of input stream
     // buffer
     int batchSize = 1024 * 1024;
-    SnowflakePreparedStatementV1 stmt =
-        (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
+    SnowflakePreparedStatementImpl stmt =
+        (SnowflakePreparedStatementImpl) conn.prepareStatement(dummyInsert);
     for (int i = 0; i < batchSize; i++) {
       bind(stmt, row1);
     }

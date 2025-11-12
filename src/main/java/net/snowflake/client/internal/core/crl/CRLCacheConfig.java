@@ -5,12 +5,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import net.snowflake.client.internal.core.FileCacheUtil;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class CRLCacheConfig {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheConfig.class);
   public static final String ENABLE_CRL_IN_MEMORY_CACHING = "ENABLE_CRL_IN_MEMORY_CACHING";

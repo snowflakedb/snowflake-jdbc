@@ -8,7 +8,6 @@ import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.ResultUtil;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
@@ -160,7 +159,6 @@ public class ArrowResultUtil {
    * @param useSessionTimezone should the session timezone be used
    * @return Timestamp
    */
-  @SnowflakeJdbcInternalApi
   public static Timestamp toJavaTimestamp(
       long epoch, int scale, TimeZone sessionTimezone, boolean useSessionTimezone) {
     long seconds = epoch / powerOfTen(scale);

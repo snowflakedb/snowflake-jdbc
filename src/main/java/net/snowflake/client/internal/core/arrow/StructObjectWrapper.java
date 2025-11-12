@@ -1,8 +1,6 @@
 package net.snowflake.client.internal.core.arrow;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class StructObjectWrapper {
   private final String jsonString;
   private final Object object;

@@ -18,7 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
@@ -578,7 +578,7 @@ public class CustomProxyLatestIT {
     try (Connection con =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
       assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyHttpProtocol());
     }
@@ -604,7 +604,7 @@ public class CustomProxyLatestIT {
     try (Connection con =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
       assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     }
@@ -629,7 +629,7 @@ public class CustomProxyLatestIT {
     try (Connection con =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
       assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     }

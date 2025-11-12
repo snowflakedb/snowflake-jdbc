@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
@@ -305,7 +305,7 @@ public class StreamLatestIT extends BaseJDBCTest {
       String expectedFileContent)
       throws IOException, SQLException {
     try (InputStream inputStream =
-            conn.unwrap(SnowflakeConnectionV1.class)
+            conn.unwrap(SnowflakeConnectionImpl.class)
                 .downloadStream(stageName, fileName, decompress);
         InputStreamReader isr = new InputStreamReader(inputStream);
         BufferedReader br = new BufferedReader(isr)) {

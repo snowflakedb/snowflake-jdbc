@@ -1273,7 +1273,7 @@ public abstract class SFBaseSession {
 
   /**
    * Function that checks if the active session can be closed when the connection is closed. Called
-   * by SnowflakeConnectionV1.
+   * by SnowflakeConnectionImpl.
    *
    * @return true if the active session is safe to close.
    */
@@ -1415,7 +1415,6 @@ public abstract class SFBaseSession {
     this.clearBatchOnlyAfterSuccessfulExecution = value;
   }
 
-  @SnowflakeJdbcInternalApi
   public boolean getClearBatchOnlyAfterSuccessfulExecution() {
     return this.clearBatchOnlyAfterSuccessfulExecution;
   }

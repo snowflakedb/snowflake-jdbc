@@ -1,10 +1,8 @@
 package net.snowflake.client.internal.util;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /** Class keeping the start and stop time in epoch microseconds. */
-@SnowflakeJdbcInternalApi
 public class TimeMeasurement {
   private long start;
   private long end;

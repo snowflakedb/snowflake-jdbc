@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.core;
 
-@SnowflakeJdbcInternalApi
 public class SFOauthLoginInput {
 
   private static final String LOCAL_APPLICATION_CLIENT_CREDENTIAL = "LOCAL_APPLICATION";

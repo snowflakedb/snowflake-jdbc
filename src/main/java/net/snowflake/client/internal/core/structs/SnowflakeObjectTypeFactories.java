@@ -6,9 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class SnowflakeObjectTypeFactories {
   private static final Map<Class<?>, Supplier<SQLData>> factories = new ConcurrentHashMap<>();
 

@@ -11,12 +11,10 @@ import net.snowflake.client.internal.core.AssertUtil;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
 import net.snowflake.client.internal.core.SFOauthLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class OAuthAccessTokenProviderFactory {
 
   private static final String SNOWFLAKE_DOMAIN = "snowflakecomputing.com";

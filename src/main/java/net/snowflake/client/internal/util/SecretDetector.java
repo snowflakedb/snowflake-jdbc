@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -247,7 +246,6 @@ public class SecretDetector {
    * @param text Text which may contain secrets
    * @return Masked string
    */
-  @SnowflakeJdbcInternalApi
   public static String filterOAuthTokens(String text) {
     if (text == null) {
       return null;

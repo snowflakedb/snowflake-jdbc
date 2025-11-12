@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
@@ -30,7 +30,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testS3Client256Encryption() throws SQLException {
     try (Connection connection = getConnection("s3testaccount")) {
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       String putCommand = "put file:///dummy/path/file1.gz @~";
       SnowflakeFileTransferAgent sfAgent =
           new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
@@ -108,7 +108,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
     servEx.setErrorType(AmazonServiceException.ErrorType.Client);
 
     try (Connection connection = getConnection("s3testaccount")) {
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       String getCommand = "GET '@~/testStage' 'file://C:/temp' PARALLEL=8";
       SnowflakeFileTransferAgent agent =
           new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
@@ -138,7 +138,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
     Properties props = new Properties();
     props.put("putGetMaxRetries", 1);
     try (Connection connection = getConnection("s3testaccount", props)) {
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       String command = "GET '@~/testStage' 'file://C:/temp' PARALLEL=8";
       SnowflakeFileTransferAgent agent =
           new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));

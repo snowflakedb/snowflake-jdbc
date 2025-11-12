@@ -22,7 +22,6 @@ import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.jdbc.FieldMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 
-@SnowflakeJdbcInternalApi
 public abstract class BaseSqlInput implements SFSqlInput {
 
   protected final SFBaseSession session;

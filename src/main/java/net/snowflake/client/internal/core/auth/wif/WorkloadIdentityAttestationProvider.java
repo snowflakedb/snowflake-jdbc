@@ -4,11 +4,9 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class WorkloadIdentityAttestationProvider {
 
   private static final SFLogger logger =

@@ -7,9 +7,7 @@ import com.amazonaws.http.HttpMethodName;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class AwsSdkGCPSigner extends AWS4Signer {
   private static final Map<String, String> headerMap =
       new HashMap<String, String>() {

@@ -9,7 +9,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -17,7 +16,6 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * Cache manager that coordinates between in-memory and file-based CRL caches. Provides automatic
  * cleanup of expired entries and proper lifecycle management.
  */
-@SnowflakeJdbcInternalApi
 public class CRLCacheManager {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLCacheManager.class);

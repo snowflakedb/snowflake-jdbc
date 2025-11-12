@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -133,7 +132,6 @@ public class TelemetryService {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   public static void disableOOBTelemetry() {
     disable();
     disableHTAP();

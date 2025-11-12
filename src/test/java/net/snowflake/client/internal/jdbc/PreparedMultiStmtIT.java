@@ -11,7 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -20,10 +20,10 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag(TestTags.STATEMENT)
 public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
-  private static SnowflakeConnectionV1 sfConnectionV1;
+  private static SnowflakeConnectionImpl sfConnectionV1;
 
   public PreparedMultiStmtIT() {
-    this.sfConnectionV1 = (SnowflakeConnectionV1) connection;
+    this.sfConnectionV1 = (SnowflakeConnectionImpl) connection;
   }
 
   public void setSessionResultFormat(String queryResultFormat) throws SQLException {

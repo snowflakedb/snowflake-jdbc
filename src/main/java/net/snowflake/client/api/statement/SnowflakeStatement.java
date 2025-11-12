@@ -47,8 +47,8 @@ public interface SnowflakeStatement {
   ResultSet executeAsyncQuery(String sql) throws SQLException;
 
   /**
-   * This method exposes SFBaseResultSet to the sub-classes of SnowflakeStatementV1.java. This is
-   * required as SnowflakeStatementV1 doesn't directly expose ResultSet to the sub-classes making it
+   * This method exposes SFBaseResultSet to the sub-classes of SnowflakeStatementImpl.java. This is
+   * required as SnowflakeStatementImpl doesn't directly expose ResultSet to the sub-classes making it
    * challenging to get additional information from the previously executed query.
    *
    * @param resultSet SFBaseResultSet

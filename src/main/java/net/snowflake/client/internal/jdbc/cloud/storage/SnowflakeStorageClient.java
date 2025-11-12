@@ -8,7 +8,6 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.SFSession;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.FileBackedOutputStream;
 import net.snowflake.client.internal.jdbc.MatDesc;
 import net.snowflake.common.core.SqlState;
@@ -477,7 +476,6 @@ public interface SnowflakeStorageClient {
    * @param dataAad the additional authenticated data for data
    * @param contentLength the length of the encrypted content
    */
-  @SnowflakeJdbcInternalApi
   default void addEncryptionMetadataForGcm(
       StorageObjectMetadata meta,
       MatDesc matDesc,

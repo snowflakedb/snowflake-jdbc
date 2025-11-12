@@ -2,7 +2,6 @@ package net.snowflake.client.internal.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 public class FieldMetadata {
 
@@ -42,7 +41,6 @@ public class FieldMetadata {
     this.fields = fields;
   }
 
-  @SnowflakeJdbcInternalApi
   public FieldMetadata() {
     this.fields = new ArrayList<>();
   }

@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SessionUtil;
 
@@ -181,12 +181,12 @@ public class AuthTestHelper {
   }
 
   private void saveToken(Connection con) throws SnowflakeSQLException {
-    SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+    SnowflakeConnectionImpl sfcon = (SnowflakeConnectionImpl) con;
     this.idToken = sfcon.getSfSession().getIdToken();
   }
 
   private void saveAccessToken(Connection con) throws SnowflakeSQLException {
-    SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+    SnowflakeConnectionImpl sfcon = (SnowflakeConnectionImpl) con;
     this.accessToken = sfcon.getSfSession().getAccessToken();
   }
 

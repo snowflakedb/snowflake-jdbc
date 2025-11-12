@@ -10,7 +10,6 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -19,7 +18,6 @@ import org.apache.http.client.methods.HttpRequestBase;
  * Utility class for Workload Identity Federation (WIF) specific operations. This class contains
  * functions that are used exclusively within the WIF package.
  */
-@SnowflakeJdbcInternalApi
 public class WorkloadIdentityUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(WorkloadIdentityUtil.class);

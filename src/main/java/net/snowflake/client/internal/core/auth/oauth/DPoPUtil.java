@@ -14,10 +14,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import org.apache.http.client.methods.HttpRequestBase;
 
-@SnowflakeJdbcInternalApi
 public class DPoPUtil {
 
   private final ECKey jwk;

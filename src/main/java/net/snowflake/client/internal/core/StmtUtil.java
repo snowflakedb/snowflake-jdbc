@@ -596,7 +596,6 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  @SnowflakeJdbcInternalApi
   protected static String getQueryResult(
       JsonNode inProgressResponse,
       String previousGetResultPath,
@@ -648,7 +647,6 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  @SnowflakeJdbcInternalApi
   protected static String getQueryResult(
       String getResultPath, StmtInput stmtInput, SFBaseSession sfSession)
       throws SFException, SnowflakeSQLException {

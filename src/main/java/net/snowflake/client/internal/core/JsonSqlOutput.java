@@ -44,7 +44,6 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-@SnowflakeJdbcInternalApi
 public class JsonSqlOutput implements SQLOutput {
   static final SFLogger logger = SFLoggerFactory.getLogger(JsonSqlOutput.class);
   private JSONObject json;

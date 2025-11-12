@@ -1,4 +1,4 @@
-package net.snowflake.client.api.statement;
+package net.snowflake.client.internal.api.implementation.statement;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -18,18 +18,19 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.api.statement.SnowflakeCallableStatement;
 import net.snowflake.client.internal.jdbc.*;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-public final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
+public final class SnowflakeCallableStatementImpl extends SnowflakePreparedStatementImpl
     implements CallableStatement, SnowflakeCallableStatement {
   private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SnowflakeCallableStatementV1.class);
+      SFLoggerFactory.getLogger(SnowflakeCallableStatementImpl.class);
 
   /**
-   * Construct SnowflakePreparedStatementV1
+   * Construct SnowflakePreparedStatementImpl
    *
    * @param connection connection object
    * @param sql sql
@@ -40,8 +41,8 @@ public final class SnowflakeCallableStatementV1 extends SnowflakePreparedStateme
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
-  public SnowflakeCallableStatementV1(
-      SnowflakeConnectionV1 connection,
+  public SnowflakeCallableStatementImpl(
+      SnowflakeConnectionImpl connection,
       String sql,
       boolean skipParsing,
       int resultSetType,

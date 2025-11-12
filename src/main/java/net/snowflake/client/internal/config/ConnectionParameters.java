@@ -1,9 +1,7 @@
 package net.snowflake.client.internal.config;
 
 import java.util.Properties;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class ConnectionParameters {
   private final String url;
   private final Properties params;

@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.core.auth.wif.AwsAttestationService;
 import net.snowflake.client.internal.core.auth.wif.PlatformDetectionUtil;
 import net.snowflake.client.internal.log.SFLogger;
@@ -21,7 +20,6 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 
-@SnowflakeJdbcInternalApi
 public class PlatformDetector {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(PlatformDetector.class);

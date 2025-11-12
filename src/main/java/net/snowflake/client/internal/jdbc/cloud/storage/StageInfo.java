@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
 /** Encapsulates all the required stage properties used by GET/PUT for Azure, GCS and S3 stages */
 public class StageInfo implements Serializable {
@@ -181,22 +180,18 @@ public class StageInfo implements Serializable {
     return useS3RegionalUrl;
   }
 
-  @SnowflakeJdbcInternalApi
   public void setUseRegionalUrl(boolean useRegionalUrl) {
     this.useRegionalUrl = useRegionalUrl;
   }
 
-  @SnowflakeJdbcInternalApi
   public boolean getUseRegionalUrl() {
     return useRegionalUrl;
   }
 
-  @SnowflakeJdbcInternalApi
   public void setUseVirtualUrl(boolean useVirtualUrl) {
     this.useVirtualUrl = useVirtualUrl;
   }
 
-  @SnowflakeJdbcInternalApi
   public boolean getUseVirtualUrl() {
     return useVirtualUrl;
   }
@@ -213,7 +208,6 @@ public class StageInfo implements Serializable {
     return proxyProperties;
   }
 
-  @SnowflakeJdbcInternalApi
   public Optional<String> gcsCustomEndpoint() {
     if (stageType != StageType.GCS) {
       return Optional.empty();

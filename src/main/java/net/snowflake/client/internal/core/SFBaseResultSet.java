@@ -115,7 +115,6 @@ public abstract class SFBaseResultSet {
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
-  @SnowflakeJdbcInternalApi
   public abstract Object getObjectWithoutString(int columnIndex) throws SFException;
 
   public Array getArray(int columnIndex) throws SFException {
@@ -227,18 +226,15 @@ public abstract class SFBaseResultSet {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
 
-  @SnowflakeJdbcInternalApi
   public Converters getConverters() {
     logger.debug("Json converters weren't created");
     return null;
   }
 
-  @SnowflakeJdbcInternalApi
   public TimeZone getSessionTimeZone() {
     return resultSetSerializable.getTimeZone();
   }
 
-  @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
       Object input,
       Class<?> parentObjectClass,
@@ -248,23 +244,19 @@ public abstract class SFBaseResultSet {
     throw new UnsupportedOperationException();
   }
 
-  @SnowflakeJdbcInternalApi
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
     throw new UnsupportedOperationException();
   }
 
-  @SnowflakeJdbcInternalApi
   public Time convertToTime(Object object, int scale) throws SFException {
     throw new UnsupportedOperationException();
   }
 
-  @SnowflakeJdbcInternalApi
   public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     throw new UnsupportedOperationException();
   }
 
-  @SnowflakeJdbcInternalApi
   protected SQLInput createJsonSqlInputForColumn(
       Object input, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
@@ -277,7 +269,6 @@ public abstract class SFBaseResultSet {
         input.toString(), inputNode, session, getConverters(), fields, sessionTimeZone);
   }
 
-  @SnowflakeJdbcInternalApi
   protected SfSqlArray getJsonArray(String arrayString, int columnIndex, ObjectMapper objectMapper)
       throws SFException {
     try {
@@ -438,17 +429,14 @@ public abstract class SFBaseResultSet {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   protected Date convertStringToDate(String object, TimeZone tz) throws SFException {
     return (Date) getConverters().dateStringConverter(session).convert(object);
   }
 
-  @SnowflakeJdbcInternalApi
   protected Time convertStringToTime(String object, int scale) throws SFException {
     return (Time) getConverters().timeFromStringConverter(session).convert(object);
   }
 
-  @SnowflakeJdbcInternalApi
   protected Timestamp convertStringToTimestamp(
       String object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     return (Timestamp)

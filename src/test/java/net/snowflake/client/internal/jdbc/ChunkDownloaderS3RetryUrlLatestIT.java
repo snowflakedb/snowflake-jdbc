@@ -9,10 +9,10 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.HttpUtil;
@@ -36,8 +36,8 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
   public void setup() throws SQLException, InterruptedException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      sfBaseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-      sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      sfBaseSession = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+      sfStatement = statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
       int rowCount = 170000;
       try (ResultSet rs =
           statement.executeQuery(

@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.telemetry.PreSessionTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.RevocationCheckTelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
@@ -42,7 +41,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-@SnowflakeJdbcInternalApi
 public class CRLValidator {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CRLValidator.class);
   private static final Map<HttpClientSettingsKey, CRLValidator> validatorRegistryForTelemetry =

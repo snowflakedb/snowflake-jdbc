@@ -13,7 +13,6 @@ import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.ssl.SSLInitializationException;
 
-@SnowflakeJdbcInternalApi
 class SFCrlTrustManagerFactory {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFCrlTrustManagerFactory.class);
 

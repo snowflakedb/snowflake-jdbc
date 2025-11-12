@@ -3,7 +3,6 @@ package net.snowflake.client.internal.core;
 import java.sql.Types;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
-@SnowflakeJdbcInternalApi
 public class ColumnTypeHelper {
   public static int getColumnType(int internalColumnType, SFBaseSession session) {
     int externalColumnType = internalColumnType;

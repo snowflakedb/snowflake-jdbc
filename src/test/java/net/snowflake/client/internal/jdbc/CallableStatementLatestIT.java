@@ -10,7 +10,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import net.snowflake.client.api.statement.SnowflakeCallableStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeCallableStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -35,7 +35,7 @@ public class CallableStatementLatestIT extends CallableStatementITBase {
     for (int i = 0; i < callStatements.length; i++) {
       assertEquals(
           expectedStatements[i],
-          SnowflakeCallableStatementV1.parseSqlEscapeSyntax(callStatements[i]));
+          SnowflakeCallableStatementImpl.parseSqlEscapeSyntax(callStatements[i]));
     }
   }
 

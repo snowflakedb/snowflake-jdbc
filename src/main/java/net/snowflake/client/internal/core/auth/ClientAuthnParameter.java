@@ -1,8 +1,6 @@
 package net.snowflake.client.internal.core.auth;
 
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public enum ClientAuthnParameter {
   LOGIN_NAME,
   PASSWORD,

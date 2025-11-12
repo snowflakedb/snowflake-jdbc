@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Builder class for {@link HttpExecutingContext}. Provides a fluent interface for constructing
  * HttpExecutingContext instances with many optional parameters.
  */
-@SnowflakeJdbcInternalApi
 public class HttpExecutingContextBuilder {
   private final String requestId;
   private final String requestInfoScrubbed;

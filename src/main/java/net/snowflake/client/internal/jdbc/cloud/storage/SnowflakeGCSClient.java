@@ -37,7 +37,6 @@ import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.FileBackedOutputStream;
 import net.snowflake.client.internal.jdbc.MatDesc;
 import net.snowflake.client.internal.jdbc.RestRequest;
@@ -62,7 +61,6 @@ import org.apache.http.util.EntityUtils;
 
 /** Encapsulates the GCS Storage client and all GCS operations and logic */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
-  @SnowflakeJdbcInternalApi
   public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
       "net.snowflake.jdbc.disableGcsDefaultCredentials";
 

@@ -18,13 +18,11 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.jdbc.EnvironmentVariables;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class AwsAttestationService {
 
   public static final SFLogger logger = SFLoggerFactory.getLogger(AwsAttestationService.class);

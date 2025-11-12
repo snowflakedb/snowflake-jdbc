@@ -14,9 +14,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.statement.SnowflakeStatementV1;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.SFSession;
@@ -44,9 +44,9 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @BeforeEach
   public void setup() throws SQLException {
     connection = getConnection("azureaccount");
-    sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     Statement statement = connection.createStatement();
-    sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+    sfStatement = statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
     statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
     command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage";
     SnowflakeFileTransferAgent agent =

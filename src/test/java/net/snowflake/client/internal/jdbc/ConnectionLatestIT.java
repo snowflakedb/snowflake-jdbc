@@ -49,7 +49,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -127,7 +127,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection(props);
         Statement statement = con.createStatement()) {
       statement.execute("select 1");
-      SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession session = con.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       // if QCC disable, this should be null
       assertNull(session.getQueryContextDTO());
     }
@@ -154,7 +154,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
         }
       }
-      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       assertEquals(1800, session.getHeartbeatFrequency());
     }
   }
@@ -181,7 +181,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         }
       }
 
-      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
       assertEquals(900, session.getHeartbeatFrequency());
     }
   }
@@ -1059,7 +1059,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   // Wait for the async query finish
   private void waitForAsyncQueryDone(Connection connection, String queryID) throws Exception {
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     QueryStatus qs = session.getQueryStatus(queryID);
     while (QueryStatus.isStillRunning(qs)) {
       Thread.sleep(1000);
@@ -1082,7 +1082,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query0)) {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection, queryID);
-        queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        queryIDs = connection.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(queryID);
         assertEquals(queryIDs.length, 1);
       }
 
@@ -1097,7 +1097,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query1)) {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
-        queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        queryIDs = connection2.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(queryID);
         assertEquals(queryIDs.length, 1);
       }
 
@@ -1112,7 +1112,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query2)) {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
-        queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        queryIDs = connection2.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(queryID);
         assertEquals(queryIDs.length, 1);
       }
 
@@ -1147,7 +1147,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // Get the child query IDs in a new connection
     try (Connection connection = getConnection()) {
       waitForAsyncQueryDone(connection, queryID);
-      queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+      queryIDs = connection.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(queryID);
       assertEquals(queryIDs.length, 3);
 
       // First statement ResultSet
@@ -1195,14 +1195,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             assertThrows(
                 SQLException.class,
                 () -> {
-                  connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(finalQueryID);
+                  connection.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(finalQueryID);
                 });
         String msg = ex.getMessage();
         if (!msg.contains("Status of query associated with resultSet is")
             || !msg.contains("Results not generated.")) {
           ex.printStackTrace();
           QueryStatus qs =
-              connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
+              connection.unwrap(SnowflakeConnectionImpl.class).getSfSession().getQueryStatus(queryID);
           fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
 
@@ -1231,7 +1231,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
               SQLException.class,
               () -> {
                 waitForAsyncQueryDone(connection, queryID);
-                connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+                connection.unwrap(SnowflakeConnectionImpl.class).getChildQueryIds(queryID);
               });
       assertTrue(
           ex.getMessage()
@@ -1340,7 +1340,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Assert that activeAsyncQueries is non-empty with running query. Session is async and not
       // safe to close
       long start = System.currentTimeMillis();
-      SnowflakeConnectionV1 snowflakeConnection = con.unwrap(SnowflakeConnectionV1.class);
+      SnowflakeConnectionImpl snowflakeConnection = con.unwrap(SnowflakeConnectionImpl.class);
       assertTrue(snowflakeConnection.getSfSession().isAsyncSession());
       assertFalse(snowflakeConnection.getSfSession().isSafeToClose());
       // ensure that query is finished

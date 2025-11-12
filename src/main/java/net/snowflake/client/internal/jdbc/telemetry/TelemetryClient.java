@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.Future;
-import net.snowflake.client.api.connection.SnowflakeConnectionV1;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -143,7 +143,7 @@ public class TelemetryClient implements Telemetry {
   public static Telemetry createTelemetry(Connection conn, int flushSize) {
     try {
       return createTelemetry(
-          (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSFBaseSession(), flushSize);
+          (SFSession) conn.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession(), flushSize);
     } catch (SQLException ex) {
       logger.debug("Input connection is not a SnowflakeConnection", false);
       return null;

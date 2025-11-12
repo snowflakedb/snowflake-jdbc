@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.net.ssl.X509TrustManager;
-import net.snowflake.client.internal.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -32,7 +31,6 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * certificate chain presented by a server and returns verified paths that include trust anchors for
  * CRL validation support.
  */
-@SnowflakeJdbcInternalApi
 public class VerifiedCertPathBuilder {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(VerifiedCertPathBuilder.class);

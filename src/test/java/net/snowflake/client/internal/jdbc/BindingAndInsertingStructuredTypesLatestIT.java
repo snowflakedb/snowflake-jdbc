@@ -28,8 +28,8 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.resultset.SnowflakeBaseResultSet;
-import net.snowflake.client.api.statement.SnowflakePreparedStatementV1;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.internal.jdbc.structuredtypes.sqldata.AllTypesClass;
@@ -87,11 +87,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       Statement statement = connection.createStatement();
       statement.execute(
           "CREATE OR REPLACE TABLE test_table (ob OBJECT(string varchar, intValue NUMBER))");
-      try (SnowflakePreparedStatementV1 stmt =
-              (SnowflakePreparedStatementV1)
+      try (SnowflakePreparedStatementImpl stmt =
+              (SnowflakePreparedStatementImpl)
                   connection.prepareStatement("insert into test_table select ?");
-          SnowflakePreparedStatementV1 stmt3 =
-              (SnowflakePreparedStatementV1)
+          SnowflakePreparedStatementImpl stmt3 =
+              (SnowflakePreparedStatementImpl)
                   connection.prepareStatement("SELECT ob FROM test_table where ob = ?"); ) {
 
         stmt.setObject(1, sc);
@@ -121,11 +121,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
     Assumptions.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmtement2 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmtement2 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("insert into test_table select null");
-        SnowflakePreparedStatementV1 statement3 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl statement3 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("SELECT * FROM test_table"); ) {
 
       statement.execute(
@@ -147,11 +147,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       throws SQLException {
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("insert into test_table select ?");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt2 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("SELECT * FROM test_table"); ) {
       statement.execute(
           "CREATE OR REPLACE TABLE test_table (ob OBJECT(string varchar, intValue NUMBER))");
@@ -172,11 +172,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
     TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("insert into test_all_types_object select ?");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt2 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("select * from test_all_types_object where ob=?"); ) {
 
       statement.execute(
@@ -262,8 +262,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public void testWriteArray(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement(
                     "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
 
@@ -297,8 +297,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public void testWriteArrayNoBinds(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement(
                     "insert into array_of_integers select ([1, 2, 3]::array(integer));"); ) {
 
@@ -322,11 +322,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public void testWriteMapOfSqlData(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt2 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
 
       statement.execute(
@@ -359,11 +359,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public void testWriteMapOfInteger(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
+        SnowflakePreparedStatementImpl stmt2 =
+            (SnowflakePreparedStatementImpl)
                 connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
 
       statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, INTEGER))");
