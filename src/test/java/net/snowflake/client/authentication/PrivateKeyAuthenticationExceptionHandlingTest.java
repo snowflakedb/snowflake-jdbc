@@ -11,6 +11,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -20,6 +21,11 @@ public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest 
     return Stream.of("10", "100", null);
   }
 
+  /**
+   * Tests the authentication exception and retry JWT renew functionality when retrying login
+   * requests. To run, update environment variables to use connect with JWT authentication.
+   */
+  @Disabled
   @ParameterizedTest
   @MethodSource("jwtTimeoutProvider")
   public void testPrivateKeyAuthTimeout(String jwtTimeout) {
