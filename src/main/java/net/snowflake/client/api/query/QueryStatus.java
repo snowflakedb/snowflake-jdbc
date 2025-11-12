@@ -38,7 +38,7 @@ public enum QueryStatus {
   }
 
   /**
-   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @deprecated use {@link QueryStatusV2} instead
    * @return error message
    */
   @Deprecated
@@ -47,7 +47,7 @@ public enum QueryStatus {
   }
 
   /**
-   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @deprecated use {@link QueryStatusV2} instead
    * @return error code
    */
   @Deprecated
@@ -56,7 +56,7 @@ public enum QueryStatus {
   }
 
   /**
-   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @deprecated use {@link QueryStatusV2} instead
    * @param message the error message
    */
   @Deprecated
@@ -65,7 +65,7 @@ public enum QueryStatus {
   }
 
   /**
-   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   * @deprecated use {@link QueryStatusV2} instead
    * @param errorCode the error code
    */
   @Deprecated

@@ -95,15 +95,17 @@ $MVNW_EXE --batch-mode --show-version dependency:go-offline
 #             --batch-mode --show-version
 #     popd >& /dev/null
 if [[ "$is_old_driver" == "true" ]]; then
-    echo "[INFO] ============================================================"
-    echo "[INFO] Old driver tests are DISABLED for 4.0.0+"
-    echo "[INFO] Reason: Breaking API changes (package restructuring)"
-    echo "[INFO] - Packages moved from net.snowflake.client.jdbc.*"
-    echo "[INFO]   to net.snowflake.client.api.* and net.snowflake.client.internal.*"
-    echo "[INFO] These tests will be re-enabled for 4.x.x compatibility testing"
-    echo "[INFO] (e.g., testing 4.0.0 → 4.1.0 compatibility)"
-    echo "[INFO] ============================================================"
-    exit 0
+    pushd TestOnly >& /dev/null
+        JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        echo "[INFO] Run JDBC $JDBC_VERSION tests"
+        $MVNW_EXE -DjenkinsIT \
+            -Djava.io.tmpdir=$WORKSPACE \
+            -Djacoco.skip.instrument=false \
+            -DintegrationTestSuites="$JDBC_TEST_SUITES" \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            verify \
+            --batch-mode --show-version
+    popd >& /dev/null
 elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"

@@ -522,6 +522,7 @@
           <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
           <stylesheet>java</stylesheet>
           <helpfile>${project.basedir}/src/main/javadoc/licenses.html</helpfile>
+          <excludePackageNames>net.snowflake.client.internal.*:net.snowflake.client.jdbc.internal.*</excludePackageNames>
         </configuration>
         <executions>
           <execution>
