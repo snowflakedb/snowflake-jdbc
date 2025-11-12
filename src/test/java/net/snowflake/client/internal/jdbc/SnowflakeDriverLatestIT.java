@@ -805,20 +805,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
         testGeoOutputTypeSingle(
-            regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
+            regularStatement, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
         testGeoOutputTypeSingle(
-            regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
+            regularStatement, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
-        testGeoOutputTypeSingle(
-            regularStatement, false, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
-
-        testGeoOutputTypeSingle(
-            regularStatement, true, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
-
-        testGeoOutputTypeSingle(regularStatement, false, "wkb", "BINARY", "[B", Types.BINARY);
-
-        testGeoOutputTypeSingle(regularStatement, true, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
+        testGeoOutputTypeSingle(regularStatement, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
       } finally {
         regularStatement.execute("drop table t_geo");
       }
@@ -827,7 +819,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   private void testGeoOutputTypeSingle(
       Statement regularStatement,
-      boolean enableExternalTypeNames,
       String outputFormat,
       String expectedColumnTypeName,
       String expectedColumnClassName,
@@ -835,9 +826,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       throws Throwable {
 
     regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
-
-    regularStatement.execute(
-        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
 
     try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo")) {
       ResultSetMetaData metadata = resultSet.getMetaData();
@@ -919,10 +907,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
         testGeometryOutputTypeSingle(
-            regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+            regularStatement, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
 
         testGeometryOutputTypeSingle(
-            regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+            regularStatement, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
       } finally {
         regularStatement.execute("drop table t_geo2");
       }
@@ -931,7 +919,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   private void testGeometryOutputTypeSingle(
       Statement regularStatement,
-      boolean enableExternalTypeNames,
       String outputFormat,
       String expectedColumnTypeName,
       String expectedColumnClassName,
@@ -939,9 +926,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       throws Throwable {
 
     regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
-
-    regularStatement.execute(
-        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
 
     try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo2")) {
 

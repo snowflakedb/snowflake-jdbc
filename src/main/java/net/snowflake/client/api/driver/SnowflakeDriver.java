@@ -38,7 +38,7 @@ public class SnowflakeDriver implements Driver {
   public static final SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.27.1";
+  public static String implementVersion = "4.0.0";
 
   private static int majorVersion = 0;
   private static int minorVersion = 0;
@@ -242,8 +242,10 @@ public class SnowflakeDriver implements Driver {
       String url, Properties info) throws SnowflakeSQLException {
     if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
       // Connect using connection configuration file
+      logger.debug(
+          "JDBC connection initializing with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
       ConnectionParameters connectionParameters =
-          SFConnectionConfigParser.buildConnectionParameters();
+          SFConnectionConfigParser.buildConnectionParameters(url);
       if (connectionParameters == null) {
         throw new SnowflakeSQLException(
             "Unavailable connection configuration parameters expected for auto configuration using file");
