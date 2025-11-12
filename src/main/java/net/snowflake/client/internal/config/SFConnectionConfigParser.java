@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.config;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.convertSystemGetEnvToBooleanValue;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
@@ -48,7 +49,7 @@ public class SFConnectionConfigParser {
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
     String defaultConnectionName = getConnectionNameFromUrl(connectionUrl);
-    if (defaultConnectionName == null || defaultConnectionName.trim().isEmpty()) {
+    if (isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
     }
@@ -99,7 +100,7 @@ public class SFConnectionConfigParser {
     Map<String, String> autoConfigJdbcUrlParameters =
         parseAutoConfigJdbcUrlParameters(connectionUrl);
     String connectionNameValue = autoConfigJdbcUrlParameters.get("connectionName");
-    if (connectionNameValue == null || connectionNameValue.isEmpty()) {
+    if (isBlank(connectionNameValue)) {
       logger.debug("'connectionName' parameter is not configured");
       return "";
     } else {
@@ -144,11 +145,18 @@ public class SFConnectionConfigParser {
 
     if (Files.exists(configFilePath)) {
       logger.debug(
-          "Reading connection parameters from file using key: {} []",
+          "Reading connection parameters from file {} using key: {}",
           configFilePath,
           defaultConnectionName);
       Map<String, Map> parametersMap = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
+      if (defaultConnectionParametersMap == null) {
+        logger.debug("The Connection {} not found in connections.toml.", defaultConnectionName);
+        throw new SnowflakeSQLException(
+            "The Connection " + defaultConnectionName + " not found in connections.toml file.");
+      } else {
+        logger.debug("The Connection {} found in connections.toml.", defaultConnectionName);
+      }
       return defaultConnectionParametersMap;
     } else {
       logger.debug("Connection configuration file does not exist");

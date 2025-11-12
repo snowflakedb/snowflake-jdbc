@@ -2,7 +2,6 @@ package net.snowflake.client.internal.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import net.snowflake.client.internal.config.SFConnectionConfigParser;
 import org.junit.jupiter.api.Test;
 
 // Unit tests for getConnectionNameFromUrl() function.
