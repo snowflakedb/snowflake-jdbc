@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.jdbc;
 
-
 public class SnowflakeUseDPoPNonceException extends RuntimeException {
 
   private final String nonce;

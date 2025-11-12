@@ -42,13 +42,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SessionUtil;
@@ -661,7 +661,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
         }
       }
-      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+      SFBaseSession baseSession =
+          connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
       Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
       field.setAccessible(true);
       field.set(baseSession, false);

@@ -36,12 +36,12 @@ import java.util.Set;
 import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
-import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.util.ThrowingFunction;
@@ -1230,7 +1230,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
       }
 
-      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+      SFBaseSession baseSession =
+          connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
       Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
       field.setAccessible(true);
       field.set(baseSession, false);

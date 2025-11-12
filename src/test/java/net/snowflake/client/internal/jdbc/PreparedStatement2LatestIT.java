@@ -18,8 +18,8 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
-import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -319,19 +319,23 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
+        assertFalse(
+            prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
         prepStatement.setInt(1, 1);
         try (ResultSet rs = prepStatement.executeQuery()) {
           assertTrue(rs.next());
-          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
+          assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
         }
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectAllSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
+        assertFalse(
+            prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
         try (ResultSet rs = prepStatement.executeQuery()) {
           assertTrue(rs.next());
-          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
+          assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementImpl.class).isAlreadyDescribed());
         }
       }
     }

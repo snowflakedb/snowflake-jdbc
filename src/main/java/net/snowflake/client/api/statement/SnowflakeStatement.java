@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.internal.core.SFBaseResultSet;
-import net.snowflake.client.internal.jdbc.*;
 
 /** This interface defines Snowflake specific APIs for Statement */
 public interface SnowflakeStatement {
@@ -48,8 +47,8 @@ public interface SnowflakeStatement {
 
   /**
    * This method exposes SFBaseResultSet to the sub-classes of SnowflakeStatementImpl.java. This is
-   * required as SnowflakeStatementImpl doesn't directly expose ResultSet to the sub-classes making it
-   * challenging to get additional information from the previously executed query.
+   * required as SnowflakeStatementImpl doesn't directly expose ResultSet to the sub-classes making
+   * it challenging to get additional information from the previously executed query.
    *
    * @param resultSet SFBaseResultSet
    * @throws SQLException if an error is encountered

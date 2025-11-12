@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.core.arrow;
 
-
 public class StructObjectWrapper {
   private final String jsonString;
   private final Object object;

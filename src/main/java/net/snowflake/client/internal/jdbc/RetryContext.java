@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.jdbc;
 
-
 /** RetryContext stores information about an ongoing request's retrying process. */
 public class RetryContext {
   static final int SECONDS_TO_MILLIS_FACTOR = 1000;

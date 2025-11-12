@@ -65,7 +65,8 @@ public class SnowflakePooledConnection implements PooledConnection {
   @Override
   public void close() throws SQLException {
     if (this.physicalConnection != null) {
-      SnowflakeConnectionImpl sfConnection = physicalConnection.unwrap(SnowflakeConnectionImpl.class);
+      SnowflakeConnectionImpl sfConnection =
+          physicalConnection.unwrap(SnowflakeConnectionImpl.class);
       logger.debug("Closing pooled connection with session id: {}", sfConnection.getSessionID());
       this.physicalConnection.close();
       this.physicalConnection = null;

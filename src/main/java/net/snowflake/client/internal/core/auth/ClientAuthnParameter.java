@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.core.auth;
 
-
 public enum ClientAuthnParameter {
   LOGIN_NAME,
   PASSWORD,

@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -136,7 +136,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       boolean canUnwrap = logicalConnection.isWrapperFor(SnowflakeConnectionImpl.class);
       assertTrue(canUnwrap);
-      SnowflakeConnectionImpl sfconnection = logicalConnection.unwrap(SnowflakeConnectionImpl.class);
+      SnowflakeConnectionImpl sfconnection =
+          logicalConnection.unwrap(SnowflakeConnectionImpl.class);
       sfconnection.createStatement();
 
       assertThrows(SQLException.class, () -> logicalConnection.unwrap(SnowflakeDriver.class));

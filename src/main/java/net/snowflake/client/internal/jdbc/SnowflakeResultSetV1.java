@@ -26,11 +26,12 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
+import net.snowflake.client.api.query.QueryStatus;
+import net.snowflake.client.api.query.QueryStatusV2;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
-import net.snowflake.client.internal.core.QueryStatus;
 import net.snowflake.client.internal.core.SFBaseResultSet;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.arrow.StructObjectWrapper;
@@ -136,7 +137,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   public void close(boolean removeClosedResultSetFromStatement) throws SQLException {
     // no SQLException is raised.
     sfBaseResultSet.close();
-    if (removeClosedResultSetFromStatement && statement.isWrapperFor(SnowflakeStatementImpl.class)) {
+    if (removeClosedResultSetFromStatement
+        && statement.isWrapperFor(SnowflakeStatementImpl.class)) {
       statement.unwrap(SnowflakeStatementImpl.class).removeClosedResultSet(this);
     }
   }

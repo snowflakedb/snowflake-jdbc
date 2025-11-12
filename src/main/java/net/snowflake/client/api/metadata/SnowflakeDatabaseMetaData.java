@@ -28,8 +28,7 @@ public interface SnowflakeDatabaseMetaData extends DatabaseMetaData {
    * @return a ResultSet object in which each row is a stream description
    * @throws SQLException if a database access error occurs
    */
-  ResultSet getStreams(String catalog, String schemaPattern, String streamName)
-      throws SQLException;
+  ResultSet getStreams(String catalog, String schemaPattern, String streamName) throws SQLException;
 
   /**
    * Retrieves a description of the table columns available in the specified catalog with extended

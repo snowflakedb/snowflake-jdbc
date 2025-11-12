@@ -27,12 +27,12 @@ import java.util.Calendar;
 import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
-import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -684,7 +684,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           assertThat(ret, is(1));
         }
         try (PreparedStatement stmt =
-                con.unwrap(SnowflakeConnectionImpl.class).prepareStatement("select * from t", true);
+                con.unwrap(SnowflakeConnectionImpl.class)
+                    .prepareStatement("select * from t", true);
             ResultSet rs = stmt.executeQuery()) {
           assertThat(rs.next(), is(true));
           assertThat(rs.getInt(1), is(123));

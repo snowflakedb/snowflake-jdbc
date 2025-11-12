@@ -1,6 +1,4 @@
-package net.snowflake.client.internal.jdbc;
-
-import net.snowflake.client.internal.core.QueryStatus;
+package net.snowflake.client.api.query;
 
 public final class QueryStatusV2 {
   private final long endTime;

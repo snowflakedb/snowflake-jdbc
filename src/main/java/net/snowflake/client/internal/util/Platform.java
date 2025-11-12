@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.util;
 
-
 /** Enum representing all detectable cloud platforms and identity providers. */
 public enum Platform {
   IS_AWS_LAMBDA("is_aws_lambda"),

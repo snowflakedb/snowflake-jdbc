@@ -42,7 +42,6 @@ import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
 import net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakeCallableStatementImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
@@ -124,8 +123,8 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
    * @param info Connection properties.
    * @throws SQLException if failed to instantiate connection.
    */
-  public SnowflakeConnectionImpl(SFConnectionHandler sfConnectionHandler, String url, Properties info)
-      throws SQLException {
+  public SnowflakeConnectionImpl(
+      SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
     initConnectionWithImpl(sfConnectionHandler, url, info);
   }
 

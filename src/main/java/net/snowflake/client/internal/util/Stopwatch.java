@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.util;
 
-
 /** Stopwatch class used to calculate the time between start and stop. */
 public class Stopwatch {
   private boolean isStarted = false;

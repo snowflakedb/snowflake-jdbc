@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.core;
+package net.snowflake.client.api.query;
 
 /** Copied from QueryDTO.java in Global Services. */
 public enum QueryStatus {

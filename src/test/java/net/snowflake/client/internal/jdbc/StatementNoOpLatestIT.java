@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

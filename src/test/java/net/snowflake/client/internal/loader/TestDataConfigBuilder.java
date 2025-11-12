@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.loader.LoadResultListener;
 import net.snowflake.client.api.loader.LoaderFactory;
 import net.snowflake.client.api.loader.LoaderProperty;
 import net.snowflake.client.api.loader.LoadingError;
 import net.snowflake.client.api.loader.Operation;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 
 class TestDataConfigBuilder {
   static final String TARGET_TABLE_NAME = "LOADER_test_TABLE";

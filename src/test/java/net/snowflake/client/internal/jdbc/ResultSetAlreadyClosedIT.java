@@ -9,8 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
-import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

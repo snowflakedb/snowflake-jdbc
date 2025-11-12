@@ -40,12 +40,12 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.statement.SnowflakeStatement;
-import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.statement.SnowflakeStatementImpl;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.core.SFSession;
@@ -1440,7 +1440,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
         try (Statement statement = connection.createStatement()) {
           try {
-            SFStatement sfStatement = statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
+            SFStatement sfStatement =
+                statement.unwrap(SnowflakeStatementImpl.class).getSfStatement();
             statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
             statement.execute(
                 "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");

@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.jdbc;
 
-
 public enum EnvironmentVariables {
   AWS_REGION("AWS_REGION");
 

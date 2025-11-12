@@ -49,18 +49,19 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.query.QueryStatus;
+import net.snowflake.client.api.query.QueryStatusV2;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
-import net.snowflake.client.internal.core.QueryStatus;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.core.SecurityUtil;
@@ -1202,7 +1203,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             || !msg.contains("Results not generated.")) {
           ex.printStackTrace();
           QueryStatus qs =
-              connection.unwrap(SnowflakeConnectionImpl.class).getSfSession().getQueryStatus(queryID);
+              connection
+                  .unwrap(SnowflakeConnectionImpl.class)
+                  .getSfSession()
+                  .getQueryStatus(queryID);
           fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
 
