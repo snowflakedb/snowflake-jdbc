@@ -75,7 +75,25 @@ cd $SOURCE_ROOT
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 $MVNW_EXE --batch-mode --show-version dependency:go-offline
 
-# Check if old driver tests are requested and skip gracefully for 4.0.0+
+# DISABLED for 4.0.0: Old driver tests are incompatible with 4.0.0 package restructuring
+# The 4.0.0 release includes breaking changes (package moves from net.snowflake.client.jdbc.* 
+# to net.snowflake.client.api.* and net.snowflake.client.internal.*).
+# These tests can be re-enabled for future 4.x.x compatibility testing (e.g., 4.0.0 → 4.1.0).
+#
+# To re-enable: Uncomment the block below and ensure TestOnly/pom.xml references a 4.x baseline version.
+#
+# if [[ "$is_old_driver" == "true" ]]; then
+#     pushd TestOnly >& /dev/null
+#         JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+#         echo "[INFO] Run JDBC $JDBC_VERSION tests"
+#         $MVNW_EXE -DjenkinsIT \
+#             -Djava.io.tmpdir=$WORKSPACE \
+#             -Djacoco.skip.instrument=false \
+#             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
+#             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+#             verify \
+#             --batch-mode --show-version
+#     popd >& /dev/null
 if [[ "$is_old_driver" == "true" ]]; then
     echo "[INFO] ============================================================"
     echo "[INFO] Old driver tests are DISABLED for 4.0.0+"
