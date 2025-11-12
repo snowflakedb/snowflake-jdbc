@@ -108,8 +108,17 @@ REM Avoid connection timeouts
 set MAVEN_OPTS="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
 echo "MAVEN OPTIONS %MAVEN_OPTS%"
 
-REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
+REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched after 3 retries
+REM Retry dependency:go-offline up to 3 times if it fails
+for /l %%i in (1,1,3) do (
+    echo [INFO] maven dependency:go-offline attempt %%i/3
+    cmd /c "%MVNW_EXE%" --batch-mode --show-version dependency:go-offline
+    if !errorlevel! equ 0 goto :success
+    if %%i equ 3 exit /b 1
+    echo [WARN] Retrying in 5 seconds...
+    timeout /t 5 /nobreak >nul
+)
+:success
 
 if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
