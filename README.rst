@@ -109,7 +109,9 @@ Load Driver Class
 
 .. code-block:: java
 
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver")
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver")
+
+Note: The legacy driver class ``net.snowflake.client.jdbc.SnowflakeDriver`` is still available for backward compatibility but is deprecated.
 
 Datasource
 ----------
@@ -118,7 +120,7 @@ javax.sql.DataSource interface is implemented by class
 
 .. code-block:: java
 
-    net.snowflake.client.jdbc.SnowflakeBasicDataSource
+    net.snowflake.client.api.datasource.SnowflakeBasicDataSource
 
 Connection String
 -----------------

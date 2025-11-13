@@ -54,7 +54,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException(
           "Unable to load "
-              + "net.snowflake.client.jdbc.SnowflakeDriver. "
+              + "net.snowflake.client.api.driver.SnowflakeDriver. "
               + "Please check if you have proper Snowflake JDBC "
               + "Driver jar on the classpath",
           e);
