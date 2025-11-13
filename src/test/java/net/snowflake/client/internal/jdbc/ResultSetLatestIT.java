@@ -867,7 +867,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       SQLException ex = assertThrows(SQLException.class, () -> rs.unwrap(SnowflakeUtil.class));
       assertEquals(
           ex.getMessage(),
-          "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
+          "net.snowflake.client.internal.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.internal.jdbc.SnowflakeUtil");
     }
   }
 
