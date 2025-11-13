@@ -109,6 +109,7 @@ public class SFStatement extends SFBaseStatement {
    * Execute SQL query with an option for describe only
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param describeOnly true if describe only
    * @return query result set
    * @throws SQLException if connection is already closed
@@ -116,34 +117,39 @@ public class SFStatement extends SFBaseStatement {
    */
   private SFBaseResultSet executeQuery(
       String sql,
+      String dataframeAst,
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
       boolean asyncExec,
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    sanityCheckQuery(sql);
+    // if dataframeAst is passed, then can skip sql checks
+    if (dataframeAst == null) {
+      sanityCheckQuery(sql);
 
-    String trimmedSql = sql.trim();
+      String trimmedSql = sql.trim();
 
-    // snowflake specific client side commands
-    if (isFileTransfer(trimmedSql)) {
-      // Server side value or Connection string value is false then disable the PUT/GET command
-      if ((session != null && !(session.getJdbcEnablePutGet() && session.getEnablePutGet()))) {
-        // PUT/GET command disabled either on server side or in the client connection string
-        logger.debug("Executing file transfer locally is disabled: {}", sql);
-        throw new SnowflakeSQLException("File transfers have been disabled.");
+      // snowflake specific client side commands
+      if (isFileTransfer(trimmedSql)) {
+        // Server side value or Connection string value is false then disable the PUT/GET command
+        if ((session != null && !(session.getJdbcEnablePutGet() && session.getEnablePutGet()))) {
+          // PUT/GET command disabled either on server side or in the client connection string
+          logger.debug("Executing file transfer locally is disabled: {}", sql);
+          throw new SnowflakeSQLException("File transfers have been disabled.");
+        }
+
+        // PUT/GET command
+        logger.debug("Executing file transfer locally: {}", sql);
+
+        return executeFileTransfer(sql);
       }
-
-      // PUT/GET command
-      logger.debug("Executing file transfer locally: {}", sql);
-
-      return executeFileTransfer(sql);
     }
 
     // NOTE: It is intentional two describeOnly parameters are specified.
     return executeQueryInternal(
         sql,
+        dataframeAst,
         parametersBinding,
         describeOnly,
         describeOnly, // internal query if describeOnly is true
@@ -163,7 +169,7 @@ public class SFStatement extends SFBaseStatement {
   @Override
   public SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException {
     SFBaseResultSet baseResultSet =
-        executeQuery(sql, null, true, false, null, new ExecTimeTelemetryData());
+        executeQuery(sql, null, null, true, false, null, new ExecTimeTelemetryData());
 
     describeJobUUID = baseResultSet.getQueryId();
 
@@ -182,6 +188,7 @@ public class SFStatement extends SFBaseStatement {
    * <p>
    *
    * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
    * @param parameterBindings binding information
    * @param describeOnly true if just showing result set metadata
    * @param internal true if internal command not showing up in the history
@@ -192,6 +199,7 @@ public class SFStatement extends SFBaseStatement {
    */
   SFBaseResultSet executeQueryInternal(
       String sql,
+      String dataframeAst,
       Map<String, ParameterBindingDTO> parameterBindings,
       boolean describeOnly,
       boolean internal,
@@ -210,6 +218,7 @@ public class SFStatement extends SFBaseStatement {
     Object result =
         executeHelper(
             sql,
+            dataframeAst,
             StmtUtil.SF_MEDIA_TYPE,
             parameterBindings,
             describeOnly,
@@ -329,6 +338,36 @@ public class SFStatement extends SFBaseStatement {
       boolean asyncExec,
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, SFException {
+    return executeHelper(
+        sql, null, mediaType, bindValues, describeOnly, internal, asyncExec, execTimeData);
+  }
+
+  /**
+   * A helper method to build URL and submit the SQL to snowflake for exec
+   *
+   * @param sql sql statement
+   * @param dataframeAst encoded string representation of the dataframe AST
+   * @param mediaType media type
+   * @param bindValues map of binding values
+   * @param describeOnly whether only show the result set metadata
+   * @param internal run internal query not showing up in history
+   * @param asyncExec is async execute
+   * @param execTimeData ExecTimeTelemetryData
+   * @return raw json response
+   * @throws SFException if query is canceled
+   * @throws SnowflakeSQLException if query is already running
+   */
+  @SnowflakeJdbcInternalApi
+  public Object executeHelper(
+      String sql,
+      String dataframeAst,
+      String mediaType,
+      Map<String, ParameterBindingDTO> bindValues,
+      boolean describeOnly,
+      boolean internal,
+      boolean asyncExec,
+      ExecTimeTelemetryData execTimeData)
+      throws SnowflakeSQLException, SFException {
     ScheduledExecutorService executor = null;
 
     try {
@@ -399,6 +438,7 @@ public class SFStatement extends SFBaseStatement {
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       stmtInput
           .setSql(sql)
+          .setDataframeAst(dataframeAst)
           .setMediaType(mediaType)
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
@@ -697,6 +737,18 @@ public class SFStatement extends SFBaseStatement {
     return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
+  @SnowflakeJdbcInternalApi
+  @Override
+  public SFBaseResultSet execute(
+      String sql,
+      String dataframeAst,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException, SFException {
+    return execute(sql, dataframeAst, false, parametersBinding, caller, execTimeData);
+  }
+
   /**
    * A helper method to build URL and cancel the SQL for exec
    *
@@ -759,24 +811,55 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller,
       ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
+    return execute(sql, null, asyncExec, parametersBinding, caller, execTimeData);
+  }
+
+  /**
+   * Execute sql
+   *
+   * @param sql sql statement.
+   * @param dataframeAst encoded string representation of the dataframe AST
+   * @param asyncExec is async exec
+   * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  @SnowflakeJdbcInternalApi
+  public SFBaseResultSet execute(
+      String sql,
+      String dataframeAst,
+      boolean asyncExec,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
-    sanityCheckQuery(sql);
 
-    session.injectedDelay();
+    // if dataframeAst is passed, then no need for sql checks and can skip
+    if (dataframeAst == null) {
+      sanityCheckQuery(sql);
 
-    if (session.getPreparedStatementLogging()) {
-      logger.info("Execute: {}", sql);
-    } else {
-      logger.debug("Execute: {}", sql);
+      session.injectedDelay();
+
+      if (session.getPreparedStatementLogging()) {
+        logger.info("Execute: {}", sql);
+      } else {
+        logger.debug("Execute: {}", sql);
+      }
+
+      String trimmedSql = sql.trim();
+
+      if (trimmedSql.length() >= 20 && trimmedSql.toLowerCase().startsWith("set-sf-property")) {
+        executeSetProperty(sql);
+        return null;
+      }
     }
-
-    String trimmedSql = sql.trim();
-
-    if (trimmedSql.length() >= 20 && trimmedSql.toLowerCase().startsWith("set-sf-property")) {
-      executeSetProperty(sql);
-      return null;
-    }
-    return executeQuery(sql, parametersBinding, false, asyncExec, caller, execTimeData);
+    return executeQuery(
+        sql, dataframeAst, parametersBinding, false, asyncExec, caller, execTimeData);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {
