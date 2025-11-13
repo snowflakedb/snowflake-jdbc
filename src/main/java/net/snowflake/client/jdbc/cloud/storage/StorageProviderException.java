@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.AmazonServiceException;
 import org.apache.http.HttpStatus;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 
 /**
  * Custom exception class to signal a remote provider exception in a platform-independent manner.
@@ -31,14 +31,14 @@ public class StorageProviderException extends RuntimeException {
    * Returns true if this is an exception corresponding to a HTTP 404 error returned by the storage
    * provider.
    *
-   * @return true if the specified exception is an AmazonServiceException instance and if it was
-   *     thrown because of a 404, false otherwise.
+   * @return true if the specified exception is an SdkServiceException instance and if it was thrown
+   *     because of a 404, false otherwise.
    */
   public boolean isServiceException404() {
     Throwable cause = getCause();
-    if (cause instanceof AmazonServiceException) {
-      AmazonServiceException asEx = (AmazonServiceException) cause;
-      return (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND);
+    if (cause instanceof SdkServiceException) {
+      SdkServiceException asEx = (SdkServiceException) cause;
+      return (asEx.statusCode() == HttpStatus.SC_NOT_FOUND);
     }
 
     return false;
