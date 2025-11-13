@@ -19,7 +19,7 @@ import javax.net.ssl.HttpsURLConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.DontRunOnGCP;
 import net.snowflake.client.DontRunOnGithubActions;
-import net.snowflake.client.core.SecurityUtil;
+import net.snowflake.client.internal.core.SecurityUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
