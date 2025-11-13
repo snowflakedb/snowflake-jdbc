@@ -3,10 +3,10 @@ package net.snowflake.client.core.json;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
+import net.snowflake.client.common.core.SFBinary;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 
 public class BytesConverter {
