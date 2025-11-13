@@ -76,7 +76,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
    * Advance to next row
    *
    * @return true if next row exists, false otherwise
-   * @throws net.snowflake.client.core.SFException if failed to get next row
+   * @throws net.snowflake.client.internal.core.SFException if failed to get next row
    */
   @Override
   public boolean next() throws SFException {

@@ -42,6 +42,9 @@ public class TelemetryUtil {
    * @param queryId query ID
    * @param sqlState the SQL state
    * @param errorNumber the error number
+   * @param type the telemetry field type
+   * @param errorMessage the error message
+   * @param reason the reason for the error
    * @return ObjectNode for IB telemetry log
    */
   public static ObjectNode createIBValue(

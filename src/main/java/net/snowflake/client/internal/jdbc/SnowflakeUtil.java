@@ -927,7 +927,12 @@ public class SnowflakeUtil {
     }
   }
 
-  /** create a directory with Owner only permission (0600) */
+  /**
+   * create a directory with Owner only permission (0600)
+   *
+   * @param location the directory location
+   * @return true if directory was created successfully, false otherwise
+   */
   public static boolean createOwnerOnlyPermissionDir(String location) {
     if (isWindows()) {
       File dir = new File(location);

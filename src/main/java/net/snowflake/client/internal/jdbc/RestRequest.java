@@ -110,8 +110,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   @Deprecated
   public static CloseableHttpResponse execute(
@@ -165,8 +165,8 @@ public class RestRequest {
    *     the retry
    * @param sfSession the session associated with the request
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
@@ -224,8 +224,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not should be executed before and/or after
    *     the retry
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   @Deprecated
   public static CloseableHttpResponse execute(
@@ -281,8 +281,8 @@ public class RestRequest {
    *     the retry
    * @param sfSession the session associated with the request
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
@@ -341,8 +341,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   @Deprecated
   public static CloseableHttpResponse execute(
@@ -398,8 +398,8 @@ public class RestRequest {
    * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @param sfSession the session associated with the request
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
@@ -461,8 +461,8 @@ public class RestRequest {
    * @param retryManager RetryContextManager - object allowing to optionally pass custom logic that
    *     should be executed before and/or after the retry
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   @Deprecated
   public static CloseableHttpResponse execute(
@@ -529,8 +529,8 @@ public class RestRequest {
    *     requests sent by the Snowflake JDBC driver.
    * @param isHttpClientWithoutDecompression flag for create client without Decompression
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
@@ -740,8 +740,8 @@ public class RestRequest {
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
@@ -805,8 +805,8 @@ public class RestRequest {
    *     retry
    * @param sfSession the session associated with the request
    * @return HttpResponseContextDto Object get from server or exception
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,
@@ -867,8 +867,8 @@ public class RestRequest {
    * @param execTimeData ExecTimeTelemetryData should be executed before and/or after the retry
    * @param retryManager RetryManager containing extra actions used during retries
    * @return HttpResponseContextDto Object get from server or exception
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.api.exception.SnowflakeSQLException Request timeout Exception or
+   *     Illegal State Exception i.e. connection is already shutdown etc
    */
   public static HttpResponseContextDto executeWithRetries(
       CloseableHttpClient httpClient,

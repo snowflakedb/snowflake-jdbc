@@ -113,6 +113,8 @@ public class PlatformDetector {
   /**
    * Get cached platform detection results. If platform detection has not been performed yet,
    * initializes the cache.
+   *
+   * @return list of detected platform strings
    */
   public static synchronized List<String> getCachedPlatformDetection() {
     if (cachedDetectedPlatforms != null) {
