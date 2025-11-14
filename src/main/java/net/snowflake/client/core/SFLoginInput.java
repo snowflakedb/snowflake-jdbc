@@ -58,6 +58,7 @@ public class SFLoginInput {
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
   private int platformDetectionTimeoutMs = 200; // Default 200ms timeout for platform detection
   private boolean disablePlatformDetection = false; // Default false - platform detection enabled
+  private int maxRetryCount;
 
   private SFOauthLoginInput oauthLoginInput;
 
@@ -677,6 +678,15 @@ public class SFLoginInput {
 
   public SFLoginInput setDisablePlatformDetection(boolean disablePlatformDetection) {
     this.disablePlatformDetection = disablePlatformDetection;
+    return this;
+  }
+
+  public int getMaxRetryCount() {
+    return maxRetryCount;
+  }
+
+  public SFLoginInput setMaxRetryCount(int maxRetryCount) {
+    this.maxRetryCount = maxRetryCount;
     return this;
   }
 }
