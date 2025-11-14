@@ -10,6 +10,7 @@ import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
 
 public class PlatformDetectionUtil {
@@ -24,6 +25,12 @@ public class PlatformDetectionUtil {
 
   public static String performPlatformDetectionRequest(HttpRequestBase httpRequest, int timeoutMs)
       throws SnowflakeSQLException, IOException {
+    httpRequest.setConfig(
+        RequestConfig.custom()
+            .setConnectTimeout(timeoutMs)
+            .setSocketTimeout(timeoutMs)
+            .setConnectionRequestTimeout(timeoutMs)
+            .build());
     return HttpUtil.executeGeneralRequestOmitSnowflakeHeaders(
         httpRequest,
         1,
