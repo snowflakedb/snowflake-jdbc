@@ -154,9 +154,12 @@ public class StreamLoader implements Loader, Runnable {
       Connection processConnection) {
     _putConn = putConnection;
     _processConn = processConnection;
-    for (Map.Entry<LoaderProperty, Object> e : properties.entrySet()) {
-      setProperty(e.getKey(), e.getValue());
-    }
+
+    // Sort properties by ordinal to ensure columns is processed after table, schema and db to
+    // execute more performant metadata queries
+    properties.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey(Enum::compareTo))
+        .forEach(e -> setProperty(e.getKey(), e.getValue()));
 
     _noise = SnowflakeUtil.randomAlphaNumeric(6);
   }
