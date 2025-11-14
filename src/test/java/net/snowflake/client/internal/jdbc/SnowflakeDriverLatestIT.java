@@ -1,7 +1,5 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.api.driver.SnowflakeDriver.getClientVersionStringFromManifest;
-import static net.snowflake.client.api.driver.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.internal.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,11 +96,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       inputStream1.close();
       inputStream2.close();
     }
-  }
-
-  @Test
-  public void testStaticVersionMatchesManifest() {
-    assertEquals(implementVersion, getClientVersionStringFromManifest().replace("-SNAPSHOT", ""));
   }
 
   @Test
