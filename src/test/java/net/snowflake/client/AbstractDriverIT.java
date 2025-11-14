@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
 
-  public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
+  public static final String DRIVER_CLASS = "net.snowflake.client.api.driver.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 

@@ -1,6 +1,6 @@
 package net.snowflake.client.authentication;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
 
 import java.util.Properties;
 

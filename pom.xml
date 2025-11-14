@@ -201,34 +201,33 @@
           </execution>
         </executions>
       </plugin>
-<!--      <plugin>-->
-<!--        <groupId>com.github.siom79.japicmp</groupId>-->
-<!--        <artifactId>japicmp-maven-plugin</artifactId>-->
-<!--        <configuration>-->
-<!--          <parameter>-->
-<!--            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>-->
-<!--            <ignoreMissingClasses>false</ignoreMissingClasses>-->
-<!--            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>-->
-<!--            <includes>-->
-<!--              <include>com.snowflake</include>-->
-<!--              <include>net.snowflake</include>-->
-<!--            </includes>-->
-<!--            <excludes>-->
-<!--              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>-->
-<!--              <exclude>${shadeBase}</exclude>-->
-<!--            </excludes>-->
-<!--          </parameter>-->
-<!--        </configuration>-->
-<!--        <executions>-->
-<!--          <execution>-->
-<!--            <id>japicmp</id>-->
-<!--            <goals>-->
-<!--              <goal>cmp</goal>-->
-<!--            </goals>-->
-<!--            <phase>verify</phase>-->
-<!--          </execution>-->
-<!--        </executions>-->
-<!--      </plugin>-->
+      <plugin>
+        <groupId>com.github.siom79.japicmp</groupId>
+        <artifactId>japicmp-maven-plugin</artifactId>
+        <configuration>
+          <parameter>
+            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+            <ignoreMissingClasses>false</ignoreMissingClasses>
+            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
+            <includes>
+              <include>net.snowflake.client.api</include>
+            </includes>
+            <excludes>
+              <exclude>net.snowflake.client.internal</exclude>
+              <exclude>${shadeBase}</exclude>
+            </excludes>
+          </parameter>
+        </configuration>
+        <executions>
+          <execution>
+            <id>japicmp</id>
+            <goals>
+              <goal>cmp</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
@@ -502,7 +501,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
+              <mainClass>net.snowflake.client.api.driver.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
@@ -523,6 +522,7 @@
           <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
           <stylesheet>java</stylesheet>
           <helpfile>${project.basedir}/src/main/javadoc/licenses.html</helpfile>
+          <excludePackageNames>net.snowflake.client.internal.*:net.snowflake.client.jdbc.internal.*</excludePackageNames>
         </configuration>
         <executions>
           <execution>
@@ -1246,11 +1246,11 @@
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
-                <configuration>
-                  <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
-                  </systemPropertyVariables>
+              <configuration>
+                <systemPropertyVariables>
+                  <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                  <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+                </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>
