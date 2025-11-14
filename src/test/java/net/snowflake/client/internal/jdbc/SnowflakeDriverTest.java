@@ -416,6 +416,12 @@ public class SnowflakeDriverTest {
   }
 
   @Test
+  public void testSuppressIllegalReflectiveAccessWarning() {
+    // Just to make sure this function won't break anything
+    SnowflakeDriver.disableIllegalReflectiveAccessWarning();
+  }
+
+  @Test
   public void testParseConnectStringException() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     Properties info = new Properties();

@@ -1,7 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryServiceIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static net.snowflake.client.internal.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
