@@ -87,17 +87,17 @@ for attempt in 1 2 3; do
 done
 
 if [[ "$is_old_driver" == "true" ]]; then
-     pushd TestOnly >& /dev/null
-         JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
-         echo "[INFO] Run JDBC $JDBC_VERSION tests"
-         $MVNW_EXE -DjenkinsIT \
-             -Djava.io.tmpdir=$WORKSPACE \
-             -Djacoco.skip.instrument=false \
-             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
-             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-             verify \
-             --batch-mode --show-version
-     popd >& /dev/null
+    pushd TestOnly >& /dev/null
+        JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        echo "[INFO] Run JDBC $JDBC_VERSION tests"
+        $MVNW_EXE -DjenkinsIT \
+            -Djava.io.tmpdir=$WORKSPACE \
+            -Djacoco.skip.instrument=false \
+            -DintegrationTestSuites="$JDBC_TEST_SUITES" \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            verify \
+            --batch-mode --show-version
+    popd >& /dev/null
 elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
