@@ -65,6 +65,8 @@ public class SFSession extends SFBaseSession {
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
+  public static final String TELEMETRY_SERVICE_AVAILABLE = "TELEMETRY_SERVICE_AVAILABLE";
+
   // temporarily have this variable to avoid hardcode.
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
@@ -822,6 +824,20 @@ public class SFSession extends SFBaseSession {
     HttpUtil.initHttpClient(httpClientSettingsKey, null, httpHeadersCustomizers);
     HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
     HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
+
+    String telemetryValue =
+        loginInput
+            .getSessionParameters()
+            .getOrDefault(TELEMETRY_SERVICE_AVAILABLE, Boolean.TRUE)
+            .toString();
+
+    boolean isTelemetryServiceAvailable = Boolean.parseBoolean(telemetryValue);
+
+    if (!isTelemetryServiceAvailable) {
+      logger.debug("Telemetry Service is not available");
+    }
+
+    setTelemetryServiceAvailable(isTelemetryServiceAvailable);
 
     runDiagnosticsIfEnabled();
 
