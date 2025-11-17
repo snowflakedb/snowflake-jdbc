@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.jdbc;
+package net.snowflake.client.api.resultset;
 
 import java.util.ArrayList;
 import java.util.List;

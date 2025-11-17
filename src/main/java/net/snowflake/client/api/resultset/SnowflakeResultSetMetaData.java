@@ -2,7 +2,6 @@ package net.snowflake.client.api.resultset;
 
 import java.sql.SQLException;
 import java.util.List;
-import net.snowflake.client.internal.jdbc.FieldMetadata;
 
 public interface SnowflakeResultSetMetaData {
   String getQueryID() throws SQLException;

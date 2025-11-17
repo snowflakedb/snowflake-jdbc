@@ -16,6 +16,7 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.stream.Stream;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

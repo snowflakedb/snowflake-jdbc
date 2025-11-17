@@ -1,8 +1,8 @@
 package net.snowflake.client.internal.core.arrow;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeType.TIMESTAMP_LTZ;
-import static net.snowflake.client.internal.jdbc.SnowflakeType.TIMESTAMP_NTZ;
-import static net.snowflake.client.internal.jdbc.SnowflakeType.TIMESTAMP_TZ;
+import static net.snowflake.client.api.resultset.SnowflakeType.TIMESTAMP_LTZ;
+import static net.snowflake.client.api.resultset.SnowflakeType.TIMESTAMP_NTZ;
+import static net.snowflake.client.api.resultset.SnowflakeType.TIMESTAMP_TZ;
 
 import java.sql.Date;
 import java.sql.Time;

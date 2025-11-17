@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.FieldMetadata;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import org.apache.http.Header;
@@ -37,7 +39,6 @@ import org.apache.http.message.BasicHeader;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mockito;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
@@ -278,9 +279,9 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     assertFalse(fieldMetadata.isFixed());
 
     // Testing setBase
-    SnowflakeType mockBase = Mockito.mock(SnowflakeType.class);
-    fieldMetadata.setBase(mockBase);
-    assertEquals(mockBase, fieldMetadata.getBase());
+    SnowflakeType testBase = SnowflakeType.TEXT;
+    fieldMetadata.setBase(testBase);
+    assertEquals(testBase, fieldMetadata.getBase());
 
     // Testing setFields
     List<FieldMetadata> fieldList = new ArrayList<>();

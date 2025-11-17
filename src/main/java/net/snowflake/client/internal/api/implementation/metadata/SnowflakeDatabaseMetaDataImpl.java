@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.api.implementation.metadata;
 
+import static net.snowflake.client.api.resultset.SnowflakeType.convertStringToType;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS_EXTENDED_SET;
@@ -13,7 +14,6 @@ import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_STREAMS;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
-import static net.snowflake.client.internal.jdbc.SnowflakeType.convertStringToType;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;

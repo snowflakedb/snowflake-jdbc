@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.core.arrow.tostringhelpers;
 
-import net.snowflake.client.internal.jdbc.SnowflakeType;
+import net.snowflake.client.api.resultset.SnowflakeType;
 
 public class ArrowArrayStringRepresentationBuilder extends ArrowStringRepresentationBuilderBase {
 

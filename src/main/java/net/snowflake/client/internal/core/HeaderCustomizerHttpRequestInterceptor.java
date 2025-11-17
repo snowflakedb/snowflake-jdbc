@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.snowflake.client.internal.jdbc.HttpHeadersCustomizer;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.Header;

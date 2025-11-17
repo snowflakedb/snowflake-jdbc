@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.internal.jdbc.HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY;
+import static net.snowflake.client.api.http.HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.SFSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

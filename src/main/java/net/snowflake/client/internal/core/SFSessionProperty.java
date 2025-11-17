@@ -4,7 +4,7 @@ import java.security.PrivateKey;
 import java.util.List;
 import java.util.regex.Pattern;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.internal.jdbc.HttpHeadersCustomizer;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
 
 /** session properties accepted for opening a new session. */
 public enum SFSessionProperty {

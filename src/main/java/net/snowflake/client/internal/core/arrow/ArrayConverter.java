@@ -1,10 +1,10 @@
 package net.snowflake.client.internal.core.arrow;
 
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.arrow.tostringhelpers.ArrowArrayStringRepresentationBuilder;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.ListVector;
 

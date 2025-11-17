@@ -3,9 +3,9 @@ package net.snowflake.client.internal.core.arrow;
 import java.math.BigDecimal;
 import java.time.Duration;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.ValueVector;
 

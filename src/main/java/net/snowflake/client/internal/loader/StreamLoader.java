@@ -26,7 +26,7 @@ import net.snowflake.client.api.loader.Loader;
 import net.snowflake.client.api.loader.LoaderProperty;
 import net.snowflake.client.api.loader.LoadingError;
 import net.snowflake.client.api.loader.Operation;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;

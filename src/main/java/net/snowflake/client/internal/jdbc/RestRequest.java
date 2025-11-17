@@ -25,6 +25,7 @@ import javax.net.ssl.SSLProtocolException;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.Event;
 import net.snowflake.client.internal.core.EventUtil;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;

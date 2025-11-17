@@ -1,8 +1,8 @@
 package net.snowflake.client.internal.jdbc;
 
 import static java.util.Arrays.stream;
+import static net.snowflake.client.api.resultset.SnowflakeType.GEOGRAPHY;
 import static net.snowflake.client.internal.core.Constants.OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE;
-import static net.snowflake.client.internal.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.FieldMetadata;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.OCSPMode;

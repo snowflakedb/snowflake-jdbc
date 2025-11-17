@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.jdbc;
+package net.snowflake.client.api.http;
 
 import java.util.List;
 import java.util.Map;
@@ -11,8 +11,7 @@ import java.util.Map;
  * and specify if headers should regenerate on retries (e.g., for dynamic tokens).
  */
 public interface HttpHeadersCustomizer {
-  public static final String HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY =
-      "net.snowflake.client.jdbc.HttpHeadersCustomizer";
+  String HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY = "net.snowflake.client.jdbc.HttpHeadersCustomizer";
 
   /**
    * Determines if this customizer should be applied to the given request context.

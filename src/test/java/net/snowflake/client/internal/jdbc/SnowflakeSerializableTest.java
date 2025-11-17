@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.QueryResultFormat;
 import net.snowflake.client.internal.core.SFBaseSession;

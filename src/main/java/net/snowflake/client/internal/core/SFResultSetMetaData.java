@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.internal.jdbc.FieldMetadata;
+import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;

@@ -179,9 +179,19 @@ public class SnowflakeStatementImpl implements Statement, SnowflakeStatement {
     return rs;
   }
 
-  @Override
-  public void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
-    // No-Op.
+  /**
+   * Hook for subclasses to process result set metadata after query execution. This method is called
+   * internally after executing a query to allow subclasses to extract and cache metadata from the
+   * result set.
+   *
+   * <p>The default implementation does nothing. Subclasses (like PreparedStatementImpl) can
+   * override this to capture metadata such as parameter metadata.
+   *
+   * @param resultSet the internal result set containing metadata
+   * @throws SQLException if an error occurs while processing metadata
+   */
+  protected void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
+    // No-Op - subclasses can override
   }
 
   /**

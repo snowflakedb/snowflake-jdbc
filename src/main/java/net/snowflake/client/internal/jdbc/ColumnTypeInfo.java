@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
+import net.snowflake.client.api.resultset.SnowflakeType;
+
 public class ColumnTypeInfo {
   private int columnType;
   private String extColTypeName;

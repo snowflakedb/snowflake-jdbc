@@ -10,6 +10,8 @@ import java.io.Serializable;
 import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.FieldMetadata;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFBaseSession;
 
 public class SnowflakeColumnMetadata implements Serializable {

@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.jdbc;
+package net.snowflake.client.api.resultset;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -16,6 +16,7 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -336,7 +337,7 @@ public enum SnowflakeType {
       this.type = type;
     }
 
-    int getType() {
+    public int getType() {
       return type;
     }
 

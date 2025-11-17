@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.core.arrow;
 
 import java.math.BigDecimal;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.ValueVector;
 

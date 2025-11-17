@@ -3,9 +3,9 @@ package net.snowflake.client.internal.core;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Optional;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.BindingParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeColumn;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 

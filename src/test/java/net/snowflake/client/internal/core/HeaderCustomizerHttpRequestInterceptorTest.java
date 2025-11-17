@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.internal.jdbc.HttpHeadersCustomizer;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;

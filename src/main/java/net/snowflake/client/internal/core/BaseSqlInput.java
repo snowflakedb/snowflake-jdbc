@@ -18,8 +18,8 @@ import java.sql.SQLXML;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.internal.core.json.Converters;
-import net.snowflake.client.internal.jdbc.FieldMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 
 public abstract class BaseSqlInput implements SFSqlInput {

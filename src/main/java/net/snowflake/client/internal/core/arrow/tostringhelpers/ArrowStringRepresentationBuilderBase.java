@@ -3,7 +3,7 @@ package net.snowflake.client.internal.core.arrow.tostringhelpers;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringJoiner;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
+import net.snowflake.client.api.resultset.SnowflakeType;
 
 /**
  * StringBuilder like class to aggregate the string representation of snowflake Native ARROW

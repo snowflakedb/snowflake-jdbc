@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.core.arrow;
 
 import java.util.List;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.DataConversionContext;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 
 /** Arrow FixedSizeListVector converter. */

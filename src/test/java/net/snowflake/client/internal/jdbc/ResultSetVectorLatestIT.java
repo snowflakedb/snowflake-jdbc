@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.providers.SimpleResultFormatProvider;

@@ -1,7 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeType.convertStringToType;
-import static net.snowflake.client.internal.jdbc.SnowflakeType.getJavaType;
+import static net.snowflake.client.api.resultset.SnowflakeType.convertStringToType;
+import static net.snowflake.client.api.resultset.SnowflakeType.getJavaType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,6 +13,7 @@ import java.sql.Time;
 import java.sql.Types;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeTypeTest {
