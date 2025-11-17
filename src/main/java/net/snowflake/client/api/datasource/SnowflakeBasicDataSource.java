@@ -24,7 +24,7 @@ import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
 public class SnowflakeBasicDataSource implements DataSource, Serializable {
-  private static final long serialversionUID = 1L;
+  private static final long serialVersionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
 

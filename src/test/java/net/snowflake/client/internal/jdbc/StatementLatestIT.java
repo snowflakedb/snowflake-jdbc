@@ -35,7 +35,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.query.QueryStatus;
+import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;

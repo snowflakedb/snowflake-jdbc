@@ -1,4 +1,4 @@
-package net.snowflake.client.api.query;
+package net.snowflake.client.api.resultset;
 
 /** Copied from QueryDTO.java in Global Services. */
 public enum QueryStatus {

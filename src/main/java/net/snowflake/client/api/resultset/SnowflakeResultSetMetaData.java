@@ -21,7 +21,7 @@ public interface SnowflakeResultSetMetaData {
    * @return vector dimension when the column is vector type or 0 when it is not vector type
    * @throws SQLException when cannot get column dimension
    */
-  int getDimension(int column) throws SQLException;
+  int getVectorDimension(int column) throws SQLException;
 
   /**
    * Get vector dimension
@@ -30,5 +30,5 @@ public interface SnowflakeResultSetMetaData {
    * @return vector dimension when the column is vector type or 0 when it is not vector type
    * @throws SQLException when cannot get column dimension
    */
-  int getDimension(String columnName) throws SQLException;
+  int getVectorDimension(String columnName) throws SQLException;
 }

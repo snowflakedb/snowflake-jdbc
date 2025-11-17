@@ -1,4 +1,4 @@
-package net.snowflake.client.api.query;
+package net.snowflake.client.api.resultset;
 
 public final class QueryStatusV2 {
   private final long endTime;

@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.metadata.SnowflakeDatabaseMetaData;
+import net.snowflake.client.api.connection.SnowflakeDatabaseMetaData;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
@@ -2378,12 +2378,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           statement.executeQuery("Select text_col, float_vec, int_vec from JDBC_VECTOR")) {
         SnowflakeResultSetMetaData unwrapResultSetMetadata =
             resultSet.getMetaData().unwrap(SnowflakeResultSetMetaData.class);
-        assertEquals(0, unwrapResultSetMetadata.getDimension("TEXT_COL"));
-        assertEquals(0, unwrapResultSetMetadata.getDimension(1));
-        assertEquals(256, unwrapResultSetMetadata.getDimension("FLOAT_VEC"));
-        assertEquals(256, unwrapResultSetMetadata.getDimension(2));
-        assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
-        assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+        assertEquals(0, unwrapResultSetMetadata.getVectorDimension("TEXT_COL"));
+        assertEquals(0, unwrapResultSetMetadata.getVectorDimension(1));
+        assertEquals(256, unwrapResultSetMetadata.getVectorDimension("FLOAT_VEC"));
+        assertEquals(256, unwrapResultSetMetadata.getVectorDimension(2));
+        assertEquals(16, unwrapResultSetMetadata.getVectorDimension("INT_VEC"));
+        assertEquals(16, unwrapResultSetMetadata.getVectorDimension(3));
       }
     }
   }

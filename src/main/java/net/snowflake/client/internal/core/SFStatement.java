@@ -22,7 +22,7 @@ import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.api.query.QueryStatusV2;
+import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.core.BasicEvent.QueryState;
 import net.snowflake.client.internal.core.bind.BindException;
 import net.snowflake.client.internal.core.bind.BindUploader;

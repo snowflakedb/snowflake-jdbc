@@ -150,10 +150,10 @@ public class FlatfileReadMultithreadIT {
 
         try {
           underTest.finish();
+          underTest.close();
         } catch (Exception e) {
           e.printStackTrace();
         }
-        underTest.close();
         assertThat("must be no error", _resultListener.getErrorCount(), equalTo(0));
         assertThat(
             "total number of rows",

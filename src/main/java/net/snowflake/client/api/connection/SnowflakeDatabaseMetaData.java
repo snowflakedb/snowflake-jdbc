@@ -1,4 +1,4 @@
-package net.snowflake.client.api.metadata;
+package net.snowflake.client.api.connection;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;

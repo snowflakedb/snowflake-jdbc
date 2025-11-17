@@ -764,8 +764,18 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         final List<SnowflakeResultSetSerializable> serializables =
             resultSet.getResultSetSerializables(arbitrarySizeInBytes);
         final ArrayList<Date> dates = new ArrayList<>();
+
+        // Get connection URL for ResultSetRetrieveConfig
+        String url = conn.getMetaData().getURL();
+        String sfFullURL = url.replace("jdbc:snowflake://", "https://");
+
         for (SnowflakeResultSetSerializable s : serializables) {
-          ResultSet srs = s.getResultSet();
+          ResultSet srs =
+              s.getResultSet(
+                  SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                      .setProxyProperties(new Properties())
+                      .setSfFullURL(sfFullURL)
+                      .build());
           srs.next();
           dates.add(srs.getDate(2));
         }

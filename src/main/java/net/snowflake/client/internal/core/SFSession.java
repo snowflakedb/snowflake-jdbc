@@ -1,8 +1,8 @@
 package net.snowflake.client.internal.core;
 
-import static net.snowflake.client.api.query.QueryStatus.getStatusFromString;
-import static net.snowflake.client.api.query.QueryStatus.isAnError;
-import static net.snowflake.client.api.query.QueryStatus.isStillRunning;
+import static net.snowflake.client.api.resultset.QueryStatus.getStatusFromString;
+import static net.snowflake.client.api.resultset.QueryStatus.isAnError;
+import static net.snowflake.client.api.resultset.QueryStatus.isStillRunning;
 import static net.snowflake.client.internal.core.SFLoginInput.getBooleanValue;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
@@ -32,8 +32,8 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
-import net.snowflake.client.api.query.QueryStatus;
-import net.snowflake.client.api.query.QueryStatusV2;
+import net.snowflake.client.api.resultset.QueryStatus;
+import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.config.SFClientConfig;
 import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.core.crl.CRLValidator;

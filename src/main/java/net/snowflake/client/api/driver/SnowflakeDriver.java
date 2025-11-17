@@ -44,12 +44,10 @@ public class SnowflakeDriver implements Driver {
   private static int minorVersion = 0;
   private static long patchVersion = 0;
 
-  protected static boolean disableIncidents = false;
-
   private static boolean disableArrowResultFormat = false;
   private static String disableArrowResultFormatMessage;
 
-  private static final ResourceBundleManager versionResourceBundleManager =
+  static final ResourceBundleManager versionResourceBundleManager =
       ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version");
 
   static {
@@ -148,15 +146,6 @@ public class SnowflakeDriver implements Driver {
     }
   }
 
-  /**
-   * For testing purposes only- used to compare that JDBC version in pom.xml matches static string
-   *
-   * @return String with version from pom.xml file
-   */
-  static String getClientVersionStringFromManifest() {
-    return versionResourceBundleManager.getLocalizedMessage("version");
-  }
-
   public static boolean isDisableArrowResultFormat() {
     return disableArrowResultFormat;
   }
@@ -170,7 +159,7 @@ public class SnowflakeDriver implements Driver {
    *
    * @return the title of the implementation, null is returned if it is not known.
    */
-  public static String getImplementationTitle() {
+  static String getImplementationTitle() {
     Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
     return pkg != null ? pkg.getImplementationTitle() : "snowflake-jdbc";
   }
@@ -316,14 +305,6 @@ public class SnowflakeDriver implements Driver {
   @Override
   public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
     return null;
-  }
-
-  public static boolean isDisableIncidents() {
-    return disableIncidents;
-  }
-
-  public static void setDisableIncidents(boolean throttleIncidents) {
-    SnowflakeDriver.disableIncidents = throttleIncidents;
   }
 
   public static final void main(String[] args) {

@@ -1,6 +1,5 @@
 package net.snowflake.client.api.driver;
 
-import static net.snowflake.client.api.driver.SnowflakeDriver.getClientVersionStringFromManifest;
 import static net.snowflake.client.api.driver.SnowflakeDriver.implementVersion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,7 +20,8 @@ public class SnowflakeDriverTest {
 
   @Test
   public void testStaticVersionMatchesManifest() {
-    String manifestVersion = getClientVersionStringFromManifest();
+    String manifestVersion =
+        SnowflakeDriver.versionResourceBundleManager.getLocalizedMessage("version");
     assertNotNull(manifestVersion, "Manifest version should not be null");
 
     // Remove -SNAPSHOT suffix if present for comparison

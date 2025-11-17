@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.api.query.QueryStatus.NO_DATA;
+import static net.snowflake.client.api.resultset.QueryStatus.NO_DATA;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import java.math.BigDecimal;
@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.query.QueryStatus;
-import net.snowflake.client.api.query.QueryStatusV2;
+import net.snowflake.client.api.resultset.QueryStatus;
+import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;

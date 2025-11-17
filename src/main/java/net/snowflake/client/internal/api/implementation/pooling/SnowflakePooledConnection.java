@@ -1,4 +1,4 @@
-package net.snowflake.client.api.pooling;
+package net.snowflake.client.internal.api.implementation.pooling;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,7 +22,7 @@ public class SnowflakePooledConnection implements PooledConnection {
   /** list of event listener registered to listen for connection event */
   private final Set<ConnectionEventListener> eventListeners;
 
-  SnowflakePooledConnection(Connection physicalConnection) throws SQLException {
+  public SnowflakePooledConnection(Connection physicalConnection) throws SQLException {
     this.physicalConnection = physicalConnection;
 
     SnowflakeConnectionImpl sfConnection = physicalConnection.unwrap(SnowflakeConnectionImpl.class);

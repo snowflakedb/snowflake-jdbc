@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.TimeZone;
@@ -64,7 +63,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   }
 
   @AfterEach
-  public void tearDown() throws SQLException {
+  public void tearDown() throws Exception {
     conn.close();
     bindUploader.close();
     TimeZone.setDefault(prevTimeZone);

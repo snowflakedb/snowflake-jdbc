@@ -108,7 +108,7 @@ public class BindUploaderIT extends BaseJDBCTest {
   }
 
   @AfterEach
-  public void tearDown() throws SQLException {
+  public void tearDown() throws Exception {
     conn.close();
     bindUploader.close();
     TimeZone.setDefault(prevTimeZone);

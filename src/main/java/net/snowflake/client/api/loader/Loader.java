@@ -4,8 +4,21 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 
 import java.io.File;
 
-/** Bulk loader for Snowflake */
-public interface Loader {
+/**
+ * Bulk loader for Snowflake.
+ *
+ * <p>This interface extends {@link AutoCloseable}, enabling try-with-resources pattern for
+ * automatic resource management:
+ *
+ * <pre>{@code
+ * try (Loader loader = LoaderFactory.createLoader(...)) {
+ *     loader.start();
+ *     loader.submitRow(data);
+ *     loader.finish();
+ * } // Connections closed automatically
+ * }</pre>
+ */
+public interface Loader extends AutoCloseable {
 
   // Temporary directory used for data cache
   String tmpdir = systemGetProperty("java.io.tmpdir");
@@ -54,8 +67,16 @@ public interface Loader {
    */
   void finish() throws Exception;
 
-  /** Close connections that have been provided upon initialization */
-  void close();
+  /**
+   * Close connections that have been provided upon initialization.
+   *
+   * <p>This method is called automatically when using try-with-resources. It is safe to call this
+   * method multiple times.
+   *
+   * @throws Exception if an error occurs while closing resources
+   */
+  @Override
+  void close() throws Exception;
 
   // Raised for data conversion errors, if requested
   class DataError extends RuntimeException {

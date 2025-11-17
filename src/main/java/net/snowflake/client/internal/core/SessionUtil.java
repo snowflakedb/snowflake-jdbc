@@ -1864,9 +1864,7 @@ public class SessionUtil {
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
       logger.debug("Processing parameter {}", entry.getKey());
 
-      if ("CLIENT_DISABLE_INCIDENTS".equalsIgnoreCase(entry.getKey())) {
-        SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());
-      } else if ("CLIENT_SESSION_KEEP_ALIVE".equalsIgnoreCase(entry.getKey())) {
+      if ("CLIENT_SESSION_KEEP_ALIVE".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setEnableHeartbeat((Boolean) entry.getValue());
         }

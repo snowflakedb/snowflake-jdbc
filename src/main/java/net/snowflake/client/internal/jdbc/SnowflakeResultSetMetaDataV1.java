@@ -88,12 +88,12 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
   }
 
   @Override
-  public int getDimension(int column) throws SQLException {
+  public int getVectorDimension(int column) throws SQLException {
     return resultSetMetaData.getDimension(column);
   }
 
   @Override
-  public int getDimension(String columnName) throws SQLException {
+  public int getVectorDimension(String columnName) throws SQLException {
     return resultSetMetaData.getDimension(getColumnIndex(columnName) + 1);
   }
 

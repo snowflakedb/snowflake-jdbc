@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.query.QueryStatus;
+import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;

@@ -704,7 +704,7 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   @Override
-  public void close() {
+  public void close() throws Exception {
     logger.debug("Close Loader", false);
     try {
       this._processConn.close();
