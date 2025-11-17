@@ -1,5 +1,6 @@
 package net.snowflake.client.api.query;
 
+// Maybe we can move it to `resultset` package?
 public final class QueryStatusV2 {
   private final long endTime;
   private final int errorCode;

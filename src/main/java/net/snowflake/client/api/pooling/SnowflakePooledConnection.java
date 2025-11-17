@@ -13,6 +13,7 @@ import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /** Snowflake implementation of pooled connection */
+// This may be private, right?
 public class SnowflakePooledConnection implements PooledConnection {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakePooledConnection.class);
 

@@ -8,6 +8,7 @@ import java.util.Properties;
  * This interface defines Snowflake specific APIs to access the data wrapped in the result set
  * serializable object.
  */
+// Why do we need this interface?
 public interface SnowflakeResultSetSerializable {
   // This wraps the required info for retrieving ResultSet
   class ResultSetRetrieveConfig {
@@ -70,6 +71,7 @@ public interface SnowflakeResultSetSerializable {
    * @throws SQLException if an error occurs
    * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
+  // If deprecated - maybe we can remove it right away?
   @Deprecated
   ResultSet getResultSet() throws SQLException;
 
@@ -84,6 +86,7 @@ public interface SnowflakeResultSetSerializable {
    * @throws SQLException if an error occurs
    * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
+  // Same.
   @Deprecated
   ResultSet getResultSet(Properties info) throws SQLException;
 

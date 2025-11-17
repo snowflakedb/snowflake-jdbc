@@ -55,9 +55,11 @@ public interface Loader {
   void finish() throws Exception;
 
   /** Close connections that have been provided upon initialization */
+  // Should we migrate to (Auto)Closeable instead?
   void close();
 
   // Raised for data conversion errors, if requested
+  // Should we migrate to SQLException?
   class DataError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
@@ -75,6 +77,7 @@ public interface Loader {
   }
 
   // Raised for connection and other system errors.
+  // Should we migrate to SQLException?
   class ConnectionError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 

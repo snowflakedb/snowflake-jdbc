@@ -5,6 +5,7 @@ import java.util.List;
 import net.snowflake.client.internal.jdbc.FieldMetadata;
 
 public interface SnowflakeResultSetMetaData {
+  // Do we need this? It's already available in `SnowflakeResultSet`.
   String getQueryID() throws SQLException;
 
   List<String> getColumnNames() throws SQLException;
@@ -22,6 +23,7 @@ public interface SnowflakeResultSetMetaData {
    * @return vector dimension when the column is vector type or 0 when it is not vector type
    * @throws SQLException when cannot get column dimension
    */
+  // `getVectorDimension`?
   int getDimension(int column) throws SQLException;
 
   /**
@@ -31,5 +33,6 @@ public interface SnowflakeResultSetMetaData {
    * @return vector dimension when the column is vector type or 0 when it is not vector type
    * @throws SQLException when cannot get column dimension
    */
+  // `getVectorDimension`?
   int getDimension(String columnName) throws SQLException;
 }

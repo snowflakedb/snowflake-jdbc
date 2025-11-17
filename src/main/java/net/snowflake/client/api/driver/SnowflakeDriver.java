@@ -88,6 +88,7 @@ public class SnowflakeDriver implements Driver {
     disableIllegalReflectiveAccessWarning();
   }
 
+  // private, do we really need this in test?
   static void disableIllegalReflectiveAccessWarning() {
     // The netty dependency of arrow will cause an illegal reflective access warning
     // This function try to eliminate the warning by setting
@@ -153,6 +154,7 @@ public class SnowflakeDriver implements Driver {
    *
    * @return String with version from pom.xml file
    */
+  // This is used only in tests - remove?
   static String getClientVersionStringFromManifest() {
     return versionResourceBundleManager.getLocalizedMessage("version");
   }
@@ -170,6 +172,7 @@ public class SnowflakeDriver implements Driver {
    *
    * @return the title of the implementation, null is returned if it is not known.
    */
+  // Needed to be public?
   public static String getImplementationTitle() {
     Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
     return pkg != null ? pkg.getImplementationTitle() : "snowflake-jdbc";
@@ -180,6 +183,7 @@ public class SnowflakeDriver implements Driver {
    *
    * @return the jar name with version
    */
+  // Needed to be public?
   public static String getJdbcJarname() {
     return String.format("%s-%s", getImplementationTitle(), implementVersion);
   }
@@ -318,14 +322,17 @@ public class SnowflakeDriver implements Driver {
     return null;
   }
 
+  // Unused - to remove?
   public static boolean isDisableIncidents() {
     return disableIncidents;
   }
 
+  // Unused - to remove?
   public static void setDisableIncidents(boolean throttleIncidents) {
     SnowflakeDriver.disableIncidents = throttleIncidents;
   }
 
+  // To remove?
   public static final void main(String[] args) {
     if (args.length > 0 && "--version".equals(args[0])) {
       Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");

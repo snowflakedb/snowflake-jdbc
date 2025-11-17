@@ -27,6 +27,7 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * Logical connection is wrapper class on top of SnowflakeConnectionImpl Every method call will be
  * delegated to SnowflakeConnectionImpl except for close method
  */
+// This may be private, right?
 class LogicalConnection implements Connection {
   private static final SFLogger logger = SFLoggerFactory.getLogger(LogicalConnection.class);
 

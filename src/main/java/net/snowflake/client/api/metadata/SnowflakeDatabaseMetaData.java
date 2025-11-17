@@ -10,6 +10,7 @@ import java.sql.SQLException;
  * <p>This interface extends the standard JDBC DatabaseMetaData interface with Snowflake-specific
  * metadata operations.
  */
+// I think we could put it in `connection` package?
 public interface SnowflakeDatabaseMetaData extends DatabaseMetaData {
 
   /**
@@ -51,6 +52,7 @@ public interface SnowflakeDatabaseMetaData extends DatabaseMetaData {
    * @return ResultSet - each row is a column description
    * @throws SQLException if a database access error occurs
    */
+  // To consult with rkr
   ResultSet getColumns(
       String catalog,
       String schemaPattern,

@@ -13,6 +13,7 @@ public class LoaderFactory {
       Map<LoaderProperty, Object> properties,
       Connection uploadConnection,
       Connection processingConnection) {
+    // What is it for?
     logger.debug("", false);
     StreamLoader loader = new StreamLoader(properties, uploadConnection, processingConnection);
     return loader;
