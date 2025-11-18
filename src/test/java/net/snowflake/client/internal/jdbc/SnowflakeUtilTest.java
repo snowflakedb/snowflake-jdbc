@@ -33,6 +33,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.resultset.FieldMetadataImpl;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -178,7 +179,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             false,
             columnTypeInfo.getSnowflakeType(),
             Arrays.asList(
-                new FieldMetadata(
+                new FieldMetadataImpl(
                     fieldOne.path("name").asText(),
                     columnTypeInfoNodeOne.getExtColTypeName(),
                     columnTypeInfoNodeOne.getColumnType(),
@@ -189,7 +190,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
                     fieldOne.path("fixed").asBoolean(),
                     columnTypeInfoNodeOne.getSnowflakeType(),
                     new ArrayList<>()),
-                new FieldMetadata(
+                new FieldMetadataImpl(
                     fieldTwo.path("name").asText(),
                     columnTypeInfoNodeTwo.getExtColTypeName(),
                     columnTypeInfoNodeTwo.getColumnType(),
@@ -240,7 +241,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   @Test
   public void testFieldMetadataSetterMethods() {
-    FieldMetadata fieldMetadata = new FieldMetadata();
+    FieldMetadataImpl fieldMetadata = new FieldMetadataImpl();
 
     // Testing setName
     fieldMetadata.setName("testName");
@@ -285,7 +286,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
     // Testing setFields
     List<FieldMetadata> fieldList = new ArrayList<>();
-    fieldList.add(new FieldMetadata());
+    fieldList.add(new FieldMetadataImpl());
     fieldMetadata.setFields(fieldList);
     assertEquals(fieldList, fieldMetadata.getFields());
   }

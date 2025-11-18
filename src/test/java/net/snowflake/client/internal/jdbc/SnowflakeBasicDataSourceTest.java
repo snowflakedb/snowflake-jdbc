@@ -10,7 +10,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.SFSessionProperty;
@@ -21,7 +22,7 @@ public class SnowflakeBasicDataSourceTest {
   /** snow-37186 */
   @Test
   public void testSetLoginTimeout() throws SQLException {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
 
     ds.setLoginTimeout(10);
     assertThat(ds.getLoginTimeout(), is(10));
@@ -29,7 +30,7 @@ public class SnowflakeBasicDataSourceTest {
 
   @Test
   public void testDataSourceSetters() {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
 
     ds.setTracing("all");
     ds.setApplication("application_name");
@@ -119,7 +120,7 @@ public class SnowflakeBasicDataSourceTest {
 
   @Test
   public void testDataSourceWithoutUsernameOrPasswordThrowsExplicitException() {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
 
     ds.setAccount("testaccount");
     ds.setAuthenticator("snowflake");
@@ -139,7 +140,7 @@ public class SnowflakeBasicDataSourceTest {
   public void testSetsHttpHeadersCustomizers() {
     List<HttpHeadersCustomizer> customizers =
         Collections.singletonList(mock(HttpHeadersCustomizer.class));
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
 
     ds.setHttpHeadersCustomizers(customizers);
 

@@ -7,7 +7,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.api.exception.ErrorCode;
@@ -303,16 +302,7 @@ public class SnowflakeDriver implements Driver {
   }
 
   @Override
-  public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+  public java.util.logging.Logger getParentLogger() {
     return null;
-  }
-
-  public static final void main(String[] args) {
-    if (args.length > 0 && "--version".equals(args[0])) {
-      Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
-      if (pkg != null) {
-        System.out.println(pkg.getImplementationVersion());
-      }
-    }
   }
 }

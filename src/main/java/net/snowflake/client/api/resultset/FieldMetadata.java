@@ -1,127 +1,80 @@
 package net.snowflake.client.api.resultset;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class FieldMetadata {
+/**
+ * Metadata describing a field in a structured type (OBJECT, ARRAY, MAP). This interface provides
+ * read-only access to field information including name, type, precision, scale, and nested fields.
+ */
+public interface FieldMetadata {
 
-  private String name;
-  private String typeName;
-  private int type;
-  private boolean nullable;
+  /**
+   * Gets the name of the field.
+   *
+   * @return the field name
+   */
+  String getName();
 
-  private int byteLength;
+  /**
+   * Gets the type name of the field.
+   *
+   * @return the type name
+   */
+  String getTypeName();
 
-  private int precision;
-  private int scale;
-  private boolean fixed;
-  private SnowflakeType base;
-  private List<FieldMetadata> fields;
+  /**
+   * Gets the SQL type code of the field.
+   *
+   * @return the SQL type code as defined in {@link java.sql.Types}
+   */
+  int getType();
 
-  public FieldMetadata(
-      String name,
-      String typeName,
-      int type,
-      boolean nullable,
-      int byteLength,
-      int precision,
-      int scale,
-      boolean fixed,
-      SnowflakeType base,
-      List<FieldMetadata> fields) {
-    this.name = name;
-    this.typeName = typeName;
-    this.type = type;
-    this.nullable = nullable;
-    this.byteLength = byteLength;
-    this.precision = precision;
-    this.scale = scale;
-    this.fixed = fixed;
-    this.base = base;
-    this.fields = fields;
-  }
+  /**
+   * Checks if the field is nullable.
+   *
+   * @return true if the field can contain null values, false otherwise
+   */
+  boolean isNullable();
 
-  public FieldMetadata() {
-    this.fields = new ArrayList<>();
-  }
+  /**
+   * Gets the byte length of the field.
+   *
+   * @return the byte length
+   */
+  int getByteLength();
 
-  public String getName() {
-    return name;
-  }
+  /**
+   * Gets the precision of the field.
+   *
+   * @return the precision
+   */
+  int getPrecision();
 
-  public void setName(String name) {
-    this.name = name;
-  }
+  /**
+   * Gets the scale of the field.
+   *
+   * @return the scale
+   */
+  int getScale();
 
-  public String getTypeName() {
-    return typeName;
-  }
+  /**
+   * Checks if the field has a fixed size.
+   *
+   * @return true if the field has a fixed size, false otherwise
+   */
+  boolean isFixed();
 
-  public void setTypeName(String typeName) {
-    this.typeName = typeName;
-  }
+  /**
+   * Gets the base Snowflake type of the field.
+   *
+   * @return the base {@link SnowflakeType}
+   */
+  SnowflakeType getBase();
 
-  public int getType() {
-    return type;
-  }
-
-  public void setType(int type) {
-    this.type = type;
-  }
-
-  public boolean isNullable() {
-    return nullable;
-  }
-
-  public void setNullable(boolean nullable) {
-    this.nullable = nullable;
-  }
-
-  public int getByteLength() {
-    return byteLength;
-  }
-
-  public void setByteLength(int byteLength) {
-    this.byteLength = byteLength;
-  }
-
-  public int getPrecision() {
-    return precision;
-  }
-
-  public void setPrecision(int precision) {
-    this.precision = precision;
-  }
-
-  public int getScale() {
-    return scale;
-  }
-
-  public void setScale(int scale) {
-    this.scale = scale;
-  }
-
-  public boolean isFixed() {
-    return fixed;
-  }
-
-  public void setFixed(boolean fixed) {
-    this.fixed = fixed;
-  }
-
-  public SnowflakeType getBase() {
-    return base;
-  }
-
-  public void setBase(SnowflakeType base) {
-    this.base = base;
-  }
-
-  public List<FieldMetadata> getFields() {
-    return fields;
-  }
-
-  public void setFields(List<FieldMetadata> fields) {
-    this.fields = fields;
-  }
+  /**
+   * Gets the nested field metadata for structured types (OBJECT, ARRAY, MAP).
+   *
+   * @return list of nested field metadata, or empty list if no nested fields
+   */
+  List<FieldMetadata> getFields();
 }

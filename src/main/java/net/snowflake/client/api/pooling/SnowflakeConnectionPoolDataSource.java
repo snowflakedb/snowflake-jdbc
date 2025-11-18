@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.PooledConnection;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.internal.api.implementation.pooling.SnowflakePooledConnection;
 
 public class SnowflakeConnectionPoolDataSource extends SnowflakeBasicDataSource

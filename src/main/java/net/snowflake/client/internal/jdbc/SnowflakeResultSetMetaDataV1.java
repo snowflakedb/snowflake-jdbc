@@ -8,10 +8,10 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFResultSetMetaData;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -178,7 +178,7 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
 
     int type = this.getColumnType(column);
 
-    return SnowflakeType.javaTypeToClassName(type);
+    return SnowflakeTypeUtil.javaTypeToClassName(type);
   }
 
   /**

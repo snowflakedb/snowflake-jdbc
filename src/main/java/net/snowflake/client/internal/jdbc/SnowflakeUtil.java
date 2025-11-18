@@ -47,6 +47,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeType;
+import net.snowflake.client.internal.api.implementation.resultset.FieldMetadataImpl;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.OCSPMode;
@@ -54,6 +55,7 @@ import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSessionProperty;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.ThrowingCallable;
@@ -217,7 +219,7 @@ public class SnowflakeUtil {
       boolean isStructuredType,
       boolean isVectorType)
       throws SnowflakeSQLLoggedException {
-    SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
+    SnowflakeType baseType = SnowflakeTypeUtil.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo;
 
     switch (baseType) {
@@ -353,7 +355,7 @@ public class SnowflakeUtil {
         extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
 
         if (!udtOutputType.isMissingNode()) {
-          SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
+          SnowflakeType outputType = SnowflakeTypeUtil.fromString(udtOutputType.asText());
           switch (outputType) {
             case OBJECT:
             case TEXT:
@@ -418,7 +420,7 @@ public class SnowflakeUtil {
               internalFields.size() > 0,
               isVectorType(parentInternalColumnTypeName));
       fields.add(
-          new FieldMetadata(
+          new FieldMetadataImpl(
               colName,
               columnTypeInfo.getExtColTypeName(),
               columnTypeInfo.getColumnType(),
@@ -451,12 +453,12 @@ public class SnowflakeUtil {
 
   public static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
-    return SnowflakeType.javaTypeToSFType(javaType, session).name();
+    return SnowflakeTypeUtil.javaTypeToSFType(javaType, session).name();
   }
 
   public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
-    return SnowflakeType.javaTypeToSFType(javaType, session);
+    return SnowflakeTypeUtil.javaTypeToSFType(javaType, session);
   }
 
   /**

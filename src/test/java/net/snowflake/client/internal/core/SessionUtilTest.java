@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.internal.core.auth.AuthenticatorType;
+import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.internal.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;

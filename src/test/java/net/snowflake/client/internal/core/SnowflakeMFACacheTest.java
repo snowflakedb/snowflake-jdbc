@@ -24,7 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
@@ -340,7 +341,7 @@ public class SnowflakeMFACacheTest {
   @Disabled
   public void testEnableClientRequestMfaToken() throws SQLException {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));

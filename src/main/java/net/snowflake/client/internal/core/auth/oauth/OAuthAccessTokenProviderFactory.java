@@ -6,12 +6,12 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.AssertUtil;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
 import net.snowflake.client.internal.core.SFOauthLoginInput;
-import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 

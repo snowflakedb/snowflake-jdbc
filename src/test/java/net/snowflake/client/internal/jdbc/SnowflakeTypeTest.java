@@ -1,7 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.api.resultset.SnowflakeType.convertStringToType;
-import static net.snowflake.client.api.resultset.SnowflakeType.getJavaType;
+import static net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil.getJavaType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +14,7 @@ import java.sql.Types;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeTypeTest {
@@ -82,31 +83,33 @@ public class SnowflakeTypeTest {
 
   @Test
   public void testJavaSQLTypeLexicalValue() {
-    assertEquals(SnowflakeType.lexicalValue(1.0f, null, null, null, null), "0x1.0p0");
-    assertEquals(SnowflakeType.lexicalValue(new BigDecimal(100.0), null, null, null, null), "100");
+    assertEquals(SnowflakeTypeUtil.lexicalValue(1.0f, null, null, null, null), "0x1.0p0");
     assertEquals(
-        SnowflakeType.lexicalValue("random".getBytes(), null, null, null, null), "72616E646F6D");
+        SnowflakeTypeUtil.lexicalValue(new BigDecimal(100.0), null, null, null, null), "100");
+    assertEquals(
+        SnowflakeTypeUtil.lexicalValue("random".getBytes(), null, null, null, null),
+        "72616E646F6D");
   }
 
   @Test
   public void testJavaTypeToSFType() throws SnowflakeSQLException {
-    assertEquals(SnowflakeType.javaTypeToSFType(0, null), SnowflakeType.ANY);
+    assertEquals(SnowflakeTypeUtil.javaTypeToSFType(0, null), SnowflakeType.ANY);
     assertThrows(
         SnowflakeSQLLoggedException.class,
         () -> {
-          SnowflakeType.javaTypeToSFType(2000000, null);
+          SnowflakeTypeUtil.javaTypeToSFType(2000000, null);
         });
   }
 
   @Test
   public void testJavaTypeToClassName() throws SQLException {
-    assertEquals(SnowflakeType.javaTypeToClassName(Types.DECIMAL), BigDecimal.class.getName());
-    assertEquals(SnowflakeType.javaTypeToClassName(Types.TIME), Time.class.getName());
-    assertEquals(SnowflakeType.javaTypeToClassName(Types.BOOLEAN), Boolean.class.getName());
+    assertEquals(SnowflakeTypeUtil.javaTypeToClassName(Types.DECIMAL), BigDecimal.class.getName());
+    assertEquals(SnowflakeTypeUtil.javaTypeToClassName(Types.TIME), Time.class.getName());
+    assertEquals(SnowflakeTypeUtil.javaTypeToClassName(Types.BOOLEAN), Boolean.class.getName());
     assertThrows(
         SQLFeatureNotSupportedException.class,
         () -> {
-          SnowflakeType.javaTypeToClassName(-2000000);
+          SnowflakeTypeUtil.javaTypeToClassName(-2000000);
         });
   }
 }

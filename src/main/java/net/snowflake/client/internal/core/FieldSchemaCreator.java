@@ -3,9 +3,9 @@ package net.snowflake.client.internal.core;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Optional;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.BindingParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeColumn;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -62,7 +62,7 @@ public class FieldSchemaCreator {
 
   public static BindingParameterMetadata buildBindingSchemaForType(int baseType, boolean addName)
       throws SQLException {
-    String name = addName ? SnowflakeType.javaTypeToSFType(baseType, null).name() : null;
+    String name = addName ? SnowflakeTypeUtil.javaTypeToSFType(baseType, null).name() : null;
     switch (baseType) {
       case Types.VARCHAR:
       case Types.CHAR:

@@ -1129,7 +1129,7 @@ public class RestRequest {
       /* connect timeout not reached */
       // check if this is a login-request
       if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLExceptionWithRetryContext(
             ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
             httpExecutingContext.getRetryCount(),
             true,
@@ -1169,7 +1169,7 @@ public class RestRequest {
     if (httpExecutingContext.getAuthTimeout() > 0
         && httpExecutingContext.getElapsedMilliForTransientIssues()
             >= httpExecutingContext.getAuthTimeout()) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLExceptionWithRetryContext(
           ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
           httpExecutingContext.getRetryCount(),
           false,

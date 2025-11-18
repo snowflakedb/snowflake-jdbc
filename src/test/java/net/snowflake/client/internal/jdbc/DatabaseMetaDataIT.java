@@ -31,6 +31,7 @@ import net.snowflake.client.api.connection.SnowflakeDatabaseMetaData;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -283,7 +284,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
       assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
       assertEquals(
-          SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)),
+          SnowflakeTypeUtil.javaTypeToClassName(resultSetMetaData.getColumnType(col)),
           resultSetMetaData.getColumnClassName(col));
       assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
       assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));

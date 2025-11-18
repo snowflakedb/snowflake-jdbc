@@ -28,6 +28,7 @@ import net.snowflake.client.api.loader.LoadingError;
 import net.snowflake.client.api.loader.Operation;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -665,8 +666,8 @@ public class StreamLoader implements Loader, Runnable {
         sb.append(',');
       }
       sb.append(
-          SnowflakeType.escapeForCSV(
-              SnowflakeType.lexicalValue(
+          SnowflakeTypeUtil.escapeForCSV(
+              SnowflakeTypeUtil.lexicalValue(
                   data[i], _dateFormat, _timeFormat, _timestampFormat, _timestampTzFormat)));
     }
     return sb.toString().getBytes(UTF_8);

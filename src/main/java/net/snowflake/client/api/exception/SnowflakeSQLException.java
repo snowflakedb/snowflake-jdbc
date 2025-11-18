@@ -15,10 +15,6 @@ public class SnowflakeSQLException extends SQLException {
       ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   private String queryId = "unknown";
-  private int retryCount = 0;
-
-  boolean issocketTimeoutNoBackoff;
-  long elapsedSeconds;
 
   /**
    * This constructor should only be used for error from Global service. Since Global service has
@@ -216,23 +212,6 @@ public class SnowflakeSQLException extends SQLException {
   }
 
   /**
-   * @param errorCode error code
-   * @param retryCount retry count
-   * @param issocketTimeoutNoBackoff isSocketTimeoutNoBackoff
-   * @param elapsedSeconds time elapsed in seconds
-   */
-  public SnowflakeSQLException(
-      ErrorCode errorCode, int retryCount, boolean issocketTimeoutNoBackoff, long elapsedSeconds) {
-    super(
-        errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode())),
-        errorCode.getSqlState(),
-        errorCode.getMessageCode());
-    this.retryCount = retryCount;
-    this.issocketTimeoutNoBackoff = issocketTimeoutNoBackoff;
-    this.elapsedSeconds = elapsedSeconds;
-  }
-
-  /**
    * @param e the SFException
    */
   public SnowflakeSQLException(SFException e) {
@@ -249,17 +228,5 @@ public class SnowflakeSQLException extends SQLException {
 
   public String getQueryId() {
     return queryId;
-  }
-
-  public int getRetryCount() {
-    return retryCount;
-  }
-
-  public boolean issocketTimeoutNoBackoff() {
-    return issocketTimeoutNoBackoff;
-  }
-
-  public long getElapsedSeconds() {
-    return elapsedSeconds;
   }
 }

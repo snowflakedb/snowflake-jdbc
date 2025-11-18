@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.core;
 
 import java.util.HashMap;
+import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;

@@ -25,12 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
-import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
 import net.snowflake.client.internal.core.auth.ClientAuthnParameter;
 import net.snowflake.client.internal.core.auth.oauth.AccessTokenProvider;
@@ -50,6 +50,7 @@ import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.RetryContext;
 import net.snowflake.client.internal.jdbc.RetryContextManager;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.internal.jdbc.SnowflakeSQLExceptionWithRetryContext;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -809,7 +810,16 @@ public class SessionUtil {
                 postRequest.setEntity(updatedInput);
               }
 
-              long elapsedSeconds = ex.getElapsedSeconds();
+              // Extract retry context information if available
+              long elapsedSeconds = 0;
+              boolean isSocketTimeoutNoBackoff = false;
+              if (ex instanceof SnowflakeSQLExceptionWithRetryContext) {
+                SnowflakeSQLExceptionWithRetryContext retryEx =
+                    (SnowflakeSQLExceptionWithRetryContext) ex;
+                elapsedSeconds = retryEx.getElapsedSeconds();
+                isSocketTimeoutNoBackoff = retryEx.isSocketTimeoutNoBackoff();
+                retryCount = retryEx.getRetryCount();
+              }
 
               if (loginInput.getLoginTimeout() > 0) {
                 if (leftRetryTimeout > elapsedSeconds) {
@@ -825,7 +835,7 @@ public class SessionUtil {
               // and we need to update time remained in socket timeout here to control
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeoutInMillis() > 0) {
-                if (ex.issocketTimeoutNoBackoff()) {
+                if (isSocketTimeoutNoBackoff) {
                   if (leftsocketTimeout > elapsedSeconds) {
                     leftsocketTimeout -= elapsedSeconds;
                   } else {
@@ -838,8 +848,7 @@ public class SessionUtil {
               }
 
               // JWT or Okta renew should not count as a retry, so we pass back the current retry
-              // count.
-              retryCount = ex.getRetryCount();
+              // count from the exception context.
 
               continue;
             }

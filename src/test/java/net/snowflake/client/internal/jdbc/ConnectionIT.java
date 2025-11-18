@@ -39,13 +39,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
@@ -113,7 +115,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
    */
   @Test
   public void testLoginTimeoutViaDataSource() throws SQLException {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setUrl("jdbc:snowflake://fakeaccount.snowflakecomputing.com");
     ds.setUser("fakeUser");
     ds.setPassword("fakePassword");
@@ -285,7 +287,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testConnectViaDataSource() throws SQLException {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
 
     Map<String, String> params = getConnectionParameters();
     String account = params.get("account");
@@ -322,7 +324,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
 
     // get connection by server name
     // this is used by ibm cast iron studio
-    ds = new SnowflakeBasicDataSource();
+    ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(ssl));
     ds.setAccount(account);
@@ -354,7 +356,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(params.get("ssl")));
     ds.setAccount(params.get("account"));
@@ -429,7 +431,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     }
 
     // test datasource connection using private key
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setUrl(uri);
     ds.setAccount(parameters.get("account"));
     ds.setUser(parameters.get("user"));

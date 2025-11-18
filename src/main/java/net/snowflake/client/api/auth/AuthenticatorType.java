@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.core.auth;
+package net.snowflake.client.api.auth;
 
 public enum AuthenticatorType {
   /*

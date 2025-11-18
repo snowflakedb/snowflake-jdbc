@@ -24,7 +24,8 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import org.apache.http.client.methods.HttpPost;
@@ -279,7 +280,7 @@ public class SessionUtilExternalBrowserTest {
   @Disabled
   public void testEnableClientStoreTemporaryCredential() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
@@ -301,7 +302,7 @@ public class SessionUtilExternalBrowserTest {
   @Disabled
   public void testExternalBrowserTimeout() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));

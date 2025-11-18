@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.api.driver.SnowflakeDriver;
+import net.snowflake.client.internal.jdbc.telemetry.SqlExceptionTelemetryHandler;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,8 @@ public class SqlFeatureNotSupportedTelemetryTest {
   /** Test that creating out-of-band JSONObject contains all attributes it needs */
   @Test
   public void testCreateOOBValue() {
-    JSONObject oobValue = SnowflakeSQLLoggedException.createOOBValue(queryId, SQLState, vendorCode);
+    JSONObject oobValue =
+        SqlExceptionTelemetryHandler.createOOBValue(queryId, SQLState, vendorCode);
     assertEquals("client_sql_exception", oobValue.get("type").toString());
     assertEquals("JDBC", oobValue.get("DriverType").toString());
     assertEquals(driverVersion, oobValue.get("DriverVersion").toString());
@@ -77,7 +79,7 @@ public class SqlFeatureNotSupportedTelemetryTest {
 
     assertEquals(
         maskedSnowflakeSQLStacktrace,
-        SnowflakeSQLLoggedException.maskStacktrace(snowflakeSQLStacktrace));
+        SqlExceptionTelemetryHandler.maskStacktrace(snowflakeSQLStacktrace));
 
     // Unmasked stacktrace for SQLFeatureNotSupportedException. Contains reason as well
     String featureNotSupportedStacktrace =
@@ -91,10 +93,10 @@ public class SqlFeatureNotSupportedTelemetryTest {
 
     assertEquals(
         maskedFeatureNotSupportedStacktrace,
-        SnowflakeSQLLoggedException.maskStacktrace(featureNotSupportedStacktrace));
+        SqlExceptionTelemetryHandler.maskStacktrace(featureNotSupportedStacktrace));
 
     assertEquals(
         maskedMultipleLineReasonMessage,
-        SnowflakeSQLLoggedException.maskStacktrace(multipleLineReasonMessage));
+        SqlExceptionTelemetryHandler.maskStacktrace(multipleLineReasonMessage));
   }
 }

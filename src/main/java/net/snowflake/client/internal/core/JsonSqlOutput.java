@@ -36,6 +36,7 @@ import net.snowflake.client.internal.jdbc.BindingParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeColumn;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.ThrowingTriCallable;
@@ -226,7 +227,7 @@ public class JsonSqlOutput implements SQLOutput {
                   ResultUtil.effectiveParamValue(
                       session.getCommonParameters(), "CLIENT_TIMESTAMP_TYPE_MAPPING");
           SnowflakeType snowflakeType =
-              SnowflakeType.fromString(
+              SnowflakeTypeUtil.fromString(
                   maybeColumn
                       .map(cl -> cl.type())
                       .filter(str -> !str.isEmpty())

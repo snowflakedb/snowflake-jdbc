@@ -48,8 +48,10 @@ import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
+import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.connection.SnowflakeConnection;
-import net.snowflake.client.api.datasource.SnowflakeBasicDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
+import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.QueryStatus;
@@ -59,6 +61,7 @@ import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -66,7 +69,6 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.core.SecurityUtil;
 import net.snowflake.client.internal.core.SessionUtil;
-import net.snowflake.client.internal.core.auth.AuthenticatorType;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
 import net.snowflake.client.internal.core.auth.ClientAuthnParameter;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -719,7 +721,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
     try {
-      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
       ds.setServerName(params.get("host"));
       ds.setSsl("on".equals(params.get("ssl")));
       ds.setAccount(params.get("account"));
@@ -765,7 +767,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
     try {
-      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
       ds.setServerName(params.get("host"));
       ds.setSsl("on".equals(params.get("ssl")));
       ds.setAccount(params.get("account"));
@@ -1018,7 +1020,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(params.get("ssl")));
     ds.setAccount(params.get("account"));
@@ -1049,7 +1051,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  private static void connectAndExecuteSelect1(SnowflakeBasicDataSource ds) throws SQLException {
+  private static void connectAndExecuteSelect1(SnowflakeDataSource ds) throws SQLException {
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
@@ -1478,7 +1480,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(params.get("ssl")));
     ds.setAccount(params.get("account"));

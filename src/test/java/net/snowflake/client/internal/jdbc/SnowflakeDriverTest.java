@@ -401,18 +401,9 @@ public class SnowflakeDriverTest {
   }
 
   @Test
-  public void testGetParentLogger() throws SQLException {
+  public void testGetParentLogger() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     assertNull(snowflakeDriver.getParentLogger());
-  }
-
-  @Test
-  public void testMain() {
-    // Can't get version information during test phase
-    // Just make sure this function won't break
-    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    String[] args = {"--version"};
-    snowflakeDriver.main(args);
   }
 
   @Test

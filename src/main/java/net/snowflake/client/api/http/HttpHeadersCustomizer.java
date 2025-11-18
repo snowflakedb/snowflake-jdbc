@@ -6,9 +6,10 @@ import java.util.Map;
 /**
  * Allows programmatic customization of HTTP headers for requests sent by the Snowflake JDBC driver.
  *
- * <p>Implementations can be registered with the driver (e.g., via {@code SnowflakeBasicDataSource})
- * to dynamically add headers. They define which requests to apply headers to, provide the headers,
- * and specify if headers should regenerate on retries (e.g., for dynamic tokens).
+ * <p>Implementations can be registered with the driver (e.g., via {@link
+ * net.snowflake.client.api.datasource.SnowflakeDataSource}) to dynamically add headers. They define
+ * which requests to apply headers to, provide the headers, and specify if headers should regenerate
+ * on retries (e.g., for dynamic tokens).
  */
 public interface HttpHeadersCustomizer {
   String HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY = "net.snowflake.client.jdbc.HttpHeadersCustomizer";
