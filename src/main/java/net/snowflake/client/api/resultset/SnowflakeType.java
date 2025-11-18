@@ -1,5 +1,13 @@
 package net.snowflake.client.api.resultset;
 
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SqlState;
+
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -12,13 +20,6 @@ import java.time.Period;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.internal.core.SFBaseSession;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
 
 /** Type converters */
 public enum SnowflakeType {
@@ -58,11 +59,13 @@ public enum SnowflakeType {
     return SnowflakeType.valueOf(name.toUpperCase());
   }
 
+  // Do we need this public at all? Is it really deprecated? For 99% of use cases, isStructuredType ignorable.
   @Deprecated
   public static JavaDataType getJavaType(SnowflakeType type) {
     return getJavaType(type, false);
   }
 
+  // I'm a bit hesitant about the isStructuredType flag here. Such a "config" is hard to extend.
   public static JavaDataType getJavaType(SnowflakeType type, boolean isStructuredType) {
     // TODO structuredType fill for Array and Map: SNOW-1234216, SNOW-1234214
     switch (type) {
@@ -116,6 +119,7 @@ public enum SnowflakeType {
    * @param typeName type name
    * @return int representation of type
    */
+  // Do we really need this public?
   public static int convertStringToType(String typeName) {
     int retval = Types.NULL;
     if (typeName == null || typeName.trim().isEmpty()) {
@@ -361,6 +365,7 @@ public enum SnowflakeType {
    * @param timestampTzFormat last part of java.sql.Timestamp format
    * @return String representation of it that can be used for creating a load file
    */
+  // Definitely shouldn't be public.
   public static String lexicalValue(
       Object o,
       DateFormat dateFormat,
@@ -419,6 +424,7 @@ public enum SnowflakeType {
     return String.valueOf(o);
   }
 
+  // Error prone - it's very easy to forget about this method and call SDF instead. We should migrate to java.time.
   private static synchronized String synchronizeFormat(Object o, DateFormat sdf) {
     return sdf.format(o);
   }
@@ -441,6 +447,7 @@ public enum SnowflakeType {
     }
   }
 
+  // Public? Uses internal session class.
   public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
 

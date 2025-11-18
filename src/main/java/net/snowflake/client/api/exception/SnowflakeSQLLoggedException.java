@@ -1,18 +1,7 @@
 package net.snowflake.client.api.exception;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -28,6 +17,18 @@ import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 /**
  * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB
@@ -155,6 +156,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    *     null, in which case oob is used.
    * @param ex Exception object
    */
+  // Hide it!
   public static void sendTelemetryData(
       String queryId, String SQLState, int vendorCode, SFBaseSession session, SQLException ex) {
     Telemetry ibInstance = null;
@@ -341,6 +343,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * @param errorCode the error code
    * @param params additional parameters
    */
+  // Reconsider all deprecations.
   @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, ErrorCode errorCode, Object... params) {
     this(null, session, errorCode, params);

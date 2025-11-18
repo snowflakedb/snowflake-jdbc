@@ -1,7 +1,14 @@
 package net.snowflake.client.api.datasource;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import net.snowflake.client.api.driver.SnowflakeDriver;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.http.HttpHeadersCustomizer;
+import net.snowflake.client.internal.core.SFSessionProperty;
+import net.snowflake.client.internal.log.ArgSupplier;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,15 +21,10 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.sql.DataSource;
-import net.snowflake.client.api.driver.SnowflakeDriver;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.http.HttpHeadersCustomizer;
-import net.snowflake.client.internal.core.SFSessionProperty;
-import net.snowflake.client.internal.log.ArgSupplier;
-import net.snowflake.client.internal.log.SFLogger;
-import net.snowflake.client.internal.log.SFLoggerFactory;
 
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+
+// I'm still not convinced. Maybe we should just add a factory instead of exposing this class?
 public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialVersionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";

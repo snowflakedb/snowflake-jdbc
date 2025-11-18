@@ -1,10 +1,11 @@
 package net.snowflake.client.api.exception;
 
-import java.sql.SQLException;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
+
+import java.sql.SQLException;
 
 public class SnowflakeSQLException extends SQLException {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
@@ -17,6 +18,7 @@ public class SnowflakeSQLException extends SQLException {
   private String queryId = "unknown";
   private int retryCount = 0;
 
+  // I think we are leaking this incorrectly. Rethink what we expose here. My guess is that only queryId should be exposed.
   boolean issocketTimeoutNoBackoff;
   long elapsedSeconds;
 

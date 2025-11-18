@@ -49,6 +49,10 @@ public class FieldMetadata {
     return name;
   }
 
+  // Do we want setters publicly available? Maybe we should:
+  // a) extract interface
+  // b) make FieldMetadata immutable
+  // I'd personally vote for a).
   public void setName(String name) {
     this.name = name;
   }

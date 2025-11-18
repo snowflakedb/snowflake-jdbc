@@ -10,6 +10,7 @@ import java.util.Properties;
  */
 public interface SnowflakeResultSetSerializable {
   // This wraps the required info for retrieving ResultSet
+  // Just RetrieveConfig?
   class ResultSetRetrieveConfig {
     private Properties proxyProperties;
     private String sfFullURL;
