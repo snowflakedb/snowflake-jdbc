@@ -26,10 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.api.auth.AuthenticatorType;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
 import net.snowflake.client.internal.core.auth.ClientAuthnParameter;
@@ -47,12 +45,14 @@ import net.snowflake.client.internal.core.auth.wif.OidcIdentityAttestationCreato
 import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.RetryContext;
 import net.snowflake.client.internal.jdbc.RetryContextManager;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeSQLExceptionWithRetryContext;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -236,9 +236,9 @@ public class SessionUtil {
     if (loginInput.getAuthenticator() != null) {
       if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
+          .equalsIgnoreCase(AuthenticatorType.EXTERNAL_BROWSER.name())) {
         // SAML 2.0 compliant service/application
-        return AuthenticatorType.EXTERNALBROWSER;
+        return AuthenticatorType.EXTERNAL_BROWSER;
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
@@ -406,7 +406,7 @@ public class SessionUtil {
   }
 
   private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {
-    return authenticator.equals(AuthenticatorType.EXTERNALBROWSER)
+    return authenticator.equals(AuthenticatorType.EXTERNAL_BROWSER)
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
   }
@@ -586,7 +586,7 @@ public class SessionUtil {
         uriBuilder.addParameter(SF_QUERY_ROLE, loginInput.getRole());
       }
 
-      if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
+      if (authenticatorType == AuthenticatorType.EXTERNAL_BROWSER) {
         // try to reuse id_token if exists
         if (loginInput.getIdToken() == null) {
           // SAML 2.0 compliant service/application
@@ -645,13 +645,13 @@ public class SessionUtil {
        */
       if (authenticatorType == AuthenticatorType.SNOWFLAKE) {
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
-      } else if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
+      } else if (authenticatorType == AuthenticatorType.EXTERNAL_BROWSER) {
         if (loginInput.getIdToken() != null) {
           data.put(ClientAuthnParameter.AUTHENTICATOR.name(), ID_TOKEN_AUTHENTICATOR);
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getIdToken());
         } else {
           data.put(
-              ClientAuthnParameter.AUTHENTICATOR.name(), AuthenticatorType.EXTERNALBROWSER.name());
+              ClientAuthnParameter.AUTHENTICATOR.name(), AuthenticatorType.EXTERNAL_BROWSER.name());
           data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
           data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
         }
@@ -1155,7 +1155,7 @@ public class SessionUtil {
       clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
     }
 
-    clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+    clientEnv.put("JDBC_JAR_NAME", DriverUtil.getJdbcJarname());
 
     // Add platform detection (if not disabled)
     if (!loginInput.isDisablePlatformDetection()) {

@@ -25,7 +25,6 @@ import java.util.logging.Level;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.config.SFClientConfig;
@@ -38,7 +37,9 @@ import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.core.SFStatement;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.JDK14Logger;
 import net.snowflake.client.internal.log.SFLogLevel;
 import net.snowflake.client.internal.log.SFLogger;
@@ -141,8 +142,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       setClientConfig();
       initLogger();
       initHttpHeaderCustomizers(properties);
-      logger.debug(
-          "Trying to establish session, JDBC driver: {}", SnowflakeDriver.getJdbcJarname());
+      logger.debug("Trying to establish session, JDBC driver: {}", DriverUtil.getJdbcJarname());
       if (!skipOpen) {
         sfSession.open();
       }

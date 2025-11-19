@@ -36,6 +36,7 @@ import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
@@ -579,11 +580,13 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
                     connection
                         .unwrap(SnowflakeConnection.class)
                         .uploadStream(
-                            "~",
-                            DEST_PREFIX,
-                            outputStream.asByteSource().openStream(),
-                            "hello.txt",
-                            false));
+                            UploadStreamConfig.builder()
+                                .setStageName("~")
+                                .setDestPrefix(DEST_PREFIX)
+                                .setInputStream(outputStream.asByteSource().openStream())
+                                .setDestFileName("hello.txt")
+                                .setCompressData(false)
+                                .build()));
         assertEquals(ErrorCode.INTERRUPTED.getMessageCode(), thrown.getErrorCode());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);

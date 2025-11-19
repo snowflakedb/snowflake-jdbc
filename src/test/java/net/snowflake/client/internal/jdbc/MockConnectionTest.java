@@ -31,9 +31,10 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -53,6 +54,7 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatementType;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.core.json.Converters;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SFBinaryFormat;
@@ -411,9 +413,22 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     byte[] inputBytes1 = new byte[] {0, 1, 2};
     InputStream uploadStream1 = new ByteArrayInputStream(inputBytes1);
-    mockConnection.uploadStream("@fakeStage", "", uploadStream1, "file1", false);
+    mockConnection.uploadStream(
+        UploadStreamConfig.builder()
+            .setStageName("@fakeStage")
+            .setDestPrefix("")
+            .setInputStream(uploadStream1)
+            .setDestFileName("file1")
+            .setCompressData(false)
+            .build());
 
-    InputStream downloadStream1 = mockConnection.downloadStream("@fakeStage", "file1", false);
+    InputStream downloadStream1 =
+        mockConnection.downloadStream(
+            DownloadStreamConfig.builder()
+                .setStageName("@fakeStage")
+                .setSourceFileName("file1")
+                .setDecompress(false)
+                .build());
     byte[] outputBytes1 = new byte[downloadStream1.available()];
     downloadStream1.read(outputBytes1);
     assertArrayEquals(outputBytes1, inputBytes1, "downloaded bytes not what was expected");

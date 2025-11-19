@@ -5,9 +5,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import javax.net.ssl.X509TrustManager;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.PreSessionTelemetryClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 

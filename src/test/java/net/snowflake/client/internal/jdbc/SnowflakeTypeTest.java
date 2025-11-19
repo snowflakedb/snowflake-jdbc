@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.api.resultset.SnowflakeType.convertStringToType;
+import static net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper.convertStringToType;
 import static net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil.getJavaType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,8 +12,9 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Time;
 import java.sql.Types;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import org.junit.jupiter.api.Test;
 
@@ -21,29 +22,42 @@ public class SnowflakeTypeTest {
 
   @Test
   public void testSnowflakeType() {
-    assertEquals(getJavaType(SnowflakeType.CHAR, false), SnowflakeType.JavaDataType.JAVA_STRING);
-    assertEquals(getJavaType(SnowflakeType.INTEGER, false), SnowflakeType.JavaDataType.JAVA_LONG);
     assertEquals(
-        getJavaType(SnowflakeType.FIXED, false), SnowflakeType.JavaDataType.JAVA_BIGDECIMAL);
+        getJavaType(SnowflakeType.CHAR, false), SnowflakeTypeHelper.JavaDataType.JAVA_STRING);
     assertEquals(
-        getJavaType(SnowflakeType.TIMESTAMP, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
-    assertEquals(getJavaType(SnowflakeType.TIME, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
+        getJavaType(SnowflakeType.INTEGER, false), SnowflakeTypeHelper.JavaDataType.JAVA_LONG);
     assertEquals(
-        getJavaType(SnowflakeType.TIMESTAMP_LTZ, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
+        getJavaType(SnowflakeType.FIXED, false), SnowflakeTypeHelper.JavaDataType.JAVA_BIGDECIMAL);
     assertEquals(
-        getJavaType(SnowflakeType.TIMESTAMP_NTZ, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
+        getJavaType(SnowflakeType.TIMESTAMP, false),
+        SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
     assertEquals(
-        getJavaType(SnowflakeType.TIMESTAMP_TZ, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
-    assertEquals(getJavaType(SnowflakeType.DATE, false), SnowflakeType.JavaDataType.JAVA_TIMESTAMP);
+        getJavaType(SnowflakeType.TIME, false), SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
     assertEquals(
-        getJavaType(SnowflakeType.BOOLEAN, false), SnowflakeType.JavaDataType.JAVA_BOOLEAN);
-    assertEquals(getJavaType(SnowflakeType.VECTOR, false), SnowflakeType.JavaDataType.JAVA_STRING);
-    assertEquals(getJavaType(SnowflakeType.BINARY, false), SnowflakeType.JavaDataType.JAVA_BYTES);
-    assertEquals(getJavaType(SnowflakeType.ANY, false), SnowflakeType.JavaDataType.JAVA_OBJECT);
-    assertEquals(getJavaType(SnowflakeType.OBJECT, true), SnowflakeType.JavaDataType.JAVA_OBJECT);
-    assertEquals(getJavaType(SnowflakeType.OBJECT, false), SnowflakeType.JavaDataType.JAVA_STRING);
+        getJavaType(SnowflakeType.TIMESTAMP_LTZ, false),
+        SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
     assertEquals(
-        getJavaType(SnowflakeType.GEOMETRY, false), SnowflakeType.JavaDataType.JAVA_STRING);
+        getJavaType(SnowflakeType.TIMESTAMP_NTZ, false),
+        SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
+    assertEquals(
+        getJavaType(SnowflakeType.TIMESTAMP_TZ, false),
+        SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
+    assertEquals(
+        getJavaType(SnowflakeType.DATE, false), SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP);
+    assertEquals(
+        getJavaType(SnowflakeType.BOOLEAN, false), SnowflakeTypeHelper.JavaDataType.JAVA_BOOLEAN);
+    assertEquals(
+        getJavaType(SnowflakeType.VECTOR, false), SnowflakeTypeHelper.JavaDataType.JAVA_STRING);
+    assertEquals(
+        getJavaType(SnowflakeType.BINARY, false), SnowflakeTypeHelper.JavaDataType.JAVA_BYTES);
+    assertEquals(
+        getJavaType(SnowflakeType.ANY, false), SnowflakeTypeHelper.JavaDataType.JAVA_OBJECT);
+    assertEquals(
+        getJavaType(SnowflakeType.OBJECT, true), SnowflakeTypeHelper.JavaDataType.JAVA_OBJECT);
+    assertEquals(
+        getJavaType(SnowflakeType.OBJECT, false), SnowflakeTypeHelper.JavaDataType.JAVA_STRING);
+    assertEquals(
+        getJavaType(SnowflakeType.GEOMETRY, false), SnowflakeTypeHelper.JavaDataType.JAVA_STRING);
   }
 
   @Test
@@ -78,7 +92,7 @@ public class SnowflakeTypeTest {
 
   @Test
   public void testJavaSQLTypeFind() {
-    assertNull(SnowflakeType.JavaSQLType.find(200000));
+    assertNull(SnowflakeTypeHelper.JavaSQLType.find(200000));
   }
 
   @Test

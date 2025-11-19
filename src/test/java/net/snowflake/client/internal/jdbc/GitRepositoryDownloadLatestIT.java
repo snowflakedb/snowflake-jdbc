@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
@@ -89,7 +90,13 @@ public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
       Connection connection, String stageName, String filePathInGitRepo)
       throws SQLException, IOException {
     SnowflakeConnection unwrap = connection.unwrap(SnowflakeConnection.class);
-    try (InputStream inputStream = unwrap.downloadStream(stageName, filePathInGitRepo, false)) {
+    try (InputStream inputStream =
+        unwrap.downloadStream(
+            DownloadStreamConfig.builder()
+                .setStageName(stageName)
+                .setSourceFileName(filePathInGitRepo)
+                .setDecompress(false)
+                .build())) {
       return IOUtils.readLines(inputStream, StandardCharsets.UTF_8);
     }
   }

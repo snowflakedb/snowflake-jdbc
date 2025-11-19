@@ -41,17 +41,6 @@ public class SnowflakeSQLException extends SQLException {
   }
 
   /**
-   * use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, String)}
-   *
-   * @param reason exception reason
-   * @param sqlState the SQL state
-   */
-  @Deprecated
-  public SnowflakeSQLException(String reason, String sqlState) {
-    this((String) null, reason, sqlState);
-  }
-
-  /**
    * @param queryId the queryID
    * @param reason exception reason
    * @param sqlState the SQL state
@@ -61,17 +50,6 @@ public class SnowflakeSQLException extends SQLException {
     this.queryId = queryId;
     // log user error from GS at fine level
     logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
-  }
-
-  /**
-   * use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int)}
-   *
-   * @param sqlState the SQL state
-   * @param vendorCode the vendor code
-   */
-  @Deprecated
-  public SnowflakeSQLException(String sqlState, int vendorCode) {
-    this((String) null, sqlState, vendorCode);
   }
 
   /**
@@ -93,13 +71,10 @@ public class SnowflakeSQLException extends SQLException {
   }
 
   /**
-   * use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int, Object...)}
-   *
    * @param sqlState the SQL state
    * @param vendorCode the vendor code
    * @param params additional parameters
    */
-  @Deprecated
   public SnowflakeSQLException(String sqlState, int vendorCode, Object... params) {
     this((String) null, sqlState, vendorCode, params);
   }
@@ -151,14 +126,11 @@ public class SnowflakeSQLException extends SQLException {
   }
 
   /**
-   * @deprecated use {@link SnowflakeSQLException#SnowflakeSQLException(String, Throwable, String,
-   *     int, Object...)}
    * @param ex Throwable exception
    * @param sqlState the SQL state
    * @param vendorCode the vendor code
    * @param params additional parameters
    */
-  @Deprecated
   public SnowflakeSQLException(Throwable ex, String sqlState, int vendorCode, Object... params) {
     this(null, ex, sqlState, vendorCode, params);
   }

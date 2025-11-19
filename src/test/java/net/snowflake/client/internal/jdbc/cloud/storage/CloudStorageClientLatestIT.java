@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
@@ -34,7 +35,12 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
             () ->
                 connection
                     .unwrap(SnowflakeConnection.class)
-                    .downloadStream("@" + stageName, "/fileNotExist.gz", true));
+                    .downloadStream(
+                        DownloadStreamConfig.builder()
+                            .setStageName("@" + stageName)
+                            .setSourceFileName("/fileNotExist.gz")
+                            .setDecompress(true)
+                            .build()));
       } finally {
         statement.execute("DROP STAGE IF EXISTS " + stageName);
       }

@@ -23,7 +23,9 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import org.apache.commons.io.IOUtils;
@@ -65,8 +67,13 @@ public class StreamLatestIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnection.class)
             .uploadStream(
-                "'@%\"ice cream (nice)\"'",
-                null, outputStream.asByteSource().openStream(), "hello.txt", false);
+                UploadStreamConfig.builder()
+                    .setStageName("'@%\"ice cream (nice)\"'")
+                    .setDestPrefix(null)
+                    .setInputStream(outputStream.asByteSource().openStream())
+                    .setDestFileName("hello.txt")
+                    .setCompressData(false)
+                    .build());
 
         // select from the file to make sure the data is uploaded
         try (ResultSet rset = statement.executeQuery("SELECT $1 FROM '@%\"ice cream (nice)\"/'")) {
@@ -83,8 +90,13 @@ public class StreamLatestIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnection.class)
             .uploadStream(
-                "$$@%\"ice cream (nice)\"$$",
-                null, outputStream.asByteSource().openStream(), "hello.txt", false);
+                UploadStreamConfig.builder()
+                    .setStageName("$$@%\"ice cream (nice)\"$$")
+                    .setDestPrefix(null)
+                    .setInputStream(outputStream.asByteSource().openStream())
+                    .setDestFileName("hello.txt")
+                    .setCompressData(false)
+                    .build());
 
         // select from the file to make sure the data is uploaded
         try (ResultSet rset =
@@ -120,7 +132,12 @@ public class StreamLatestIT extends BaseJDBCTest {
                 () ->
                     connection
                         .unwrap(SnowflakeConnection.class)
-                        .downloadStream("~", DEST_PREFIX + "/abc.gz", true));
+                        .downloadStream(
+                            DownloadStreamConfig.builder()
+                                .setStageName("~")
+                                .setSourceFileName(DEST_PREFIX + "/abc.gz")
+                                .setDecompress(true)
+                                .build()));
         assertTrue(
             ex.getMessage().contains("File not found"),
             "Wrong exception message: " + ex.getMessage());
@@ -150,7 +167,12 @@ public class StreamLatestIT extends BaseJDBCTest {
         InputStream out =
             connection
                 .unwrap(SnowflakeConnection.class)
-                .downloadStream("@testgcpstage", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+                .downloadStream(
+                    DownloadStreamConfig.builder()
+                        .setStageName("@testgcpstage")
+                        .setSourceFileName(DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz")
+                        .setDecompress(true)
+                        .build());
         StringWriter writer = new StringWriter();
         IOUtils.copy(out, writer, "UTF-8");
         String output = writer.toString();
@@ -184,7 +206,12 @@ public class StreamLatestIT extends BaseJDBCTest {
         InputStream out =
             connection
                 .unwrap(SnowflakeConnection.class)
-                .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+                .downloadStream(
+                    DownloadStreamConfig.builder()
+                        .setStageName("~")
+                        .setSourceFileName(DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz")
+                        .setDecompress(true)
+                        .build());
         StringWriter writer = new StringWriter();
         IOUtils.copy(out, writer, "UTF-8");
         String output = writer.toString();
@@ -230,7 +257,12 @@ public class StreamLatestIT extends BaseJDBCTest {
         try (InputStream out =
             connection
                 .unwrap(SnowflakeConnection.class)
-                .downloadStream("~", "/downloadStream_stage/" + specialCharFile.getName(), false)) {
+                .downloadStream(
+                    DownloadStreamConfig.builder()
+                        .setStageName("~")
+                        .setSourceFileName("/downloadStream_stage/" + specialCharFile.getName())
+                        .setDecompress(false)
+                        .build())) {
 
           // Read file stream and check the result
           StringWriter writer = new StringWriter();
@@ -287,13 +319,23 @@ public class StreamLatestIT extends BaseJDBCTest {
       String randomStage = "test" + UUID.randomUUID().toString().replaceAll("-", "");
       stmt.execute("CREATE OR REPLACE STAGE " + randomStage);
       connection.uploadStream(
-          randomStage,
-          "PREFIX",
-          new ByteArrayInputStream("some text".getBytes()),
-          "testfile.csv",
-          false);
+          UploadStreamConfig.builder()
+              .setStageName(randomStage)
+              .setDestPrefix("PREFIX")
+              .setInputStream(new ByteArrayInputStream("some text".getBytes()))
+              .setDestFileName("testfile.csv")
+              .setCompressData(false)
+              .build());
       assertDoesNotThrow(
-          () -> connection.downloadStream(randomStage, "PREFIX/testfile.csv", false).close());
+          () ->
+              connection
+                  .downloadStream(
+                      DownloadStreamConfig.builder()
+                          .setStageName(randomStage)
+                          .setSourceFileName("PREFIX/testfile.csv")
+                          .setDecompress(false)
+                          .build())
+                  .close());
     }
   }
 
@@ -306,7 +348,12 @@ public class StreamLatestIT extends BaseJDBCTest {
       throws IOException, SQLException {
     try (InputStream inputStream =
             conn.unwrap(SnowflakeConnectionImpl.class)
-                .downloadStream(stageName, fileName, decompress);
+                .downloadStream(
+                    DownloadStreamConfig.builder()
+                        .setStageName(stageName)
+                        .setSourceFileName(fileName)
+                        .setDecompress(decompress)
+                        .build());
         InputStreamReader isr = new InputStreamReader(inputStream);
         BufferedReader br = new BufferedReader(isr)) {
       String content = br.lines().collect(Collectors.joining("\n"));

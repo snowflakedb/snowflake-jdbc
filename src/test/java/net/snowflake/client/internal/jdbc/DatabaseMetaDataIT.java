@@ -29,8 +29,8 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.SnowflakeDatabaseMetaData;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -293,7 +293,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
       assertEquals(9, resultSetMetaData.getScale(col));
 
       assertEquals(
-          SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
+          SnowflakeTypeHelper.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
           resultSetMetaData.isSigned(col));
       assertFalse(resultSetMetaData.isAutoIncrement(col));
       assertFalse(resultSetMetaData.isCurrency(col));

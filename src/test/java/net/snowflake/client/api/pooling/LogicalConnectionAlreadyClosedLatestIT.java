@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.PooledConnection;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.pooling.SnowflakeConnectionPoolDataSource;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,8 @@ public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
   public void testLogicalConnectionAlreadyClosed() throws SQLException {
     Map<String, String> properties = getConnectionParameters();
 
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
 
     poolDataSource.setUrl(properties.get("uri"));
     poolDataSource.setPortNumber(Integer.parseInt(properties.get("port")));

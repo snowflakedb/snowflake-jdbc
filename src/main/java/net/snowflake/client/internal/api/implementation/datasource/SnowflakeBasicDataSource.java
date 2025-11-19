@@ -38,7 +38,7 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
 
-  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
+  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNAL_BROWSER";
 
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
 
@@ -237,9 +237,8 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
   }
 
   @Override
-  public void setOauthToken(String oauthToken) {
-    this.setAuthenticator(AUTHENTICATOR_OAUTH);
-    this.properties.put(SFSessionProperty.TOKEN.getPropertyKey(), oauthToken);
+  public void setToken(String token) {
+    this.properties.put(SFSessionProperty.TOKEN.getPropertyKey(), token);
   }
 
   @Override

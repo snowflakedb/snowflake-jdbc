@@ -1,7 +1,6 @@
 package net.snowflake.client.api.datasource;
 
 import java.security.PrivateKey;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import javax.sql.DataSource;
@@ -66,11 +65,11 @@ public interface SnowflakeDataSource extends DataSource {
   /** Sets whether to use SSL (default: true). */
   void setSsl(boolean ssl);
 
-  /** Sets the authenticator type (e.g., "snowflake", "externalbrowser", "oauth"). */
+  /** Sets the authenticator type (e.g., "snowflake", "external_browser", "oauth"). */
   void setAuthenticator(String authenticator);
 
-  /** Sets the OAuth token for OAuth authentication. */
-  void setOauthToken(String oauthToken);
+  /** Sets the token for OAuth/PAT authentication. */
+  void setToken(String token);
 
   /** Gets the JDBC URL. */
   String getUrl();
@@ -185,12 +184,4 @@ public interface SnowflakeDataSource extends DataSource {
 
   /** Sets custom HTTP header customizers. */
   void setHttpHeadersCustomizers(List<HttpHeadersCustomizer> httpHeadersCustomizers);
-
-  /** Sets the login timeout in seconds. */
-  @Override
-  void setLoginTimeout(int seconds) throws SQLException;
-
-  /** Gets the login timeout in seconds. */
-  @Override
-  int getLoginTimeout() throws SQLException;
 }

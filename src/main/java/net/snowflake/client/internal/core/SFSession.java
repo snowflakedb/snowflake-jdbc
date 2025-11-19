@@ -31,12 +31,12 @@ import java.util.logging.Level;
 import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.config.SFClientConfig;
 import net.snowflake.client.internal.core.crl.CRLValidator;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
@@ -282,7 +282,7 @@ public class SFSession extends SFBaseSession {
             else if (ex instanceof SFException) {
               throw new SnowflakeSQLException((SFException) ex);
             }
-            throw new SnowflakeSQLException(queryID, ex.getMessage());
+            throw new SnowflakeSQLException(null, queryID, ex.getMessage());
           }
           sessionRenewed = true;
           // If the error code was not due to session renewal issues, throw an exception
@@ -928,7 +928,7 @@ public class SFSession extends SFBaseSession {
   boolean isExternalbrowserOrOAuthFullFlowAuthenticator() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator)
+    return AuthenticatorType.EXTERNAL_BROWSER.name().equalsIgnoreCase(authenticator)
         || AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name().equalsIgnoreCase(authenticator)
         || AuthenticatorType.OAUTH_CLIENT_CREDENTIALS.name().equalsIgnoreCase(authenticator);
   }

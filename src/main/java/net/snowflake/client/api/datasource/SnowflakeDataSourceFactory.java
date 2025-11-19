@@ -28,7 +28,6 @@ import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasi
  */
 public final class SnowflakeDataSourceFactory {
 
-  /** Private constructor to prevent instantiation. */
   private SnowflakeDataSourceFactory() {
     throw new AssertionError("SnowflakeDataSourceFactory cannot be instantiated");
   }

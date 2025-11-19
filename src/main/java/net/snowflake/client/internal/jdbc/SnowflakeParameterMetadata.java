@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.api.resultset.SnowflakeType.convertStringToType;
+import static net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper.convertStringToType;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;

@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
 import net.snowflake.client.internal.core.SecurityUtil;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -151,25 +151,6 @@ public class SnowflakeDriver implements Driver {
 
   public static String getDisableArrowResultFormatMessage() {
     return disableArrowResultFormatMessage;
-  }
-
-  /**
-   * Utility method to verify if the standard or fips snowflake-jdbc driver is being used.
-   *
-   * @return the title of the implementation, null is returned if it is not known.
-   */
-  static String getImplementationTitle() {
-    Package pkg = Package.getPackage("net.snowflake.client.internal.jdbc");
-    return pkg != null ? pkg.getImplementationTitle() : "snowflake-jdbc";
-  }
-
-  /**
-   * Utility method to get the complete jar name with version.
-   *
-   * @return the jar name with version
-   */
-  public static String getJdbcJarname() {
-    return String.format("%s-%s", getImplementationTitle(), implementVersion);
   }
 
   /**

@@ -1,5 +1,7 @@
-package net.snowflake.client.api.exception;
+package net.snowflake.client.internal.exception;
 
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
@@ -40,7 +42,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * @param SQLState the SQL state
    */
   public SnowflakeSQLLoggedException(SFBaseSession session, int vendorCode, String SQLState) {
-    super(SQLState, vendorCode);
+    super((String) null, SQLState, vendorCode);
     SqlExceptionTelemetryHandler.sendTelemetry(null, SQLState, vendorCode, session, this);
   }
 
@@ -62,7 +64,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * @param reason the exception reason
    */
   public SnowflakeSQLLoggedException(SFBaseSession session, String SQLState, String reason) {
-    super(reason, SQLState);
+    super(null, reason, SQLState);
     SqlExceptionTelemetryHandler.sendTelemetry(
         null, SQLState, TelemetryUtil.NO_VENDOR_CODE, session, this);
   }
@@ -75,7 +77,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    */
   public SnowflakeSQLLoggedException(
       String queryId, SFBaseSession session, String SQLState, String reason) {
-    super(reason, SQLState);
+    super(null, reason, SQLState);
     SqlExceptionTelemetryHandler.sendTelemetry(
         queryId, SQLState, TelemetryUtil.NO_VENDOR_CODE, session, this);
   }

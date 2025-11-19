@@ -29,10 +29,20 @@ public enum QueryStatus {
     this.description = description;
   }
 
+  /**
+   * Gets the numeric value of this query status.
+   *
+   * @return the integer value representing this status
+   */
   public int getValue() {
     return this.value;
   }
 
+  /**
+   * Gets the human-readable description of this query status.
+   *
+   * @return the description string (e.g., "RUNNING", "SUCCESS")
+   */
   public String getDescription() {
     return this.description;
   }

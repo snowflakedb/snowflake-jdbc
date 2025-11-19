@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -257,7 +257,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     assertThat(
         thrown.getMessage(),
         equalTo(
-            "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
+            "MFA enabled in Okta is not supported with this authenticator type. Please use 'external_browser' instead or a different authentication method."));
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(

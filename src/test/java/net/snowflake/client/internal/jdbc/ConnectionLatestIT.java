@@ -49,6 +49,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.api.auth.AuthenticatorType;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
@@ -1323,7 +1324,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
               () -> {
                 connection
                     .unwrap(SnowflakeConnection.class)
-                    .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+                    .downloadStream(
+                        DownloadStreamConfig.builder()
+                            .setStageName("@testDownloadStream_stage")
+                            .setSourceFileName("/fileNotExist.gz")
+                            .setDecompress(true)
+                            .build());
               });
       assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
 

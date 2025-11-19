@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -52,11 +51,13 @@ import net.snowflake.client.internal.core.SFPreparedStatementMetaData;
 import net.snowflake.client.internal.core.SfSqlArray;
 import net.snowflake.client.internal.core.SfTimestampUtil;
 import net.snowflake.client.internal.core.StmtUtil;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.BindingParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.internal.jdbc.SnowflakeParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetMetaDataV1;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -229,7 +230,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace(
         "setNull(parameterIndex: {}, sqlType: {})",
         parameterIndex,
-        SnowflakeType.JavaSQLType.find(sqlType));
+        SnowflakeTypeHelper.JavaSQLType.find(sqlType));
     raiseSQLExceptionIfStatementIsClosed();
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeType.ANY.toString(), null);
@@ -492,7 +493,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       logger.trace(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
           parameterIndex,
-          SnowflakeType.JavaSQLType.find(targetSqlType));
+          SnowflakeTypeHelper.JavaSQLType.find(targetSqlType));
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(

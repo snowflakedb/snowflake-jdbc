@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
 import net.snowflake.client.api.driver.SnowflakeDriver;
-import net.snowflake.client.api.pooling.SnowflakeConnectionPoolDataSource;
+import net.snowflake.client.api.pooling.SnowflakeConnectionPoolDataSourceFactory;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
@@ -37,7 +37,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testLogicalConnection() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     Connection logicalConnection = pooledConnection.getConnection();
@@ -59,7 +60,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testNetworkTimeout() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -73,7 +75,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testIsValid() throws Throwable {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
 
@@ -86,7 +89,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testConnectionClientInfo() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -106,7 +110,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testAbort() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     Connection logicalConnection = pooledConnection.getConnection();
@@ -119,7 +124,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testNativeSQL() throws Throwable {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -131,7 +137,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testUnwrapper() throws Throwable {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -147,7 +154,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testTransactionStatement() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -188,7 +196,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReadOnly() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -202,7 +211,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetTypeMap() throws Throwable {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -214,7 +224,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testPreparedStatement() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -242,7 +253,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testSetSchema() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -276,7 +288,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
             + "BEGIN\n"
             + "  RETURN message;\n"
             + "END;";
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -323,7 +336,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testClob() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
@@ -351,7 +365,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testDatabaseMetaData() throws SQLException {
-    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+    SnowflakeConnectionPoolDataSource poolDataSource =
+        SnowflakeConnectionPoolDataSourceFactory.createConnectionPoolDataSource();
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {

@@ -55,11 +55,11 @@ public class SqlFeatureNotSupportedTelemetryTest {
   public void testMaskStacktrace() {
     // Unmasked stacktrace containing reason for failure after the exception type
     String snowflakeSQLStacktrace =
-        "net.snowflake.client.api.exception.SnowflakeSQLLoggedException: This is a test exception.\n"
+        "net.snowflake.client.internal.exception.SnowflakeSQLLoggedException: This is a test exception.\n"
             + "\tat net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryServiceIT.generateDummyException(TelemetryServiceIT.java:211)\n";
     // Masked stacktrace with reason removed
     String maskedSnowflakeSQLStacktrace =
-        "net.snowflake.client.api.exception.SnowflakeSQLLoggedException\n"
+        "net.snowflake.client.internal.exception.SnowflakeSQLLoggedException\n"
             + "\tat net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryServiceIT.generateDummyException(TelemetryServiceIT.java:211)\n";
 
     // Sometimes reason can be multiple lines

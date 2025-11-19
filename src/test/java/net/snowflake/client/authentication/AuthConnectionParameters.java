@@ -32,7 +32,7 @@ public class AuthConnectionParameters {
   static Properties getExternalBrowserConnectionParameters() {
     Properties properties = getBaseConnectionParameters();
     properties.put("user", SSO_USER);
-    properties.put("authenticator", "externalbrowser");
+    properties.put("authenticator", "external_browser");
     return properties;
   }
 

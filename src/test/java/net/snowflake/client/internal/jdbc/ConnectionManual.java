@@ -60,7 +60,7 @@ public class ConnectionManual {
     properties.put("account", account);
     properties.put("ssl", ssl);
     properties.put("tracing", "FINEST");
-    properties.put("authenticator", "externalbrowser");
+    properties.put("authenticator", "external_browser");
     properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
     return properties;
   }

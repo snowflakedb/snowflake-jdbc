@@ -16,8 +16,8 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.stream.Stream;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -438,7 +438,7 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
               + "C9 timestamp_ltz, C10 timestamp_tz,"
               + "C11 BINARY, C12 BOOLEAN)");
 
-      for (SnowflakeType.JavaSQLType t : SnowflakeType.JavaSQLType.ALL_TYPES) {
+      for (SnowflakeTypeHelper.JavaSQLType t : SnowflakeTypeHelper.JavaSQLType.ALL_TYPES) {
         try (PreparedStatement preparedStatement =
             connection.prepareStatement(
                 "insert into TEST_BIND_ALL_TYPES values(?, ?,?,?, ?,?,?, ?,?,?, ?,?,?)")) {

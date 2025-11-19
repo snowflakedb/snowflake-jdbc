@@ -147,7 +147,7 @@ public class SqlExceptionTelemetryHandler {
   public static String maskStacktrace(String stackTrace) {
     Pattern STACKTRACE_BEGINNING =
         Pattern.compile(
-            "(com|net)(\\.snowflake\\.client\\.api\\.exception\\.Snowflake|\\.snowflake\\.client\\.jdbc\\.Snowflake)(SQLLogged|LoggedFeatureNotSupported|SQL)(Exception)([\\s\\S]*?)(\\n\\t?at\\snet|com\\.)",
+            "(com|net)(\\.snowflake\\.client\\.api\\.exception\\.Snowflake|\\.snowflake\\.client\\.internal\\.exception\\.Snowflake|\\.snowflake\\.client\\.jdbc\\.Snowflake)(SQLLogged|LoggedFeatureNotSupported|SQL)(Exception)([\\s\\S]*?)(\\n\\t?at\\snet|com\\.)",
             Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
     Matcher matcher = STACKTRACE_BEGINNING.matcher(stackTrace);
     // Remove the reason from after the stack trace (in group #5 of regex pattern)

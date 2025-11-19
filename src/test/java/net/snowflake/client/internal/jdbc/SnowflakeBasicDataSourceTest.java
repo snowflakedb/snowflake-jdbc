@@ -91,8 +91,7 @@ public class SnowflakeBasicDataSourceTest {
         "/some/path/allowlist.json",
         props.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey()));
 
-    ds.setOauthToken("a_token");
-    assertEquals("OAUTH", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+    ds.setToken("a_token");
     assertEquals("a_token", props.get(SFSessionProperty.TOKEN.getPropertyKey()));
 
     ds.setPasscodeInPassword(true);

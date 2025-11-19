@@ -9,9 +9,9 @@ import java.time.Duration;
 import java.time.Period;
 import java.util.Date;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -37,7 +37,7 @@ public class SnowflakeTypeUtil {
    * @param type the Snowflake type
    * @return the corresponding Java data type
    */
-  public static SnowflakeType.JavaDataType getJavaType(SnowflakeType type) {
+  public static SnowflakeTypeHelper.JavaDataType getJavaType(SnowflakeType type) {
     return getJavaType(type, false);
   }
 
@@ -48,51 +48,51 @@ public class SnowflakeTypeUtil {
    * @param isStructuredType whether this is a structured type
    * @return the corresponding Java data type
    */
-  public static SnowflakeType.JavaDataType getJavaType(
+  public static SnowflakeTypeHelper.JavaDataType getJavaType(
       SnowflakeType type, boolean isStructuredType) {
     // TODO structuredType fill for Array and Map: SNOW-1234216, SNOW-1234214
     switch (type) {
       case TEXT:
-        return SnowflakeType.JavaDataType.JAVA_STRING;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_STRING;
       case CHAR:
-        return SnowflakeType.JavaDataType.JAVA_STRING;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_STRING;
       case INTEGER:
-        return SnowflakeType.JavaDataType.JAVA_LONG;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_LONG;
       case FIXED:
       case DECFLOAT:
-        return SnowflakeType.JavaDataType.JAVA_BIGDECIMAL;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_BIGDECIMAL;
       case REAL:
-        return SnowflakeType.JavaDataType.JAVA_DOUBLE;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_DOUBLE;
       case TIMESTAMP:
       case TIME:
       case TIMESTAMP_LTZ:
       case TIMESTAMP_NTZ:
       case TIMESTAMP_TZ:
       case DATE:
-        return SnowflakeType.JavaDataType.JAVA_TIMESTAMP;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_TIMESTAMP;
       case INTERVAL_YEAR_MONTH:
-        return SnowflakeType.JavaDataType.JAVA_PERIOD;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_PERIOD;
       case INTERVAL_DAY_TIME:
-        return SnowflakeType.JavaDataType.JAVA_DURATION;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_DURATION;
       case BOOLEAN:
-        return SnowflakeType.JavaDataType.JAVA_BOOLEAN;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_BOOLEAN;
       case ARRAY:
       case VARIANT:
       case VECTOR:
-        return SnowflakeType.JavaDataType.JAVA_STRING;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_STRING;
       case BINARY:
-        return SnowflakeType.JavaDataType.JAVA_BYTES;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_BYTES;
       case ANY:
-        return SnowflakeType.JavaDataType.JAVA_OBJECT;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_OBJECT;
       case OBJECT:
         if (isStructuredType) {
-          return SnowflakeType.JavaDataType.JAVA_OBJECT;
+          return SnowflakeTypeHelper.JavaDataType.JAVA_OBJECT;
         } else {
-          return SnowflakeType.JavaDataType.JAVA_STRING;
+          return SnowflakeTypeHelper.JavaDataType.JAVA_STRING;
         }
       default:
         // Those are not supported, but no reason to panic
-        return SnowflakeType.JavaDataType.JAVA_STRING;
+        return SnowflakeTypeHelper.JavaDataType.JAVA_STRING;
     }
   }
 
@@ -269,7 +269,7 @@ public class SnowflakeTypeUtil {
         return String.class.getName();
 
       case java.sql.Types.BINARY:
-        return SnowflakeType.BINARY_CLASS_NAME;
+        return SnowflakeTypeHelper.BINARY_CLASS_NAME;
 
       case java.sql.Types.INTEGER:
         return Integer.class.getName();

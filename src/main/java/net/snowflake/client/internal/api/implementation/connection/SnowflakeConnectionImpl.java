@@ -38,10 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakeCallableStatementImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
@@ -51,6 +52,7 @@ import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SfSqlArray;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SFBaseFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SFConnectionHandler;
@@ -843,58 +845,17 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     return sfConnectionHandler;
   }
 
-  /**
-   * Method to put data from a stream at a stage location. The data will be uploaded as one file. No
-   * splitting is done in this method.
-   *
-   * <p>Stream size must match the total size of data in the input stream unless compressData
-   * parameter is set to true.
-   *
-   * <p>caller is responsible for passing the correct size for the data in the stream and releasing
-   * the inputStream after the method is called.
-   *
-   * <p>Note this method is deprecated since streamSize is not required now. Keep the function
-   * signature for backward compatibility
-   *
-   * @param stageName stage name: e.g. ~ or table name or stage name
-   * @param destPrefix path prefix under which the data should be uploaded on the stage
-   * @param inputStream input stream from which the data will be uploaded
-   * @param destFileName destination file name to use
-   * @param streamSize data size in the stream
-   * @throws SQLException failed to put data from a stream at stage
-   */
-  @Deprecated
-  public void uploadStream(
-      String stageName,
-      String destPrefix,
-      InputStream inputStream,
-      String destFileName,
-      long streamSize)
-      throws SQLException {
-    uploadStreamInternal(stageName, destPrefix, inputStream, destFileName, false);
-  }
-
-  /**
-   * Method to compress data from a stream and upload it at a stage location. The data will be
-   * uploaded as one file. No splitting is done in this method.
-   *
-   * <p>caller is responsible for releasing the inputStream after the method is called.
-   *
-   * @param stageName stage name: e.g. ~ or table name or stage name
-   * @param destPrefix path prefix under which the data should be uploaded on the stage
-   * @param inputStream input stream from which the data will be uploaded
-   * @param destFileName destination file name to use
-   * @param compressData compress data or not before uploading stream
-   * @throws SQLException failed to compress and put data from a stream at stage
-   */
-  public void uploadStream(
-      String stageName,
-      String destPrefix,
-      InputStream inputStream,
-      String destFileName,
-      boolean compressData)
-      throws SQLException {
-    uploadStreamInternal(stageName, destPrefix, inputStream, destFileName, compressData);
+  @Override
+  public void uploadStream(UploadStreamConfig config) throws SQLException {
+    if (config == null) {
+      throw new IllegalArgumentException("UploadStreamConfig cannot be null");
+    }
+    uploadStreamInternal(
+        config.getStageName(),
+        config.getDestPrefix(),
+        config.getInputStream(),
+        config.getDestFileName(),
+        config.isCompressData());
   }
 
   /**
@@ -999,17 +960,15 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     stmt.close();
   }
 
-  /**
-   * Download file from the given stage and return an input stream
-   *
-   * @param stageName stage name
-   * @param sourceFileName file path in stage
-   * @param decompress true if file compressed
-   * @return an input stream
-   * @throws SnowflakeSQLException if any SQL error occurs.
-   */
-  public InputStream downloadStream(String stageName, String sourceFileName, boolean decompress)
-      throws SQLException {
+  @Override
+  public InputStream downloadStream(DownloadStreamConfig config) throws SQLException {
+    if (config == null) {
+      throw new IllegalArgumentException("DownloadStreamConfig cannot be null");
+    }
+
+    String stageName = config.getStageName();
+    String sourceFileName = config.getSourceFileName();
+    boolean decompress = config.isDecompress();
 
     logger.debug(
         "Download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);

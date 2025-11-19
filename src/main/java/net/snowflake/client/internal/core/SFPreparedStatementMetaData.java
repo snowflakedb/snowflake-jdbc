@@ -60,7 +60,8 @@ public class SFPreparedStatementMetaData {
           numberOfBinds);
     }
     if (numberOfBinds != metaDataOfBinds.size() || metaDataOfBinds.size() == 0) {
-      throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
+      throw new SnowflakeSQLException(
+          ((String) null), SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
     }
     return metaDataOfBinds.get(param - 1);
   }

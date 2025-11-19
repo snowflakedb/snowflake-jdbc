@@ -12,7 +12,9 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import org.apache.commons.io.IOUtils;
@@ -42,7 +44,13 @@ public class StreamIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnection.class)
             .uploadStream(
-                "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
+                UploadStreamConfig.builder()
+                    .setStageName("~")
+                    .setDestPrefix(DEST_PREFIX)
+                    .setInputStream(outputStream.asByteSource().openStream())
+                    .setDestFileName("hello.txt")
+                    .setCompressData(false)
+                    .build());
 
         // select from the file to make sure the data is uploaded
         try (ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX)) {
@@ -87,7 +95,12 @@ public class StreamIT extends BaseJDBCTest {
             InputStream out =
                 connection
                     .unwrap(SnowflakeConnection.class)
-                    .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+                    .downloadStream(
+                        DownloadStreamConfig.builder()
+                            .setStageName("~")
+                            .setSourceFileName(DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz")
+                            .setDecompress(true)
+                            .build());
             StringWriter writer = new StringWriter();
             IOUtils.copy(out, writer, "UTF-8");
             String output = writer.toString();
@@ -121,7 +134,13 @@ public class StreamIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnectionImpl.class)
             .uploadStream(
-                "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", true);
+                UploadStreamConfig.builder()
+                    .setStageName("~")
+                    .setDestPrefix(DEST_PREFIX)
+                    .setInputStream(outputStream.asByteSource().openStream())
+                    .setDestFileName("hello.txt")
+                    .setCompressData(true)
+                    .build());
 
         // select from the file to make sure the data is uploaded
         try (ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX)) {

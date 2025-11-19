@@ -26,8 +26,8 @@ import net.snowflake.client.api.loader.Loader;
 import net.snowflake.client.api.loader.LoaderProperty;
 import net.snowflake.client.api.loader.LoadingError;
 import net.snowflake.client.api.loader.Operation;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -326,15 +326,15 @@ public class StreamLoader implements Loader, Runnable {
   private void initDateFormats() {
     resetCalendar();
 
-    _dateFormat = new SimpleDateFormat(SnowflakeType.DATE_OR_TIME_FORMAT_PATTERN);
+    _dateFormat = new SimpleDateFormat(SnowflakeTypeHelper.DATE_OR_TIME_FORMAT_PATTERN);
     if (_mapTimeToTimestamp) {
       // same format for TIME to TIMESTAMP
       _timeFormat = _dateFormat;
     } else {
-      _timeFormat = new SimpleDateFormat(SnowflakeType.TIME_FORMAT_PATTERN);
+      _timeFormat = new SimpleDateFormat(SnowflakeTypeHelper.TIME_FORMAT_PATTERN);
     }
-    _timestampFormat = new SimpleDateFormat(SnowflakeType.TIMESTAMP_FORMAT_PATTERN);
-    _timestampTzFormat = new SimpleDateFormat(SnowflakeType.TIMESTAMP_FORMAT_TZ_PATTERN);
+    _timestampFormat = new SimpleDateFormat(SnowflakeTypeHelper.TIMESTAMP_FORMAT_PATTERN);
+    _timestampTzFormat = new SimpleDateFormat(SnowflakeTypeHelper.TIMESTAMP_FORMAT_TZ_PATTERN);
 
     Calendar cal = !_useLocalTimezone ? _calendarUTC : _calendarLocal;
     _dateFormat.setCalendar(cal);

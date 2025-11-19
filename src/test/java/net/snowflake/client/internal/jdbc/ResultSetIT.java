@@ -29,8 +29,8 @@ import java.sql.Types;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,9 +65,9 @@ public class ResultSetIT extends ResultSet0IT {
         statement.execute("insert into bintable values ('00f1f2')");
         try (ResultSet resultSet = statement.executeQuery("select * from bintable")) {
           ResultSetMetaData metaData = resultSet.getMetaData();
-          assertEquals(SnowflakeType.BINARY_CLASS_NAME, metaData.getColumnClassName(1));
+          assertEquals(SnowflakeTypeHelper.BINARY_CLASS_NAME, metaData.getColumnClassName(1));
           assertTrue(resultSet.next());
-          Class<?> klass = Class.forName(SnowflakeType.BINARY_CLASS_NAME);
+          Class<?> klass = Class.forName(SnowflakeTypeHelper.BINARY_CLASS_NAME);
           Object ret0 = resultSet.getObject(1);
           assertEquals(ret0.getClass(), klass);
           byte[] ret = (byte[]) ret0;
