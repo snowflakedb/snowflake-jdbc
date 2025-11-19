@@ -4,10 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.PooledConnection;
+
+import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 
 public class SnowflakeConnectionPoolDataSource extends SnowflakeBasicDataSource
-    implements ConnectionPoolDataSource {
+    implements ConnectionPoolDataSource, SnowflakeDataSource {
   @Override
   public PooledConnection getPooledConnection() throws SQLException {
     Connection connection = super.getConnection();
