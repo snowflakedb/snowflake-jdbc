@@ -1,7 +1,9 @@
 package net.snowflake.client.internal.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -37,6 +39,16 @@ public class StreamLoader implements Loader, Runnable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(StreamLoader.class);
 
   private static final String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
+
+  // Temporary directory used for data cache
+  private static final String tmpdir = systemGetProperty("java.io.tmpdir");
+
+  private static final String BASE =
+      tmpdir
+          + (!(tmpdir.endsWith("/") || tmpdir.endsWith("\\")) ? File.separatorChar : "")
+          + "snowflake"
+          + File.separatorChar
+          + "stage";
 
   static final String FILE_PREFIX = "stream_";
 

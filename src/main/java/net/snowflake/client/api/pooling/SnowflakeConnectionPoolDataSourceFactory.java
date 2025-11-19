@@ -1,9 +1,9 @@
 package net.snowflake.client.api.pooling;
 
-import net.snowflake.client.internal.api.implementation.pooling.SnowflakeConnectionPoolDataSource;
+import net.snowflake.client.internal.api.implementation.pooling.SnowflakeConnectionPoolDataSourceImpl;
 
 /**
- * Factory for creating {@link SnowflakeConnectionPoolDataSource} instances.
+ * Factory for creating {@link SnowflakeConnectionPoolDataSourceImpl} instances.
  *
  * <p>This factory provides methods to create different types of Snowflake Connection Pool Data
  * Source implementations. Use this factory instead of directly instantiating Connection Pool Data
@@ -25,7 +25,7 @@ import net.snowflake.client.internal.api.implementation.pooling.SnowflakeConnect
  * }
  * }</pre>
  *
- * @see SnowflakeConnectionPoolDataSource
+ * @see SnowflakeConnectionPoolDataSourceImpl
  */
 public class SnowflakeConnectionPoolDataSourceFactory {
 
@@ -39,6 +39,6 @@ public class SnowflakeConnectionPoolDataSourceFactory {
    * @return a new SnowflakeConnectionPoolDataSource instance
    */
   public static SnowflakeConnectionPoolDataSource createConnectionPoolDataSource() {
-    return new SnowflakeConnectionPoolDataSource();
+    return new SnowflakeConnectionPoolDataSourceImpl();
   }
 }

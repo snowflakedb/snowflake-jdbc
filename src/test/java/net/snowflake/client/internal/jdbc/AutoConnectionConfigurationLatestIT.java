@@ -27,9 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -78,12 +78,12 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
 
     if (null != connectionName && connectionName.equals("systemEnvConfig")) {
       SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, connectionName);
-      connectionString = SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX;
+      connectionString = AutoConfigurationHelper.AUTO_CONNECTION_PREFIX;
     } else {
       connectionString =
           connectionName != null
-              ? SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX + "?connectionName=" + connectionName
-              : SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX;
+              ? AutoConfigurationHelper.AUTO_CONNECTION_PREFIX + "?connectionName=" + connectionName
+              : AutoConfigurationHelper.AUTO_CONNECTION_PREFIX;
     }
 
     if (shouldThrow) {

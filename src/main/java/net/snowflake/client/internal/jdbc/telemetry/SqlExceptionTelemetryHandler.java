@@ -169,7 +169,8 @@ public class SqlExceptionTelemetryHandler {
     JSONObject oobValue = new JSONObject();
     oobValue.put(TelemetryField.TYPE.toString(), TelemetryField.SQL_EXCEPTION.toString());
     oobValue.put(TelemetryField.DRIVER_TYPE.toString(), LoginInfoDTO.SF_JDBC_APP_ID);
-    oobValue.put(TelemetryField.DRIVER_VERSION.toString(), SnowflakeDriver.implementVersion);
+    oobValue.put(
+        TelemetryField.DRIVER_VERSION.toString(), SnowflakeDriver.getImplementationVersion());
     if (!isNullOrEmpty(queryId)) {
       oobValue.put(TelemetryField.QUERY_ID.toString(), queryId);
     }

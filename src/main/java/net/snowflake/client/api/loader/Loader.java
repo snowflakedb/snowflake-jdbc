@@ -1,9 +1,5 @@
 package net.snowflake.client.api.loader;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
-
-import java.io.File;
-
 /**
  * Bulk loader for Snowflake.
  *
@@ -19,16 +15,6 @@ import java.io.File;
  * }</pre>
  */
 public interface Loader extends AutoCloseable {
-
-  // Temporary directory used for data cache
-  String tmpdir = systemGetProperty("java.io.tmpdir");
-
-  String BASE =
-      tmpdir
-          + (!(tmpdir.endsWith("/") || tmpdir.endsWith("\\")) ? File.separatorChar : "")
-          + "snowflake"
-          + File.separatorChar
-          + "stage";
 
   // Configuration, see LoaderProperty
   void setProperty(LoaderProperty property, Object value);

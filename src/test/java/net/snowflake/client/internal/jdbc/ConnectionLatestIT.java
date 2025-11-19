@@ -1325,11 +1325,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 connection
                     .unwrap(SnowflakeConnection.class)
                     .downloadStream(
-                        DownloadStreamConfig.builder()
-                            .setStageName("@testDownloadStream_stage")
-                            .setSourceFileName("/fileNotExist.gz")
-                            .setDecompress(true)
-                            .build());
+                        "@testDownloadStream_stage",
+                        "/fileNotExist.gz",
+                        DownloadStreamConfig.builder().setDecompress(true).build());
               });
       assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
 

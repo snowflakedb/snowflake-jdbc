@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ public class FileConnectionConfigurationLatestIT {
   private static void verifyConnetionToSnowflake(String connectionName) throws SQLException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, connectionName);
     try (Connection con =
-            DriverManager.getConnection(SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX, null);
+            DriverManager.getConnection(AutoConfigurationHelper.AUTO_CONNECTION_PREFIX, null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
       assertTrue(resultSet.next());

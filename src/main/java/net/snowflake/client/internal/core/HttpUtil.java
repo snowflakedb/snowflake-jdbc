@@ -254,7 +254,7 @@ public class HttpUtil {
     // Start with connector name
     StringBuilder builder = new StringBuilder("JDBC/");
     // Append connector version and parenthesis start
-    builder.append(SnowflakeDriver.implementVersion);
+    builder.append(SnowflakeDriver.getImplementationVersion());
     builder.append(" (");
     // Generate OS platform and version from system properties
     String osPlatform = (systemGetProperty("os.name") != null) ? systemGetProperty("os.name") : "";

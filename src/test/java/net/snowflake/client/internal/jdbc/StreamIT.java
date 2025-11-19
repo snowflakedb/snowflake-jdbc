@@ -44,11 +44,11 @@ public class StreamIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnection.class)
             .uploadStream(
+                "~",
+                "hello.txt",
+                outputStream.asByteSource().openStream(),
                 UploadStreamConfig.builder()
-                    .setStageName("~")
                     .setDestPrefix(DEST_PREFIX)
-                    .setInputStream(outputStream.asByteSource().openStream())
-                    .setDestFileName("hello.txt")
                     .setCompressData(false)
                     .build());
 
@@ -96,11 +96,9 @@ public class StreamIT extends BaseJDBCTest {
                 connection
                     .unwrap(SnowflakeConnection.class)
                     .downloadStream(
-                        DownloadStreamConfig.builder()
-                            .setStageName("~")
-                            .setSourceFileName(DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz")
-                            .setDecompress(true)
-                            .build());
+                        "~",
+                        DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz",
+                        DownloadStreamConfig.builder().setDecompress(true).build());
             StringWriter writer = new StringWriter();
             IOUtils.copy(out, writer, "UTF-8");
             String output = writer.toString();
@@ -134,11 +132,11 @@ public class StreamIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnectionImpl.class)
             .uploadStream(
+                "~",
+                "hello.txt",
+                outputStream.asByteSource().openStream(),
                 UploadStreamConfig.builder()
-                    .setStageName("~")
                     .setDestPrefix(DEST_PREFIX)
-                    .setInputStream(outputStream.asByteSource().openStream())
-                    .setDestFileName("hello.txt")
                     .setCompressData(true)
                     .build());
 

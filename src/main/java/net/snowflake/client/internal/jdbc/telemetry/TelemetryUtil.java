@@ -57,7 +57,8 @@ public class TelemetryUtil {
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put(TelemetryField.TYPE.toString(), type.toString());
     ibValue.put(TelemetryField.DRIVER_TYPE.toString(), LoginInfoDTO.SF_JDBC_APP_ID);
-    ibValue.put(TelemetryField.DRIVER_VERSION.toString(), SnowflakeDriver.implementVersion);
+    ibValue.put(
+        TelemetryField.DRIVER_VERSION.toString(), SnowflakeDriver.getImplementationVersion());
     if (!isNullOrEmpty(queryId)) {
       ibValue.put(TelemetryField.QUERY_ID.toString(), queryId);
     }

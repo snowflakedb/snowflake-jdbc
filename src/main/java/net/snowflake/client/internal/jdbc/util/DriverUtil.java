@@ -1,8 +1,12 @@
 package net.snowflake.client.internal.jdbc.util;
 
-import static net.snowflake.client.api.driver.SnowflakeDriver.implementVersion;
+import net.snowflake.client.api.driver.SnowflakeDriver;
 
 public class DriverUtil {
+
+  public static String getImplementationVersion() {
+    return SnowflakeDriver.getImplementationVersion();
+  }
   /**
    * Utility method to verify if the standard or fips snowflake-jdbc driver is being used.
    *
@@ -19,6 +23,6 @@ public class DriverUtil {
    * @return the jar name with version
    */
   public static String getJdbcJarname() {
-    return String.format("%s-%s", getImplementationTitle(), implementVersion);
+    return String.format("%s-%s", getImplementationTitle(), getImplementationVersion());
   }
 }

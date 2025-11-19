@@ -36,11 +36,9 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
                 connection
                     .unwrap(SnowflakeConnection.class)
                     .downloadStream(
-                        DownloadStreamConfig.builder()
-                            .setStageName("@" + stageName)
-                            .setSourceFileName("/fileNotExist.gz")
-                            .setDecompress(true)
-                            .build()));
+                        "@" + stageName,
+                        "/fileNotExist.gz",
+                        DownloadStreamConfig.builder().setDecompress(true).build()));
       } finally {
         statement.execute("DROP STAGE IF EXISTS " + stageName);
       }

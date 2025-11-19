@@ -1,36 +1,30 @@
 package net.snowflake.client.api.connection;
 
-import java.io.InputStream;
-
 /**
- * Configuration for uploading data to a Snowflake stage from a stream.
+ * Optional configuration for uploading data to a Snowflake stage from a stream.
  *
- * <p>This class provides configuration options for the {@link
- * SnowflakeConnection#uploadStream(UploadStreamConfig)} method, which allows uploading data from an
- * input stream to Snowflake internal or external stages.
+ * <p>This class provides optional configuration for the {@link
+ * SnowflakeConnection#uploadStream(String, String, java.io.InputStream, UploadStreamConfig)}
+ * method. Required parameters (stageName, destFileName, inputStream) are passed as method
+ * arguments, while optional settings are configured here.
  *
  * <p><b>Example usage:</b>
  *
  * <pre>{@code
  * try (InputStream dataStream = new FileInputStream("data.csv")) {
  *   UploadStreamConfig config = UploadStreamConfig.builder()
- *       .setStageName("@my_stage")
- *       .setDestFileName("uploaded_data.csv")
- *       .setInputStream(dataStream)
+ *       .setDestPrefix("data/2024")
  *       .setCompressData(true)
  *       .build();
  *
- *   connection.uploadStream(config);
+ *   connection.uploadStream("@my_stage", "uploaded_data.csv", dataStream, config);
  * }
  * }</pre>
  *
- * @see SnowflakeConnection#uploadStream(UploadStreamConfig)
+ * @see SnowflakeConnection#uploadStream(String, String, java.io.InputStream, UploadStreamConfig)
  */
 public class UploadStreamConfig {
-  private final String stageName;
   private final String destPrefix;
-  private final InputStream inputStream;
-  private final String destFileName;
   private final boolean compressData;
 
   /**
@@ -39,20 +33,8 @@ public class UploadStreamConfig {
    * @param builder the builder instance
    */
   private UploadStreamConfig(Builder builder) {
-    this.stageName = builder.stageName;
     this.destPrefix = builder.destPrefix;
-    this.inputStream = builder.inputStream;
-    this.destFileName = builder.destFileName;
     this.compressData = builder.compressData;
-  }
-
-  /**
-   * Gets the stage name.
-   *
-   * @return the stage name (e.g., "@my_stage" or "@~" for user stage)
-   */
-  public String getStageName() {
-    return stageName;
   }
 
   /**
@@ -62,24 +44,6 @@ public class UploadStreamConfig {
    */
   public String getDestPrefix() {
     return destPrefix;
-  }
-
-  /**
-   * Gets the input stream containing the data to upload.
-   *
-   * @return the input stream
-   */
-  public InputStream getInputStream() {
-    return inputStream;
-  }
-
-  /**
-   * Gets the destination file name.
-   *
-   * @return the destination file name
-   */
-  public String getDestFileName() {
-    return destFileName;
   }
 
   /**
@@ -103,54 +67,24 @@ public class UploadStreamConfig {
   /**
    * Builder for creating {@link UploadStreamConfig} instances.
    *
-   * <p>This builder provides a fluent API for configuring upload stream operations. All setter
-   * methods return the builder instance for method chaining.
+   * <p>This builder provides a fluent API for configuring optional upload stream settings. All
+   * setter methods return the builder instance for method chaining.
    *
    * <p><b>Example:</b>
    *
    * <pre>{@code
    * UploadStreamConfig config = UploadStreamConfig.builder()
-   *     .setStageName("@my_stage")
    *     .setDestPrefix("data/2024")
-   *     .setDestFileName("file.csv")
-   *     .setInputStream(inputStream)
    *     .setCompressData(true)
    *     .build();
    * }</pre>
    */
   public static class Builder {
-    private String stageName;
     private String destPrefix;
-    private InputStream inputStream;
-    private String destFileName;
     private boolean compressData = true;
 
     /** Private constructor. Use {@link UploadStreamConfig#builder()} instead. */
     private Builder() {}
-
-    /**
-     * Sets the stage name to which the file will be uploaded.
-     *
-     * <p><b>Examples:</b>
-     *
-     * <ul>
-     *   <li>{@code "@my_stage"} - named internal stage
-     *   <li>{@code "@~"} - user stage
-     *   <li>{@code "@%table_name"} - table stage
-     *   <li>{@code "@external_stage"} - external stage (S3, Azure, GCS)
-     * </ul>
-     *
-     * @param stageName the stage name (must not be null or empty)
-     * @return this builder instance
-     * @throws IllegalArgumentException if stageName is null or empty
-     */
-    public Builder setStageName(String stageName) {
-      if (stageName == null || stageName.trim().isEmpty()) {
-        throw new IllegalArgumentException("stageName cannot be null or empty");
-      }
-      this.stageName = stageName.trim();
-      return this;
-    }
 
     /**
      * Sets the destination prefix (directory path) within the stage.
@@ -176,49 +110,6 @@ public class UploadStreamConfig {
     }
 
     /**
-     * Sets the input stream containing the data to upload.
-     *
-     * <p><b>Important:</b> The caller is responsible for closing the input stream after the upload
-     * completes. Consider using try-with-resources for proper resource management.
-     *
-     * @param inputStream the input stream (must not be null)
-     * @return this builder instance
-     * @throws IllegalArgumentException if inputStream is null
-     */
-    public Builder setInputStream(InputStream inputStream) {
-      if (inputStream == null) {
-        throw new IllegalArgumentException("inputStream cannot be null");
-      }
-      this.inputStream = inputStream;
-      return this;
-    }
-
-    /**
-     * Sets the destination file name in the stage.
-     *
-     * <p>This is the name the file will have after upload. Do not include directory paths here; use
-     * {@link #setDestPrefix(String)} for directory paths.
-     *
-     * <p><b>Examples:</b>
-     *
-     * <ul>
-     *   <li>{@code "data.csv"} - upload as data.csv
-     *   <li>{@code "report_2024.txt"} - upload with specific name
-     * </ul>
-     *
-     * @param destFileName the destination file name (must not be null or empty)
-     * @return this builder instance
-     * @throws IllegalArgumentException if destFileName is null or empty
-     */
-    public Builder setDestFileName(String destFileName) {
-      if (destFileName == null || destFileName.trim().isEmpty()) {
-        throw new IllegalArgumentException("destFileName cannot be null or empty");
-      }
-      this.destFileName = destFileName.trim();
-      return this;
-    }
-
-    /**
      * Sets whether to automatically compress the data during upload.
      *
      * <p>If set to {@code true} (default), the driver will compress the data using gzip compression
@@ -236,22 +127,11 @@ public class UploadStreamConfig {
     }
 
     /**
-     * Builds and validates the {@link UploadStreamConfig} instance.
+     * Builds the {@link UploadStreamConfig} instance.
      *
      * @return a new {@link UploadStreamConfig} instance
-     * @throws IllegalStateException if required fields (stageName, inputStream, destFileName) are
-     *     not set
      */
     public UploadStreamConfig build() {
-      if (stageName == null || stageName.isEmpty()) {
-        throw new IllegalStateException("stageName is required");
-      }
-      if (inputStream == null) {
-        throw new IllegalStateException("inputStream is required");
-      }
-      if (destFileName == null || destFileName.isEmpty()) {
-        throw new IllegalStateException("destFileName is required");
-      }
       return new UploadStreamConfig(this);
     }
   }
@@ -259,16 +139,8 @@ public class UploadStreamConfig {
   @Override
   public String toString() {
     return "UploadStreamConfig{"
-        + "stageName='"
-        + stageName
-        + '\''
-        + ", destPrefix='"
+        + "destPrefix='"
         + destPrefix
-        + '\''
-        + ", inputStream="
-        + (inputStream != null ? "provided" : "null")
-        + ", destFileName='"
-        + destFileName
         + '\''
         + ", compressData="
         + compressData

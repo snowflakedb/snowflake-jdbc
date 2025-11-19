@@ -2,13 +2,9 @@ package net.snowflake.client.api.exception;
 
 import java.sql.SQLException;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.log.SFLogger;
-import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 
 public class SnowflakeSQLException extends SQLException {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
-
   private static final long serialVersionUID = 1L;
 
   static final ResourceBundleManager errorResourceBundleManager =
@@ -23,21 +19,12 @@ public class SnowflakeSQLException extends SQLException {
    *
    * @param queryId query id
    * @param reason reason for which exception is created
-   * @param sqlState sql state
+   * @param sqlState SQL state
    * @param vendorCode vendor code
    */
   public SnowflakeSQLException(String queryId, String reason, String sqlState, int vendorCode) {
     super(reason, sqlState, vendorCode);
-
     this.queryId = queryId;
-
-    // log user error from GS at fine level
-    logger.debug(
-        "Snowflake exception: {}, sqlState: {}, vendorCode: {}, queryId: {}",
-        reason,
-        sqlState,
-        vendorCode,
-        queryId);
   }
 
   /**
@@ -48,8 +35,6 @@ public class SnowflakeSQLException extends SQLException {
   public SnowflakeSQLException(String queryId, String reason, String sqlState) {
     super(reason, sqlState);
     this.queryId = queryId;
-    // log user error from GS at fine level
-    logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
   }
 
   /**
@@ -63,11 +48,6 @@ public class SnowflakeSQLException extends SQLException {
         sqlState,
         vendorCode);
     this.queryId = queryId;
-    logger.debug(
-        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
-        errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
-        sqlState,
-        vendorCode);
   }
 
   /**
@@ -91,11 +71,6 @@ public class SnowflakeSQLException extends SQLException {
         sqlState,
         vendorCode);
     this.queryId = queryId;
-    logger.debug(
-        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
-        errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
-        sqlState,
-        vendorCode);
   }
 
   /**
@@ -108,11 +83,6 @@ public class SnowflakeSQLException extends SQLException {
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
         sqlState,
         vendorCode,
-        ex);
-
-    logger.debug(
-        "Snowflake exception: {}"
-            + errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
         ex);
   }
 
@@ -150,11 +120,6 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode,
         ex);
     this.queryId = queryId;
-
-    logger.debug(
-        "Snowflake exception: "
-            + errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
-        ex);
   }
 
   /**

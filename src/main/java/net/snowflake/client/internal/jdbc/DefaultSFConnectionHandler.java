@@ -111,7 +111,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   @Override
   public void initializeConnection(String url, Properties info) throws SQLException {
-    initialize(conStr, LoginInfoDTO.SF_JDBC_APP_ID, SnowflakeDriver.implementVersion, info);
+    initialize(
+        conStr, LoginInfoDTO.SF_JDBC_APP_ID, SnowflakeDriver.getImplementationVersion(), info);
   }
 
   /** Returns the default SFSession client implementation. */

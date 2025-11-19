@@ -1,7 +1,5 @@
 package net.snowflake.client.api.driver;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -9,42 +7,37 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
-import net.snowflake.client.internal.config.ConnectionParameters;
-import net.snowflake.client.internal.config.SFConnectionConfigParser;
-import net.snowflake.client.internal.core.SecurityUtil;
-import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
+import net.snowflake.client.internal.driver.ConnectionFactory;
+import net.snowflake.client.internal.driver.DriverInitializer;
+import net.snowflake.client.internal.driver.DriverVersion;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
-import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
-import net.snowflake.common.core.SqlState;
 
 /**
- * JDBC Driver implementation of Snowflake for production. To use this driver, specify the following
- * URL: jdbc:snowflake://host:port
+ * JDBC Driver implementation for Snowflake.
  *
- * <p>Note: don't add logger to this class since logger init will potentially break driver class
- * loading
+ * <p>To use this driver, specify the following URL formats:
+ *
+ * <ul>
+ *   <li>{@code jdbc:snowflake://host:port} - Standard connection
+ *   <li>{@code jdbc:snowflake:auto} - Auto-configuration from connections.toml
+ * </ul>
+ *
+ * <p>The driver is automatically registered with {@link DriverManager} when loaded.
+ *
+ * @see java.sql.Driver
  */
 public class SnowflakeDriver implements Driver {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
-  public static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
+
   public static final SnowflakeDriver INSTANCE;
-
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "4.0.0";
 
-  private static int majorVersion = 0;
-  private static int minorVersion = 0;
-  private static long patchVersion = 0;
-
-  private static boolean disableArrowResultFormat = false;
-  private static String disableArrowResultFormatMessage;
+  private static final DriverVersion VERSION = DriverVersion.getInstance();
 
   static final ResourceBundleManager versionResourceBundleManager =
       ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version");
@@ -52,229 +45,103 @@ public class SnowflakeDriver implements Driver {
   static {
     try {
       DriverManager.registerDriver(INSTANCE = new SnowflakeDriver());
+      logger.info("Snowflake JDBC Driver {} registered successfully", VERSION.getFullVersion());
     } catch (SQLException ex) {
       throw new IllegalStateException("Unable to register " + SnowflakeDriver.class.getName(), ex);
     }
 
-    initializeArrowSupport();
-    /*
-     * Get the manifest properties here.
-     */
-    initializeClientVersionFromManifest();
-
-    SecurityUtil.addBouncyCastleProvider();
-
-    // Telemetry OOB is disabled
-    TelemetryService.disableOOBTelemetry();
-  }
-
-  /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */
-  private static void initializeArrowSupport() {
-    try {
-      // this is required to enable direct memory usage for Arrow buffers in Java
-      System.setProperty("io.netty.tryReflectionSetAccessible", "true");
-    } catch (Throwable t) {
-      // fail to enable required feature for Arrow
-      disableArrowResultFormat = true;
-      disableArrowResultFormatMessage = t.getLocalizedMessage();
-    }
-    if ("true"
-        .equals(SnowflakeUtil.systemGetProperty("snowflake.jdbc.enable.illegalAccessWarning"))) {
-      return;
-    }
-    disableIllegalReflectiveAccessWarning();
-  }
-
-  static void disableIllegalReflectiveAccessWarning() {
-    // The netty dependency of arrow will cause an illegal reflective access warning
-    // This function try to eliminate the warning by setting
-    // jdk.internal.module.IllegalAccessLogger's logger as null
-    // Disable this function and manually run arrow tests, e.g. testResultSetMetadata., then
-    // the warning can be found in output.
-    try {
-      Class unsafeClass = Class.forName("sun.misc.Unsafe");
-      Field field = unsafeClass.getDeclaredField("theUnsafe");
-      field.setAccessible(true);
-      Object unsafe = field.get(null);
-
-      Method putObjectVolatile =
-          unsafeClass.getDeclaredMethod(
-              "putObjectVolatile", Object.class, long.class, Object.class);
-      Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
-      Method staticFieldBase = unsafeClass.getDeclaredMethod("staticFieldBase", Field.class);
-
-      Class loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
-      Field loggerField = loggerClass.getDeclaredField("logger");
-      Long loggerOffset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
-      Object loggerBase = staticFieldBase.invoke(unsafe, loggerField);
-      putObjectVolatile.invoke(unsafe, loggerBase, loggerOffset, null);
-    } catch (Throwable ex) {
-      // If failed to eliminate warnings, do nothing
-    }
-  }
-
-  private static void initializeClientVersionFromManifest() {
-    /*
-     * Get JDBC version numbers from static string in snowflake-jdbc
-     */
-    try {
-      // parse implementation version major.minor.change
-      if (implementVersion != null) {
-        String[] versionBreakdown = implementVersion.split("\\.");
-
-        if (versionBreakdown.length == 3) {
-          majorVersion = Integer.parseInt(versionBreakdown[0]);
-          minorVersion = Integer.parseInt(versionBreakdown[1]);
-          patchVersion = Long.parseLong(versionBreakdown[2]);
-        } else {
-          throw new SnowflakeSQLLoggedException(
-              null,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              /*session = */ "Invalid Snowflake JDBC Version: " + implementVersion);
-        }
-      } else {
-        throw new SnowflakeSQLException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            /*session = */ null,
-            "Snowflake JDBC Version is not set. "
-                + "Ensure static version string was initialized.");
-      }
-    } catch (Throwable ex) {
-    }
-  }
-
-  public static boolean isDisableArrowResultFormat() {
-    return disableArrowResultFormat;
-  }
-
-  public static String getDisableArrowResultFormatMessage() {
-    return disableArrowResultFormatMessage;
+    // Perform all driver initialization (Arrow, security, telemetry, etc.)
+    DriverInitializer.initialize();
   }
 
   /**
-   * Checks whether a given url is in a valid format.
+   * Checks whether a given URL is in a valid Snowflake JDBC format.
    *
-   * <p>The current uri format is: jdbc:snowflake://[host[:port]] or jdbc:snowflake:auto
+   * <p>Valid formats:
    *
-   * <p>jdbc:snowflake:// - run in embedded mode jdbc:snowflake://localhost - connect to localhost
-   * default port (8080)
+   * <ul>
+   *   <li>{@code jdbc:snowflake://host[:port]} - Standard connection
+   *   <li>{@code jdbc:snowflake:auto} - Auto-configuration
+   * </ul>
    *
-   * <p>jdbc:snowflake://localhost:8080- connect to localhost port 8080
-   *
-   * <p>jdbc:snowflake:auto - use connections.toml
-   *
-   * @param url url of the database including host and port
-   * @return true if the url is valid
+   * @param url the database URL
+   * @return true if the URL is valid and accepted by this driver
    */
   @Override
   public boolean acceptsURL(String url) {
-    if (url != null && url.equalsIgnoreCase(AUTO_CONNECTION_STRING_PREFIX)) {
+    if (AutoConfigurationHelper.isAutoConfigurationUrl(url)) {
       return true;
     }
-
     return SnowflakeConnectString.parse(url, EMPTY_PROPERTIES).isValid();
   }
 
   /**
-   * Connect method
+   * Establishes a connection to the Snowflake database.
    *
-   * @param url jdbc url
-   * @param info addition info for passing database/schema names
-   * @return connection
-   * @throws SQLException if failed to create a snowflake connection
+   * @param url the database URL
+   * @param info additional connection properties
+   * @return a Connection object, or null if the URL is not accepted
+   * @throws SQLException if a database access error occurs
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    ConnectionParameters connectionParameters =
-        overrideByFileConnectionParametersIfAutoConfiguration(url, info);
-
-    if (connectionParameters.getUrl() == null) {
-      // expected return format per the JDBC spec for java.sql.Driver#connect()
-      throw new SnowflakeSQLException("Unable to connect to url of 'null'.");
-    }
-    if (!SnowflakeConnectString.hasSupportedPrefix(connectionParameters.getUrl())) {
-      return null; // expected return format per the JDBC spec for java.sql.Driver#connect()
-    }
-    SnowflakeConnectString conStr =
-        SnowflakeConnectString.parse(
-            connectionParameters.getUrl(), connectionParameters.getParams());
-    if (!conStr.isValid()) {
-      throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
-    }
-    return new SnowflakeConnectionImpl(
-        connectionParameters.getUrl(), connectionParameters.getParams());
-  }
-
-  private static ConnectionParameters overrideByFileConnectionParametersIfAutoConfiguration(
-      String url, Properties info) throws SnowflakeSQLException {
-    if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
-      // Connect using connection configuration file
-      logger.debug(
-          "JDBC connection initializing with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
-      ConnectionParameters connectionParameters =
-          SFConnectionConfigParser.buildConnectionParameters(url);
-      if (connectionParameters == null) {
-        throw new SnowflakeSQLException(
-            "Unavailable connection configuration parameters expected for auto configuration using file");
-      }
-      return connectionParameters;
-    } else {
-      return new ConnectionParameters(url, info);
-    }
+    return ConnectionFactory.createConnection(url, info);
   }
 
   /**
-   * Connect method using connection configuration file
+   * Establishes a connection using auto-configuration.
    *
-   * @return connection
-   * @throws SQLException if failed to create a snowflake connection
+   * @return a Connection object
+   * @throws SQLException if a database access error occurs
    */
   public Connection connect() throws SQLException {
-    logger.debug("Execute internal method connect() without parameters");
-    return connect(AUTO_CONNECTION_STRING_PREFIX, null);
+    return ConnectionFactory.createConnectionWithAutoConfig();
   }
 
   @Override
   public int getMajorVersion() {
-    return majorVersion;
+    return VERSION.getMajor();
   }
 
   @Override
   public int getMinorVersion() {
-    return minorVersion;
+    return VERSION.getMinor();
   }
 
   /**
-   * Get the driver patch version number. This is not part of the standard JDBC Driver interface,
+   * Gets the driver patch version number. This is not part of the standard JDBC Driver interface,
    * but is needed for full version information.
    *
    * @return driver patch version number
    */
   public long getPatchVersion() {
-    return patchVersion;
+    return VERSION.getPatch();
+  }
+
+  /**
+   * Gets driver version information for telemetry and logging.
+   *
+   * @return full version string (e.g., "4.0.0")
+   */
+  public static String getImplementationVersion() {
+    return VERSION.getFullVersion();
   }
 
   @Override
   public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-    DriverPropertyInfo[] retVal;
     if (url == null || url.isEmpty()) {
-      retVal = new DriverPropertyInfo[1];
-      retVal[0] = new DriverPropertyInfo("serverURL", null);
-      retVal[0].description =
-          "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>";
-      return retVal;
+      DriverPropertyInfo[] result = new DriverPropertyInfo[1];
+      result[0] = new DriverPropertyInfo("serverURL", null);
+      result[0].description =
+          "server URL in form of <protocol>://<host or domain>:<port number>/<path>";
+      return result;
     }
 
-    Connection con = new SnowflakeConnectionImpl(url, info, true);
-    List<DriverPropertyInfo> missingProperties =
-        ((SnowflakeConnectionImpl) con).returnMissingProperties();
-    con.close();
-
-    retVal = new DriverPropertyInfo[missingProperties.size()];
-    retVal = missingProperties.toArray(retVal);
-    return retVal;
+    try (Connection con = new SnowflakeConnectionImpl(url, info, true)) {
+      List<DriverPropertyInfo> missingProperties =
+          ((SnowflakeConnectionImpl) con).returnMissingProperties();
+      return missingProperties.toArray(new DriverPropertyInfo[0]);
+    }
   }
 
   @Override
@@ -285,5 +152,23 @@ public class SnowflakeDriver implements Driver {
   @Override
   public java.util.logging.Logger getParentLogger() {
     return null;
+  }
+
+  // Deprecated methods kept for backward compatibility
+
+  /**
+   * @deprecated Use {@link DriverInitializer#isArrowEnabled()} instead
+   */
+  @Deprecated
+  public static boolean isDisableArrowResultFormat() {
+    return !DriverInitializer.isArrowEnabled();
+  }
+
+  /**
+   * @deprecated Use {@link DriverInitializer#getArrowDisableReason()} instead
+   */
+  @Deprecated
+  public static String getDisableArrowResultFormatMessage() {
+    return DriverInitializer.getArrowDisableReason();
   }
 }

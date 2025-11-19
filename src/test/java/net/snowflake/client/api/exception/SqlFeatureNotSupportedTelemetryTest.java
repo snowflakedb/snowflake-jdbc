@@ -15,7 +15,7 @@ public class SqlFeatureNotSupportedTelemetryTest {
   String queryId = "test-query-idfake";
   String SQLState = "00000";
   int vendorCode = 27;
-  String driverVersion = SnowflakeDriver.implementVersion;
+  String driverVersion = SnowflakeDriver.getImplementationVersion();
 
   String comparison =
       "{\"type\":\"client_sql_exception\",\"DriverType\":\"JDBC\",\"DriverVersion\":\""

@@ -846,16 +846,20 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   @Override
-  public void uploadStream(UploadStreamConfig config) throws SQLException {
+  public void uploadStream(String stageName, String destFileName, InputStream inputStream)
+      throws SQLException {
+    uploadStream(stageName, destFileName, inputStream, UploadStreamConfig.builder().build());
+  }
+
+  @Override
+  public void uploadStream(
+      String stageName, String destFileName, InputStream inputStream, UploadStreamConfig config)
+      throws SQLException {
     if (config == null) {
       throw new IllegalArgumentException("UploadStreamConfig cannot be null");
     }
     uploadStreamInternal(
-        config.getStageName(),
-        config.getDestPrefix(),
-        config.getInputStream(),
-        config.getDestFileName(),
-        config.isCompressData());
+        stageName, config.getDestPrefix(), inputStream, destFileName, config.isCompressData());
   }
 
   /**
@@ -961,13 +965,17 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   @Override
-  public InputStream downloadStream(DownloadStreamConfig config) throws SQLException {
+  public InputStream downloadStream(String stageName, String sourceFileName) throws SQLException {
+    return downloadStream(stageName, sourceFileName, DownloadStreamConfig.builder().build());
+  }
+
+  @Override
+  public InputStream downloadStream(
+      String stageName, String sourceFileName, DownloadStreamConfig config) throws SQLException {
     if (config == null) {
       throw new IllegalArgumentException("DownloadStreamConfig cannot be null");
     }
 
-    String stageName = config.getStageName();
-    String sourceFileName = config.getSourceFileName();
     boolean decompress = config.isDecompress();
 
     logger.debug(

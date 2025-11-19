@@ -92,11 +92,9 @@ public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
     SnowflakeConnection unwrap = connection.unwrap(SnowflakeConnection.class);
     try (InputStream inputStream =
         unwrap.downloadStream(
-            DownloadStreamConfig.builder()
-                .setStageName(stageName)
-                .setSourceFileName(filePathInGitRepo)
-                .setDecompress(false)
-                .build())) {
+            stageName,
+            filePathInGitRepo,
+            DownloadStreamConfig.builder().setDecompress(false).build())) {
       return IOUtils.readLines(inputStream, StandardCharsets.UTF_8);
     }
   }

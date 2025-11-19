@@ -17,6 +17,7 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.api.pooling.SnowflakeConnectionPoolDataSource;
 import net.snowflake.client.api.pooling.SnowflakeConnectionPoolDataSourceFactory;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;

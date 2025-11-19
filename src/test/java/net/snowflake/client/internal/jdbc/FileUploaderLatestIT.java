@@ -580,11 +580,11 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
                     connection
                         .unwrap(SnowflakeConnection.class)
                         .uploadStream(
+                            "~",
+                            "hello.txt",
+                            outputStream.asByteSource().openStream(),
                             UploadStreamConfig.builder()
-                                .setStageName("~")
                                 .setDestPrefix(DEST_PREFIX)
-                                .setInputStream(outputStream.asByteSource().openStream())
-                                .setDestFileName("hello.txt")
                                 .setCompressData(false)
                                 .build()));
         assertEquals(ErrorCode.INTERRUPTED.getMessageCode(), thrown.getErrorCode());

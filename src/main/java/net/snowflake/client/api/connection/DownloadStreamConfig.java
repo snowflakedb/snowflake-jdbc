@@ -1,31 +1,28 @@
 package net.snowflake.client.api.connection;
 
 /**
- * Configuration for downloading files from a Snowflake stage as a stream.
+ * Optional configuration for downloading files from a Snowflake stage as a stream.
  *
- * <p>This class provides configuration options for the {@link
- * SnowflakeConnection#downloadStream(DownloadStreamConfig)} method, which allows downloading files
- * from Snowflake internal or external stages.
+ * <p>This class provides optional configuration for the {@link
+ * SnowflakeConnection#downloadStream(String, String, DownloadStreamConfig)} method. Required
+ * parameters (stageName, sourceFileName) are passed as method arguments, while optional settings
+ * are configured here.
  *
  * <p><b>Example usage:</b>
  *
  * <pre>{@code
  * DownloadStreamConfig config = DownloadStreamConfig.builder()
- *     .setStageName("@my_stage")
- *     .setSourceFileName("data/file.csv")
  *     .setDecompress(true)
  *     .build();
  *
- * try (InputStream stream = connection.downloadStream(config)) {
+ * try (InputStream stream = connection.downloadStream("@my_stage", "data/file.csv.gz", config)) {
  *   // Process the stream
  * }
  * }</pre>
  *
- * @see SnowflakeConnection#downloadStream(DownloadStreamConfig)
+ * @see SnowflakeConnection#downloadStream(String, String, DownloadStreamConfig)
  */
 public class DownloadStreamConfig {
-  private final String stageName;
-  private final String sourceFileName;
   private final boolean decompress;
 
   /**
@@ -34,27 +31,7 @@ public class DownloadStreamConfig {
    * @param builder the builder instance
    */
   private DownloadStreamConfig(Builder builder) {
-    this.stageName = builder.stageName;
-    this.sourceFileName = builder.sourceFileName;
     this.decompress = builder.decompress;
-  }
-
-  /**
-   * Gets the stage name.
-   *
-   * @return the stage name (e.g., "@my_stage" or "@~" for user stage)
-   */
-  public String getStageName() {
-    return stageName;
-  }
-
-  /**
-   * Gets the source file name or path within the stage.
-   *
-   * @return the source file name/path
-   */
-  public String getSourceFileName() {
-    return sourceFileName;
   }
 
   /**
@@ -78,75 +55,22 @@ public class DownloadStreamConfig {
   /**
    * Builder for creating {@link DownloadStreamConfig} instances.
    *
-   * <p>This builder provides a fluent API for configuring download stream operations. All setter
-   * methods return the builder instance for method chaining.
+   * <p>This builder provides a fluent API for configuring optional download stream settings. All
+   * setter methods return the builder instance for method chaining.
    *
    * <p><b>Example:</b>
    *
    * <pre>{@code
    * DownloadStreamConfig config = DownloadStreamConfig.builder()
-   *     .setStageName("@my_stage")
-   *     .setSourceFileName("data/file.csv.gz")
    *     .setDecompress(true)
    *     .build();
    * }</pre>
    */
   public static class Builder {
-    private String stageName;
-    private String sourceFileName;
     private boolean decompress = false;
 
     /** Private constructor. Use {@link DownloadStreamConfig#builder()} instead. */
     private Builder() {}
-
-    /**
-     * Sets the stage name from which to download the file.
-     *
-     * <p><b>Examples:</b>
-     *
-     * <ul>
-     *   <li>{@code "@my_stage"} - named internal stage
-     *   <li>{@code "@~"} - user stage
-     *   <li>{@code "@%table_name"} - table stage
-     *   <li>{@code "@external_stage"} - external stage (S3, Azure, GCS)
-     * </ul>
-     *
-     * @param stageName the stage name (must not be null or empty)
-     * @return this builder instance
-     * @throws IllegalArgumentException if stageName is null or empty
-     */
-    public Builder setStageName(String stageName) {
-      if (stageName == null || stageName.trim().isEmpty()) {
-        throw new IllegalArgumentException("stageName cannot be null or empty");
-      }
-      this.stageName = stageName.trim();
-      return this;
-    }
-
-    /**
-     * Sets the source file name or path within the stage.
-     *
-     * <p>This can be a simple file name or a path with directories separated by forward slashes.
-     *
-     * <p><b>Examples:</b>
-     *
-     * <ul>
-     *   <li>{@code "file.csv"} - file in stage root
-     *   <li>{@code "data/file.csv"} - file in subdirectory
-     *   <li>{@code "2024/01/data.csv.gz"} - file in nested directories
-     * </ul>
-     *
-     * @param sourceFileName the source file name/path (must not be null or empty)
-     * @return this builder instance
-     * @throws IllegalArgumentException if sourceFileName is null or empty
-     */
-    public Builder setSourceFileName(String sourceFileName) {
-      if (sourceFileName == null || sourceFileName.trim().isEmpty()) {
-        throw new IllegalArgumentException("sourceFileName cannot be null or empty");
-      }
-      this.sourceFileName = sourceFileName.trim();
-      return this;
-    }
 
     /**
      * Sets whether to automatically decompress the file during download.
@@ -166,33 +90,17 @@ public class DownloadStreamConfig {
     }
 
     /**
-     * Builds and validates the {@link DownloadStreamConfig} instance.
+     * Builds the {@link DownloadStreamConfig} instance.
      *
      * @return a new {@link DownloadStreamConfig} instance
-     * @throws IllegalStateException if required fields (stageName, sourceFileName) are not set
      */
     public DownloadStreamConfig build() {
-      if (stageName == null || stageName.isEmpty()) {
-        throw new IllegalStateException("stageName is required");
-      }
-      if (sourceFileName == null || sourceFileName.isEmpty()) {
-        throw new IllegalStateException("sourceFileName is required");
-      }
       return new DownloadStreamConfig(this);
     }
   }
 
   @Override
   public String toString() {
-    return "DownloadStreamConfig{"
-        + "stageName='"
-        + stageName
-        + '\''
-        + ", sourceFileName='"
-        + sourceFileName
-        + '\''
-        + ", decompress="
-        + decompress
-        + '}';
+    return "DownloadStreamConfig{" + "decompress=" + decompress + '}';
   }
 }

@@ -26,7 +26,7 @@ public class TelemetryUtilTest {
     assertEquals(
         LoginInfoDTO.SF_JDBC_APP_ID, on.get(TelemetryField.DRIVER_TYPE.toString()).asText());
     assertEquals(
-        SnowflakeDriver.implementVersion,
+        SnowflakeDriver.getImplementationVersion(),
         on.get(TelemetryField.DRIVER_VERSION.toString()).asText());
     assertEquals(queryId, on.get(TelemetryField.QUERY_ID.toString()).asText());
     assertEquals(sqlState, on.get(TelemetryField.SQL_STATE.toString()).asText());
