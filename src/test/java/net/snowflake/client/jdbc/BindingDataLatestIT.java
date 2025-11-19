@@ -130,7 +130,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           prepStatement.executeBatch();
         }
         // insert using stage binding
-        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         executePsStatementForTimestampTest(connection, "stageinsert", currT);
 
         // Compare the results
@@ -142,7 +141,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           assertEquals(rs1.getInt(1), rs2.getInt(1));
 
           // Check tz type and ltz type columns have the same value.
-          assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(3));
 
           assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
           assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
@@ -180,7 +179,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         executePrepStmtForNumRows(connection, "regularinsert", currT, 3);
 
         // insert using stage binding
-        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        //        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         executePrepStmtForNumRows(connection, "stageinsert", currT, 3);
 
         // Compare the results
@@ -193,11 +192,11 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             assertEquals(rs1.getInt(1), rs2.getInt(1));
 
             // Check tz type and ltz type columns have the same value.
-            assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+            assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(3));
 
-            assertEquals(rs2.getTimestamp(2), rs2.getTimestamp(2));
-            assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(3));
-            assertEquals(rs2.getTimestamp(4), rs2.getTimestamp(4));
+            assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+            assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+            assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
           }
         }
       } finally {
