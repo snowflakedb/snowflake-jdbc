@@ -36,7 +36,6 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.common.core.SqlState;
@@ -325,15 +324,15 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = sfrs.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertTrue(
-            sfrs.getStatusV2()
+            sfrs.getStatus()
                 .getErrorMessage()
                 .contains(
                     "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
@@ -445,15 +444,15 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = sfrs.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            sfrs.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }
@@ -484,15 +483,15 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = sfrs.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            sfrs.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }

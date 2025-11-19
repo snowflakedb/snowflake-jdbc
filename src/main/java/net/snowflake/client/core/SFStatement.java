@@ -22,7 +22,7 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.QueryStatus;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
@@ -662,7 +662,7 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
-    QueryStatusV2 qs = session.getQueryStatusV2(queryID);
+    QueryStatus qs = session.getQueryStatus(queryID);
     if (qs.isStillRunning()) {
       throw new SQLException(
           "Status of query associated with resultSet is "

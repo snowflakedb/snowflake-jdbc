@@ -1,8 +1,5 @@
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
-import static net.snowflake.client.core.QueryStatus.isStillRunning;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 
@@ -34,7 +31,7 @@ import net.snowflake.client.core.crl.CRLValidator;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
-import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.QueryStatus;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -190,7 +187,7 @@ public class SFSession extends SFBaseSession {
       try {
         QueryStatus qStatus = getQueryStatus(query);
         //  if any query is still running, it is not safe to close.
-        if (QueryStatus.isStillRunning(qStatus)) {
+        if (qStatus.isStillRunning()) {
           canClose = false;
         }
       } catch (SQLException e) {
@@ -299,61 +296,14 @@ public class SFSession extends SFBaseSession {
 
   /**
    * @param queryID query ID of the query whose status is being investigated
-   * @return enum of type QueryStatus indicating the query's status
-   * @throws SQLException if an error is encountered
-   * @deprecated the returned enum is error-prone, use {@link #getQueryStatusV2} instead
-   */
-  @Deprecated
-  public QueryStatus getQueryStatus(String queryID) throws SQLException {
-    JsonNode queryNode = getQueryMetadata(queryID);
-    String queryStatus = "";
-    String errorMessage = "";
-    int errorCode = 0;
-    if (queryNode.size() > 0) {
-      queryStatus = queryNode.get(0).path("status").asText();
-      errorMessage = queryNode.get(0).path("errorMessage").asText();
-      errorCode = queryNode.get(0).path("errorCode").asInt();
-    }
-    logger.debug("Query status: {}", queryNode.asText());
-    // Turn string with query response into QueryStatus enum and return it
-    QueryStatus result = getStatusFromString(queryStatus);
-    // if an error code has been provided, set appropriate error code
-    if (errorCode != 0) {
-      result.setErrorCode(errorCode);
-    }
-    // if no code was provided but query status indicates an error, set
-    // code to be an internal error and set error message
-    else if (isAnError(result)) {
-      result.setErrorCode(ErrorCode.INTERNAL_ERROR.getMessageCode());
-      result.setErrorMessage("no_error_code_from_server");
-    } else if (!isAnError(result)) {
-      result.setErrorCode(0);
-      result.setErrorMessage("No error reported");
-    }
-    // if an error message has been provided, set appropriate error message.
-    // This should override the default error message displayed when there is
-    // an error with no code.
-    if (!isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
-      result.setErrorMessage(errorMessage);
-    } else {
-      result.setErrorMessage("No error reported");
-    }
-    if (!isStillRunning(result)) {
-      activeAsyncQueries.remove(queryID);
-    }
-    return result;
-  }
-
-  /**
-   * @param queryID query ID of the query whose status is being investigated
    * @return a QueryStatusV2 instance indicating the query's status
    * @throws SQLException if an error is encountered
    */
-  public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
+  public QueryStatus getQueryStatus(String queryID) throws SQLException {
     JsonNode queryNode = getQueryMetadata(queryID);
     logger.debug("Query status: {}", queryNode.asText());
     if (queryNode.isEmpty()) {
-      return QueryStatusV2.empty();
+      return QueryStatus.empty();
     }
     JsonNode node = queryNode.get(0);
     long endTime = node.path("endTime").asLong(0);
@@ -370,8 +320,8 @@ public class SFSession extends SFBaseSession {
     int warehouseId = node.path("warehouseId").asInt(0);
     String warehouseName = node.path("warehouseName").asText(null);
     String warehouseServerType = node.path("warehouseServerType").asText(null);
-    QueryStatusV2 result =
-        new QueryStatusV2(
+    QueryStatus result =
+        new QueryStatus(
             endTime,
             errorCode,
             errorMessage,
