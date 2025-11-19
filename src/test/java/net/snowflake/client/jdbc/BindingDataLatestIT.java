@@ -180,7 +180,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         executePrepStmtForNumRows(connection, "regularinsert", currT, 3);
 
         // insert using stage binding
-        //        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         executePrepStmtForNumRows(connection, "stageinsert", currT, 3);
 
         // Compare the results
