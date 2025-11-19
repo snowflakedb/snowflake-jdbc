@@ -234,6 +234,7 @@ public class SSOConnectionTest {
                     anyInt(),
                     anyInt(),
                     anyInt(),
+                    anyInt(),
                     nullable(HttpClientSettingsKey.class),
                     nullable(SFBaseSession.class)))
         .thenAnswer(
