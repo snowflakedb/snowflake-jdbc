@@ -2,6 +2,7 @@ package net.snowflake.client.loader;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,8 +16,12 @@ public class LoaderBase {
 
   @BeforeAll
   public static void setUpClass() throws Throwable {
-    testConnection = AbstractDriverIT.getConnection();
-    putConnection = AbstractDriverIT.getConnection();
+    Properties props = new Properties();
+    // Disable wildcards in SHOW METADATA commands to run more performant queries without need to
+    // escape wildcards
+    props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false);
+    testConnection = AbstractDriverIT.getConnection(props);
+    putConnection = AbstractDriverIT.getConnection(props);
 
     SCHEMA_NAME = testConnection.getSchema();
     testConnection

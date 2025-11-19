@@ -72,8 +72,19 @@ export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=fa
 
 cd $SOURCE_ROOT
 
-# Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-$MVNW_EXE --batch-mode --show-version dependency:go-offline
+# Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched after 3 retries
+# Retry dependency:go-offline up to 3 times if it fails
+for attempt in 1 2 3; do
+    echo "[INFO] maven dependency:go-offline attempt $attempt/3"
+    if "$MVNW_EXE" --batch-mode --show-version dependency:go-offline; then
+        break
+    fi
+    if [ $attempt -eq 3 ]; then
+        exit 1
+    fi
+    echo "[WARN] Retrying in 5 seconds..."
+    sleep 5
+done
 
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
