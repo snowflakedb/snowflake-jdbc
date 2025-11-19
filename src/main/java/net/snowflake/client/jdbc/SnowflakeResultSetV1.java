@@ -398,6 +398,11 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     return sfBaseResultSet.getResultSetSerializables(maxSizeInBytes);
   }
 
+  @Override
+  public ArrowBatches getArrowBatches() throws SQLException {
+    return sfBaseResultSet.getArrowBatches();
+  }
+
   /** Empty result set */
   static class EmptyResultSet implements ResultSet {
     private boolean isClosed;
