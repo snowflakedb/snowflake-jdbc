@@ -50,7 +50,7 @@
     <google.http.client.version>1.45.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
-    <grpc.version>1.76.0</grpc.version>
+    <grpc.version>1.77.0</grpc.version>
     <jackson.version>2.18.1</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
