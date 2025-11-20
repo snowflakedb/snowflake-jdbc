@@ -15,7 +15,6 @@ package net.snowflake.client.api.auth;
  * props.put("authenticator", "EXTERNAL_BROWSER");
  * Connection conn = DriverManager.getConnection(url, props);
  * }</pre>
- *
  */
 public enum AuthenticatorType {
   /** Regular login with username and password via Snowflake, may or may not have MFA */

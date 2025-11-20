@@ -137,9 +137,8 @@ public class SnowflakeDriver implements Driver {
       return result;
     }
 
-    try (Connection con = new SnowflakeConnectionImpl(url, info, true)) {
-      List<DriverPropertyInfo> missingProperties =
-          ((SnowflakeConnectionImpl) con).returnMissingProperties();
+    try (SnowflakeConnectionImpl con = new SnowflakeConnectionImpl(url, info, true)) {
+      List<DriverPropertyInfo> missingProperties = con.returnMissingProperties();
       return missingProperties.toArray(new DriverPropertyInfo[0]);
     }
   }

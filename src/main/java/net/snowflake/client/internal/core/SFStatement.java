@@ -18,7 +18,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.QueryStatusV2;
@@ -87,8 +86,7 @@ public class SFStatement extends SFBaseStatement {
 
   private void verifyArrowSupport() {
     if (!DriverInitializer.isArrowEnabled()) {
-      logger.debug(
-          "Disable arrow support: {}", DriverInitializer.getArrowDisableReason());
+      logger.debug("Disable arrow support: {}", DriverInitializer.getArrowDisableReason());
       statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
     }
   }
