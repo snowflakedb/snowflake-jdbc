@@ -25,6 +25,7 @@ import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.core.BasicEvent.QueryState;
 import net.snowflake.client.internal.core.bind.BindException;
 import net.snowflake.client.internal.core.bind.BindUploader;
+import net.snowflake.client.internal.driver.DriverInitializer;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
@@ -85,9 +86,9 @@ public class SFStatement extends SFBaseStatement {
   }
 
   private void verifyArrowSupport() {
-    if (SnowflakeDriver.isDisableArrowResultFormat()) {
+    if (!DriverInitializer.isArrowEnabled()) {
       logger.debug(
-          "Disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
+          "Disable arrow support: {}", DriverInitializer.getArrowDisableReason());
       statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
     }
   }

@@ -133,7 +133,7 @@ public class SnowflakeDriver implements Driver {
       DriverPropertyInfo[] result = new DriverPropertyInfo[1];
       result[0] = new DriverPropertyInfo("serverURL", null);
       result[0].description =
-          "server URL in form of <protocol>://<host or domain>:<port number>/<path>";
+          "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>";
       return result;
     }
 
@@ -152,23 +152,5 @@ public class SnowflakeDriver implements Driver {
   @Override
   public java.util.logging.Logger getParentLogger() {
     return null;
-  }
-
-  // Deprecated methods kept for backward compatibility
-
-  /**
-   * @deprecated Use {@link DriverInitializer#isArrowEnabled()} instead
-   */
-  @Deprecated
-  public static boolean isDisableArrowResultFormat() {
-    return !DriverInitializer.isArrowEnabled();
-  }
-
-  /**
-   * @deprecated Use {@link DriverInitializer#getArrowDisableReason()} instead
-   */
-  @Deprecated
-  public static String getDisableArrowResultFormatMessage() {
-    return DriverInitializer.getArrowDisableReason();
   }
 }

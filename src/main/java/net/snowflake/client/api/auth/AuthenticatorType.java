@@ -16,7 +16,6 @@ package net.snowflake.client.api.auth;
  * Connection conn = DriverManager.getConnection(url, props);
  * }</pre>
  *
- * @see java.sql.Connection
  */
 public enum AuthenticatorType {
   /** Regular login with username and password via Snowflake, may or may not have MFA */
