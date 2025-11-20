@@ -18,6 +18,7 @@ import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
 import software.amazon.awssdk.http.auth.spi.signer.SignRequest;
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -71,19 +72,25 @@ public class AwsAttestationService {
 
   SdkHttpRequest signRequestWithSigV4(
       SdkHttpRequest signableRequest, AwsCredentials awsCredentials) {
-    AwsCredentialsIdentity credentialsIdentity =
-        AwsCredentialsIdentity.create(
-            awsCredentials.accessKeyId(), awsCredentials.secretAccessKey());
-
-    // Add session token header manually if credentials are session credentials
+    AwsCredentialsIdentity credentialsIdentity;
     if (awsCredentials instanceof AwsSessionCredentials) {
       AwsSessionCredentials sessionCredentials = (AwsSessionCredentials) awsCredentials;
-      signableRequest =
-          signableRequest.toBuilder()
-              .putHeader("X-Amz-Security-Token", sessionCredentials.sessionToken())
-              .build();
-    }
 
+      // Create AwsSessionCredentialsIdentity that properly includes the session token
+      credentialsIdentity =
+          AwsSessionCredentialsIdentity.create(
+              sessionCredentials.accessKeyId(),
+              sessionCredentials.secretAccessKey(),
+              sessionCredentials.sessionToken());
+    } else {
+      // For basic credentials, use AwsCredentialsIdentity
+      credentialsIdentity =
+          AwsCredentialsIdentity.create(
+              awsCredentials.accessKeyId(), awsCredentials.secretAccessKey());
+    }
+    
+    System.out.println(
+        "signableRequest = " + signableRequest + ", awsCredentials = " + awsCredentials);
     SignRequest<AwsCredentialsIdentity> signRequest =
         SignRequest.builder(credentialsIdentity)
             .request(signableRequest)
@@ -91,7 +98,45 @@ public class AwsAttestationService {
             .putProperty(AwsV4HttpSigner.REGION_NAME, getAWSRegion().toString())
             .build();
 
-    return aws4Signer.sign(signRequest).request();
+    System.out.println(
+        "signRequest = " + signableRequest);
+    
+    // Sign the request and then remove the x-amz-content-sha256 header
+    SdkHttpRequest signedRequest = aws4Signer.sign(signRequest).request();
+    
+    // Remove the x-amz-content-sha256 header from the signed request
+    // and update the Authorization header to exclude it from SignedHeaders
+    return removeContentSha256Header(signedRequest);
+  }
+  
+  private SdkHttpRequest removeContentSha256Header(SdkHttpRequest signedRequest) {
+    // Get the current Authorization header
+    String authHeader = signedRequest.firstMatchingHeader("Authorization").orElse("");
+    
+    if (authHeader.contains("SignedHeaders=")) {
+      // Remove x-amz-content-sha256 from the SignedHeaders list
+      String updatedAuthHeader = authHeader.replaceAll(
+          "SignedHeaders=([^,]*,)?x-amz-content-sha256(,[^,]*)?", 
+          "SignedHeaders=$1$2");
+      // Clean up any double commas or leading/trailing commas
+      updatedAuthHeader = updatedAuthHeader.replaceAll(",,", ",");
+      updatedAuthHeader = updatedAuthHeader.replaceAll("SignedHeaders=,", "SignedHeaders=");
+      updatedAuthHeader = updatedAuthHeader.replaceAll(",\\s*Credential", " Credential");
+      
+      logger.debug("Original Authorization: {}", authHeader);
+      logger.debug("Updated Authorization: {}", updatedAuthHeader);
+      
+      // Return request without x-amz-content-sha256 header and with updated Authorization
+      return signedRequest.toBuilder()
+          .removeHeader("x-amz-content-sha256")
+          .putHeader("Authorization", updatedAuthHeader)
+          .build();
+    }
+    
+    // Fallback: just remove the header
+    return signedRequest.toBuilder()
+        .removeHeader("x-amz-content-sha256")
+        .build();
   }
 
   AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn) throws SFException {

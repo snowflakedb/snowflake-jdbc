@@ -86,13 +86,13 @@ public class AwsIdentityAttestationCreatorTest {
         credentialMap.get("url"));
     assertEquals("POST", credentialMap.get("method"));
     assertNotNull(credentialMap.get("headers"));
-    Map<String, List<String>> headersMap = (Map<String, List<String>>) credentialMap.get("headers");
-    assertEquals(6, headersMap.size());
-    assertEquals(expectedStsUrl, headersMap.get("Host").get(0));
-    assertEquals("snowflakecomputing.com", headersMap.get("X-Snowflake-Audience").get(0));
-    assertNotNull(headersMap.get("X-Amz-Date").get(0));
-    assertTrue(headersMap.get("Authorization").get(0).matches("^AWS4-HMAC-SHA256 Credential=.*"));
-    assertEquals("aws-session-token", headersMap.get("X-Amz-Security-Token").get(0));
+    Map<String, String> headersMap = (Map<String, String>) credentialMap.get("headers");
+    assertEquals(5, headersMap.size());
+    assertEquals(expectedStsUrl, headersMap.get("Host"));
+    assertEquals("snowflakecomputing.com", headersMap.get("X-Snowflake-Audience"));
+    assertNotNull(headersMap.get("X-Amz-Date"));
+    assertTrue(headersMap.get("Authorization").matches("^AWS4-HMAC-SHA256 Credential=.*"));
+    assertEquals("aws-session-token", headersMap.get("X-Amz-Security-Token"));
   }
 
   @Test
