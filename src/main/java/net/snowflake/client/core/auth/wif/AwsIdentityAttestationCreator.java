@@ -60,6 +60,8 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     Request<Void> request = createStsRequest(stsHostname);
     attestationService.signRequestWithSigV4(request, awsCredentials);
 
+    System.out.println("afterSigning=" + request);
+
     String credential = createBase64EncodedRequestCredential(request);
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
@@ -86,6 +88,8 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     request.addHeader(
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
         WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE);
+
+    System.out.println("beforeSigning=" + request);
     return request;
   }
 
@@ -96,6 +100,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     assertionJson.put("url", request.getEndpoint().toString());
     assertionJson.put("method", request.getHttpMethod().toString());
     assertionJson.put("headers", headers);
+    System.out.println("assertionJson: " + assertionJson);
 
     String assertionJsonString = assertionJson.toString();
     return Base64.getEncoder().encodeToString(assertionJsonString.getBytes(StandardCharsets.UTF_8));
