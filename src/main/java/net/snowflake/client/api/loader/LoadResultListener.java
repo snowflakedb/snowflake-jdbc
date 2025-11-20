@@ -18,22 +18,26 @@ public interface LoadResultListener {
    * @param op Operation requested
    * @param i number of rows that had been processed
    */
+  // this could be internal?
   void addProcessedRecordCount(Operation op, int i);
 
   /**
    * @param op Operation requested
    * @param i number of rows that had been affected by a given operation
    */
+  // this could be internal?
   void addOperationRecordCount(Operation op, int i);
 
   /**
    * @return whether this result listener needs to listen to error records
    */
+  // this could be internal?
   boolean needErrors();
 
   /**
    * @param error information about error that was encountered
    */
+  // this could be internal?
   void addError(LoadingError error);
 
   /**
@@ -46,6 +50,7 @@ public interface LoadResultListener {
    *
    * @param number the number of errors
    */
+  // this could be internal?
   void addErrorCount(int number);
 
   /** Method to reset the error count back to zero */
@@ -63,6 +68,7 @@ public interface LoadResultListener {
    *
    * @param number the number of error records
    */
+  // this could be internal?
   void addErrorRecordCount(int number);
 
   /** Method to reset the errorRecordCount back to zero */

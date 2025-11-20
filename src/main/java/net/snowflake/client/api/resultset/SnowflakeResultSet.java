@@ -22,6 +22,7 @@ public interface SnowflakeResultSet {
    * @return QueryStatus enum showing status of query
    * @throws SQLException if an error is encountered
    */
+  // deprecated? use getStatusV2()
   QueryStatus getStatus() throws SQLException;
 
   /**
