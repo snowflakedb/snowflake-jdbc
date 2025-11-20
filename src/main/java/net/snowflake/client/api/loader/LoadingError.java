@@ -32,6 +32,7 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * @see LoadResultListener
  * @see Loader
  */
+// this could be internal?
 public class LoadingError {
   private static final SFLogger logger = SFLoggerFactory.getLogger(LoadingError.class);
 
