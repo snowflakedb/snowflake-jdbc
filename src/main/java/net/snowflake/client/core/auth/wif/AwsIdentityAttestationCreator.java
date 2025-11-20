@@ -73,7 +73,8 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
     String stsHostname = getStsHostname(region.id());
     SdkHttpRequest request = createStsRequest(stsHostname);
-    SdkHttpRequest signedRequest = attestationService.signRequestWithSigV4(request, awsCredentials);
+    // Use custom signer to avoid x-amz-content-sha256 header issues
+    SdkHttpRequest signedRequest = attestationService.customSignRequestWithSigV4(request, awsCredentials);
 
     String credential = createBase64EncodedRequestCredential(signedRequest);
     return new WorkloadIdentityAttestation(

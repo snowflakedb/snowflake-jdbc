@@ -1,6 +1,19 @@
 package net.snowflake.client.core.auth.wif;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFLoginInput;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -96,47 +109,182 @@ public class AwsAttestationService {
             .request(signableRequest)
             .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "sts")
             .putProperty(AwsV4HttpSigner.REGION_NAME, getAWSRegion().toString())
+            .putProperty(AwsV4HttpSigner.PAYLOAD_SIGNING_ENABLED, false)
             .build();
 
     System.out.println(
         "signRequest = " + signableRequest);
-    
-    // Sign the request and then remove the x-amz-content-sha256 header
-    SdkHttpRequest signedRequest = aws4Signer.sign(signRequest).request();
-    
-    // Remove the x-amz-content-sha256 header from the signed request
-    // and update the Authorization header to exclude it from SignedHeaders
-    return removeContentSha256Header(signedRequest);
+
+//    return aws4Signer.sign(signRequest).request();
+    return customSignRequestWithSigV4(signableRequest, awsCredentials);
   }
   
-  private SdkHttpRequest removeContentSha256Header(SdkHttpRequest signedRequest) {
-    // Get the current Authorization header
-    String authHeader = signedRequest.firstMatchingHeader("Authorization").orElse("");
+  // Alternative custom signer implementation that excludes x-amz-content-sha256
+  SdkHttpRequest customSignRequestWithSigV4(
+      SdkHttpRequest signableRequest, AwsCredentials awsCredentials) {
     
-    if (authHeader.contains("SignedHeaders=")) {
-      // Remove x-amz-content-sha256 from the SignedHeaders list
-      String updatedAuthHeader = authHeader.replaceAll(
-          "SignedHeaders=([^,]*,)?x-amz-content-sha256(,[^,]*)?", 
-          "SignedHeaders=$1$2");
-      // Clean up any double commas or leading/trailing commas
-      updatedAuthHeader = updatedAuthHeader.replaceAll(",,", ",");
-      updatedAuthHeader = updatedAuthHeader.replaceAll("SignedHeaders=,", "SignedHeaders=");
-      updatedAuthHeader = updatedAuthHeader.replaceAll(",\\s*Credential", " Credential");
+    System.out.println(
+        "Using custom signer - signableRequest = " + signableRequest + ", awsCredentials = " + awsCredentials);
+    
+    // Use custom signer that excludes x-amz-content-sha256 header
+    return customSignRequest(signableRequest, awsCredentials);
+  }
+  
+  private SdkHttpRequest customSignRequest(SdkHttpRequest request, AwsCredentials credentials) {
+    try {
+      String accessKey = credentials.accessKeyId();
+      String secretKey = credentials.secretAccessKey();
+      String sessionToken = null;
       
-      logger.debug("Original Authorization: {}", authHeader);
-      logger.debug("Updated Authorization: {}", updatedAuthHeader);
+      if (credentials instanceof AwsSessionCredentials) {
+        sessionToken = ((AwsSessionCredentials) credentials).sessionToken();
+      }
       
-      // Return request without x-amz-content-sha256 header and with updated Authorization
-      return signedRequest.toBuilder()
-          .removeHeader("x-amz-content-sha256")
-          .putHeader("Authorization", updatedAuthHeader)
+      // Get current timestamp
+      Instant now = Instant.now();
+      String amzDate = now.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
+      String dateStamp = now.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      
+      // Add required headers (excluding x-amz-content-sha256)
+      SdkHttpRequest.Builder requestBuilder = request.toBuilder()
+          .putHeader("X-Amz-Date", amzDate);
+      
+      if (sessionToken != null) {
+        requestBuilder.putHeader("X-Amz-Security-Token", sessionToken);
+      }
+      
+      SdkHttpRequest requestWithHeaders = requestBuilder.build();
+      
+      // Create canonical request (excluding x-amz-content-sha256 from headers)
+      String canonicalRequest = createCanonicalRequest(requestWithHeaders);
+      logger.debug("Canonical Request:\n{}", canonicalRequest);
+      
+      // Create string to sign
+      String region = getAWSRegion().toString();
+      String service = "sts";
+      String credentialScope = dateStamp + "/" + region + "/" + service + "/aws4_request";
+      String algorithm = "AWS4-HMAC-SHA256";
+      
+      String stringToSign = algorithm + "\n" +
+          amzDate + "\n" +
+          credentialScope + "\n" +
+          sha256Hex(canonicalRequest);
+      
+      logger.debug("String to Sign:\n{}", stringToSign);
+      
+      // Calculate signature
+      byte[] signingKey = getSignatureKey(secretKey, dateStamp, region, service);
+      String signature = bytesToHex(hmacSha256(signingKey, stringToSign));
+      
+      // Create authorization header
+      String signedHeaders = getSignedHeaders(requestWithHeaders);
+      String authorizationHeader = algorithm + " " +
+          "Credential=" + accessKey + "/" + credentialScope + ", " +
+          "SignedHeaders=" + signedHeaders + ", " +
+          "Signature=" + signature;
+      
+      logger.debug("Authorization Header: {}", authorizationHeader);
+      
+      // Return signed request
+      return requestWithHeaders.toBuilder()
+          .putHeader("Authorization", authorizationHeader)
           .build();
+          
+    } catch (Exception e) {
+      logger.error("Failed to sign request", e);
+      throw new RuntimeException("Failed to sign request", e);
+    }
+  }
+  
+  private String createCanonicalRequest(SdkHttpRequest request) {
+    // HTTP method
+    String method = request.method().toString();
+    
+    // Canonical URI
+    String canonicalUri = request.getUri().getPath();
+    if (canonicalUri.isEmpty()) {
+      canonicalUri = "/";
     }
     
-    // Fallback: just remove the header
-    return signedRequest.toBuilder()
-        .removeHeader("x-amz-content-sha256")
-        .build();
+    // Canonical query string
+    String canonicalQueryString = "";
+    if (request.getUri().getQuery() != null) {
+      canonicalQueryString = request.getUri().getQuery();
+    }
+    
+    // Canonical headers (sorted, lowercase, exclude x-amz-content-sha256)
+    Map<String, String> sortedHeaders = new TreeMap<>();
+    for (Map.Entry<String, List<String>> entry : request.headers().entrySet()) {
+      String headerName = entry.getKey().toLowerCase();
+      // Exclude x-amz-content-sha256 from canonical headers
+      if (!"x-amz-content-sha256".equals(headerName)) {
+        String headerValue = String.join(",", entry.getValue()).trim();
+        sortedHeaders.put(headerName, headerValue);
+      }
+    }
+    
+    StringBuilder canonicalHeaders = new StringBuilder();
+    for (Map.Entry<String, String> entry : sortedHeaders.entrySet()) {
+      canonicalHeaders.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
+    }
+    
+    // Signed headers (exclude x-amz-content-sha256)
+    String signedHeaders = String.join(";", sortedHeaders.keySet());
+    
+    // Payload hash - use empty string hash since we have no body
+    String payloadHash = sha256Hex("");
+    
+    return method + "\n" +
+        canonicalUri + "\n" +
+        canonicalQueryString + "\n" +
+        canonicalHeaders + "\n" +
+        signedHeaders + "\n" +
+        payloadHash;
+  }
+  
+  private String getSignedHeaders(SdkHttpRequest request) {
+    List<String> headerNames = new ArrayList<>();
+    for (String headerName : request.headers().keySet()) {
+      String lowerHeaderName = headerName.toLowerCase();
+      // Exclude x-amz-content-sha256 from signed headers
+      if (!"x-amz-content-sha256".equals(lowerHeaderName)) {
+        headerNames.add(lowerHeaderName);
+      }
+    }
+    Collections.sort(headerNames);
+    return String.join(";", headerNames);
+  }
+  
+  private byte[] getSignatureKey(String key, String dateStamp, String regionName, String serviceName) 
+      throws Exception {
+    byte[] kDate = hmacSha256(("AWS4" + key).getBytes(StandardCharsets.UTF_8), dateStamp);
+    byte[] kRegion = hmacSha256(kDate, regionName);
+    byte[] kService = hmacSha256(kRegion, serviceName);
+    return hmacSha256(kService, "aws4_request");
+  }
+  
+  private byte[] hmacSha256(byte[] key, String data) throws Exception {
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(new SecretKeySpec(key, "HmacSHA256"));
+    return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+  }
+  
+  private String sha256Hex(String data) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+      return bytesToHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException("SHA-256 not available", e);
+    }
+  }
+  
+  private String bytesToHex(byte[] bytes) {
+    StringBuilder result = new StringBuilder();
+    for (byte b : bytes) {
+      result.append(String.format("%02x", b));
+    }
+    return result.toString();
   }
 
   AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn) throws SFException {
