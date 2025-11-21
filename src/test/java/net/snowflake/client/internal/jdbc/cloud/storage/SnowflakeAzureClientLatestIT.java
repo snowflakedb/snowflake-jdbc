@@ -1,0 +1,59 @@
+package net.snowflake.client.internal.jdbc.cloud.storage;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+
+import com.amazonaws.services.kms.model.UnsupportedOperationException;
+import com.microsoft.azure.storage.blob.ListBlobItem;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.core.SFSession;
+import net.snowflake.client.internal.core.SFStatement;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.BaseJDBCTest;
+import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+@Tag(TestTags.OTHERS)
+public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
+  @Test
+  @DontRunOnGithubActions
+  public void testAzureClientSetupInvalidEncryptionKeySize() throws SQLException {
+    try (Connection connection = getConnection("azureaccount")) {
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
+      String putCommand = "put file:///dummy/path/file1.gz @~";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      RemoteStoreFileEncryptionMaterial content =
+          new RemoteStoreFileEncryptionMaterial(
+              "EXAMPLEQUERYSTAGEMASTERKEY", "EXAMPLEQUERYID", 123L);
+
+      SnowflakeSQLLoggedException ex =
+          assertThrows(
+              SnowflakeSQLLoggedException.class,
+              () ->
+                  SnowflakeAzureClient.createSnowflakeAzureClient(
+                      sfAgent.getStageInfo(), content, sfSession));
+      assertEquals(ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(), ex.getErrorCode());
+    }
+  }
+
+  @Test
+  public void testCloudExceptionTest() {
+    Iterable<ListBlobItem> mockList = new ArrayList<>();
+    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
+    AzureObjectSummariesIterator spyIterator = spy(iterator);
+    UnsupportedOperationException ex =
+        assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());
+    assertTrue(ex.getMessage().startsWith("remove() method not supported"));
+  }
+}

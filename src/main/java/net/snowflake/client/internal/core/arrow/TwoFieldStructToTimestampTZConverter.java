@@ -1,0 +1,126 @@
+package net.snowflake.client.internal.core.arrow;
+
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
+import net.snowflake.client.internal.core.DataConversionContext;
+import net.snowflake.client.internal.core.ResultUtil;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.jdbc.SnowflakeTimeWithTimezone;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.common.core.SFTimestamp;
+import org.apache.arrow.vector.BigIntVector;
+import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.complex.StructVector;
+
+/** converter from two-field struct (epoch and time zone) to Timestamp_TZ */
+public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorConverter {
+  private StructVector structVector;
+  private BigIntVector epochs;
+  private IntVector timeZoneIndices;
+  private TimeZone timeZone = TimeZone.getTimeZone("UTC");
+
+  public TwoFieldStructToTimestampTZConverter(
+      ValueVector fieldVector, int columnIndex, DataConversionContext context) {
+    super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);
+    structVector = (StructVector) fieldVector;
+    epochs = structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class);
+    timeZoneIndices = structVector.getChild(FIELD_NAME_TIME_ZONE_INDEX, IntVector.class);
+  }
+
+  @Override
+  public boolean isNull(int index) {
+    return structVector.isNull(index) || epochs.isNull(index) || timeZoneIndices.isNull(index);
+  }
+
+  @Override
+  public String toString(int index) throws SFException {
+    if (context.getTimestampTZFormatter() == null) {
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter");
+    }
+    Timestamp ts = toTimestamp(index, TimeZone.getDefault());
+
+    return ts == null
+        ? null
+        : context.getTimestampTZFormatter().format(ts, timeZone, context.getScale(columnIndex));
+  }
+
+  @Override
+  public Object toObject(int index) throws SFException {
+    return toTimestamp(index, TimeZone.getDefault());
+  }
+
+  @Override
+  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
+    return isNull(index) ? null : getTimestamp(index, tz);
+  }
+
+  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
+    long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+    int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+
+    if (context.getResultVersion() > 0) {
+      timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
+    } else {
+      timeZone = TimeZone.getTimeZone("UTC");
+    }
+    return getTimestamp(epoch, timeZoneIndex, context.getScale(columnIndex));
+  }
+
+  @Override
+  public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
+    // ts can be null when Java's timestamp is overflow.
+    return ts == null ? null : new Date(ts.getTime());
+  }
+
+  @Override
+  public Time toTime(int index) throws SFException {
+    Timestamp ts = toTimestamp(index, TimeZone.getDefault());
+    return ts == null
+        ? null
+        : new SnowflakeTimeWithTimezone(ts.getTime(), ts.getNanos(), useSessionTimezone);
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException {
+    if (isNull(index)) {
+      return false;
+    }
+    Timestamp val = toTimestamp(index, TimeZone.getDefault());
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    if (isNull(index)) {
+      return null;
+    }
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "byteArray", toString(index));
+  }
+
+  @Override
+  public short toShort(int rowIndex) throws SFException {
+    if (isNull(rowIndex)) {
+      return 0;
+    }
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.SHORT_STR, "");
+  }
+
+  public static Timestamp getTimestamp(long epoch, int timeZoneIndex, int scale)
+      throws SFException {
+    Timestamp ts = ArrowResultUtil.toJavaTimestamp(epoch, scale);
+    return ResultUtil.adjustTimestamp(ts);
+  }
+}
