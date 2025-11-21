@@ -25,7 +25,9 @@
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.792</awssdk.version>
-    <azure.storage.version>5.0.0</azure.storage.version>
+    <azure.core.version>1.57.0</azure.core.version>
+    <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
+    <azure.storage.common.version>12.31.0</azure.storage.common.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
@@ -54,7 +56,7 @@
     <grpc.version>1.77.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.18.1</jackson.version>
+    <jackson.version>2.18.4.1</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
@@ -204,9 +206,31 @@
         <version>${google.j2objc-annotations.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.microsoft.azure</groupId>
-        <artifactId>azure-storage</artifactId>
-        <version>${azure.storage.version}</version>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-core</artifactId>
+        <version>${azure.core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-common</artifactId>
+        <version>${azure.storage.common.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-blob</artifactId>
+        <version>${azure.storage.blob.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
@@ -604,6 +628,21 @@
       <artifactId>aws-java-sdk-sts</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core</artifactId>
+      <version>${azure.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-common</artifactId>
+      <version>${azure.storage.common.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-blob</artifactId>
+      <version>${azure.storage.blob.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>
@@ -642,10 +681,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-storage</artifactId>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>

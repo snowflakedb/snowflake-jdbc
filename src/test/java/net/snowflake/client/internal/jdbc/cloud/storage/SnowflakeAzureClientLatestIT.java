@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 
 import com.amazonaws.services.kms.model.UnsupportedOperationException;
-import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.azure.storage.blob.models.BlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -49,8 +49,8 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
 
   @Test
   public void testCloudExceptionTest() {
-    Iterable<ListBlobItem> mockList = new ArrayList<>();
-    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
+    Iterable<BlobItem> mockList = new ArrayList<>();
+    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList, null);
     AzureObjectSummariesIterator spyIterator = spy(iterator);
     UnsupportedOperationException ex =
         assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());

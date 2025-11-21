@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.azure.storage.blob.models.BlobItem;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
-import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,8 +20,9 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
 
   private final storageType sType;
   private List<S3ObjectSummary> s3ObjSummariesList = null;
-  private Iterable<ListBlobItem> azCLoudBlobIterable = null;
+  private Iterable<BlobItem> azCLoudBlobIterable = null;
   private Page<Blob> gcsIterablePage = null;
+  private String location; // bucket name
 
   // Constructs platform-agnostic collection of object summaries from S3 object summaries
   public StorageObjectSummaryCollection(List<S3ObjectSummary> s3ObjectSummaries) {
@@ -31,9 +32,10 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
 
   // Constructs platform-agnostic collection of object summaries from an Azure CloudBlobDirectory
   // object
-  public StorageObjectSummaryCollection(Iterable<ListBlobItem> azCLoudBlobIterable) {
+  public StorageObjectSummaryCollection(Iterable<BlobItem> azCLoudBlobIterable, String location) {
     this.azCLoudBlobIterable = azCLoudBlobIterable;
     sType = storageType.AZURE;
+    this.location = location;
   }
 
   public StorageObjectSummaryCollection(Page<Blob> gcsIterablePage) {
@@ -47,7 +49,7 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
       case S3:
         return new S3ObjectSummariesIterator(s3ObjSummariesList);
       case AZURE:
-        return new AzureObjectSummariesIterator(azCLoudBlobIterable);
+        return new AzureObjectSummariesIterator(azCLoudBlobIterable, location);
       case GCS:
         return new GcsObjectSummariesIterator(this.gcsIterablePage);
       default:

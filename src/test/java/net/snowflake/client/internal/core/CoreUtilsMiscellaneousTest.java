@@ -9,9 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.microsoft.azure.storage.OperationContext;
+import com.azure.core.http.ProxyOptions;
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
@@ -149,7 +148,6 @@ public class CoreUtilsMiscellaneousTest {
 
   @Test
   public void testSetProxyForAzure() {
-    OperationContext op = new OperationContext();
     HttpClientSettingsKey testKey =
         new HttpClientSettingsKey(
             OCSPMode.FAIL_OPEN,
@@ -161,10 +159,12 @@ public class CoreUtilsMiscellaneousTest {
             "https",
             "jdbc",
             false);
-    HttpUtil.setProxyForAzure(testKey, op);
-    Proxy proxy = op.getProxy();
-    assertEquals(Proxy.Type.HTTP, proxy.type());
-    assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxy.address());
+    ProxyOptions proxyOptions = HttpUtil.setProxyForAzure(testKey);
+    assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
+    assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxyOptions.getAddress());
+    assertEquals("testuser", proxyOptions.getUsername());
+    assertEquals("pw", proxyOptions.getPassword());
+    assertEquals("(.*?\\.foo\\.com)", proxyOptions.getNonProxyHosts());
   }
 
   @Test
@@ -173,18 +173,22 @@ public class CoreUtilsMiscellaneousTest {
     props.put("useProxy", "true");
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8084");
-    OperationContext op = new OperationContext();
-    HttpUtil.setSessionlessProxyForAzure(props, op);
-    Proxy proxy = op.getProxy();
-    assertEquals(Proxy.Type.HTTP, proxy.type());
-    assertEquals(new InetSocketAddress("localhost", 8084), proxy.address());
+    props.put("proxyUser", "testuser");
+    props.put("proxyPassword", "pw");
+    props.put("nonProxyHosts", "*");
+    ProxyOptions proxyOptions = HttpUtil.setSessionlessProxyForAzure(props);
+    assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
+    assertEquals(new InetSocketAddress("localhost", 8084), proxyOptions.getAddress());
+    assertEquals("testuser", proxyOptions.getUsername());
+    assertEquals("pw", proxyOptions.getPassword());
+    assertEquals("(.*?)", proxyOptions.getNonProxyHosts());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     SnowflakeSQLException e =
         assertThrows(
             SnowflakeSQLException.class,
             () -> {
-              HttpUtil.setSessionlessProxyForAzure(props, op);
+              HttpUtil.setSessionlessProxyForAzure(props);
             });
     assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }

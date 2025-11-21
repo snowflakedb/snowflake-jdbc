@@ -36,7 +36,9 @@
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>1.12.792</awssdk.version>
-    <azure.storage.version>5.0.0</azure.storage.version>
+    <azure.core.version>1.57.0</azure.core.version>
+    <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
+    <azure.storage.common.version>12.31.0</azure.storage.common.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.17.0</commons.io.version>
@@ -51,7 +53,7 @@
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
     <grpc.version>1.77.0</grpc.version>
-    <jackson.version>2.18.1</jackson.version>
+    <jackson.version>2.18.4.1</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
@@ -189,9 +191,25 @@
       <artifactId>google-http-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-storage</artifactId>
-      <version>${azure.storage.version}</version>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core</artifactId>
+      <version>${azure.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-common</artifactId>
+      <version>${azure.storage.common.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-blob</artifactId>
+      <version>${azure.storage.blob.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>

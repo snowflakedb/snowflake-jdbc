@@ -8,8 +8,8 @@ import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
+import com.azure.core.http.ProxyOptions;
 import com.google.common.annotations.VisibleForTesting;
-import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -189,11 +189,10 @@ public class HttpUtil {
    * from the StageInfo
    *
    * @param proxyProperties proxy properties
-   * @param opContext the configuration needed by Azure to set the proxy
    * @throws SnowflakeSQLException when invalid proxy properties encountered
    */
-  public static void setSessionlessProxyForAzure(
-      Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
+  public static ProxyOptions setSessionlessProxyForAzure(Properties proxyProperties)
+      throws SnowflakeSQLException {
     if (proxyProperties != null
         && proxyProperties.size() > 0
         && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
@@ -212,32 +211,58 @@ public class HttpUtil {
           throw new SnowflakeSQLException(
               ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
         }
-        Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        logger.debug("Setting sessionless Azure proxy. Host: {}, port: {}", proxyHost, proxyPort);
-        opContext.setProxy(azProxy);
+        String proxyUser =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
+        String proxyPassword =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
+        String nonProxyHosts =
+            proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
+
+        ProxyOptions proxyOptions =
+            new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        proxyOptions.setCredentials(proxyUser, proxyPassword);
+        proxyOptions.setNonProxyHosts(nonProxyHosts);
+        logger.debug(
+            "Setting sessionless Azure proxy. Host: {}, port: {}, user: {}, passwordProvided: {}, nonProxyHosts: {}",
+            proxyHost,
+            proxyPort,
+            proxyUser,
+            SFLoggerUtil.isVariableProvided(proxyPassword),
+            nonProxyHosts);
+        return proxyOptions;
       } else {
         logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
       }
     } else {
       logger.debug("Omitting sessionless Azure proxy setup");
     }
+    return null;
   }
 
   /**
    * A static function to set Azure proxy params when there is a valid session
    *
    * @param key key to HttpClient map containing OCSP and proxy info
-   * @param opContext the configuration needed by Azure to set the proxy
    */
-  public static void setProxyForAzure(HttpClientSettingsKey key, OperationContext opContext) {
+  public static ProxyOptions setProxyForAzure(HttpClientSettingsKey key) {
     if (key != null && key.usesProxy()) {
-      Proxy azProxy =
-          new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      ProxyOptions proxyOptions =
+          new ProxyOptions(
+              ProxyOptions.Type.HTTP,
+              new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      proxyOptions.setCredentials(key.getProxyUser(), key.getProxyPassword());
+      proxyOptions.setNonProxyHosts(key.getNonProxyHosts());
       logger.debug(
-          "Setting Azure proxy. Host: {}, port: {}", key.getProxyHost(), key.getProxyPort());
-      opContext.setProxy(azProxy);
+          "Setting Azure proxy. Host: {}, port: {}, user: {}, passwordProvided: {}, nonProxyHosts: {}",
+          key.getProxyHost(),
+          key.getProxyPort(),
+          key.getProxyUser(),
+          SFLoggerUtil.isVariableProvided(key.getProxyPassword()),
+          key.getNonProxyHosts());
+      return proxyOptions;
     } else {
       logger.debug("Omitting Azure proxy setup");
+      return null;
     }
   }
 
