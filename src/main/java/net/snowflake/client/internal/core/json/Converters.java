@@ -12,13 +12,13 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SfTimestampUtil;
 import net.snowflake.client.internal.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.internal.util.Converter;
-import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 

@@ -10,9 +10,9 @@ import java.time.Period;
 import java.util.Date;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.SnowflakeType;
+import net.snowflake.client.internal.common.core.SFBinary;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
-import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
 /**
