@@ -109,16 +109,24 @@ Load Driver Class
 
 .. code-block:: java
 
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver")
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver")
+
+Note: The legacy driver class ``net.snowflake.client.jdbc.SnowflakeDriver`` is still available for backward compatibility but is deprecated.
 
 Datasource
 ----------
 
-javax.sql.DataSource interface is implemented by class
+Use ``SnowflakeDataSourceFactory`` to create DataSource instances:
 
 .. code-block:: java
 
-    net.snowflake.client.jdbc.SnowflakeBasicDataSource
+    import net.snowflake.client.api.datasource.SnowflakeDataSource;
+    import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
+
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
+    ds.setAccount("myaccount");
+    ds.setUser("myuser");
+    ds.setPassword("mypassword");
 
 Connection String
 -----------------

@@ -2,7 +2,7 @@ package net.snowflake.client.providers;
 
 import java.util.Arrays;
 import java.util.List;
-import net.snowflake.client.jdbc.ResultSetFormatType;
+import net.snowflake.client.internal.jdbc.ResultSetFormatType;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 

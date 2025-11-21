@@ -1,10 +1,10 @@
 package net.snowflake.client;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import net.snowflake.client.core.Constants;
+import net.snowflake.client.internal.core.Constants;
 
 public class AssumptionUtils {
   public static void assumeNotRunningOnGithubActionsMac() {
