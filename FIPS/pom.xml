@@ -262,7 +262,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
+              <mainClass>net.snowflake.client.api.driver.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
@@ -813,7 +813,7 @@
                   </includes>
                   <systemPropertyVariables>
                     <net.snowflake.jdbc.loggerImpl>
-                      net.snowflake.client.log.JDK14Logger
+                      net.snowflake.client.internal.log.JDK14Logger
                     </net.snowflake.jdbc.loggerImpl>
                     <java.util.logging.config.file>
                       ${basedir}/../src/test/resources/logging.properties
