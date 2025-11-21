@@ -1,6 +1,6 @@
 package com.snowflake.client.jdbc.prober;
 
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;

@@ -1,1 +1,1 @@
-net.snowflake.client.jdbc.SnowflakeDriver
+net.snowflake.client.api.driver.SnowflakeDriver
