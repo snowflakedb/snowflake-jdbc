@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,14 +17,19 @@ import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.regions.Region;
 
 public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldThrowExceptionWhenNoCredentialsFound() {
-    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(null);
-    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceMock, new SFLoginInput());
     assertThrows(SFException.class, attestationCreator::createAttestation);
@@ -32,9 +37,9 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldThrowExceptionWhenNoRegion() {
-    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials())
-        .thenReturn(new BasicAWSCredentials("abc", "abc"));
+        .thenReturn(AwsBasicCredentials.create("abc", "abc"));
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(null);
 
     AwsIdentityAttestationCreator attestationCreator =
@@ -46,20 +51,20 @@ public class AwsIdentityAttestationCreatorTest {
   public void shouldReturnProperAttestationWithStandardRegion()
       throws JsonProcessingException, SFException {
     shouldReturnProperAttestationWithSignedRequestCredential(
-        "us-east-1", "sts.us-east-1.amazonaws.com");
+        Region.US_EAST_1, "sts.us-east-1.amazonaws.com");
   }
 
   @Test
   public void shouldReturnProperAttestationWithCnRegion()
       throws JsonProcessingException, SFException {
     shouldReturnProperAttestationWithSignedRequestCredential(
-        "cn-northwest-1", "sts.cn-northwest-1.amazonaws.com.cn");
+        Region.CN_NORTHWEST_1, "sts.cn-northwest-1.amazonaws.com.cn");
   }
 
   private void shouldReturnProperAttestationWithSignedRequestCredential(
-      String region, String expectedStsUrl) throws JsonProcessingException, SFException {
+      Region region, String expectedStsUrl) throws JsonProcessingException, SFException {
     AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
-    Mockito.doReturn(new BasicSessionCredentials("abc", "abc", "aws-session-token"))
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
         .when(attestationServiceSpy)
         .getAWSCredentials();
     Mockito.doReturn(region).when(attestationServiceSpy).getAWSRegion();
@@ -81,22 +86,23 @@ public class AwsIdentityAttestationCreatorTest {
     assertEquals("POST", credentialMap.get("method"));
     assertNotNull(credentialMap.get("headers"));
     Map<String, String> headersMap = (Map<String, String>) credentialMap.get("headers");
-    assertEquals(5, headersMap.size());
+    assertEquals(6, headersMap.size());
     assertEquals(expectedStsUrl, headersMap.get("Host"));
     assertEquals("snowflakecomputing.com", headersMap.get("X-Snowflake-Audience"));
     assertNotNull(headersMap.get("X-Amz-Date"));
     assertTrue(headersMap.get("Authorization").matches("^AWS4-HMAC-SHA256 Credential=.*"));
     assertEquals("aws-session-token", headersMap.get("X-Amz-Security-Token"));
+    assertNotNull(headersMap.get("x-amz-content-sha256"));
   }
 
   @Test
   public void shouldCreateAttestationWithoutImpersonationWhenImpersonationPathIsEmpty()
       throws SFException {
     AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
-    Mockito.doReturn(new BasicSessionCredentials("abc", "abc", "aws-session-token"))
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
         .when(attestationServiceSpy)
         .getAWSCredentials();
-    Mockito.doReturn("us-east-1").when(attestationServiceSpy).getAWSRegion();
+    Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setWorkloadIdentityImpersonationPath(""); // Empty path
@@ -112,9 +118,9 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldThrowExceptionWhenImpersonationFailsWithNoInitialCredentials() {
-    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(null);
-    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setWorkloadIdentityImpersonationPath("arn:aws:iam::123456789012:role/TestRole");
@@ -127,25 +133,27 @@ public class AwsIdentityAttestationCreatorTest {
 
   @Test
   public void shouldCreateAttestationWithImpersonationPath() throws SFException {
-    AwsAttestationService attestationServiceMock = Mockito.mock(AwsAttestationService.class);
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
+    SdkHttpRequest requestMock = mock(SdkHttpRequest.class);
+    Mockito.when(requestMock.getUri()).thenReturn(URI.create("https://snowflakecomputing.com"));
+    Mockito.when(requestMock.method()).thenReturn(SdkHttpMethod.GET);
 
-    BasicSessionCredentials initialCredentials =
-        new BasicSessionCredentials("initial-key", "initial-secret", "initial-token");
+    AwsSessionCredentials initialCredentials =
+        AwsSessionCredentials.create("initial-key", "initial-secret", "initial-token");
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
-    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn("us-east-1");
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
 
-    BasicSessionCredentials assumedCredentials =
-        new BasicSessionCredentials("assumed-key", "assumed-secret", "assumed-token");
+    AwsSessionCredentials assumedCredentials =
+        AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
     Mockito.when(
             attestationServiceMock.assumeRole(
                 initialCredentials, "arn:aws:iam::123456789012:role/TestRole"))
         .thenReturn(assumedCredentials);
 
     Mockito.doNothing().when(attestationServiceMock).initializeSignerRegion();
-    Mockito.doNothing()
-        .when(attestationServiceMock)
-        .signRequestWithSigV4(any(), Mockito.eq(assumedCredentials));
+    Mockito.when(attestationServiceMock.signRequestWithSigV4(any(), Mockito.eq(assumedCredentials)))
+        .thenReturn(requestMock);
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setWorkloadIdentityImpersonationPath("arn:aws:iam::123456789012:role/TestRole");
