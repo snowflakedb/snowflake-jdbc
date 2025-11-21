@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.core;
 
-class HexUtil {
+public class HexUtil {
 
   /**
    * Converts Byte array to hex string
@@ -8,7 +8,7 @@ class HexUtil {
    * @param bytes a byte array
    * @return a string in hexadecimal code
    */
-  static String byteToHexString(byte[] bytes) {
+  public static String byteToHexString(byte[] bytes) {
     final char[] hexArray = "0123456789ABCDEF".toCharArray();
     char[] hexChars = new char[bytes.length * 2];
     for (int j = 0; j < bytes.length; j++) {

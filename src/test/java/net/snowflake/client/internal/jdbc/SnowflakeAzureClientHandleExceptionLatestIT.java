@@ -2,9 +2,11 @@ package net.snowflake.client.internal.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.StorageExtendedErrorInformation;
+import com.azure.core.http.HttpResponse;
+import com.azure.storage.blob.models.BlobStorageException;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -23,7 +25,6 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
 import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeAzureClient;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,7 +42,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   private int overMaxRetry;
   private int maxRetry;
 
-  @BeforeEach
+  //  @BeforeEach
   public void setup() throws SQLException {
     connection = getConnection("azureaccount");
     sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
@@ -63,39 +64,23 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @DontRunOnGithubActions
   public void error403RenewExpired() throws SQLException, InterruptedException {
     // Unauthenticated, renew is called.
-    spyingClient.handleStorageException(
-        new StorageException(
-            "403", "Unauthenticated", 403, new StorageExtendedErrorInformation(), new Exception()),
-        0,
-        "upload",
-        sfSession,
-        command,
-        null);
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getStatusCode()).thenReturn(403);
+    BlobStorageException storageException =
+        new BlobStorageException("Unauthenticated", response, new Exception());
+    spyingClient.handleStorageException(storageException, 0, "upload", sfSession, command, null);
     Mockito.verify(spyingClient, Mockito.times(2)).renew(Mockito.anyMap());
 
     // Unauthenticated, backoff with interrupt, renew is called
     Exception[] exceptionContainer = new Exception[1];
     Thread thread =
         new Thread(
-            new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  spyingClient.handleStorageException(
-                      new StorageException(
-                          "403",
-                          "Unauthenticated",
-                          403,
-                          new StorageExtendedErrorInformation(),
-                          new Exception()),
-                      maxRetry,
-                      "upload",
-                      sfSession,
-                      command,
-                      null);
-                } catch (SnowflakeSQLException e) {
-                  exceptionContainer[0] = e;
-                }
+            () -> {
+              try {
+                spyingClient.handleStorageException(
+                    storageException, maxRetry, "upload", sfSession, command, null);
+              } catch (SnowflakeSQLException e) {
+                exceptionContainer[0] = e;
               }
             });
     thread.start();
@@ -108,41 +93,29 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @Test
   @DontRunOnGithubActions
   public void error403OverMaxRetryThrow() {
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getStatusCode()).thenReturn(403);
+    BlobStorageException storageException =
+        new BlobStorageException("Unauthenticated", response, new Exception());
     assertThrows(
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new StorageException(
-                    "403",
-                    "Unauthenticated",
-                    403,
-                    new StorageExtendedErrorInformation(),
-                    new Exception()),
-                overMaxRetry,
-                "upload",
-                sfSession,
-                command,
-                null));
+                storageException, overMaxRetry, "upload", sfSession, command, null));
   }
 
   @Test
   @DontRunOnGithubActions
   public void error403NullSession() {
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getStatusCode()).thenReturn(403);
+    BlobStorageException storageException =
+        new BlobStorageException("Unauthenticated", response, new Exception());
     assertThrows(
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new StorageException(
-                    "403",
-                    "Unauthenticated",
-                    403,
-                    new StorageExtendedErrorInformation(),
-                    new Exception()),
-                0,
-                "upload",
-                null,
-                command,
-                null));
+                storageException, 0, "upload", null, command, null));
   }
 
   @Test
@@ -207,9 +180,9 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new StorageException(
-                    "",
+                new BlobStorageException(
                     Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                    null,
                     new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
                 0,
                 "download",
