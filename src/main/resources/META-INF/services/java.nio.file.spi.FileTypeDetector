@@ -1,1 +1,1 @@
-net.snowflake.client.core.FileTypeDetector
+net.snowflake.client.internal.core.FileTypeDetector
