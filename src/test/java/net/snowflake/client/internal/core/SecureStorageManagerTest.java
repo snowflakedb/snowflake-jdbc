@@ -297,6 +297,9 @@ public class SecureStorageManagerTest {
     try (MockedStatic<SnowflakeUtil> snowflakeUtilMockedStatic =
         Mockito.mockStatic(SnowflakeUtil.class)) {
       snowflakeUtilMockedStatic
+          .when(() -> SnowflakeUtil.byteToHexString(Mockito.any(byte[].class)))
+          .thenCallRealMethod();
+      snowflakeUtilMockedStatic
           .when(
               () ->
                   SnowflakeUtil.systemGetProperty("net.snowflake.jdbc.temporaryCredentialCacheDir"))

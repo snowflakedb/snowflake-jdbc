@@ -1,8 +1,8 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import static net.snowflake.client.internal.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
-import static net.snowflake.client.internal.core.HttpUtil.setProxyForAzure;
-import static net.snowflake.client.internal.core.HttpUtil.setSessionlessProxyForAzure;
+import static net.snowflake.client.internal.core.HttpUtil.createProxyOptionsForAzure;
+import static net.snowflake.client.internal.core.HttpUtil.createSessionlessProxyOptionsForAzure;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.azure.core.http.ProxyOptions;
@@ -32,14 +32,18 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
+import java.security.NoSuchAlgorithmException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -124,8 +128,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String sasToken = (String) stage.getCredentials().get("AZURE_SAS_TOKEN");
       if (sasToken != null) {
         builder.sasToken(sasToken);
-      } else {
-        // Use anonymous authentication aka do nothing
       }
 
       if (stage.getIsClientSideEncrypted() && encMat != null) {
@@ -144,9 +146,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
       ProxyOptions proxyOptions;
       if (session != null) {
-        proxyOptions = setProxyForAzure(session.getHttpClientKey());
+        proxyOptions = createProxyOptionsForAzure(session.getHttpClientKey());
       } else {
-        proxyOptions = setSessionlessProxyForAzure(stage.getProxyProperties());
+        proxyOptions = createSessionlessProxyOptionsForAzure(stage.getProxyProperties());
       }
       HttpClientOptions clientOptions = new HttpClientOptions();
       clientOptions.setProxyOptions(proxyOptions);
@@ -254,23 +256,19 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       throws StorageProviderException {
     CommonObjectMetadata azureObjectMetadata;
     try {
-      // Get a reference to the BLOB, to retrieve its metadata
       BlobContainerClient blobContainerClient =
           azStorageClient.getBlobContainerClient(remoteStorageLocation);
       BlobClient blobClient = blobContainerClient.getBlobClient(prefix);
       BlockBlobClient blockBlobClient = blobClient.getBlockBlobClient();
 
-      // Get the BLOB system properties we care about
       BlobProperties properties = blockBlobClient.getProperties();
 
-      // Get the user-defined BLOB metadata
       Map<String, String> userDefinedMetadata =
           SnowflakeUtil.createCaseInsensitiveMap(properties.getMetadata());
 
       long contentLength = properties.getBlobSize();
       String contentEncoding = properties.getContentEncoding();
 
-      // Construct an Azure metadata object
       azureObjectMetadata =
           new CommonObjectMetadata(contentLength, contentEncoding, userDefinedMetadata);
     } catch (BlobStorageException ex) {
@@ -317,6 +315,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
         "Staring download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
+    localFilePath = trimLeadingSlashIfOnWindows(localFilePath);
     int retryCount = 0;
     do {
       try {
@@ -334,60 +333,24 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         Response<BlobProperties> response =
             blockBlobClient.downloadToFileWithResponse(downloadOptions, null, null);
-        response.getValue().getMetadata();
+        SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
+            localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
-        // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata =
-            SnowflakeUtil.createCaseInsensitiveMap(blockBlobClient.getProperties().getMetadata());
-        logger.info("Received user metadata for stageFilePath: {}", stageFilePath);
-        userDefinedMetadata.forEach(
-            (key, value) -> {
-              logger.info("UserDefinedMetadata key: {}, value: {}", key, value);
-            });
+            SnowflakeUtil.createCaseInsensitiveMap(response.getValue().getMetadata());
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
-          if (!userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Encryption data not found in the metadata of a file being downloaded");
-          }
-          AbstractMap.SimpleEntry<String, String> encryptionData =
-              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
-          String key = encryptionData.getKey();
-          String iv = encryptionData.getValue();
-          stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
-
-          // Decrypt file
-          try {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
-            stopwatch.stop();
-            long decryptMillis = stopwatch.elapsedMillis();
-            logger.info(
-                "Azure file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
-                remoteStorageLocation,
-                localFile.getAbsolutePath(),
-                downloadMillis + decryptMillis,
-                downloadMillis,
-                decryptMillis,
-                retryCount);
-          } catch (Exception ex) {
-            logger.error("Error decrypting file", ex);
-            throw ex;
-          }
+          decryptFile(
+              session,
+              remoteStorageLocation,
+              queryId,
+              userDefinedMetadata,
+              stopwatch,
+              localFile,
+              downloadMillis,
+              retryCount);
         } else {
           logger.info(
               "Azure file {} downloaded to {}. It took {} ms with {} retries",
@@ -397,7 +360,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               retryCount);
         }
         return;
-
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
         handleAzureException(
@@ -411,6 +373,52 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
+  }
+
+  /**
+   * If path on Windows looks like "/C:/..." we need to manually trim the leading slash. Otherwise,
+   * it fails with InvalidPathException
+   */
+  private static String trimLeadingSlashIfOnWindows(String localFilePath) {
+    if (SnowflakeUtil.isWindows() && localFilePath.startsWith("/")) {
+      logger.debug("Trimming leading slash for Windows path: {}", localFilePath);
+      return localFilePath.substring(1);
+    }
+    return localFilePath;
+  }
+
+  private void decryptFile(
+      SFSession session,
+      String remoteStorageLocation,
+      String queryId,
+      Map<String, String> userDefinedMetadata,
+      Stopwatch stopwatch,
+      File localFile,
+      long downloadMillis,
+      int retryCount)
+      throws SnowflakeSQLException, NoSuchAlgorithmException, NoSuchPaddingException,
+          InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
+          InvalidAlgorithmParameterException, IOException {
+    EncryptionData encryptionData =
+        validateAndGetEncryptionData(session, queryId, userDefinedMetadata, stopwatch);
+
+    // Decrypt file
+    try {
+      EncryptionProvider.decrypt(localFile, encryptionData.key, encryptionData.iv, this.encMat);
+      stopwatch.stop();
+      long decryptMillis = stopwatch.elapsedMillis();
+      logger.info(
+          "Azure file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+          remoteStorageLocation,
+          localFile.getAbsolutePath(),
+          downloadMillis + decryptMillis,
+          downloadMillis,
+          decryptMillis,
+          retryCount);
+    } catch (Exception ex) {
+      logger.error("Error decrypting file", ex);
+      throw ex;
+    }
   }
 
   /**
@@ -458,47 +466,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             SnowflakeUtil.createCaseInsensitiveMap(blockBlobClient.getProperties().getMetadata());
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
-          if (!userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Encryption data not found in the metadata of a file being downloaded");
-          }
-          AbstractMap.SimpleEntry<String, String> encryptionData =
-              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-          String key = encryptionData.getKey();
-          String iv = encryptionData.getValue();
-          stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
-
-          try {
-            InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
-            stopwatch.stop();
-            long decryptMillis = stopwatch.elapsedMillis();
-            logger.info(
-                "Azure file {} downloaded to input stream. It took {} ms "
-                    + "(download: {} ms, decryption: {} ms) with {} retries",
-                stageFilePath,
-                downloadMillis + decryptMillis,
-                downloadMillis,
-                decryptMillis,
-                retryCount);
-            return is;
-
-          } catch (Exception ex) {
-            logger.error("Error in decrypting file", ex);
-            throw ex;
-          }
-
+          return decryptStream(
+              session,
+              stageFilePath,
+              queryId,
+              userDefinedMetadata,
+              stopwatch,
+              stream,
+              downloadMillis,
+              retryCount);
         } else {
           logger.info(
               "Azure file {} downloaded to input stream. Download took {} ms with {} retries",
@@ -507,7 +483,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               retryCount);
           return stream;
         }
-
       } catch (Exception ex) {
         logger.debug("Downloading unsuccessful {}", ex);
         handleAzureException(
@@ -521,6 +496,72 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
+  }
+
+  private InputStream decryptStream(
+      SFSession session,
+      String stageFilePath,
+      String queryId,
+      Map<String, String> userDefinedMetadata,
+      Stopwatch stopwatch,
+      InputStream stream,
+      long downloadMillis,
+      int retryCount)
+      throws SnowflakeSQLException, NoSuchPaddingException, NoSuchAlgorithmException,
+          InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
+          InvalidAlgorithmParameterException {
+    EncryptionData encryptionData =
+        validateAndGetEncryptionData(session, queryId, userDefinedMetadata, stopwatch);
+
+    try {
+      InputStream is =
+          EncryptionProvider.decryptStream(stream, encryptionData.key, encryptionData.iv, encMat);
+      stopwatch.stop();
+      long decryptMillis = stopwatch.elapsedMillis();
+      logger.info(
+          "Azure file {} downloaded to input stream. It took {} ms "
+              + "(download: {} ms, decryption: {} ms) with {} retries",
+          stageFilePath,
+          downloadMillis + decryptMillis,
+          downloadMillis,
+          decryptMillis,
+          retryCount);
+      return is;
+    } catch (Exception ex) {
+      logger.error("Error in decrypting file", ex);
+      throw ex;
+    }
+  }
+
+  private EncryptionData validateAndGetEncryptionData(
+      SFSession session,
+      String queryId,
+      Map<String, String> userDefinedMetadata,
+      Stopwatch stopwatch)
+      throws SnowflakeSQLException {
+    if (!userDefinedMetadata.containsKey(AZ_ENCRYPTIONDATAPROP)) {
+      throw new SnowflakeSQLLoggedException(
+          queryId,
+          session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "Encryption data not found in the metadata of a file being downloaded");
+    }
+    SimpleEntry<String, String> encryptionData =
+        parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
+
+    String key = encryptionData.getKey();
+    String iv = encryptionData.getValue();
+    stopwatch.restart();
+    if (key == null || iv == null) {
+      throw new SnowflakeSQLLoggedException(
+          queryId,
+          session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "File metadata incomplete");
+    }
+    return new EncryptionData(key, iv);
   }
 
   /**
@@ -648,7 +689,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
                 toClose,
                 queryId);
       }
-
     } while (retryCount <= getMaxRetries());
 
     for (FileInputStream is : toClose) {
@@ -913,11 +953,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         + "}";
   }
 
-  /*
+  /**
    * Builds a URI to an Azure Storage account endpoint
    *
-   *  @param storageEndPoint   the storage endpoint name
-   *  @param storageAccount    the storage account name
+   * @param storageEndPoint the storage endpoint name
+   * @param storageAccount the storage account name
    */
   private static URI buildAzureStorageEndpointURI(String storageEndPoint, String storageAccount)
       throws URISyntaxException {
@@ -927,10 +967,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     return storageEndpoint;
   }
 
-  /*
-   * buildEncryptionMetadataJSON
-   * Takes the base64-encoded iv and key and creates the JSON block to be
-   * used as the encryptiondata metadata field on the blob.
+  /**
+   * buildEncryptionMetadataJSON Takes the base64-encoded iv and key and creates the JSON block to
+   * be used as the encryptiondata metadata field on the blob.
    */
   private String buildEncryptionMetadataJSON(String iv64, String key64) {
     return String.format(
@@ -943,10 +982,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             + "\"Java 5.3.0\"}}",
         key64, iv64);
   }
-
-  /*
-   * parseEncryptionData
-   * Takes the json string in the encryptiondata metadata field of the encrypted
+  /**
+   * parseEncryptionData Takes the json string in the encryptiondata metadata field of the encrypted
    * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
    */
   private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData, String queryId)
@@ -1031,5 +1068,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(AZ_STREAMING_INGEST_CLIENT_KEY);
+  }
+
+  private static class EncryptionData {
+    public final String key;
+    public final String iv;
+
+    public EncryptionData(String key, String iv) {
+      this.key = key;
+      this.iv = iv;
+    }
   }
 }

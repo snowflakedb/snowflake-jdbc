@@ -14,8 +14,8 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 public class AzureObjectSummariesIterator implements Iterator<StorageObjectSummary> {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AzureObjectSummariesIterator.class);
-  Iterator<BlobItem> itemIterator;
-  String location;
+  private final Iterator<BlobItem> itemIterator;
+  private final String location;
 
   /*
    * Constructs a summaries iterator object from an iterable derived by a

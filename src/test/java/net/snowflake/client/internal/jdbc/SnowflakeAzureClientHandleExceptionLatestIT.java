@@ -1,10 +1,12 @@
 package net.snowflake.client.internal.jdbc;
 
+import static com.azure.storage.common.implementation.Constants.HeaderConstants.ERROR_CODE_HEADER_NAME;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.core.http.HttpResponse;
 import com.azure.storage.blob.models.BlobStorageException;
 import java.io.File;
@@ -24,7 +26,9 @@ import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
 import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeAzureClient;
+import org.bouncycastle.util.Exceptions;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,7 +46,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   private int overMaxRetry;
   private int maxRetry;
 
-  //  @BeforeEach
+  @BeforeEach
   public void setup() throws SQLException {
     connection = getConnection("azureaccount");
     sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
@@ -95,6 +99,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   public void error403OverMaxRetryThrow() {
     HttpResponse response = mock(HttpResponse.class);
     when(response.getStatusCode()).thenReturn(403);
+    when(response.getHeaders()).thenReturn(new HttpHeaders().add(ERROR_CODE_HEADER_NAME, "403"));
     BlobStorageException storageException =
         new BlobStorageException("Unauthenticated", response, new Exception());
     assertThrows(
@@ -109,6 +114,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   public void error403NullSession() {
     HttpResponse response = mock(HttpResponse.class);
     when(response.getStatusCode()).thenReturn(403);
+    when(response.getHeaders()).thenReturn(new HttpHeaders().add(ERROR_CODE_HEADER_NAME, "403"));
     BlobStorageException storageException =
         new BlobStorageException("Unauthenticated", response, new Exception());
     assertThrows(
@@ -180,9 +186,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         SnowflakeSQLException.class,
         () ->
             spyingClient.handleStorageException(
-                new BlobStorageException(
-                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                    null,
+                Exceptions.ioException(
+                    "java.util.concurrent.ExecutionException: java.io.IOException: No space left on device",
                     new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
                 0,
                 "download",

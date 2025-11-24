@@ -49,6 +49,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.internal.jdbc.OCSPErrorCode;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
@@ -413,8 +414,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static String CertificateIDToString(CertificateID certificateID) {
     return String.format(
         "CertID. NameHash: %s, KeyHash: %s, Serial Number: %s",
-        HexUtil.byteToHexString(certificateID.getIssuerNameHash()),
-        HexUtil.byteToHexString(certificateID.getIssuerKeyHash()),
+        SnowflakeUtil.byteToHexString(certificateID.getIssuerNameHash()),
+        SnowflakeUtil.byteToHexString(certificateID.getIssuerKeyHash()),
         MessageFormat.format("{0,number,#}", certificateID.getSerialNumber()));
   }
 
@@ -1618,8 +1619,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     public String toString() {
       return String.format(
           "OcspResponseCacheKey: NameHash: %s, KeyHash: %s, SerialNumber: %s",
-          HexUtil.byteToHexString(nameHash),
-          HexUtil.byteToHexString(keyHash),
+          SnowflakeUtil.byteToHexString(nameHash),
+          SnowflakeUtil.byteToHexString(keyHash),
           serialNumber.toString());
     }
   }

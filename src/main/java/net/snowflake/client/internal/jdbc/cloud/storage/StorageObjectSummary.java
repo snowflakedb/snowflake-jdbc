@@ -4,7 +4,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobItemProperties;
 import com.google.cloud.storage.Blob;
-import net.snowflake.client.internal.core.HexUtil;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -63,7 +63,7 @@ public class StorageObjectSummary {
       BlobItemProperties blobProperties = blobItem.getProperties();
 
       byte[] contentMd5 = blobProperties.getContentMd5();
-      String md5 = contentMd5 != null ? HexUtil.byteToHexString(contentMd5) : null;
+      String md5 = contentMd5 != null ? SnowflakeUtil.byteToHexString(contentMd5) : null;
       size = blobProperties.getContentLength();
       return new StorageObjectSummary(location, key, md5, size);
     } catch (Exception ex) {

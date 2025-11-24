@@ -185,13 +185,13 @@ public class HttpUtil {
   }
 
   /**
-   * A static function to set Azure proxy params for sessionless connections using the proxy params
-   * from the StageInfo
+   * A static function to create Azure proxy params for sessionless connections using the proxy
+   * params from the StageInfo
    *
    * @param proxyProperties proxy properties
    * @throws SnowflakeSQLException when invalid proxy properties encountered
    */
-  public static ProxyOptions setSessionlessProxyForAzure(Properties proxyProperties)
+  public static ProxyOptions createSessionlessProxyOptionsForAzure(Properties proxyProperties)
       throws SnowflakeSQLException {
     if (proxyProperties != null
         && proxyProperties.size() > 0
@@ -244,7 +244,7 @@ public class HttpUtil {
    *
    * @param key key to HttpClient map containing OCSP and proxy info
    */
-  public static ProxyOptions setProxyForAzure(HttpClientSettingsKey key) {
+  public static ProxyOptions createProxyOptionsForAzure(HttpClientSettingsKey key) {
     if (key != null && key.usesProxy()) {
       ProxyOptions proxyOptions =
           new ProxyOptions(

@@ -159,7 +159,7 @@ public class CoreUtilsMiscellaneousTest {
             "https",
             "jdbc",
             false);
-    ProxyOptions proxyOptions = HttpUtil.setProxyForAzure(testKey);
+    ProxyOptions proxyOptions = HttpUtil.createProxyOptionsForAzure(testKey);
     assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
     assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxyOptions.getAddress());
     assertEquals("testuser", proxyOptions.getUsername());
@@ -176,7 +176,7 @@ public class CoreUtilsMiscellaneousTest {
     props.put("proxyUser", "testuser");
     props.put("proxyPassword", "pw");
     props.put("nonProxyHosts", "*");
-    ProxyOptions proxyOptions = HttpUtil.setSessionlessProxyForAzure(props);
+    ProxyOptions proxyOptions = HttpUtil.createSessionlessProxyOptionsForAzure(props);
     assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
     assertEquals(new InetSocketAddress("localhost", 8084), proxyOptions.getAddress());
     assertEquals("testuser", proxyOptions.getUsername());
@@ -188,7 +188,7 @@ public class CoreUtilsMiscellaneousTest {
         assertThrows(
             SnowflakeSQLException.class,
             () -> {
-              HttpUtil.setSessionlessProxyForAzure(props);
+              HttpUtil.createSessionlessProxyOptionsForAzure(props);
             });
     assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
