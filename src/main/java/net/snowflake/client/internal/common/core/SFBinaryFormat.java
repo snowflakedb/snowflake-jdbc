@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
  * UTF-8, it is the reverse: "format" means to decode bytes as Unicode characters (which can fail),
  * and "parse" means to encode a string of as UTF-8 bytes (which always suceeds).
  *
- * @author mkember
+ * @author mkember, copied from net.snowflake.snowflake-common artifact
  */
 public enum SFBinaryFormat {
   HEX {
