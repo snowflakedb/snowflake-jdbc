@@ -38,7 +38,8 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
           new RemoteStoreFileEncryptionMaterial(
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);
       StageInfo info = sfAgent.getStageInfo();
-      SnowflakeS3Client.ClientConfiguration config = new SnowflakeS3Client.ClientConfiguration();
+      SnowflakeS3Client.ClientConfiguration config =
+          new SnowflakeS3Client.ClientConfiguration(1, 1, 10_000, 10_000);
       // AmazonS3EncryptionClient builder will create the client
       SnowflakeS3Client client =
           new SnowflakeS3Client(
@@ -112,7 +113,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);
       StageInfo info = agent.getStageInfo();
       SnowflakeS3Client.ClientConfiguration clientConfig =
-          new SnowflakeS3Client.ClientConfiguration();
+          new SnowflakeS3Client.ClientConfiguration(1, 1, 10_000, 10_000);
       SnowflakeS3Client client =
           new SnowflakeS3Client(
               info.getCredentials(),
@@ -140,7 +141,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
           new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
       StageInfo info = agent.getStageInfo();
       SnowflakeS3Client.ClientConfiguration clientConfig =
-          new SnowflakeS3Client.ClientConfiguration();
+          new SnowflakeS3Client.ClientConfiguration(1, 1, 10_000, 10_000);
       RemoteStoreFileEncryptionMaterial content =
           new RemoteStoreFileEncryptionMaterial(
               "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);

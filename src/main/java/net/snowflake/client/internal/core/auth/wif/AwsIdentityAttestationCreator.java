@@ -5,8 +5,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
@@ -94,16 +92,10 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     JSONObject assertionJson = new JSONObject();
     JSONObject headers = new JSONObject();
 
-    // AWS SDK 2 returns headers as Map<String, List<String>>, but backend expects flat Map<String,
-    // String>
-    for (Map.Entry<String, List<String>> entry : request.headers().entrySet()) {
-      String headerName = entry.getKey();
-      List<String> headerValues = entry.getValue();
-      if (headerValues != null && !headerValues.isEmpty()) {
-        // Take the first value to flatten the header
-        headers.put(headerName, headerValues.get(0));
-      }
-    }
+    // AWS SDK 2 headers are Map<String, List<String>>, but backend expects Map<String, String>
+    request.headers().entrySet().stream()
+        .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+        .forEach(entry -> headers.put(entry.getKey(), entry.getValue().get(0)));
 
     assertionJson.put("url", request.getUri().toString());
     assertionJson.put("method", request.method().toString());

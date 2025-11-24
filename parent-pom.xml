@@ -28,6 +28,7 @@
     <azure.core.version>1.57.0</azure.core.version>
     <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
     <azure.storage.common.version>12.31.0</azure.storage.common.version>
+    <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
@@ -607,6 +608,11 @@
         <version>${version.plugin.wiremock}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>software.amazon.encryption.s3</groupId>
+        <artifactId>amazon-s3-encryption-client-java</artifactId>
+        <version>${awssdk.encryption.s3.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -684,7 +690,6 @@
     <dependency>
       <groupId>software.amazon.encryption.s3</groupId>
       <artifactId>amazon-s3-encryption-client-java</artifactId>
-      <version>3.4.0</version>
     </dependency>
     <dependency>
       <groupId>com.azure</groupId>

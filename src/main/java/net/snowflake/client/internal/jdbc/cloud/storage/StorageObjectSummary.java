@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobItemProperties;
 import com.google.cloud.storage.Blob;

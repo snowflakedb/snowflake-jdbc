@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
-import net.snowflake.client.internal.core.HttpProtocol;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
@@ -28,11 +27,9 @@ public class S3HttpUtil {
    */
   public static ProxyConfiguration createProxyConfigurationForS3(HttpClientSettingsKey key) {
     if (key != null && key.usesProxy()) {
-      String scheme = key.getProxyHttpProtocol() == HttpProtocol.HTTPS ? "https" : "http";
-
       ProxyConfiguration.Builder proxyBuilder =
           ProxyConfiguration.builder()
-              .scheme(scheme)
+              .scheme(key.getProxyHttpProtocol().getScheme())
               .host(key.getProxyHost())
               .port(key.getProxyPort())
               .useEnvironmentVariableValues(false)
@@ -150,7 +147,7 @@ public class S3HttpUtil {
     }
   }
 
-  private static Set<String> prepareNonProxyHosts(String nonProxyHosts) {
+  static Set<String> prepareNonProxyHosts(String nonProxyHosts) {
     return Arrays.stream(nonProxyHosts.split("\\|"))
         .map(String::trim)
         .map(
@@ -160,7 +157,7 @@ public class S3HttpUtil {
               // 1. Escape dots to match literal periods
               // 2. Replace wildcards (*) with regex equivalent (.*)
               // This differs from SdkProxyRoutePlanner which uses simple pattern matching
-              return host.replace(".", "\\.").replace("*", ".*");
+              return host.replace(".", "\\.").replace("*", ".*?");
             })
         .collect(Collectors.toSet());
   }

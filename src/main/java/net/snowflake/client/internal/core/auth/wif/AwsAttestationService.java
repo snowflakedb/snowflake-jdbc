@@ -27,10 +27,8 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 
 public class AwsAttestationService {
-
   public static final SFLogger logger = SFLoggerFactory.getLogger(AwsAttestationService.class);
-
-  private static boolean regionInitialized = false;
+  public static final int TIMEOUT_MS = 10_000;
   private static Region region;
 
   private final AwsV4HttpSigner aws4Signer;
@@ -40,7 +38,14 @@ public class AwsAttestationService {
   }
 
   void initializeSignerRegion() {
-    getAWSRegion(); // Ensure region is initialized
+    logger.debug("Getting AWS region from environment variable");
+    String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
+    if (envRegion != null) {
+      region = Region.of(envRegion);
+    } else {
+      logger.debug("Getting AWS region from default region provider chain");
+      region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+    }
   }
 
   public AwsCredentials getAWSCredentials() {
@@ -54,17 +59,6 @@ public class AwsAttestationService {
   }
 
   Region getAWSRegion() {
-    if (!regionInitialized) {
-      logger.debug("Getting AWS region from environment variable");
-      String envRegion = SnowflakeUtil.systemGetEnv(EnvironmentVariables.AWS_REGION.getName());
-      if (envRegion != null) {
-        region = Region.of(envRegion);
-      } else {
-        logger.debug("Getting AWS region from default region provider chain");
-        region = DefaultAwsRegionProviderChain.builder().build().getRegion();
-      }
-      regionInitialized = true;
-    }
     return region;
   }
 
@@ -98,7 +92,7 @@ public class AwsAttestationService {
   }
 
   AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn) throws SFException {
-    try (StsClient stsClient = createStsClient(currentCredentials, 10000)) {
+    try (StsClient stsClient = createStsClient(currentCredentials, TIMEOUT_MS)) {
 
       AssumeRoleRequest assumeRoleRequest =
           AssumeRoleRequest.builder()

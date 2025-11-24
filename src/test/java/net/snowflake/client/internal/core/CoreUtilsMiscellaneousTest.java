@@ -114,7 +114,7 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals("snowflakecomputing.com", proxyConfiguration.host());
     assertEquals(443, proxyConfiguration.port());
     assertEquals(
-        new HashSet<>(Collections.singletonList(".*\\.foo\\.com")),
+        new HashSet<>(Collections.singletonList(".*?\\.foo\\.com")),
         proxyConfiguration.nonProxyHosts());
     assertEquals("pw", proxyConfiguration.password());
     assertEquals("testuser", proxyConfiguration.username());

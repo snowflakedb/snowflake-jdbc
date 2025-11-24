@@ -67,6 +67,7 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
         .when(attestationServiceSpy)
         .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
     Mockito.doReturn(region).when(attestationServiceSpy).getAWSRegion();
 
     AwsIdentityAttestationCreator attestationCreator =
@@ -102,6 +103,7 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
         .when(attestationServiceSpy)
         .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
     Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
 
     SFLoginInput loginInput = new SFLoginInput();
