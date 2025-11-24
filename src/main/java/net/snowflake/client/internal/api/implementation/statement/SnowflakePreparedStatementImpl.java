@@ -39,6 +39,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.common.core.SFBinary;
 import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.FieldSchemaCreator;
 import net.snowflake.client.internal.core.JsonSqlOutput;
@@ -62,7 +63,6 @@ import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.VariableTypeArray;
-import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
 public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl

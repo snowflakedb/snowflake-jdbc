@@ -70,6 +70,12 @@
         <Source><Package name="com.nimbusds"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <!-- AWS SDK v1 exclusions - com.amazonaws.util is not used in runtime -->
+    <LinkageError>
+        <Target><Package name="com.amazonaws.util"/></Target>
+        <Source><Package name="net.snowflake.common.core.SFBinary"/></Source>
+        <Reason>com.amazonaws.util is not used in runtime</Reason>
+    </LinkageError>
     <!-- AWS CRT exclusions - CRT is excluded from dependencies and not used in runtime -->
     <LinkageError>
         <Target><Package name="software.amazon.awssdk.crt"/></Target>
