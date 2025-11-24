@@ -1,8 +1,8 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static net.snowflake.client.internal.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createDefaultExecutorService;
-import static net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeS3Client.EXPIRED_AWS_TOKEN_ERROR_CODE;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
@@ -20,15 +21,13 @@ import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.HeaderCustomizerHttpRequestInterceptor;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFSession;
-import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.SFPair;
-import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpStatus;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -41,12 +40,12 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
 import software.amazon.awssdk.transfer.s3.model.FileDownload;
@@ -189,20 +188,16 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   @Override
   public SFPair<InputStream, Map<String, String>> downloadToStream(
       String remoteStorageLocation, String stageFilePath, boolean isEncrypting) {
-    InputStream stream =
-        amazonClient
-            .getObject(
-                GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
-                AsyncResponseTransformer.toBlockingInputStream())
-            .join();
-    HeadObjectResponse meta =
-        amazonClient
-            .headObject(
-                HeadObjectRequest.builder()
-                    .bucket(remoteStorageLocation)
-                    .key(stageFilePath)
-                    .build())
-            .join();
+    CompletableFuture<ResponseInputStream<GetObjectResponse>> streamFuture =
+        amazonClient.getObject(
+            GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
+            AsyncResponseTransformer.toBlockingInputStream());
+    CompletableFuture<HeadObjectResponse> metaFuture =
+        amazonClient.headObject(
+            HeadObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build());
+
+    HeadObjectResponse meta = metaFuture.join();
+    InputStream stream = streamFuture.join();
 
     Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
 
@@ -279,83 +274,11 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       logger.debug("GCSAccessStrategyAwsSdk: " + cause.getMessage());
 
       if (retryCount > gcsClient.getMaxRetries() || isClientException400Or404(cause)) {
-        String extendedRequestId = "none";
-
-        if (cause instanceof S3Exception) {
-          S3Exception ex1 = (S3Exception) cause;
-          extendedRequestId = ex1.extendedRequestId();
-        }
-
-        if (cause instanceof SdkServiceException) {
-          SdkServiceException ex1 = (SdkServiceException) cause;
-
-          // The AWS credentials might have expired when server returns error 400 and
-          // does not return the ExpiredToken error code.
-          // If session is null we cannot renew the token so throw the exception
-          if (ex1.statusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
-            SnowflakeFileTransferAgent.renewExpiredToken(session, command, gcsClient);
-          } else {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                SqlState.SYSTEM_ERROR,
-                StorageHelper.getOperationException(operation).getMessageCode(),
-                ex1,
-                operation,
-                ex1.getMessage(),
-                ex1.requestId(),
-                extendedRequestId);
-          }
-        } else {
-          throw new SnowflakeSQLLoggedException(
-              queryId,
-              session,
-              SqlState.SYSTEM_ERROR,
-              StorageHelper.getOperationException(operation).getMessageCode(),
-              cause,
-              operation,
-              cause.getMessage());
-        }
+        throwIfClientExceptionOrMaxRetryReached(
+            operation, session, command, queryId, gcsClient, cause);
       } else {
-        logger.debug(
-            "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
-            operation,
-            retryCount);
-        logger.debug("Stack trace: ", ex);
-
-        // exponential backoff up to a limit
-        int backoffInMillis = gcsClient.getRetryBackoffMin();
-
-        if (retryCount > 1) {
-          backoffInMillis <<= (Math.min(retryCount - 1, gcsClient.getRetryBackoffMaxExponent()));
-        }
-
-        try {
-          logger.debug("Sleep for {} milliseconds before retry", backoffInMillis);
-
-          Thread.sleep(backoffInMillis);
-        } catch (InterruptedException ex1) {
-          // ignore
-        }
-
-        // If the exception indicates that the AWS token has expired,
-        // we need to refresh our S3 client with the new token
-        if (cause instanceof S3Exception) {
-          S3Exception s3ex = (S3Exception) cause;
-          if (s3ex.awsErrorDetails().errorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
-            // If session is null we cannot renew the token so throw the ExpiredToken exception
-            if (session != null) {
-              SnowflakeFileTransferAgent.renewExpiredToken(session, command, gcsClient);
-            } else {
-              throw new SnowflakeSQLException(
-                  queryId,
-                  s3ex.awsErrorDetails().errorCode(),
-                  CLOUD_STORAGE_CREDENTIALS_EXPIRED,
-                  "S3 credentials have expired");
-            }
-          }
-        }
+        retryRequestWithExponentialBackoff(
+            ex, retryCount, operation, session, command, gcsClient, queryId, cause);
       }
       return true;
     } else {

@@ -114,10 +114,11 @@ public class StorageClientFactory {
     SnowflakeS3Client s3Client;
 
     SnowflakeS3Client.ClientConfiguration clientConfig =
-        new SnowflakeS3Client.ClientConfiguration();
-    clientConfig.setMaxConnections(parallel + 1);
-    clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
-    clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
+        new SnowflakeS3Client.ClientConfiguration(
+            parallel + 1,
+            S3_TRANSFER_MAX_RETRIES,
+            (int) HttpUtil.getConnectionTimeout().toMillis(),
+            (int) HttpUtil.getSocketTimeout().toMillis());
 
     logger.debug(
         "S3 client configuration: maxConnection: {}, connectionTimeout: {}, "

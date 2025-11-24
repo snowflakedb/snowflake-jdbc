@@ -3,6 +3,7 @@ package net.snowflake.client.internal.jdbc.cloud.storage;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -72,6 +73,7 @@ public class S3ObjectMetadata implements StorageObjectMetadata {
         .metadata(userMetadata)
         .contentLength(contentLength)
         .contentEncoding(contentEncoding)
+        .checksumAlgorithm(ChecksumAlgorithm.CRC32)
         .build();
   }
 }

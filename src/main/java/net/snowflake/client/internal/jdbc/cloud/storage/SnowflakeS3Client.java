@@ -1,9 +1,10 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static net.snowflake.client.internal.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createDefaultExecutorService;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +20,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import javax.crypto.SecretKey;
@@ -47,6 +49,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -58,12 +61,12 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
@@ -190,7 +193,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     clientBuilder.httpClientBuilder(
         NettyNioAsyncHttpClient.builder()
-            .maxConcurrency(100)
+            .maxConcurrency(clientConfig.getMaxConnections())
             .connectionAcquisitionTimeout(Duration.ofSeconds(60))
             .proxyConfiguration(proxyConfiguration)
             .connectionTimeout(Duration.ofMillis(clientConfig.connectionTimeout))
@@ -392,20 +395,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     .build());
 
         // Pull object metadata from S3
-        HeadObjectResponse meta =
-            amazonClient
-                .headObject(
-                    HeadObjectRequest.builder()
-                        .bucket(remoteStorageLocation)
-                        .key(stageFilePath)
-                        .build())
-                .join();
+        CompletableFuture<HeadObjectResponse> metaFuture =
+            amazonClient.headObject(
+                HeadObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build());
+
+        fileDownload.completionFuture().join();
+        HeadObjectResponse meta = metaFuture.join();
 
         Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
         String key = metaMap.get(AMZ_KEY);
         String iv = metaMap.get(AMZ_IV);
 
-        fileDownload.completionFuture().join();
         SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
             localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
         stopwatch.stop();
@@ -499,23 +502,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     int retryCount = 0;
     do {
       try {
-        InputStream stream =
-            amazonClient
-                .getObject(
-                    GetObjectRequest.builder()
-                        .bucket(remoteStorageLocation)
-                        .key(stageFilePath)
-                        .build(),
-                    AsyncResponseTransformer.toBlockingInputStream())
-                .join();
-        HeadObjectResponse meta =
-            amazonClient
-                .headObject(
-                    HeadObjectRequest.builder()
-                        .bucket(remoteStorageLocation)
-                        .key(stageFilePath)
-                        .build())
-                .join();
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> streamFuture =
+            amazonClient.getObject(
+                GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
+                AsyncResponseTransformer.toBlockingInputStream());
+        CompletableFuture<HeadObjectResponse> metaFuture =
+            amazonClient.headObject(
+                HeadObjectRequest.builder()
+                    .bucket(remoteStorageLocation)
+                    .key(stageFilePath)
+                    .build());
+
+        HeadObjectResponse meta = metaFuture.join();
+        InputStream stream = streamFuture.join();
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
@@ -860,84 +859,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (cause instanceof SdkException) {
       logger.debug("SdkException: " + ex.getMessage());
       if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException400Or404(cause)) {
-        String extendedRequestId = "none";
-
-        if (cause instanceof S3Exception) {
-          S3Exception ex1 = (S3Exception) cause;
-          extendedRequestId = ex1.extendedRequestId();
-        }
-
-        if (cause instanceof SdkServiceException) {
-          SdkServiceException ex1 = (SdkServiceException) cause;
-
-          // The AWS credentials might have expired when server returns error 400 and
-          // does not return the ExpiredToken error code.
-          // If session is null we cannot renew the token so throw the exception
-          if (ex1.statusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
-            SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
-          } else {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                SqlState.SYSTEM_ERROR,
-                StorageHelper.getOperationException(operation).getMessageCode(),
-                ex1,
-                operation,
-                ex1.getMessage(),
-                ex1.requestId(),
-                extendedRequestId);
-          }
-
-        } else {
-          throw new SnowflakeSQLLoggedException(
-              queryId,
-              session,
-              SqlState.SYSTEM_ERROR,
-              StorageHelper.getOperationException(operation).getMessageCode(),
-              cause,
-              operation,
-              cause.getMessage());
-        }
+        throwIfClientExceptionOrMaxRetryReached(
+            operation, session, command, queryId, s3Client, cause);
       } else {
-        logger.debug(
-            "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
-            operation,
-            retryCount);
-        logger.debug("Stack trace: ", ex);
-
-        // exponential backoff up to a limit
-        int backoffInMillis = s3Client.getRetryBackoffMin();
-
-        if (retryCount > 1) {
-          backoffInMillis <<= (Math.min(retryCount - 1, s3Client.getRetryBackoffMaxExponent()));
-        }
-
-        try {
-          logger.debug("Sleep for {} milliseconds before retry", backoffInMillis);
-
-          Thread.sleep(backoffInMillis);
-        } catch (InterruptedException ex1) {
-          // ignore
-        }
-
-        // If the exception indicates that the AWS token has expired,
-        // we need to refresh our S3 client with the new token
-        if (cause instanceof S3Exception) {
-          S3Exception s3ex = (S3Exception) cause;
-          if (s3ex.awsErrorDetails().errorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
-            // If session is null we cannot renew the token so throw the ExpiredToken exception
-            if (session != null) {
-              SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
-            } else {
-              throw new SnowflakeSQLException(
-                  queryId,
-                  s3ex.awsErrorDetails().errorCode(),
-                  CLOUD_STORAGE_CREDENTIALS_EXPIRED,
-                  "S3 credentials have expired");
-            }
-          }
-        }
+        retryRequestWithExponentialBackoff(
+            ex, retryCount, operation, session, command, s3Client, queryId, cause);
       }
     } else {
       if (ex instanceof InterruptedException
@@ -1039,50 +965,33 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   }
 
   public static class ClientConfiguration {
-    private int maxConnections = 50;
-    private int maxErrorRetry = -1;
-    private boolean disableSocketProxy = false;
-    private int connectionTimeout = 10 * 1000;
-    private int socketTimeout = 50 * 1000;
+    private final int maxConnections;
+    private final int maxErrorRetry;
+    private final int connectionTimeout;
+    private final int socketTimeout;
+
+    public ClientConfiguration(
+        int maxConnections, int maxErrorRetry, int connectionTimeout, int socketTimeout) {
+      this.maxConnections = maxConnections;
+      this.maxErrorRetry = maxErrorRetry;
+      this.connectionTimeout = connectionTimeout;
+      this.socketTimeout = socketTimeout;
+    }
 
     public int getMaxConnections() {
       return maxConnections;
-    }
-
-    public void setMaxConnections(int maxConnections) {
-      this.maxConnections = maxConnections;
     }
 
     public int getMaxErrorRetry() {
       return maxErrorRetry;
     }
 
-    public void setMaxErrorRetry(int maxErrorRetry) {
-      this.maxErrorRetry = maxErrorRetry;
-    }
-
-    public boolean isDisableSocketProxy() {
-      return disableSocketProxy;
-    }
-
-    public void setDisableSocketProxy(boolean disableSocketProxy) {
-      this.disableSocketProxy = disableSocketProxy;
-    }
-
     public int getConnectionTimeout() {
       return connectionTimeout;
     }
 
-    public void setConnectionTimeout(int connectionTimeout) {
-      this.connectionTimeout = connectionTimeout;
-    }
-
     public int getSocketTimeout() {
       return socketTimeout;
-    }
-
-    public void setSocketTimeout(int socketTimeout) {
-      this.socketTimeout = socketTimeout;
     }
   }
 }

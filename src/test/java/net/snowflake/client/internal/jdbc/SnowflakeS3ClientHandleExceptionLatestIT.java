@@ -59,7 +59,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
     StageInfo info = agent.getStageInfo();
     SnowflakeS3Client.ClientConfiguration clientConfig =
-        new SnowflakeS3Client.ClientConfiguration();
+        new SnowflakeS3Client.ClientConfiguration(1, 1, 10_000, 10_000);
     SnowflakeS3Client client =
         new SnowflakeS3Client(
             info.getCredentials(),
