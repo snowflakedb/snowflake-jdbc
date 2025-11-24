@@ -12,7 +12,7 @@ import org.apache.commons.codec.binary.Base64;
  *
  * <p>Instances of this class are immutable.
  *
- * @author mkember
+ * @author mkember, copied from net.snowflake.snowflake-common artifact
  */
 public class SFBinary {
   private static final Base16 INSTANCE = new Base16();
