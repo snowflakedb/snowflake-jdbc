@@ -1,31 +1,39 @@
 package net.snowflake.client.authentication;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.common.base.Strings;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.stream.Stream;
-import net.snowflake.client.TestUtil;
+import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@Tag(TestTags.AUTHENTICATION)
 public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest {
 
   static Stream<String> jwtTimeoutProvider() {
     return Stream.of("10", "100", null);
   }
 
+  static Stream<String> timeOutSettings() {
+    return Stream.of("HTTP_CLIENT_CONNECTION_TIMEOUT", "HTTP_CLIENT_SOCKET_TIMEOUT");
+  }
+
   /**
    * Tests the authentication exception and retry JWT renew functionality when retrying login
    * requests. To run, update environment variables to use connect with JWT authentication.
    */
-  @Disabled
   @ParameterizedTest
   @MethodSource("jwtTimeoutProvider")
   public void testPrivateKeyAuthTimeout(String jwtTimeout) {
@@ -38,30 +46,10 @@ public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest 
     props.put("user", "testUser");
     props.put("account", "testaccount");
 
-    String privateKeyFile = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE");
-    if (!Strings.isNullOrEmpty(privateKeyFile)) {
-      String workspace = System.getenv("WORKSPACE");
-      if (workspace != null) {
-        props.put(
-            "private_key_file", java.nio.file.Paths.get(workspace, privateKeyFile).toString());
-      } else {
-        props.put("private_key_file", privateKeyFile);
-      }
-      props.put("authenticator", "SNOWFLAKE_JWT");
+    String privateKeyFile = AbstractDriverIT.getFullPathFileInResource("rsa_key.p8");
+    props.put("private_key_file", privateKeyFile);
+    props.put("authenticator", "SNOWFLAKE_JWT");
 
-      String privateKeyPwd = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD");
-      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
-        props.put("private_key_pwd", privateKeyPwd);
-      }
-    } else {
-      String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
-      if (!Strings.isNullOrEmpty(password)) {
-        props.put("password", password);
-      } else {
-        throw new IllegalStateException(
-            "Neither SNOWFLAKE_TEST_PRIVATE_KEY_FILE nor SNOWFLAKE_TEST_PASSWORD environment variable is set. Please configure one of them for authentication.");
-      }
-    }
     try {
       Exception ex =
           assertThrows(
@@ -74,5 +62,32 @@ public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest 
       System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "false");
       System.setProperty("JWT_AUTH_TIMEOUT", "0");
     }
+  }
+
+  /**
+   * Test that Connection timeout and socket timout are applied to the httpclient.
+   *
+   * @throws SQLException if any SQL error occurs
+   */
+  @ParameterizedTest
+  @MethodSource("timeOutSettings")
+  public void testConnectionAndSocketTimeout(String timeoutType) throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "testUser");
+    props.put("account", "testaccount");
+    props.put("password", "testPasswordt");
+    props.put(timeoutType, "10");
+    long startLoginTime = System.currentTimeMillis();
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              DriverManager.getConnection(
+                  "jdbc:snowflake://fakeaccount.snowflakecomputing.com", props);
+            });
+    assertThat(e.getErrorCode(), is(ErrorCode.NETWORK_ERROR.getMessageCode()));
+    long endLoginTime = System.currentTimeMillis();
+    // Time lapsed should be less than default socket timeout.
+    assertTrue(endLoginTime - startLoginTime < 30000);
   }
 }
