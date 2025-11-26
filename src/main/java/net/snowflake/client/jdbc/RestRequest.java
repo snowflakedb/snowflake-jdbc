@@ -922,6 +922,8 @@ public class RestRequest {
         httpExecutingContext.getRequestId(),
         httpExecutingContext.getAuthTimeoutInMilliseconds());
 
+    execTimeData.setExecuteToSendQueryEnd();
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug(
