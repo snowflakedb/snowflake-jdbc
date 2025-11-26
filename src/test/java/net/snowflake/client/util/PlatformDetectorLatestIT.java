@@ -308,19 +308,25 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Set up wiremock for EC2 detection
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
+    // Ensure other metadata endpoints return immediately to avoid wiremock timeouts
+    String gcpMetadataUnavailable = loadMappingFile("platform-detection/gcp_metadata_unavailable");
+    importMapping(gcpMetadataUnavailable);
+    String azureMetadataUnavailable =
+        loadMappingFile("platform-detection/azure_metadata_unavailable");
+    importMapping(azureMetadataUnavailable);
 
     BasicAWSCredentials awsCredentials =
         // pragma: allowlist nextline secret
         new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
-    when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 100))
+    when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 500))
         .thenReturn("arn:aws:sts::123456789012:assumed-role/test-role/session");
 
     PlatformDetector detector =
         new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use small timeout to enable HTTP calls but ensure static mocks work in async context
-    List<String> platforms = detector.detectPlatforms(100, mockAwsAttestationService);
+    List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
 
     // Assert - Should detect multiple platforms
     assertEquals(3, platforms.size(), "Should detect exactly 3 platforms");
