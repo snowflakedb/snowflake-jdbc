@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.OperationContext;
+import com.microsoft.azure.storage.RetryNoRetry;
 import com.microsoft.azure.storage.StorageCredentials;
 import com.microsoft.azure.storage.StorageCredentialsAnonymous;
 import com.microsoft.azure.storage.StorageCredentialsSharedAccessSignature;
@@ -152,6 +153,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       } else {
         setSessionlessProxyForAzure(stage.getProxyProperties(), opContext);
       }
+      // Configure default retry policy for Azure client: no retries (driver handles retries)
+      BlobRequestOptions defaultOptions = azStorageClient.getDefaultRequestOptions();
+      defaultOptions.setRetryPolicyFactory(RetryNoRetry.getInstance());
+      azStorageClient.setDefaultRequestOptions(defaultOptions);
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
     }
@@ -810,10 +815,18 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
+    // Treat both direct StorageException and one wrapped as the root cause (e.g., inside
+    // IOException)
+    StorageException se = null;
     if (ex instanceof StorageException) {
-      StorageException se = (StorageException) ex;
+      se = (StorageException) ex;
+    } else if (SnowflakeUtil.getRootCause(ex) instanceof StorageException) {
+      se = (StorageException) SnowflakeUtil.getRootCause(ex);
+    }
 
-      if (((StorageException) ex).getHttpStatusCode() == 403) {
+    if (se != null) {
+
+      if (se.getHttpStatusCode() == 403) {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
         if (session != null) {
@@ -829,8 +842,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
       // If we have exceeded the max number of retries, propagate the error
       // no need for back off and retry if the file does not exist
-      if (retryCount > azClient.getMaxRetries()
-          || ((StorageException) ex).getHttpStatusCode() == 404) {
+      if (retryCount > azClient.getMaxRetries() || se.getHttpStatusCode() == 404) {
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -845,7 +857,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       } else {
         logger.debug(
             "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
+            se.getMessage(),
             operation,
             retryCount);
         logger.debug("Stack trace: ", ex);
