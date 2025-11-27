@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
@@ -395,6 +396,52 @@ public class RestRequestTest {
                 t.statusCode, t.retryHTTP403));
       }
     }
+  }
+
+  @Test
+  public void testRetryOnTransientSslHandshakeEof() throws Exception {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    // First attempt throws SSLHandshakeException with EOF root cause, second succeeds
+    SSLHandshakeException handshake = new SSLHandshakeException("handshake failed");
+    handshake.initCause(new EOFException("remote host closed connection during handshake"));
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenThrow(handshake)
+        .thenReturn(successResponse());
+
+    // Use helper to execute with maxRetries >= 1 so the loop can retry
+    execute(
+        client,
+        "fakeurl.com/?requestId=abcd-1234",
+        /* retryTimeout */ 0,
+        /* authTimeout */ 0,
+        /* socketTimeout */ 0,
+        /* includeRetryParameters */ true,
+        /* noRetry */ false,
+        /* maxRetries */ 2);
+
+    // Verify two executions (first throws, second succeeds)
+    verify(client, times(2)).execute(any(HttpUriRequest.class));
+  }
+
+  @Test
+  public void testNoRetryOnSslHandshakeWithoutEof() throws Exception {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    // SSLHandshakeException without EOF root cause should be treated as non-retryable
+    SSLHandshakeException handshake = new SSLHandshakeException("handshake failed (non-EOF)");
+    when(client.execute(any(HttpUriRequest.class))).thenThrow(handshake);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            execute(
+                client,
+                "fakeurl.com/?requestId=abcd-1234",
+                /* retryTimeout */ 0,
+                /* authTimeout */ 0,
+                /* socketTimeout */ 0,
+                /* includeRetryParameters */ true,
+                /* noRetry */ false,
+                /* maxRetries */ 2));
   }
 
   @Test
