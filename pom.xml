@@ -48,6 +48,20 @@
       <resource>
         <filtering>true</filtering>
         <directory>src/main/resources</directory>
+        <excludes>
+          <exclude>**/*.dylib</exclude>
+          <exclude>**/*.so</exclude>
+          <exclude>**/*.dll</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <filtering>false</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.dylib</include>
+          <include>**/*.so</include>
+          <include>**/*.dll</include>
+        </includes>
       </resource>
     </resources>
     <pluginManagement>

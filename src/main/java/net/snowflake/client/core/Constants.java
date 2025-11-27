@@ -32,7 +32,15 @@ public final class Constants {
     SOLARIS
   }
 
+  public enum Architecture {
+    X86_64,
+    AARCH64,
+    PPC64,
+    X86
+  }
+
   private static OS os = null;
+  private static Architecture architecture = null;
 
   public static synchronized OS getOS() {
     if (os == null) {
@@ -50,8 +58,25 @@ public final class Constants {
     return os;
   }
 
+  public static synchronized Architecture getArchitecture() {
+    if (architecture == null) {
+      String osArch = systemGetProperty("os.arch").toLowerCase();
+      if (osArch.contains("amd64") || osArch.contains("x86_64")) {
+        architecture = Architecture.X86_64;
+      } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
+        architecture = Architecture.AARCH64;
+      } else if (osArch.contains("ppc64")) {
+        architecture = Architecture.PPC64;
+      } else if (osArch.contains("x86") || osArch.contains("i386") || osArch.contains("i686")) {
+        architecture = Architecture.X86;
+      }
+    }
+    return architecture;
+  }
+
   public static void clearOSForTesting() {
     os = null;
+    architecture = null;
   }
 
   public static final int MB = 1024 * 1024;
