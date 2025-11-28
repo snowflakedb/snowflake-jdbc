@@ -1157,6 +1157,8 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
           </plugin>
           <plugin>
@@ -1164,6 +1166,8 @@
             <configuration>
               <skipTests>${skip.unitTests}</skipTests>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
           </plugin>
         </plugins>
@@ -1216,6 +1220,8 @@
             <configuration>
               <test>UnitTestSuite</test>
               <skipTests>${skip.unitTests}</skipTests>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
             <dependencies>
               <dependency>
@@ -1252,6 +1258,8 @@
                     <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>
+                  <reportFormat>plain</reportFormat>
+                  <useFile>false</useFile>
                 </configuration>
               </execution>
             </executions>
@@ -1374,6 +1382,8 @@
               <includes>
                 <include>**/*IT.java</include>
               </includes>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
             <dependencies>
               <dependency>
@@ -1409,6 +1419,8 @@
               <includes>
                 <include>**/*IT.java</include>
               </includes>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
             <dependencies>
               <dependency>
@@ -1444,6 +1456,8 @@
               <includes>
                 <include>**/*IT.java</include>
               </includes>
+              <reportFormat>plain</reportFormat>
+              <useFile>false</useFile>
             </configuration>
             <dependencies>
               <dependency>
