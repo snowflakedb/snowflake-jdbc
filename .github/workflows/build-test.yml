@@ -104,7 +104,7 @@ jobs:
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                MAVEN_OPTS: "-DargLine=-Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
               run: /opt/homebrew/bin/bash ./ci/test_mac.sh
 
     test-rocky:
