@@ -179,6 +179,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // insert using regular binging
         executePrepStmtForNumRows(connection, "regularinsert", currT, 3);
 
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         // insert using stage binding
         executePrepStmtForNumRows(connection, "stageinsert", currT, 3);
 
