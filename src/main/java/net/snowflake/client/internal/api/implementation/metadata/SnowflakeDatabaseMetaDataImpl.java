@@ -1925,54 +1925,48 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
   }
 
   static Integer getColumnSize(SnowflakeColumnMetadata columnMetadata) {
-    // Initialize columnSize as null (JDBC spec requirement for non-applicable types)
-    Integer columnSize = null;
-
-    // The COLUMN_SIZE column specifies the column size for the given
-    // column. For numeric data, this is the maximum precision. For
-    // character data, this is the length in characters. For datetime
-    // datatypes, this is the length in characters of the String
-    // representation (assuming the maximum allowed precision of the
-    // fractional seconds component). For binary data, this is the
-    // length in bytes. For the ROWID datatype, this is the length in
-    // bytes. Null is returned for data types where the column size
-    // is not applicable.
-    // Character data types
-    if (columnMetadata.getType() == Types.VARCHAR || columnMetadata.getType() == Types.CHAR) {
-      columnSize = columnMetadata.getLength();
+    // The COLUMN_SIZE column specifies the column size for the given column. For numeric data, this
+    // is the maximum precision. For character data, this is the length in characters. For datetime
+    // datatypes, this is the length in characters of the String representation (assuming the
+    // maximum allowed precision of the fractional seconds component). For binary data, this is the
+    // length in bytes. For the ROWID datatype, this is the length in bytes. Null is returned for
+    // data types where the column size is not applicable.
+    switch (columnMetadata.getType()) {
+        // Character data types
+      case Types.CHAR:
+      case Types.VARCHAR:
+        return columnMetadata.getLength();
+        // Binary data types
+      case Types.BINARY:
+      case Types.VARBINARY:
+        return columnMetadata.getLength();
+        // All numeric and datetime types - getPrecision() handles both correctly
+      case Types.DECIMAL:
+      case Types.NUMERIC:
+      case Types.BIGINT:
+      case Types.INTEGER:
+      case Types.SMALLINT:
+      case Types.TINYINT:
+      case Types.FLOAT:
+      case Types.DOUBLE:
+      case Types.REAL:
+      case Types.DATE:
+      case Types.TIME:
+      case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ:
+      case SnowflakeUtil.EXTRA_TYPES_DECFLOAT:
+        return columnMetadata.getPrecision();
+        // For VECTOR Snowflake type we consider dimension as the column size
+      case SnowflakeUtil.EXTRA_TYPES_VECTOR:
+        return columnMetadata.getDimension();
+        // For all other types (BOOLEAN, ARRAY, OBJECT, etc.) return null as per JDBC spec
+        // requirement for non-applicable types
+      default:
+        return null;
     }
-    // Binary data types
-    else if (columnMetadata.getType() == Types.BINARY
-        || columnMetadata.getType() == Types.VARBINARY) {
-      columnSize = columnMetadata.getLength();
-    }
-    // All numeric and datetime types - getPrecision() handles both correctly
-    else if (columnMetadata.getType() == Types.DECIMAL
-        || columnMetadata.getType() == Types.NUMERIC
-        || columnMetadata.getType() == Types.BIGINT
-        || columnMetadata.getType() == Types.INTEGER
-        || columnMetadata.getType() == Types.SMALLINT
-        || columnMetadata.getType() == Types.TINYINT
-        || columnMetadata.getType() == Types.FLOAT
-        || columnMetadata.getType() == Types.DOUBLE
-        || columnMetadata.getType() == Types.REAL
-        || columnMetadata.getType() == Types.DATE
-        || columnMetadata.getType() == Types.TIME
-        || columnMetadata.getType() == Types.TIMESTAMP
-        || columnMetadata.getType() == Types.TIMESTAMP_WITH_TIMEZONE
-        || columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-        || columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
-        || columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
-        || columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_DECFLOAT) {
-      columnSize = columnMetadata.getPrecision();
-    }
-    // Special Snowflake types
-    else if (columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-      // For VECTOR Snowflake type we consider dimension as the column size
-      columnSize = columnMetadata.getDimension();
-    }
-    // For all other types (BOOLEAN, ARRAY, OBJECT, etc.), return null as per JDBC spec
-    return columnSize;
   }
 
   @Override
