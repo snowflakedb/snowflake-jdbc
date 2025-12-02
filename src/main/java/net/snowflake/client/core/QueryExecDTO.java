@@ -6,6 +6,8 @@ import java.util.Map;
 public class QueryExecDTO {
   private String sqlText;
 
+  private String dataframeAst;
+
   @Deprecated private Integer sequenceId;
 
   private Map<String, ParameterBindingDTO> bindings;
@@ -39,7 +41,35 @@ public class QueryExecDTO {
       long querySubmissionTime,
       boolean internal,
       boolean asyncExec) {
+    this(
+        sqlText,
+        describeOnly,
+        sequenceId,
+        bindings,
+        bindStage,
+        parameters,
+        queryContext,
+        querySubmissionTime,
+        internal,
+        asyncExec,
+        null);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public QueryExecDTO(
+      String sqlText,
+      boolean describeOnly,
+      Integer sequenceId,
+      Map<String, ParameterBindingDTO> bindings,
+      String bindStage,
+      Map<String, Object> parameters,
+      QueryContextDTO queryContext,
+      long querySubmissionTime,
+      boolean internal,
+      boolean asyncExec,
+      String dataframeAst) {
     this.sqlText = sqlText;
+    this.dataframeAst = dataframeAst;
     this.describeOnly = describeOnly;
     this.sequenceId = sequenceId;
     this.bindings = bindings;
@@ -57,6 +87,16 @@ public class QueryExecDTO {
 
   public void setSqlText(String sqlText) {
     this.sqlText = sqlText;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getDataframeAst() {
+    return this.dataframeAst;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setDataframeAst(String dataframeAst) {
+    this.dataframeAst = dataframeAst;
   }
 
   @Deprecated

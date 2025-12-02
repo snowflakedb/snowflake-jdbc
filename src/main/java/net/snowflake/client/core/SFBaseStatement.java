@@ -80,6 +80,30 @@ public abstract class SFBaseStatement {
       throws SQLException, SFException;
 
   /**
+   * Executes the given SQL string, with dataframe AST parameter.
+   *
+   * @param sql The SQL string to execute, synchronously.
+   * @param dataframeAst encoded string representation of the dataframe AST
+   * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData OOB telemetry object to record timings
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  @SnowflakeJdbcInternalApi
+  public SFBaseResultSet execute(
+      String sql,
+      String dataframeAst,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
+      throws SQLException, SFException {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
    * Execute sql asynchronously. Note that at a minimum, this does not have to be supported; if
    * executeAsyncQuery() is called from SnowflakeStatement and the SFConnectionHandler's
    * supportsAsyncQuery() returns false, an exception is thrown. If this is un-implemented, then
