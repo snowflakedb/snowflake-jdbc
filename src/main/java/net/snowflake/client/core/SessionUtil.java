@@ -1178,7 +1178,37 @@ public class SessionUtil {
       logger.debug("Exception in retrieving application path for client environment", e);
       clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
     }
+
+    // Add minicore telemetry (if available)
+    // Non-blocking: if minicore async initialization hasn't completed yet, we skip it
+    try {
+      addMinicoreTelemetry(clientEnv);
+    } catch (Throwable t) {
+      logger.debug("Failed to add minicore telemetry: {}", t.getMessage());
+    }
+
     return clientEnv;
+  }
+
+  private static void addMinicoreTelemetry(Map<String, Object> clientEnv) {
+    net.snowflake.client.internal.core.minicore.Minicore minicore =
+        net.snowflake.client.internal.core.minicore.Minicore.getInstance();
+
+    if (minicore == null) {
+      logger.trace("Minicore not initialized yet, skipping telemetry");
+      return;
+    }
+
+    net.snowflake.client.internal.core.minicore.MinicoreLoadResult loadResult =
+        minicore.getLoadResult();
+    if (loadResult == null) {
+      logger.debug("Minicore load result is null, skipping telemetry");
+      return;
+    }
+
+    net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
+        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(loadResult);
+    clientEnv.putAll(telemetry.toMap());
   }
 
   private static String getCertRevocationMode(SFLoginInput loginInput) {

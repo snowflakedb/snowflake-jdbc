@@ -9,10 +9,6 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
 public class MinicorePlatform {
-  private static final String MINICORE_VERSION = "0.0.1_SNAPSHOT";
-  private static final String MINICORE_GIT_HASH = "47a8f3d456b27d6253cd8020a80dd6fc885169a3";
-  private static final String LIBRARY_BASE_NAME = "sf_mini_core";
-
   private final OS os;
   private final Architecture architecture;
   private final String osName;
@@ -26,7 +22,8 @@ public class MinicorePlatform {
     this.os = Constants.getOS();
     this.architecture = Constants.getArchitecture();
     this.resourcePath = buildResourcePath();
-    this.supported = resourcePath != null && MinicorePlatform.class.getResource(resourcePath) != null;
+    this.supported =
+        resourcePath != null && MinicorePlatform.class.getResource(resourcePath) != null;
   }
 
   public boolean isSupported() {
@@ -44,23 +41,12 @@ public class MinicorePlatform {
   }
 
   private String buildResourcePath() {
-    if (os == null || architecture == null) {
+    String fileName = getLibraryFileName();
+    if (fileName == null) {
       return null;
     }
-    
-    String osId = getOsIdentifier();
-    String archId = getArchIdentifier();
-    if (osId == null || archId == null) {
-      return null;
-    }
-    
-    String platformId = osId + "-" + archId;
-    String libraryFile = getLibraryPrefix() + LIBRARY_BASE_NAME + getLibraryExtension();
-    String directoryName = String.format(
-        "sf_mini_core_%s_%s_%s",
-        platformId, MINICORE_VERSION, MINICORE_GIT_HASH);
-    
-    return String.format("/minicore/%s/%s", directoryName, libraryFile);
+    // Flat structure: /minicore/{filename}
+    return "/minicore/" + fileName;
   }
 
   public String getPlatformIdentifier() {
@@ -69,9 +55,47 @@ public class MinicorePlatform {
     if (osId == null || archId == null) {
       return null;
     }
+
+    // For Linux, add libc variant: linux-x86_64-glibc or linux-aarch64-musl
+    LibcDetector.LibcVariant libcVariant = LibcDetector.detectLibcVariant();
+    if (libcVariant != LibcDetector.LibcVariant.UNSUPPORTED) {
+      return osId + "-" + archId + "-" + libcVariant.getIdentifier();
+    }
+
+    // For other OSes (UNSUPPORTED), just os-arch
     return osId + "-" + archId;
   }
 
+  /**
+   * Get OS identifier for use in filenames.
+   * Uses conventional naming: darwin (macOS), linux, windows, etc.
+   */
+  private String getOsIdentifierForFilename() {
+    if (os == null) {
+      return null;
+    }
+    switch (os) {
+      case LINUX:
+        return "linux";
+      case MAC:
+        return "darwin"; // Use conventional "darwin" instead of "macos"
+      case WINDOWS:
+        return "windows";
+      case SOLARIS:
+        // AIX is detected as LINUX in Constants, but we need to check the actual OS name
+        if (osName != null && osName.toLowerCase().contains("aix")) {
+          return "aix";
+        }
+        return "solaris";
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Get OS identifier for platform identifier (used in telemetry).
+   * Uses JDBC convention: macos, linux, windows, etc.
+   */
   private String getOsIdentifier() {
     if (os == null) {
       return null;
@@ -94,6 +118,32 @@ public class MinicorePlatform {
     }
   }
 
+  /**
+   * Get architecture identifier for use in filenames.
+   * Uses conventional naming: amd64 (x86_64), arm64 (aarch64), etc.
+   */
+  private String getArchIdentifierForFilename() {
+    if (architecture == null) {
+      return null;
+    }
+    switch (architecture) {
+      case X86_64:
+        return "amd64"; // Use conventional "amd64" instead of "x86_64"
+      case AARCH64:
+        return "arm64"; // Use conventional "arm64" instead of "aarch64"
+      case PPC64:
+        return "ppc64";
+      case X86:
+        return "x86";
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Get architecture identifier for platform identifier (used in telemetry).
+   * Uses JDBC convention: x86_64, aarch64, etc.
+   */
   private String getArchIdentifier() {
     if (architecture == null) {
       return null;
@@ -147,23 +197,45 @@ public class MinicorePlatform {
     }
   }
 
-  public String getLibraryFileName() {
-    return getLibraryPrefix() + LIBRARY_BASE_NAME + getLibraryExtension();
-  }
-
   /**
-   * Get the resource path for the minicore library in the JAR.
-   *
-   * <p>Format: /minicore/sf_mini_core_{platform}_{version}_{hash}/{library_file}
-   *
-   * <p>Example:
-   * /minicore/sf_mini_core_linux-x86_64_0.0.1_SNAPSHOT_47a8f3d456b27d6253cd8020a80dd6fc885169a3/libsf_mini_core.so
-   *
-   * @return resource path, or null if platform is not supported
-   * @deprecated Use {@link #getLibraryPath()} instead, which throws an exception for unsupported platforms
+   * Get the library filename with platform encoding.
+   * 
+   * <p>Format: {prefix}sf_mini_core_{os}_{arch}[_{libc}]{extension}
+   * 
+   * <p>Examples:
+   * <ul>
+   *   <li>Linux x86_64 glibc: {@code libsf_mini_core_linux_amd64_glibc.so}
+   *   <li>Linux aarch64 musl: {@code libsf_mini_core_linux_arm64_musl.so}
+   *   <li>macOS x86_64: {@code libsf_mini_core_darwin_amd64.dylib}
+   *   <li>macOS aarch64: {@code libsf_mini_core_darwin_arm64.dylib}
+   *   <li>Windows x86_64: {@code sf_mini_core_windows_amd64.dll}
+   * </ul>
    */
-  public String getResourcePath() {
-    return resourcePath;
+  public String getLibraryFileName() {
+    if (os == null || architecture == null) {
+      return null;
+    }
+
+    String osId = getOsIdentifierForFilename();
+    String archId = getArchIdentifierForFilename();
+    if (osId == null || archId == null) {
+      return null;
+    }
+
+    StringBuilder fileName = new StringBuilder();
+    fileName.append(getLibraryPrefix());
+    fileName.append(Minicore.LIBRARY_BASE_NAME);
+    fileName.append("_").append(osId);
+    fileName.append("_").append(archId);
+
+    // For Linux, add libc variant
+    LibcDetector.LibcVariant libcVariant = LibcDetector.detectLibcVariant();
+    if (libcVariant != LibcDetector.LibcVariant.UNSUPPORTED) {
+      fileName.append("_").append(libcVariant.getIdentifier());
+    }
+
+    fileName.append(getLibraryExtension());
+    return fileName.toString();
   }
 
   public OS getOs() {

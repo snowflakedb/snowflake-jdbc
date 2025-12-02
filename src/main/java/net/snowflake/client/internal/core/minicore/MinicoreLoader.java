@@ -10,7 +10,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
-
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -22,7 +21,6 @@ public class MinicoreLoader {
   private static final String TEMP_FILE_PREFIX = "snowflake-minicore-";
 
   private volatile MinicoreLoadResult loadResult;
-  private volatile MinicoreLibrary library;
   private final MinicoreLoadLogger loadLogger;
 
   public MinicoreLoader() {
@@ -33,19 +31,21 @@ public class MinicoreLoader {
     if (loadResult != null) {
       return loadResult;
     }
-    
+
     loadLogger.log("Starting minicore loading");
-    
+
     MinicorePlatform platform = new MinicorePlatform();
-    loadLogger.log("Detected platform: OS=" + platform.getOsName() + ", Arch=" + platform.getOsArch());
-    
+    loadLogger.log(
+        "Detected platform: OS=" + platform.getOsName() + ", Arch=" + platform.getOsArch());
+
     if (!platform.isSupported()) {
-      loadLogger.log("Platform not supported: "+ platform.getPlatformIdentifier());
+      loadLogger.log("Platform not supported: " + platform.getPlatformIdentifier());
       loadResult =
           MinicoreLoadResult.failure(
               String.format(
                   "Unsupported platform: OS=%s, Arch=%s",
                   platform.getOsName(), platform.getOsArch()),
+              platform.getLibraryFileName(),
               null,
               loadLogger.getLogs());
       return loadResult;
@@ -59,27 +59,34 @@ public class MinicoreLoader {
   private MinicoreLoadResult loadLibraryFromJar(MinicorePlatform platform) {
     String resourcePath = platform.getLibraryPath();
     loadLogger.log("Library resource path: " + resourcePath);
-    
+
+    String libraryFileName = platform.getLibraryFileName();
     try (InputStream libraryStream = MinicoreLoader.class.getResourceAsStream(resourcePath)) {
       if (libraryStream == null) {
         loadLogger.log("Library resource not found in JAR");
         return MinicoreLoadResult.failure(
-            String.format("Library resource not found in JAR: %s", resourcePath), null, loadLogger.getLogs());
+            String.format("Library resource not found in JAR: %s", resourcePath),
+            libraryFileName,
+            null,
+            loadLogger.getLogs());
       }
 
       loadLogger.log("Library resource found in JAR");
-      Path targetPath = determineTargetPath(platform.getLibraryFileName());
+      Path targetPath = determineTargetPath(libraryFileName);
       if (targetPath == null) {
         loadLogger.log("No writable directory found");
         return MinicoreLoadResult.failure(
-            "No writable directory found (tried: system temp, working dir, home dir)", null, loadLogger.getLogs());
+            "No writable directory found (tried: system temp, working dir, home dir)",
+            libraryFileName,
+            null,
+            loadLogger.getLogs());
       }
 
-      return persistLoadAndDelete(targetPath, libraryStream);
+      return persistLoadAndDelete(targetPath, libraryStream, libraryFileName);
     } catch (IOException e) {
       loadLogger.log("Failed to read library from JAR: " + e.getMessage());
       return MinicoreLoadResult.failure(
-          "Failed to read library from JAR: " + e.getMessage(), e, loadLogger.getLogs());
+          "Failed to read library from JAR: " + e.getMessage(), libraryFileName, e, loadLogger.getLogs());
     }
   }
 
@@ -87,7 +94,7 @@ public class MinicoreLoader {
     // Try system temp directory first (create dedicated temp directory)
     try {
       Path tempDir = Files.createTempDirectory(TEMP_FILE_PREFIX);
-      loadLogger.log("Created temp directory: " + tempDir);
+      loadLogger.log("Using temp directory");
       setPermissions700(tempDir);
       loadLogger.log("Configured temp directory permissions to 0700");
       Path filePath = tempDir.resolve(libraryFileName);
@@ -98,11 +105,15 @@ public class MinicoreLoader {
 
     // Fallback to working directory
     Path path = tryDirectoryForFile("user.dir", libraryFileName, "working");
-    if (path != null) return path;
+    if (path != null) {
+      return path;
+    }
 
     // Fallback to home directory
     path = tryDirectoryForFile("user.home", libraryFileName, "home");
-    if (path != null) return path;
+    if (path != null) {
+      return path;
+    }
 
     return null;
   }
@@ -113,8 +124,9 @@ public class MinicoreLoader {
       if (dir != null && !dir.isEmpty()) {
         Path baseDir = Paths.get(dir);
         if (Files.isWritable(baseDir)) {
-          Path filePath = baseDir.resolve(TEMP_FILE_PREFIX + System.nanoTime() + "-" + libraryFileName);
-          loadLogger.log("Using " + dirType + " directory: " + baseDir);
+          Path filePath =
+              baseDir.resolve(TEMP_FILE_PREFIX + System.nanoTime() + "-" + libraryFileName);
+          loadLogger.log("Using " + dirType + " directory");
           return filePath;
         }
       }
@@ -124,37 +136,69 @@ public class MinicoreLoader {
     return null;
   }
 
-
   private MinicoreLoadResult persistLoadAndDelete(
-      Path targetPath, InputStream libraryStream) {
+      Path targetPath, InputStream libraryStream, String libraryFileName) {
     try {
-      persistLibraryToDisk(targetPath, libraryStream);
-      loadLogger.log("Loading minicore library from: " + targetPath);
-      MinicoreLibrary loadedLibrary = loadLibraryFromPath(targetPath);
-      this.library = loadedLibrary;
-      loadLogger.log("Minicore library loaded successfully");
-      return MinicoreLoadResult.success(targetPath.toAbsolutePath().toString(), loadLogger.getLogs());
-    } catch (IOException e) {
-      loadLogger.log("Failed to persist library: " + e.getMessage());
+      MinicoreLibrary loadedLibrary = loadLibraryFromDisk(targetPath, libraryStream);
+      String coreVersion = getLibraryVersion(loadedLibrary);
+      
+      return MinicoreLoadResult.success(
+          libraryFileName, loadedLibrary, coreVersion, loadLogger.getLogs());
+    } catch (LoadLibraryException e) {
       return MinicoreLoadResult.failure(
-          String.format("Failed to persist library to %s: %s", targetPath, e.getMessage()), e, loadLogger.getLogs());
-    } catch (UnsatisfiedLinkError e) {
-      loadLogger.log("Failed to load library: " + e.getMessage());
-      return MinicoreLoadResult.failure(
-          String.format("Failed to load library from %s: %s", targetPath, e.getMessage()), e, loadLogger.getLogs());
-    } catch (Exception e) {
-      loadLogger.log("Unexpected error: " + e.getMessage());
-      return MinicoreLoadResult.failure(
-          String.format("Unexpected error with library at %s: %s", targetPath, e.getMessage()), e, loadLogger.getLogs());
+          e.getMessage(), libraryFileName, e.getCause(), loadLogger.getLogs());
     } finally {
       deleteLibraryFile(targetPath);
       loadLogger.log("Deleted temporary library file");
     }
   }
 
-  private Path persistLibraryToDisk(Path targetPath, InputStream libraryStream)
-      throws IOException {
-    loadLogger.log("Writing embedded library to: " + targetPath);
+  private MinicoreLibrary loadLibraryFromDisk(Path targetPath, InputStream libraryStream)
+      throws LoadLibraryException {
+    try {
+      persistLibraryToDisk(targetPath, libraryStream);
+      loadLogger.log("Loading minicore library");
+      MinicoreLibrary library = loadLibraryFromPath(targetPath);
+      loadLogger.log("Minicore library loaded successfully");
+      return library;
+    } catch (IOException e) {
+      loadLogger.log("Failed to persist library: " + e.getMessage());
+      throw new LoadLibraryException("Failed to persist library: " + e.getMessage(), e);
+    } catch (UnsatisfiedLinkError e) {
+      loadLogger.log("Failed to load library: " + e.getMessage());
+      throw new LoadLibraryException("Failed to load library: " + e.getMessage(), e);
+    } catch (Exception e) {
+      loadLogger.log("Unexpected error loading library: " + e.getMessage());
+      throw new LoadLibraryException("Unexpected error loading library: " + e.getMessage(), e);
+    }
+  }
+
+  private String getLibraryVersion(MinicoreLibrary library) throws LoadLibraryException {
+    try {
+      loadLogger.log("Calling sf_core_full_version");
+      String version = library.sf_core_full_version();
+      loadLogger.log("sf_core_full_version returned: " + version);
+      return version;
+    } catch (UnsatisfiedLinkError e) {
+      loadLogger.log("Failed to load symbol sf_core_full_version: " + e.getMessage());
+      throw new LoadLibraryException(
+          "Failed to load symbol sf_core_full_version: " + e.getMessage(), e);
+    } catch (Exception e) {
+      loadLogger.log("Unexpected error calling sf_core_full_version: " + e.getMessage());
+      throw new LoadLibraryException(
+          "Unexpected error calling sf_core_full_version: " + e.getMessage(), e);
+    }
+  }
+
+  /** Internal exception for library loading failures. */
+  private static class LoadLibraryException extends Exception {
+    LoadLibraryException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
+  private Path persistLibraryToDisk(Path targetPath, InputStream libraryStream) throws IOException {
+    loadLogger.log("Writing embedded library to disk");
     Files.copy(libraryStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
     loadLogger.log("Successfully wrote embedded library");
     loadLogger.log("Setting file permissions to 600");
@@ -175,7 +219,7 @@ public class MinicoreLoader {
     try {
       Files.deleteIfExists(filePath);
     } catch (IOException e) {
-      logger.trace("Failed to delete library file {}: {}", filePath, e.getMessage());
+      logger.trace("Failed to delete library file: {}", e.getMessage());
     }
   }
 
@@ -203,9 +247,5 @@ public class MinicoreLoader {
       path.toFile().setWritable(true, true); // writable by owner only
       path.toFile().setExecutable(executable, true); // executable by owner only if needed
     }
-  }
-
-  public MinicoreLibrary getLibrary() {
-    return library;
   }
 }

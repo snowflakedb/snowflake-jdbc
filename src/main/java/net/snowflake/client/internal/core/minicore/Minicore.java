@@ -1,15 +1,22 @@
 package net.snowflake.client.internal.core.minicore;
 
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
 public class Minicore {
-
   private static final SFLogger logger = SFLoggerFactory.getLogger(Minicore.class);
+  
+  public static final String DISABLE_MINICORE_ENV_VAR = "SF_DISABLE_MINICORE";
+
+  public static final String LIBRARY_BASE_NAME = "sf_mini_core";
 
   private static volatile Minicore INSTANCE;
+  private static volatile CompletableFuture<Void> INITIALIZATION_FUTURE;
 
   private final MinicoreLoadResult loadResult;
   private final MinicoreLibrary library;
@@ -19,20 +26,61 @@ public class Minicore {
     this.library = library;
   }
 
+  public static synchronized void initializeAsync() {
+    if (INITIALIZATION_FUTURE != null) {
+      return; // Already started
+    }
+
+    // Check if minicore is disabled via environment variable
+    if (isMinicoreDisabled()) {
+      logger.debug("Minicore initialization disabled via {} environment variable", DISABLE_MINICORE_ENV_VAR);
+      INITIALIZATION_FUTURE = CompletableFuture.completedFuture(null);
+      return;
+    }
+
+    INITIALIZATION_FUTURE =
+        CompletableFuture.runAsync(
+            () -> {
+              try {
+                logger.trace("Starting async minicore initialization");
+                MinicoreLoader loader = new MinicoreLoader();
+                MinicoreLoadResult result = loader.loadLibrary();
+                INSTANCE = new Minicore(result, result.getLibrary());
+              } catch (Exception e) {
+                logger.error("Unexpected error during minicore initialization", e);
+                // Create a failed result
+                MinicoreLoadResult failedResult =
+                    MinicoreLoadResult.failure(
+                        "Unexpected initialization error: " + e.getMessage(),
+                        null,
+                        e,
+                        Collections.emptyList());
+                Minicore instance = new Minicore(failedResult, null);
+                INSTANCE = instance;
+              }
+            });
+  }
+
+  private static boolean isMinicoreDisabled() {
+    String envValue = SnowflakeUtil.systemGetEnv(DISABLE_MINICORE_ENV_VAR);
+    return envValue != null && envValue.equalsIgnoreCase("true");
+  }
+
   public static synchronized void initialize() {
     if (INSTANCE != null) {
       return;
     }
 
-    MinicoreLoader loader = new MinicoreLoader();
-    MinicoreLoadResult result = loader.loadLibrary();
+    if (INITIALIZATION_FUTURE == null) {
+      // Not started yet, initialize synchronously
+      initializeAsync();
+    }
 
-    INSTANCE = new Minicore(result, loader.getLibrary());
-
-    if (result.isSuccess()) {
-      logger.trace("Minicore initialized successfully: {}", result);
-    } else {
-      logger.trace("Minicore initialized with failed load: {}", result);
+    try {
+      // Wait for completion
+      INITIALIZATION_FUTURE.join();
+    } catch (Exception e) {
+      logger.error("Failed to initialize minicore", e);
     }
   }
 

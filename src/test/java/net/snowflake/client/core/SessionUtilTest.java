@@ -350,6 +350,79 @@ public class SessionUtilTest {
     assertThat("APPLICATION_PATH should contain file path", isValidPath(applicationPath));
   }
 
+  @Test
+  public void testMinicoreTelemetryWithSuccessfulLoad() {
+    // Create a mock successful load result
+    List<String> logs = new ArrayList<>();
+    logs.add("Starting minicore loading");
+    logs.add("Platform supported");
+    logs.add("Minicore library loaded successfully");
+
+    net.snowflake.client.internal.core.minicore.MinicoreLoadResult successResult =
+        net.snowflake.client.internal.core.minicore.MinicoreLoadResult.success(
+            "libsf_mini_core.so",
+            null, // library instance not needed for this test
+            "1.0.0",
+            logs);
+
+    net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
+        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(
+            successResult);
+    Map<String, Object> telemetryMap = telemetry.toMap();
+
+    // THEN - Telemetry should contain success information
+    assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
+    assertTrue(telemetryMap.get("ISA") != null, "ISA should not be null");
+
+    assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
+    assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
+
+    assertTrue(telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should be set on success");
+    assertEquals("1.0.0", telemetryMap.get("CORE_VERSION"));
+
+    assertTrue(telemetryMap.containsKey("CORE_LOAD_LOGS"), "CORE_LOAD_LOGS should be set");
+
+    assertFalse(
+        telemetryMap.containsKey("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should not be set on success");
+  }
+
+  @Test
+  public void testMinicoreTelemetryWithFailedLoad() {
+    // Create a mock failed load result
+    List<String> logs = new ArrayList<>();
+    logs.add("Starting minicore loading");
+    logs.add("Failed to load library");
+
+    net.snowflake.client.internal.core.minicore.MinicoreLoadResult failedResult =
+        net.snowflake.client.internal.core.minicore.MinicoreLoadResult.failure(
+            "Failed to load library: UnsatisfiedLinkError",
+            "libsf_mini_core.so",
+            new UnsatisfiedLinkError("Cannot load library"),
+            logs);
+
+    net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
+        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(
+            failedResult);
+    Map<String, Object> telemetryMap = telemetry.toMap();
+
+    // THEN - Telemetry should contain error information
+    assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
+    assertTrue(telemetryMap.get("ISA") != null, "ISA should not be null");
+
+    assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
+    assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
+
+    assertTrue(
+        telemetryMap.containsKey("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should be set on failure");
+    assertEquals("Failed to load library: UnsatisfiedLinkError", telemetryMap.get("CORE_LOAD_ERROR"));
+
+    assertTrue(telemetryMap.containsKey("CORE_LOAD_LOGS"), "CORE_LOAD_LOGS should be set");
+
+    assertFalse(
+        telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should not be set on failure");
+  }
+
   private static boolean isValidPath(String path) {
     try {
       Paths.get(path);

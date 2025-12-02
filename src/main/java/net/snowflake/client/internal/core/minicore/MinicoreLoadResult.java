@@ -10,29 +10,37 @@ public class MinicoreLoadResult {
 
   private final boolean success;
   private final String errorMessage;
-  private final String loadedFromPath;
+  private final String libraryFileName;
+  private final MinicoreLibrary library;
+  private final String coreVersion;
   private final Throwable exception;
   private final List<String> logs;
 
   private MinicoreLoadResult(
       boolean success,
       String errorMessage,
-      String loadedFromPath,
+      String libraryFileName,
+      MinicoreLibrary library,
+      String coreVersion,
       Throwable exception,
       List<String> logs) {
     this.success = success;
     this.errorMessage = errorMessage;
-    this.loadedFromPath = loadedFromPath;
+    this.libraryFileName = libraryFileName;
+    this.library = library;
+    this.coreVersion = coreVersion;
     this.exception = exception;
     this.logs = logs != null ? new ArrayList<>(logs) : new ArrayList<>();
   }
 
-  public static MinicoreLoadResult success(String loadedFromPath, List<String> logs) {
-    return new MinicoreLoadResult(true, null, loadedFromPath, null, logs);
+  public static MinicoreLoadResult success(
+      String libraryFileName, MinicoreLibrary library, String coreVersion, List<String> logs) {
+    return new MinicoreLoadResult(true, null, libraryFileName, library, coreVersion, null, logs);
   }
 
-  public static MinicoreLoadResult failure(String errorMessage, Throwable exception, List<String> logs) {
-    return new MinicoreLoadResult(false, errorMessage, null, exception, logs);
+  public static MinicoreLoadResult failure(
+      String errorMessage, String libraryFileName, Throwable exception, List<String> logs) {
+    return new MinicoreLoadResult(false, errorMessage, libraryFileName, null, null, exception, logs);
   }
 
   public boolean isSuccess() {
@@ -47,6 +55,18 @@ public class MinicoreLoadResult {
     return exception;
   }
 
+  public String getLibraryFileName() {
+    return libraryFileName;
+  }
+
+  public MinicoreLibrary getLibrary() {
+    return library;
+  }
+
+  public String getCoreVersion() {
+    return coreVersion;
+  }
+
   public List<String> getLogs() {
     return Collections.unmodifiableList(logs);
   }
@@ -55,8 +75,8 @@ public class MinicoreLoadResult {
   public String toString() {
     if (success) {
       return String.format(
-          "MinicoreLoadResult{success=true, loadedFrom='%s'}",
-          loadedFromPath);
+          "MinicoreLoadResult{success=true, libraryFileName='%s', version='%s'}",
+          libraryFileName, coreVersion);
     } else {
       return String.format(
           "MinicoreLoadResult{success=false, error='%s', exception=%s}",

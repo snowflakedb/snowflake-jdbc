@@ -1,13 +1,11 @@
 package net.snowflake.client.internal.core.minicore;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.Constants.Architecture;
-import net.snowflake.client.core.Constants.OS;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
@@ -21,6 +19,7 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
  * <ul>
  *   <li><b>ISA</b>: Instruction Set Architecture (e.g., "amd64", "arm64")
  *   <li><b>CORE_VERSION</b>: Result of sf_core_full_version() if successful
+ *   <li><b>CORE_FILE_NAME</b>: Binary library file name that the driver tried to load
  *   <li><b>CORE_LOAD_ERROR</b>: Error message if loading failed
  *   <li><b>CORE_LOAD_LOGS</b>: List of log messages from the loading process
  * </ul>
@@ -32,35 +31,40 @@ public class MinicoreTelemetry {
 
   private final String isa;
   private final String coreVersion;
+  private final String coreFileName;
   private final String coreLoadError;
   private final List<String> coreLoadLogs;
 
   private MinicoreTelemetry(
       String isa,
       String coreVersion,
+      String coreFileName,
       String coreLoadError,
       List<String> coreLoadLogs) {
     this.isa = isa;
     this.coreVersion = coreVersion;
+    this.coreFileName = coreFileName;
     this.coreLoadError = coreLoadError;
     this.coreLoadLogs = coreLoadLogs != null ? coreLoadLogs : new ArrayList<>();
   }
 
-  public static MinicoreTelemetry fromLoadResult(MinicoreLoadResult loadResult, String coreVersion) {
+  public static MinicoreTelemetry fromLoadResult(MinicoreLoadResult loadResult) {
     if (loadResult == null) {
       return createNotInitialized();
     }
 
     String isa = normalizeArchitecture(Constants.getArchitecture());
+    String coreVersion = loadResult.getCoreVersion();
+    String coreFileName = loadResult.getLibraryFileName();
     String coreLoadError = loadResult.isSuccess() ? null : loadResult.getErrorMessage();
     List<String> logs = new ArrayList<>(loadResult.getLogs());
 
-    return new MinicoreTelemetry(isa, coreVersion, coreLoadError, logs);
+    return new MinicoreTelemetry(isa, coreVersion, coreFileName, coreLoadError, logs);
   }
 
   private static MinicoreTelemetry createNotInitialized() {
     String isa = normalizeArchitecture(Constants.getArchitecture());
-    return new MinicoreTelemetry(isa, null, "MinicoreManager not initialized", null);
+    return new MinicoreTelemetry(isa, null, null, "MinicoreManager not initialized", null);
   }
 
   private static String normalizeArchitecture(Architecture arch) {
@@ -93,6 +97,10 @@ public class MinicoreTelemetry {
       map.put("CORE_VERSION", coreVersion);
     }
 
+    if (coreFileName != null) {
+      map.put("CORE_FILE_NAME", coreFileName);
+    }
+
     if (coreLoadError != null) {
       map.put("CORE_LOAD_ERROR", coreLoadError);
     }
@@ -107,7 +115,7 @@ public class MinicoreTelemetry {
   @Override
   public String toString() {
     return String.format(
-        "MinicoreTelemetry{isa='%s', coreVersion='%s', coreLoadError='%s', logs=%d entries}",
-        isa, coreVersion, coreLoadError, coreLoadLogs.size());
+        "MinicoreTelemetry{isa='%s', coreVersion='%s', coreFileName='%s', coreLoadError='%s', logs=%d entries}",
+        isa, coreVersion, coreFileName, coreLoadError, coreLoadLogs.size());
   }
 }
