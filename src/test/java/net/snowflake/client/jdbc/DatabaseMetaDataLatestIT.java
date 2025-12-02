@@ -1918,158 +1918,49 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                     + ")");
 
             DatabaseMetaData dbmd = connection.getMetaData();
-
-            String schemaPattern1 = schema.substring(0, schema.length() - 1).concat("%");
-            String schemaPattern2 = schema.substring(0, schema.length() - 1).concat("_");
-            String tablePattern1 = "PATTERN_SEARCH_TABLE%";
-            String tablePattern2 = "PATTERN_SEARCH_TABLE_";
             String database = connection.getCatalog();
+            String tablePattern = "PATTERN_SEARCH_TABLE%";
 
             ExecutorService executor = Executors.newFixedThreadPool(10);
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            // Should return result for matching schema and table name
+            // Test getPrimaryKeys: exact match should work, patterns should be rejected
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern)),
+                    size -> assertEquals(0, size)));
 
-            // Should return an empty result if we try a pattern match on the schema
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)),
-                    result -> assertEquals(0, result)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
-                    result -> assertEquals(0, result)));
-
-            // Should return result for matching schema and table name
+            // Test getImportedKeys: exact match should work, patterns should be rejected
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern)),
+                    size -> assertEquals(0, size)));
 
-            // Should return an empty result if we try a pattern match on the schema
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)),
-                    result -> assertEquals(0, result)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(0, result)));
-
-            // Should return result for matching schema and table name
+            // Test getExportedKeys: exact match should work, patterns should be rejected
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern)),
+                    size -> assertEquals(0, size)));
 
-            // Should return an empty result if we try a pattern match on the schema
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)),
-                    result -> assertEquals(0, result)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(0, result)));
-
-            // Should return result for matching schema and table name
+            // Test getCrossReference: exact match should work, patterns should be rejected
             futures.add(
                 asyncAssert(
                     executor,
@@ -2077,138 +1968,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                         getSizeOfResultSet(
                             dbmd.getCrossReference(
                                 database, schema, table1, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-
-            // Should return an empty result if we try a pattern match on any of the table or schema
-            // names
+                    size -> assertEquals(1, size)));
             futures.add(
                 asyncAssert(
                     executor,
                     () ->
                         getSizeOfResultSet(
                             dbmd.getCrossReference(
-                                database, schemaPattern1, table1, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern2, table1, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern1, null, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern2, null, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern1, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern2, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern1, null)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern2, null)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, null, tablePattern1, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, null, tablePattern2, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, tablePattern1, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, tablePattern2, database, schema, table2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, null, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, null, tablePattern2)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, tablePattern1)),
-                    result -> assertEquals(0, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, tablePattern2)),
-                    result -> assertEquals(0, result)));
+                                database, schema, tablePattern, database, schema, table2)),
+                    size -> assertEquals(0, size)));
 
             // Wait for all async assertions to complete
             try {
@@ -2250,144 +2018,49 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                     + ")");
 
             DatabaseMetaData dbmd = connection.getMetaData();
-
-            String schemaPattern1 = schema.substring(0, schema.length() - 1).concat("%");
-            String schemaPattern2 = schema.substring(0, schema.length() - 1).concat("_");
-            String tablePattern1 = "PATTERN_SEARCH_TABLE%";
-            String tablePattern2 = "PATTERN_SEARCH_TABLE_";
             String database = connection.getCatalog();
+            String tablePattern = "PATTERN_SEARCH_TABLE%";
 
             ExecutorService executor = Executors.newFixedThreadPool(10);
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            // Should return result for matching on either an exact schema and table name or a
-            // pattern
+            // Test getPrimaryKeys: exact match should work, patterns should also work
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)),
-                    result -> assertEquals(2, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)),
-                    result -> assertEquals(2, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(2, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(2, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern)),
+                    size -> assertEquals(2, size)));
 
+            // Test getImportedKeys: exact match should work, patterns should also work
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
             futures.add(
                 asyncAssert(
                     executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(1, result)));
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern)),
+                    size -> assertEquals(1, size)));
 
+            // Test getExportedKeys: exact match should work, patterns should also work
             futures.add(
                 asyncAssert(
                     executor,
                     () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
             futures.add(
                 asyncAssert(
                     executor,
-                    () ->
-                        getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)),
-                    result -> assertEquals(1, result)));
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern)),
+                    size -> assertEquals(1, size)));
 
+            // Test getCrossReference: exact match should work, patterns should also work
             futures.add(
                 asyncAssert(
                     executor,
@@ -2395,135 +2068,15 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                         getSizeOfResultSet(
                             dbmd.getCrossReference(
                                 database, schema, table1, database, schema, table2)),
-                    result -> assertEquals(1, result)));
+                    size -> assertEquals(1, size)));
             futures.add(
                 asyncAssert(
                     executor,
                     () ->
                         getSizeOfResultSet(
                             dbmd.getCrossReference(
-                                database, schemaPattern1, table1, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern2, table1, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern1, null, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern2, null, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern1, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern2, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern1, null)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern2, null)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, null, tablePattern1, database, schema, table2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, null, tablePattern2, database, schema, table2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, tablePattern1, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, tablePattern2, database, schema, table2)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, null, tablePattern1)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, null, tablePattern2)),
-                    result -> assertThat(result, greaterThanOrEqualTo(1))));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, tablePattern1)),
-                    result -> assertEquals(1, result)));
-            futures.add(
-                asyncAssert(
-                    executor,
-                    () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, tablePattern2)),
-                    result -> assertEquals(1, result)));
+                                database, schema, tablePattern, database, schema, table2)),
+                    size -> assertEquals(1, size)));
 
             // Wait for all async assertions to complete
             try {
