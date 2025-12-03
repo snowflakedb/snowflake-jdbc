@@ -52,6 +52,7 @@
           <exclude>**/*.dylib</exclude>
           <exclude>**/*.so</exclude>
           <exclude>**/*.dll</exclude>
+          <exclude>**/*.a</exclude>
         </excludes>
       </resource>
       <resource>
@@ -61,6 +62,7 @@
           <include>**/*.dylib</include>
           <include>**/*.so</include>
           <include>**/*.dll</include>
+          <include>**/*.a</include>
         </includes>
       </resource>
     </resources>
