@@ -1197,23 +1197,20 @@ public class SessionUtil {
   }
 
   private static void addMinicoreTelemetry(Map<String, Object> clientEnv) {
-    Minicore minicore =
-        Minicore.getInstance();
+    Minicore minicore = Minicore.getInstance();
 
     if (minicore == null) {
       logger.trace("Minicore not initialized yet, skipping telemetry");
       return;
     }
 
-    MinicoreLoadResult loadResult =
-        minicore.getLoadResult();
+    MinicoreLoadResult loadResult = minicore.getLoadResult();
     if (loadResult == null) {
       logger.debug("Minicore load result is null, skipping telemetry");
       return;
     }
 
-    MinicoreTelemetry telemetry =
-        MinicoreTelemetry.fromLoadResult(loadResult);
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(loadResult);
     clientEnv.putAll(telemetry.toMap());
   }
 
