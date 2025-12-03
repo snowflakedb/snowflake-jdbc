@@ -42,6 +42,9 @@ import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.internal.core.minicore.Minicore;
+import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
+import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
@@ -1184,8 +1187,6 @@ public class SessionUtil {
       clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
     }
 
-    // Add minicore telemetry (if available)
-    // Non-blocking: if minicore async initialization hasn't completed yet, we skip it
     try {
       addMinicoreTelemetry(clientEnv);
     } catch (Throwable t) {
@@ -1196,23 +1197,23 @@ public class SessionUtil {
   }
 
   private static void addMinicoreTelemetry(Map<String, Object> clientEnv) {
-    net.snowflake.client.internal.core.minicore.Minicore minicore =
-        net.snowflake.client.internal.core.minicore.Minicore.getInstance();
+    Minicore minicore =
+        Minicore.getInstance();
 
     if (minicore == null) {
       logger.trace("Minicore not initialized yet, skipping telemetry");
       return;
     }
 
-    net.snowflake.client.internal.core.minicore.MinicoreLoadResult loadResult =
+    MinicoreLoadResult loadResult =
         minicore.getLoadResult();
     if (loadResult == null) {
       logger.debug("Minicore load result is null, skipping telemetry");
       return;
     }
 
-    net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
-        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(loadResult);
+    MinicoreTelemetry telemetry =
+        MinicoreTelemetry.fromLoadResult(loadResult);
     clientEnv.putAll(telemetry.toMap());
   }
 
