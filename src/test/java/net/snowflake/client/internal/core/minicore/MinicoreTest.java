@@ -9,9 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Core test suite for Minicore initialization and functionality. */
+@Tag(TestTags.CORE)
 public class MinicoreTest {
 
   private static final long MAX_ASYNC_INIT_TIME_MS = 1000;
