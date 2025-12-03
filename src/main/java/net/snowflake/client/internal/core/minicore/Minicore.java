@@ -95,4 +95,10 @@ public class Minicore {
   public MinicoreLoadResult getLoadResult() {
     return loadResult;
   }
+
+  // This method is for testing only. Do not use in production code
+  public static synchronized void resetForTesting() {
+    INSTANCE = null;
+    INITIALIZATION_FUTURE = null;
+  }
 }

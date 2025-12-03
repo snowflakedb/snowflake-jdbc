@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.core.minicore;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,32 +8,54 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/**
- * Core test suite for Minicore initialization and functionality.
- *
- * <p>This test suite verifies that minicore loads successfully on supported platforms and provides
- * detailed diagnostics on failure. When run on CI across different platforms (Linux, macOS, etc.),
- * these tests automatically verify minicore works correctly on all supported platforms.
- */
+/** Core test suite for Minicore initialization and functionality. */
 public class MinicoreTest {
+
+  private static final long MAX_ASYNC_INIT_TIME_MS = 1000;
+  private static final int NUM_TIMING_RUNS = 5;
+
+  @Test
+  public void testAsyncInitializationCompletesInReasonableTime() {
+    long[] times = new long[NUM_TIMING_RUNS];
+
+    for (int run = 0; run < NUM_TIMING_RUNS; run++) {
+      Minicore.resetForTesting();
+      long startTime = System.currentTimeMillis();
+      Minicore.initializeAsync();
+
+      await()
+          .atMost(Duration.ofMillis(MAX_ASYNC_INIT_TIME_MS))
+          .until(() -> Minicore.getInstance() != null);
+
+      times[run] = System.currentTimeMillis() - startTime;
+      assertTrue(Minicore.getInstance().getLoadResult().isSuccess());
+    }
+
+    long avg = 0;
+    for (long t : times) {
+      avg += t;
+    }
+    avg /= NUM_TIMING_RUNS;
+    System.out.printf("Minicore init (%d runs): avg=%dms%n", NUM_TIMING_RUNS, avg);
+  }
 
   @Test
   public void testMinicoreInitializesSuccessfully() {
-    // GIVEN - Initialize minicore
+    Minicore.resetForTesting();
+
     Minicore.initialize();
     Minicore instance = Minicore.getInstance();
     MinicorePlatform platform = new MinicorePlatform();
 
-    // THEN - Instance should be created
     assertNotNull(instance, "Minicore instance should not be null after initialization");
 
-    // AND - Load result should exist
     MinicoreLoadResult result = instance.getLoadResult();
     assertNotNull(result, "Load result should not be null");
 
-    // AND - Build detailed error message in case of failure
+    // Build detailed error message in case of failure
     StringBuilder errorMessage = new StringBuilder();
     errorMessage
         .append("Minicore should load successfully on platform: ")
@@ -55,16 +78,14 @@ public class MinicoreTest {
       }
     }
 
-    // AND - Loading should succeed
+    // Loading should succeed
     assertTrue(result.isSuccess(), errorMessage.toString());
     assertNull(result.getErrorMessage(), "Error message should be null on success");
     assertNull(result.getException(), "Exception should be null on success");
 
-    // AND - Library should be accessible
     MinicoreLibrary library = instance.getLibrary();
     assertNotNull(library, "Library should not be null after successful load");
 
-    // AND - Native function should work
     String version = library.sf_core_full_version();
     assertNotNull(version, "Version should not be null");
     assertFalse(version.isEmpty(), "Version should not be empty");
@@ -72,12 +93,14 @@ public class MinicoreTest {
         version.contains("0.0.1"),
         "Version should contain expected version number, got: " + version);
 
-    // AND - Version should be in load result
     assertEquals(version, result.getCoreVersion(), "Version in result should match library call");
   }
 
   @Test
   public void testMinicoreInitializationIsIdempotent() {
+    // Reset to ensure clean state
+    Minicore.resetForTesting();
+
     // GIVEN - Initialize minicore twice
     Minicore.initialize();
     Minicore instance1 = Minicore.getInstance();
@@ -97,6 +120,9 @@ public class MinicoreTest {
 
   @Test
   public void testMinicoreLibraryFunctionConsistency() {
+    // Reset to ensure clean state
+    Minicore.resetForTesting();
+
     // GIVEN - Initialized minicore
     Minicore.initialize();
     Minicore instance = Minicore.getInstance();
