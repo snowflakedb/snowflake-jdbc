@@ -74,6 +74,11 @@ public final class Constants {
     return architecture;
   }
 
+  public static boolean isAix() {
+    String osName = systemGetProperty("os.name");
+    return osName != null && osName.toLowerCase().contains("aix");
+  }
+
   public static void clearOSForTesting() {
     os = null;
     architecture = null;

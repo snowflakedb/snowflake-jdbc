@@ -66,83 +66,29 @@ public class MinicorePlatform {
     return osId + "-" + archId;
   }
 
-  /**
-   * Get OS identifier for use in filenames.
-   * Uses conventional naming: darwin (macOS), linux, windows, etc.
-   */
-  private String getOsIdentifierForFilename() {
-    if (os == null) {
-      return null;
-    }
-    switch (os) {
-      case LINUX:
-        return "linux";
-      case MAC:
-        return "darwin"; // Use conventional "darwin" instead of "macos"
-      case WINDOWS:
-        return "windows";
-      case SOLARIS:
-        // AIX is detected as LINUX in Constants, but we need to check the actual OS name
-        if (osName != null && osName.toLowerCase().contains("aix")) {
-          return "aix";
-        }
-        return "solaris";
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * Get OS identifier for platform identifier (used in telemetry).
-   * Uses JDBC convention: macos, linux, windows, etc.
-   */
+  /** Get OS identifier (used in both filenames and telemetry). Uses: macos, linux, windows, aix. */
   private String getOsIdentifier() {
     if (os == null) {
       return null;
     }
     switch (os) {
       case LINUX:
+        if (Constants.isAix()) {
+          return "aix";
+        }
         return "linux";
       case MAC:
         return "macos";
       case WINDOWS:
         return "windows";
-      case SOLARIS:
-        // AIX is detected as LINUX in Constants, but we need to check the actual OS name
-        if (osName != null && osName.toLowerCase().contains("aix")) {
-          return "aix";
-        }
-        return "solaris";
       default:
         return null;
     }
   }
 
   /**
-   * Get architecture identifier for use in filenames.
-   * Uses conventional naming: amd64 (x86_64), arm64 (aarch64), etc.
-   */
-  private String getArchIdentifierForFilename() {
-    if (architecture == null) {
-      return null;
-    }
-    switch (architecture) {
-      case X86_64:
-        return "amd64"; // Use conventional "amd64" instead of "x86_64"
-      case AARCH64:
-        return "arm64"; // Use conventional "arm64" instead of "aarch64"
-      case PPC64:
-        return "ppc64";
-      case X86:
-        return "x86";
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * Get architecture identifier for platform identifier (used in telemetry).
-   * Uses JDBC convention: x86_64, aarch64, etc.
+   * Get architecture identifier (used in both filenames and telemetry). Uses: x86_64, aarch64,
+   * ppc64.
    */
   private String getArchIdentifier() {
     if (architecture == null) {
@@ -162,27 +108,11 @@ public class MinicorePlatform {
     }
   }
 
-  private String getLibraryPrefix() {
-    if (os == null) {
-      return "";
-    }
-    switch (os) {
-      case WINDOWS:
-        return "";
-      case LINUX:
-      case MAC:
-      case SOLARIS:
-      default:
-        return "lib";
-    }
-  }
-
   private String getLibraryExtension() {
     if (os == null) {
       return "";
     }
-    // Check for AIX specifically
-    if (osName != null && osName.toLowerCase().contains("aix")) {
+    if (Constants.isAix()) {
       return ".a";
     }
     switch (os) {
@@ -191,7 +121,6 @@ public class MinicorePlatform {
       case MAC:
         return ".dylib";
       case LINUX:
-      case SOLARIS:
       default:
         return ".so";
     }
@@ -199,16 +128,18 @@ public class MinicorePlatform {
 
   /**
    * Get the library filename with platform encoding.
-   * 
-   * <p>Format: {prefix}sf_mini_core_{os}_{arch}[_{libc}]{extension}
-   * 
+   *
+   * <p>Format: {base_name}_{os}_{arch}[_{libc}]{extension}
+   *
    * <p>Examples:
+   *
    * <ul>
-   *   <li>Linux x86_64 glibc: {@code libsf_mini_core_linux_amd64_glibc.so}
-   *   <li>Linux aarch64 musl: {@code libsf_mini_core_linux_arm64_musl.so}
-   *   <li>macOS x86_64: {@code libsf_mini_core_darwin_amd64.dylib}
-   *   <li>macOS aarch64: {@code libsf_mini_core_darwin_arm64.dylib}
-   *   <li>Windows x86_64: {@code sf_mini_core_windows_amd64.dll}
+   *   <li>Linux x86_64 glibc: {@code libsf_mini_core_linux_x86_64_glibc.so}
+   *   <li>Linux aarch64 musl: {@code libsf_mini_core_linux_aarch64_musl.so}
+   *   <li>macOS x86_64: {@code libsf_mini_core_macos_x86_64.dylib}
+   *   <li>macOS aarch64: {@code libsf_mini_core_macos_aarch64.dylib}
+   *   <li>Windows x86_64: {@code libsf_mini_core_windows_x86_64.dll}
+   *   <li>AIX ppc64: {@code libsf_mini_core_aix_ppc64.a}
    * </ul>
    */
   public String getLibraryFileName() {
@@ -216,14 +147,13 @@ public class MinicorePlatform {
       return null;
     }
 
-    String osId = getOsIdentifierForFilename();
-    String archId = getArchIdentifierForFilename();
+    String osId = getOsIdentifier();
+    String archId = getArchIdentifier();
     if (osId == null || archId == null) {
       return null;
     }
 
     StringBuilder fileName = new StringBuilder();
-    fileName.append(getLibraryPrefix());
     fileName.append(Minicore.LIBRARY_BASE_NAME);
     fileName.append("_").append(osId);
     fileName.append("_").append(archId);

@@ -47,7 +47,9 @@ public class LibcDetectorTest {
     // Should be three parts: os-arch-libc
     String[] parts = platformId.split("-");
     assertEquals(
-        3, parts.length, "Platform identifier on Linux should have 3 parts (os-arch-libc): " + platformId);
+        3,
+        parts.length,
+        "Platform identifier on Linux should have 3 parts (os-arch-libc): " + platformId);
   }
 
   @Test
@@ -61,7 +63,9 @@ public class LibcDetectorTest {
     // On non-Linux, should NOT include libc variant
     String[] parts = platformId.split("-");
     assertEquals(
-        2, parts.length, "Platform identifier on non-Linux should have 2 parts (os-arch): " + platformId);
+        2,
+        parts.length,
+        "Platform identifier on non-Linux should have 2 parts (os-arch): " + platformId);
   }
 
   @Test

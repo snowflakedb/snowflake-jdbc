@@ -366,8 +366,7 @@ public class SessionUtilTest {
             logs);
 
     net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
-        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(
-            successResult);
+        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(successResult);
     Map<String, Object> telemetryMap = telemetry.toMap();
 
     // THEN - Telemetry should contain success information
@@ -402,8 +401,7 @@ public class SessionUtilTest {
             logs);
 
     net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
-        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(
-            failedResult);
+        net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(failedResult);
     Map<String, Object> telemetryMap = telemetry.toMap();
 
     // THEN - Telemetry should contain error information
@@ -415,7 +413,8 @@ public class SessionUtilTest {
 
     assertTrue(
         telemetryMap.containsKey("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should be set on failure");
-    assertEquals("Failed to load library: UnsatisfiedLinkError", telemetryMap.get("CORE_LOAD_ERROR"));
+    assertEquals(
+        "Failed to load library: UnsatisfiedLinkError", telemetryMap.get("CORE_LOAD_ERROR"));
 
     assertTrue(telemetryMap.containsKey("CORE_LOAD_LOGS"), "CORE_LOAD_LOGS should be set");
 

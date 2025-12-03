@@ -40,7 +40,8 @@ public class MinicoreLoadResult {
 
   public static MinicoreLoadResult failure(
       String errorMessage, String libraryFileName, Throwable exception, List<String> logs) {
-    return new MinicoreLoadResult(false, errorMessage, libraryFileName, null, null, exception, logs);
+    return new MinicoreLoadResult(
+        false, errorMessage, libraryFileName, null, null, exception, logs);
   }
 
   public boolean isSuccess() {

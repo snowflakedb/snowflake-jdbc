@@ -86,7 +86,10 @@ public class MinicoreLoader {
     } catch (IOException e) {
       loadLogger.log("Failed to read library from JAR: " + e.getMessage());
       return MinicoreLoadResult.failure(
-          "Failed to read library from JAR: " + e.getMessage(), libraryFileName, e, loadLogger.getLogs());
+          "Failed to read library from JAR: " + e.getMessage(),
+          libraryFileName,
+          e,
+          loadLogger.getLogs());
     }
   }
 
@@ -141,7 +144,7 @@ public class MinicoreLoader {
     try {
       MinicoreLibrary loadedLibrary = loadLibraryFromDisk(targetPath, libraryStream);
       String coreVersion = getLibraryVersion(loadedLibrary);
-      
+
       return MinicoreLoadResult.success(
           libraryFileName, loadedLibrary, coreVersion, loadLogger.getLogs());
     } catch (LoadLibraryException e) {

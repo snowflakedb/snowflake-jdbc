@@ -21,4 +21,3 @@ interface LibC extends Library {
     }
   }
 }
-

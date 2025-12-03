@@ -80,7 +80,8 @@ public class MinicoreLoaderTest {
               || allLogs.contains("Using working directory")
               || allLogs.contains("Using home directory"),
           "Should log directory selection");
-      assertTrue(allLogs.contains("Writing embedded library to disk"), "Should log library extraction");
+      assertTrue(
+          allLogs.contains("Writing embedded library to disk"), "Should log library extraction");
       assertTrue(
           allLogs.contains("Successfully wrote embedded library"), "Should log successful write");
       assertTrue(allLogs.contains("Setting file permissions"), "Should log permission setting");
@@ -122,5 +123,4 @@ public class MinicoreLoaderTest {
       previousTime = timestamp;
     }
   }
-
 }

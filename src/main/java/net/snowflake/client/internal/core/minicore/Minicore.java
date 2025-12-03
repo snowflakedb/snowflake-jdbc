@@ -10,10 +10,9 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class Minicore {
   private static final SFLogger logger = SFLoggerFactory.getLogger(Minicore.class);
-  
-  public static final String DISABLE_MINICORE_ENV_VAR = "SF_DISABLE_MINICORE";
 
-  public static final String LIBRARY_BASE_NAME = "sf_mini_core";
+  public static final String DISABLE_MINICORE_ENV_VAR = "SF_DISABLE_MINICORE";
+  public static final String LIBRARY_BASE_NAME = "libsf_mini_core";
 
   private static volatile Minicore INSTANCE;
   private static volatile CompletableFuture<Void> INITIALIZATION_FUTURE;
@@ -33,7 +32,8 @@ public class Minicore {
 
     // Check if minicore is disabled via environment variable
     if (isMinicoreDisabled()) {
-      logger.debug("Minicore initialization disabled via {} environment variable", DISABLE_MINICORE_ENV_VAR);
+      logger.debug(
+          "Minicore initialization disabled via {} environment variable", DISABLE_MINICORE_ENV_VAR);
       INITIALIZATION_FUTURE = CompletableFuture.completedFuture(null);
       return;
     }

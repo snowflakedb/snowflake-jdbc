@@ -25,14 +25,14 @@ public class MinicoreTelemetryTest {
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toMap();
 
-      assertNotNull(telemetry, "Telemetry should not be null");
+    assertNotNull(telemetry, "Telemetry should not be null");
 
     // ISA should always be present
-      assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
-      assertNotNull(map.get("ISA"), "ISA should not be null");
-      assertTrue(
+    assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
+    assertNotNull(map.get("ISA"), "ISA should not be null");
+    assertTrue(
         map.get("ISA").toString().matches("amd64|arm64|ppc64|x86|Unknown"),
-          "ISA should be a valid architecture: " + map.get("ISA"));
+        "ISA should be a valid architecture: " + map.get("ISA"));
 
     if (result.isSuccess()) {
       // On success: should have version, should NOT have error
@@ -47,11 +47,12 @@ public class MinicoreTelemetryTest {
           "Telemetry should not contain CORE_LOAD_ERROR on success");
     } else {
       // On failure: should have error, should NOT have version
-    assertTrue(
-        map.containsKey("CORE_LOAD_ERROR"), "Telemetry should contain CORE_LOAD_ERROR on failure");
-    assertNotNull(map.get("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should not be null");
-    assertFalse(
-        map.containsKey("CORE_VERSION"), "Telemetry should not contain CORE_VERSION on failure");
+      assertTrue(
+          map.containsKey("CORE_LOAD_ERROR"),
+          "Telemetry should contain CORE_LOAD_ERROR on failure");
+      assertNotNull(map.get("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should not be null");
+      assertFalse(
+          map.containsKey("CORE_VERSION"), "Telemetry should not contain CORE_VERSION on failure");
     }
 
     // Logs should always be present
@@ -96,17 +97,17 @@ public class MinicoreTelemetryTest {
     MinicoreLoadResult result = loader.loadLibrary();
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
-      Map<String, Object> map = telemetry.toMap();
+    Map<String, Object> map = telemetry.toMap();
 
-      @SuppressWarnings("unchecked")
-      java.util.List<String> logs = (java.util.List<String>) map.get("CORE_LOAD_LOGS");
+    @SuppressWarnings("unchecked")
+    java.util.List<String> logs = (java.util.List<String>) map.get("CORE_LOAD_LOGS");
 
-      assertNotNull(logs, "Logs should not be null");
-      assertFalse(logs.isEmpty(), "Logs should not be empty");
+    assertNotNull(logs, "Logs should not be null");
+    assertFalse(logs.isEmpty(), "Logs should not be empty");
 
-      for (String log : logs) {
-        assertTrue(
-            log.matches("^\\[\\d+\\.\\d{6}ms\\] .*"), "Each log should be timestamped: " + log);
+    for (String log : logs) {
+      assertTrue(
+          log.matches("^\\[\\d+\\.\\d{6}ms\\] .*"), "Each log should be timestamped: " + log);
     }
   }
 
@@ -138,11 +139,9 @@ public class MinicoreTelemetryTest {
     assertTrue(
         fileName.contains("sf_mini_core"),
         "CORE_FILE_NAME should contain library base name: " + fileName);
-    
+
     String expectedFileName = platform.getLibraryFileName();
     assertEquals(
-        expectedFileName,
-        fileName,
-        "CORE_FILE_NAME should match platform's library file name");
+        expectedFileName, fileName, "CORE_FILE_NAME should match platform's library file name");
   }
 }
