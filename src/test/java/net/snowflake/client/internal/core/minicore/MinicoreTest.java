@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
