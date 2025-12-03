@@ -15,6 +15,7 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.models.DownloadRetryOptions;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.models.ParallelTransferOptions;
 import com.azure.storage.blob.options.BlobDownloadToFileOptions;
@@ -32,14 +33,18 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -325,8 +330,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         BlobClient blobClient = blobContainerClient.getBlobClient(stageFilePath);
         BlockBlobClient blockBlobClient = blobClient.getBlockBlobClient();
 
+        Set<OpenOption> options = new HashSet<>();
+        options.add(StandardOpenOption.CREATE);
+        options.add(StandardOpenOption.WRITE);
+        options.add(StandardOpenOption.TRUNCATE_EXISTING);
         BlobDownloadToFileOptions downloadOptions =
             new BlobDownloadToFileOptions(localFilePath)
+                .setDownloadRetryOptions(new DownloadRetryOptions().setMaxRetryRequests(0))
+                .setOpenOptions(options)
                 .setParallelTransferOptions(
                     new com.azure.storage.common.ParallelTransferOptions()
                         .setMaxConcurrency(parallelism));
