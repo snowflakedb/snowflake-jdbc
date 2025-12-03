@@ -68,6 +68,7 @@ jobs:
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ci\\test_windows.bat
 
     test-mac:
@@ -104,7 +105,7 @@ jobs:
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                MAVEN_OPTS: "-DargLine=-Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
               run: /opt/homebrew/bin/bash ./ci/test_mac.sh
 
     test-rocky:
@@ -131,6 +132,7 @@ jobs:
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.runConfig.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
 
     test-linux:
@@ -158,6 +160,7 @@ jobs:
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
 
     test-linux-old-driver:
@@ -183,4 +186,5 @@ jobs:
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
                 is_old_driver: ${{ matrix.is_old_driver }}
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
