@@ -23,6 +23,6 @@ public class MinicoreLoadLogger {
   }
 
   public List<String> getLogs() {
-    return new ArrayList<>(logs);
+    return logs;
   }
 }

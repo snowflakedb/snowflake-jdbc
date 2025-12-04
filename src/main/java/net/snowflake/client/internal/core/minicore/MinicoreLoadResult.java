@@ -30,7 +30,7 @@ public class MinicoreLoadResult {
     this.library = library;
     this.coreVersion = coreVersion;
     this.exception = exception;
-    this.logs = logs != null ? new ArrayList<>(logs) : new ArrayList<>();
+    this.logs = logs != null ? logs : new ArrayList<>();
   }
 
   public static MinicoreLoadResult success(

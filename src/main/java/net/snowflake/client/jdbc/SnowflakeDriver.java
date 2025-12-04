@@ -66,6 +66,10 @@ public class SnowflakeDriver implements Driver {
     // Telemetry OOB is disabled
     TelemetryService.disableOOBTelemetry();
 
+    initializeMinicore();
+  }
+
+  private static void initializeMinicore() {
     try {
       Minicore.initializeAsync();
     } catch (Throwable t) {

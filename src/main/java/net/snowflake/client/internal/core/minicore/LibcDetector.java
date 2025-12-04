@@ -36,7 +36,7 @@ public class LibcDetector {
     }
 
     if (LibC.INSTANCE == null) {
-      logger.warn("Failed to load C library, defaulting to musl");
+      logger.trace("Failed to load C library, defaulting to musl");
       return LibcVariant.MUSL;
     }
 
@@ -50,7 +50,7 @@ public class LibcDetector {
       return LibcVariant.MUSL;
 
     } catch (Throwable t) {
-      logger.warn("Error calling gnu_get_libc_version(), defaulting to musl: {}", t.getMessage());
+      logger.trace("Error calling gnu_get_libc_version(), defaulting to musl: {}", t.getMessage());
       return LibcVariant.MUSL;
     }
   }
