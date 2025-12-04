@@ -68,6 +68,9 @@ public class MinicoreTestIT extends BaseJDBCTest {
     long coldMinicoreInitTime = System.currentTimeMillis() - coldStartTotal;
     long coldConnectionTime = measureConnectionTime();
     long coldTotalTime = System.currentTimeMillis() - coldStartTotal;
+    for (String log : Minicore.getInstance().getLoadResult().getLogs()) {
+      System.out.printf("  %s%n", log);
+    }
     System.out.printf(
         "  Cold: minicore=%dms, connection=%dms, total=%dms%n",
         coldMinicoreInitTime, coldConnectionTime, coldTotalTime);
@@ -90,6 +93,9 @@ public class MinicoreTestIT extends BaseJDBCTest {
       Minicore.initialize();
       minicoreTimes[i] = System.currentTimeMillis() - startMinicore;
       timesWithMinicore[i] = measureConnectionTime();
+      for (String log : Minicore.getInstance().getLoadResult().getLogs()) {
+        System.out.printf("  %s%n", log);
+      }
       System.out.printf(
           "  Run %d - with (init=%dms): %dms%n", i + 1, minicoreTimes[i], timesWithMinicore[i]);
     }

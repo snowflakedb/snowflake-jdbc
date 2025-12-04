@@ -1211,9 +1211,6 @@ public class SessionUtil {
     }
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(loadResult);
-    for (String log : loadResult.getLogs()) {
-      System.out.printf("  %s%n", log);
-    }
     clientEnv.putAll(telemetry.toMap());
   }
 
