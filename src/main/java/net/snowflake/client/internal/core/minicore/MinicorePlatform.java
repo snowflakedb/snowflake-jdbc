@@ -139,7 +139,7 @@ public class MinicorePlatform {
    *   <li>macOS x86_64: {@code libsf_mini_core_macos_x86_64.dylib}
    *   <li>macOS aarch64: {@code libsf_mini_core_macos_aarch64.dylib}
    *   <li>Windows x86_64: {@code libsf_mini_core_windows_x86_64.dll}
-   *   <li>AIX ppc64: {@code libsf_mini_core_aix_ppc64.a}
+   *   <li>AIX ppc64: {@code libsf_mini_core_aix_ppc64.so}
    * </ul>
    */
   public String getLibraryFileName() {
