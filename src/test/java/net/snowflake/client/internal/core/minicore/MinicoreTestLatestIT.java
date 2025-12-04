@@ -134,7 +134,9 @@ public class MinicoreTestLatestIT extends BaseJDBCTest {
 
   private long average(long[] values) {
     long sum = 0;
-    for (long v : values) sum += v;
+    for (long v : values) {
+      sum += v;
+    }
     return sum / values.length;
   }
 
