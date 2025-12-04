@@ -1,6 +1,5 @@
 package net.snowflake.client.internal.core.auth.wif;
 
-import com.amazonaws.auth.AWSCredentials;
 import java.io.IOException;
 import java.util.regex.Pattern;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -12,6 +11,7 @@ import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 public class PlatformDetectionUtil {
 
@@ -44,7 +44,7 @@ public class PlatformDetectionUtil {
   public static boolean hasValidAwsIdentityForWif(
       AwsAttestationService attestationService, int timeoutMs) {
     try {
-      AWSCredentials credentials = attestationService.getAWSCredentials();
+      AwsCredentials credentials = attestationService.getAWSCredentials();
       if (!hasValidAwsCredentials(credentials)) {
         logger.debug("No valid AWS credentials available for identity validation");
         return false;
@@ -76,14 +76,14 @@ public class PlatformDetectionUtil {
         || ASSUMED_ROLE_ARN_PATTERN.matcher(arn).matches();
   }
 
-  private static boolean hasValidAwsCredentials(AWSCredentials awsCredentials) {
+  private static boolean hasValidAwsCredentials(AwsCredentials awsCredentials) {
     if (awsCredentials == null) {
       logger.debug("No AWS credentials found");
       return false;
     }
 
-    String accessKey = awsCredentials.getAWSAccessKeyId();
-    String secretKey = awsCredentials.getAWSSecretKey();
+    String accessKey = awsCredentials.accessKeyId();
+    String secretKey = awsCredentials.secretAccessKey();
 
     if (SnowflakeUtil.isNullOrEmpty(accessKey) || SnowflakeUtil.isNullOrEmpty(secretKey)) {
       logger.debug("AWS credentials are incomplete");

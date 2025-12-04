@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
 import com.azure.core.http.ProxyOptions;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
@@ -19,6 +20,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.cloud.storage.S3HttpUtil;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 
 public class CoreUtilsMiscellaneousTest {
 
@@ -107,14 +109,15 @@ public class CoreUtilsMiscellaneousTest {
             "https",
             "jdbc",
             false);
-    ClientConfiguration clientConfig = new ClientConfiguration();
-    S3HttpUtil.setProxyForS3(testKey, clientConfig);
-    assertEquals(Protocol.HTTPS, clientConfig.getProxyProtocol());
-    assertEquals("snowflakecomputing.com", clientConfig.getProxyHost());
-    assertEquals(443, clientConfig.getProxyPort());
-    assertEquals("*.foo.com", clientConfig.getNonProxyHosts());
-    assertEquals("pw", clientConfig.getProxyPassword());
-    assertEquals("testuser", clientConfig.getProxyUsername());
+    ProxyConfiguration proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(testKey);
+    assertEquals(HttpProtocol.HTTPS.toString(), proxyConfiguration.scheme().toUpperCase());
+    assertEquals("snowflakecomputing.com", proxyConfiguration.host());
+    assertEquals(443, proxyConfiguration.port());
+    assertEquals(
+        new HashSet<>(Collections.singletonList(".*?\\.foo\\.com")),
+        proxyConfiguration.nonProxyHosts());
+    assertEquals("pw", proxyConfiguration.password());
+    assertEquals("testuser", proxyConfiguration.username());
   }
 
   @Test
@@ -127,21 +130,22 @@ public class CoreUtilsMiscellaneousTest {
     props.put("proxyPassword", "pw");
     props.put("nonProxyHosts", "baz.com | foo.com");
     props.put("proxyProtocol", "http");
-    ClientConfiguration clientConfig = new ClientConfiguration();
-    S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
-    assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
-    assertEquals("localhost", clientConfig.getProxyHost());
-    assertEquals(8084, clientConfig.getProxyPort());
-    assertEquals("baz.com | foo.com", clientConfig.getNonProxyHosts());
-    assertEquals("pw", clientConfig.getProxyPassword());
-    assertEquals("testuser", clientConfig.getProxyUsername());
+    ProxyConfiguration proxyConfiguration =
+        S3HttpUtil.createSessionlessProxyConfigurationForS3(props);
+    assertEquals(HttpProtocol.HTTP.toString(), proxyConfiguration.scheme().toUpperCase());
+    assertEquals("localhost", proxyConfiguration.host());
+    assertEquals(8084, proxyConfiguration.port());
+    assertEquals(
+        new HashSet<>(Arrays.asList("baz\\.com", "foo\\.com")), proxyConfiguration.nonProxyHosts());
+    assertEquals("pw", proxyConfiguration.password());
+    assertEquals("testuser", proxyConfiguration.username());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     SnowflakeSQLException e =
         assertThrows(
             SnowflakeSQLException.class,
             () -> {
-              S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
+              S3HttpUtil.createSessionlessProxyConfigurationForS3(props);
             });
     assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
@@ -358,13 +362,12 @@ public class CoreUtilsMiscellaneousTest {
   public void testNullAndEmptyProxySettingsForS3() {
     HttpClientSettingsKey testKey =
         new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
-    ClientConfiguration clientConfig = new ClientConfiguration();
-    S3HttpUtil.setProxyForS3(testKey, clientConfig);
-    assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
-    assertEquals("", clientConfig.getProxyHost());
-    assertEquals(443, clientConfig.getProxyPort());
-    assertEquals("", clientConfig.getNonProxyHosts());
-    assertNull(clientConfig.getProxyUsername());
-    assertNull(clientConfig.getProxyPassword());
+    ProxyConfiguration proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(testKey);
+    assertEquals(HttpProtocol.HTTP.toString(), proxyConfiguration.scheme().toUpperCase());
+    assertEquals("", proxyConfiguration.host());
+    assertEquals(443, proxyConfiguration.port());
+    assertEquals(Collections.emptySet(), proxyConfiguration.nonProxyHosts());
+    assertNull(proxyConfiguration.username());
+    assertNull(proxyConfiguration.password());
   }
 }

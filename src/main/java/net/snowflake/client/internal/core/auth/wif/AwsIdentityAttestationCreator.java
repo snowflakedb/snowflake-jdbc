@@ -1,9 +1,5 @@
 package net.snowflake.client.internal.core.auth.wif;
 
-import com.amazonaws.DefaultRequest;
-import com.amazonaws.Request;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.http.HttpMethodName;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +11,11 @@ import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.http.SdkHttpFullRequest;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.regions.Region;
 
 public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestationCreator {
 
@@ -35,7 +36,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
   @Override
   public WorkloadIdentityAttestation createAttestation() throws SFException {
     attestationService.initializeSignerRegion();
-    AWSCredentials awsCredentials;
+    AwsCredentials awsCredentials;
 
     if (loginInput.getWorkloadIdentityImpersonationPath().isEmpty()) {
       logger.debug("Creating AWS identity attestation...");
@@ -49,16 +50,16 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       throw new SFException(
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS credentials were found");
     }
-    String region = attestationService.getAWSRegion();
+    Region region = attestationService.getAWSRegion();
     if (region == null) {
       throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS region was found");
     }
 
-    String stsHostname = getStsHostname(region);
-    Request<Void> request = createStsRequest(stsHostname);
-    attestationService.signRequestWithSigV4(request, awsCredentials);
+    String stsHostname = getStsHostname(region.id());
+    SdkHttpRequest request = createStsRequest(stsHostname);
+    SdkHttpRequest signedRequest = attestationService.signRequestWithSigV4(request, awsCredentials);
 
-    String credential = createBase64EncodedRequestCredential(request);
+    String credential = createBase64EncodedRequestCredential(signedRequest);
     return new WorkloadIdentityAttestation(
         WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
   }
@@ -68,31 +69,36 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     return String.format("sts.%s.%s", region, domain);
   }
 
-  private Request<Void> createStsRequest(String hostname) {
-    Request<Void> request = new DefaultRequest<>("sts");
-    request.setHttpMethod(HttpMethodName.POST);
-    request.setEndpoint(
-        URI.create(
-            String.format(
-                "https://%s?Action=%s&Version=%s",
-                hostname, GET_CALLER_IDENTITY_ACTION, API_VERSION)));
-    request.addParameter("Action", GET_CALLER_IDENTITY_ACTION);
-    request.addParameter("Version", API_VERSION);
-    request.setContent(
-        new ByteArrayInputStream(new byte[0])); // needed to properly sign the request
-    request.addHeader("Host", hostname);
-    request.addHeader(
-        WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
-        WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE);
-    return request;
+  private SdkHttpRequest createStsRequest(String hostname) {
+    String url =
+        String.format(
+            "https://%s?Action=%s&Version=%s", hostname, GET_CALLER_IDENTITY_ACTION, API_VERSION);
+
+    SdkHttpFullRequest.Builder requestBuilder =
+        SdkHttpFullRequest.builder()
+            .method(SdkHttpMethod.POST)
+            .uri(URI.create(url))
+            .putHeader("Host", hostname)
+            .putHeader(
+                WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
+                WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE)
+            .contentStreamProvider(
+                () -> new ByteArrayInputStream(new byte[0])); // needed to properly sign the request
+
+    return requestBuilder.build();
   }
 
-  private String createBase64EncodedRequestCredential(Request<Void> request) {
+  private String createBase64EncodedRequestCredential(SdkHttpRequest request) {
     JSONObject assertionJson = new JSONObject();
     JSONObject headers = new JSONObject();
-    headers.putAll(request.getHeaders());
-    assertionJson.put("url", request.getEndpoint().toString());
-    assertionJson.put("method", request.getHttpMethod().toString());
+
+    // AWS SDK 2 headers are Map<String, List<String>>, but backend expects Map<String, String>
+    request.headers().entrySet().stream()
+        .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+        .forEach(entry -> headers.put(entry.getKey(), entry.getValue().get(0)));
+
+    assertionJson.put("url", request.getUri().toString());
+    assertionJson.put("method", request.method().toString());
     assertionJson.put("headers", headers);
 
     String assertionJsonString = assertionJson.toString();
