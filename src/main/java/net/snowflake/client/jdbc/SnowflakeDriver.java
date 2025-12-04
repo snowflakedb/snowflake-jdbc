@@ -14,6 +14,7 @@ import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -65,10 +66,8 @@ public class SnowflakeDriver implements Driver {
     // Telemetry OOB is disabled
     TelemetryService.disableOOBTelemetry();
 
-    // Initialize minicore asynchronously (non-blocking)
-    // Minicore provides native library functionality for enhanced diagnostics
     try {
-      net.snowflake.client.internal.core.minicore.Minicore.initializeAsync();
+      Minicore.initialize();
     } catch (Throwable t) {
       // Don't let minicore initialization failure break driver loading
       logger.trace("Failed to start minicore initialization", t);

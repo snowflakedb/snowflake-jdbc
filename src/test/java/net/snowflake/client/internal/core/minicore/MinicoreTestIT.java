@@ -8,16 +8,21 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Core test suite for Minicore initialization and functionality. */
 @Tag(TestTags.CORE)
-public class MinicoreTest {
+public class MinicoreTestIT extends BaseJDBCTest {
 
-  private static final long MAX_ASYNC_INIT_TIME_MS = 1000;
+  private static final long MAX_MINICORE_INIT_TIME_MS = 1000;
   private static final int NUM_TIMING_RUNS = 5;
 
   @Test
@@ -31,7 +36,7 @@ public class MinicoreTest {
       Minicore.initializeAsync();
 
       await()
-          .atMost(Duration.ofMillis(MAX_ASYNC_INIT_TIME_MS))
+          .atMost(Duration.ofMillis(MAX_MINICORE_INIT_TIME_MS))
           .until(() -> Minicore.getInstance() != null);
 
       times[run] = System.currentTimeMillis() - startTime;
@@ -39,21 +44,83 @@ public class MinicoreTest {
       assertTrue(results[run].isSuccess());
     }
 
-    long avg = 0;
-    for (long t : times) {
-      avg += t;
-    }
-    avg /= NUM_TIMING_RUNS;
     System.out.printf(
-        "Minicore init (%d runs): firstRun=%dms, avg=%dms%n", NUM_TIMING_RUNS, times[0], avg);
+        "Minicore init (%d runs): firstRun=%dms, avg=%dms%n",
+        NUM_TIMING_RUNS, times[0], average(times));
 
-    // Print load logs for each run
     for (int run = 0; run < NUM_TIMING_RUNS; run++) {
       System.out.printf("Run %d logs:%n", run + 1);
       for (String log : results[run].getLogs()) {
         System.out.printf("  %s%n", log);
       }
     }
+  }
+
+  @Test
+  public void testExecuteSelectWithMinicore() throws SQLException {
+    int numRuns = 3;
+
+    System.out.println("Warmup runs...");
+    for (int i = 0; i < 2; i++) {
+      Minicore.resetForTesting();
+      Minicore.initialize();
+      measureConnectionTime();
+      Minicore.resetForTesting();
+      measureConnectionTime();
+    }
+
+    long[] timesWithMinicore = new long[numRuns];
+    long[] timesWithoutMinicore = new long[numRuns];
+    long[] minicoreTimes = new long[numRuns];
+
+    System.out.println("\nInterleaved measurement runs:");
+    for (int i = 0; i < numRuns; i++) {
+      // Run WITHOUT minicore
+      Minicore.resetForTesting();
+      timesWithoutMinicore[i] = measureConnectionTime();
+      System.out.printf("  Run %d - without: %dms%n", i + 1, timesWithoutMinicore[i]);
+
+      // Run WITH minicore (sync init)
+      Minicore.resetForTesting();
+      long startMinicore = System.currentTimeMillis();
+      Minicore.initialize();
+      minicoreTimes[i] = System.currentTimeMillis() - startMinicore;
+      timesWithMinicore[i] = measureConnectionTime();
+      System.out.printf(
+          "  Run %d - with (init=%dms): %dms%n", i + 1, minicoreTimes[i], timesWithMinicore[i]);
+    }
+
+    // Calculate averages
+    long avgWith = average(timesWithMinicore);
+    long avgWithout = average(timesWithoutMinicore);
+    long avgMinicoreInit = average(minicoreTimes);
+    assertTrue(
+        (avgWith - avgWithout) < MAX_MINICORE_INIT_TIME_MS,
+        "Minicore initialization time difference exceeded");
+
+    System.out.println("\n=== testExecuteSelect with/without Minicore Impact ===");
+    System.out.printf("Minicore sync init time: avg=%dms%n", avgMinicoreInit);
+    System.out.printf("With sync minicore (%d runs): avg=%dms%n", numRuns, avgWith);
+    System.out.printf("Without minicore (%d runs): avg=%dms%n", numRuns, avgWithout);
+    System.out.printf("Connection time difference: %dms%n", avgWith - avgWithout);
+  }
+
+  private long measureConnectionTime() throws SQLException {
+    long start = System.currentTimeMillis();
+    try (Connection conn = getConnection()) {
+      try (Statement statement = conn.createStatement()) {
+        ResultSet rs = statement.executeQuery("select 1;");
+        rs.next();
+        assertEquals(1, rs.getInt(1));
+      }
+    }
+    return System.currentTimeMillis() - start;
+  }
+
+  private long average(long[] values) {
+    long sum = 0;
+    for (long v : values) sum += v;
+    return sum / values.length;
   }
 
   @Test

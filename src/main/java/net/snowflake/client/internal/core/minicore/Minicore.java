@@ -48,15 +48,13 @@ public class Minicore {
                 INSTANCE = new Minicore(result, result.getLibrary());
               } catch (Exception e) {
                 logger.error("Unexpected error during minicore initialization", e);
-                // Create a failed result
                 MinicoreLoadResult failedResult =
                     MinicoreLoadResult.failure(
                         "Unexpected initialization error: " + e.getMessage(),
                         null,
                         e,
                         Collections.emptyList());
-                Minicore instance = new Minicore(failedResult, null);
-                INSTANCE = instance;
+                INSTANCE = new Minicore(failedResult, null);
               }
             });
   }
@@ -72,12 +70,10 @@ public class Minicore {
     }
 
     if (INITIALIZATION_FUTURE == null) {
-      // Not started yet, initialize synchronously
       initializeAsync();
     }
 
     try {
-      // Wait for completion
       INITIALIZATION_FUTURE.join();
     } catch (Exception e) {
       logger.error("Failed to initialize minicore", e);
