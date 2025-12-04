@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SFCrlTrustManagerLatestIT extends BaseJDBCTest {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);
   @TempDir static File tmpFolder;

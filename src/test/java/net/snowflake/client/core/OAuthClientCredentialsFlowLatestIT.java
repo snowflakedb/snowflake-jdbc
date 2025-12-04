@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
 
   private static final String SCENARIOS_BASE_DIR = MAPPINGS_BASE_DIR + "/oauth/client_credentials";

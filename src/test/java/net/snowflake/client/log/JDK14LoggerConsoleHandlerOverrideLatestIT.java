@@ -23,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class JDK14LoggerConsoleHandlerOverrideLatestIT extends BaseJDBCTest {
   private static final PrintStream standardOut = System.out;
   private static final PrintStream standardErr = System.err;

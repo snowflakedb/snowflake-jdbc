@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** {@link SLF4JLogger} instance that will be tested in this class */
   private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerLatestIT.class);

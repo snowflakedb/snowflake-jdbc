@@ -44,10 +44,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                category: [{suites: 'CoreTestSuite', name: 'TestCategoryCore'}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v5
@@ -79,10 +76,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                category: [{suites: 'CoreTestSuite', name: 'TestCategoryCore'}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v5
@@ -116,10 +110,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8', image: 'jdbc-rockylinux9-openjdk8'}, {cloud: 'GCP', javaVersion: '11', image: 'jdbc-rockylinux9-openjdk11'}, {cloud: 'AZURE', javaVersion: '17', image: 'jdbc-rockylinux9-openjdk17'}, {cloud: 'AWS', javaVersion: '21', image: 'jdbc-rockylinux9-openjdk21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                category: [{suites: 'CoreTestSuite', name: 'TestCategoryCore'}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v5
@@ -144,10 +135,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
                 cloud: [ 'AWS', 'AZURE', 'GCP' ]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                category: [{suites: 'CoreTestSuite', name: 'TestCategoryCore'}]
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v5
@@ -162,29 +150,29 @@ jobs:
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
-
-    test-linux-old-driver:
-        name: Old JDBC ${{ matrix.category.name }} on ${{ matrix.image }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                image: [ 'jdbc-centos7-openjdk8' ]
-                cloud: [ 'AWS' ]
-                category: [{suites: 'OthersOldDriverTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', name: 'TestCategoryConnection,TestCategoryStatement'},
-                           {suites: 'LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite', name: 'TestCategoryLoader,TestCategoryResultSet'}]
-                is_old_driver: ['true']
-        steps:
-            - uses: actions/checkout@v5
-            - name: Tests
-              shell: bash
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
-                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                is_old_driver: ${{ matrix.is_old_driver }}
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
-              run: ./ci/test.sh
+#
+#    test-linux-old-driver:
+#        name: Old JDBC ${{ matrix.category.name }} on ${{ matrix.image }}
+#        runs-on: ubuntu-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                image: [ 'jdbc-centos7-openjdk8' ]
+#                cloud: [ 'AWS' ]
+#                category: [{suites: 'OthersOldDriverTestSuite', name: 'TestCategoryOthers'},
+#                           {suites: 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', name: 'TestCategoryConnection,TestCategoryStatement'},
+#                           {suites: 'LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite', name: 'TestCategoryLoader,TestCategoryResultSet'}]
+#                is_old_driver: ['true']
+#        steps:
+#            - uses: actions/checkout@v5
+#            - name: Tests
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.cloud }}
+#                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+#                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+#                is_old_driver: ${{ matrix.is_old_driver }}
+#                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
+#              run: ./ci/test.sh

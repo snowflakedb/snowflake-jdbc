@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";

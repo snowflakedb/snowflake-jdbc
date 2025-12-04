@@ -20,7 +20,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
   private static final int DECREASED_LOGIN_TIMEOUT = 5;
   private static final String OKTA_VANITY_PATH = "/okta-stub/vanity-url";

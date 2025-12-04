@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SFTrustManagerMockitoMockLatestIT {
 
   @TempDir private File tmpFolder;

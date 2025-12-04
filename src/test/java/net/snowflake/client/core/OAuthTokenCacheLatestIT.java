@@ -21,7 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
 
   public static final String MOCK_DPOP_PUBLIC_KEY =

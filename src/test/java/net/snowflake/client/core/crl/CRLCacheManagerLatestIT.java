@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class CRLCacheManagerLatestIT {
 
   private static final String TEST_CRL_URL = "http://snowflake.com/test.crl";

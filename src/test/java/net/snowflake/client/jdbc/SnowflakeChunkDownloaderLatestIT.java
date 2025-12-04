@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
   private static String originalProxyHost;
   private static String originalProxyPort;

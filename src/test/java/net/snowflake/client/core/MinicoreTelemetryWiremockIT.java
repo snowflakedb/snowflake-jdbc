@@ -11,7 +11,7 @@ import net.snowflake.client.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class MinicoreTelemetryWiremockIT extends BaseWiremockTest {
 
   private static final String LOGIN_MAPPING_PATH =

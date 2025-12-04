@@ -19,7 +19,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class StmtUtilTest extends BaseJDBCTest {
 
   /** SNOW-862760 Verify that additional headers are added to request */

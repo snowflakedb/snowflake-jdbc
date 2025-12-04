@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** A class for testing {@link JDK14Logger} */
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class JDK14LoggerLatestIT extends AbstractLoggerIT {
   /** {@link JDK14Logger} instance that will be tested in this class */
   private static final JDK14Logger LOGGER = new JDK14Logger(JDK14LoggerLatestIT.class.getName());

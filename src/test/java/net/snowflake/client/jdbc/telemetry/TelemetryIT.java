@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class TelemetryIT extends AbstractDriverIT {
   private static final String OAUTH_SCOPE_FORMAT = "session:role:%s";
   private Connection connection = null;

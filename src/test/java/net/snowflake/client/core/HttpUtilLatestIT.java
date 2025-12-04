@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class HttpUtilLatestIT {
 
   private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";

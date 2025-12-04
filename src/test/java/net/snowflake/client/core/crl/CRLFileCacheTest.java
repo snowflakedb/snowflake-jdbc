@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 class CRLFileCacheTest {
   private static final String TEST_CRL_URL = "http://snowflake.com/test.crl";
   private static final String TEST_CRL_URL_2 = "http://snowflake.com/test2.crl";

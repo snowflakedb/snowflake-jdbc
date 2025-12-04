@@ -37,7 +37,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**

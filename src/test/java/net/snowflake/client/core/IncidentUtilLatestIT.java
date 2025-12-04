@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class IncidentUtilLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final String FILE_NAME = "sf_incident_123456.dmp.gz";

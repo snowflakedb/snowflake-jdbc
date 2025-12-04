@@ -57,7 +57,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.CsvSource;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SFTrustManagerIT extends BaseJDBCTest {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);
 

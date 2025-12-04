@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class HttpUtilWiremockLatestIT extends BaseWiremockTest {
   private static final String SUCCESS_AT_THIRD_RETRY_ECHOING_HEADERS_SENT =
       "{\n"

@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.Properties;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
@@ -58,6 +59,14 @@ public class MinicoreTestIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteSelectWithMinicore() throws SQLException {
+    // Enable JNA debug logging
+    //    System.setProperty("jna.debug_load", "true");
+    //    System.setProperty("jna.debug_load.jna", "true");
+    //    System.setProperty("jna.nosys", "true");
+    //    System.setProperty("jna.noclasspath", "true");
+    //    System.setProperty("jna.platform.library.path", "");
+    //    System.setProperty("jna.nounpack", "true");
+
     int numRuns = 3;
 
     System.out.println("Warmup runs...");
@@ -107,7 +116,9 @@ public class MinicoreTestIT extends BaseJDBCTest {
 
   private long measureConnectionTime() throws SQLException {
     long start = System.currentTimeMillis();
-    try (Connection conn = getConnection()) {
+    Properties props = new Properties();
+    props.setProperty("disablePlatformDetection", "true");
+    try (Connection conn = getConnection(props)) {
       try (Statement statement = conn.createStatement()) {
         ResultSet rs = statement.executeQuery("select 1;");
         rs.next();

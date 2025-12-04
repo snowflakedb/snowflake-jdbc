@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();

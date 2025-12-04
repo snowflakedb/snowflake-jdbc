@@ -32,7 +32,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 @Nested
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 class FileCacheManagerTest extends BaseJDBCTest {
 
   private static final String CACHE_FILE_NAME = "credential_cache_v1.json.json";

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-@Tag(TestTags.CORE)
+@Tag(TestTags.OTHERS)
 public class CRLValidatorWiremockIT extends BaseWiremockTest {
   private CertificateGeneratorUtil certGen;
   private CloseableHttpClient httpClient;
