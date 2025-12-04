@@ -113,7 +113,7 @@ public class MinicorePlatform {
       return "";
     }
     if (Constants.isAix()) {
-      return ".a";
+      return ".so";
     }
     switch (os) {
       case WINDOWS:
