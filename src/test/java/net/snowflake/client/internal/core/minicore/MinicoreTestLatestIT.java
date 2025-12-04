@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 /** Core test suite for Minicore initialization and functionality. */
 @Tag(TestTags.CORE)
-public class MinicoreTestIT extends BaseJDBCTest {
+public class MinicoreTestLatestIT extends BaseJDBCTest {
 
   private static final long MAX_MINICORE_INIT_TIME_MS = 1000;
   private static final int NUM_TIMING_RUNS = 5;
