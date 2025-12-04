@@ -47,7 +47,7 @@ public class Minicore {
                 MinicoreLoadResult result = loader.loadLibrary();
                 INSTANCE = new Minicore(result, result.getLibrary());
               } catch (Exception e) {
-                logger.error("Unexpected error during minicore initialization", e);
+                logger.debug("Unexpected error during minicore initialization", e);
                 MinicoreLoadResult failedResult =
                     MinicoreLoadResult.failure(
                         "Unexpected initialization error: " + e.getMessage(),

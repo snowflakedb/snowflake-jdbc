@@ -6,6 +6,7 @@
     - Bumped grpc-java to 1.77.0 to address CVE-2025-58057 from transient dep (snowflakedb/snowflake-jdbc#2415)
     - Fix Connection and socket timeout are now propagated to HTTP client.
     - Fix Azure 503 retries and configure it with the putGetMaxRetries parameter.
+    - Improved retries for SSLHandshakeException errors caused by transient EOFException 
     - Introduced shared library for extended telemetry to identify and prepare testing platform for native rust extensions
 
 - v3.27.1
