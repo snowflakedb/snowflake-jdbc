@@ -60,20 +60,24 @@ public class MinicoreTestIT extends BaseJDBCTest {
   public void testExecuteSelectWithMinicore() throws SQLException {
     int numRuns = 3;
 
-    System.out.println("Warmup runs...");
-    for (int i = 0; i < 2; i++) {
-      Minicore.resetForTesting();
-      Minicore.initialize();
-      measureConnectionTime();
-      Minicore.resetForTesting();
-      measureConnectionTime();
-    }
+    // Cold start run (first connection with minicore - simulates customer cold JVM)
+    System.out.println("Cold start run (with minicore)...");
+    Minicore.resetForTesting();
+    long coldStartTotal = System.currentTimeMillis();
+    Minicore.initialize();
+    long coldMinicoreInitTime = System.currentTimeMillis() - coldStartTotal;
+    long coldConnectionTime = measureConnectionTime();
+    long coldTotalTime = System.currentTimeMillis() - coldStartTotal;
+    System.out.printf(
+        "  Cold: minicore=%dms, connection=%dms, total=%dms%n",
+        coldMinicoreInitTime, coldConnectionTime, coldTotalTime);
 
+    // Warm interleaved runs
     long[] timesWithMinicore = new long[numRuns];
     long[] timesWithoutMinicore = new long[numRuns];
     long[] minicoreTimes = new long[numRuns];
 
-    System.out.println("\nInterleaved measurement runs:");
+    System.out.println("\nInterleaved measurement runs (warm JVM):");
     for (int i = 0; i < numRuns; i++) {
       // Run WITHOUT minicore
       Minicore.resetForTesting();
@@ -99,10 +103,15 @@ public class MinicoreTestIT extends BaseJDBCTest {
         "Minicore initialization time difference exceeded");
 
     System.out.println("\n=== testExecuteSelect with/without Minicore Impact ===");
-    System.out.printf("Minicore sync init time: avg=%dms%n", avgMinicoreInit);
-    System.out.printf("With sync minicore (%d runs): avg=%dms%n", numRuns, avgWith);
-    System.out.printf("Without minicore (%d runs): avg=%dms%n", numRuns, avgWithout);
-    System.out.printf("Connection time difference: %dms%n", avgWith - avgWithout);
+    System.out.println("Cold start (first connection with minicore):");
+    System.out.printf("  Minicore init: %dms%n", coldMinicoreInitTime);
+    System.out.printf("  Connection:    %dms%n", coldConnectionTime);
+    System.out.printf("  Total:         %dms%n", coldTotalTime);
+    System.out.println("\nWarm JVM (interleaved runs):");
+    System.out.printf("  Minicore sync init time: avg=%dms%n", avgMinicoreInit);
+    System.out.printf("  With sync minicore (%d runs): avg=%dms%n", numRuns, avgWith);
+    System.out.printf("  Without minicore (%d runs): avg=%dms%n", numRuns, avgWithout);
+    System.out.printf("  Connection time difference: %dms%n", avgWith - avgWithout);
   }
 
   private long measureConnectionTime() throws SQLException {
