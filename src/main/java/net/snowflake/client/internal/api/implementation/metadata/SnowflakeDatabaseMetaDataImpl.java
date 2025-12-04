@@ -1885,32 +1885,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
             nextRow[4] = externalColumnType;
             nextRow[5] = columnMetadata.getTypeName();
 
-            int columnSize = 0;
-
-            // The COLUMN_SIZE column specifies the column size for the given
-            // column. For numeric data, this is the maximum precision. For
-            // character data, this is the length in characters. For datetime
-            // datatypes, this is the length in characters of the String
-            // representation (assuming the maximum allowed precision of the
-            // fractional seconds component). For binary data, this is the
-            // length in bytes. For the ROWID datatype, this is the length in
-            // bytes. Null is returned for data types where the column size
-            // is not applicable.
-            if (columnMetadata.getType() == Types.VARCHAR
-                || columnMetadata.getType() == Types.CHAR
-                || columnMetadata.getType() == Types.BINARY) {
-              columnSize = columnMetadata.getLength();
-            } else if (columnMetadata.getType() == Types.DECIMAL
-                || columnMetadata.getType() == Types.BIGINT
-                || columnMetadata.getType() == Types.TIME
-                || columnMetadata.getType() == Types.TIMESTAMP) {
-              columnSize = columnMetadata.getPrecision();
-            } else if (columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-              // For VECTOR Snowflake type we consider dimension as the column size
-              columnSize = columnMetadata.getDimension();
-            }
-
-            nextRow[6] = columnSize;
+            nextRow[6] = getColumnSize(columnMetadata);
             nextRow[7] = null;
             nextRow[8] = columnMetadata.getScale();
             nextRow[9] = null;
@@ -1947,6 +1922,51 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         return false;
       }
     };
+  }
+
+  static Integer getColumnSize(SnowflakeColumnMetadata columnMetadata) {
+    // The COLUMN_SIZE column specifies the column size for the given column. For numeric data, this
+    // is the maximum precision. For character data, this is the length in characters. For datetime
+    // datatypes, this is the length in characters of the String representation (assuming the
+    // maximum allowed precision of the fractional seconds component). For binary data, this is the
+    // length in bytes. For the ROWID datatype, this is the length in bytes. Null is returned for
+    // data types where the column size is not applicable.
+    switch (columnMetadata.getType()) {
+        // Character data types
+      case Types.CHAR:
+      case Types.VARCHAR:
+        return columnMetadata.getLength();
+        // Binary data types
+      case Types.BINARY:
+      case Types.VARBINARY:
+        return columnMetadata.getLength();
+        // All numeric and datetime types - getPrecision() handles both correctly
+      case Types.DECIMAL:
+      case Types.NUMERIC:
+      case Types.BIGINT:
+      case Types.INTEGER:
+      case Types.SMALLINT:
+      case Types.TINYINT:
+      case Types.FLOAT:
+      case Types.DOUBLE:
+      case Types.REAL:
+      case Types.DATE:
+      case Types.TIME:
+      case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ:
+      case SnowflakeUtil.EXTRA_TYPES_DECFLOAT:
+        return columnMetadata.getPrecision();
+        // For VECTOR Snowflake type we consider dimension as the column size
+      case SnowflakeUtil.EXTRA_TYPES_VECTOR:
+        return columnMetadata.getDimension();
+        // For all other types (BOOLEAN, ARRAY, OBJECT, etc.) return null as per JDBC spec
+        // requirement for non-applicable types
+      default:
+        return null;
+    }
   }
 
   @Override
