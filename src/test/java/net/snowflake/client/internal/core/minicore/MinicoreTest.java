@@ -23,6 +23,7 @@ public class MinicoreTest {
   @Test
   public void testAsyncInitializationCompletesInReasonableTime() {
     long[] times = new long[NUM_TIMING_RUNS];
+    MinicoreLoadResult[] results = new MinicoreLoadResult[NUM_TIMING_RUNS];
 
     for (int run = 0; run < NUM_TIMING_RUNS; run++) {
       Minicore.resetForTesting();
@@ -34,7 +35,8 @@ public class MinicoreTest {
           .until(() -> Minicore.getInstance() != null);
 
       times[run] = System.currentTimeMillis() - startTime;
-      assertTrue(Minicore.getInstance().getLoadResult().isSuccess());
+      results[run] = Minicore.getInstance().getLoadResult();
+      assertTrue(results[run].isSuccess());
     }
 
     long avg = 0;
@@ -42,7 +44,16 @@ public class MinicoreTest {
       avg += t;
     }
     avg /= NUM_TIMING_RUNS;
-    System.out.printf("Minicore init (%d runs): avg=%dms%n", NUM_TIMING_RUNS, avg);
+    System.out.printf(
+        "Minicore init (%d runs): firstRun=%dms, avg=%dms%n", NUM_TIMING_RUNS, times[0], avg);
+
+    // Print load logs for each run
+    for (int run = 0; run < NUM_TIMING_RUNS; run++) {
+      System.out.printf("Run %d logs:%n", run + 1);
+      for (String log : results[run].getLogs()) {
+        System.out.printf("  %s%n", log);
+      }
+    }
   }
 
   @Test
