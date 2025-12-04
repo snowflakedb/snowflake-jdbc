@@ -386,8 +386,8 @@
                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>com.microsoft.azure</pattern>
-                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                      <pattern>com.azure</pattern>
+                      <shadedPattern>${shadeBase}.azure</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.fasterxml</pattern>
@@ -566,6 +566,14 @@
                       <pattern>android.annotation</pattern>
                       <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>reactor</pattern>
+                      <shadedPattern>${shadeBase}.reactor</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.org.reactivestreams</shadedPattern>
+                    </relocation>
                   </relocations>
                   <filters>
                     <filter>
@@ -588,6 +596,7 @@
                         <exclude>google-http-client.properties</exclude>
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>dependencies.properties</exclude>
+                        <exclude>azure-*.properties</exclude>
                       </excludes>
                     </filter>
                     <filter>
@@ -651,9 +660,12 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/22/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <!-- reactor.* packages are relocated to ${relocationBase}.reactor.* -->
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>

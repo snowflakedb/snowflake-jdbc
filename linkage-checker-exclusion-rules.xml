@@ -70,6 +70,16 @@
         <Source><Package name="com.nimbusds"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.micrometer"/></Target>
+        <Source><Package name="reactor.core"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.micrometer"/></Target>
+        <Source><Package name="reactor.util"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
     <!--
     <LinkageError>
         <Target><Package name=""/></Target>

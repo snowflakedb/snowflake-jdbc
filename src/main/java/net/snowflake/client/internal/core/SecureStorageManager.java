@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /**
  * Interface for accessing Platform specific Local Secure Storage E.g. keychain on Mac credential
@@ -29,7 +30,7 @@ interface SecureStorageManager {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       byte[] hash = md.digest(target.toString().getBytes());
-      return HexUtil.byteToHexString(hash);
+      return SnowflakeUtil.byteToHexString(hash);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
