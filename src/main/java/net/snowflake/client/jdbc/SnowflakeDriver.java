@@ -66,12 +66,9 @@ public class SnowflakeDriver implements Driver {
     // Telemetry OOB is disabled
     TelemetryService.disableOOBTelemetry();
 
-    // Initialize minicore asynchronously (non-blocking)
-    // Minicore provides native library functionality for enhanced diagnostics
     try {
       Minicore.initializeAsync();
     } catch (Throwable t) {
-      // Don't let minicore initialization failure break driver loading
       logger.trace("Failed to start minicore initialization", t);
     }
   }
