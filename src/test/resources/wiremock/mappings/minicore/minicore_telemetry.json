@@ -25,9 +25,6 @@
               "expression": "$.data.CLIENT_ENVIRONMENT.CORE_FILE_NAME",
               "matches": "^libsf_mini_core_.+\\.(so|dylib|dll|a)$"
             }
-          },
-          {
-            "matchesJsonPath": "$.data.CLIENT_ENVIRONMENT.CORE_LOAD_LOGS"
           }
         ]
       },
