@@ -1,11 +1,15 @@
 package net.snowflake.client.internal.core.minicore;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.Constants.Architecture;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
@@ -86,7 +90,8 @@ public class MinicoreTelemetry {
     }
   }
 
-  public Map<String, Object> toMap() {
+  // Convert telemetry data to Map for client environment telemetry. Load logs are not included.
+  public Map<String, Object> toClientEnvironmentTelemetryMap() {
     Map<String, Object> map = new HashMap<>();
 
     if (isa != null) {
@@ -105,11 +110,38 @@ public class MinicoreTelemetry {
       map.put("CORE_LOAD_ERROR", coreLoadError);
     }
 
-    if (!coreLoadLogs.isEmpty()) {
-      map.put("CORE_LOAD_LOGS", coreLoadLogs);
+    return map;
+  }
+
+  // Convert telemetry data to ObjectNode for in-band telemetry.
+  public ObjectNode toInBandTelemetryNode() {
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+    ObjectNode message = mapper.createObjectNode();
+
+    message.put("type", "client_minicore_load");
+    message.put("source", "JDBC");
+    message.put("success", coreLoadError == null);
+
+    if (coreFileName != null) {
+      message.put("libraryFileName", coreFileName);
     }
 
-    return map;
+    if (coreVersion != null) {
+      message.put("coreVersion", coreVersion);
+    }
+
+    if (coreLoadError != null) {
+      message.put("error", coreLoadError);
+    }
+
+    if (!coreLoadLogs.isEmpty()) {
+      ArrayNode logsArray = message.putArray("loadLogs");
+      for (String log : coreLoadLogs) {
+        logsArray.add(log);
+      }
+    }
+
+    return message;
   }
 
   @Override

@@ -1211,7 +1211,7 @@ public class SessionUtil {
     }
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(loadResult);
-    clientEnv.putAll(telemetry.toMap());
+    clientEnv.putAll(telemetry.toClientEnvironmentTelemetryMap());
   }
 
   private static String getCertRevocationMode(SFLoginInput loginInput) {

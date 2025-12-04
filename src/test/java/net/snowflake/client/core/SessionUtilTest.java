@@ -3,6 +3,7 @@ package net.snowflake.client.core;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -367,20 +368,17 @@ public class SessionUtilTest {
 
     net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
         net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(successResult);
-    Map<String, Object> telemetryMap = telemetry.toMap();
+    Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();
 
     // THEN - Telemetry should contain success information
     assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
-    assertTrue(telemetryMap.get("ISA") != null, "ISA should not be null");
+    assertNotNull(telemetryMap.get("ISA"), "ISA should not be null");
 
     assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
     assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
 
     assertTrue(telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should be set on success");
     assertEquals("1.0.0", telemetryMap.get("CORE_VERSION"));
-
-    assertTrue(telemetryMap.containsKey("CORE_LOAD_LOGS"), "CORE_LOAD_LOGS should be set");
-
     assertFalse(
         telemetryMap.containsKey("CORE_LOAD_ERROR"),
         "CORE_LOAD_ERROR should not be set on success");
@@ -402,11 +400,11 @@ public class SessionUtilTest {
 
     net.snowflake.client.internal.core.minicore.MinicoreTelemetry telemetry =
         net.snowflake.client.internal.core.minicore.MinicoreTelemetry.fromLoadResult(failedResult);
-    Map<String, Object> telemetryMap = telemetry.toMap();
+    Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();
 
     // THEN - Telemetry should contain error information
     assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
-    assertTrue(telemetryMap.get("ISA") != null, "ISA should not be null");
+    assertNotNull(telemetryMap.get("ISA"), "ISA should not be null");
 
     assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
     assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
@@ -415,9 +413,6 @@ public class SessionUtilTest {
         telemetryMap.containsKey("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should be set on failure");
     assertEquals(
         "Failed to load library: UnsatisfiedLinkError", telemetryMap.get("CORE_LOAD_ERROR"));
-
-    assertTrue(telemetryMap.containsKey("CORE_LOAD_LOGS"), "CORE_LOAD_LOGS should be set");
-
     assertFalse(
         telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should not be set on failure");
   }
