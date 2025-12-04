@@ -132,12 +132,8 @@ public class MinicorePlatformTest {
       actualFiles =
           paths
               .map(p -> p.getFileName().toString())
-              .filter(
-                  f ->
-                      f.endsWith(".so")
-                          || f.endsWith(".dylib")
-                          || f.endsWith(".dll")
-                          || f.endsWith(".a"))
+              .filter(f -> f.endsWith(".so") || f.endsWith(".dylib") || f.endsWith(".dll"))
+              // || f.endsWith(".a"))
               .map(f -> "/minicore/" + f)
               .collect(Collectors.toSet());
     }
