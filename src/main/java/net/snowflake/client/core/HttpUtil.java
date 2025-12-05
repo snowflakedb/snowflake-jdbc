@@ -115,6 +115,8 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static void reset() {
+    setConnectionTimeout(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
+    setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
     httpClient.clear();
     httpClientWithoutDecompression.clear();
     httpClientRoutePlanner.clear();
