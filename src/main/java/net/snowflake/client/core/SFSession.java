@@ -31,6 +31,9 @@ import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.crl.CRLValidator;
+import net.snowflake.client.internal.core.minicore.Minicore;
+import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
+import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.HttpHeadersCustomizer;
@@ -905,8 +908,44 @@ public class SFSession extends SFBaseSession {
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     this.getTelemetryClient();
+
+    // Send minicore telemetry after session is established
+    sendMinicoreTelemetry();
+
     stopwatch.stop();
     logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+  }
+
+  private void sendMinicoreTelemetry() {
+    try {
+      Minicore minicore = Minicore.getInstance();
+      if (minicore == null) {
+        logger.trace("Minicore not initialized, skipping telemetry");
+        return;
+      }
+
+      MinicoreLoadResult result = minicore.getLoadResult();
+      if (result == null) {
+        logger.trace("Minicore load result is null, skipping telemetry");
+        return;
+      }
+
+      Telemetry telemetry = getTelemetryClient();
+      if (!(telemetry instanceof TelemetryClient)) {
+        logger.trace("Telemetry client not available or wrong type, skipping minicore telemetry");
+        return;
+      }
+      TelemetryClient telemetryClient = (TelemetryClient) telemetry;
+
+      MinicoreTelemetry minicoreTelemetry = MinicoreTelemetry.fromLoadResult(result);
+      telemetryClient.addLogToBatch(
+          minicoreTelemetry.toInBandTelemetryNode(), System.currentTimeMillis());
+      logger.trace("Queued minicore telemetry for sending");
+
+    } catch (Exception e) {
+      // Never fail the session due to telemetry
+      logger.trace("Failed to send minicore telemetry: {}", e.getMessage());
+    }
   }
 
   /**

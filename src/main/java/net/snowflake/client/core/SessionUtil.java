@@ -42,6 +42,9 @@ import net.snowflake.client.core.auth.wif.OidcIdentityAttestationCreator;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestationProvider;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.internal.core.minicore.Minicore;
+import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
+import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RetryContext;
 import net.snowflake.client.jdbc.RetryContextManager;
@@ -1183,7 +1186,32 @@ public class SessionUtil {
       logger.debug("Exception in retrieving application path for client environment", e);
       clientEnv.put(ClientAuthnParameter.APPLICATION_PATH.name(), "UNKNOWN");
     }
+
+    try {
+      addMinicoreTelemetry(clientEnv);
+    } catch (Throwable t) {
+      logger.debug("Failed to add minicore telemetry: {}", t.getMessage());
+    }
+
     return clientEnv;
+  }
+
+  private static void addMinicoreTelemetry(Map<String, Object> clientEnv) {
+    Minicore minicore = Minicore.getInstance();
+
+    if (minicore == null) {
+      logger.trace("Minicore not initialized yet, skipping telemetry");
+      return;
+    }
+
+    MinicoreLoadResult loadResult = minicore.getLoadResult();
+    if (loadResult == null) {
+      logger.debug("Minicore load result is null, skipping telemetry");
+      return;
+    }
+
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(loadResult);
+    clientEnv.putAll(telemetry.toClientEnvironmentTelemetryMap());
   }
 
   private static String getCertRevocationMode(SFLoginInput loginInput) {

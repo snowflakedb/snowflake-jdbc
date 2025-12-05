@@ -14,6 +14,7 @@ import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -64,6 +65,16 @@ public class SnowflakeDriver implements Driver {
 
     // Telemetry OOB is disabled
     TelemetryService.disableOOBTelemetry();
+
+    initializeMinicore();
+  }
+
+  private static void initializeMinicore() {
+    try {
+      Minicore.initializeAsync();
+    } catch (Throwable t) {
+      logger.trace("Failed to start minicore initialization", t);
+    }
   }
 
   /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */
