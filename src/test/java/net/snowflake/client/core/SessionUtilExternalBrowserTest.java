@@ -150,7 +150,6 @@ public class SessionUtilExternalBrowserTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
-                      Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
@@ -210,7 +209,6 @@ public class SessionUtilExternalBrowserTest {
               () ->
                   HttpUtil.executeGeneralRequestWithContext(
                       Mockito.any(HttpRequestBase.class),
-                      Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
