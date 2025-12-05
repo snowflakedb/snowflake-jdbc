@@ -111,7 +111,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testStatementClose() throws SQLException {
-    try (Statement statement = connection.createStatement(); ) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(connection, statement.getConnection());
       assertTrue(!statement.isClosed());
       statement.close();
