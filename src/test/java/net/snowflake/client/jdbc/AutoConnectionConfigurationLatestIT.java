@@ -3,10 +3,10 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isWindows;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.google.common.base.Strings;
@@ -48,13 +48,12 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
   public void setUp() throws IOException {
     params = BaseJDBCTest.getConnectionParameters();
     tempPath = Files.createTempDirectory(".snowflake");
-    ENV_VARIABLES_KEYS.stream()
-        .forEach(
-            key -> {
-              if (SnowflakeUtil.systemGetEnv(key) != null) {
-                envVariables.put(key, SnowflakeUtil.systemGetEnv(key));
-              }
-            });
+    ENV_VARIABLES_KEYS.forEach(
+        key -> {
+          if (SnowflakeUtil.systemGetEnv(key) != null) {
+            envVariables.put(key, SnowflakeUtil.systemGetEnv(key));
+          }
+        });
   }
 
   @AfterEach
@@ -63,14 +62,14 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
-    envVariables.forEach((key, value) -> SnowflakeUtil.systemSetEnv(key, value));
+    envVariables.forEach(SnowflakeUtil::systemSetEnv);
   }
 
   @ParameterizedTest
   @MethodSource("connectionScenarios")
   public void testConnectionScenarios(String connectionName, boolean shouldThrow)
       throws IOException, SQLException {
-    prepareConnectionConfigurationTomlFile(true);
+    prepareConnectionConfigurationTomlFile();
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     final String connectionString;
 
@@ -94,15 +93,14 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
       try (Connection con = DriverManager.getConnection(connectionString, null)) {
         assertNotNull(con);
       } catch (Exception e) {
-        fail("Should not fail." + e.getMessage());
+        fail("Should not fail. " + e.getMessage());
       }
     }
   }
 
-  private void prepareConnectionConfigurationTomlFile(boolean onlyUserPermissionConnection)
-      throws IOException {
+  private void prepareConnectionConfigurationTomlFile() throws IOException {
     Path path = Paths.get(tempPath.toString(), "connections.toml");
-    Path filePath = createFilePathWithPermission(path, onlyUserPermissionConnection);
+    Path filePath = createFilePathWithPermission(path);
     File file = filePath.toFile();
 
     Map<String, Map<String, String>> configuration = new HashMap<String, Map<String, String>>();
@@ -110,6 +108,8 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
     configurationParams.put("account", params.get("account"));
     configurationParams.put("user", params.get("user"));
     configurationParams.put("port", params.get("port"));
+    configurationParams.put("host", params.get("host"));
+    configurationParams.put("ssl", params.get("ssl"));
 
     if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
       configurationParams.put("private_key_file", params.get("private_key_file"));
@@ -127,13 +127,10 @@ public class AutoConnectionConfigurationLatestIT extends BaseJDBCTest {
     tomlMapper.writeValue(file, configuration);
   }
 
-  private Path createFilePathWithPermission(Path path, boolean onlyUserPermission)
-      throws IOException {
+  private Path createFilePathWithPermission(Path path) throws IOException {
     if (!isWindows()) {
       FileAttribute<Set<PosixFilePermission>> fileAttribute =
-          onlyUserPermission
-              ? PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))
-              : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrw----"));
+          PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
       return Files.createFile(path, fileAttribute);
     } else {
       return Files.createFile(path);
