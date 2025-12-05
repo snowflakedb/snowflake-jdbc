@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -21,11 +22,8 @@ public class MinicoreLoader {
   private static final String TEMP_FILE_PREFIX = "snowflake-minicore-";
 
   private volatile MinicoreLoadResult loadResult;
-  private final MinicoreLoadLogger loadLogger;
-
-  public MinicoreLoader() {
-    this.loadLogger = new MinicoreLoadLogger();
-  }
+  private final MinicoreLoadLogger loadLogger = new MinicoreLoadLogger();
+  private final MinicorePlatform platform = new MinicorePlatform();
 
   public synchronized MinicoreLoadResult loadLibrary() {
     if (loadResult != null) {
@@ -33,8 +31,6 @@ public class MinicoreLoader {
     }
 
     loadLogger.log("Starting minicore loading");
-
-    MinicorePlatform platform = new MinicorePlatform();
     loadLogger.log(
         "Detected platform: OS=" + platform.getOsName() + ", Arch=" + platform.getOsArch());
 
@@ -100,8 +96,7 @@ public class MinicoreLoader {
       loadLogger.log("Using temp directory");
       setPermissions700(tempDir);
       loadLogger.log("Configured temp directory permissions to 0700");
-      Path filePath = tempDir.resolve(libraryFileName);
-      return filePath;
+      return tempDir.resolve(libraryFileName);
     } catch (Exception e) {
       loadLogger.log("Failed to create system temp directory: " + e.getMessage());
     }
@@ -200,14 +195,13 @@ public class MinicoreLoader {
     }
   }
 
-  private Path persistLibraryToDisk(Path targetPath, InputStream libraryStream) throws IOException {
+  private void persistLibraryToDisk(Path targetPath, InputStream libraryStream) throws IOException {
     loadLogger.log("Writing embedded library to disk");
     Files.copy(libraryStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
     loadLogger.log("Successfully wrote embedded library");
     loadLogger.log("Setting file permissions to 600");
     setPermissions600(targetPath);
     loadLogger.log("File permissions configured");
-    return targetPath;
   }
 
   private MinicoreLibrary loadLibraryFromPath(Path libraryPath) throws UnsatisfiedLinkError {
@@ -235,7 +229,13 @@ public class MinicoreLoader {
   }
 
   private void setPermissions(Path path, boolean executable) throws IOException {
-    try {
+    if (platform.getOs().equals(Constants.OS.WINDOWS)) {
+      // Windows doesn't support POSIX permissions
+      // Use basic file attributes instead
+      path.toFile().setReadable(true, true); // readable by owner only
+      path.toFile().setWritable(true, true); // writable by owner only
+      path.toFile().setExecutable(executable, true); // executable by owner only if needed
+    } else {
       Set<PosixFilePermission> perms = new HashSet<>();
       perms.add(PosixFilePermission.OWNER_READ);
       perms.add(PosixFilePermission.OWNER_WRITE);
@@ -243,12 +243,6 @@ public class MinicoreLoader {
         perms.add(PosixFilePermission.OWNER_EXECUTE);
       }
       Files.setPosixFilePermissions(path, perms);
-    } catch (UnsupportedOperationException e) {
-      // Windows doesn't support POSIX permissions
-      // Use basic file attributes instead
-      path.toFile().setReadable(true, true); // readable by owner only
-      path.toFile().setWritable(true, true); // writable by owner only
-      path.toFile().setExecutable(executable, true); // executable by owner only if needed
     }
   }
 }

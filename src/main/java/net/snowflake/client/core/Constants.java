@@ -2,6 +2,8 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import net.snowflake.client.jdbc.SnowflakeUtil;
+
 /*
  * Constants used in JDBC implementation
  */
@@ -36,7 +38,8 @@ public final class Constants {
     X86_64,
     AARCH64,
     PPC64,
-    X86
+    X86,
+    UNKNOWN
   }
 
   private static OS os = null;
@@ -60,15 +63,19 @@ public final class Constants {
 
   public static synchronized Architecture getArchitecture() {
     if (architecture == null) {
-      String osArch = systemGetProperty("os.arch").toLowerCase();
-      if (osArch.contains("amd64") || osArch.contains("x86_64")) {
-        architecture = Architecture.X86_64;
-      } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
-        architecture = Architecture.AARCH64;
-      } else if (osArch.contains("ppc64")) {
-        architecture = Architecture.PPC64;
-      } else if (osArch.contains("x86") || osArch.contains("i386") || osArch.contains("i686")) {
-        architecture = Architecture.X86;
+      architecture = Architecture.UNKNOWN;
+      String osArch = systemGetProperty("os.arch");
+      if (!SnowflakeUtil.isNullOrEmpty(osArch)) {
+        osArch = osArch.toLowerCase();
+        if (osArch.contains("amd64") || osArch.contains("x86_64")) {
+          architecture = Architecture.X86_64;
+        } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
+          architecture = Architecture.AARCH64;
+        } else if (osArch.contains("ppc64")) {
+          architecture = Architecture.PPC64;
+        } else if (osArch.contains("x86") || osArch.contains("i386") || osArch.contains("i686")) {
+          architecture = Architecture.X86;
+        }
       }
     }
     return architecture;
