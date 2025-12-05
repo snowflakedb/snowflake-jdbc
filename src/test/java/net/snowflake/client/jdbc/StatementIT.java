@@ -117,6 +117,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.close();
       assertTrue(statement.isClosed());
     }
+
   }
 
   @Test
