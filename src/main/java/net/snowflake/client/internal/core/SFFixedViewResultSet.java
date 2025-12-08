@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SFBaseFileTransferAgent;
@@ -12,7 +13,6 @@ import net.snowflake.client.internal.jdbc.SnowflakeFixedView;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
-import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SqlState;
 
 /**
