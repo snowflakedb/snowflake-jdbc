@@ -1,7 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v3.28.1-SNAPSHOT
+- v4.0.0-SNAPSHOT
+    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385)
+
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
     - Bumped grpc-java to 1.77.0 to address CVE-2025-58057 from transient dep (snowflakedb/snowflake-jdbc#2415)
@@ -10,6 +12,7 @@
     - Improved retries for SSLHandshakeException errors caused by transient EOFException 
     - Introduced shared library for extended telemetry to identify and prepare testing platform for native rust extensions
     - Bumped netty to 4.1.128.Final to address CVE-2025-59419
+
 - v3.27.1
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
     - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test
@@ -21,6 +24,7 @@
     - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348)
     - Added support for authentication as a different identity through transitive IAM role impersonation for AWS (snowflakedb/snowflake-jdbc#2364)
     - Add AWS identity detection with ARN validation (snowflakedb/snowflake-jdbc#2379)
+  
 - v3.27.0
     - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs.
     - Added HTTP 307 & 308 retries in case of internal IP redirects
