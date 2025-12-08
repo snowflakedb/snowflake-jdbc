@@ -5,9 +5,6 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.azure.core.http.ProxyOptions;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -38,7 +35,6 @@ import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.RestRequest;
 import net.snowflake.client.internal.jdbc.RetryContextManager;
-import net.snowflake.client.internal.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -155,35 +151,6 @@ public class HttpUtil {
         connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
       }
     }
-  }
-
-  /**
-   * A static function to set S3 proxy params when there is a valid session
-   *
-   * @param key key to HttpClient map containing OCSP and proxy info
-   * @param clientConfig the configuration needed by S3 to set the proxy
-   * @deprecated Use {@link S3HttpUtil#setProxyForS3(HttpClientSettingsKey, ClientConfiguration)}
-   *     instead
-   */
-  @Deprecated
-  public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
-    S3HttpUtil.setProxyForS3(key, clientConfig);
-  }
-
-  /**
-   * A static function to set S3 proxy params for sessionless connections using the proxy params
-   * from the StageInfo
-   *
-   * @param proxyProperties proxy properties
-   * @param clientConfig the configuration needed by S3 to set the proxy
-   * @throws SnowflakeSQLException when exception encountered
-   * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties, ClientConfiguration)}
-   *     instead
-   */
-  @Deprecated
-  public static void setSessionlessProxyForS3(
-      Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
-    S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
   }
 
   /**
@@ -1671,9 +1638,9 @@ public class HttpUtil {
     if (key.usesProxy()) {
       // use the custom proxy properties
       HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
-      SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(
-              key.getProxyHost(), key.getProxyPort(), Protocol.HTTP, key.getNonProxyHosts());
+      SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
+          new SnowflakeMutableProxyRoutePlanner(
+              key.getProxyHost(), key.getProxyPort(), HttpProtocol.HTTP, key.getNonProxyHosts());
       httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
       if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
         Credentials credentials =
