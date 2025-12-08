@@ -4,8 +4,6 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.Protocol;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -582,11 +580,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       // use the custom proxy properties
       HttpHost proxy =
           new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
-      SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(
+      SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
+          new SnowflakeMutableProxyRoutePlanner(
               proxySettingsKey.getProxyHost(),
               proxySettingsKey.getProxyPort(),
-              Protocol.HTTP,
+              HttpProtocol.HTTP,
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
       if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
