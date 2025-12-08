@@ -21,7 +21,7 @@ public class MinicoreLoader {
   private static final SFLogger logger = SFLoggerFactory.getLogger(MinicoreLoader.class);
   private static final String TEMP_FILE_PREFIX = "snowflake-minicore-";
 
-  private volatile MinicoreLoadResult loadResult;
+  private MinicoreLoadResult loadResult;
   private final MinicoreLoadLogger loadLogger = new MinicoreLoadLogger();
   private final MinicorePlatform platform = new MinicorePlatform();
 
@@ -72,7 +72,7 @@ public class MinicoreLoader {
       if (targetPath == null) {
         loadLogger.log("No writable directory found");
         return MinicoreLoadResult.failure(
-            "No writable directory found (tried: system temp, working dir, home dir)",
+            "No writable directory found (tried: system temp, home cache dir, working dir)",
             libraryFileName,
             null,
             loadLogger.getLogs());
@@ -90,48 +90,95 @@ public class MinicoreLoader {
   }
 
   private Path determineTargetPath(String libraryFileName) {
-    // Try system temp directory first (create dedicated temp directory)
+    // 1. System temp directory (preferred - isolated, auto-cleaned)
+    Path path = tryTempDirectory(libraryFileName);
+    if (path != null) {
+      return path;
+    }
+
+    // 2. OS-specific home cache directory
+    path = tryHomeCacheDirectory(libraryFileName);
+    if (path != null) {
+      return path;
+    }
+    // 3. Current working directory (last resort)
+    return tryWorkingDirectory(libraryFileName);
+  }
+
+  private Path tryTempDirectory(String libraryFileName) {
     try {
       Path tempDir = Files.createTempDirectory(TEMP_FILE_PREFIX);
-      loadLogger.log("Using temp directory");
       setPermissions700(tempDir);
-      loadLogger.log("Configured temp directory permissions to 0700");
+      loadLogger.log("Using temp directory");
       return tempDir.resolve(libraryFileName);
     } catch (Exception e) {
-      loadLogger.log("Failed to create system temp directory: " + e.getMessage());
+      loadLogger.log("Failed to use temp directory: " + e.getMessage());
+      return null;
     }
+  }
 
-    // Fallback to working directory
-    Path path = tryDirectoryForFile("user.dir", libraryFileName, "working");
-    if (path != null) {
-      return path;
+  private Path tryHomeCacheDirectory(String libraryFileName) {
+    try {
+      Path cacheDir = getHomeCacheDirectory();
+      if (cacheDir == null) {
+        return null;
+      }
+
+      if (!Files.exists(cacheDir)) {
+        Files.createDirectories(cacheDir);
+        setPermissions700(cacheDir);
+      }
+
+      if (Files.isWritable(cacheDir)) {
+        loadLogger.log("Using home cache directory: " + cacheDir);
+        return cacheDir.resolve(libraryFileName);
+      }
+      loadLogger.log("Home cache directory not writable: " + cacheDir);
+    } catch (Exception e) {
+      loadLogger.log("Failed to use home cache directory: " + e.getMessage());
     }
-
-    // Fallback to home directory
-    path = tryDirectoryForFile("user.home", libraryFileName, "home");
-    if (path != null) {
-      return path;
-    }
-
     return null;
   }
 
-  private Path tryDirectoryForFile(String propertyName, String libraryFileName, String dirType) {
+  private Path tryWorkingDirectory(String libraryFileName) {
     try {
-      String dir = System.getProperty(propertyName);
-      if (dir != null && !dir.isEmpty()) {
-        Path baseDir = Paths.get(dir);
-        if (Files.isWritable(baseDir)) {
-          Path filePath =
-              baseDir.resolve(TEMP_FILE_PREFIX + System.nanoTime() + "-" + libraryFileName);
-          loadLogger.log("Using " + dirType + " directory");
-          return filePath;
+      String cwd = System.getProperty("user.dir");
+      if (cwd != null && !cwd.isEmpty()) {
+        Path cwdPath = Paths.get(cwd);
+        if (Files.isWritable(cwdPath)) {
+          loadLogger.log("Using current working directory");
+          return cwdPath.resolve(TEMP_FILE_PREFIX + System.nanoTime() + "-" + libraryFileName);
         }
       }
     } catch (Exception e) {
-      loadLogger.log("Failed to use " + dirType + " directory: " + e.getMessage());
+      loadLogger.log("Failed to use working directory: " + e.getMessage());
     }
     return null;
+  }
+
+  /**
+   * Returns the OS-specific cache directory path:
+   *
+   * <ul>
+   *   <li>Windows: %USERPROFILE%/AppData/Local/Snowflake/Caches/minicore/
+   *   <li>MacOS: $HOME/Library/Caches/Snowflake/minicore/
+   *   <li>Other: $HOME/.cache/Snowflake/minicore/
+   * </ul>
+   */
+  Path getHomeCacheDirectory() {
+    String home = System.getProperty("user.home");
+    if (home == null || home.isEmpty()) {
+      return null;
+    }
+
+    Constants.OS os = platform.getOs();
+    if (os == Constants.OS.WINDOWS) {
+      return Paths.get(home, "AppData", "Local", "Snowflake", "Caches", "minicore");
+    } else if (os == Constants.OS.MAC) {
+      return Paths.get(home, "Library", "Caches", "Snowflake", "minicore");
+    } else {
+      return Paths.get(home, ".cache", "Snowflake", "minicore");
+    }
   }
 
   private MinicoreLoadResult persistLoadAndDelete(

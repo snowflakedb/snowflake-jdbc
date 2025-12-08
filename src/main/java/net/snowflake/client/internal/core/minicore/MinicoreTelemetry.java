@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.Constants;
-import net.snowflake.client.core.Constants.Architecture;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
@@ -52,12 +51,21 @@ public class MinicoreTelemetry {
     this.coreLoadLogs = coreLoadLogs != null ? coreLoadLogs : new ArrayList<>();
   }
 
-  public static MinicoreTelemetry fromLoadResult(MinicoreLoadResult loadResult) {
-    if (loadResult == null) {
-      return createNotInitialized();
+  /** Create telemetry from the Minicore instance, handling all null cases. */
+  public static MinicoreTelemetry from(Minicore minicore) {
+    if (minicore == null) {
+      return withError("Minicore not initialized");
     }
+    MinicoreLoadResult result = minicore.getLoadResult();
+    if (result == null) {
+      return withError("Minicore load result unavailable");
+    }
+    return fromLoadResult(result);
+  }
 
-    String isa = normalizeArchitecture(Constants.getArchitecture());
+  /** Create telemetry from a successful or failed load result. */
+  public static MinicoreTelemetry fromLoadResult(MinicoreLoadResult loadResult) {
+    String isa = Constants.getArchitecture().getIdentifier();
     String coreVersion = loadResult.getCoreVersion();
     String coreFileName = loadResult.getLibraryFileName();
     String coreLoadError = loadResult.isSuccess() ? null : loadResult.getErrorMessage();
@@ -66,28 +74,9 @@ public class MinicoreTelemetry {
     return new MinicoreTelemetry(isa, coreVersion, coreFileName, coreLoadError, logs);
   }
 
-  private static MinicoreTelemetry createNotInitialized() {
-    String isa = normalizeArchitecture(Constants.getArchitecture());
-    return new MinicoreTelemetry(isa, null, null, "MinicoreManager not initialized", null);
-  }
-
-  private static String normalizeArchitecture(Architecture arch) {
-    if (arch == null) {
-      return "Unknown";
-    }
-
-    switch (arch) {
-      case X86_64:
-        return "amd64";
-      case AARCH64:
-        return "arm64";
-      case PPC64:
-        return "ppc64";
-      case X86:
-        return "x86";
-      default:
-        return "Unknown";
-    }
+  private static MinicoreTelemetry withError(String error) {
+    String isa = Constants.getArchitecture().getIdentifier();
+    return new MinicoreTelemetry(isa, null, null, error, null);
   }
 
   // Convert telemetry data to Map for client environment telemetry. Load logs are not included.
@@ -105,11 +94,6 @@ public class MinicoreTelemetry {
     if (coreFileName != null) {
       map.put("CORE_FILE_NAME", coreFileName);
     }
-
-    if (coreLoadError != null) {
-      map.put("CORE_LOAD_ERROR", coreLoadError);
-    }
-
     return map;
   }
 
@@ -136,9 +120,7 @@ public class MinicoreTelemetry {
 
     if (!coreLoadLogs.isEmpty()) {
       ArrayNode logsArray = message.putArray("loadLogs");
-      for (String log : coreLoadLogs) {
-        logsArray.add(log);
-      }
+      coreLoadLogs.forEach(logsArray::add);
     }
 
     return message;

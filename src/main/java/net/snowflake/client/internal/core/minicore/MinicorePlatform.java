@@ -51,10 +51,11 @@ public class MinicorePlatform {
 
   public String getPlatformIdentifier() {
     String osId = getOsIdentifier();
-    String archId = getArchIdentifier();
-    if (osId == null || archId == null) {
+    if (osId == null || architecture == Architecture.UNKNOWN) {
       return null;
     }
+
+    String archId = architecture.getIdentifier();
 
     // For Linux, add libc variant: linux-x86_64-glibc or linux-aarch64-musl
     LibcDetector.LibcVariant libcVariant = LibcDetector.detectLibcVariant();
@@ -66,7 +67,7 @@ public class MinicorePlatform {
     return osId + "-" + archId;
   }
 
-  /** Get OS identifier (used in both filenames and telemetry). Uses: macos, linux, windows, aix. */
+  /** Get OS identifier (used in filenames). Returns: macos, linux, windows, aix. */
   private String getOsIdentifier() {
     if (os == null) {
       return null;
@@ -86,28 +87,6 @@ public class MinicorePlatform {
     }
   }
 
-  /**
-   * Get architecture identifier (used in both filenames and telemetry). Uses: x86_64, aarch64,
-   * ppc64.
-   */
-  private String getArchIdentifier() {
-    if (architecture == null) {
-      return null;
-    }
-    switch (architecture) {
-      case X86_64:
-        return "x86_64";
-      case AARCH64:
-        return "aarch64";
-      case PPC64:
-        return "ppc64";
-      case X86:
-        return "x86";
-      default:
-        return null;
-    }
-  }
-
   private String getLibraryExtension() {
     if (os == null) {
       return "";
@@ -120,8 +99,7 @@ public class MinicorePlatform {
         return ".dll";
       case MAC:
         return ".dylib";
-      case LINUX:
-      default:
+      default: // Linux included.
         return ".so";
     }
   }
@@ -143,15 +121,12 @@ public class MinicorePlatform {
    * </ul>
    */
   public String getLibraryFileName() {
-    if (os == null || architecture == null) {
+    String osId = getOsIdentifier();
+    if (osId == null || architecture == Architecture.UNKNOWN) {
       return null;
     }
 
-    String osId = getOsIdentifier();
-    String archId = getArchIdentifier();
-    if (osId == null || archId == null) {
-      return null;
-    }
+    String archId = architecture.getIdentifier();
 
     StringBuilder fileName = new StringBuilder();
     fileName.append(Minicore.LIBRARY_BASE_NAME);

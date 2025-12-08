@@ -32,7 +32,6 @@ import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.core.auth.AuthenticatorType;
 import net.snowflake.client.core.crl.CRLValidator;
 import net.snowflake.client.internal.core.minicore.Minicore;
-import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
 import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -918,26 +917,14 @@ public class SFSession extends SFBaseSession {
 
   private void sendMinicoreTelemetry() {
     try {
-      Minicore minicore = Minicore.getInstance();
-      if (minicore == null) {
-        logger.trace("Minicore not initialized, skipping telemetry");
-        return;
-      }
-
-      MinicoreLoadResult result = minicore.getLoadResult();
-      if (result == null) {
-        logger.trace("Minicore load result is null, skipping telemetry");
-        return;
-      }
-
       Telemetry telemetry = getTelemetryClient();
       if (!(telemetry instanceof TelemetryClient)) {
-        logger.trace("Telemetry client not available or wrong type, skipping minicore telemetry");
+        logger.trace("Telemetry client not available, skipping minicore telemetry");
         return;
       }
       TelemetryClient telemetryClient = (TelemetryClient) telemetry;
 
-      MinicoreTelemetry minicoreTelemetry = MinicoreTelemetry.fromLoadResult(result);
+      MinicoreTelemetry minicoreTelemetry = MinicoreTelemetry.from(Minicore.getInstance());
       telemetryClient.addLogToBatch(
           minicoreTelemetry.toInBandTelemetryNode(), System.currentTimeMillis());
       logger.trace("Queued minicore telemetry for sending");

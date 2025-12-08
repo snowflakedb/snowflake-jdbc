@@ -54,24 +54,29 @@ public class MinicoreTelemetryTest {
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
     assertNotNull(telemetry, "Telemetry should not be null");
     assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
-    assertTrue(map.containsKey("CORE_LOAD_ERROR"), "Should contain CORE_LOAD_ERROR on failure");
-    assertEquals(errorMessage, map.get("CORE_LOAD_ERROR"), "CORE_LOAD_ERROR should match");
     assertTrue(map.containsKey("CORE_FILE_NAME"), "Telemetry should contain CORE_FILE_NAME");
     assertEquals(TEST_LIBRARY_FILE, map.get("CORE_FILE_NAME"), "CORE_FILE_NAME should match");
     assertFalse(map.containsKey("CORE_VERSION"), "Should not contain CORE_VERSION on failure");
+    // CORE_LOAD_ERROR is only sent via in-band telemetry, not in CLIENT_ENVIRONMENT
+    assertFalse(
+        map.containsKey("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should not be in client environment map");
   }
 
   @Test
-  public void testTelemetryFromNullLoadResult() {
-    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(null);
+  public void testTelemetryFromNullMinicore() {
+    MinicoreTelemetry telemetry = MinicoreTelemetry.from(null);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
 
-    assertNotNull(telemetry, "Telemetry should not be null even with null load result");
-    assertTrue(map.containsKey("CORE_LOAD_ERROR"), "Should contain error when load result is null");
-    assertEquals(
-        "MinicoreManager not initialized",
-        map.get("CORE_LOAD_ERROR"),
-        "Error message should indicate not initialized");
+    assertNotNull(telemetry, "Telemetry should not be null");
+    assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
+    assertFalse(
+        map.containsKey("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should not be in client environment map");
+
+    // Check in-band telemetry has the correct error
+    ObjectNode node = telemetry.toInBandTelemetryNode();
+    assertEquals("Minicore not initialized", node.get("error").asText());
   }
 
   // Tests for toInBandTelemetryNode()
@@ -128,15 +133,15 @@ public class MinicoreTelemetryTest {
   }
 
   @Test
-  public void testInBandTelemetryNodeFromNullLoadResult() {
-    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(null);
+  public void testInBandTelemetryNodeFromNullMinicore() {
+    MinicoreTelemetry telemetry = MinicoreTelemetry.from(null);
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
     assertNotNull(node, "ObjectNode should not be null");
     assertEquals("client_minicore_load", node.get("type").asText());
     assertEquals("JDBC", node.get("source").asText());
-    assertFalse(node.get("success").asBoolean(), "Success should be false for null result");
-    assertEquals("MinicoreManager not initialized", node.get("error").asText());
+    assertFalse(node.get("success").asBoolean(), "Success should be false");
+    assertEquals("Minicore not initialized", node.get("error").asText());
   }
 
   @Test

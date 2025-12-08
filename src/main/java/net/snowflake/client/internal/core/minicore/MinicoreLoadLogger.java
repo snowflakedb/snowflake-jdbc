@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.core.minicore;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
@@ -23,6 +24,6 @@ public class MinicoreLoadLogger {
   }
 
   public List<String> getLogs() {
-    return logs;
+    return Collections.unmodifiableList(logs);
   }
 }

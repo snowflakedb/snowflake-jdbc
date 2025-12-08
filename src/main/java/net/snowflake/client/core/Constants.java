@@ -35,15 +35,26 @@ public final class Constants {
   }
 
   public enum Architecture {
-    X86_64,
-    AARCH64,
-    PPC64,
-    X86,
-    UNKNOWN
+    X86_64("x86_64"),
+    AARCH64("aarch64"),
+    PPC64("ppc64"),
+    X86("x86"),
+    UNKNOWN("unknown");
+
+    private final String identifier;
+
+    Architecture(String identifier) {
+      this.identifier = identifier;
+    }
+
+    public String getIdentifier() {
+      return identifier;
+    }
   }
 
   private static OS os = null;
   private static Architecture architecture = null;
+  private static Boolean isAix = null;
 
   public static synchronized OS getOS() {
     if (os == null) {
@@ -82,8 +93,11 @@ public final class Constants {
   }
 
   public static boolean isAix() {
-    String osName = systemGetProperty("os.name");
-    return osName != null && osName.toLowerCase().contains("aix");
+    if (isAix == null) {
+      String osName = systemGetProperty("os.name");
+      return osName != null && osName.toLowerCase().contains("aix");
+    }
+    return isAix;
   }
 
   public static void clearOSForTesting() {
