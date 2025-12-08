@@ -270,7 +270,6 @@
               <ignoreNonCompile>true</ignoreNonCompile>
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
-                <ignoredUnusedDeclaredDependency>com.amazonaws:aws-java-sdk-sts</ignoredUnusedDeclaredDependency>
               </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
@@ -808,13 +807,42 @@
                         <exclude>org.apache.log4j.*</exclude>
                       </excludes>
                     </relocation>
+                    <!-- relocate this temporarily just to get artifact built -->
                     <relocation>
                       <pattern>com.amazonaws</pattern>
                       <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>software.amazon.awssdk</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.awssdk</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.encryption.s3</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.encryption.s3</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.eventstream</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.eventstream</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>software.amazon.ion</pattern>
                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.reactivestreams</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.jvnet.staxex</pattern>
+                      <shadedPattern>${shadeBase}.jvnet.staxex</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.xml.soap</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.xml.soap</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.activation</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.activation</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.azure</pattern>
@@ -1035,6 +1063,8 @@
                         <exclude>dependencies.properties</exclude>
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>azure-*.properties</exclude>
+                        <exclude>VersionInfo.java</exclude>
+                        <exclude>project.properties</exclude>
                       </excludes>
                     </filter>
                     <filter>

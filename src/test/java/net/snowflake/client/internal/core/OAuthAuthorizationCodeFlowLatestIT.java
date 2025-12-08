@@ -2,7 +2,6 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.core.SessionUtilExternalBrowser.AuthExternalBrowserHandlers;
 
-import com.amazonaws.util.StringUtils;
 import java.net.URI;
 import java.time.Duration;
 import net.snowflake.client.category.TestTags;
@@ -11,6 +10,7 @@ import net.snowflake.client.internal.core.auth.oauth.OAuthAuthorizationCodeAcces
 import net.snowflake.client.internal.core.auth.oauth.StateProvider;
 import net.snowflake.client.internal.core.auth.oauth.TokenResponseDTO;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
@@ -66,7 +66,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
     String accessToken = tokenResponse.getAccessToken();
 
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
   }
 
@@ -80,7 +80,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
     String accessToken = tokenResponse.getAccessToken();
 
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
   }
 
@@ -94,7 +94,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
     String accessToken = tokenResponse.getAccessToken();
 
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
   }
 
@@ -108,8 +108,8 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     String accessToken = tokenResponse.getAccessToken();
     String refreshToken = tokenResponse.getRefreshToken();
 
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(refreshToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(refreshToken));
     Assertions.assertEquals("access-token-123", accessToken);
     Assertions.assertEquals("refresh-token-123", refreshToken);
   }
@@ -127,7 +127,7 @@ public class OAuthAuthorizationCodeFlowLatestIT extends BaseWiremockTest {
     TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
     String accessToken = tokenResponse.getAccessToken();
 
-    Assertions.assertFalse(StringUtils.isNullOrEmpty(accessToken));
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
     Assertions.assertEquals("access-token-123", accessToken);
   }
 
