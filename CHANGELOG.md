@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.0.0-SNAPSHOT
-    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385)
+    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
 
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)

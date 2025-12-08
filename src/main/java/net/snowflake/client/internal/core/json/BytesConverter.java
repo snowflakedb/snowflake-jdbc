@@ -4,9 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.internal.common.core.SFBinary;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 
 public class BytesConverter {
