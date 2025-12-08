@@ -1,9 +1,6 @@
-package net.snowflake.client.util;
-
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+package net.snowflake.client.internal.util;
 
 /** Wrapper exception that ensures any secret in log output is masked via {@link SecretDetector}. */
-@SnowflakeJdbcInternalApi
 public class MaskedException extends RuntimeException {
   private final Throwable inner;
 
