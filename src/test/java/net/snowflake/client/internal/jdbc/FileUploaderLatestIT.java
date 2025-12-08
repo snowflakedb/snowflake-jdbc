@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,7 +43,7 @@ import net.snowflake.client.internal.api.implementation.connection.SnowflakeConn
 import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
-import net.snowflake.client.internal.jdbc.cloud.storage.S3StorageObjectMetadata;
+import net.snowflake.client.internal.jdbc.cloud.storage.S3ObjectMetadata;
 import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeGCSClient;
 import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.internal.jdbc.cloud.storage.StageInfo;
@@ -58,6 +57,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Tag(TestTags.OTHERS)
@@ -769,12 +769,14 @@ public class FileUploaderLatestIT extends FileUploaderPrep {
           String path = location.substring(idx + 1) + "file1.gz";
           StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
 
-          ObjectMetadata s3Meta = new ObjectMetadata();
-          s3Meta.setContentLength(meta.getContentLength());
-          s3Meta.setContentEncoding(meta.getContentEncoding());
-          s3Meta.setUserMetadata(meta.getUserMetadata());
+          PutObjectRequest s3Meta =
+              PutObjectRequest.builder()
+                  .contentLength(meta.getContentLength())
+                  .contentEncoding(meta.getContentEncoding())
+                  .metadata(meta.getUserMetadata())
+                  .build();
 
-          S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(s3Meta);
+          S3ObjectMetadata s3Metadata = new S3ObjectMetadata(s3Meta);
           RemoteStoreFileEncryptionMaterial encMat = sfAgent.getEncryptionMaterial().get(0);
           Map<String, String> matDesc =
               mapper.readValue(s3Metadata.getUserMetadata().get("x-amz-matdesc"), Map.class);

@@ -2,37 +2,43 @@ package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.ProxyAuthenticationMethod;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
-import net.snowflake.client.internal.core.HttpProtocol;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
+import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 
 public class S3HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
   /**
-   * A static function to set S3 proxy params when there is a valid session
+   * A static function to create S3 proxy configuration when there is a valid session
    *
    * @param key key to HttpClient map containing OCSP and proxy info
-   * @param clientConfig the configuration needed by S3 to set the proxy
+   * @return ProxyConfiguration or null if no proxy is configured
    */
-  public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
+  public static ProxyConfiguration createProxyConfigurationForS3(HttpClientSettingsKey key) {
     if (key != null && key.usesProxy()) {
-      clientConfig.setProxyProtocol(
-          key.getProxyHttpProtocol() == HttpProtocol.HTTPS ? Protocol.HTTPS : Protocol.HTTP);
-      clientConfig.setProxyHost(key.getProxyHost());
-      clientConfig.setProxyPort(key.getProxyPort());
-      clientConfig.setNonProxyHosts(key.getNonProxyHosts());
+      ProxyConfiguration.Builder proxyBuilder =
+          ProxyConfiguration.builder()
+              .scheme(key.getProxyHttpProtocol().getScheme())
+              .host(key.getProxyHost())
+              .port(key.getProxyPort())
+              .useEnvironmentVariableValues(false)
+              .useSystemPropertyValues(false);
+
+      if (key.getNonProxyHosts() != null && !key.getNonProxyHosts().isEmpty()) {
+        proxyBuilder.nonProxyHosts(prepareNonProxyHosts(key.getNonProxyHosts()));
+      }
+
       String logMessage =
           "Setting S3 proxy. Host: "
               + key.getProxyHost()
@@ -42,36 +48,34 @@ public class S3HttpUtil {
               + key.getProxyHttpProtocol()
               + ", non-proxy hosts: "
               + key.getNonProxyHosts();
+
       if (!isNullOrEmpty(key.getProxyUser()) && !isNullOrEmpty(key.getProxyPassword())) {
         logMessage +=
             ", user: "
                 + key.getProxyUser()
                 + ", password is "
                 + SFLoggerUtil.isVariableProvided(key.getProxyPassword());
-        clientConfig.setProxyUsername(key.getProxyUser());
-        clientConfig.setProxyPassword(key.getProxyPassword());
-        // Force the use of BASIC authentication only for proxy authentication
-        // This ensures that when multiple authentication schemes are offered by the proxy
-        // (e.g., NEGOTIATE, NTLM, BASIC), we only use BASIC authentication
-        clientConfig.setProxyAuthenticationMethods(Arrays.asList(ProxyAuthenticationMethod.BASIC));
+        proxyBuilder.username(key.getProxyUser());
+        proxyBuilder.password(key.getProxyPassword());
       }
       logger.debug(logMessage);
+      return proxyBuilder.build();
     } else {
       logger.debug("Omitting S3 proxy setup");
+      return null;
     }
   }
 
   /**
-   * A static function to set S3 proxy params for sessionless connections using the proxy params
-   * from the StageInfo
+   * A static function to create S3 proxy configuration for sessionless connections using the proxy
+   * params from the StageInfo
    *
    * @param proxyProperties proxy properties
-   * @param clientConfig the configuration needed by S3 to set the proxy
+   * @return ProxyConfiguration for AWS SDK v2, or null if no proxy is configured
    * @throws SnowflakeSQLException when an error is encountered
    */
-  public static void setSessionlessProxyForS3(
-      Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
-    // do nothing yet
+  public static ProxyConfiguration createSessionlessProxyConfigurationForS3(
+      Properties proxyProperties) throws SnowflakeSQLException {
     if (proxyProperties != null
         && proxyProperties.size() > 0
         && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
@@ -99,14 +103,24 @@ public class S3HttpUtil {
             proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
         String proxyProtocol =
             proxyProperties.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
-        Protocol protocolEnum =
+
+        String scheme =
             (!isNullOrEmpty(proxyProtocol) && proxyProtocol.equalsIgnoreCase("https"))
-                ? Protocol.HTTPS
-                : Protocol.HTTP;
-        clientConfig.setProxyHost(proxyHost);
-        clientConfig.setProxyPort(proxyPort);
-        clientConfig.setNonProxyHosts(nonProxyHosts);
-        clientConfig.setProxyProtocol(protocolEnum);
+                ? "https"
+                : "http";
+
+        ProxyConfiguration.Builder proxyBuilder =
+            ProxyConfiguration.builder()
+                .scheme(scheme)
+                .host(proxyHost)
+                .port(proxyPort)
+                .useEnvironmentVariableValues(false)
+                .useSystemPropertyValues(false);
+
+        if (!isNullOrEmpty(nonProxyHosts)) {
+          proxyBuilder.nonProxyHosts(prepareNonProxyHosts(nonProxyHosts));
+        }
+
         String logMessage =
             "Setting sessionless S3 proxy. Host: "
                 + proxyHost
@@ -118,20 +132,33 @@ public class S3HttpUtil {
                 + proxyProtocol;
         if (!isNullOrEmpty(proxyUser) && !isNullOrEmpty(proxyPassword)) {
           logMessage += ", user: " + proxyUser + " with password provided";
-          clientConfig.setProxyUsername(proxyUser);
-          clientConfig.setProxyPassword(proxyPassword);
-          // Force the use of BASIC authentication only for proxy authentication
-          // This ensures that when multiple authentication schemes are offered by the proxy
-          // (e.g., NEGOTIATE, NTLM, BASIC), we only use BASIC authentication
-          clientConfig.setProxyAuthenticationMethods(
-              Arrays.asList(ProxyAuthenticationMethod.BASIC));
+          proxyBuilder.username(proxyUser);
+          proxyBuilder.password(proxyPassword);
         }
         logger.debug(logMessage);
+        return proxyBuilder.build();
       } else {
         logger.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
+        return null;
       }
     } else {
       logger.debug("Omitting sessionless S3 proxy setup");
+      return null;
     }
+  }
+
+  static Set<String> prepareNonProxyHosts(String nonProxyHosts) {
+    return Arrays.stream(nonProxyHosts.split("\\|"))
+        .map(String::trim)
+        .map(
+            host -> {
+              // AWS SDK v2 Netty client expects proper Java regex patterns for non-proxy hosts.
+              // Transform traditional proxy patterns to valid regex:
+              // 1. Escape dots to match literal periods
+              // 2. Replace wildcards (*) with regex equivalent (.*)
+              // This differs from SdkProxyRoutePlanner which uses simple pattern matching
+              return host.replace(".", "\\.").replace("*", ".*?");
+            })
+        .collect(Collectors.toSet());
   }
 }
