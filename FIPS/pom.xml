@@ -393,11 +393,6 @@
                       <pattern>org.apache</pattern>
                       <shadedPattern>${shadeBase}.apache</shadedPattern>
                     </relocation>
-                    <!-- relocate this temporarily just to get artifact built -->
-                    <relocation>
-                      <pattern>com.amazonaws</pattern>
-                      <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
-                    </relocation>
                     <relocation>
                       <pattern>software.amazon.awssdk</pattern>
                       <shadedPattern>${shadeBase}.software.amazon.awssdk</shadedPattern>

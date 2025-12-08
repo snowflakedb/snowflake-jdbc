@@ -6,7 +6,7 @@
     - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
     - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
     - Fix NPE when sending in-band telemetry without HTTP response (snowflakedb/snowflake-jdbc#2460)
-    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385)
+    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
 
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
