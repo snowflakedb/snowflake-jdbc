@@ -613,6 +613,11 @@
         <artifactId>amazon-s3-encryption-client-java</artifactId>
         <version>${awssdk.encryption.s3.version}</version>
       </dependency>
+      <dependency>
+        <groupId>software.amazon.encryption.s3</groupId>
+        <artifactId>amazon-s3-encryption-client-java</artifactId>
+        <version>${awssdk.encryption.s3.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -795,6 +800,13 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
+      <exclusions>
+        <!-- Exclude AWS SDK v1 dependencies -->
+        <exclusion>
+          <groupId>com.amazonaws</groupId>
+          <artifactId>aws-java-sdk-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>

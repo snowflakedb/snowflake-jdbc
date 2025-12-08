@@ -1,7 +1,7 @@
 package net.snowflake.client.internal.core;
 
 import java.util.TimeZone;
-import net.snowflake.common.core.SFBinaryFormat;
+import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /**

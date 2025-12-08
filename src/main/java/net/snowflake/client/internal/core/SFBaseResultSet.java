@@ -31,12 +31,12 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
+import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.Converter;
-import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Base class for query result set and metadata result set */

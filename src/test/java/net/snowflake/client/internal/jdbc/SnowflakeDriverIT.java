@@ -747,11 +747,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      booleans = {
-        /*true, */
-        false
-      })
+  @ValueSource(booleans = {true, false})
   @DontRunOnGithubActions
   public void testPutWithWildcardGCP(boolean useAwsSDKStrategy) throws Throwable {
     if (useAwsSDKStrategy) {
@@ -834,11 +830,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      booleans = {
-        /*true, */
-        false
-      })
+  @ValueSource(booleans = {true, false})
   @DontRunOnGithubActions
   public void testPutGetLargeFileGCP(boolean useAwsSDKStrategy) throws Throwable {
     if (useAwsSDKStrategy) {
@@ -948,8 +940,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
     List<String> accounts =
-        Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -1012,8 +1003,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPut() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2676,8 +2666,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPutGet() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2742,8 +2731,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPutGetToUnencryptedStage() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
