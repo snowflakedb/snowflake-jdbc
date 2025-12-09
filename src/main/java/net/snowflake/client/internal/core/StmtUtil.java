@@ -16,6 +16,7 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.BasicEvent.QueryState;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.SecretDetector;

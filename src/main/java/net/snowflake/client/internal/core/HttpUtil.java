@@ -35,6 +35,7 @@ import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.RestRequest;
 import net.snowflake.client.internal.jdbc.RetryContextManager;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;

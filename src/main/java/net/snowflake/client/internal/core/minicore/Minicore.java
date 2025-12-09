@@ -2,12 +2,10 @@ package net.snowflake.client.internal.core.minicore;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
-@SnowflakeJdbcInternalApi
 public class Minicore {
   private static final SFLogger logger = SFLoggerFactory.getLogger(Minicore.class);
 

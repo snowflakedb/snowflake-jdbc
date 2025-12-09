@@ -1,9 +1,8 @@
-package net.snowflake.client.internal.core;
+package net.snowflake.client.internal.jdbc.telemetry;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import net.minidev.json.JSONObject;
-import net.snowflake.client.jdbc.telemetry.CSVMetricsExporter;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.util.TimeMeasurement;
 

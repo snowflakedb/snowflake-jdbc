@@ -7,7 +7,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.internal.core.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;

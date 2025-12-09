@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.28.1-SNAPSHOT</version>
+  <version>4.0.0</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -607,11 +607,6 @@
         <artifactId>wiremock-standalone</artifactId>
         <version>${version.plugin.wiremock}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.encryption.s3</groupId>
-        <artifactId>amazon-s3-encryption-client-java</artifactId>
-        <version>${awssdk.encryption.s3.version}</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.encryption.s3</groupId>

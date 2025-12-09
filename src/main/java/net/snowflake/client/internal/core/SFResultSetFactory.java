@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 

@@ -8,13 +8,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
-import net.snowflake.client.core.Constants;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.Constants;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.commons.io.IOUtils;
 
-@SnowflakeJdbcInternalApi
 public class MinicoreLoader {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(MinicoreLoader.class);

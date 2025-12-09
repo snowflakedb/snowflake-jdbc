@@ -1,8 +1,5 @@
 package net.snowflake.client.internal.core.minicore;
 
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-
-@SnowflakeJdbcInternalApi
 public enum MinicoreLoadError {
   DISABLED("Minicore is disabled with SNOWFLAKE_DISABLE_MINICORE env variable"),
   FAILED_TO_LOAD("Failed to load binary"),
