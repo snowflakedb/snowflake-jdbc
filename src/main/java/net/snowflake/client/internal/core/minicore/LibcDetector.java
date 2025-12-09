@@ -36,8 +36,8 @@ public class LibcDetector {
     }
 
     if (LibC.INSTANCE == null) {
-      logger.trace("Failed to load C library, defaulting to musl");
-      return LibcVariant.MUSL;
+      logger.trace("Failed to load C library, cannot detect libc variant");
+      return LibcVariant.UNSUPPORTED;
     }
 
     try {
@@ -46,12 +46,13 @@ public class LibcDetector {
       return LibcVariant.GLIBC;
 
     } catch (UnsatisfiedLinkError e) {
-      logger.trace("gnu_get_libc_version() not found, using musl: {}", e.getMessage());
+      // gnu_get_libc_version is glibc-specific, so if it's not found, this is musl
+      logger.trace("gnu_get_libc_version() not found, detected musl: {}", e.getMessage());
       return LibcVariant.MUSL;
 
     } catch (Throwable t) {
-      logger.trace("Error calling gnu_get_libc_version(), defaulting to musl: {}", t.getMessage());
-      return LibcVariant.MUSL;
+      logger.trace("Error calling gnu_get_libc_version(): {}", t.getMessage());
+      return LibcVariant.UNSUPPORTED;
     }
   }
 }

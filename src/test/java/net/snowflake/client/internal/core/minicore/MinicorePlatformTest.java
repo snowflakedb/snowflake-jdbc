@@ -3,6 +3,9 @@ package net.snowflake.client.internal.core.minicore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.condition.OS.LINUX;
+import static org.junit.jupiter.api.condition.OS.MAC;
+import static org.junit.jupiter.api.condition.OS.WINDOWS;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
@@ -61,7 +64,7 @@ public class MinicorePlatformTest {
   }
 
   @Test
-  @EnabledOnOs(org.junit.jupiter.api.condition.OS.LINUX)
+  @EnabledOnOs(LINUX)
   public void testLinuxPlatformFileName() {
     MinicorePlatform platform = new MinicorePlatform();
 
@@ -73,7 +76,7 @@ public class MinicorePlatformTest {
   }
 
   @Test
-  @EnabledOnOs(org.junit.jupiter.api.condition.OS.MAC)
+  @EnabledOnOs(MAC)
   public void testMacOSPlatformFileName() {
     MinicorePlatform platform = new MinicorePlatform();
 
@@ -86,7 +89,7 @@ public class MinicorePlatformTest {
   }
 
   @Test
-  @EnabledOnOs(org.junit.jupiter.api.condition.OS.WINDOWS)
+  @EnabledOnOs(WINDOWS)
   public void testWindowsPlatformFileName() {
     MinicorePlatform platform = new MinicorePlatform();
 
