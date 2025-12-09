@@ -7,6 +7,8 @@
     - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
     - Fix NPE when sending in-band telemetry without HTTP response (snowflakedb/snowflake-jdbc#2460)
     - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
+    - Return column_size value in database metadata commands as in JDBC spec (snowflakedb/snowflake-jdbc#2418)
+    - Migrate Azure storage from v5 to v12 (snowflakedb/snowflake-jdbc#2417)
 
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
