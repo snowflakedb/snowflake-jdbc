@@ -1,7 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.internal.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -71,7 +70,6 @@ import net.snowflake.client.internal.core.SecurityUtil;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
 import net.snowflake.client.internal.core.auth.ClientAuthnParameter;
-import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;

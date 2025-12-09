@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.StmtUtil.StmtInput;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import org.apache.http.Header;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

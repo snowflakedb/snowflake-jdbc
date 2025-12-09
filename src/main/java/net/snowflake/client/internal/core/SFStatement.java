@@ -28,6 +28,7 @@ import net.snowflake.client.internal.driver.DriverInitializer;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;

@@ -859,10 +859,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
+    BlobStorageException se = null;
     if (ex instanceof BlobStorageException) {
-      BlobStorageException se = (BlobStorageException) ex;
+      se = (BlobStorageException) ex;
+    } else if (SnowflakeUtil.getRootCause(ex) instanceof BlobStorageException) {
+      se = (BlobStorageException) SnowflakeUtil.getRootCause(ex);
+    }
 
-      if (((BlobStorageException) ex).getStatusCode() == 403) {
+    if (se != null) {
+      if (se.getStatusCode() == 403) {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
         if (session != null) {
@@ -878,8 +883,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
       // If we have exceeded the max number of retries, propagate the error
       // no need for back off and retry if the file does not exist
-      if (retryCount > azClient.getMaxRetries()
-          || ((BlobStorageException) ex).getStatusCode() == 404) {
+      if (retryCount > azClient.getMaxRetries() || se.getStatusCode() == 404) {
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
