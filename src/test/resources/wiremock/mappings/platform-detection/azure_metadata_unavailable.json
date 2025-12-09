@@ -1,0 +1,44 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/metadata/instance",
+        "queryParameters": {
+          "api-version": {
+            "equalTo": "2021-02-01"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "body": "Azure metadata instance unavailable"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/metadata/identity/oauth2/token",
+        "queryParameters": {
+          "api-version": {
+            "equalTo": "2018-02-01"
+          },
+          "resource": {
+            "equalTo": "https://management.azure.com"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "body": "Azure managed identity unavailable"
+      }
+    }
+  ]
+}
+

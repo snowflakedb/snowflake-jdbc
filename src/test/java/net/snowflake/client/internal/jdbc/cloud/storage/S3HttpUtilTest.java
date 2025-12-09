@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.HashSet;

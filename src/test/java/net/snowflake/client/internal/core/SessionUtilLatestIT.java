@@ -156,6 +156,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
+                  Mockito.anyInt(),
                   Mockito.nullable(HttpClientSettingsKey.class),
                   Mockito.nullable(SFBaseSession.class));
       mockedHttpUtil
@@ -211,6 +212,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                         }
                         return false;
                       }),
+                  Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
                   Mockito.anyInt(),
@@ -489,6 +491,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
@@ -564,6 +567,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
               () ->
                   HttpUtil.executeGeneralRequestWithContext(
                       Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),

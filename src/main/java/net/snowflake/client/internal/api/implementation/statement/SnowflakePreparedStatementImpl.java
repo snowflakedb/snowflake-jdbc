@@ -184,7 +184,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", execTimeData.getLogString());
+    logger.debug("Query completed. {}", execTimeData);
     return rs;
   }
 
@@ -206,7 +206,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", execTimeData.getLogString());
+    logger.debug("Query completed. {}", execTimeData);
     return rs;
   }
 
@@ -589,7 +589,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", execTimeData.getLogString());
+    logger.debug("Query completed. {}", execTimeData);
     return success;
   }
 

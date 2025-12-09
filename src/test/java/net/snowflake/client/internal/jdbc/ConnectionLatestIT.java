@@ -1,7 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.internal.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,7 +42,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
@@ -72,15 +70,12 @@ import net.snowflake.client.internal.core.SecurityUtil;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
 import net.snowflake.client.internal.core.auth.ClientAuthnParameter;
-import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -96,32 +91,6 @@ import org.junit.jupiter.api.io.TempDir;
 public class ConnectionLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
-
-  private boolean defaultState;
-
-  @BeforeEach
-  public void setUp() {
-    TelemetryService service = TelemetryService.getInstance();
-    service.updateContextForIT(getConnectionParameters());
-    defaultState = service.isEnabled();
-    service.setNumOfRetryToTriggerTelemetry(3);
-    TelemetryService.enable();
-  }
-
-  @AfterEach
-  public void tearDown() throws InterruptedException {
-    TelemetryService service = TelemetryService.getInstance();
-    // wait 5 seconds while the service is flushing
-    TimeUnit.SECONDS.sleep(5);
-
-    if (defaultState) {
-      TelemetryService.enable();
-    } else {
-      TelemetryService.disable();
-    }
-    service.resetNumOfRetryToTriggerTelemetry();
-    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
-  }
 
   @Test
   public void testDisableQueryContextCache() throws SQLException {
@@ -297,7 +266,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         ResultSet rs1 =
             statement
                 .unwrap(SnowflakeStatement.class)
-                .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')")) {
+                .executeAsyncQuery("CALL SYSTEM$WAIT(5, 'SECONDS')")) {
       // Retrieve query ID for part 2 of test, check status of query
       queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
 
@@ -306,13 +275,15 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           .atMost(Duration.ofSeconds(5))
           .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
       QueryStatusV2 statusV2 = sfrs.getStatusV2();
-      // Query should take 60 seconds so should be running
+      // Query should take 5 seconds so should be running
       assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
       assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
-      // close connection and wait for 1 minute while query finishes running
+      // wait while query finishes running
+      await()
+          .atMost(Duration.ofSeconds(60))
+          .until(() -> sfrs.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
     }
 
-    Thread.sleep(1000 * 70);
     // Create a new connection and new instance of a resultSet using query ID
     try (Connection con = getConnection()) {
       SQLException e =
@@ -336,7 +307,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 statement
                     .unwrap(SnowflakeStatement.class)
                     .executeAsyncQuery("select * from nonexistentTable")) {
-          Thread.sleep(100);
           SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
           await()
               .atMost(Duration.ofSeconds(10))
@@ -594,7 +564,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // Adding authenticator type for code coverage purposes
     properties.put("authenticator", AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
-    int count = TelemetryService.getInstance().getEventCount();
     SQLException e =
         assertThrows(
             SQLException.class,
@@ -609,31 +578,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             });
     assertThat(
         "Communication error", e.getErrorCode(), equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-    if (TelemetryService.getInstance()
-            .getServerDeploymentName()
-            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName())
-        || TelemetryService.getInstance()
-            .getServerDeploymentName()
-            .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
-
-      // since it returns normal response,
-      // the telemetry does not create new event
-      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry should not create new event",
-            TelemetryService.getInstance().getEventCount(),
-            equalTo(count));
-      }
-    } else {
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
-      }
-    }
   }
 
   @Test
@@ -666,15 +610,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     conEnd = System.currentTimeMillis();
     assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-
-    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-    if (TelemetryService.getInstance().isDeploymentEnabled()) {
-      assertThat(
-          "Telemetry event has not been reported successfully. Error: "
-              + TelemetryService.getInstance().getLastClientError(),
-          TelemetryService.getInstance().getClientFailureCount(),
-          equalTo(0));
-    }
   }
 
   @Test
@@ -705,14 +640,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     conEnd = System.currentTimeMillis();
     assertThat("Login time out not taking effective", conEnd - connStart < 300000);
-    Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-    if (TelemetryService.getInstance().isDeploymentEnabled()) {
-      assertThat(
-          "Telemetry event has not been reported successfully. Error: "
-              + TelemetryService.getInstance().getLastClientError(),
-          TelemetryService.getInstance().getClientFailureCount(),
-          equalTo(0));
-    }
   }
 
   @Test
@@ -1064,11 +991,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   // Wait for the async query finish
   private void waitForAsyncQueryDone(Connection connection, String queryID) throws Exception {
     SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
-    QueryStatus qs = session.getQueryStatus(queryID);
-    while (QueryStatus.isStillRunning(qs)) {
-      Thread.sleep(1000);
-      qs = session.getQueryStatus(queryID);
-    }
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .until(() -> !(session.getQueryStatusV2(queryID)).isStillRunning());
   }
 
   @Test

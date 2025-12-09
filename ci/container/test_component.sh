@@ -69,6 +69,7 @@ python3 $THIS_DIR/hang_webserver.py 12345&
 
 # Avoid connection timeouts
 export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+echo $MAVEN_OPTS
 
 cd $SOURCE_ROOT
 

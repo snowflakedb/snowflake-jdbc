@@ -105,6 +105,7 @@ public class ServiceNameTest {
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.any(HttpClientSettingsKey.class),
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(new HttpResponseWithHeaders(responseLogin(), new HashMap<>()));
