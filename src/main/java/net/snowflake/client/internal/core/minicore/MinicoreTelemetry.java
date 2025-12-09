@@ -7,10 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.core.Constants;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.internal.core.Constants;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
+import net.snowflake.client.internal.util.SecretDetector;
 
 /**
  * Telemetry data for minicore library loading and platform information.
@@ -30,7 +29,6 @@ import net.snowflake.client.util.SecretDetector;
  *
  * <p>Note: OS and OS_VERSION are already set by SessionUtil.createClientEnvironmentInfo()
  */
-@SnowflakeJdbcInternalApi
 public class MinicoreTelemetry {
 
   private final String isa;

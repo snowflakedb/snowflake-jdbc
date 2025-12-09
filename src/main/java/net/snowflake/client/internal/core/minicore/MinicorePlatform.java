@@ -1,13 +1,11 @@
 package net.snowflake.client.internal.core.minicore;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
-import net.snowflake.client.core.Constants;
-import net.snowflake.client.core.Constants.Architecture;
-import net.snowflake.client.core.Constants.OS;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.internal.core.Constants;
+import net.snowflake.client.internal.core.Constants.Architecture;
+import net.snowflake.client.internal.core.Constants.OS;
 
-@SnowflakeJdbcInternalApi
 public class MinicorePlatform {
   private final OS os;
   private final Architecture architecture;

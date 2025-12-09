@@ -815,13 +815,15 @@ public class SessionUtil {
 
               // Extract retry context information if available
               long elapsedSeconds = 0;
+              long elapsedMiliSeconds = 0;
               boolean isSocketTimeoutNoBackoff = false;
               if (ex instanceof SnowflakeSQLExceptionWithRetryContext) {
                 SnowflakeSQLExceptionWithRetryContext retryEx =
                     (SnowflakeSQLExceptionWithRetryContext) ex;
                 elapsedSeconds = retryEx.getElapsedSeconds();
                 isSocketTimeoutNoBackoff = retryEx.isSocketTimeoutNoBackoff();
-                retryCount = retryEx.getRetryCount();
+                elapsedMiliSeconds = retryEx.getElapsedSeconds() * 1000;
+                retryedCount = retryEx.getRetryCount();
               }
 
               if (loginInput.getLoginTimeout() > 0) {

@@ -2,7 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /*
  * Constants used in JDBC implementation

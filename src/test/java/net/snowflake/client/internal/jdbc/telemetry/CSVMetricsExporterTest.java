@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
-import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
