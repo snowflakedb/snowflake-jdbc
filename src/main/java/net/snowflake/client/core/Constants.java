@@ -95,7 +95,7 @@ public final class Constants {
   public static boolean isAix() {
     if (isAix == null) {
       String osName = systemGetProperty("os.name");
-      return osName != null && osName.toLowerCase().contains("aix");
+      isAix = osName != null && osName.toLowerCase().contains("aix");
     }
     return isAix;
   }
