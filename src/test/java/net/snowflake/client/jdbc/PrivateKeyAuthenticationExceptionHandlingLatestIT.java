@@ -1,4 +1,4 @@
-package net.snowflake.client.authentication;
+package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -11,16 +11,15 @@ import java.util.Properties;
 import java.util.stream.Stream;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SecurityUtil;
-import net.snowflake.client.jdbc.BaseJDBCTest;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@Tag(TestTags.AUTHENTICATION)
-public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest {
+@Tag(TestTags.CONNECTION)
+public class PrivateKeyAuthenticationExceptionHandlingLatestIT {
 
   static Stream<String> jwtTimeoutProvider() {
     return Stream.of("10", "100", null);
@@ -30,9 +29,14 @@ public class PrivateKeyAuthenticationExceptionHandlingTest extends BaseJDBCTest 
     return Stream.of("HTTP_CLIENT_CONNECTION_TIMEOUT", "HTTP_CLIENT_SOCKET_TIMEOUT");
   }
 
+  @AfterEach
+  void cleanup() {
+    HttpUtil.reset();
+  }
+
   /**
    * Tests the authentication exception and retry JWT renew functionality when retrying login
-   * requests. To run, update environment variables to use connect with JWT authentication.
+   * requests
    */
   @ParameterizedTest
   @MethodSource("jwtTimeoutProvider")
