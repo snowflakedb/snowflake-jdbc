@@ -40,7 +40,6 @@ import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.common.core.SFBinary;
-import net.snowflake.client.internal.core.ExecTimeTelemetryData;
 import net.snowflake.client.internal.core.FieldSchemaCreator;
 import net.snowflake.client.internal.core.JsonSqlOutput;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -58,6 +57,7 @@ import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedExce
 import net.snowflake.client.internal.jdbc.SnowflakeParameterMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetMetaDataV1;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
 import net.snowflake.client.internal.log.SFLogger;

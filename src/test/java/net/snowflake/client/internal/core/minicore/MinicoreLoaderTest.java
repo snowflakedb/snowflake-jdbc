@@ -10,7 +10,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import net.snowflake.client.core.Constants;
+import net.snowflake.client.internal.core.Constants;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 

@@ -1,12 +1,20 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
+import static com.azure.storage.common.implementation.Constants.HeaderConstants.ERROR_CODE_HEADER_NAME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
+import com.azure.core.http.HttpHeaders;
+import com.azure.core.http.HttpResponse;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
+import java.io.IOException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeAzureClientTest {
@@ -32,13 +40,10 @@ public class SnowflakeAzureClientTest {
     when(client.getRetryBackoffMin()).thenReturn(0);
     when(client.getRetryBackoffMaxExponent()).thenReturn(0);
 
-    StorageException storageException =
-        new StorageException(
-            "503",
-            "Service Unavailable",
-            503,
-            new StorageExtendedErrorInformation(),
-            new Exception());
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getHeaders()).thenReturn(new HttpHeaders().add(ERROR_CODE_HEADER_NAME, "503"));
+    BlobStorageException storageException =
+        new BlobStorageException("Service Unavailable", response, new Exception());
 
     assertDoesNotThrow(
         () ->
@@ -59,13 +64,10 @@ public class SnowflakeAzureClientTest {
         mock(SnowflakeAzureClient.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
     when(client.getMaxRetries()).thenReturn(1);
 
-    StorageException storageException =
-        new StorageException(
-            "503",
-            "Service Unavailable",
-            503,
-            new StorageExtendedErrorInformation(),
-            new Exception());
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getHeaders()).thenReturn(new HttpHeaders().add(ERROR_CODE_HEADER_NAME, "503"));
+    BlobStorageException storageException =
+        new BlobStorageException("Service Unavailable", response, new Exception());
 
     assertThrows(
         SnowflakeSQLException.class,
@@ -88,9 +90,10 @@ public class SnowflakeAzureClientTest {
     when(client.getRetryBackoffMin()).thenReturn(0);
     when(client.getRetryBackoffMaxExponent()).thenReturn(0);
 
-    StorageException storageException =
-        new StorageException(
-            "503", "Service Unavailable", 503, new StorageExtendedErrorInformation(), null);
+    HttpResponse response = mock(HttpResponse.class);
+    when(response.getHeaders()).thenReturn(new HttpHeaders().add(ERROR_CODE_HEADER_NAME, "503"));
+    BlobStorageException storageException =
+        new BlobStorageException("Service Unavailable", response, new Exception());
     IOException ioException = new IOException("transport error", storageException);
 
     assertDoesNotThrow(

@@ -1,15 +1,13 @@
 package net.snowflake.client.internal.core.minicore;
 
 import com.sun.jna.Platform;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /**
  * This class distinguishes between glibc (GNU C Library) and musl libc by attempting to call the
  * glibc-specific function gnu_get_libc_version().
  */
-@SnowflakeJdbcInternalApi
 public class LibcDetector {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(LibcDetector.class);

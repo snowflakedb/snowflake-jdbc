@@ -3,9 +3,7 @@ package net.snowflake.client.internal.core.minicore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class MinicoreLoadResult {
 
   private final boolean success;

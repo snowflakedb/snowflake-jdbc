@@ -5,7 +5,7 @@ import static org.awaitility.Awaitility.await;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import net.snowflake.client.internal.category.TestTags;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
 import org.junit.jupiter.api.Tag;
