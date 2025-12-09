@@ -917,6 +917,12 @@ public class SFSession extends SFBaseSession {
 
   private void sendMinicoreTelemetry() {
     try {
+      Minicore minicore = Minicore.getInstance();
+      if (minicore == null) {
+        logger.trace("Minicore not initialized, skipping in-band telemetry");
+        return;
+      }
+
       Telemetry telemetry = getTelemetryClient();
       if (!(telemetry instanceof TelemetryClient)) {
         logger.trace("Telemetry client not available, skipping minicore telemetry");
@@ -924,7 +930,7 @@ public class SFSession extends SFBaseSession {
       }
       TelemetryClient telemetryClient = (TelemetryClient) telemetry;
 
-      MinicoreTelemetry minicoreTelemetry = MinicoreTelemetry.from(Minicore.getInstance());
+      MinicoreTelemetry minicoreTelemetry = MinicoreTelemetry.from(minicore);
       telemetryClient.addLogToBatch(
           minicoreTelemetry.toInBandTelemetryNode(), System.currentTimeMillis());
       logger.trace("Queued minicore telemetry for sending");

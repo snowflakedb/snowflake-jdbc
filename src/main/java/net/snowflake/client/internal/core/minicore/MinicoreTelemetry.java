@@ -10,6 +10,7 @@ import java.util.Map;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.util.SecretDetector;
 
 /**
  * Telemetry data for minicore library loading and platform information.
@@ -84,15 +85,15 @@ public class MinicoreTelemetry {
     Map<String, Object> map = new HashMap<>();
 
     if (isa != null) {
-      map.put("ISA", isa);
+      map.put("ISA", SecretDetector.maskSecrets(isa));
     }
 
     if (coreVersion != null) {
-      map.put("CORE_VERSION", coreVersion);
+      map.put("CORE_VERSION", SecretDetector.maskSecrets(coreVersion));
     }
 
     if (coreFileName != null) {
-      map.put("CORE_FILE_NAME", coreFileName);
+      map.put("CORE_FILE_NAME", SecretDetector.maskSecrets(coreFileName));
     }
     return map;
   }
@@ -107,20 +108,20 @@ public class MinicoreTelemetry {
     message.put("success", coreLoadError == null);
 
     if (coreFileName != null) {
-      message.put("libraryFileName", coreFileName);
+      message.put("libraryFileName", SecretDetector.maskSecrets(coreFileName));
     }
 
     if (coreVersion != null) {
-      message.put("coreVersion", coreVersion);
+      message.put("coreVersion", SecretDetector.maskSecrets(coreVersion));
     }
 
     if (coreLoadError != null) {
-      message.put("error", coreLoadError);
+      message.put("error", SecretDetector.maskSecrets(coreLoadError));
     }
 
     if (!coreLoadLogs.isEmpty()) {
       ArrayNode logsArray = message.putArray("loadLogs");
-      coreLoadLogs.forEach(logsArray::add);
+      coreLoadLogs.stream().map(SecretDetector::maskSecrets).forEach(logsArray::add);
     }
 
     return message;
