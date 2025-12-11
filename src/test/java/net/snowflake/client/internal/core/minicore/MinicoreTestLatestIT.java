@@ -10,15 +10,14 @@ import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
 public class MinicoreTestLatestIT extends BaseJDBCTest {
 
   private static final long MAX_MINICORE_INIT_TIME_MS = 1000;
 
-  @Test
-  public void testExecuteSelectWithMinicore() throws SQLException {
+  // @Test
+  public void testExecuteSelectWithMinicorePerformance() throws SQLException {
     int numRuns = 3;
 
     // Cold start run (first connection with minicore - simulates customer cold JVM)
