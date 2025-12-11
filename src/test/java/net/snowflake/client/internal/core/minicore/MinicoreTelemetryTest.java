@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -25,8 +26,13 @@ public class MinicoreTelemetryTest {
   private static final String TEST_LIBRARY_FILE = "libsf_mini_core_test.so";
   private static final String TEST_VERSION = "0.0.1-test";
 
+  @AfterEach
+  public void tearDown() {
+    Minicore.resetForTesting();
+  }
+
   @Test
-  public void testTelemetryFromSuccessfulLoad() {
+  public void testClientEnvTelemetryFromSuccessfulLoad() {
     MinicoreLoadResult result =
         MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
@@ -44,7 +50,7 @@ public class MinicoreTelemetryTest {
   }
 
   @Test
-  public void testTelemetryFromFailedLoad() {
+  public void testClientEnvTelemetryFromFailedLoad() {
     String errorMessage = "Failed to load library: symbol not found";
     MinicoreLoadResult result =
         MinicoreLoadResult.failure(
@@ -52,31 +58,68 @@ public class MinicoreTelemetryTest {
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
+
     assertNotNull(telemetry, "Telemetry should not be null");
     assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
     assertTrue(map.containsKey("CORE_FILE_NAME"), "Telemetry should contain CORE_FILE_NAME");
     assertEquals(TEST_LIBRARY_FILE, map.get("CORE_FILE_NAME"), "CORE_FILE_NAME should match");
     assertFalse(map.containsKey("CORE_VERSION"), "Should not contain CORE_VERSION on failure");
-    // CORE_LOAD_ERROR is only sent via in-band telemetry, not in CLIENT_ENVIRONMENT
-    assertFalse(
-        map.containsKey("CORE_LOAD_ERROR"),
-        "CORE_LOAD_ERROR should not be in client environment map");
+    assertTrue(map.containsKey("CORE_LOAD_ERROR"), "Should contain CORE_LOAD_ERROR on failure");
+    assertEquals(
+        MinicoreLoadError.FAILED_TO_LOAD.getMessage(),
+        map.get("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should match enum message");
   }
 
   @Test
-  public void testTelemetryFromNullMinicore() {
-    MinicoreTelemetry telemetry = MinicoreTelemetry.from(null);
+  public void testTelemetryWhenStillLoading() {
+    // Don't initialize minicore - simulates "still loading" state
+    Minicore.resetForTesting();
+
+    MinicoreTelemetry telemetry = MinicoreTelemetry.create();
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
 
     assertNotNull(telemetry, "Telemetry should not be null");
     assertTrue(map.containsKey("ISA"), "Telemetry should contain ISA");
-    assertFalse(
-        map.containsKey("CORE_LOAD_ERROR"),
-        "CORE_LOAD_ERROR should not be in client environment map");
+    assertTrue(map.containsKey("CORE_LOAD_ERROR"), "Should contain CORE_LOAD_ERROR");
+    assertEquals(
+        MinicoreLoadError.STILL_LOADING.getMessage(),
+        map.get("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should match enum message");
 
     // Check in-band telemetry has the correct error
     ObjectNode node = telemetry.toInBandTelemetryNode();
-    assertEquals("Minicore not initialized", node.get("error").asText());
+    assertEquals(MinicoreLoadError.STILL_LOADING.getMessage(), node.get("error").asText());
+  }
+
+  @Test
+  public void testFailedLoadPreservesDetailedErrorInLogs() {
+    String detailedError = "Library resource not found in JAR: /native/linux/libsf_mini_core.so";
+    RuntimeException exception = new RuntimeException("File not found");
+    List<String> originalLogs = Arrays.asList("Starting load", "Checking platform");
+
+    MinicoreLoadResult result =
+        MinicoreLoadResult.failure(detailedError, TEST_LIBRARY_FILE, exception, originalLogs);
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
+    ObjectNode node = telemetry.toInBandTelemetryNode();
+
+    // Error field should have the enum message
+    assertEquals(
+        MinicoreLoadError.FAILED_TO_LOAD.getMessage(),
+        node.get("error").asText(),
+        "Error should be the enum message");
+
+    // Logs should contain the detailed error and exception
+    assertTrue(node.has("loadLogs"), "Should have loadLogs");
+    List<String> logs = new ArrayList<>();
+    node.get("loadLogs").forEach(n -> logs.add(n.asText()));
+
+    assertTrue(
+        logs.stream().anyMatch(log -> log.contains(detailedError)),
+        "Logs should contain detailed error message");
+    assertTrue(
+        logs.stream().anyMatch(log -> log.contains("RuntimeException")),
+        "Logs should contain exception class name");
   }
 
   // Tests for toInBandTelemetryNode()
@@ -99,7 +142,6 @@ public class MinicoreTelemetryTest {
     assertEquals(TEST_VERSION, node.get("coreVersion").asText(), "Core version should match");
     assertNull(node.get("error"), "Error should not be present on success");
 
-    // Check logs array
     assertTrue(node.has("loadLogs"), "Should have loadLogs array");
     assertEquals(3, node.get("loadLogs").size(), "Should have 3 log entries");
     assertEquals("log1", node.get("loadLogs").get(0).asText());
@@ -125,23 +167,25 @@ public class MinicoreTelemetryTest {
     assertEquals(
         TEST_LIBRARY_FILE, node.get("libraryFileName").asText(), "Library file name should match");
     assertNull(node.get("coreVersion"), "Core version should not be present on failure");
-    assertEquals(errorMessage, node.get("error").asText(), "Error message should match");
+    assertEquals(
+        MinicoreLoadError.FAILED_TO_LOAD.getMessage(),
+        node.get("error").asText(),
+        "Error should be enum message");
 
-    // Check logs array
     assertTrue(node.has("loadLogs"), "Should have loadLogs array");
-    assertEquals(2, node.get("loadLogs").size(), "Should have 2 log entries");
   }
 
   @Test
-  public void testInBandTelemetryNodeFromNullMinicore() {
-    MinicoreTelemetry telemetry = MinicoreTelemetry.from(null);
+  public void testInBandTelemetryNodeWhenStillLoading() {
+    Minicore.resetForTesting();
+    MinicoreTelemetry telemetry = MinicoreTelemetry.create();
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
     assertNotNull(node, "ObjectNode should not be null");
     assertEquals("client_minicore_load", node.get("type").asText());
     assertEquals("JDBC", node.get("source").asText());
     assertFalse(node.get("success").asBoolean(), "Success should be false");
-    assertEquals("Minicore not initialized", node.get("error").asText());
+    assertEquals(MinicoreLoadError.STILL_LOADING.getMessage(), node.get("error").asText());
   }
 
   @Test
