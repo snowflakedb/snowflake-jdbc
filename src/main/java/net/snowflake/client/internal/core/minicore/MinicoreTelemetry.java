@@ -24,8 +24,8 @@ import net.snowflake.client.util.SecretDetector;
  *   <li><b>ISA</b>: Instruction Set Architecture (e.g., "amd64", "arm64")
  *   <li><b>CORE_VERSION</b>: Result of sf_core_full_version() if successful
  *   <li><b>CORE_FILE_NAME</b>: Binary library file name that the driver tried to load
- *   <li><b>CORE_LOAD_ERROR</b>: Error message if loading failed
- *   <li><b>CORE_LOAD_LOGS</b>: List of log messages from the loading process
+ *   <li><b>CORE_LOAD_ERROR</b>: One of three error states from {@link MinicoreLoadError}
+ *   <li><b>loadLogs</b>: List of log messages with detailed error info from the loading process
  * </ul>
  *
  * <p>Note: OS and OS_VERSION are already set by SessionUtil.createClientEnvironmentInfo()
@@ -36,14 +36,14 @@ public class MinicoreTelemetry {
   private final String isa;
   private final String coreVersion;
   private final String coreFileName;
-  private final String coreLoadError;
+  private final MinicoreLoadError coreLoadError;
   private final List<String> coreLoadLogs;
 
   private MinicoreTelemetry(
       String isa,
       String coreVersion,
       String coreFileName,
-      String coreLoadError,
+      MinicoreLoadError coreLoadError,
       List<String> coreLoadLogs) {
     this.isa = isa;
     this.coreVersion = coreVersion;
@@ -52,15 +52,36 @@ public class MinicoreTelemetry {
     this.coreLoadLogs = coreLoadLogs != null ? coreLoadLogs : new ArrayList<>();
   }
 
-  /** Create telemetry from the Minicore instance, handling all null cases. */
-  public static MinicoreTelemetry from(Minicore minicore) {
-    if (minicore == null) {
-      return withError("Minicore not initialized");
+  /**
+   * Create telemetry based on current Minicore state.
+   *
+   * <p>Handles three error cases:
+   *
+   * <ul>
+   *   <li>Disabled via env var: {@link MinicoreLoadError#DISABLED}
+   *   <li>Still loading: {@link MinicoreLoadError#STILL_LOADING}
+   *   <li>Failed to load: {@link MinicoreLoadError#FAILED_TO_LOAD}
+   * </ul>
+   */
+  public static MinicoreTelemetry create() {
+    String isa = Constants.getArchitecture().getIdentifier();
+
+    // Check if disabled via environment variable
+    if (Minicore.isDisabledViaEnvVar()) {
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.DISABLED, null);
     }
+
+    // Check if initialization hasn't started or instance not yet available
+    Minicore minicore = Minicore.getInstance();
+    if (minicore == null) {
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
+    }
+
     MinicoreLoadResult result = minicore.getLoadResult();
     if (result == null) {
-      return withError("Minicore load result unavailable");
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
     }
+
     return fromLoadResult(result);
   }
 
@@ -69,15 +90,24 @@ public class MinicoreTelemetry {
     String isa = Constants.getArchitecture().getIdentifier();
     String coreVersion = loadResult.getCoreVersion();
     String coreFileName = loadResult.getLibraryFileName();
-    String coreLoadError = loadResult.isSuccess() ? null : loadResult.getErrorMessage();
     List<String> logs = new ArrayList<>(loadResult.getLogs());
 
-    return new MinicoreTelemetry(isa, coreVersion, coreFileName, coreLoadError, logs);
-  }
+    if (loadResult.isSuccess()) {
+      return new MinicoreTelemetry(isa, coreVersion, coreFileName, null, logs);
+    }
 
-  private static MinicoreTelemetry withError(String error) {
-    String isa = Constants.getArchitecture().getIdentifier();
-    return new MinicoreTelemetry(isa, null, null, error, null);
+    // For failures, add the detailed error message to logs for visibility
+    String detailedError = loadResult.getErrorMessage();
+    if (detailedError != null && !detailedError.isEmpty()) {
+      logs.add("Error: " + detailedError);
+    }
+    Throwable exception = loadResult.getException();
+    if (exception != null) {
+      logs.add("Exception: " + exception.getClass().getName() + ": " + exception.getMessage());
+    }
+
+    return new MinicoreTelemetry(
+        isa, coreVersion, coreFileName, MinicoreLoadError.FAILED_TO_LOAD, logs);
   }
 
   // Convert telemetry data to Map for client environment telemetry. Load logs are not included.
@@ -95,6 +125,11 @@ public class MinicoreTelemetry {
     if (coreFileName != null) {
       map.put("CORE_FILE_NAME", SecretDetector.maskSecrets(coreFileName));
     }
+
+    if (coreLoadError != null) {
+      map.put("CORE_LOAD_ERROR", SecretDetector.maskSecrets(coreLoadError.getMessage()));
+    }
+
     return map;
   }
 
@@ -116,7 +151,7 @@ public class MinicoreTelemetry {
     }
 
     if (coreLoadError != null) {
-      message.put("error", SecretDetector.maskSecrets(coreLoadError));
+      message.put("error", SecretDetector.maskSecrets(coreLoadError.getMessage()));
     }
 
     if (!coreLoadLogs.isEmpty()) {
@@ -131,6 +166,10 @@ public class MinicoreTelemetry {
   public String toString() {
     return String.format(
         "MinicoreTelemetry{isa='%s', coreVersion='%s', coreFileName='%s', coreLoadError='%s', logs=%d entries}",
-        isa, coreVersion, coreFileName, coreLoadError, coreLoadLogs.size());
+        isa,
+        coreVersion,
+        coreFileName,
+        coreLoadError != null ? coreLoadError.getMessage() : null,
+        coreLoadLogs.size());
   }
 }
