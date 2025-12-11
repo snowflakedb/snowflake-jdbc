@@ -398,4 +398,9 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
         .unwrap(SnowflakeResultSet.class)
         .getResultSetSerializables(maxSizeInBytes);
   }
+
+  @Override
+  public ArrowBatches getArrowBatches() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+  }
 }
