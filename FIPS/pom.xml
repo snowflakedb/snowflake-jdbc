@@ -47,6 +47,22 @@
       <resource>
         <directory>${basedir}/../src/main/resources</directory>
         <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.dylib</exclude>
+          <exclude>**/*.so</exclude>
+          <exclude>**/*.dll</exclude>
+          <exclude>**/*.a</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>${basedir}/../src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*.dylib</include>
+          <include>**/*.so</include>
+          <include>**/*.dll</include>
+          <include>**/*.a</include>
+        </includes>
       </resource>
     </resources>
     <testResources>
