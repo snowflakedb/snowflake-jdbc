@@ -154,6 +154,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
   public void testOcspWithServerCache(String host) throws Throwable {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
+    SFTrustManager.setOCSPResponseCacheServerURL(String.format("http://%s", host));
     File ocspCacheFile = new File(tmpFolder, "ocsp-cache");
     ocspCacheFile.createNewFile();
     HttpClient client =
@@ -191,6 +192,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
   public void testInvalidCacheFile(String host) throws Throwable {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
+    SFTrustManager.setOCSPResponseCacheServerURL(String.format("http://%s", host));
     // a file under never exists.
     File ocspCacheFile = new File("NEVER_EXISTS", "NEVER_EXISTS");
     HttpClient client =
