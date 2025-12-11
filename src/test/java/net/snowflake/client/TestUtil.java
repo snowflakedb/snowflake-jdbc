@@ -15,10 +15,10 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.hamcrest.MatcherAssert;
 
 public class TestUtil {

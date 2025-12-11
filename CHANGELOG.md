@@ -7,6 +7,9 @@
     - Fix Connection and socket timeout are now propagated to HTTP client.
     - Fix Azure 503 retries and configure it with the putGetMaxRetries parameter.
     - Improved retries for SSLHandshakeException errors caused by transient EOFException
+    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
+    - Return column_size value in database metadata commands as in JDBC spec (snowflakedb/snowflake-jdbc#2418)
+    - Migrate Azure storage from v5 to v12 (snowflakedb/snowflake-jdbc#2417)
 
 - v3.27.1
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT

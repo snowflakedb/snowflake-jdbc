@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class AbstractDriverIT {
   // This is required to use ConditionalIgnore annotation.
 
-  public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
+  public static final String DRIVER_CLASS = "net.snowflake.client.api.driver.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 
