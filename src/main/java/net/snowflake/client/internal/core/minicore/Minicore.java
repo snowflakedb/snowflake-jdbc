@@ -16,7 +16,7 @@ public class Minicore {
 
   private static volatile Minicore INSTANCE;
   private static volatile CompletableFuture<Void> INITIALIZATION_FUTURE;
-  private static volatile boolean DISABLED_VIA_ENV_VAR = false;
+  private static boolean DISABLED_VIA_ENV_VAR = false;
 
   private final MinicoreLoadResult loadResult;
   private final MinicoreLibrary library;
@@ -96,10 +96,6 @@ public class Minicore {
 
   public static boolean isDisabledViaEnvVar() {
     return DISABLED_VIA_ENV_VAR;
-  }
-
-  public static boolean isInitializationStarted() {
-    return INITIALIZATION_FUTURE != null;
   }
 
   // This method is for testing only. Do not use in production code
