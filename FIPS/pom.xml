@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.28.0</version>
+    <version>3.28.1-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.28.0</version>
+  <version>3.28.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
