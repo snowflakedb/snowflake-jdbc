@@ -1,7 +1,12 @@
 package net.snowflake.client.wif;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -12,13 +17,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
-import net.snowflake.client.category.TestTags;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.condition.EnabledIf;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Running tests locally:
@@ -59,6 +60,7 @@ public class WIFLatestIT {
     properties.put("authenticator", "WORKLOAD_IDENTITY");
     properties.put("workloadIdentityProvider", PROVIDER);
     properties.put("workloadIdentityImpersonationPath", IMPERSONATION_PATH);
+    System.out.println("workloadIdentityImpersonationPath=" + IMPERSONATION_PATH);
     connectAndExecuteSimpleQuery(properties, IMPERSONATION_USER);
   }
 

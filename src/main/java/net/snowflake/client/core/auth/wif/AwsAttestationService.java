@@ -107,6 +107,8 @@ public class AwsAttestationService {
   }
 
   AWSCredentials assumeRole(AWSCredentials currentCredentials, String roleArn) throws SFException {
+    System.out.println("current credentials: " + currentCredentials);
+    System.out.println("Assuming role: " + roleArn);
     AWSSecurityTokenService stsClient = null;
     try {
       stsClient = createStsClient(currentCredentials, null);
