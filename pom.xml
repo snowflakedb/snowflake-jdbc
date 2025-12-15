@@ -6,21 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-<<<<<<< HEAD
     <version>3.28.1-SNAPSHOT</version>
-=======
-    <version>3.28.0</version>
->>>>>>> 32a155f1ea4146ec47f8b0dc225b6371077abd4a
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-<<<<<<< HEAD
   <version>3.28.1-SNAPSHOT</version>
-=======
-  <version>3.28.0</version>
->>>>>>> 32a155f1ea4146ec47f8b0dc225b6371077abd4a
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
