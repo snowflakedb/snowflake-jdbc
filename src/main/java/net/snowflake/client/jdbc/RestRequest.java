@@ -5,6 +5,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -651,6 +652,11 @@ public class RestRequest {
     return ex0;
   }
 
+  private static boolean isTransientHandshakeEOF(Exception ex) {
+    Throwable root = getRootCause(ex);
+    return root instanceof EOFException;
+  }
+
   private static void setRequestConfig(
       HttpRequestBase httpRequest,
       boolean withoutCookies,
@@ -922,6 +928,8 @@ public class RestRequest {
         httpExecutingContext.getRequestId(),
         httpExecutingContext.getAuthTimeoutInMilliseconds());
 
+    execTimeData.setExecuteToSendQueryEnd();
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug(
@@ -977,6 +985,10 @@ public class RestRequest {
             httpClient = HttpUtil.getHttpClient(key, httpHeaderCustomizer);
           }
           continue;
+        } else if (ex instanceof SSLHandshakeException && isTransientHandshakeEOF(ex)) {
+          // Treat transient EOF during TLS handshake as retryable:
+          // set saved exception for logging/telemetry and allow the retry loop to proceed.
+          responseDto.setSavedEx(ex);
         } else {
           responseDto.setSavedEx(handlingNotRetryableException(ex, httpExecutingContext));
         }

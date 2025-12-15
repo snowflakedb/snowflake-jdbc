@@ -14,6 +14,7 @@ import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -33,7 +34,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.27.1";
+  public static String implementVersion = "4.0.0";
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -64,6 +65,16 @@ public class SnowflakeDriver implements Driver {
 
     // Telemetry OOB is disabled
     TelemetryService.disableOOBTelemetry();
+
+    initializeMinicore();
+  }
+
+  private static void initializeMinicore() {
+    try {
+      Minicore.initializeAsync();
+    } catch (Throwable t) {
+      logger.trace("Failed to start minicore initialization", t);
+    }
   }
 
   /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */
@@ -237,8 +248,10 @@ public class SnowflakeDriver implements Driver {
       String url, Properties info) throws SnowflakeSQLException {
     if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
       // Connect using connection configuration file
+      logger.debug(
+          "JDBC connection initializing with URL 'jdbc:snowflake:auto'. Autoconfiguration is enabled.");
       ConnectionParameters connectionParameters =
-          SFConnectionConfigParser.buildConnectionParameters();
+          SFConnectionConfigParser.buildConnectionParameters(url);
       if (connectionParameters == null) {
         throw new SnowflakeSQLException(
             "Unavailable connection configuration parameters expected for auto configuration using file");

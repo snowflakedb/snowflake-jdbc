@@ -57,8 +57,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
 
-  public static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
-
   String errorMessage = null;
 
   @TempDir private File tmpFolder;

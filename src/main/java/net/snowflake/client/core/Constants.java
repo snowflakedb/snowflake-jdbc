@@ -2,6 +2,8 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import net.snowflake.client.jdbc.SnowflakeUtil;
+
 /*
  * Constants used in JDBC implementation
  */
@@ -32,7 +34,27 @@ public final class Constants {
     SOLARIS
   }
 
+  public enum Architecture {
+    X86_64("x86_64"),
+    AARCH64("aarch64"),
+    PPC64("ppc64"),
+    X86("x86"),
+    UNKNOWN("unknown");
+
+    private final String identifier;
+
+    Architecture(String identifier) {
+      this.identifier = identifier;
+    }
+
+    public String getIdentifier() {
+      return identifier;
+    }
+  }
+
   private static OS os = null;
+  private static Architecture architecture = null;
+  private static Boolean isAix = null;
 
   public static synchronized OS getOS() {
     if (os == null) {
@@ -50,8 +72,37 @@ public final class Constants {
     return os;
   }
 
+  public static synchronized Architecture getArchitecture() {
+    if (architecture == null) {
+      architecture = Architecture.UNKNOWN;
+      String osArch = systemGetProperty("os.arch");
+      if (!SnowflakeUtil.isNullOrEmpty(osArch)) {
+        osArch = osArch.toLowerCase();
+        if (osArch.contains("amd64") || osArch.contains("x86_64")) {
+          architecture = Architecture.X86_64;
+        } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
+          architecture = Architecture.AARCH64;
+        } else if (osArch.contains("ppc64")) {
+          architecture = Architecture.PPC64;
+        } else if (osArch.contains("x86") || osArch.contains("i386") || osArch.contains("i686")) {
+          architecture = Architecture.X86;
+        }
+      }
+    }
+    return architecture;
+  }
+
+  public static boolean isAix() {
+    if (isAix == null) {
+      String osName = systemGetProperty("os.name");
+      isAix = osName != null && osName.toLowerCase().contains("aix");
+    }
+    return isAix;
+  }
+
   public static void clearOSForTesting() {
     os = null;
+    architecture = null;
   }
 
   public static final int MB = 1024 * 1024;

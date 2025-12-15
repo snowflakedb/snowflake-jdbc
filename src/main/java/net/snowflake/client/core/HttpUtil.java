@@ -115,6 +115,8 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static void reset() {
+    setConnectionTimeout(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
+    setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
     httpClient.clear();
     httpClientWithoutDecompression.clear();
     httpClientRoutePlanner.clear();
@@ -928,8 +930,9 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount max retry count for the request - if it is set to 0, it will be ignored and
-   *     only retryTimeout will determine when to end the retries
+   * @param maxRetryCount max retry count for the request - if it is set to 0, it will be ignored
+   *     and only retryTimeout will determine when to end the retries
+   * @param retriedCount The number of retries attempted to execute the request.
    * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @param sfSession the session associated with the request
    * @return HttpResponseWithHeaders containing response body and headers as a map
@@ -942,7 +945,8 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetryCount,
+      int retriedCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey,
       SFBaseSession sfSession)
       throws SnowflakeSQLException, IOException {
@@ -960,7 +964,8 @@ public class HttpUtil {
             retryTimeout,
             authTimeout,
             socketTimeout,
-            retryCount,
+            maxRetryCount,
+            retriedCount,
             0, // no inject socket timeout
             null, // no canceling
             false, // with cookie
@@ -1401,6 +1406,78 @@ public class HttpUtil {
       List<HttpHeadersCustomizer> httpHeaderCustomizer,
       boolean isHttpClientWithoutDecompression)
       throws SnowflakeSQLException, IOException {
+
+    return executeRequestInternalWithContext(
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        maxRetries,
+        0,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeSnowflakeHeaders,
+        retryOnHTTP403,
+        httpClient,
+        execTimeData,
+        retryContextManager,
+        sfSession,
+        key,
+        httpHeaderCustomizer,
+        isHttpClientWithoutDecompression);
+  }
+
+  /**
+   * Common internal method to execute HTTP requests and return full response context. This method
+   * contains the shared logic for building the request context and executing the request with
+   * retries.
+   *
+   * @param httpRequest request object contains all the information
+   * @param retryTimeout retry timeout (in seconds)
+   * @param authTimeout authenticator specific timeout (in seconds)
+   * @param socketTimeout socket timeout (in ms)
+   * @param maxRetries retry count for the request
+   * @param retriedCount The number of retries attempted to execute the request.
+   * @param injectSocketTimeout simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether this request should ignore cookies
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeSnowflakeHeaders whether to include Snowflake headers (incl. request_guid)
+   * @param retryOnHTTP403 whether to retry on HTTP 403
+   * @param httpClient client object used to communicate with other machine
+   * @param execTimeData execution time telemetry data
+   * @param retryContextManager RetryContext used to customize retry handling functionality
+   * @param sfSession the session associated with the request
+   * @param key HttpClientSettingsKey object
+   * @param httpHeaderCustomizer HttpHeadersCustomizer object for customization of HTTP headers
+   * @param isHttpClientWithoutDecompression flag for create client without Decompression
+   * @return HttpResponseContextDto containing both response body and headers
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  private static HttpResponseContextDto executeRequestInternalWithContext(
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int maxRetries,
+      int retriedCount,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeSnowflakeHeaders,
+      boolean retryOnHTTP403,
+      CloseableHttpClient httpClient,
+      ExecTimeTelemetryData execTimeData,
+      RetryContextManager retryContextManager,
+      SFBaseSession sfSession,
+      HttpClientSettingsKey key,
+      List<HttpHeadersCustomizer> httpHeaderCustomizer,
+      boolean isHttpClientWithoutDecompression)
+      throws SnowflakeSQLException, IOException {
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
 
     logger.debug(
@@ -1426,7 +1503,7 @@ public class HttpUtil {
             .loginRequest(SessionUtil.isNewRetryStrategyRequest(httpRequest))
             .withSfSession(sfSession)
             .build();
-
+    context.setRetryCount(retriedCount);
     HttpResponseContextDto responseContext =
         RestRequest.executeWithRetries(
             httpClient,

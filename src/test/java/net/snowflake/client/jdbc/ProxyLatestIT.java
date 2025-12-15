@@ -181,4 +181,18 @@ public class ProxyLatestIT extends BaseWiremockTest {
     connectAndVerifySimpleQuery(props);
     verifyProxyWasUsed();
   }
+
+  @Override
+  protected Properties getProperties() {
+    Properties props = super.getProperties();
+    // disable telemetry because it introduces race condition which leads to sending requests
+    // outside of current test proxy settings
+    // Scenario:
+    // testProxyIsUsed*** -> success -> telemetry is scheduled for sending
+    // tearDown() resets properties and wiremock
+    // telemetry is sent using HttpClient with configured proxy from the previous test
+    // testProxyIsNotUsed*** -> fails because telemetry request is counted
+    props.put("CLIENT_TELEMETRY_ENABLED", "false");
+    return props;
+  }
 }

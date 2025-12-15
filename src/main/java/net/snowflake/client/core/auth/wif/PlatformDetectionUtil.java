@@ -11,6 +11,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
 
 @SnowflakeJdbcInternalApi
@@ -26,6 +27,12 @@ public class PlatformDetectionUtil {
 
   public static String performPlatformDetectionRequest(HttpRequestBase httpRequest, int timeoutMs)
       throws SnowflakeSQLException, IOException {
+    httpRequest.setConfig(
+        RequestConfig.custom()
+            .setConnectTimeout(timeoutMs)
+            .setSocketTimeout(timeoutMs)
+            .setConnectionRequestTimeout(timeoutMs)
+            .build());
     return HttpUtil.executeGeneralRequestOmitSnowflakeHeaders(
         httpRequest,
         1,

@@ -201,9 +201,11 @@ public class PlatformDetector {
             } catch (TimeoutException e) {
               logger.debug("Platform detection timed out for: {}", entry.getKey());
               platforms.put(entry.getKey(), DetectionState.TIMEOUT);
+              entry.getValue().cancel(true);
             } catch (Exception e) {
               logger.debug("Platform detection failed for {}: {}", entry.getKey(), e.getMessage());
               platforms.put(entry.getKey(), DetectionState.NOT_DETECTED);
+              entry.getValue().cancel(true);
             }
           }
 

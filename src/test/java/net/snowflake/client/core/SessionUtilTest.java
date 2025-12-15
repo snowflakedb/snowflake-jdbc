@@ -3,6 +3,7 @@ package net.snowflake.client.core;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.auth.AuthenticatorType;
+import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
+import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -348,6 +351,66 @@ public class SessionUtilTest {
     String applicationPath = (String) clientEnv.get("APPLICATION_PATH");
     assertThat("APPLICATION_PATH should not be empty", !applicationPath.isEmpty());
     assertThat("APPLICATION_PATH should contain file path", isValidPath(applicationPath));
+  }
+
+  @Test
+  public void testMinicoreTelemetryWithSuccessfulLoad() {
+    // Create a mock successful load result
+    List<String> logs = new ArrayList<>();
+    logs.add("Starting minicore loading");
+    logs.add("Platform supported");
+    logs.add("Minicore library loaded successfully");
+
+    MinicoreLoadResult successResult =
+        MinicoreLoadResult.success(
+            "libsf_mini_core.so",
+            null, // library instance not needed for this test
+            "1.0.0",
+            logs);
+
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(successResult);
+    Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();
+
+    // THEN - Telemetry should contain success information
+    assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
+    assertNotNull(telemetryMap.get("ISA"), "ISA should not be null");
+
+    assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
+    assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
+
+    assertTrue(telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should be set on success");
+    assertEquals("1.0.0", telemetryMap.get("CORE_VERSION"));
+    assertFalse(
+        telemetryMap.containsKey("CORE_LOAD_ERROR"),
+        "CORE_LOAD_ERROR should not be set on success");
+  }
+
+  @Test
+  public void testMinicoreTelemetryWithFailedLoad() {
+    // Create a mock failed load result
+    List<String> logs = new ArrayList<>();
+    logs.add("Starting minicore loading");
+    logs.add("Failed to load library");
+
+    MinicoreLoadResult failedResult =
+        MinicoreLoadResult.failure(
+            "Failed to load library: UnsatisfiedLinkError",
+            "libsf_mini_core.so",
+            new UnsatisfiedLinkError("Cannot load library"),
+            logs);
+
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(failedResult);
+    Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();
+
+    // THEN - Telemetry should contain error information
+    assertTrue(telemetryMap.containsKey("ISA"), "ISA should be set");
+    assertNotNull(telemetryMap.get("ISA"), "ISA should not be null");
+
+    assertTrue(telemetryMap.containsKey("CORE_FILE_NAME"), "CORE_FILE_NAME should be set");
+    assertEquals("libsf_mini_core.so", telemetryMap.get("CORE_FILE_NAME"));
+
+    assertFalse(
+        telemetryMap.containsKey("CORE_VERSION"), "CORE_VERSION should not be set on failure");
   }
 
   private static boolean isValidPath(String path) {

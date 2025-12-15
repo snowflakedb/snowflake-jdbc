@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 
 class TestDataConfigBuilder {
   static final String TARGET_TABLE_NAME = "LOADER_test_TABLE";
@@ -276,9 +275,6 @@ class TestDataConfigBuilder {
 
     // causes upload to fail
     streamLoader.setTestMode(testMode);
-
-    // Wait for 5 seconds on first put to buffer everything up.
-    putConnection.unwrap(SnowflakeConnectionV1.class).setInjectedDelay(5000);
 
     return _resultListener;
   }
