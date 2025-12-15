@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.28.1-SNAPSHOT</version>
+    <version>4.0.0</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.28.1-SNAPSHOT</version>
+  <version>4.0.0</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -218,34 +218,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.github.siom79.japicmp</groupId>
-        <artifactId>japicmp-maven-plugin</artifactId>
-        <configuration>
-          <parameter>
-            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
-            <ignoreMissingClasses>false</ignoreMissingClasses>
-            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
-            <includes>
-              <include>com.snowflake</include>
-              <include>net.snowflake</include>
-            </includes>
-            <excludes>
-              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>
-              <exclude>${shadeBase}</exclude>
-            </excludes>
-          </parameter>
-        </configuration>
-        <executions>
-          <execution>
-            <id>japicmp</id>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
         <configuration>
@@ -298,7 +270,6 @@
               <ignoreNonCompile>true</ignoreNonCompile>
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
-                <ignoredUnusedDeclaredDependency>com.amazonaws:aws-java-sdk-sts</ignoredUnusedDeclaredDependency>
               </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
@@ -518,7 +489,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
+              <mainClass>net.snowflake.client.api.driver.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
@@ -539,6 +510,7 @@
           <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
           <stylesheet>java</stylesheet>
           <helpfile>${project.basedir}/src/main/javadoc/licenses.html</helpfile>
+          <excludePackageNames>net.snowflake.client.internal.*:net.snowflake.client.jdbc.internal.*</excludePackageNames>
         </configuration>
         <executions>
           <execution>
@@ -836,16 +808,40 @@
                       </excludes>
                     </relocation>
                     <relocation>
-                      <pattern>com.amazonaws</pattern>
-                      <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
+                      <pattern>software.amazon.awssdk</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.awssdk</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.encryption.s3</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.encryption.s3</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.eventstream</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.eventstream</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>software.amazon.ion</pattern>
                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>com.microsoft.azure</pattern>
-                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.reactivestreams</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.jvnet.staxex</pattern>
+                      <shadedPattern>${shadeBase}.jvnet.staxex</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.xml.soap</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.xml.soap</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.activation</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.activation</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.azure</pattern>
+                      <shadedPattern>${shadeBase}.azure</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.fasterxml</pattern>
@@ -1028,6 +1024,14 @@
                       <pattern>android.annotation</pattern>
                       <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>reactor</pattern>
+                      <shadedPattern>${shadeBase}.reactor</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.org.reactivestreams</shadedPattern>
+                    </relocation>
                   </relocations>
                   <filters>
                     <filter>
@@ -1053,6 +1057,9 @@
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>dependencies.properties</exclude>
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                        <exclude>azure-*.properties</exclude>
+                        <exclude>VersionInfo.java</exclude>
+                        <exclude>project.properties</exclude>
                       </excludes>
                     </filter>
                     <filter>
@@ -1122,9 +1129,12 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/22/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <!-- reactor.* packages are relocated to ${relocationBase}.reactor.* -->
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1262,11 +1272,11 @@
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
-                <configuration>
-                  <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
-                  </systemPropertyVariables>
+              <configuration>
+                <systemPropertyVariables>
+                  <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                  <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+                </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>

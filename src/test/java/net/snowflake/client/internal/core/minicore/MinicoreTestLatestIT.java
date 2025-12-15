@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.internal.jdbc.BaseJDBCTest;
 import org.junit.jupiter.api.Tag;
 
 @Tag(TestTags.CORE)
