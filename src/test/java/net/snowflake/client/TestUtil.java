@@ -13,6 +13,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
@@ -158,5 +162,24 @@ public class TestUtil {
         .limit(length)
         .mapToObj(i -> Math.abs(i) % modulo)
         .collect(Collectors.toList());
+  }
+
+  public static CompletableFuture<Void> asyncAssert(
+      ExecutorService executor, Callable<Integer> supplier, Consumer<Integer> assertion) {
+    return CompletableFuture.supplyAsync(
+            () -> {
+              try {
+                return supplier.call();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            },
+            executor)
+        .thenAccept(assertion);
+  }
+
+  // this allows exact metadata searches instead of pattern matching
+  public static String escapeUnderscore(String input) {
+    return input.replace("_", "\\_");
   }
 }
