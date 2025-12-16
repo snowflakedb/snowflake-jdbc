@@ -14,7 +14,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.SnowflakeResultSet;
+import net.snowflake.client.api.resultset.SnowflakeAsyncResultSet;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
@@ -52,15 +52,13 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
             stmt.unwrap(SnowflakeStatement.class)
                 .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 5))")) {
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
-      QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
+      QueryStatus qs = resultSet.unwrap(SnowflakeAsyncResultSet.class).getStatus();
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
-      SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
-      await()
-          .atMost(Duration.ofSeconds(60))
-          .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
+      SnowflakeAsyncResultSet rs = resultSet.unwrap(SnowflakeAsyncResultSet.class);
+      await().atMost(Duration.ofSeconds(60)).until(() -> !rs.getStatus().isStillRunning());
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.SUCCESS, qs);
+      assertEquals(QueryStatus.Status.SUCCESS, qs);
 
       // assert we get 1 row
       assertTrue(resultSet.next());

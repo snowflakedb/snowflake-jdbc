@@ -43,6 +43,7 @@ import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.internal.api.implementation.metadata.SnowflakeDatabaseMetaDataImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakeCallableStatementImpl;
 import net.snowflake.client.internal.api.implementation.statement.SnowflakePreparedStatementImpl;
@@ -308,11 +309,16 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
         stopwatch.elapsedMillis());
   }
 
+  @Override
   public String getSessionID() throws SQLException {
-    if (isClosed) {
-      raiseSQLExceptionIfConnectionIsClosed();
-    }
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getSessionId();
+  }
+
+  @Override
+  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getQueryStatus(queryID);
   }
 
   @Override

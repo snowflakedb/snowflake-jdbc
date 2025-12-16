@@ -54,7 +54,7 @@ import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.QueryStatusV2;
+import net.snowflake.client.api.resultset.SnowflakeAsyncResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.statement.SnowflakePreparedStatement;
 import net.snowflake.client.api.statement.SnowflakeStatement;
@@ -270,18 +270,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Retrieve query ID for part 2 of test, check status of query
       queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
 
-      SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
+      SnowflakeAsyncResultSet asyncResultSet = rs1.unwrap(SnowflakeAsyncResultSet.class);
       await()
           .atMost(Duration.ofSeconds(5))
-          .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
-      QueryStatusV2 statusV2 = sfrs.getStatusV2();
+          .until(
+              () -> asyncResultSet.getStatus().getStatus(),
+              not(equalTo(QueryStatus.Status.NO_DATA)));
+      QueryStatus queryStatus = asyncResultSet.getStatus();
       // Query should take 5 seconds so should be running
-      assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
-      assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+      assertEquals(QueryStatus.Status.RUNNING, queryStatus.getStatus());
+      assertEquals(QueryStatus.Status.RUNNING.name(), queryStatus.getName());
       // wait while query finishes running
       await()
-          .atMost(Duration.ofSeconds(60))
-          .until(() -> sfrs.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
+          .atMost(Duration.ofSeconds(10))
+          .until(() -> asyncResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.SUCCESS));
     }
 
     // Create a new connection and new instance of a resultSet using query ID
@@ -295,11 +297,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                       .close());
       assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
-        QueryStatusV2 statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        QueryStatus status = rs.unwrap(SnowflakeAsyncResultSet.class).getStatus();
         // Assert status of query is a success
-        assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
-        assertEquals("No error reported", statusV2.getErrorMessage());
-        assertEquals(0, statusV2.getErrorCode());
+        assertTrue(status.isSuccess());
+        assertEquals("No error reported", status.getErrorMessage());
+        assertEquals(0, status.getErrorCode());
         assertEquals(1, getSizeOfResultSet(rs));
         try (Statement statement = con.createStatement();
             // Create another query that will not be successful (querying table that does not exist)
@@ -307,16 +309,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 statement
                     .unwrap(SnowflakeStatement.class)
                     .executeAsyncQuery("select * from nonexistentTable")) {
-          SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
+          SnowflakeAsyncResultSet asyncResultSet = rs1.unwrap(SnowflakeAsyncResultSet.class);
           await()
               .atMost(Duration.ofSeconds(10))
-              .until(() -> sfrs1.getStatusV2().getStatus() == QueryStatus.FAILED_WITH_ERROR);
-          statusV2 = sfrs1.getStatusV2();
-          assertEquals(2003, statusV2.getErrorCode());
+              .until(
+                  () ->
+                      asyncResultSet.getStatus().getStatus()
+                          == QueryStatus.Status.FAILED_WITH_ERROR);
+          status = asyncResultSet.getStatus();
+          assertEquals(2003, status.getErrorCode());
           assertEquals(
               "SQL compilation error:\n"
                   + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-              statusV2.getErrorMessage());
+              status.getErrorMessage());
         }
       }
     }
@@ -329,26 +334,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Create another query that will not be successful (querying table that does not exist)
       try (ResultSet rs1 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!")) {
-        SQLException ex =
-            assertThrows(
-                SQLException.class,
-                () -> {
-                  rs1.next();
-                });
-        assertEquals(
-            "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-                + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-            ex.getMessage());
+        assertThrows(
+            SQLException.class,
+            () -> {
+              rs1.next();
+            });
         assertEquals(
             "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-            rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+            rs1.unwrap(SnowflakeAsyncResultSet.class).getStatus().getErrorMessage());
       }
       try (ResultSet rs2 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
         rs2.next();
         // Assert there is no error message when query is successful
         assertEquals(
-            "No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+            "No error reported",
+            rs2.unwrap(SnowflakeAsyncResultSet.class).getStatus().getErrorMessage());
       }
     }
   }
@@ -403,7 +404,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  /** Can be used in > 3.14.4 (when {@link QueryStatusV2} was added) */
+  /**
+   * Can be used in > 3.14.4 (when {@link QueryStatus} was added, called QueryStatusV2 at that time)
+   */
   @Test
   public void testQueryStatusErrorMessageAndErrorCodeChangeOnAsyncQuery() throws SQLException {
     try (Connection con = getConnection();
@@ -412,16 +415,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             statement
                 .unwrap(SnowflakeStatement.class)
                 .executeAsyncQuery("select count(*) from table(generator(timeLimit => 2))")) {
-      SnowflakeResultSet sfResultSet = rs1.unwrap(SnowflakeResultSet.class);
+      SnowflakeAsyncResultSet sfResultSet = rs1.unwrap(SnowflakeAsyncResultSet.class);
       // status should change state to RUNNING and then to SUCCESS
       await()
-          .atMost(Duration.ofSeconds(10))
-          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+          .atMost(Duration.ofSeconds(5))
+          .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.RUNNING));
 
       // it may take more time to finish the test when running in parallel in CI builds
       await()
-          .atMost(Duration.ofSeconds(360))
-          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
+          .atMost(Duration.ofSeconds(10))
+          .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.SUCCESS));
     }
   }
 
@@ -454,59 +457,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testIsStillRunning() {
-    QueryStatus[] runningStatuses = {
-      QueryStatus.RUNNING,
-      QueryStatus.RESUMING_WAREHOUSE,
-      QueryStatus.QUEUED,
-      QueryStatus.QUEUED_REPAIRING_WAREHOUSE,
-      QueryStatus.NO_DATA,
-      QueryStatus.BLOCKED
-    };
-
-    QueryStatus[] otherStatuses = {
-      QueryStatus.ABORTED,
-      QueryStatus.ABORTING,
-      QueryStatus.SUCCESS,
-      QueryStatus.FAILED_WITH_ERROR,
-      QueryStatus.FAILED_WITH_INCIDENT,
-      QueryStatus.DISCONNECTED,
-      QueryStatus.RESTARTED
-    };
-
-    for (QueryStatus qs : runningStatuses) {
-      assertEquals(true, QueryStatus.isStillRunning(qs));
-    }
-
-    for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isStillRunning(qs));
-    }
-  }
-
-  @Test
-  public void testIsAnError() {
-    QueryStatus[] otherStatuses = {
-      QueryStatus.RUNNING, QueryStatus.RESUMING_WAREHOUSE, QueryStatus.QUEUED,
-      QueryStatus.QUEUED_REPAIRING_WAREHOUSE, QueryStatus.SUCCESS, QueryStatus.RESTARTED,
-      QueryStatus.NO_DATA
-    };
-
-    QueryStatus[] errorStatuses = {
-      QueryStatus.ABORTED, QueryStatus.ABORTING,
-      QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
-      QueryStatus.DISCONNECTED, QueryStatus.BLOCKED
-    };
-
-    for (QueryStatus qs : errorStatuses) {
-      assertEquals(true, QueryStatus.isAnError(qs));
-    }
-
-    for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isAnError(qs));
-    }
-  }
-
   /**
    * MANUAL TESTING OF ASYNCHRONOUS QUERYING
    *
@@ -524,9 +474,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 .unwrap(SnowflakeStatement.class)
                 .executeAsyncQuery("select count(*) from table(generator(timeLimit => 5))")) {
       Thread.sleep(100);
-      QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
+      QueryStatus status = rs.unwrap(SnowflakeAsyncResultSet.class).getStatus();
       // Since warehouse has just been restarted, warehouse should still be booting
-      assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
+      assertEquals(QueryStatus.Status.RESUMING_WAREHOUSE, status.getStatus());
 
       // now try to get QUEUED status
       try (ResultSet rs1 =
@@ -547,10 +497,36 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                   .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))")) {
         // Retrieve query ID for part 2 of test, check status of query
         Thread.sleep(100);
-        status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
+        status = rs4.unwrap(SnowflakeAsyncResultSet.class).getStatus();
         // Since 4 queries were started at once, status is most likely QUEUED
-        assertEquals(QueryStatus.QUEUED, status);
+        assertEquals(QueryStatus.Status.QUEUED, status);
       }
+    }
+  }
+
+  @Test
+  public void testAsyncQueryStatus() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rs =
+            statement
+                .unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("SELECT SYSTEM$WAIT(2, 'SECONDS')")) {
+
+      String queryId = rs.unwrap(SnowflakeAsyncResultSet.class).getQueryID();
+      SnowflakeConnection snowflakeConnection = con.unwrap(SnowflakeConnection.class);
+
+      await()
+          .atMost(Duration.ofSeconds(3))
+          .until(
+              () -> snowflakeConnection.getQueryStatus(queryId).getStatus(),
+              equalTo(QueryStatus.Status.RUNNING));
+
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(
+              () -> snowflakeConnection.getQueryStatus(queryId).getStatus(),
+              equalTo(QueryStatus.Status.SUCCESS));
     }
   }
 
@@ -993,7 +969,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     SFSession session = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
     await()
         .atMost(Duration.ofSeconds(30))
-        .until(() -> !(session.getQueryStatusV2(queryID)).isStillRunning());
+        .until(() -> !(session.getQueryStatus(queryID)).isStillRunning());
   }
 
   @Test
