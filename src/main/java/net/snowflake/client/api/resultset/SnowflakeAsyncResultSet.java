@@ -2,7 +2,7 @@ package net.snowflake.client.api.resultset;
 
 import java.sql.SQLException;
 
-/** This interface defines Snowflake specific APIs for ResultSet */
+/** This interface defines Snowflake specific APIs for asynchronous ResultSet */
 public interface SnowflakeAsyncResultSet extends SnowflakeResultSet {
   /**
    * This function retrieves the status of an asynchronous query. An empty ResultSet object has

@@ -662,11 +662,11 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
-    QueryStatus qs = session.getQueryStatus(queryID);
-    if (qs.isStillRunning()) {
+    QueryStatus queryStatus = session.getQueryStatus(queryID);
+    if (queryStatus.isStillRunning()) {
       throw new SQLException(
           "Status of query associated with resultSet is "
-              + qs.getDescription()
+              + queryStatus.getDescription()
               + ". Results not generated.");
     }
     try {

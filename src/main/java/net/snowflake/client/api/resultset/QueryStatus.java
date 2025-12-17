@@ -1,5 +1,7 @@
 package net.snowflake.client.api.resultset;
 
+import java.util.Arrays;
+
 /**
  * Represents detailed status information for a query execution.
  *
@@ -60,6 +62,7 @@ public final class QueryStatus {
         case QUEUED:
         case RESUMING_WAREHOUSE:
         case QUEUED_REPAIRING_WAREHOUSE:
+        case BLOCKED:
         case NO_DATA:
           return true;
         default:
@@ -83,12 +86,10 @@ public final class QueryStatus {
 
     private static Status getStatusFromString(String description) {
       if (description != null) {
-        for (Status st : Status.values()) {
-          if (description.equalsIgnoreCase(st.getDescription())) {
-            return st;
-          }
-        }
-        return Status.NO_DATA;
+        return Arrays.stream(Status.values())
+            .filter(st -> description.equalsIgnoreCase(st.getDescription()))
+            .findFirst()
+            .orElse(Status.NO_DATA);
       }
       // Is it correct? I think we should never reach this point, but maybe we should return NO_DATA
       // instead?

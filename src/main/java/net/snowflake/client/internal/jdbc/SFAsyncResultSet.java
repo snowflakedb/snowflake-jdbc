@@ -124,29 +124,29 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     if (!resultSetForNextInitialized) {
       // If query has already succeeded, go straight to result scan to get results
       if (!this.lastQueriedStatus.isSuccess()) {
-        QueryStatus qs = this.lastQueriedStatus;
+        QueryStatus queryStatus = this.lastQueriedStatus;
         int noDataRetry = 0;
         final int noDataMaxRetries = 30;
         final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
         final int maxIndex = retryPattern.length - 1;
         int retry = 0;
-        while (!qs.isSuccess()) {
+        while (!queryStatus.isSuccess()) {
           // if query is not running due to a failure (Aborted, failed with error, etc), generate
           // exception
-          if (!qs.isStillRunning()) {
+          if (!queryStatus.isStillRunning()) {
             String errorMessage = this.lastQueriedStatus.getErrorMessage();
             if (isNullOrEmpty(errorMessage)) {
               errorMessage = "No error message available";
             }
             throw new SQLException(
                 "Status of query associated with resultSet is "
-                    + qs.getDescription()
+                    + queryStatus.getDescription()
                     + ". "
                     + errorMessage
                     + " Results not generated.");
           }
           // if no data about the query is returned after about 2 minutes, give up
-          if (qs.getStatus() == NO_DATA) {
+          if (queryStatus.getStatus() == NO_DATA) {
             noDataRetry++;
             if (noDataRetry >= noDataMaxRetries) {
               throw new SQLException(
@@ -164,7 +164,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
           if (retry < maxIndex) {
             retry++;
           }
-          qs = this.getStatus();
+          queryStatus = this.getStatus();
         }
       }
 

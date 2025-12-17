@@ -52,13 +52,13 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
             stmt.unwrap(SnowflakeStatement.class)
                 .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 5))")) {
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
-      QueryStatus qs = resultSet.unwrap(SnowflakeAsyncResultSet.class).getStatus();
+      QueryStatus queryStatus = resultSet.unwrap(SnowflakeAsyncResultSet.class).getStatus();
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
       SnowflakeAsyncResultSet rs = resultSet.unwrap(SnowflakeAsyncResultSet.class);
       await().atMost(Duration.ofSeconds(60)).until(() -> !rs.getStatus().isStillRunning());
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.Status.SUCCESS, qs);
+      assertEquals(QueryStatus.Status.SUCCESS, queryStatus);
 
       // assert we get 1 row
       assertTrue(resultSet.next());

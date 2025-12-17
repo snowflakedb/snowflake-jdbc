@@ -186,9 +186,9 @@ public class SFSession extends SFBaseSession {
     // if the set is not empty, iterate through each query and check its status
     for (String query : this.activeAsyncQueries) {
       try {
-        QueryStatus qStatus = getQueryStatus(query);
+        QueryStatus queryStatus = getQueryStatus(query);
         //  if any query is still running, it is not safe to close.
-        if (qStatus.isStillRunning()) {
+        if (queryStatus.isStillRunning()) {
           canClose = false;
         }
       } catch (SQLException e) {
