@@ -67,7 +67,7 @@
     <metrics.version>2.2.0</metrics.version>
     <mockito.version>4.11.0</mockito.version>
     <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
-    <netty.version>4.1.128.Final</netty.version>
+    <netty.version>4.1.130.Final</netty.version>
     <nimbusds.version>10.3.1</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
