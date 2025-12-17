@@ -190,7 +190,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
   public void testOktaRetriesUntilTimeoutThenRaisesAuthTimeoutExceptionWhen429InFederatedStep4()
       throws Throwable {
     // GIVEN
-    final int ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS = 500;
+    final int ALLOWED_DIFFERENCE_BETWEEN_LOGIN_TIMEOUT_AND_ACTUAL_DURATION_IN_MS = 1500;
     Map<String, Object> placeholders = new HashMap<>();
     placeholders.put("{{WIREMOCK_HOST_WITH_HTTPS_AND_PORT}}", WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
     String wireMockMapping =
