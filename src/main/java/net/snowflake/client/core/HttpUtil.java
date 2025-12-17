@@ -1621,7 +1621,16 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static CloseableHttpClient getHttpClientForCrl(HttpClientSettingsKey key) {
-    int timeout = (int) HttpUtil.getConnectionTimeout().toMillis();
+    return getHttpClient((int) HttpUtil.getConnectionTimeout().toMillis(), key);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpClient getHttpClientForOcsp(HttpClientSettingsKey key) {
+    return getHttpClient(key.getOcspTimeout(), key);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static CloseableHttpClient getHttpClient(int timeout, HttpClientSettingsKey key) {
     RequestConfig config =
         RequestConfig.custom()
             .setConnectTimeout(timeout)
@@ -1638,7 +1647,7 @@ public class HttpUtil {
     PoolingHttpClientConnectionManager connectionManager =
         new PoolingHttpClientConnectionManager(registry);
     connectionManager.setMaxTotal(1);
-    connectionManager.setDefaultMaxPerRoute(3);
+    connectionManager.setDefaultMaxPerRoute(10);
 
     HttpClientBuilder httpClientBuilder =
         HttpClientBuilder.create()
