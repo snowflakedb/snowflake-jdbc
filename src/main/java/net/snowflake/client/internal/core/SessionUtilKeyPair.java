@@ -72,7 +72,7 @@ class SessionUtilKeyPair {
 
   private static final int JWT_DEFAULT_AUTH_TIMEOUT = 0;
 
-  private boolean isBouncyCastleProviderEnabled = false;
+  private boolean useBundledBouncyCastleForPrivateKeyDecryption = true;
 
   SessionUtilKeyPair(
       PrivateKey privateKey,
@@ -84,10 +84,11 @@ class SessionUtilKeyPair {
       throws SFException {
     this.userName = userName.toUpperCase();
     this.accountName = excludeRegionInformation(accountName).toUpperCase();
-    String enableBouncyCastleJvm =
-        System.getProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
-    if (enableBouncyCastleJvm != null) {
-      isBouncyCastleProviderEnabled = enableBouncyCastleJvm.equalsIgnoreCase("true");
+    String useBundledBouncyCastleJvm =
+        System.getProperty(SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
+    if (useBundledBouncyCastleJvm != null) {
+      useBundledBouncyCastleForPrivateKeyDecryption =
+          useBundledBouncyCastleJvm.equalsIgnoreCase("true");
     }
     // check if in FIPS mode
     for (Provider p : Security.getProviders()) {
@@ -184,7 +185,7 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyFromBytes(byte[] privateKeyBytes, String privateKeyPwd)
       throws SFException {
-    if (isBouncyCastleProviderEnabled) {
+    if (useBundledBouncyCastleForPrivateKeyDecryption) {
       try {
         return extractPrivateKeyWithBouncyCastle(privateKeyBytes, privateKeyPwd);
       } catch (IOException | PKCSException | OperatorCreationException e) {
@@ -204,7 +205,7 @@ class SessionUtilKeyPair {
             "Could not extract private key using standard JDK. Try setting the JVM argument: "
                 + "-D{}"
                 + "=TRUE",
-            SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+            SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
         throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getMessage());
       }
     }
