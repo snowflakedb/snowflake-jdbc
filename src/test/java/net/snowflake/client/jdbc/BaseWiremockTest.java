@@ -80,7 +80,7 @@ public abstract class BaseWiremockTest {
 
   @AfterAll
   public static void tearDownClass() {
-    stopWiremockStandAlone();
+    stopWiremockStandAlone(wiremockStandalone);
   }
 
   protected static void startWiremockStandAlone() {
@@ -93,42 +93,39 @@ public abstract class BaseWiremockTest {
               try {
                 wiremockHttpPort = findFreePort();
                 wiremockHttpsPort = findFreePort();
-                String javaExecutable =
-                    System.getProperty("java.home")
-                        + File.separator
-                        + "bin"
-                        + File.separator
-                        + "java";
-                wiremockStandalone =
-                    new ProcessBuilder(
-                            javaExecutable,
-                            "-jar",
-                            getWiremockStandAlonePath(),
-                            "--root-dir",
-                            System.getProperty("user.dir")
-                                + File.separator
-                                + WIREMOCK_HOME_DIR
-                                + File.separator,
-                            "--enable-browser-proxying", // work as forward proxy
-                            "--proxy-pass-through",
-                            "false", // pass through only matched requests
-                            "--port",
-                            String.valueOf(wiremockHttpPort),
-                            "--https-port",
-                            String.valueOf(wiremockHttpsPort),
-                            "--https-keystore",
-                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
-                            "--ca-keystore",
-                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
-                        .inheritIO()
-                        .start();
-                waitForWiremock();
+                wiremockStandalone = startWiremockProcess(wiremockHttpPort, wiremockHttpsPort);
+                waitForWiremockOnPort(wiremockHttpPort);
                 return true;
               } catch (Exception e) {
                 logger.warn("Failed to start wiremock, retrying: ", e);
                 return false;
               }
             });
+  }
+
+  protected static Process startWiremockProcess(int wiremockHttpPort, int wiremockHttpsPort)
+      throws IOException {
+    String javaExecutable =
+        System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+    return new ProcessBuilder(
+            javaExecutable,
+            "-jar",
+            getWiremockStandAlonePath(),
+            "--root-dir",
+            System.getProperty("user.dir") + File.separator + WIREMOCK_HOME_DIR + File.separator,
+            "--enable-browser-proxying", // work as forward proxy
+            "--proxy-pass-through",
+            "false", // pass through only matched requests
+            "--port",
+            String.valueOf(wiremockHttpPort),
+            "--https-port",
+            String.valueOf(wiremockHttpsPort),
+            "--https-keystore",
+            getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
+            "--ca-keystore",
+            getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
+        .inheritIO()
+        .start();
   }
 
   protected void resetWiremock() {
@@ -146,18 +143,17 @@ public abstract class BaseWiremockTest {
     return System.getProperty("user.home") + WIREMOCK_M2_PATH;
   }
 
-  private static void waitForWiremock() {
+  protected static void waitForWiremockOnPort(int port) {
     await()
         .pollDelay(Duration.ofSeconds(1))
         .atMost(Duration.ofSeconds(3))
-        .until(BaseWiremockTest::isWiremockResponding);
+        .until(() -> isWiremockResponding(port));
   }
 
-  private static boolean isWiremockResponding() {
+  private static boolean isWiremockResponding(int port) {
     try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
       HttpGet request =
-          new HttpGet(
-              String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, wiremockHttpPort));
+          new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, port));
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
@@ -166,7 +162,7 @@ public abstract class BaseWiremockTest {
     return false;
   }
 
-  protected static void stopWiremockStandAlone() {
+  protected static void stopWiremockStandAlone(Process wiremockStandalone) {
     if (wiremockStandalone != null) {
       wiremockStandalone.destroyForcibly();
       await()
@@ -176,7 +172,7 @@ public abstract class BaseWiremockTest {
     }
   }
 
-  private static int findFreePort() {
+  protected static int findFreePort() {
     try {
       ServerSocket socket = new ServerSocket(0);
       int port = socket.getLocalPort();
@@ -215,7 +211,11 @@ public abstract class BaseWiremockTest {
   }
 
   protected HttpPost createWiremockPostRequest(String body, String path) {
-    HttpPost postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + path);
+    return createWiremockPostRequest(body, path, getAdminPort());
+  }
+
+  protected HttpPost createWiremockPostRequest(String body, String path, int adminPort) {
+    HttpPost postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + adminPort + path);
     final StringEntity entity;
     try {
       entity = new StringEntity(body);
@@ -410,7 +410,11 @@ public abstract class BaseWiremockTest {
    * @return A list of MinimalServeEvent objects representing the requests WireMock has recorded.
    */
   protected List<MinimalServeEvent> getAllServeEvents() {
-    String url = "http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/requests";
+    return getAllServeEvents(getAdminPort());
+  }
+
+  protected List<MinimalServeEvent> getAllServeEvents(int port) {
+    String url = "http://" + WIREMOCK_HOST + ":" + port + "/__admin/requests";
     try (CloseableHttpClient client = HttpClients.createDefault()) {
       HttpGet request = new HttpGet(url);
       try (CloseableHttpResponse response = client.execute(request)) {
