@@ -44,7 +44,6 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -816,10 +815,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testNewFeaturesNotSupportedExeceptions(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet rs = statement.executeQuery("select 1")) {
-      expectSnowflakeLoggedFeatureNotSupportedException(
-          rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
-      expectSnowflakeLoggedFeatureNotSupportedException(
-          rs.unwrap(SnowflakeResultSet.class)::getStatus);
       expectSnowflakeLoggedFeatureNotSupportedException(() -> rs.getArray(1));
       expectSnowflakeLoggedFeatureNotSupportedException(
           () -> rs.unwrap(SnowflakeBaseResultSet.class).getList(1, String.class));

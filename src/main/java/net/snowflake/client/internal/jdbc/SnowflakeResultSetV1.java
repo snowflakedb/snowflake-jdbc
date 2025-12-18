@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Statement;
@@ -26,8 +25,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
@@ -60,40 +57,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-  }
-
-  /**
-   * This function is not supported for synchronous queries
-   *
-   * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
-   */
-  public QueryStatus getStatus() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
-  }
-
-  /**
-   * This function is not supported for synchronous queries
-   *
-   * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
-   */
-  @Override
-  public QueryStatusV2 getStatusV2() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(
-        session, "This function is only supported for asynchronous queries.");
-  }
-
-  /**
-   * This function is not supported for synchronous queries
-   *
-   * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
-   */
-  @Override
-  public String getQueryErrorMessage() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(
-        session, "This function is only supported for asynchronous queries.");
   }
 
   /**

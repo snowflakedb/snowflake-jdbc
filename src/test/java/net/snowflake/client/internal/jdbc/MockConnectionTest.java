@@ -36,7 +36,6 @@ import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.api.connection.UploadStreamConfig;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.common.core.SFBinaryFormat;
@@ -734,11 +733,6 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
-      return null;
-    }
-
-    @Override
-    public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
       return null;
     }
 
