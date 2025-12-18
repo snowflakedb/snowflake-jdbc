@@ -42,6 +42,7 @@ public interface SnowflakeStatement {
    * @return ResultSet
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
+  // Should we return AsyncResultSet here? It would have to extend ResultSet
   ResultSet executeAsyncQuery(String sql) throws SQLException;
 
   /**

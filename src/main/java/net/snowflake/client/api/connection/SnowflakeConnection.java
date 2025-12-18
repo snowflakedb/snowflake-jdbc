@@ -3,6 +3,7 @@ package net.snowflake.client.api.connection;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import net.snowflake.client.api.resultset.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for Connection */
 public interface SnowflakeConnection {
@@ -80,6 +81,15 @@ public interface SnowflakeConnection {
    * @throws SQLException if an error occurs
    */
   String getSessionID() throws SQLException;
+
+  /**
+   * Return the status of a query.
+   *
+   * @param queryID the query ID.
+   * @return the status of the query.
+   * @throws SQLException if an error occurs.
+   */
+  QueryStatus getQueryStatus(String queryID) throws SQLException;
 
   /**
    * Create a new instance of a ResultSet object based off query ID. ResultSet will contain results
