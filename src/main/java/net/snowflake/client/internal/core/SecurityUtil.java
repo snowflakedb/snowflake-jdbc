@@ -17,8 +17,8 @@ public class SecurityUtil {
   private static final String DEFAULT_SECURITY_PROVIDER_NAME =
       "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
-  public static final String ENABLE_BOUNCYCASTLE_PROVIDER_JVM =
-      "net.snowflake.jdbc.enableBouncyCastle";
+  public static final String USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM =
+      "net.snowflake.jdbc.useBundledBouncyCastleForPrivateKeyDecryption";
 
   public static void addBouncyCastleProvider() {
     // Add Bouncy Castle to the list of security providers. This is required to
