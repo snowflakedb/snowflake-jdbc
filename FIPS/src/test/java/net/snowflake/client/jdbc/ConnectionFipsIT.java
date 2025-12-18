@@ -206,7 +206,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE,
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE_ORIGINAL_VALUE);
     }
-    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+    System.clearProperty(SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
     // clear the named group.
     System.clearProperty(JAVA_SYSTEM_PROPERTY_SSL_NAMEDGROUPS);
     // attempts an SSL connection to Google
@@ -356,7 +356,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void connectWithFipsKeyPairWithBouncyCastle() throws Exception {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    System.setProperty(
+        SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "true");
     connectWithFipsKeyPair();
   }
 
@@ -364,7 +365,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void testConnectUsingKeyPairWithBouncyCastle() throws Exception {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    System.setProperty(
+        SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "true");
     testConnectUsingKeyPair();
   }
 

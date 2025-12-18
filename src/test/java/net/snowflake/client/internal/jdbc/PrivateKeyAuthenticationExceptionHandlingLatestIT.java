@@ -43,7 +43,8 @@ public class PrivateKeyAuthenticationExceptionHandlingLatestIT {
   @ParameterizedTest
   @MethodSource("jwtTimeoutProvider")
   public void testPrivateKeyAuthTimeout(String jwtTimeout) {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    System.setProperty(
+        SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "true");
     if (jwtTimeout != null) {
       System.setProperty("JWT_AUTH_TIMEOUT", jwtTimeout);
     }
@@ -65,7 +66,8 @@ public class PrivateKeyAuthenticationExceptionHandlingLatestIT {
                       "jdbc:snowflake://localhost:8443/?db=TEST_DB&schema=PUBLIC", props));
       assertTrue(ex.getMessage().contains("JDBC driver encountered communication error"));
     } finally {
-      System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "false");
+      System.setProperty(
+          SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "false");
       System.setProperty("JWT_AUTH_TIMEOUT", "0");
     }
   }
