@@ -1647,7 +1647,6 @@ public class HttpUtil {
     PoolingHttpClientConnectionManager connectionManager =
         new PoolingHttpClientConnectionManager(registry);
     connectionManager.setMaxTotal(1);
-    connectionManager.setDefaultMaxPerRoute(10);
 
     HttpClientBuilder httpClientBuilder =
         HttpClientBuilder.create()
