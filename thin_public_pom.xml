@@ -58,8 +58,8 @@
     <jsoup.version>1.15.3</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
     <netty.version>4.1.130.Final</netty.version>
-    <nimbusds.version>10.3.1</nimbusds.version>
-    <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
+    <nimbusds.version>10.6</nimbusds.version>
+    <nimbusds.oauth2.version>11.30.1</nimbusds.oauth2.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>2.0.13</slf4j.version>
