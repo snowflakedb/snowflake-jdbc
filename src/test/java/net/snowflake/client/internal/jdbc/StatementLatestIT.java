@@ -36,7 +36,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.SnowflakeResultSet;
+import net.snowflake.client.api.resultset.SnowflakeAsyncResultSet;
 import net.snowflake.client.api.statement.SnowflakeStatement;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -326,20 +326,21 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
 
       try (ResultSet resultSet =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql)) {
-        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        SnowflakeAsyncResultSet asyncResultSet = resultSet.unwrap(SnowflakeAsyncResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = asyncResultSet.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertTrue(
-            sfrs.getStatusV2()
+            asyncResultSet
+                .getStatus()
                 .getErrorMessage()
                 .contains(
                     "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
@@ -446,20 +447,20 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
       String sql = "select system$wait(100);";
 
       try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
-        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        SnowflakeAsyncResultSet asyncResultSet = resultSet.unwrap(SnowflakeAsyncResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = asyncResultSet.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            asyncResultSet.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }
@@ -485,20 +486,20 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
       String sql = "select system$wait(100);";
 
       try (ResultSet resultSet = sfStmt.executeAsyncQuery(sql)) {
-        SnowflakeResultSet sfrs = resultSet.unwrap(SnowflakeResultSet.class);
+        SnowflakeAsyncResultSet asyncResultSet = resultSet.unwrap(SnowflakeAsyncResultSet.class);
         await()
             .atMost(Duration.ofSeconds(10))
             .untilAsserted(
                 () -> {
-                  QueryStatus actualStatus = sfrs.getStatusV2().getStatus();
+                  QueryStatus.Status actualStatus = asyncResultSet.getStatus().getStatus();
                   assertThat(
                       "Expected query to fail but status was: " + actualStatus,
                       actualStatus,
-                      equalTo(QueryStatus.FAILED_WITH_ERROR));
+                      equalTo(QueryStatus.Status.FAILED_WITH_ERROR));
                 });
 
         assertThat(
-            sfrs.getStatusV2().getErrorMessage(),
+            asyncResultSet.getStatus().getErrorMessage(),
             containsString(
                 "Statement reached its statement or warehouse timeout of 1 second(s) and was canceled"));
       }

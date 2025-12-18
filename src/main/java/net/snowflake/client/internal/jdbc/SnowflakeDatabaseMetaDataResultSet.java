@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.QueryStatus;
-import net.snowflake.client.api.resultset.QueryStatusV2;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
@@ -542,21 +540,6 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
       default:
         throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
-  }
-
-  @Override
-  public QueryStatus getStatus() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
-  }
-
-  @Override
-  public QueryStatusV2 getStatusV2() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
-  }
-
-  @Override
-  public String getQueryErrorMessage() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override

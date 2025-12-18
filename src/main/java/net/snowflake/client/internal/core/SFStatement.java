@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.api.resultset.QueryStatusV2;
+import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.internal.core.BasicEvent.QueryState;
 import net.snowflake.client.internal.core.bind.BindException;
 import net.snowflake.client.internal.core.bind.BindUploader;
@@ -662,11 +662,11 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
-    QueryStatusV2 qs = session.getQueryStatusV2(queryID);
-    if (qs.isStillRunning()) {
+    QueryStatus queryStatus = session.getQueryStatus(queryID);
+    if (queryStatus.isStillRunning()) {
       throw new SQLException(
           "Status of query associated with resultSet is "
-              + qs.getDescription()
+              + queryStatus.getDescription()
               + ". Results not generated.");
     }
     try {
