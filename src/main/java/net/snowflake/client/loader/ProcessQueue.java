@@ -265,7 +265,9 @@ public class ProcessQueue implements Runnable {
                         + "("
                         + _loader.getColumnsAsString()
                         + ")"
-                        + " SELECT * FROM \""
+                        + " SELECT "
+                        + _loader.getStageColumnsAsString()
+                        + " FROM \""
                         + stage.getId()
                         + "\"";
                 break;

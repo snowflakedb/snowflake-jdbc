@@ -16,7 +16,9 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 /**
  * Running tests locally:
@@ -34,6 +36,10 @@ public class WIFLatestIT {
   private static final String HOST = System.getenv("SNOWFLAKE_TEST_WIF_HOST");
   private static final String PROVIDER = System.getenv("SNOWFLAKE_TEST_WIF_PROVIDER");
   private static final String IS_GCP_FUNCTION = System.getenv("IS_GCP_FUNCTION");
+  private static final String IMPERSONATION_PATH =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH");
+  private static final String IMPERSONATION_USER =
+      System.getenv("SNOWFLAKE_TEST_WIF_USERNAME_IMPERSONATION");
 
   @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
@@ -42,6 +48,18 @@ public class WIFLatestIT {
     properties.put("authenticator", "WORKLOAD_IDENTITY");
     properties.put("workloadIdentityProvider", PROVIDER);
     connectAndExecuteSimpleQuery(properties);
+  }
+
+  @Test
+  @DisabledIf("isProviderAzure")
+  @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH", matches = ".+")
+  void shouldAuthenticateUsingWIFWithImpersonation() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", PROVIDER);
+    properties.put("workloadIdentityImpersonationPath", IMPERSONATION_PATH);
+    connectAndExecuteSimpleQuery(properties, IMPERSONATION_USER);
   }
 
   @Test
@@ -58,6 +76,10 @@ public class WIFLatestIT {
 
   private static boolean isProviderGCP() {
     return Objects.equals(PROVIDER, "GCP");
+  }
+
+  private static boolean isProviderAzure() {
+    return Objects.equals(PROVIDER, "AZURE");
   }
 
   private String getGCPAccessToken() {
@@ -91,6 +113,24 @@ public class WIFLatestIT {
       assertTrue(rs.next());
       int value = rs.getInt(1);
       assertEquals(1, value);
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to execute query", e);
+    }
+  }
+
+  private void connectAndExecuteSimpleQuery(Properties props, String expectedUser) {
+    String url = String.format("jdbc:snowflake://%s", HOST);
+    try (Connection con = DriverManager.getConnection(url, props);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      assertTrue(rs.next());
+      int value = rs.getInt(1);
+      assertEquals(1, value);
+
+      ResultSet rs2 = stmt.executeQuery("select current_user()");
+      assertTrue(rs2.next());
+      String username = rs2.getString(1);
+      assertEquals(expectedUser, username);
     } catch (SQLException e) {
       throw new RuntimeException("Failed to execute query", e);
     }

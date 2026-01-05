@@ -201,4 +201,130 @@ public class LoaderLatestIT extends LoaderBase {
       }
     }
   }
+
+  @Test
+  private void testVectorColumnInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format("CREATE OR REPLACE TABLE %s (vector_col VECTOR(FLOAT, 3))", tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14.0, 100]"});
+      loader.setVectorColumnType("FLOAT");
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @Test
+  private void testMultipleFloatVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(FLOAT, 3), vec2 VECTOR(FLOAT, 3))",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]"});
+      loader.setVectorColumnType("FLOAT");
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @Test
+  private void testMultipleIntVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(INT, 3), vec2 VECTOR(INT, 3))",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.submitRow(new Object[] {"[12, 14, 100]", "[12, 14, 100]"});
+      loader.setVectorColumnType("INT");
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
+
+  @Test
+  private void testMultipleTypesWithVectorColumnsInTable() throws Exception {
+    String tableName = "VECTOR_TABLE";
+    try {
+      testConnection
+          .createStatement()
+          .execute(
+              String.format(
+                  "CREATE OR REPLACE TABLE %s (vec1 VECTOR(FLOAT, 3), vec2 VECTOR(FLOAT, 3), ID int, colA varchar(255), colB date)",
+                  tableName));
+
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcb.setOperation(Operation.INSERT)
+          .setStartTransaction(true)
+          .setTruncateTable(true)
+          .setTableName(tableName)
+          .setColumns(Arrays.asList("vector_col"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcb.getListener();
+      loader.start();
+
+      loader.setVectorColumnType("FLOAT");
+      loader.submitRow(new Object[] {"[12, 14.0, 100]", "[12, 14.0, 100]", 10, "abc", new Date()});
+      loader.finish();
+      int submitted = listener.getSubmittedRowCount();
+      assertThat("submitted rows", submitted, equalTo(1));
+
+    } finally {
+      testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
+    }
+  }
 }

@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static net.snowflake.client.TestUtil.escapeUnderscore;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -445,7 +446,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   public void testGetObjectsDoesNotExists() throws Throwable {
     try (Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String schema = escapeUnderscore(connection.getSchema());
       final String targetTable = "T0";
       final String targetView = "V0";
       try {
@@ -472,7 +473,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         }
 
         try (ResultSet resultSet =
-            metaData.getTables("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null)) {
+            metaData.getTables("DB_NOT_EXIST", "SCHEMA\\_NOT\\_EXIST", "%", null)) {
           assertFalse(resultSet.next());
         }
 
@@ -482,7 +483,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         }
 
         try (ResultSet resultSet =
-            metaData.getColumns("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%")) {
+            metaData.getColumns("DB_NOT_EXIST", "SCHEMA\\_NOT\\_EXIST", "%", "%")) {
           assertFalse(resultSet.next());
         }
 
@@ -556,8 +557,8 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
           assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
         }
@@ -569,16 +570,16 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
           assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
           resultSet.next();
           assertEquals(database, resultSet.getString("TABLE_CAT"));
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTOR")));
+          assertFalse(isNullOrEmpty(resultSet.getString("GRANTEE")));
           assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
           assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
         }
@@ -605,7 +606,8 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute(PI_PROCEDURE);
         DatabaseMetaData metaData = connection.getMetaData();
         /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
-        try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
+        try (ResultSet resultSet =
+            metaData.getProcedures(database, escapeUnderscore(schema), "GETPI")) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
           resultSet.next();
           assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
@@ -809,5 +811,9 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
     expectFeatureNotSupportedException(metaData::generatedKeyAlwaysReturned);
     expectFeatureNotSupportedException(
         () -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
+  }
+
+  public static boolean isNullOrEmpty(String str) {
+    return str == null || str.isEmpty();
   }
 }

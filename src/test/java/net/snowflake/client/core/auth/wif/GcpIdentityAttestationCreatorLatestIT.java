@@ -31,6 +31,9 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
   private static final String SUCCESSFUL_FLOW_SCENARIO_MAPPINGS =
       SCENARIOS_BASE_DIR + "/successful_flow.json";
 
+  private static final String SUCCESSFUL_IMPERSONATION_FLOW_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/successful_impersonation_flow.json";
+
   /*
    * {
    *   "sub": "some-subject",
@@ -66,7 +69,7 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     SFLoginInput loginInput = createLoginInputStub();
 
     GcpIdentityAttestationCreator attestationCreator =
-        new GcpIdentityAttestationCreator(loginInput, getBaseUrl());
+        new GcpIdentityAttestationCreator(loginInput, getBaseUrl(), getBaseUrl());
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
     assertNotNull(attestation);
     assertEquals(WorkloadIdentityProviderType.GCP, attestation.getProvider());
@@ -98,10 +101,25 @@ class GcpIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     createAttestationAndAssertExceptionThrown();
   }
 
+  @Test
+  public void successfulImpersonationFlowScenario() throws SFException {
+    importMappingFromResources(SUCCESSFUL_IMPERSONATION_FLOW_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput = createLoginInputStub();
+    loginInput.setWorkloadIdentityImpersonationPath("delegate1,delegate2,targetServiceAccount");
+
+    GcpIdentityAttestationCreator attestationCreator =
+        new GcpIdentityAttestationCreator(loginInput, getBaseUrl(), getBaseUrl());
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+    assertNotNull(attestation);
+    assertEquals(WorkloadIdentityProviderType.GCP, attestation.getProvider());
+    assertEquals("some-subject", attestation.getUserIdentifierComponents().get("sub"));
+    assertNotNull(attestation.getCredential());
+  }
+
   private void createAttestationAndAssertExceptionThrown() {
     SFLoginInput loginInput = createLoginInputStub();
     GcpIdentityAttestationCreator attestationCreator =
-        new GcpIdentityAttestationCreator(loginInput, getBaseUrl());
+        new GcpIdentityAttestationCreator(loginInput, getBaseUrl(), getBaseUrl());
     assertThrows(SFException.class, attestationCreator::createAttestation);
   }
 

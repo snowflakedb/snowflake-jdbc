@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 @Tag(TestTags.CORE)
 public class TelemetryIT extends AbstractDriverIT {
+  private static final String OAUTH_SCOPE_FORMAT = "session:role:%s";
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -296,7 +297,8 @@ public class TelemetryIT extends AbstractDriverIT {
               + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
               + "  oauth_issue_refresh_tokens=true\n"
               + "  enabled=true oauth_refresh_token_validity=86400;");
-      String role = parameters.get("role");
+
+      String role = String.format(OAUTH_SCOPE_FORMAT, parameters.get("role"));
       try (ResultSet resultSet =
           statement.executeQuery(
               "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"

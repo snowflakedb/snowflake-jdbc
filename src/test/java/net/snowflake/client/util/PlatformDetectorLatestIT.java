@@ -1,6 +1,7 @@
 package net.snowflake.client.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
 
     // Default behavior for AWS attestation service (return null/empty unless overridden)
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(null);
+
     resetWiremock();
   }
 
@@ -276,10 +278,13 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   @Test
   @DisplayName("Should detect AWS identity when AWS attestation service returns valid identity")
   public void testDetectAwsIdentity() {
-    // Arrange - Mock AWS attestation service to return valid credentials
+    // Arrange - Mock AWS attestation service to return valid credentials and ARN
     BasicAWSCredentials awsCredentials =
+        // pragma: allowlist nextline secret
         new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
+    when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 200))
+        .thenReturn("arn:aws:iam::123456789012:user/testuser");
 
     PlatformDetector detector =
         new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
@@ -290,7 +295,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Assert
     assertEquals(1, platforms.size(), "Should detect exactly 1 platform");
     assertTrue(
-        platforms.contains("has_aws_identity_arn_unknown"),
+        platforms.contains("has_aws_identity"),
         "Should detect AWS identity when attestation service returns valid credentials and ARN");
   }
 
@@ -303,17 +308,25 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Set up wiremock for EC2 detection
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
+    // Ensure other metadata endpoints return immediately to avoid wiremock timeouts
+    String gcpMetadataUnavailable = loadMappingFile("platform-detection/gcp_metadata_unavailable");
+    importMapping(gcpMetadataUnavailable);
+    String azureMetadataUnavailable =
+        loadMappingFile("platform-detection/azure_metadata_unavailable");
+    importMapping(azureMetadataUnavailable);
 
-    // Set up AWS identity mock - Mock attestation service to return valid credentials
     BasicAWSCredentials awsCredentials =
+        // pragma: allowlist nextline secret
         new BasicAWSCredentials("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
+    when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 500))
+        .thenReturn("arn:aws:sts::123456789012:assumed-role/test-role/session");
 
     PlatformDetector detector =
         new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use small timeout to enable HTTP calls but ensure static mocks work in async context
-    List<String> platforms = detector.detectPlatforms(100, mockAwsAttestationService);
+    List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
 
     // Assert - Should detect multiple platforms
     assertEquals(3, platforms.size(), "Should detect exactly 3 platforms");
@@ -321,7 +334,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         platforms.contains("is_aws_lambda"), "Should detect AWS Lambda from environment variables");
     assertTrue(platforms.contains("is_ec2_instance"), "Should detect EC2 instance from wiremock");
     assertTrue(
-        platforms.contains("has_aws_identity_arn_unknown"),
+        platforms.contains("has_aws_identity"),
         "Should detect AWS identity from attestation service");
   }
 
@@ -431,6 +444,46 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   private String loadMappingFile(String mappingName) throws IOException {
     String mappingFile = "src/test/resources/wiremock/mappings/" + mappingName + ".json";
     return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(mappingFile)));
+  }
+
+  @Test
+  @DisplayName("Should cache platform detection results")
+  public void testCachedPlatformDetections() {
+    when(mockEnvironmentProvider.getEnv("LAMBDA_TASK_ROOT")).thenReturn("/var/task");
+
+    PlatformDetector detector =
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+
+    long startTime1 = System.currentTimeMillis();
+    List<String> platforms1 =
+        PlatformDetector.detectPlatformsAndCache(detector, mockAwsAttestationService);
+    long duration1 = System.currentTimeMillis() - startTime1;
+
+    long startTime2 = System.currentTimeMillis();
+    List<String> platforms2 = PlatformDetector.getCachedPlatformDetection();
+    long duration2 = System.currentTimeMillis() - startTime2;
+
+    long startTime3 = System.currentTimeMillis();
+    List<String> platforms3 = PlatformDetector.getCachedPlatformDetection();
+    long duration3 = System.currentTimeMillis() - startTime3;
+
+    assertSame(platforms1, platforms2, "Second call should return cached instance");
+    assertSame(platforms2, platforms3, "Third call should return cached instance");
+
+    assertTrue(
+        duration2 < duration1 || duration2 < 10,
+        "Cached call should be faster than initial detection. First: "
+            + duration1
+            + "ms, Second: "
+            + duration2
+            + "ms");
+    assertTrue(
+        duration3 < duration1 || duration3 < 10,
+        "Cached call should be faster than initial detection. First: "
+            + duration1
+            + "ms, Third: "
+            + duration3
+            + "ms");
   }
 
   /** Get the base URL for wiremock */

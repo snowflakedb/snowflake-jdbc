@@ -17,8 +17,7 @@ public class DecorrelatedJitterBackoff {
   }
 
   public long nextSleepTime(long sleep) {
-    long correctedSleep = sleep <= base ? base + 1 : sleep;
-    return Math.min(cap, ThreadLocalRandom.current().nextLong(base, correctedSleep));
+    return Math.min(cap, ThreadLocalRandom.current().nextLong(base, sleep * 3));
   }
 
   public long getJitterForLogin(long currentTime) {

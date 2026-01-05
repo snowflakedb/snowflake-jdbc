@@ -4,9 +4,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.PrivateKey;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.http.client.methods.HttpRequestBase;
 
 /** A class for holding all information required for login */
@@ -53,6 +58,7 @@ public class SFLoginInput {
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
   private int platformDetectionTimeoutMs = 200; // Default 200ms timeout for platform detection
   private boolean disablePlatformDetection = false; // Default false - platform detection enabled
+  private int maxRetryCount;
 
   private SFOauthLoginInput oauthLoginInput;
 
@@ -65,6 +71,7 @@ public class SFLoginInput {
   private String workloadIdentityProvider;
   private WorkloadIdentityAttestation workloadIdentityAttestation;
   private String workloadIdentityEntraResource;
+  private List<String> workloadIdentityImpersonationPath = Collections.emptyList();
 
   // OAuth
   private int redirectUriPort = -1;
@@ -629,6 +636,22 @@ public class SFLoginInput {
     return this;
   }
 
+  public List<String> getWorkloadIdentityImpersonationPath() {
+    return workloadIdentityImpersonationPath;
+  }
+
+  public SFLoginInput setWorkloadIdentityImpersonationPath(
+      String workloadIdentityImpersonationPath) {
+    if (!SnowflakeUtil.isNullOrEmpty(workloadIdentityImpersonationPath)) {
+      this.workloadIdentityImpersonationPath =
+          Arrays.stream(workloadIdentityImpersonationPath.split(","))
+              .map(String::trim)
+              .filter(s -> !s.isEmpty())
+              .collect(Collectors.toList());
+    }
+    return this;
+  }
+
   @SnowflakeJdbcInternalApi
   public SessionUtilExternalBrowser.AuthExternalBrowserHandlers getBrowserHandler() {
     return browserHandler;
@@ -655,6 +678,15 @@ public class SFLoginInput {
 
   public SFLoginInput setDisablePlatformDetection(boolean disablePlatformDetection) {
     this.disablePlatformDetection = disablePlatformDetection;
+    return this;
+  }
+
+  public int getMaxRetryCount() {
+    return maxRetryCount;
+  }
+
+  public SFLoginInput setMaxRetryCount(int maxRetryCount) {
+    this.maxRetryCount = maxRetryCount;
     return this;
   }
 }

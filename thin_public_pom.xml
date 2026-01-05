@@ -35,7 +35,7 @@
   <properties>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <awssdk.version>1.12.655</awssdk.version>
+    <awssdk.version>1.12.792</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
@@ -50,16 +50,16 @@
     <google.http.client.version>1.45.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
-    <grpc.version>1.68.1</grpc.version>
+    <grpc.version>1.77.0</grpc.version>
     <jackson.version>2.18.1</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
     <jsoup.version>1.15.3</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
-    <netty.version>4.1.127.Final</netty.version>
-    <nimbusds.version>10.3.1</nimbusds.version>
-    <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
+    <netty.version>4.1.130.Final</netty.version>
+    <nimbusds.version>10.6</nimbusds.version>
+    <nimbusds.oauth2.version>11.30.1</nimbusds.oauth2.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>2.0.13</slf4j.version>
@@ -133,6 +133,10 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sts</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

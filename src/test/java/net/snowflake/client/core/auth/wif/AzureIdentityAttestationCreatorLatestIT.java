@@ -219,6 +219,14 @@ public class AzureIdentityAttestationCreatorLatestIT extends BaseWiremockTest {
     executeErrorScenarioAndAssertExceptionThrown(HTTP_ERROR_MAPPINGS);
   }
 
+  @Test
+  public void azureCreatorDoesNotSupportImpersonationPath() {
+    SFLoginInput loginInput = createLoginInputStub();
+    loginInput.setWorkloadIdentityImpersonationPath("notEmpty");
+    AzureAttestationService attestationServiceMock = Mockito.mock(AzureAttestationService.class);
+    executeAndAssertExceptionThrown(attestationServiceMock, loginInput);
+  }
+
   private void executeErrorScenarioAndAssertExceptionThrown(
       String tokenParseErrorScenarioMappings) {
     importMappingFromResources(tokenParseErrorScenarioMappings);

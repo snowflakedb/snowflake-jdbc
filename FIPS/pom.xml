@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.27.1-SNAPSHOT</version>
+    <version>3.28.1-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.27.1-SNAPSHOT</version>
+  <version>3.28.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -47,6 +47,22 @@
       <resource>
         <directory>${basedir}/../src/main/resources</directory>
         <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.dylib</exclude>
+          <exclude>**/*.so</exclude>
+          <exclude>**/*.dll</exclude>
+          <exclude>**/*.a</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>${basedir}/../src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*.dylib</include>
+          <include>**/*.so</include>
+          <include>**/*.dll</include>
+          <include>**/*.a</include>
+        </includes>
       </resource>
     </resources>
     <testResources>
@@ -577,6 +593,7 @@
                         <exclude>META-INF/maven/**</exclude>
                         <exclude>META-INF/services/com.fasterxml.*</exclude>
                         <exclude>META-INF/versions/9/module-info.*</exclude>
+                        <exclude>META-INF/versions/11/module-info.*</exclude>
                         <exclude>META-INF/*.xml</exclude>
                         <exclude>META-INF/*.SF</exclude>
                         <exclude>META-INF/*.DSA</exclude>

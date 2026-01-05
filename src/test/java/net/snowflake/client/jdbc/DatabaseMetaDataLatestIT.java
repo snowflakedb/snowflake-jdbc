@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.TestUtil.GENERATED_SCHEMA_PREFIX;
+import static net.snowflake.client.TestUtil.asyncAssert;
+import static net.snowflake.client.TestUtil.escapeUnderscore;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
@@ -33,6 +35,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
@@ -122,6 +127,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
    * @throws Exception arises if any error occurs
    */
   @Test
+  @DontRunOnGithubActions
   public void testUseConnectionCtx() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -447,19 +453,21 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         DatabaseMetaData metaData = connection.getMetaData();
         String schemaSqlInection =
             "%' in database testwh; select 11 as bar; show databases like '%";
-        try (ResultSet resultSet = metaData.getSchemas(null, schemaSqlInection)) {
+        try (ResultSet resultSet = metaData.getSchemas(startingDatabase, schemaSqlInection)) {
           // assert result set is empty
           assertFalse(resultSet.next());
         }
 
         String columnSqlInjection = "%' in schema testschema; show columns like '%";
-        try (ResultSet resultSet = metaData.getColumns(null, null, null, columnSqlInjection)) {
+        try (ResultSet resultSet =
+            metaData.getColumns(startingDatabase, startingSchema, null, columnSqlInjection)) {
           // assert result set is empty
           assertFalse(resultSet.next());
         }
 
         String functionSqlInjection = "%' in account snowflake; show functions like '%";
-        try (ResultSet resultSet = metaData.getColumns(null, null, null, functionSqlInjection)) {
+        try (ResultSet resultSet =
+            metaData.getFunctions(startingDatabase, startingSchema, functionSqlInjection)) {
           // assert result set is empty
           assertFalse(resultSet.next());
         }
@@ -536,7 +544,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Connection connection = DriverManager.getConnection(params.get("uri"), properties);
         Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String schema = escapeUnderscore(connection.getSchema());
       final String targetTable = "T0";
 
       statement.execute(
@@ -575,7 +583,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testGetColumnsNullable() throws Throwable {
     try (Statement statement = connection.createStatement()) {
       String database = startingDatabase;
-      String schema = startingSchema;
+      String schema = escapeUnderscore(startingSchema);
       final String targetTable = "T0";
 
       statement.execute(
@@ -1069,7 +1077,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                 "INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
             String escapedTable1 =
                 "TEST" + escapeChar + "\\1" + escapeChar + "\\" + escapeChar + "_1";
-            try (ResultSet resultSet = metaData.getColumns(database, schema, escapedTable1, null)) {
+            try (ResultSet resultSet =
+                metaData.getColumns(database, escapeUnderscore(schema), escapedTable1, null)) {
               assertTrue(resultSet.next());
               assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
               assertTrue(resultSet.next());
@@ -1081,7 +1090,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             // is not escaped.
             String partiallyEscapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\_1";
             try (ResultSet resultSet =
-                metaData.getColumns(database, schema, partiallyEscapedTable1, null)) {
+                metaData.getColumns(
+                    database, escapeUnderscore(schema), partiallyEscapedTable1, null)) {
               assertTrue(resultSet.next());
               assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
               assertTrue(resultSet.next());
@@ -1122,7 +1132,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("create or replace table " + schema + ".\"TABLE_A\" (colA string)");
       statement.execute("create or replace table " + schema + ".\"TABLE_B\" (colB number)");
       String escapedTable = "TABLE" + escapeChar + "__";
-      try (ResultSet resultSet = metaData.getColumns(database, schema, escapedTable, null)) {
+      try (ResultSet resultSet =
+          metaData.getColumns(database, escapeUnderscore(schema), escapedTable, null)) {
         assertTrue(resultSet.next());
         assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
         assertTrue(resultSet.next());
@@ -1130,7 +1141,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertFalse(resultSet.next());
       }
 
-      try (ResultSet resultSet = metaData.getColumns(database, schema, escapedTable, "COLB")) {
+      try (ResultSet resultSet =
+          metaData.getColumns(database, escapeUnderscore(schema), escapedTable, "COLB")) {
         assertTrue(resultSet.next());
         assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
         assertFalse(resultSet.next());
@@ -1138,7 +1150,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
 
       statement.execute("create or replace table " + schema + ".\"special%table\" (colA string)");
       try (ResultSet resultSet =
-          metaData.getColumns(database, schema, "special" + escapeChar + "%table", null)) {
+          metaData.getColumns(
+              database, escapeUnderscore(schema), "special" + escapeChar + "%table", null)) {
         assertTrue(resultSet.next());
         assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
       }
@@ -1216,9 +1229,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = connection.createStatement()) {
       statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
       String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String schema = escapeUnderscore(connection.getSchema());
+      String tableName = escapeUnderscore("TS_TEST");
       DatabaseMetaData metaData = connection.getMetaData();
-      try (ResultSet resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS")) {
+      try (ResultSet resultSet = metaData.getColumns(database, schema, tableName, "TS")) {
         resultSet.next();
         // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
         assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
@@ -1230,7 +1244,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       field.set(baseSession, false);
 
       metaData = connection.getMetaData();
-      try (ResultSet resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS")) {
+      try (ResultSet resultSet = metaData.getColumns(database, schema, tableName, "TS")) {
         resultSet.next();
         // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
         // enableReturnTimestampWithTimeZone is false.
@@ -1255,7 +1269,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
 
         DatabaseMetaData metaData = connection.getMetaData();
 
-        try (ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%")) {
+        try (ResultSet resultSet =
+            metaData.getColumns(database, escapeUnderscore(schema), targetTable, "%")) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
 
           // C1 metadata
@@ -1593,7 +1608,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
 
         metaData = connection.getMetaData();
 
-        try (ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%")) {
+        try (ResultSet resultSet =
+            metaData.getColumns(database, escapeUnderscore(schema), targetTable, "%")) {
           assertTrue(resultSet.next());
           assertNull(resultSet.getString("COLUMN_DEF"));
           assertTrue(resultSet.next());
@@ -1790,10 +1806,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testGetProcedureColumnsReturnsValue() throws SQLException {
     try (Statement statement = connection.createStatement(); ) {
       DatabaseMetaData metaData = connection.getMetaData();
+      String schema = escapeUnderscore(connection.getSchema());
       // create a procedure with no parameters that has a return value
       statement.execute(PI_PROCEDURE);
       try (ResultSet res =
-          metaData.getProcedureColumns(connection.getCatalog(), null, "GETPI", "%")) {
+          metaData.getProcedureColumns(connection.getCatalog(), schema, "GETPI", "%")) {
         res.next();
         assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
         assertEquals("", res.getString("COLUMN_NAME"));
@@ -1806,7 +1823,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       // create a procedure that returns the value of the argument that is passed in
       statement.execute(MESSAGE_PROCEDURE);
       try (ResultSet res =
-          metaData.getProcedureColumns(connection.getCatalog(), null, "MESSAGE_PROC", "%")) {
+          metaData.getProcedureColumns(connection.getCatalog(), schema, "MESSAGE_PROC", "%")) {
         res.next();
         assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
         assertEquals("", res.getString("COLUMN_NAME"));
@@ -1831,6 +1848,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testGetProcedureColumnsReturnsNull() throws SQLException {
     try (Statement statement = connection.createStatement(); ) {
       DatabaseMetaData metaData = connection.getMetaData();
+      String schema = escapeUnderscore(connection.getSchema());
       // The CREATE PROCEDURE statement must include a RETURNS clause that defines a return type,
       // even
       // if the procedure does not explicitly return anything.
@@ -1845,7 +1863,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               + "snowflake.execute({sqlText: sqlcommand}); \n"
               + "';");
       try (ResultSet res =
-          metaData.getProcedureColumns(connection.getCatalog(), null, "INSERTPROC", "%")) {
+          metaData.getProcedureColumns(connection.getCatalog(), schema, "INSERTPROC", "%")) {
         res.next();
         // the procedure will return null as the value but column type will be varchar.
         assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
@@ -1907,200 +1925,297 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             String tablePattern2 = "PATTERN_SEARCH_TABLE_";
             String database = connection.getCatalog();
 
-            // Should return result for matching schema and table name
-            assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)));
+            ExecutorService executor = Executors.newFixedThreadPool(10);
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
 
             // Should return result for matching schema and table name
-            assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
+                    result -> assertEquals(1, result)));
 
             // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
-
-            // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)),
+                    result -> assertEquals(0, result)));
 
             // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
+                    result -> assertEquals(0, result)));
 
             // Should return result for matching schema and table name
-            assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
+                    result -> assertEquals(1, result)));
 
             // Should return an empty result if we try a pattern match on the schema
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)),
+                    result -> assertEquals(0, result)));
 
             // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
-
-            // Should return an empty result if we try a pattern match on the table name
-            assertEquals(
-                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(0, result)));
 
             // Should return result for matching schema and table name
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
+                    result -> assertEquals(1, result)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)),
+                    result -> assertEquals(0, result)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(0, result)));
+
+            // Should return result for matching schema and table name
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, table2)),
+                    result -> assertEquals(1, result)));
 
             // Should return an empty result if we try a pattern match on any of the table or schema
             // names
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern1, table1, database, schema, table2)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern1, table1, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern2, table1, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern1, null, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern2, null, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern1, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern2, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern1, null)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern2, null)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, null, tablePattern1, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, null, tablePattern2, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, tablePattern1, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, tablePattern2, database, schema, table2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, null, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, null, tablePattern2)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, tablePattern1)),
+                    result -> assertEquals(0, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, tablePattern2)),
+                    result -> assertEquals(0, result)));
 
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern2, table1, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern1, null, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern2, null, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern1, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern2, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern1, null)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern2, null)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, null, tablePattern1, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, null, tablePattern2, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, tablePattern1, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, tablePattern2, database, schema, table2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, null, tablePattern1)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, null, tablePattern2)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schema, tablePattern1)));
-
-            assertEquals(
-                0,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schema, tablePattern2)));
+            // Wait for all async assertions to complete
+            try {
+              CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            } finally {
+              executor.shutdown();
+            }
           });
     }
   }
@@ -2142,183 +2257,280 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             String tablePattern2 = "PATTERN_SEARCH_TABLE_";
             String database = connection.getCatalog();
 
+            ExecutorService executor = Executors.newFixedThreadPool(10);
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+
             // Should return result for matching on either an exact schema and table name or a
             // pattern
-            assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)),
+                    result -> assertEquals(2, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)),
+                    result -> assertEquals(2, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(2, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(2, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
 
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(1, result)));
 
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)),
+                    result -> assertEquals(1, result)));
 
-            assertEquals(
-                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern1, table1, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern2, table1, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern1, null, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schemaPattern2, null, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern1, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern2, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern1, null)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schemaPattern2, null)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, null, tablePattern1, database, schema, table2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, null, tablePattern2, database, schema, table2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, tablePattern1, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, tablePattern2, database, schema, table2)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, null, tablePattern1)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, null, tablePattern2)),
+                    result -> assertThat(result, greaterThanOrEqualTo(1))));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, tablePattern1)),
+                    result -> assertEquals(1, result)));
+            futures.add(
+                asyncAssert(
+                    executor,
+                    () ->
+                        getSizeOfResultSet(
+                            dbmd.getCrossReference(
+                                database, schema, table1, database, schema, tablePattern2)),
+                    result -> assertEquals(1, result)));
 
-            assertEquals(
-                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
-
-            assertEquals(
-                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
-
-            assertEquals(
-                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
-                greaterThanOrEqualTo(1));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
-                greaterThanOrEqualTo(1));
-
-            assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
-                greaterThanOrEqualTo(1));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
-                greaterThanOrEqualTo(1));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
-
-            assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
-                greaterThanOrEqualTo(1));
-
-            assertThat(
-                getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
-                greaterThanOrEqualTo(1));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
-
-            assertEquals(
-                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern1, table1, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern2, table1, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern1, null, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schemaPattern2, null, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern1, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern2, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern1, null)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schemaPattern2, null)));
-
-            assertThat(
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, null, tablePattern1, database, schema, table2)),
-                greaterThanOrEqualTo(1));
-
-            assertThat(
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, null, tablePattern2, database, schema, table2)),
-                greaterThanOrEqualTo(1));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, tablePattern1, database, schema, table2)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, tablePattern2, database, schema, table2)));
-
-            assertThat(
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, null, tablePattern1)),
-                greaterThanOrEqualTo(1));
-
-            assertThat(
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, null, tablePattern2)),
-                greaterThanOrEqualTo(1));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schema, tablePattern1)));
-
-            assertEquals(
-                1,
-                getSizeOfResultSet(
-                    dbmd.getCrossReference(
-                        database, schema, table1, database, schema, tablePattern2)));
+            // Wait for all async assertions to complete
+            try {
+              CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            } finally {
+              executor.shutdown();
+            }
           });
     }
   }

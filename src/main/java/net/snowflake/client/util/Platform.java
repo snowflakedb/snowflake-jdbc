@@ -11,7 +11,7 @@ public enum Platform {
   IS_GCE_CLOUD_RUN_JOB("is_gce_cloud_run_job"),
   IS_GITHUB_ACTION("is_github_action"),
   IS_EC2_INSTANCE("is_ec2_instance"),
-  HAS_AWS_IDENTITY_ARN_UNKNOWN("has_aws_identity_arn_unknown"),
+  HAS_AWS_IDENTITY("has_aws_identity"),
   IS_AZURE_VM("is_azure_vm"),
   HAS_AZURE_MANAGED_IDENTITY("has_azure_managed_identity"),
   IS_GCE_VM("is_gce_vm"),

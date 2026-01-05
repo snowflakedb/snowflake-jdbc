@@ -149,7 +149,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", execTimeData.getLogString());
+    logger.debug("Query completed. {}", execTimeData);
     return rs;
   }
 
@@ -167,7 +167,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
+    logger.debug("Query completed. {}", queryID, execTimeData);
     return rs;
   }
 
@@ -202,7 +202,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     long res = executeUpdateInternal(sql, null, true, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
+    logger.debug("Query completed. {}", queryID, execTimeData);
     return res;
   }
 
@@ -212,6 +212,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       boolean updateQueryRequired,
       ExecTimeTelemetryData execTimeData)
       throws SQLException {
+    execTimeData.setQueryText(sql);
+    execTimeData.setSessionId(connection.getSessionID());
     raiseSQLExceptionIfStatementIsClosed();
 
     /* If sql command is a staging command that has parameter binding, throw an exception because parameter binding
@@ -278,6 +280,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       Map<String, ParameterBindingDTO> parameterBindings,
       ExecTimeTelemetryData execTimeData)
       throws SQLException {
+    execTimeData.setQueryText(sql);
+    execTimeData.setSessionId(connection.getSessionID());
     SFBaseResultSet sfResultSet;
     try {
       if (asyncExec) {
@@ -332,6 +336,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       ExecTimeTelemetryData execTimeData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
+    execTimeData.setQueryText(sql);
+    execTimeData.setSessionId(connection.getSessionID());
     connection.injectedDelay();
 
     logger.debug("Execute: {}", sql);
@@ -425,7 +431,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
-    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
+    logger.debug("Query completed. {}", queryID, execTimeData);
     return res;
   }
 

@@ -5,12 +5,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -83,6 +85,11 @@ public class StreamLoader implements Loader, Runnable {
 
   private List<String> _columns;
 
+  private Map<String, Integer> _vectorColumnsNameAndSize = new HashMap<String, Integer>();
+
+  // Vector type can be FLOAT  or INT
+  private String _vectorType;
+
   private List<String> _keys;
 
   private long _batchRowSize = DEFAULT_BATCH_ROW_SIZE;
@@ -147,9 +154,12 @@ public class StreamLoader implements Loader, Runnable {
       Connection processConnection) {
     _putConn = putConnection;
     _processConn = processConnection;
-    for (Map.Entry<LoaderProperty, Object> e : properties.entrySet()) {
-      setProperty(e.getKey(), e.getValue());
-    }
+
+    // Sort properties by ordinal to ensure columns is processed after table, schema and db to
+    // execute more performant metadata queries
+    properties.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey(Enum::compareTo))
+        .forEach(e -> setProperty(e.getKey(), e.getValue()));
 
     _noise = SnowflakeUtil.randomAlphaNumeric(6);
   }
@@ -178,6 +188,7 @@ public class StreamLoader implements Loader, Runnable {
             typeCheckedColumns.add((String) e);
           }
           _columns = typeCheckedColumns;
+          setVectorColumns();
         }
         break;
       case keys:
@@ -598,6 +609,31 @@ public class StreamLoader implements Loader, Runnable {
     }
   }
 
+  public void setVectorColumnType(String vectorType) {
+    this._vectorType = vectorType;
+  }
+
+  public void setVectorColumns() {
+    try {
+      DatabaseMetaData dbmd = _processConn.getMetaData();
+      for (String col : _columns) {
+        try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
+          rs.next();
+          if (isColumnTypeVector(rs.getString(6))) {
+            _vectorColumnsNameAndSize.put(col, rs.getInt(7));
+          }
+        }
+      }
+    } catch (SQLException e) {
+      logger.error(e.getMessage(), e);
+      abort(new Loader.ConnectionError(Utils.getCause(e)));
+    }
+  }
+
+  private boolean isColumnTypeVector(String col) {
+    return col != null && col.equalsIgnoreCase("vector");
+  }
+
   @Override
   public void run() {
     try {
@@ -748,6 +784,10 @@ public class StreamLoader implements Loader, Runnable {
 
   List<String> getColumns() {
     return this._columns;
+  }
+
+  Map<String, Integer> getVectorColumns() {
+    return this._vectorColumnsNameAndSize;
   }
 
   String getColumnsAsString() {
@@ -903,5 +943,39 @@ public class StreamLoader implements Loader, Runnable {
 
   void setTestMode(boolean mode) {
     this._testMode = mode;
+  }
+
+  public String getStageColumnsAsString() {
+    // if there are no vector columns in the target table just select * is needed from the staging
+    // table.
+    if (_vectorColumnsNameAndSize.isEmpty()) {
+      return "*";
+    }
+    if (_vectorType == null) {
+      throw new IllegalArgumentException(
+          "Target table with vector columns must use setVectorColumnType with \"INT\" or \"FLOAT\"");
+    }
+
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < _columns.size(); i++) {
+      String colName = _columns.get(i);
+      if (_vectorColumnsNameAndSize.containsKey(colName)) {
+        sb.append(
+            colName
+                + "::VECTOR("
+                + _vectorType
+                + ", "
+                + _vectorColumnsNameAndSize.get(colName)
+                + ")");
+      } else {
+        sb.append("\"");
+        sb.append(colName);
+        sb.append("\"");
+      }
+      if (i != _columns.size() - 1) {
+        sb.append(", ");
+      }
+    }
+    return sb.toString();
   }
 }
