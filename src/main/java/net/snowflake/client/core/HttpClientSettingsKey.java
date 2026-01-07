@@ -6,13 +6,15 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import java.io.Serializable;
 import java.util.Objects;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * This class defines all non-static parameters needed to create an HttpClient object. It is used as
  * the key for the static hashmap of reusable http clients.
  */
 public class HttpClientSettingsKey implements Serializable {
-
+  private static final SFLogger logger = SFLoggerFactory.getLogger(HttpClientSettingsKey.class);
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   private static final String SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT =
       "SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT";
@@ -200,6 +202,7 @@ public class HttpClientSettingsKey implements Serializable {
         timeout = Integer.parseInt(configuredTimeout);
       } catch (Exception ex) {
         // ignore invalid override and keep default
+        logger.debug("Invalid override for OCSP timeout: {}", configuredTimeout);
       }
     }
     return timeout;
