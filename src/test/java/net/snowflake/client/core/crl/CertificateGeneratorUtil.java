@@ -35,7 +35,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-class CertificateGeneratorUtil {
+public class CertificateGeneratorUtil {
   private static final String SIGNATURE_ALGORITHM = "SHA256WithRSA";
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
   private static final long ONE_YEAR_MS = 365L * 24 * 60 * 60 * 1000;
@@ -46,7 +46,7 @@ class CertificateGeneratorUtil {
   private X509Certificate caCertificate;
   private final List<BigInteger> revokedSerialNumbers = new ArrayList<>();
 
-  CertificateGeneratorUtil() {
+  public CertificateGeneratorUtil() {
     try {
       Security.addProvider(new BouncyCastleProvider());
       this.caKeyPair = generateKeyPair();
@@ -116,6 +116,19 @@ class CertificateGeneratorUtil {
   X509Certificate createCertificateWithCRLDistributionPoints(String subjectDN, List<String> crlUrls)
       throws Exception {
     return createCertificate(subjectDN, false, crlUrls, null, null);
+  }
+
+  public X509Certificate createWithIssuer(String issuerDN) throws Exception {
+    KeyPair keyPair = generateKeyPair();
+    X509v3CertificateBuilder certBuilder =
+        createBasicCertBuilder(
+            keyPair.getPublic(),
+            "CN=Test Leaf " + random.nextInt(10000),
+            issuerDN,
+            false,
+            null,
+            null);
+    return buildCertificate(certBuilder, caKeyPair.getPrivate());
   }
 
   X509CRL createCRLWithIDPDistributionPoints(

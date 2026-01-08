@@ -4,8 +4,6 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.Protocol;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -55,25 +53,12 @@ import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.util.SFPair;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLInitializationException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -206,12 +191,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final AtomicBoolean WAS_CACHE_UPDATED = new AtomicBoolean();
   private static final AtomicBoolean WAS_CACHE_READ = new AtomicBoolean();
   /** OCSP HTTP client */
-  private static Map<Integer, CloseableHttpClient> ocspCacheServerClient =
+  private static final Map<HttpClientSettingsKey, CloseableHttpClient> ocspCacheServerClient =
       new ConcurrentHashMap<>();
   /** OCSP event types */
   public static String SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR = "RevokedCertificateError";
 
   public static String SF_OCSP_EVENT_TYPE_VALIDATION_ERROR = "OCSPValidationError";
+
+  private final HttpClientSettingsKey proxySettingsKey;
 
   static {
     // init OCSP response cache file manager
@@ -253,8 +240,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   OCSPCacheServer ocspCacheServer = new OCSPCacheServer();
   /** OCSP mode */
   private OCSPMode ocspMode;
-
-  private static HttpClientSettingsKey proxySettingsKey;
 
   /**
    * Constructor with the cache file. If not specified, the default cachefile is used.
@@ -542,66 +527,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException ex) {
       throw new CertificateEncodingException("Failed to verify the signature.", ex);
     }
-  }
-
-  /**
-   * Gets HttpClient object
-   *
-   * @return HttpClient
-   */
-  private static CloseableHttpClient getHttpClient(int timeout) {
-    RequestConfig config =
-        RequestConfig.custom()
-            .setConnectTimeout(timeout)
-            .setConnectionRequestTimeout(timeout)
-            .setSocketTimeout(timeout)
-            .build();
-
-    Registry<ConnectionSocketFactory> registry =
-        RegistryBuilder.<ConnectionSocketFactory>create()
-            .register("http", new HttpUtil.SFConnectionSocketFactory())
-            .build();
-
-    // Build a connection manager with enough connections
-    PoolingHttpClientConnectionManager connectionManager =
-        new PoolingHttpClientConnectionManager(registry);
-    connectionManager.setMaxTotal(1);
-    connectionManager.setDefaultMaxPerRoute(10);
-
-    HttpClientBuilder httpClientBuilder =
-        HttpClientBuilder.create()
-            .setDefaultRequestConfig(config)
-            .setConnectionManager(connectionManager)
-            // Support JVM proxy settings
-            .useSystemProperties()
-            .setRedirectStrategy(new DefaultRedirectStrategy())
-            .disableCookieManagement();
-
-    if (proxySettingsKey.usesProxy()) {
-      // use the custom proxy properties
-      HttpHost proxy =
-          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
-      SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(
-              proxySettingsKey.getProxyHost(),
-              proxySettingsKey.getProxyPort(),
-              Protocol.HTTP,
-              proxySettingsKey.getNonProxyHosts());
-      httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
-          && !isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
-        Credentials credentials =
-            new UsernamePasswordCredentials(
-                proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
-        AuthScope authScope =
-            new AuthScope(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(authScope, credentials);
-        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-      }
-    }
-    // using the default HTTP client
-    return httpClientBuilder.build();
   }
 
   private static long maxLong(long v1, long v2) {
@@ -1048,9 +973,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     CloseableHttpResponse response = null;
     CloseableHttpClient httpClient =
-        ocspCacheServerClient.computeIfAbsent(
-            getOCSPCacheServerConnectionTimeout(),
-            k -> getHttpClient(getOCSPCacheServerConnectionTimeout()));
+        ocspCacheServerClient.computeIfAbsent(proxySettingsKey, HttpUtil::getHttpClientForOcsp);
     try {
       URI uri = new URI(ocspCacheServerInUse);
       HttpGet get = new HttpGet(uri);
@@ -1164,9 +1087,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       final int maxRetryCounter = isOCSPFailOpen() ? 1 : 2;
       Exception savedEx = null;
       CloseableHttpClient httpClient =
-          ocspCacheServerClient.computeIfAbsent(
-              getOCSPResponderConnectionTimeout(),
-              k -> getHttpClient(getOCSPResponderConnectionTimeout()));
+          ocspCacheServerClient.computeIfAbsent(proxySettingsKey, HttpUtil::getHttpClientForOcsp);
 
       for (int retry = 0; retry < maxRetryCounter; ++retry) {
         try {
@@ -1236,18 +1157,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               OCSPErrorCode.NO_OCSP_URL_ATTACHED,
               "No OCSP Responder URL is attached to the certificate."));
     }
-  }
-
-  private int getOCSPResponderConnectionTimeout() {
-    int timeout = DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT;
-    if (systemGetProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT) != null) {
-      try {
-        timeout = Integer.parseInt(systemGetProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT));
-      } catch (Exception ex) {
-        // nop
-      }
-    }
-    return timeout;
   }
 
   private String overrideOCSPURL(String ocspURL) {

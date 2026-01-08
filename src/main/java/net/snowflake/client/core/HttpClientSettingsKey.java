@@ -1,16 +1,23 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.Serializable;
 import java.util.Objects;
 import net.snowflake.client.core.crl.CertRevocationCheckMode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * This class defines all non-static parameters needed to create an HttpClient object. It is used as
  * the key for the static hashmap of reusable http clients.
  */
 public class HttpClientSettingsKey implements Serializable {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(HttpClientSettingsKey.class);
+  private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
+  private static final String SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT =
+      "SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT";
 
   private OCSPMode ocspMode;
   private CertRevocationCheckMode revocationCheckMode;
@@ -27,6 +34,7 @@ public class HttpClientSettingsKey implements Serializable {
   private String userAgentSuffix = "";
 
   private Boolean gzipDisabled = false;
+  private Integer ocspTimeout = null;
 
   public HttpClientSettingsKey(
       OCSPMode mode,
@@ -40,6 +48,7 @@ public class HttpClientSettingsKey implements Serializable {
       Boolean gzipDisabled) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    this.ocspTimeout = getDefaultOcspTimeout();
     this.proxyHost = !isNullOrEmpty(host) ? host.trim() : "";
     this.proxyPort = port;
     this.nonProxyHosts = !isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
@@ -53,6 +62,7 @@ public class HttpClientSettingsKey implements Serializable {
   public HttpClientSettingsKey(OCSPMode mode) {
     this.useProxy = false;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    this.ocspTimeout = getDefaultOcspTimeout();
   }
 
   HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix, Boolean gzipDisabled) {
@@ -71,18 +81,20 @@ public class HttpClientSettingsKey implements Serializable {
                 == this.allowCertificatesWithoutCrlUrl) {
           if (comparisonKey.gzipDisabled.equals(this.gzipDisabled)) {
             if (comparisonKey.userAgentSuffix.equalsIgnoreCase(this.userAgentSuffix)) {
-              if (!comparisonKey.useProxy && !this.useProxy) {
-                return true;
-              } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
-                  && comparisonKey.proxyPort == this.proxyPort
-                  && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
-                  && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
-                  && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
-                // update nonProxyHost if changed
-                if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
-                  comparisonKey.nonProxyHosts = this.nonProxyHosts;
+              if (Objects.equals(comparisonKey.ocspTimeout, this.ocspTimeout)) {
+                if (!comparisonKey.useProxy && !this.useProxy) {
+                  return true;
+                } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
+                    && comparisonKey.proxyPort == this.proxyPort
+                    && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
+                    && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
+                    && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
+                  // update nonProxyHost if changed
+                  if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
+                    comparisonKey.nonProxyHosts = this.nonProxyHosts;
+                  }
+                  return true;
                 }
-                return true;
               }
             }
           }
@@ -101,7 +113,8 @@ public class HttpClientSettingsKey implements Serializable {
                 + this.proxyPassword
                 + this.proxyProtocol)
             .hashCode()
-        + Objects.hash(this.revocationCheckMode, this.allowCertificatesWithoutCrlUrl);
+        + Objects.hash(
+            this.revocationCheckMode, this.allowCertificatesWithoutCrlUrl, this.ocspTimeout);
   }
 
   public OCSPMode getOcspMode() {
@@ -177,6 +190,24 @@ public class HttpClientSettingsKey implements Serializable {
     this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
   }
 
+  public int getOcspTimeout() {
+    return ocspTimeout;
+  }
+
+  private static int getDefaultOcspTimeout() {
+    int timeout = DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT;
+    String configuredTimeout = systemGetProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT);
+    if (!isNullOrEmpty(configuredTimeout)) {
+      try {
+        timeout = Integer.parseInt(configuredTimeout);
+      } catch (Exception ex) {
+        // ignore invalid override and keep default
+        logger.debug("Invalid override for OCSP timeout: {}", configuredTimeout);
+      }
+    }
+    return timeout;
+  }
+
   @Override
   public String toString() {
     return "HttpClientSettingsKey["
@@ -209,6 +240,8 @@ public class HttpClientSettingsKey implements Serializable {
         + '\''
         + ", gzipDisabled="
         + gzipDisabled
+        + ", ocspTimeout="
+        + ocspTimeout
         + ']';
   }
 }
