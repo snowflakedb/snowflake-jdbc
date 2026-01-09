@@ -310,7 +310,7 @@ public class SnowflakeUtil {
         break;
 
       case ARRAY:
-        int columnType = isStructuredType ? Types.ARRAY : Types.VARCHAR;
+        int columnType = Types.ARRAY;
         columnTypeInfo =
             new ColumnTypeInfo(columnType, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
@@ -329,13 +329,13 @@ public class SnowflakeUtil {
               new ColumnTypeInfo(type, defaultIfNull(extColTypeName, "OBJECT"), baseType);
         } else {
           columnTypeInfo =
-              new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+              new ColumnTypeInfo(Types.OTHER, defaultIfNull(extColTypeName, "OBJECT"), baseType);
         }
         break;
 
       case VARIANT:
         columnTypeInfo =
-            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "VARIANT"), baseType);
+            new ColumnTypeInfo(Types.OTHER, defaultIfNull(extColTypeName, "VARIANT"), baseType);
         break;
 
       case BINARY:

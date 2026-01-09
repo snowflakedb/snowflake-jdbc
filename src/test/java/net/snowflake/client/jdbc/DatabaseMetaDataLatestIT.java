@@ -1530,7 +1530,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
           assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
           assertEquals("C11", resultSet.getString("COLUMN_NAME"));
-          assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+          assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
           assertEquals("VARIANT", resultSet.getString("TYPE_NAME"));
           assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
