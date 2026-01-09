@@ -10,7 +10,7 @@
     - Fix Connection and socket timeout are now propagated to HTTP client.
     - Fix Azure 503 retries and configure it with the putGetMaxRetries parameter.
     - Improved retries for SSLHandshakeException errors caused by transient EOFException 
-    - Introduced shared library for extended telemetry to identify and prepare testing platform for native rust extensions
+    - Introduced shared library([source code](https://github.com/snowflakedb/universal-driver/tree/main/sf_mini_core)) for extended telemetry to identify and prepare testing platform for native rust extensions
     - Bumped netty to 4.1.128.Final to address CVE-2025-59419
 - v3.27.1
     - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT
