@@ -846,7 +846,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         logger.debug(
             "Completed processing {} {} chunks for query {} in {} ms. Download took {} ms (average: {} ms),"
                 + " parsing took {} ms (average: {} ms). Chunks uncompressed size: {} MB (average: {} MB),"
-                + " rows in chunks: {} (total: {}, average in chunk: {}), total memory used: {} MB",
+                + " rows in chunks: {} (total: {}, average in chunk: {}), total memory used: {} MB, free memory {} MB",
             chunksSize,
             queryResultFormat == QueryResultFormat.ARROW ? "ARROW" : "JSON",
             queryId,
@@ -860,7 +860,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             rowsInChunks,
             firstChunkRowCount + rowsInChunks,
             rowsInChunks / chunksSize,
-            Runtime.getRuntime().totalMemory() / MB);
+            Runtime.getRuntime().totalMemory() / MB,
+            Runtime.getRuntime().freeMemory() / MB);
 
         return new DownloaderMetrics(
             numberMillisWaitingForChunks,
