@@ -1,5 +1,6 @@
 package net.snowflake.client.log;
 
+import net.snowflake.client.util.MaskedException;
 import net.snowflake.client.util.SecretDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,11 +76,12 @@ public class SLF4JLogger implements SFLogger {
 
   public void debug(String msg, Throwable t) {
     msg = SecretDetector.maskSecrets(msg);
+    Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, t);
+          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, masked);
     } else {
-      slf4jLogger.debug(msg, t);
+      slf4jLogger.debug(msg, masked);
     }
   }
 
@@ -102,11 +104,12 @@ public class SLF4JLogger implements SFLogger {
 
   public void error(String msg, Throwable t) {
     msg = SecretDetector.maskSecrets(msg);
+    Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
+          .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, t);
+      slf4jLogger.error(msg, masked);
     }
   }
 
@@ -129,11 +132,12 @@ public class SLF4JLogger implements SFLogger {
 
   public void info(String msg, Throwable t) {
     msg = SecretDetector.maskSecrets(msg);
+    Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, t);
+          .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, t);
+      slf4jLogger.error(msg, masked);
     }
   }
 
@@ -156,11 +160,12 @@ public class SLF4JLogger implements SFLogger {
 
   public void trace(String msg, Throwable t) {
     msg = SecretDetector.maskSecrets(msg);
+    Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, t);
+          .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, masked);
     } else {
-      slf4jLogger.trace(msg, t);
+      slf4jLogger.trace(msg, masked);
     }
   }
 
@@ -183,11 +188,12 @@ public class SLF4JLogger implements SFLogger {
 
   public void warn(String msg, Throwable t) {
     msg = SecretDetector.maskSecrets(msg);
+    Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);
+          .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, t);
+      slf4jLogger.error(msg, masked);
     }
   }
 
