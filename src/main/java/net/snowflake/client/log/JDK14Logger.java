@@ -17,6 +17,7 @@ import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.util.MaskedException;
 import net.snowflake.client.util.SecretDetector;
 
 /**
@@ -201,7 +202,8 @@ public class JDK14Logger implements SFLogger {
     // add logger message here
     if (jdkLogger.isLoggable(level)) {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg), t);
+      Throwable masked = (t == null) ? null : new MaskedException(t);
+      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg), masked);
     }
   }
 
