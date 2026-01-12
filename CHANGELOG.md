@@ -4,6 +4,7 @@
 - v3.28.1-SNAPSHOT
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
     - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
+    - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
     - Bumped grpc-java to 1.77.0 to address CVE-2025-58057 from transient dep (snowflakedb/snowflake-jdbc#2415)
