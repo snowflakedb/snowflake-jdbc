@@ -1510,6 +1510,12 @@ public class RestRequest {
       return;
     }
 
+    if (response == null) {
+      logger.debug(
+          "Not sending telemetry event as the response is null (request failed before receiving response)");
+      return;
+    }
+
     StatusLine statusLine = response.getStatusLine();
     logger.debug(
         "Preparing telemetry event for HTTP error: {} {}",
