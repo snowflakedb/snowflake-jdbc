@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Types;
 import java.util.stream.Stream;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeColumnMetadata;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -46,14 +46,14 @@ public class SnowflakeDatabaseMetaDataImplColumnSizeTest {
         Types.FLOAT,
         Types.DOUBLE,
         Types.REAL,
-        SnowflakeUtil.EXTRA_TYPES_DECFLOAT,
+        SnowflakeType.EXTRA_TYPES_DECFLOAT,
         Types.DATE,
         Types.TIME,
         Types.TIMESTAMP,
         Types.TIMESTAMP_WITH_TIMEZONE,
-        SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ,
-        SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
-        SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+        SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ,
+        SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
+        SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ);
   }
 
   @ParameterizedTest
@@ -70,7 +70,7 @@ public class SnowflakeDatabaseMetaDataImplColumnSizeTest {
   @Test
   public void testGetColumnSizeVector() {
     SnowflakeColumnMetadata metadata = mock(SnowflakeColumnMetadata.class);
-    when(metadata.getType()).thenReturn(SnowflakeUtil.EXTRA_TYPES_VECTOR);
+    when(metadata.getType()).thenReturn(SnowflakeType.EXTRA_TYPES_VECTOR);
     when(metadata.getDimension()).thenReturn(128);
 
     assertEquals(128, SnowflakeDatabaseMetaDataImpl.getColumnSize(metadata));

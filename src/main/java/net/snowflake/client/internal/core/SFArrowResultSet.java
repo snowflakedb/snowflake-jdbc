@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.FieldMetadata;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.arrow.ArrayConverter;
 import net.snowflake.client.internal.core.arrow.ArrowVectorConverter;
@@ -39,7 +40,6 @@ import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.ArrowResultChunk;
 import net.snowflake.client.internal.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
@@ -589,7 +589,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private StructObjectWrapper getObjectRepresentation(int columnIndex, boolean withString)
       throws SFException {
     int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+    if (type == SnowflakeType.EXTRA_TYPES_VECTOR) {
       return new StructObjectWrapper(getString(columnIndex), null);
     }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);

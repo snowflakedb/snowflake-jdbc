@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.TimeZone;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.Test;
 
 public class DateTimeConverterTest {
@@ -94,7 +94,7 @@ public class DateTimeConverterTest {
     Time expected = Time.valueOf(LocalTime.of(22, 2, 3));
     Time actual =
         dateTimeConverterWithUseSessionTimeZone.getTime(
-            "1691568123", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
+            "1691568123", Types.TIMESTAMP, SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
     assertEquals(expected.toString(), actual.toString());
   }
 
@@ -141,7 +141,7 @@ public class DateTimeConverterTest {
     Date expected = Date.valueOf(LocalDate.of(2023, 8, 8));
     Date actual =
         dateTimeConverterWithUseSessionTimeZone.getDate(
-            "1691568123", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
+            "1691568123", Types.TIMESTAMP, SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
     assertEquals(expected.toString(), actual.toString());
   }
 }

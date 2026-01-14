@@ -434,10 +434,10 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
                     .add(BigDecimal.valueOf(x.getNanos())));
     String bindingTypeName;
     switch (snowflakeType) {
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
         bindingTypeName = SnowflakeType.TIMESTAMP_LTZ.name();
         break;
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ:
         bindingTypeName = SnowflakeType.TIMESTAMP_NTZ.name();
         break;
       default:
@@ -480,14 +480,14 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       setTime(parameterIndex, (Time) x);
     } else if (targetSqlType == Types.TIMESTAMP) {
       setTimestamp(parameterIndex, (Timestamp) x);
-    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-        || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
+    } else if (targetSqlType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ
+        || targetSqlType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
-    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DECFLOAT) {
+    } else if (targetSqlType == SnowflakeType.EXTRA_TYPES_DECFLOAT) {
       setDecfloat(parameterIndex, (BigDecimal) x);
-    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL) {
+    } else if (targetSqlType == SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL) {
       setYearMonthInterval(parameterIndex, (String) x);
-    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL) {
+    } else if (targetSqlType == SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL) {
       setDayTimeInterval(parameterIndex, (String) x);
     } else {
       logger.trace(
@@ -507,7 +507,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace("setYearMonthInterval(parameterIndex: {}, String x)", parameterIndex);
 
     if (x == null) {
-      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+      setNull(parameterIndex, SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(SnowflakeType.INTERVAL_YEAR_MONTH.name(), x);
@@ -519,7 +519,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace("setDayTimeInterval(parameterIndex: {}, String x)", parameterIndex);
 
     if (x == null) {
-      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+      setNull(parameterIndex, SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(SnowflakeType.INTERVAL_DAY_TIME.name(), x);
@@ -531,7 +531,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace("setDecfloat(parameterIndex: {}, BigDecimal x)", parameterIndex);
 
     if (x == null) {
-      setNull(parameterIndex, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+      setNull(parameterIndex, SnowflakeType.EXTRA_TYPES_DECFLOAT);
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(SnowflakeType.DECFLOAT.name(), String.valueOf(x));
