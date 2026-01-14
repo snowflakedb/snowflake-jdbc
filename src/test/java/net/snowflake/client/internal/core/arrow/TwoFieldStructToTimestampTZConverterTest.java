@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.ResultUtil;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.providers.TimezoneProvider;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.memory.BufferAllocator;
@@ -143,7 +143,7 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
             ResultUtil.getSFTimestamp(
                 testTimesJson[i],
                 oldScale,
-                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
                 getTimeZone(),
                 getSession());
@@ -154,14 +154,14 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
             ResultUtil.getSFTimestamp(
                 testTimesJson[i],
                 oldScale,
-                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
                 getTimeZone(),
                 getSession());
         String timestampStr =
             ResultUtil.getSFTimestampAsString(
                 sfTS,
-                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
                 oldScale,
                 getTimestampNTZFormatter(),
                 getTimestampLTZFormatter(),

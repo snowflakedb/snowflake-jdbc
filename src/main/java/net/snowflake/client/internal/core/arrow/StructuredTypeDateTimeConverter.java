@@ -11,8 +11,8 @@ import java.sql.Types;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 public class StructuredTypeDateTimeConverter {
@@ -47,13 +47,13 @@ public class StructuredTypeDateTimeConverter {
       tz = TimeZone.getDefault();
     }
     if (Types.TIMESTAMP == columnType) {
-      if (SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ == columnSubType) {
+      if (SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ == columnSubType) {
         return convertTimestampLtz(obj, scale);
       } else {
         return convertTimestampNtz(obj, tz, scale);
       }
     } else if (Types.TIMESTAMP_WITH_TIMEZONE == columnType
-        && SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ == columnSubType) {
+        && SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ == columnSubType) {
       return convertTimestampTz(obj, scale);
     }
     throw new SFException(

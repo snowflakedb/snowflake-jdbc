@@ -7,7 +7,7 @@ import java.time.Duration;
 import java.time.Period;
 import java.util.HashSet;
 import java.util.Set;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.api.resultset.SnowflakeType;
 
 /**
  * Internal helper class for SnowflakeType conversions and utilities. This class contains nested
@@ -56,7 +56,7 @@ public final class SnowflakeTypeHelper {
         retval = Types.NUMERIC;
         break;
       case "decfloat":
-        retval = SnowflakeUtil.EXTRA_TYPES_DECFLOAT;
+        retval = SnowflakeType.EXTRA_TYPES_DECFLOAT;
         break;
       case "decimal":
         retval = Types.DECIMAL;
@@ -121,10 +121,10 @@ public final class SnowflakeTypeHelper {
         retval = Types.TIMESTAMP_WITH_TIMEZONE;
         break;
       case "interval_year_month":
-        retval = SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL;
+        retval = SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL;
         break;
       case "interval_day_time":
-        retval = SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL;
+        retval = SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL;
         break;
       case "variant":
         retval = Types.OTHER;
@@ -133,7 +133,7 @@ public final class SnowflakeTypeHelper {
         retval = Types.JAVA_OBJECT;
         break;
       case "vector":
-        retval = SnowflakeUtil.EXTRA_TYPES_VECTOR;
+        retval = SnowflakeType.EXTRA_TYPES_VECTOR;
         break;
       case "array":
         retval = Types.ARRAY;

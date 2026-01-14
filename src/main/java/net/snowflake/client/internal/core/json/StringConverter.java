@@ -4,12 +4,12 @@ import java.sql.Date;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.common.core.SFBinary;
 import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.ResultUtil;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -64,8 +64,8 @@ public class StringConverter {
         return ResultUtil.getBooleanAsString(ResultUtil.getBoolean(obj.toString()));
 
       case Types.TIMESTAMP:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ:
         return timestampToString(obj, columnType, columnSubType, scale);
       case Types.DATE:
         return dateToString(obj, columnType, columnSubType, scale);

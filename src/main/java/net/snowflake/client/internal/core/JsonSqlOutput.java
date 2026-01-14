@@ -391,10 +391,10 @@ public class JsonSqlOutput implements SQLOutput {
 
   private int snowflakeTypeToJavaType(SnowflakeType snowflakeType) {
     if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ) {
-      return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ;
+      return SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ;
     } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
-      return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ;
+      return SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ;
     }
-    return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ;
+    return SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ;
   }
 }

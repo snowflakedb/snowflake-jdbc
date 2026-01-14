@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -59,17 +60,17 @@ public class IntervalDayTimeTypeLatestIT extends BaseJDBCTest {
             con.prepareStatement(
                 "SELECT ?::INTERVAL DAY TO SECOND, ?::INTERVAL DAY TO MINUTE, ?::INTERVAL DAY TO HOUR, ?::INTERVAL DAY, ?::INTERVAL HOUR TO SECOND, ?::INTERVAL HOUR TO MINUTE, ?::INTERVAL HOUR, ?::INTERVAL MINUTE TO SECOND, ?::INTERVAL MINUTE, ?::INTERVAL SECOND, ?::INTERVAL DAY TO SECOND")) {
 
-          ps.setObject(1, "0 0:0:1.2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(2, "-999999999 2:3", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(3, "999999999 2", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(4, "1", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(5, "999999999:1:3.56", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(6, "-999999999:3", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(7, "5", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(8, "-999999999:2.999999", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(9, "4", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setObject(10, "-999999999.999999", SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
-          ps.setNull(11, SnowflakeUtil.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(1, "0 0:0:1.2", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(2, "-999999999 2:3", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(3, "999999999 2", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(4, "1", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(5, "999999999:1:3.56", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(6, "-999999999:3", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(7, "5", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(8, "-999999999:2.999999", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(9, "4", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setObject(10, "-999999999.999999", SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
+          ps.setNull(11, SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL);
 
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());

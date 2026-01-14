@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -195,14 +195,14 @@ public class ResultUtil {
         case Types.TIMESTAMP:
           tsType = TimeUtil.TimestampType.TIMESTAMP_NTZ;
           break;
-        case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+        case SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ:
           tsType = TimeUtil.TimestampType.TIMESTAMP_TZ;
           logger.trace(
               "Handle timestamp with timezone {} encoding: {}",
               (resultVersion > 0 ? "new" : "old"),
               timestampStr);
           break;
-        case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+        case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
           tsType = TimeUtil.TimestampType.TIMESTAMP_LTZ;
           break;
       }
@@ -280,9 +280,9 @@ public class ResultUtil {
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;
-    if (columnType == Types.TIMESTAMP || columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
+    if (columnType == Types.TIMESTAMP || columnType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ) {
       formatter = timestampNTZFormatter;
-    } else if (columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+    } else if (columnType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ) {
       formatter = timestampLTZFormatter;
     } else // TZ
     {
