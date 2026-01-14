@@ -6,11 +6,11 @@ import static org.mockito.Mockito.mock;
 import java.sql.Types;
 import java.time.ZoneId;
 import java.util.TimeZone;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.common.core.SFBinaryFormat;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,11 +83,11 @@ public class StringConverterTest {
     assertEquals(
         "1988-03-21 19:33:15.000",
         stringConverter.getString(
-            "574986795", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, 0));
+            "574986795", Types.TIMESTAMP, SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ, 0));
     assertEquals(
         "1988-03-21 14:33:15.000",
         stringConverter.getString(
-            "574986795 960", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, 0));
+            "574986795 960", Types.TIMESTAMP, SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ, 0));
   }
 
   @Test

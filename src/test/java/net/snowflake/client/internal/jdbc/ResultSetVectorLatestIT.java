@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.EXTRA_TYPES_VECTOR;
+import static net.snowflake.client.api.resultset.SnowflakeType.EXTRA_TYPES_VECTOR;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;

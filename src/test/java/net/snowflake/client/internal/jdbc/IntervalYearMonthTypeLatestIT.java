@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Period;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -71,11 +72,11 @@ public class IntervalYearMonthTypeLatestIT extends BaseJDBCTest {
             con.prepareStatement(
                 "SELECT ?::INTERVAL YEAR TO MONTH, ?::INTERVAL YEAR TO MONTH, ?::INTERVAL YEAR, ?::INTERVAL MONTH, ?::INTERVAL YEAR TO MONTH")) {
 
-          ps.setObject(1, "999999999-11", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
-          ps.setObject(2, "-999999999-11", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
-          ps.setObject(3, "2", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
-          ps.setObject(4, "5", SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
-          ps.setNull(5, SnowflakeUtil.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(1, "999999999-11", SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(2, "-999999999-11", SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(3, "2", SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setObject(4, "5", SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
+          ps.setNull(5, SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL);
 
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());

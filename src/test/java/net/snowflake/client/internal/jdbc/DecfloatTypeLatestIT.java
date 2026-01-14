@@ -16,6 +16,7 @@ import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
@@ -191,8 +192,8 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           ps.setFloat(5, 2.5f);
           ps.setLong(6, 123456789L);
           ps.setShort(7, (short) 45);
-          ps.setObject(8, new BigDecimal("1.2345e4"), SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
-          ps.setNull(9, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(8, new BigDecimal("1.2345e4"), SnowflakeType.EXTRA_TYPES_DECFLOAT);
+          ps.setNull(9, SnowflakeType.EXTRA_TYPES_DECFLOAT);
 
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());
@@ -225,9 +226,9 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
               new BigDecimal("-9.8765432099999998623226732747455716901E-250");
           BigDecimal expValue = new BigDecimal("-1.2345e2"); // -123.45
 
-          ps.setObject(1, veryLargeValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
-          ps.setObject(2, verySmallValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
-          ps.setObject(3, expValue, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(1, veryLargeValue, SnowflakeType.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(2, verySmallValue, SnowflakeType.EXTRA_TYPES_DECFLOAT);
+          ps.setObject(3, expValue, SnowflakeType.EXTRA_TYPES_DECFLOAT);
 
           try (ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());
@@ -261,7 +262,7 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           try (PreparedStatement ps =
               con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
             for (BigDecimal value : firstArray) {
-              ps.setObject(1, value, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+              ps.setObject(1, value, SnowflakeType.EXTRA_TYPES_DECFLOAT);
               ps.addBatch();
             }
             ps.executeBatch();
@@ -308,7 +309,7 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
           try (PreparedStatement ps =
               con.prepareStatement("INSERT INTO test_decfloat VALUES (?)")) {
             for (BigDecimal value : secondArray) {
-              ps.setObject(1, value, SnowflakeUtil.EXTRA_TYPES_DECFLOAT);
+              ps.setObject(1, value, SnowflakeType.EXTRA_TYPES_DECFLOAT);
               ps.addBatch();
             }
             ps.executeBatch();
