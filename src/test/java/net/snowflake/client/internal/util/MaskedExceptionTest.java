@@ -1,4 +1,4 @@
-package net.snowflake.client.util;
+package net.snowflake.client.internal.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -1,4 +1,4 @@
-package net.snowflake.client.log;
+package net.snowflake.client.internal.log;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,7 +13,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import net.snowflake.client.util.MaskedException;
+import net.snowflake.client.internal.util.MaskedException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 

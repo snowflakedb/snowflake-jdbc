@@ -1603,12 +1603,10 @@ public class HttpUtil {
     return getHttpClient((int) HttpUtil.getConnectionTimeout().toMillis(), key);
   }
 
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpClient getHttpClientForOcsp(HttpClientSettingsKey key) {
     return getHttpClient(key.getOcspTimeout(), key);
   }
 
-  @SnowflakeJdbcInternalApi
   public static CloseableHttpClient getHttpClient(int timeout, HttpClientSettingsKey key) {
     RequestConfig config =
         RequestConfig.custom()
