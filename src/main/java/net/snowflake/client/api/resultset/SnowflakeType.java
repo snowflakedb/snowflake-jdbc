@@ -24,6 +24,19 @@ package net.snowflake.client.api.resultset;
  * }
  * }</pre>
  *
+ * Additionally, this enum includes JDBC type code extensions for Snowflake-specific data types not
+ * covered by {@link java.sql.Types}.
+ *
+ * <p>These constants can be used with {@link java.sql.PreparedStatement#setObject(int, Object,
+ * int)} to specify the target SQL type when binding parameters to Snowflake-specific types. *
+ *
+ * <p>Example usage:
+ *
+ * <pre>{@code
+ * PreparedStatement pstmt = connection.prepareStatement("INSERT INTO t VALUES (?)");
+ * pstmt.setObject(1, myTimestamp, SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ);
+ * }</pre>
+ *
  * @since 4.0.0
  * @see FieldMetadata
  */
@@ -75,5 +88,13 @@ public enum SnowflakeType {
   /** Represents a GEOMETRY type */
   GEOMETRY,
   /** Represents a VECTOR type */
-  VECTOR
+  VECTOR;
+
+  public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
+  public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
+  public static final int EXTRA_TYPES_TIMESTAMP_NTZ = 50002;
+  public static final int EXTRA_TYPES_VECTOR = 50003;
+  public static final int EXTRA_TYPES_DECFLOAT = 50004;
+  public static final int EXTRA_TYPES_YEAR_MONTH_INTERVAL = 50005;
+  public static final int EXTRA_TYPES_DAY_TIME_INTERVAL = 50006;
 }

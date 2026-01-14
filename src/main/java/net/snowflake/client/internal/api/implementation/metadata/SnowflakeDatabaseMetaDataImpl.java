@@ -38,6 +38,7 @@ import net.snowflake.client.api.driver.SnowflakeDriver;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeResultSet;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
@@ -46,7 +47,6 @@ import net.snowflake.client.internal.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.internal.jdbc.SnowflakeDatabaseMetaDataQueryResultSet;
 import net.snowflake.client.internal.jdbc.SnowflakeDatabaseMetaDataResultSet;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
@@ -1869,10 +1869,10 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
             int internalColumnType = columnMetadata.getType();
             int externalColumnType = internalColumnType;
 
-            if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+            if (internalColumnType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ) {
               externalColumnType = Types.TIMESTAMP;
             }
-            if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+            if (internalColumnType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ) {
 
               externalColumnType =
                   session == null
@@ -1954,13 +1954,13 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
       case Types.TIME:
       case Types.TIMESTAMP:
       case Types.TIMESTAMP_WITH_TIMEZONE:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ:
-      case SnowflakeUtil.EXTRA_TYPES_DECFLOAT:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ:
+      case SnowflakeType.EXTRA_TYPES_DECFLOAT:
         return columnMetadata.getPrecision();
         // For VECTOR Snowflake type we consider dimension as the column size
-      case SnowflakeUtil.EXTRA_TYPES_VECTOR:
+      case SnowflakeType.EXTRA_TYPES_VECTOR:
         return columnMetadata.getDimension();
         // For all other types (BOOLEAN, ARRAY, OBJECT, etc.) return null as per JDBC spec
         // requirement for non-applicable types

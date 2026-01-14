@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.FieldMetadata;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.jdbc.SnowflakeColumnMetadata;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.SFTime;
@@ -187,9 +187,9 @@ public class SFResultSetMetaData {
         return dateStringLength;
       case Types.TIME:
         return timeStringLength;
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
         return timestampLTZStringLength;
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ:
         return timestampTZStringLength;
       case Types.TIMESTAMP:
         return timestampNTZStringLength;
@@ -202,7 +202,7 @@ public class SFResultSetMetaData {
 
   private Integer calculateDimension(SnowflakeColumnMetadata columnMetadata) {
     int columnType = columnMetadata.getType();
-    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+    if (columnType == SnowflakeType.EXTRA_TYPES_VECTOR) {
       return columnMetadata.getDimension();
     }
     return 0;
@@ -233,9 +233,9 @@ public class SFResultSetMetaData {
         return dateStringLength;
       case Types.TIME:
         return timeStringLength;
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ:
         return timestampLTZStringLength;
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
+      case SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ:
         return timestampTZStringLength;
       case Types.TIMESTAMP:
         return timestampNTZStringLength;
@@ -268,7 +268,7 @@ public class SFResultSetMetaData {
         String tsLTZStr =
             ResultUtil.getSFTimestampAsString(
                 ts,
-                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ,
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ,
                 9,
                 timestampNTZFormatter,
                 timestampLTZFormatter,
@@ -280,7 +280,7 @@ public class SFResultSetMetaData {
         String tsTZStr =
             ResultUtil.getSFTimestampAsString(
                 ts,
-                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
                 9,
                 timestampNTZFormatter,
                 timestampLTZFormatter,

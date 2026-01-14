@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -36,11 +36,11 @@ public class SqlInputTimestampUtilTest {
   public void shouldGetTimestampForDifferentType() {
     // when
     Timestamp resultLtz =
-        getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, TIMESTAMP_IN_FORMAT_1, null);
+        getFromType(SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ, TIMESTAMP_IN_FORMAT_1, null);
     Timestamp resultTz =
-        getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, TIMESTAMP_IN_FORMAT_2, null);
+        getFromType(SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ, TIMESTAMP_IN_FORMAT_2, null);
     Timestamp resultNtz =
-        getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ, TIMESTAMP_IN_FORMAT_1, null);
+        getFromType(SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ, TIMESTAMP_IN_FORMAT_1, null);
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);

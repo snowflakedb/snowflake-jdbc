@@ -16,6 +16,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Disabled;
@@ -173,16 +174,16 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           statement.execute(
               "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
           prepst.setInt(1, rowId++);
-          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-          prepst.setObject(3, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.setObject(2, testTzs[i], SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(3, testTzs[i], SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ);
           prepst.addBatch();
           prepst.executeBatch();
           // Enable stage array binding and insert the same timestamp values as above
           statement.execute(
               "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
           prepst.setInt(1, rowId++);
-          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-          prepst.setObject(3, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.setObject(2, testTzs[i], SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(3, testTzs[i], SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ);
           prepst.addBatch();
           prepst.executeBatch();
         }

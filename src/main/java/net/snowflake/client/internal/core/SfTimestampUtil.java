@@ -4,7 +4,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
-import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 public class SfTimestampUtil {
@@ -17,14 +17,14 @@ public class SfTimestampUtil {
       SFBaseSession session,
       TimeZone sessionTimeZone,
       TimeZone tz) {
-    if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+    if (columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ) {
       return getTimestampFromFormat(
           "TIMESTAMP_LTZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
+    } else if (columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_NTZ
         || columnSubType == Types.TIMESTAMP) {
       return getTimestampFromFormat(
           "TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session, sessionTimeZone, TimeZone.getDefault());
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+    } else if (columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ) {
       return getTimestampFromFormat(
           "TIMESTAMP_TZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);
     } else {

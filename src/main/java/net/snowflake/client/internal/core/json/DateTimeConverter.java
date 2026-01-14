@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.ResultUtil;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
@@ -63,8 +64,8 @@ public class DateTimeConverter {
       // If we want to display format with no session offset, we have to use session timezone for
       // ltz and tz types but UTC timezone for ntz type.
       if (useSessionTimezone) {
-        if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-            || columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+        if (columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ
+            || columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ) {
           TimeZone specificSessionTimezone = adjustTimezoneForTimestampTZ(obj, columnSubType);
           res = new SnowflakeTimestampWithTimezone(res, specificSessionTimezone);
         } else {
@@ -155,8 +156,8 @@ public class DateTimeConverter {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }
-      if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
-          || columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+      if (columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ
+          || columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ) {
         TimeZone specificSessionTimeZone = adjustTimezoneForTimestampTZ(obj, columnSubType);
         return new SnowflakeDateWithTimezone(
             getTimestamp(obj, columnType, columnSubType, tz, scale).getTime(),
@@ -182,7 +183,7 @@ public class DateTimeConverter {
     // If the timestamp is of type timestamp_tz, use the associated offset timezone instead of the
     // session timezone for formatting
     if (obj != null
-        && columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
+        && columnSubType == SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ
         && resultVersion > 0) {
       String timestampStr = obj.toString();
       int indexForSeparator = timestampStr.indexOf(' ');

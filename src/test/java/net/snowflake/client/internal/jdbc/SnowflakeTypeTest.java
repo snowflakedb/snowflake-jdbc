@@ -85,7 +85,7 @@ public class SnowflakeTypeTest {
     assertEquals(convertStringToType("timestamp_tz"), Types.TIMESTAMP_WITH_TIMEZONE);
     assertEquals(convertStringToType("variant"), Types.OTHER);
     assertEquals(convertStringToType("object"), Types.JAVA_OBJECT);
-    assertEquals(convertStringToType("vector"), SnowflakeUtil.EXTRA_TYPES_VECTOR);
+    assertEquals(convertStringToType("vector"), SnowflakeType.EXTRA_TYPES_VECTOR);
     assertEquals(convertStringToType("array"), Types.ARRAY);
     assertEquals(convertStringToType("default"), Types.OTHER);
   }
