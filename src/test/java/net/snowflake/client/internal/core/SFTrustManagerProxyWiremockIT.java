@@ -1,4 +1,4 @@
-package net.snowflake.client.core;
+package net.snowflake.client.internal.core;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,8 +10,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.core.crl.CertificateGeneratorUtil;
-import net.snowflake.client.jdbc.BaseWiremockTest;
+import net.snowflake.client.internal.core.crl.CertificateGeneratorUtil;
+import net.snowflake.client.internal.jdbc.BaseWiremockTest;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;

@@ -530,66 +530,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
   }
 
-  /**
-   * Gets HttpClient object
-   *
-   * @return HttpClient
-   */
-  private static CloseableHttpClient getHttpClient(int timeout) {
-    RequestConfig config =
-        RequestConfig.custom()
-            .setConnectTimeout(timeout)
-            .setConnectionRequestTimeout(timeout)
-            .setSocketTimeout(timeout)
-            .build();
-
-    Registry<ConnectionSocketFactory> registry =
-        RegistryBuilder.<ConnectionSocketFactory>create()
-            .register("http", new HttpUtil.SFConnectionSocketFactory())
-            .build();
-
-    // Build a connection manager with enough connections
-    PoolingHttpClientConnectionManager connectionManager =
-        new PoolingHttpClientConnectionManager(registry);
-    connectionManager.setMaxTotal(1);
-    connectionManager.setDefaultMaxPerRoute(10);
-
-    HttpClientBuilder httpClientBuilder =
-        HttpClientBuilder.create()
-            .setDefaultRequestConfig(config)
-            .setConnectionManager(connectionManager)
-            // Support JVM proxy settings
-            .useSystemProperties()
-            .setRedirectStrategy(new DefaultRedirectStrategy())
-            .disableCookieManagement();
-
-    if (proxySettingsKey.usesProxy()) {
-      // use the custom proxy properties
-      HttpHost proxy =
-          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
-      SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
-          new SnowflakeMutableProxyRoutePlanner(
-              proxySettingsKey.getProxyHost(),
-              proxySettingsKey.getProxyPort(),
-              HttpProtocol.HTTP,
-              proxySettingsKey.getNonProxyHosts());
-      httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!isNullOrEmpty(proxySettingsKey.getProxyUser())
-          && !isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
-        Credentials credentials =
-            new UsernamePasswordCredentials(
-                proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
-        AuthScope authScope =
-            new AuthScope(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(authScope, credentials);
-        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-      }
-    }
-    // using the default HTTP client
-    return httpClientBuilder.build();
-  }
-
   private static long maxLong(long v1, long v2) {
     return Math.max(v1, v2);
   }
