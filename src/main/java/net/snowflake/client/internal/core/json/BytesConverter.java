@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.common.core.SFBinary;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
@@ -49,7 +50,7 @@ public class BytesConverter {
         case Types.CHAR:
         case Types.STRUCT:
         case Types.ARRAY:
-        case SnowflakeUtil.EXTRA_TYPES_VECTOR:
+        case SnowflakeType.EXTRA_TYPES_VECTOR:
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)

@@ -75,21 +75,6 @@ public class SnowflakeUtil {
   private static final Set<PosixFilePermission> directoryOwnerOnlyPermission =
       PosixFilePermissions.fromString("rwx------");
 
-  /** Additional data types not covered by standard JDBC */
-  public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
-
-  public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
-
-  public static final int EXTRA_TYPES_TIMESTAMP_NTZ = 50002;
-
-  public static final int EXTRA_TYPES_VECTOR = 50003;
-
-  public static final int EXTRA_TYPES_DECFLOAT = 50004;
-
-  public static final int EXTRA_TYPES_YEAR_MONTH_INTERVAL = 50005;
-
-  public static final int EXTRA_TYPES_DAY_TIME_INTERVAL = 50006;
-
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
@@ -262,13 +247,15 @@ public class SnowflakeUtil {
       case TIMESTAMP_LTZ:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_TIMESTAMP_LTZ, defaultIfNull(extColTypeName, "TIMESTAMPLTZ"), baseType);
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_LTZ,
+                defaultIfNull(extColTypeName, "TIMESTAMPLTZ"),
+                baseType);
         break;
 
       case INTERVAL_YEAR_MONTH:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_YEAR_MONTH_INTERVAL,
+                SnowflakeType.EXTRA_TYPES_YEAR_MONTH_INTERVAL,
                 defaultIfNull(extColTypeName, "INTERVAL_YEAR_MONTH"),
                 baseType);
         break;
@@ -276,7 +263,7 @@ public class SnowflakeUtil {
       case INTERVAL_DAY_TIME:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_DAY_TIME_INTERVAL,
+                SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL,
                 defaultIfNull(extColTypeName, "INTERVAL_DAY_TIME"),
                 baseType);
         break;
@@ -291,7 +278,9 @@ public class SnowflakeUtil {
       case TIMESTAMP_TZ:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_TIMESTAMP_TZ, defaultIfNull(extColTypeName, "TIMESTAMPTZ"), baseType);
+                SnowflakeType.EXTRA_TYPES_TIMESTAMP_TZ,
+                defaultIfNull(extColTypeName, "TIMESTAMPTZ"),
+                baseType);
         break;
 
       case DATE:
@@ -312,7 +301,9 @@ public class SnowflakeUtil {
       case VECTOR:
         columnTypeInfo =
             new ColumnTypeInfo(
-                EXTRA_TYPES_VECTOR, defaultIfNull(extColTypeName, "VECTOR"), baseType);
+                SnowflakeType.EXTRA_TYPES_VECTOR,
+                defaultIfNull(extColTypeName, "VECTOR"),
+                baseType);
         break;
 
       case ARRAY:
