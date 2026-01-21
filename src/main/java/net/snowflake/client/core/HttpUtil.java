@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+  import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
@@ -113,6 +115,12 @@ public class HttpUtil {
 
   private static boolean socksProxyDisabled = false;
 
+  /** Background executor for periodic cleanup of expired and idle connections */
+  private static ScheduledExecutorService idleConnectionCleanupExecutor = null;
+
+  /** Interval in seconds between idle connection cleanup runs */
+  static final int IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS = 30;
+
   @SnowflakeJdbcInternalApi
   public static void reset() {
     setConnectionTimeout(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
@@ -120,6 +128,7 @@ public class HttpUtil {
     httpClient.clear();
     httpClientWithoutDecompression.clear();
     httpClientRoutePlanner.clear();
+    stopIdleConnectionCleanupThread();
   }
 
   @SnowflakeJdbcInternalApi
@@ -159,6 +168,41 @@ public class HttpUtil {
         connectionManager.closeExpiredConnections();
         connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
       }
+    }
+  }
+
+  /**
+   * Starts a background thread to periodically clean up expired and idle connections.
+   */
+  static synchronized void startIdleConnectionCleanupThread() {
+    if (idleConnectionCleanupExecutor == null || idleConnectionCleanupExecutor.isShutdown()) {
+      idleConnectionCleanupExecutor =
+          Executors.newSingleThreadScheduledExecutor(
+              r -> {
+                Thread t = new Thread(r, "snowflake-idle-connection-cleanup");
+                t.setDaemon(true); // Don't prevent JVM shutdown
+                return t;
+              });
+      idleConnectionCleanupExecutor.scheduleAtFixedRate(
+          HttpUtil::closeExpiredAndIdleConnections,
+          IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS,
+          IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS,
+          TimeUnit.SECONDS);
+      logger.debug(
+          "Started idle connection cleanup thread with interval {} seconds",
+          IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS);
+    }
+  }
+
+  /**
+   * Stops the background cleanup thread. This should be called when the HTTP client is being shut
+   * down or reset.
+   */
+  static synchronized void stopIdleConnectionCleanupThread() {
+    if (idleConnectionCleanupExecutor != null && !idleConnectionCleanupExecutor.isShutdown()) {
+      idleConnectionCleanupExecutor.shutdown();
+      idleConnectionCleanupExecutor = null;
+      logger.debug("Stopped idle connection cleanup thread");
     }
   }
 
@@ -366,6 +410,10 @@ public class HttpUtil {
           maxConnectionsPerRoute);
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
+
+      // Start background thread to clean up expired and idle connections
+      // This prevents connections from lingering in half-closed states (FIN_WAIT_2)
+      startIdleConnectionCleanupThread();
 
       logger.debug("Disabling cookie management for http client");
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
