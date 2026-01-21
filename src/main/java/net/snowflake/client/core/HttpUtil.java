@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-  import java.util.concurrent.Executors;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,6 +40,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.RetryContextManager;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -121,6 +122,10 @@ public class HttpUtil {
   /** Interval in seconds between idle connection cleanup runs */
   static final int IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS = 30;
 
+  /** Environment variable to disable the idle connection cleanup thread. */
+  public static final String JDBC_DISABLE_IDLE_CONNECTION_CLEANUP =
+      "SF_JDBC_DISABLE_IDLE_CONNECTION_CLEANUP";
+
   @SnowflakeJdbcInternalApi
   public static void reset() {
     setConnectionTimeout(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
@@ -171,10 +176,16 @@ public class HttpUtil {
     }
   }
 
-  /**
-   * Starts a background thread to periodically clean up expired and idle connections.
-   */
+  /** Starts a background thread to periodically clean up expired and idle connections. */
   static synchronized void startIdleConnectionCleanupThread() {
+    // Check if cleanup thread is disabled via environment variable
+    if (isIdleConnectionCleanupDisabled()) {
+      logger.debug(
+          "Idle connection cleanup thread is disabled via environment variable {}",
+          JDBC_DISABLE_IDLE_CONNECTION_CLEANUP);
+      return;
+    }
+
     if (idleConnectionCleanupExecutor == null || idleConnectionCleanupExecutor.isShutdown()) {
       idleConnectionCleanupExecutor =
           Executors.newSingleThreadScheduledExecutor(
@@ -192,6 +203,11 @@ public class HttpUtil {
           "Started idle connection cleanup thread with interval {} seconds",
           IDLE_CONNECTION_CLEANUP_INTERVAL_SECONDS);
     }
+  }
+
+  private static boolean isIdleConnectionCleanupDisabled() {
+    String envValue = SnowflakeUtil.systemGetEnv(JDBC_DISABLE_IDLE_CONNECTION_CLEANUP);
+    return envValue != null && envValue.equalsIgnoreCase("true");
   }
 
   /**
@@ -412,7 +428,6 @@ public class HttpUtil {
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
       // Start background thread to clean up expired and idle connections
-      // This prevents connections from lingering in half-closed states (FIN_WAIT_2)
       startIdleConnectionCleanupThread();
 
       logger.debug("Disabling cookie management for http client");
