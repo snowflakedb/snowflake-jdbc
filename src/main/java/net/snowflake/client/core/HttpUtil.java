@@ -108,8 +108,12 @@ public class HttpUtil {
   static Map<HttpClientSettingsKey, SnowflakeMutableProxyRoutePlanner> httpClientRoutePlanner =
       new ConcurrentHashMap<>();
 
-  /** Handle on the static connection manager, to gather statistics mainly */
-  private static PoolingHttpClientConnectionManager connectionManager = null;
+  /**
+   * Map of all connection managers, keyed by HttpClientSettingsKey. This allows us to track and
+   * clean up connections for all HTTP clients, not just the most recently created one.
+   */
+  private static Map<HttpClientSettingsKey, PoolingHttpClientConnectionManager> connectionManagers =
+      new ConcurrentHashMap<>();
 
   /** default request configuration, to be copied on individual requests. */
   private static RequestConfig DefaultRequestConfig = null;
@@ -133,6 +137,17 @@ public class HttpUtil {
     httpClient.clear();
     httpClientWithoutDecompression.clear();
     httpClientRoutePlanner.clear();
+    // Shutdown all connection managers before clearing the map
+    for (PoolingHttpClientConnectionManager cm : connectionManagers.values()) {
+      if (cm != null) {
+        try {
+          cm.shutdown();
+        } catch (Exception e) {
+          logger.debug("Error shutting down connection manager: {}", e.getMessage());
+        }
+      }
+    }
+    connectionManagers.clear();
     stopIdleConnectionCleanupThread();
   }
 
@@ -167,11 +182,16 @@ public class HttpUtil {
   }
 
   public static void closeExpiredAndIdleConnections() {
-    if (connectionManager != null) {
-      synchronized (connectionManager) {
-        logger.debug("Connection pool stats: {}", connectionManager.getTotalStats());
-        connectionManager.closeExpiredConnections();
-        connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+    // Iterate over all connection managers and clean up each one
+    for (Map.Entry<HttpClientSettingsKey, PoolingHttpClientConnectionManager> entry :
+        connectionManagers.entrySet()) {
+      PoolingHttpClientConnectionManager cm = entry.getValue();
+      if (cm != null) {
+        synchronized (cm) {
+          logger.trace("Connection pool stats for {}: {}", entry.getKey(), cm.getTotalStats());
+          cm.closeExpiredConnections();
+          cm.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+        }
       }
     }
   }
@@ -403,29 +423,50 @@ public class HttpUtil {
               + "connection socket factory",
           socksProxyDisabled);
 
-      Registry<ConnectionSocketFactory> registry =
-          RegistryBuilder.<ConnectionSocketFactory>create()
-              .register(
-                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
-              .register("http", new SFConnectionSocketFactory())
-              .build();
+      // Check if we already have a connection manager for this key - reuse if exists
+      PoolingHttpClientConnectionManager connectionManagerToUse = null;
+      if (key != null) {
+        connectionManagerToUse = connectionManagers.get(key);
+        if (connectionManagerToUse != null) {
+          logger.debug("Reusing existing connection manager for key: {}", key);
+        }
+      }
 
-      // Build a connection manager with enough connections
-      connectionManager =
-          new PoolingHttpClientConnectionManager(
-              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
-      int maxConnections =
-          SystemUtil.convertSystemPropertyToIntValue(
-              JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
-      int maxConnectionsPerRoute =
-          SystemUtil.convertSystemPropertyToIntValue(
-              JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY, DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
-      logger.debug(
-          "Max connections total in connection pooling manager: {}; max connections per route: {}",
-          maxConnections,
-          maxConnectionsPerRoute);
-      connectionManager.setMaxTotal(maxConnections);
-      connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
+      // Create a new connection manager if one doesn't exist for this key
+      if (connectionManagerToUse == null) {
+        Registry<ConnectionSocketFactory> registry =
+            RegistryBuilder.<ConnectionSocketFactory>create()
+                .register(
+                    "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
+                .register("http", new SFConnectionSocketFactory())
+                .build();
+
+        connectionManagerToUse =
+            new PoolingHttpClientConnectionManager(
+                registry, null, null, null, timeToLive, TimeUnit.SECONDS);
+        int maxConnections =
+            SystemUtil.convertSystemPropertyToIntValue(
+                JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
+        int maxConnectionsPerRoute =
+            SystemUtil.convertSystemPropertyToIntValue(
+                JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY, DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
+        logger.debug(
+            "Max connections total in connection pooling manager: {}; max connections per route: {}",
+            maxConnections,
+            maxConnectionsPerRoute);
+        connectionManagerToUse.setMaxTotal(maxConnections);
+        connectionManagerToUse.setDefaultMaxPerRoute(maxConnectionsPerRoute);
+
+        // Store connection manager in the map keyed by HttpClientSettingsKey
+        // This ensures we can clean up connections for ALL clients
+        if (key != null) {
+          connectionManagers.put(key, connectionManagerToUse);
+          logger.debug(
+              "Registered new connection manager for key: {}, total managers: {}",
+              key,
+              connectionManagers.size());
+        }
+      }
 
       // Start background thread to clean up expired and idle connections
       startIdleConnectionCleanupThread();
@@ -434,7 +475,7 @@ public class HttpUtil {
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
-              .setConnectionManager(connectionManager)
+              .setConnectionManager(connectionManagerToUse)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(
@@ -725,12 +766,27 @@ public class HttpUtil {
   }
 
   /**
-   * Accessor for the HTTP client singleton.
+   * Accessor for connection pool statistics for logging purposes.
    *
    * @return HTTP Client stats in string representation
    */
   private static String getHttpClientStats() {
-    return connectionManager == null ? "" : connectionManager.getTotalStats().toString();
+    if (connectionManagers.isEmpty()) {
+      return "";
+    }
+    // If only one manager, return its stats directly
+    if (connectionManagers.size() == 1) {
+      return connectionManagers.values().iterator().next().getTotalStats().toString();
+    }
+    // Multiple managers - show all stats for debugging visibility
+    StringBuilder sb = new StringBuilder();
+    for (PoolingHttpClientConnectionManager cm : connectionManagers.values()) {
+      if (sb.length() > 0) {
+        sb.append("; ");
+      }
+      sb.append(cm.getTotalStats().toString());
+    }
+    return sb.toString();
   }
 
   /**
