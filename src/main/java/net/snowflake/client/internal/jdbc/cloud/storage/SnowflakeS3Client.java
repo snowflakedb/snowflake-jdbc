@@ -226,7 +226,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         amazonClient =
                 S3AsyncEncryptionClient.builderV4()
-                        .wrappedAsyncClient(clientBuilder.build())
+                        .wrappedClient(clientBuilder.build())
                         .aesKey(queryStageMasterKey)
                         /*
                          * migration from v3
