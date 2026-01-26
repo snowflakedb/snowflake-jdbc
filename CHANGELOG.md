@@ -1,7 +1,7 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v4.0.0-SNAPSHOT
+- v4.0.0
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
     - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
     - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
@@ -10,6 +10,19 @@
     - Return column_size value in database metadata commands as in JDBC spec (snowflakedb/snowflake-jdbc#2418)
     - Migrate Azure storage from v5 to v12 (snowflakedb/snowflake-jdbc#2417)
     - Enable bundled BouncyCastle for private key decryption by default (snowflakedb/snowflake-jdbc#2452)
+    - Rename BouncyCastle JVM property from net.snowflake.jdbc.enableBouncyCastle to net.snowflake.jdbc.useBundledBouncyCastleForPrivateKeyDecryption.
+    - Major public API restructuring: move all public APIs to net.snowflake.client.api.* package hierarchy:
+      - Add new unified QueryStatus class in public API that replaces the deprecated QueryStatus enum and QueryStatusV2 class.
+      - Add new public API interfaces for stream upload/download configuration (DownloadStreamConfig, UploadStreamConfig).
+      - Add SnowflakeDatabaseMetaData interface to public API for database metadata operations.
+      - Add SnowflakeAsyncResultSet interface to public API for async query operations.
+      - Add SnowflakeResultSetSerializable interface to public API.
+      - Deprecate net.snowflake.client.jdbc.SnowflakeDriver in favor of new net.snowflake.client.api.driver.SnowflakeDriver.
+      - Move internal classes to net.snowflake.client.internal.* package hierarchy.
+      - Removed deprecated com.snowflake.client.jdbc.SnowflakeDriver class.
+      - Removed deprecated QueryStatus enum from net.snowflake.client.core package.
+      - Removed deprecated QueryStatusV2 class from net.snowflake.client.jdbc package.
+      - Removed deprecated SnowflakeType enum from net.snowflake.client.jdbc package.
 
 - v3.28.0
     - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)

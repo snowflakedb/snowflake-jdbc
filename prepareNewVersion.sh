@@ -12,9 +12,9 @@ version=$1
 
 # update version in Driver code
 version_without_snapshot=${version%-*}
-file_with_version=src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java
+file_with_version=src/main/java/net/snowflake/client/internal/driver/DriverVersion.java
 tmp_file_with_version=${file_with_version}.tmp
-sed -E "s/( implementVersion = )(.+)(;)/\1\"${version_without_snapshot}\"\3/" src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java > $tmp_file_with_version
+sed -E "s/( implementVersion = )(.+)(;)/\1\"${version_without_snapshot}\"\3/" src/main/java/net/snowflake/client/internal/driver/DriverVersion.java > $tmp_file_with_version
 mv $tmp_file_with_version $file_with_version
 
 if [[ "$version" == *-SNAPSHOT ]]; then
