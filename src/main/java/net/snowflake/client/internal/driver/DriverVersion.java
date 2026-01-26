@@ -14,6 +14,8 @@ import net.snowflake.common.core.SqlState;
  * <p>This class is thread-safe and immutable.
  */
 public final class DriverVersion {
+  private static final String implementVersion = "4.0.0";
+
   private final int major;
   private final int minor;
   private final long patch;
@@ -72,8 +74,6 @@ public final class DriverVersion {
    * @return a DriverVersion instance
    */
   private static DriverVersion parseFromStaticVersion() {
-    String implementVersion = "4.0.0";
-
     try {
       if (implementVersion != null && !implementVersion.isEmpty()) {
         return parse(implementVersion);
