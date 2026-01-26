@@ -74,6 +74,8 @@ import software.amazon.awssdk.transfer.s3.model.FileDownload;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
 import software.amazon.encryption.s3.S3AsyncEncryptionClient;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.CommitmentPolicy;
 
 /** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
@@ -223,10 +225,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
 
         amazonClient =
-            S3AsyncEncryptionClient.builder()
-                .wrappedClient(clientBuilder.build())
-                .aesKey(queryStageMasterKey)
-                .build();
+                S3AsyncEncryptionClient.builderV4()
+                        .wrappedAsyncClient(clientBuilder.build())
+                        .aesKey(queryStageMasterKey)
+                        /*
+                         * migration from v3
+                         * https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html#java-v4-migration-migrate
+                         * https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v3-migration.html#v3-transitional-api-changes
+                         */
+                        // v3 default
+                        .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                        // write: v3 compatible format, no key commitment
+                        // read: both v3 and v4 format
+                        .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                        .build();
       } else if (encryptionKeySize == 128) {
         amazonClient = clientBuilder.build();
       } else {
