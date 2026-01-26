@@ -73,9 +73,9 @@ import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
 import software.amazon.awssdk.transfer.s3.model.FileDownload;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
+import software.amazon.encryption.s3.CommitmentPolicy;
 import software.amazon.encryption.s3.S3AsyncEncryptionClient;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.CommitmentPolicy;
 
 /** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
@@ -102,43 +102,43 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private boolean isUseS3RegionalUrl = false;
 
   public SnowflakeS3Client(
-      Map<?, ?> stageCredentials,
-      ClientConfiguration clientConfig,
-      RemoteStoreFileEncryptionMaterial encMat,
-      Properties proxyProperties,
-      String stageRegion,
-      String stageEndPoint,
-      boolean isClientSideEncrypted,
-      SFBaseSession session,
-      boolean useS3RegionalUrl)
-      throws SnowflakeSQLException {
+          Map<?, ?> stageCredentials,
+          ClientConfiguration clientConfig,
+          RemoteStoreFileEncryptionMaterial encMat,
+          Properties proxyProperties,
+          String stageRegion,
+          String stageEndPoint,
+          boolean isClientSideEncrypted,
+          SFBaseSession session,
+          boolean useS3RegionalUrl)
+          throws SnowflakeSQLException {
     logger.debug(
-        "Initializing Snowflake S3 client with encryption: {}, client side encrypted: {}",
-        encMat != null,
-        isClientSideEncrypted);
+            "Initializing Snowflake S3 client with encryption: {}, client side encrypted: {}",
+            encMat != null,
+            isClientSideEncrypted);
     this.session = session;
     this.isUseS3RegionalUrl = useS3RegionalUrl;
     setupSnowflakeS3Client(
-        stageCredentials,
-        clientConfig,
-        encMat,
-        proxyProperties,
-        stageRegion,
-        stageEndPoint,
-        isClientSideEncrypted,
-        session);
+            stageCredentials,
+            clientConfig,
+            encMat,
+            proxyProperties,
+            stageRegion,
+            stageEndPoint,
+            isClientSideEncrypted,
+            session);
   }
 
   private void setupSnowflakeS3Client(
-      Map<?, ?> stageCredentials,
-      ClientConfiguration clientConfig,
-      RemoteStoreFileEncryptionMaterial encMat,
-      Properties proxyProperties,
-      String stageRegion,
-      String stageEndPoint,
-      boolean isClientSideEncrypted,
-      SFBaseSession session)
-      throws SnowflakeSQLException {
+          Map<?, ?> stageCredentials,
+          ClientConfiguration clientConfig,
+          RemoteStoreFileEncryptionMaterial encMat,
+          Properties proxyProperties,
+          String stageRegion,
+          String stageEndPoint,
+          boolean isClientSideEncrypted,
+          SFBaseSession session)
+          throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the AWS client. We won't save the awsCredentials since
     // we will be refreshing that, every time we reset the AWS client
@@ -159,9 +159,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     // initialize aws credentials
     AwsCredentials awsCredentials =
-        (awsToken != null)
-            ? AwsSessionCredentials.create(awsID, awsKey, awsToken)
-            : AwsBasicCredentials.create(awsID, awsKey);
+            (awsToken != null)
+                    ? AwsSessionCredentials.create(awsID, awsKey, awsToken)
+                    : AwsBasicCredentials.create(awsID, awsKey);
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
@@ -171,13 +171,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     S3AsyncClientBuilder clientBuilder =
-        S3AsyncClient.builder()
-            .credentialsProvider(StaticCredentialsProvider.create(awsCredentials));
+            S3AsyncClient.builder()
+                    .credentialsProvider(StaticCredentialsProvider.create(awsCredentials));
 
     Region region = Region.of(stageRegion);
     if (this.stageEndPoint != null
-        && !this.stageEndPoint.isEmpty()
-        && !"null".equals(this.stageEndPoint)) {
+            && !this.stageEndPoint.isEmpty()
+            && !"null".equals(this.stageEndPoint)) {
       clientBuilder.endpointOverride(URI.create(this.stageEndPoint));
       clientBuilder.region(region);
     } else {
@@ -194,24 +194,24 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     clientBuilder.forcePathStyle(false);
 
     clientBuilder.httpClientBuilder(
-        NettyNioAsyncHttpClient.builder()
-            .maxConcurrency(clientConfig.getMaxConnections())
-            .connectionAcquisitionTimeout(Duration.ofSeconds(60))
-            .proxyConfiguration(proxyConfiguration)
-            .connectionTimeout(Duration.ofMillis(clientConfig.connectionTimeout))
-            .readTimeout(Duration.ofMillis(clientConfig.socketTimeout))
-            .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout)));
+            NettyNioAsyncHttpClient.builder()
+                    .maxConcurrency(clientConfig.getMaxConnections())
+                    .connectionAcquisitionTimeout(Duration.ofSeconds(60))
+                    .proxyConfiguration(proxyConfiguration)
+                    .connectionTimeout(Duration.ofMillis(clientConfig.connectionTimeout))
+                    .readTimeout(Duration.ofMillis(clientConfig.socketTimeout))
+                    .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout)));
     clientBuilder.multipartEnabled(true);
 
     ClientOverrideConfiguration.Builder configurationBuilder =
-        ClientOverrideConfiguration.builder();
+            ClientOverrideConfiguration.builder();
 
     if (session instanceof SFSession) {
       List<HttpHeadersCustomizer> headersCustomizers =
-          ((SFSession) session).getHttpHeadersCustomizers();
+              ((SFSession) session).getHttpHeadersCustomizers();
       if (headersCustomizers != null && !headersCustomizers.isEmpty()) {
         configurationBuilder.addExecutionInterceptor(
-            new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
+                new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
       }
     }
 
@@ -243,12 +243,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         amazonClient = clientBuilder.build();
       } else {
         throw new SnowflakeSQLLoggedException(
-            QueryIdHelper.queryIdFromEncMatOr(encMat, null),
-            session,
-            ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "unsupported key size",
-            encryptionKeySize);
+                QueryIdHelper.queryIdFromEncMatOr(encMat, null),
+                session,
+                ErrorCode.FILE_TRANSFER_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "unsupported key size",
+                encryptionKeySize);
       }
     } else {
       amazonClient = clientBuilder.build();
@@ -263,7 +263,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   @Override
   public int getMaxRetries() {
     if (session != null
-        && session
+            && session
             .getConnectionPropertiesMap()
             .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
       return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
@@ -306,14 +306,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     logger.debug("Renewing the Snowflake S3 client");
     // We renew the client with fresh credentials and with its original parameters
     setupSnowflakeS3Client(
-        stageCredentials,
-        this.clientConfig,
-        this.encMat,
-        this.proxyProperties,
-        this.stageRegion,
-        this.stageEndPoint,
-        this.isClientSideEncrypted,
-        this.session);
+            stageCredentials,
+            this.clientConfig,
+            this.encMat,
+            this.proxyProperties,
+            this.stageRegion,
+            this.stageEndPoint,
+            this.isClientSideEncrypted,
+            this.session);
   }
 
   @Override
@@ -324,24 +324,24 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
-      throws StorageProviderException {
+          throws StorageProviderException {
     ListObjectsResponse objListing =
-        amazonClient
-            .listObjects(
-                ListObjectsRequest.builder().bucket(remoteStorageLocation).prefix(prefix).build())
-            .join();
+            amazonClient
+                    .listObjects(
+                            ListObjectsRequest.builder().bucket(remoteStorageLocation).prefix(prefix).build())
+                    .join();
 
     return new StorageObjectSummaryCollection(objListing.contents(), remoteStorageLocation);
   }
 
   @Override
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
-      throws StorageProviderException {
+          throws StorageProviderException {
     return new S3ObjectMetadata(
-        amazonClient
-            .headObject(
-                HeadObjectRequest.builder().bucket(remoteStorageLocation).key(prefix).build())
-            .join());
+            amazonClient
+                    .headObject(
+                            HeadObjectRequest.builder().bucket(remoteStorageLocation).key(prefix).build())
+                    .join());
   }
 
   /**
@@ -363,22 +363,22 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSession session,
-      String command,
-      String localLocation,
-      String destFileName,
-      int parallelism,
-      String remoteStorageLocation,
-      String stageFilePath,
-      String stageRegion,
-      String presignedUrl,
-      String queryId)
-      throws SnowflakeSQLException {
+          SFSession session,
+          String command,
+          String localLocation,
+          String destFileName,
+          int parallelism,
+          String remoteStorageLocation,
+          String stageFilePath,
+          String stageRegion,
+          String presignedUrl,
+          String queryId)
+          throws SnowflakeSQLException {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
-        "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
+            "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     S3TransferManager tx = null;
     int retryCount = 0;
     do {
@@ -389,30 +389,30 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         // download files from s3
         tx =
-            S3TransferManager.builder()
-                .s3Client(amazonClient)
-                .executor(
-                    createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
-                .build();
+                S3TransferManager.builder()
+                        .s3Client(amazonClient)
+                        .executor(
+                                createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
+                        .build();
 
         FileDownload fileDownload =
-            tx.downloadFile(
-                DownloadFileRequest.builder()
-                    .getObjectRequest(
-                        GetObjectRequest.builder()
-                            .bucket(remoteStorageLocation)
-                            .key(stageFilePath)
-                            .build())
-                    .destination(localFile.toPath())
-                    .build());
+                tx.downloadFile(
+                        DownloadFileRequest.builder()
+                                .getObjectRequest(
+                                        GetObjectRequest.builder()
+                                                .bucket(remoteStorageLocation)
+                                                .key(stageFilePath)
+                                                .build())
+                                .destination(localFile.toPath())
+                                .build());
 
         // Pull object metadata from S3
         CompletableFuture<HeadObjectResponse> metaFuture =
-            amazonClient.headObject(
-                HeadObjectRequest.builder()
-                    .bucket(remoteStorageLocation)
-                    .key(stageFilePath)
-                    .build());
+                amazonClient.headObject(
+                        HeadObjectRequest.builder()
+                                .bucket(remoteStorageLocation)
+                                .key(stageFilePath)
+                                .build());
 
         fileDownload.completionFuture().join();
         HeadObjectResponse meta = metaFuture.join();
@@ -422,7 +422,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         String iv = metaMap.get(AMZ_IV);
 
         SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
-            localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
+                localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
@@ -430,11 +430,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
+                    queryId,
+                    session,
+                    StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
+                    SqlState.INTERNAL_ERROR,
+                    "File metadata incomplete");
           }
 
           // Decrypt file
@@ -443,30 +443,30 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
-                "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
-                stageFilePath,
-                localFile.getAbsolutePath(),
-                downloadMillis + decryptMillis,
-                downloadMillis,
-                decryptMillis,
-                retryCount);
+                    "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+                    stageFilePath,
+                    localFile.getAbsolutePath(),
+                    downloadMillis + decryptMillis,
+                    downloadMillis,
+                    decryptMillis,
+                    retryCount);
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
             throw ex;
           }
         } else {
           logger.info(
-              "S3 file {} downloaded to {}. It took {} ms with {} retries",
-              stageFilePath,
-              localFile.getAbsolutePath(),
-              downloadMillis,
-              retryCount);
+                  "S3 file {} downloaded to {}. It took {} ms with {} retries",
+                  stageFilePath,
+                  localFile.getAbsolutePath(),
+                  downloadMillis,
+                  retryCount);
         }
 
         return;
       } catch (Exception ex) {
         handleS3Exception(
-            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+                ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
         if (tx != null) {
@@ -476,11 +476,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
-        queryId,
-        session,
-        StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-        SqlState.INTERNAL_ERROR,
-        "Unexpected: download unsuccessful without exception!");
+            queryId,
+            session,
+            StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
+            SqlState.INTERNAL_ERROR,
+            "Unexpected: download unsuccessful without exception!");
   }
 
   /**
@@ -499,15 +499,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSession session,
-      String command,
-      int parallelism,
-      String remoteStorageLocation,
-      String stageFilePath,
-      String stageRegion,
-      String presignedUrl,
-      String queryId)
-      throws SnowflakeSQLException {
+          SFSession session,
+          String command,
+          int parallelism,
+          String remoteStorageLocation,
+          String stageFilePath,
+          String stageRegion,
+          String presignedUrl,
+          String queryId)
+          throws SnowflakeSQLException {
     logger.debug("Starting download of file from S3 stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
@@ -515,15 +515,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     do {
       try {
         CompletableFuture<ResponseInputStream<GetObjectResponse>> streamFuture =
-            amazonClient.getObject(
-                GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
-                AsyncResponseTransformer.toBlockingInputStream());
+                amazonClient.getObject(
+                        GetObjectRequest.builder().bucket(remoteStorageLocation).key(stageFilePath).build(),
+                        AsyncResponseTransformer.toBlockingInputStream());
         CompletableFuture<HeadObjectResponse> metaFuture =
-            amazonClient.headObject(
-                HeadObjectRequest.builder()
-                    .bucket(remoteStorageLocation)
-                    .key(stageFilePath)
-                    .build());
+                amazonClient.headObject(
+                        HeadObjectRequest.builder()
+                                .bucket(remoteStorageLocation)
+                                .key(stageFilePath)
+                                .build());
 
         HeadObjectResponse meta = metaFuture.join();
         InputStream stream = streamFuture.join();
@@ -538,11 +538,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
+                    queryId,
+                    session,
+                    StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
+                    SqlState.INTERNAL_ERROR,
+                    "File metadata incomplete");
           }
 
           try {
@@ -550,13 +550,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
-                "S3 file {} downloaded to input stream. It took {} ms "
-                    + "(download: {} ms, decryption: {} ms) with {} retries",
-                stageFilePath,
-                downloadMillis + decryptMillis,
-                downloadMillis,
-                decryptMillis,
-                retryCount);
+                    "S3 file {} downloaded to input stream. It took {} ms "
+                            + "(download: {} ms, decryption: {} ms) with {} retries",
+                    stageFilePath,
+                    downloadMillis + decryptMillis,
+                    downloadMillis,
+                    decryptMillis,
+                    retryCount);
             return is;
 
           } catch (Exception ex) {
@@ -565,24 +565,24 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           }
         } else {
           logger.info(
-              "S3 file {} downloaded to input stream. Download took {} ms with {} retries",
-              stageFilePath,
-              downloadMillis,
-              retryCount);
+                  "S3 file {} downloaded to input stream. Download took {} ms with {} retries",
+                  stageFilePath,
+                  downloadMillis,
+                  retryCount);
         }
         return stream;
       } catch (Exception ex) {
         handleS3Exception(
-            ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
+                ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
-        queryId,
-        session,
-        StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-        SqlState.INTERNAL_ERROR,
-        "Unexpected: download unsuccessful without exception!");
+            queryId,
+            session,
+            StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
+            SqlState.INTERNAL_ERROR,
+            "Unexpected: download unsuccessful without exception!");
   }
 
   /**
@@ -605,36 +605,36 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSession session,
-      String command,
-      int parallelism,
-      boolean uploadFromStream,
-      String remoteStorageLocation,
-      File srcFile,
-      String destFileName,
-      InputStream inputStream,
-      FileBackedOutputStream fileBackedOutputStream,
-      StorageObjectMetadata meta,
-      String stageRegion,
-      String presignedUrl,
-      String queryId)
-      throws SnowflakeSQLException {
+          SFSession session,
+          String command,
+          int parallelism,
+          boolean uploadFromStream,
+          String remoteStorageLocation,
+          File srcFile,
+          String destFileName,
+          InputStream inputStream,
+          FileBackedOutputStream fileBackedOutputStream,
+          StorageObjectMetadata meta,
+          String stageRegion,
+          String presignedUrl,
+          String queryId)
+          throws SnowflakeSQLException {
     logger.info(
-        StorageHelper.getStartUploadLog(
-            "S3", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
+            StorageHelper.getStartUploadLog(
+                    "S3", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
 
     final long originalContentLength = meta.getContentLength();
     final List<FileInputStream> toClose = new ArrayList<>();
     SFPair<InputStream, Boolean> uploadStreamInfo =
-        createUploadStream(
-            srcFile,
-            uploadFromStream,
-            inputStream,
-            fileBackedOutputStream,
-            meta,
-            originalContentLength,
-            toClose,
-            queryId);
+            createUploadStream(
+                    srcFile,
+                    uploadFromStream,
+                    inputStream,
+                    fileBackedOutputStream,
+                    meta,
+                    originalContentLength,
+                    toClose,
+                    queryId);
 
     S3TransferManager tx = null;
     int retryCount = 0;
@@ -643,16 +643,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     do {
       try {
         PutObjectRequest.Builder putRequestBuilder =
-            ((S3ObjectMetadata) meta)
-                .getS3PutObjectRequest().toBuilder()
-                    .bucket(remoteStorageLocation)
-                    .key(destFileName);
+                ((S3ObjectMetadata) meta)
+                        .getS3PutObjectRequest().toBuilder()
+                        .bucket(remoteStorageLocation)
+                        .key(destFileName);
 
         logger.debug(
-            "Creating executor service for transfer" + "manager with {} threads", parallelism);
+                "Creating executor service for transfer" + "manager with {} threads", parallelism);
 
         ThreadPoolExecutor executorService =
-            createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
+                createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
         // upload files to s3
         tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
 
@@ -668,20 +668,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         if (uploadStreamInfo.right) {
           myUpload =
-              tx.upload(
-                  UploadRequest.builder()
-                      .putObjectRequest(request)
-                      .requestBody(
-                          AsyncRequestBody.fromInputStream(
-                              uploadStreamInfo.left, request.contentLength(), executorService))
-                      .build());
+                  tx.upload(
+                          UploadRequest.builder()
+                                  .putObjectRequest(request)
+                                  .requestBody(
+                                          AsyncRequestBody.fromInputStream(
+                                                  uploadStreamInfo.left, request.contentLength(), executorService))
+                                  .build());
         } else {
           myUpload =
-              tx.upload(
-                  UploadRequest.builder()
-                      .putObjectRequest(request)
-                      .requestBody(AsyncRequestBody.fromFile(srcFile))
-                      .build());
+                  tx.upload(
+                          UploadRequest.builder()
+                                  .putObjectRequest(request)
+                                  .requestBody(AsyncRequestBody.fromFile(srcFile))
+                                  .build());
         }
 
         myUpload.completionFuture().join();
@@ -695,41 +695,41 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         if (uploadFromStream) {
           logger.info(
-              "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
-              destFileName,
-              uploadMillis,
-              retryCount);
+                  "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
+                  destFileName,
+                  uploadMillis,
+                  retryCount);
         } else {
           logger.info(
-              "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
-              srcFile.getAbsolutePath(),
-              destFileName,
-              uploadMillis,
-              retryCount);
+                  "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
+                  srcFile.getAbsolutePath(),
+                  destFileName,
+                  uploadMillis,
+                  retryCount);
         }
         return;
       } catch (Exception ex) {
         handleS3Exception(ex, ++retryCount, StorageHelper.UPLOAD, session, command, this, queryId);
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(
-              queryId,
-              ex,
-              SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
-              "Encountered exception during upload: "
-                  + ex.getMessage()
-                  + "\nCannot retry upload from stream.");
+                  queryId,
+                  ex,
+                  SqlState.SYSTEM_ERROR,
+                  ErrorCode.IO_ERROR.getMessageCode(),
+                  "Encountered exception during upload: "
+                          + ex.getMessage()
+                          + "\nCannot retry upload from stream.");
         }
         uploadStreamInfo =
-            createUploadStream(
-                srcFile,
-                uploadFromStream,
-                inputStream,
-                fileBackedOutputStream,
-                meta,
-                originalContentLength,
-                toClose,
-                queryId);
+                createUploadStream(
+                        srcFile,
+                        uploadFromStream,
+                        inputStream,
+                        fileBackedOutputStream,
+                        meta,
+                        originalContentLength,
+                        toClose,
+                        queryId);
       } finally {
         if (tx != null) {
           tx.close();
@@ -742,91 +742,91 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     throw new SnowflakeSQLLoggedException(
-        queryId,
-        session,
-        StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
-        SqlState.INTERNAL_ERROR,
-        "Unexpected: upload unsuccessful without exception!");
+            queryId,
+            session,
+            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
+            SqlState.INTERNAL_ERROR,
+            "Unexpected: upload unsuccessful without exception!");
   }
 
   private SFPair<InputStream, Boolean> createUploadStream(
-      File srcFile,
-      boolean uploadFromStream,
-      InputStream inputStream,
-      FileBackedOutputStream fileBackedOutputStream,
-      StorageObjectMetadata meta,
-      long originalContentLength,
-      List<FileInputStream> toClose,
-      String queryId)
-      throws SnowflakeSQLException {
+          File srcFile,
+          boolean uploadFromStream,
+          InputStream inputStream,
+          FileBackedOutputStream fileBackedOutputStream,
+          StorageObjectMetadata meta,
+          long originalContentLength,
+          List<FileInputStream> toClose,
+          String queryId)
+          throws SnowflakeSQLException {
     logger.debug(
-        "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize: {}",
-        this,
-        srcFile,
-        uploadFromStream,
-        inputStream,
-        fileBackedOutputStream,
-        meta,
-        toClose,
-        this.getEncryptionKeySize());
+            "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize: {}",
+            this,
+            srcFile,
+            uploadFromStream,
+            inputStream,
+            fileBackedOutputStream,
+            meta,
+            toClose,
+            this.getEncryptionKeySize());
     final InputStream result;
     FileInputStream srcFileStream = null;
     if (isEncrypting() && getEncryptionKeySize() < 256) {
       try {
         final InputStream uploadStream =
-            uploadFromStream
-                ? (fileBackedOutputStream != null
-                    ? fileBackedOutputStream.asByteSource().openStream()
-                    : inputStream)
-                : (srcFileStream = new FileInputStream(srcFile));
+                uploadFromStream
+                        ? (fileBackedOutputStream != null
+                        ? fileBackedOutputStream.asByteSource().openStream()
+                        : inputStream)
+                        : (srcFileStream = new FileInputStream(srcFile));
         toClose.add(srcFileStream);
 
         // Encrypt
         result =
-            EncryptionProvider.encrypt(
-                meta, originalContentLength, uploadStream, this.encMat, this);
+                EncryptionProvider.encrypt(
+                        meta, originalContentLength, uploadStream, this.encMat, this);
         uploadFromStream = true;
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
         throw new SnowflakeSQLLoggedException(
-            queryId,
-            session,
-            SqlState.INTERNAL_ERROR,
-            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
-            ex,
-            "Failed to encrypt input",
-            ex.getMessage());
+                queryId,
+                session,
+                SqlState.INTERNAL_ERROR,
+                StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
+                ex,
+                "Failed to encrypt input",
+                ex.getMessage());
       }
     } else {
       try {
         result =
-            uploadFromStream
-                ? (fileBackedOutputStream != null
-                    ? fileBackedOutputStream.asByteSource().openStream()
-                    : inputStream)
-                : (srcFileStream = new FileInputStream(srcFile));
+                uploadFromStream
+                        ? (fileBackedOutputStream != null
+                        ? fileBackedOutputStream.asByteSource().openStream()
+                        : inputStream)
+                        : (srcFileStream = new FileInputStream(srcFile));
         toClose.add(srcFileStream);
 
       } catch (FileNotFoundException ex) {
         logger.error("Failed to open input file", ex);
         throw new SnowflakeSQLLoggedException(
-            queryId,
-            session,
-            SqlState.INTERNAL_ERROR,
-            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
-            ex,
-            "Failed to open input file",
-            ex.getMessage());
+                queryId,
+                session,
+                SqlState.INTERNAL_ERROR,
+                StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
+                ex,
+                "Failed to open input file",
+                ex.getMessage());
       } catch (IOException ex) {
         logger.error("Failed to open input stream", ex);
         throw new SnowflakeSQLLoggedException(
-            queryId,
-            session,
-            SqlState.INTERNAL_ERROR,
-            StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
-            ex,
-            "Failed to open input stream",
-            ex.getMessage());
+                queryId,
+                session,
+                SqlState.INTERNAL_ERROR,
+                StorageHelper.getOperationException(StorageHelper.UPLOAD).getMessageCode(),
+                ex,
+                "Failed to open input stream",
+                ex.getMessage());
       }
     }
     return SFPair.of(result, uploadFromStream);
@@ -834,25 +834,25 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex,
-      int retryCount,
-      String operation,
-      SFSession session,
-      String command,
-      String queryId)
-      throws SnowflakeSQLException {
+          Exception ex,
+          int retryCount,
+          String operation,
+          SFSession session,
+          String command,
+          String queryId)
+          throws SnowflakeSQLException {
     handleS3Exception(ex, retryCount, operation, session, command, this, queryId);
   }
 
   private static void handleS3Exception(
-      Exception ex,
-      int retryCount,
-      String operation,
-      SFSession session,
-      String command,
-      SnowflakeS3Client s3Client,
-      String queryId)
-      throws SnowflakeSQLException {
+          Exception ex,
+          int retryCount,
+          String operation,
+          SFSession session,
+          String command,
+          SnowflakeS3Client s3Client,
+          String queryId)
+          throws SnowflakeSQLException {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
@@ -872,38 +872,38 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       logger.debug("SdkException: " + ex.getMessage());
       if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException400Or404(cause)) {
         throwIfClientExceptionOrMaxRetryReached(
-            operation, session, command, queryId, s3Client, cause);
+                operation, session, command, queryId, s3Client, cause);
       } else {
         retryRequestWithExponentialBackoff(
-            ex, retryCount, operation, session, command, s3Client, queryId, cause);
+                ex, retryCount, operation, session, command, s3Client, queryId, cause);
       }
     } else {
       if (ex instanceof InterruptedException
-          || getRootCause(ex) instanceof SocketTimeoutException
-          || ex instanceof CompletionException) {
+              || getRootCause(ex) instanceof SocketTimeoutException
+              || ex instanceof CompletionException) {
         if (retryCount > s3Client.getMaxRetries()) {
           throw new SnowflakeSQLLoggedException(
-              queryId,
-              session,
-              SqlState.SYSTEM_ERROR,
-              StorageHelper.getOperationException(operation).getMessageCode(),
-              ex,
-              "Encountered exception during " + operation + ": " + ex.getMessage());
+                  queryId,
+                  session,
+                  SqlState.SYSTEM_ERROR,
+                  StorageHelper.getOperationException(operation).getMessageCode(),
+                  ex,
+                  "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
           logger.debug(
-              "Encountered exception ({}) during {}, retry count: {}",
-              ex.getMessage(),
-              operation,
-              retryCount);
+                  "Encountered exception ({}) during {}, retry count: {}",
+                  ex.getMessage(),
+                  operation,
+                  retryCount);
         }
       } else {
         throw new SnowflakeSQLLoggedException(
-            queryId,
-            session,
-            SqlState.SYSTEM_ERROR,
-            StorageHelper.getOperationException(operation).getMessageCode(),
-            ex,
-            "Encountered exception during " + operation + ": " + ex.getMessage());
+                queryId,
+                session,
+                SqlState.SYSTEM_ERROR,
+                StorageHelper.getOperationException(operation).getMessageCode(),
+                ex,
+                "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
   }
@@ -918,7 +918,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (ex instanceof SdkServiceException) {
       SdkServiceException asEx = (SdkServiceException) (ex);
       return asEx.statusCode() == HttpStatus.SC_NOT_FOUND
-          || asEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
+              || asEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
     }
     return false;
   }
@@ -932,11 +932,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   /* Adds encryption metadata to the StorageObjectMetadata object */
   @Override
   public void addEncryptionMetadata(
-      StorageObjectMetadata meta,
-      MatDesc matDesc,
-      byte[] ivData,
-      byte[] encryptedKey,
-      long contentLength) {
+          StorageObjectMetadata meta,
+          MatDesc matDesc,
+          byte[] ivData,
+          byte[] encryptedKey,
+          long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
     meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
@@ -961,7 +961,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void addStreamingIngestMetadata(
-      StorageObjectMetadata meta, String clientName, String clientKey) {
+          StorageObjectMetadata meta, String clientName, String clientKey) {
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_NAME, clientName);
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
@@ -983,7 +983,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     private final int socketTimeout;
 
     public ClientConfiguration(
-        int maxConnections, int maxErrorRetry, int connectionTimeout, int socketTimeout) {
+            int maxConnections, int maxErrorRetry, int connectionTimeout, int socketTimeout) {
       this.maxConnections = maxConnections;
       this.maxErrorRetry = maxErrorRetry;
       this.connectionTimeout = connectionTimeout;
