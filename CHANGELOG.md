@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.0.1-SNAPSHOT
-    -
+    - Add /etc/os-release data to Minicore telemetry
     - 
     -
     -
