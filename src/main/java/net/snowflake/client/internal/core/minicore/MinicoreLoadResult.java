@@ -3,6 +3,7 @@ package net.snowflake.client.internal.core.minicore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class MinicoreLoadResult {
 
@@ -13,6 +14,7 @@ public class MinicoreLoadResult {
   private final String coreVersion;
   private final Throwable exception;
   private final List<String> logs;
+  private final Map<String, String> osDetails;
 
   private MinicoreLoadResult(
       boolean success,
@@ -21,7 +23,8 @@ public class MinicoreLoadResult {
       MinicoreLibrary library,
       String coreVersion,
       Throwable exception,
-      List<String> logs) {
+      List<String> logs,
+      Map<String, String> osDetails) {
     this.success = success;
     this.errorMessage = errorMessage;
     this.libraryFileName = libraryFileName;
@@ -29,17 +32,21 @@ public class MinicoreLoadResult {
     this.coreVersion = coreVersion;
     this.exception = exception;
     this.logs = logs != null ? logs : new ArrayList<>();
+    this.osDetails = osDetails != null ? osDetails : Collections.emptyMap();
   }
 
   public static MinicoreLoadResult success(
       String libraryFileName, MinicoreLibrary library, String coreVersion, List<String> logs) {
-    return new MinicoreLoadResult(true, null, libraryFileName, library, coreVersion, null, logs);
+    Map<String, String> osDetails = OsReleaseDetails.load();
+    return new MinicoreLoadResult(
+        true, null, libraryFileName, library, coreVersion, null, logs, osDetails);
   }
 
   public static MinicoreLoadResult failure(
       String errorMessage, String libraryFileName, Throwable exception, List<String> logs) {
+    Map<String, String> osDetails = OsReleaseDetails.load();
     return new MinicoreLoadResult(
-        false, errorMessage, libraryFileName, null, null, exception, logs);
+        false, errorMessage, libraryFileName, null, null, exception, logs, osDetails);
   }
 
   public boolean isSuccess() {
@@ -68,6 +75,10 @@ public class MinicoreLoadResult {
 
   public List<String> getLogs() {
     return Collections.unmodifiableList(logs);
+  }
+
+  public Map<String, String> getOsDetails() {
+    return osDetails;
   }
 
   @Override

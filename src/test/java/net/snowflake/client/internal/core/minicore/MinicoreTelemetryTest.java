@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.condition.OS.LINUX;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 
 /**
  * Tests for MinicoreTelemetry.
@@ -197,5 +199,23 @@ public class MinicoreTelemetryTest {
 
     assertNotNull(node, "ObjectNode should not be null");
     assertFalse(node.has("loadLogs"), "Should not have loadLogs when empty");
+  }
+
+  @Test
+  @EnabledOnOs(LINUX)
+  public void testOsDetailsContainsExpectedKeysOnLinux() {
+    MinicoreLoadResult result =
+        MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>());
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
+    Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
+
+    assertTrue(map.containsKey("OS_DETAILS"), "OS_DETAILS should be present on Linux");
+
+    Map<String, String> osDetails = (Map<String, String>) map.get("OS_DETAILS");
+    assertNotNull(osDetails, "OS_DETAILS map should not be null");
+    assertFalse(osDetails.isEmpty(), "OS_DETAILS should not be empty on Linux");
+    assertTrue(
+        osDetails.containsKey("ID") || osDetails.containsKey("NAME"),
+        "OS_DETAILS should contain at least ID or NAME key");
   }
 }

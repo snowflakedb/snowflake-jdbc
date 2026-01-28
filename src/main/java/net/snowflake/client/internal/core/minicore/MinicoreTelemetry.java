@@ -36,18 +36,21 @@ public class MinicoreTelemetry {
   private final String coreFileName;
   private final MinicoreLoadError coreLoadError;
   private final List<String> coreLoadLogs;
+  private final Map<String, String> osDetails;
 
   private MinicoreTelemetry(
       String isa,
       String coreVersion,
       String coreFileName,
       MinicoreLoadError coreLoadError,
-      List<String> coreLoadLogs) {
+      List<String> coreLoadLogs,
+      Map<String, String> osDetails) {
     this.isa = isa;
     this.coreVersion = coreVersion;
     this.coreFileName = coreFileName;
     this.coreLoadError = coreLoadError;
     this.coreLoadLogs = coreLoadLogs != null ? coreLoadLogs : new ArrayList<>();
+    this.osDetails = osDetails != null ? osDetails : new HashMap<>();
   }
 
   /**
@@ -66,18 +69,18 @@ public class MinicoreTelemetry {
 
     // Check if disabled via environment variable
     if (Minicore.isDisabledViaEnvVar()) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.DISABLED, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.DISABLED, null, null);
     }
 
     // Check if initialization hasn't started or instance not yet available
     Minicore minicore = Minicore.getInstance();
     if (minicore == null) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null, null);
     }
 
     MinicoreLoadResult result = minicore.getLoadResult();
     if (result == null) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null, null);
     }
 
     return fromLoadResult(result);
@@ -89,9 +92,10 @@ public class MinicoreTelemetry {
     String coreVersion = loadResult.getCoreVersion();
     String coreFileName = loadResult.getLibraryFileName();
     List<String> logs = new ArrayList<>(loadResult.getLogs());
+    Map<String, String> osDetails = loadResult.getOsDetails();
 
     if (loadResult.isSuccess()) {
-      return new MinicoreTelemetry(isa, coreVersion, coreFileName, null, logs);
+      return new MinicoreTelemetry(isa, coreVersion, coreFileName, null, logs, osDetails);
     }
 
     // For failures, add the detailed error message to logs for visibility
@@ -105,7 +109,7 @@ public class MinicoreTelemetry {
     }
 
     return new MinicoreTelemetry(
-        isa, coreVersion, coreFileName, MinicoreLoadError.FAILED_TO_LOAD, logs);
+        isa, coreVersion, coreFileName, MinicoreLoadError.FAILED_TO_LOAD, logs, osDetails);
   }
 
   // Convert telemetry data to Map for client environment telemetry. Load logs are not included.
@@ -126,6 +130,14 @@ public class MinicoreTelemetry {
 
     if (coreLoadError != null) {
       map.put("CORE_LOAD_ERROR", SecretDetector.maskSecrets(coreLoadError.getMessage()));
+    }
+
+    if (!osDetails.isEmpty()) {
+      Map<String, String> maskedOsDetails = new HashMap<>();
+      for (Map.Entry<String, String> entry : osDetails.entrySet()) {
+        maskedOsDetails.put(entry.getKey(), SecretDetector.maskSecrets(entry.getValue()));
+      }
+      map.put("OS_DETAILS", maskedOsDetails);
     }
 
     return map;
