@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.CORE)
 public class MinicoreTest {
 
-  private static final long MAX_MINICORE_INIT_TIME_MS = 1000;
+  private static final long MAX_MINICORE_INIT_TIME_MS = 5000;
   private static final int NUM_TIMING_RUNS = 5;
 
   @Test

@@ -1,8 +1,16 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- TBD
+- v4.0.1-SNAPSHOT
     - Bumped Amazon S3 Encryption Client to 4.0.0 (was: 3.4.0) to address CVE-2025-14763. Accordingly, needed to migrate our client to v4 and new (compatible) config. (snowflakedb/snowflake-jdbc#2466)
+    - 
+    -
+    -
+    -
+    -
+    -
+    -
+    -
 
 - v4.0.0
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
