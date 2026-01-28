@@ -1,6 +1,17 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.0.1-SNAPSHOT
+    -
+    - 
+    -
+    -
+    -
+    -
+    -
+    -
+    -
+
 - v4.0.0
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
     - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
