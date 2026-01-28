@@ -58,7 +58,7 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       SnowflakeAsyncResultSet rs = resultSet.unwrap(SnowflakeAsyncResultSet.class);
       await().atMost(Duration.ofSeconds(60)).until(() -> !rs.getStatus().isStillRunning());
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.Status.SUCCESS, queryStatus);
+      assertEquals(QueryStatus.Status.SUCCESS, queryStatus.getStatus());
 
       // assert we get 1 row
       assertTrue(resultSet.next());
