@@ -36,15 +36,21 @@ public class MinicoreLoadResult {
   }
 
   public static MinicoreLoadResult success(
-      String libraryFileName, MinicoreLibrary library, String coreVersion, List<String> logs) {
-    Map<String, String> osDetails = OsReleaseDetails.load();
+      String libraryFileName,
+      MinicoreLibrary library,
+      String coreVersion,
+      List<String> logs,
+      Map<String, String> osDetails) {
     return new MinicoreLoadResult(
         true, null, libraryFileName, library, coreVersion, null, logs, osDetails);
   }
 
   public static MinicoreLoadResult failure(
-      String errorMessage, String libraryFileName, Throwable exception, List<String> logs) {
-    Map<String, String> osDetails = OsReleaseDetails.load();
+      String errorMessage,
+      String libraryFileName,
+      Throwable exception,
+      List<String> logs,
+      Map<String, String> osDetails) {
     return new MinicoreLoadResult(
         false, errorMessage, libraryFileName, null, null, exception, logs, osDetails);
   }

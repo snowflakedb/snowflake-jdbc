@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
+import java.util.Map;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -21,6 +22,7 @@ public class MinicoreLoader {
   private MinicoreLoadResult loadResult;
   private final MinicoreLoadLogger loadLogger = new MinicoreLoadLogger();
   private final MinicorePlatform platform = new MinicorePlatform();
+  private Map<String, String> osDetails;
 
   public synchronized MinicoreLoadResult loadLibrary() {
     if (loadResult != null) {
@@ -30,6 +32,9 @@ public class MinicoreLoader {
     loadLogger.log("Starting minicore loading");
     loadLogger.log(
         "Detected platform: OS=" + platform.getOsName() + ", Arch=" + platform.getOsArch());
+
+    // Load OS release details for telemetry
+    loadOsDetails();
 
     if (!platform.isSupported()) {
       loadLogger.log("Platform not supported");
@@ -43,6 +48,19 @@ public class MinicoreLoader {
     loadLogger.log("Platform supported: " + platform.getPlatformIdentifier());
     loadResult = loadFromJar();
     return loadResult;
+  }
+
+  private void loadOsDetails() {
+    osDetails = OsReleaseDetails.load();
+    if (osDetails.isEmpty()) {
+      loadLogger.log("OS release details: not available");
+    } else {
+      loadLogger.log(
+          "OS release details: ID="
+              + osDetails.getOrDefault("ID", "unknown")
+              + ", VERSION_ID="
+              + osDetails.getOrDefault("VERSION_ID", "unknown"));
+    }
   }
 
   private MinicoreLoadResult loadFromJar() {
@@ -184,7 +202,7 @@ public class MinicoreLoader {
       String version = library.sf_core_full_version();
       loadLogger.log("Library version: " + version);
       return MinicoreLoadResult.success(
-          platform.getLibraryFileName(), library, version, loadLogger.getLogs());
+          platform.getLibraryFileName(), library, version, loadLogger.getLogs(), osDetails);
     } catch (UnsatisfiedLinkError e) {
       loadLogger.log("Library missing sf_core_full_version symbol: " + e.getMessage());
       return failure("Library missing required symbol: sf_core_full_version", e);
@@ -209,7 +227,7 @@ public class MinicoreLoader {
 
   private MinicoreLoadResult failure(String message, Throwable cause) {
     return MinicoreLoadResult.failure(
-        message, platform.getLibraryFileName(), cause, loadLogger.getLogs());
+        message, platform.getLibraryFileName(), cause, loadLogger.getLogs(), osDetails);
   }
 
   private void setDirectoryPermissions(Path path) throws IOException {

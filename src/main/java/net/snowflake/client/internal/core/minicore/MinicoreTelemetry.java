@@ -169,6 +169,13 @@ public class MinicoreTelemetry {
       coreLoadLogs.stream().map(SecretDetector::maskSecrets).forEach(logsArray::add);
     }
 
+    if (!osDetails.isEmpty()) {
+      ObjectNode osDetailsNode = message.putObject("osDetails");
+      for (Map.Entry<String, String> entry : osDetails.entrySet()) {
+        osDetailsNode.put(entry.getKey(), SecretDetector.maskSecrets(entry.getValue()));
+      }
+    }
+
     return message;
   }
 

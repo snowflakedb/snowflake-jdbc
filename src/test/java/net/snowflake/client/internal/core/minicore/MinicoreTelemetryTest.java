@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.condition.OS.LINUX;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +38,8 @@ public class MinicoreTelemetryTest {
   @Test
   public void testClientEnvTelemetryFromSuccessfulLoad() {
     MinicoreLoadResult result =
-        MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>());
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
 
@@ -56,7 +59,11 @@ public class MinicoreTelemetryTest {
     String errorMessage = "Failed to load library: symbol not found";
     MinicoreLoadResult result =
         MinicoreLoadResult.failure(
-            errorMessage, TEST_LIBRARY_FILE, new UnsatisfiedLinkError("test"), new ArrayList<>());
+            errorMessage,
+            TEST_LIBRARY_FILE,
+            new UnsatisfiedLinkError("test"),
+            new ArrayList<>(),
+            Collections.emptyMap());
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
@@ -101,7 +108,8 @@ public class MinicoreTelemetryTest {
     List<String> originalLogs = Arrays.asList("Starting load", "Checking platform");
 
     MinicoreLoadResult result =
-        MinicoreLoadResult.failure(detailedError, TEST_LIBRARY_FILE, exception, originalLogs);
+        MinicoreLoadResult.failure(
+            detailedError, TEST_LIBRARY_FILE, exception, originalLogs, Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
@@ -130,7 +138,8 @@ public class MinicoreTelemetryTest {
   public void testInBandTelemetryNodeFromSuccessfulLoad() {
     List<String> logs = Arrays.asList("log1", "log2", "log3");
     MinicoreLoadResult result =
-        MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, logs);
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, logs, Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
@@ -157,7 +166,11 @@ public class MinicoreTelemetryTest {
     List<String> logs = Arrays.asList("starting", "failed");
     MinicoreLoadResult result =
         MinicoreLoadResult.failure(
-            errorMessage, TEST_LIBRARY_FILE, new RuntimeException("test"), logs);
+            errorMessage,
+            TEST_LIBRARY_FILE,
+            new RuntimeException("test"),
+            logs,
+            Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
@@ -193,7 +206,8 @@ public class MinicoreTelemetryTest {
   @Test
   public void testInBandTelemetryNodeWithEmptyLogs() {
     MinicoreLoadResult result =
-        MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>());
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     ObjectNode node = telemetry.toInBandTelemetryNode();
 
@@ -202,10 +216,45 @@ public class MinicoreTelemetryTest {
   }
 
   @Test
+  public void testInBandTelemetryNodeWithOsDetails() {
+    Map<String, String> testOsDetails = new HashMap<>();
+    testOsDetails.put("NAME", "Test Linux");
+    testOsDetails.put("ID", "testlinux");
+    testOsDetails.put("VERSION_ID", "1.0.0");
+
+    MinicoreLoadResult result =
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), testOsDetails);
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
+    ObjectNode node = telemetry.toInBandTelemetryNode();
+
+    assertNotNull(node, "ObjectNode should not be null");
+    assertTrue(node.has("osDetails"), "Should have osDetails when present");
+
+    ObjectNode osDetailsNode = (ObjectNode) node.get("osDetails");
+    assertEquals("Test Linux", osDetailsNode.get("NAME").asText());
+    assertEquals("testlinux", osDetailsNode.get("ID").asText());
+    assertEquals("1.0.0", osDetailsNode.get("VERSION_ID").asText());
+  }
+
+  @Test
+  public void testInBandTelemetryNodeWithoutOsDetails() {
+    MinicoreLoadResult result =
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), Collections.emptyMap());
+    MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
+    ObjectNode node = telemetry.toInBandTelemetryNode();
+
+    assertNotNull(node, "ObjectNode should not be null");
+    assertFalse(node.has("osDetails"), "Should not have osDetails when empty");
+  }
+
+  @Test
   @EnabledOnOs(LINUX)
   public void testOsDetailsContainsExpectedKeysOnLinux() {
     MinicoreLoadResult result =
-        MinicoreLoadResult.success(TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>());
+        MinicoreLoadResult.success(
+            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), Collections.emptyMap());
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
 

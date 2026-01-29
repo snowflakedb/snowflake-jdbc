@@ -53,7 +53,8 @@ public class Minicore {
                         "Unexpected initialization error: " + e.getMessage(),
                         null,
                         e,
-                        Collections.emptyList());
+                        Collections.emptyList(),
+                        Collections.emptyMap());
                 INSTANCE = new Minicore(failedResult, null);
               }
             });
