@@ -17,19 +17,12 @@ import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
-/**
- * Parses Linux distribution details from /etc/os-release for telemetry purposes.
- *
- * <p>This class is public to allow test access from other packages, but should be considered
- * internal implementation detail.
- */
+/** Parses Linux distribution details from /etc/os-release for telemetry purposes. */
 public class OsReleaseDetails {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(OsReleaseDetails.class);
 
   private static final String DEFAULT_OS_RELEASE_PATH = "/etc/os-release";
-
-  /** Simple pattern: KEY=VALUE where KEY is uppercase letters, digits, underscore. */
   private static final Pattern KEY_VALUE_PATTERN = Pattern.compile("^([A-Z0-9_]+)=(.*)$");
 
   private static final Set<String> ALLOWED_KEYS =
