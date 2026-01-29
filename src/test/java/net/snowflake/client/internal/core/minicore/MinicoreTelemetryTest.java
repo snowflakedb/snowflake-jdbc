@@ -252,19 +252,26 @@ public class MinicoreTelemetryTest {
   @Test
   @EnabledOnOs(LINUX)
   public void testOsDetailsContainsExpectedKeysOnLinux() {
-    MinicoreLoadResult result =
-        MinicoreLoadResult.success(
-            TEST_LIBRARY_FILE, null, TEST_VERSION, new ArrayList<>(), Collections.emptyMap());
+    Minicore.initialize();
+    Minicore minicore = Minicore.getInstance();
+    assertNotNull(minicore, "Minicore should be initialized");
+
+    MinicoreLoadResult result = minicore.getLoadResult();
+    assertNotNull(result, "Load result should not be null");
+
+    Map<String, String> osDetails = result.getOsDetails();
+    assertNotNull(osDetails, "OS details should not be null");
+    assertFalse(osDetails.isEmpty(), "OS details should not be empty on Linux");
+
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(result);
     Map<String, Object> map = telemetry.toClientEnvironmentTelemetryMap();
 
     assertTrue(map.containsKey("OS_DETAILS"), "OS_DETAILS should be present on Linux");
 
-    Map<String, String> osDetails = (Map<String, String>) map.get("OS_DETAILS");
-    assertNotNull(osDetails, "OS_DETAILS map should not be null");
-    assertFalse(osDetails.isEmpty(), "OS_DETAILS should not be empty on Linux");
+    Map<String, String> telemetryOsDetails = (Map<String, String>) map.get("OS_DETAILS");
+    assertFalse(telemetryOsDetails.isEmpty(), "OS_DETAILS in telemetry should not be empty");
     assertTrue(
-        osDetails.containsKey("ID") || osDetails.containsKey("NAME"),
+        telemetryOsDetails.containsKey("ID") || telemetryOsDetails.containsKey("NAME"),
         "OS_DETAILS should contain at least ID or NAME key");
   }
 }
