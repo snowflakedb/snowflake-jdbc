@@ -77,6 +77,7 @@ public class OsReleaseDetails {
     }
 
     for (String line : content.split("\n")) {
+      line = line.trim();
       if (line.isEmpty() || line.startsWith("#")) {
         continue;
       }
@@ -109,16 +110,11 @@ public class OsReleaseDetails {
     // Handle quoted values (single or double quotes)
     if (firstChar == '"' || firstChar == '\'') {
       int endQuote = value.indexOf(firstChar, 1);
-      return endQuote > 0 ? value.substring(1, endQuote) : value.substring(1);
+      return endQuote > 0 ? value.substring(1, endQuote) : value.substring(1).trim();
     }
 
     // Unquoted value - strip inline comment if present
     int commentIndex = value.indexOf('#');
     return commentIndex > 0 ? value.substring(0, commentIndex).trim() : value;
-  }
-
-  /** Reset cached state for testing purposes. */
-  static void resetForTesting() {
-    cachedOsDetails = null;
   }
 }

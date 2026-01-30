@@ -8,7 +8,6 @@ import java.util.Map;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -20,11 +19,6 @@ public class MinicoreTelemetryWiremockIT extends BaseWiremockTest {
 
   private final String WIREMOCK_HOST_WITH_HTTPS_AND_PORT =
       "https://" + WIREMOCK_HOST + ":" + wiremockHttpsPort;
-
-  @AfterEach
-  public void tearDown() {
-    Minicore.resetForTesting();
-  }
 
   @Test
   public void testMinicoreTelemetryIncludedInLoginRequest() throws Exception, SFException {
