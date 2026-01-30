@@ -366,8 +366,7 @@ public class SessionUtilTest {
             "libsf_mini_core.so",
             null, // library instance not needed for this test
             "1.0.0",
-            logs,
-            java.util.Collections.emptyMap());
+            logs);
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(successResult);
     Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();
@@ -398,8 +397,7 @@ public class SessionUtilTest {
             "Failed to load library: UnsatisfiedLinkError",
             "libsf_mini_core.so",
             new UnsatisfiedLinkError("Cannot load library"),
-            logs,
-            java.util.Collections.emptyMap());
+            logs);
 
     MinicoreTelemetry telemetry = MinicoreTelemetry.fromLoadResult(failedResult);
     Map<String, Object> telemetryMap = telemetry.toClientEnvironmentTelemetryMap();

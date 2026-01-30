@@ -27,7 +27,7 @@ import net.snowflake.client.internal.util.SecretDetector;
  *   <li><b>loadLogs</b>: List of log messages with detailed error info from the loading process
  * </ul>
  *
- * <p>Note: OS and OS_VERSION are already set by SessionUtil.createClientEnvironmentInfo()
+ * <p>Note: OS, OS_VERSION, and OS_DETAILS are set by SessionUtil.createClientEnvironmentInfo()
  */
 public class MinicoreTelemetry {
 
@@ -36,21 +36,18 @@ public class MinicoreTelemetry {
   private final String coreFileName;
   private final MinicoreLoadError coreLoadError;
   private final List<String> coreLoadLogs;
-  private final Map<String, String> osDetails;
 
   private MinicoreTelemetry(
       String isa,
       String coreVersion,
       String coreFileName,
       MinicoreLoadError coreLoadError,
-      List<String> coreLoadLogs,
-      Map<String, String> osDetails) {
+      List<String> coreLoadLogs) {
     this.isa = isa;
     this.coreVersion = coreVersion;
     this.coreFileName = coreFileName;
     this.coreLoadError = coreLoadError;
     this.coreLoadLogs = coreLoadLogs != null ? coreLoadLogs : new ArrayList<>();
-    this.osDetails = osDetails != null ? osDetails : new HashMap<>();
   }
 
   /**
@@ -69,18 +66,18 @@ public class MinicoreTelemetry {
 
     // Check if disabled via environment variable
     if (Minicore.isDisabledViaEnvVar()) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.DISABLED, null, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.DISABLED, null);
     }
 
     // Check if initialization hasn't started or instance not yet available
     Minicore minicore = Minicore.getInstance();
     if (minicore == null) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
     }
 
     MinicoreLoadResult result = minicore.getLoadResult();
     if (result == null) {
-      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null, null);
+      return new MinicoreTelemetry(isa, null, null, MinicoreLoadError.STILL_LOADING, null);
     }
 
     return fromLoadResult(result);
@@ -92,10 +89,9 @@ public class MinicoreTelemetry {
     String coreVersion = loadResult.getCoreVersion();
     String coreFileName = loadResult.getLibraryFileName();
     List<String> logs = new ArrayList<>(loadResult.getLogs());
-    Map<String, String> osDetails = loadResult.getOsDetails();
 
     if (loadResult.isSuccess()) {
-      return new MinicoreTelemetry(isa, coreVersion, coreFileName, null, logs, osDetails);
+      return new MinicoreTelemetry(isa, coreVersion, coreFileName, null, logs);
     }
 
     // For failures, add the detailed error message to logs for visibility
@@ -109,7 +105,7 @@ public class MinicoreTelemetry {
     }
 
     return new MinicoreTelemetry(
-        isa, coreVersion, coreFileName, MinicoreLoadError.FAILED_TO_LOAD, logs, osDetails);
+        isa, coreVersion, coreFileName, MinicoreLoadError.FAILED_TO_LOAD, logs);
   }
 
   // Convert telemetry data to Map for client environment telemetry. Load logs are not included.
@@ -130,14 +126,6 @@ public class MinicoreTelemetry {
 
     if (coreLoadError != null) {
       map.put("CORE_LOAD_ERROR", SecretDetector.maskSecrets(coreLoadError.getMessage()));
-    }
-
-    if (!osDetails.isEmpty()) {
-      Map<String, String> maskedOsDetails = new HashMap<>();
-      for (Map.Entry<String, String> entry : osDetails.entrySet()) {
-        maskedOsDetails.put(entry.getKey(), SecretDetector.maskSecrets(entry.getValue()));
-      }
-      map.put("OS_DETAILS", maskedOsDetails);
     }
 
     return map;
@@ -167,13 +155,6 @@ public class MinicoreTelemetry {
     if (!coreLoadLogs.isEmpty()) {
       ArrayNode logsArray = message.putArray("loadLogs");
       coreLoadLogs.stream().map(SecretDetector::maskSecrets).forEach(logsArray::add);
-    }
-
-    if (!osDetails.isEmpty()) {
-      ObjectNode osDetailsNode = message.putObject("osDetails");
-      for (Map.Entry<String, String> entry : osDetails.entrySet()) {
-        osDetailsNode.put(entry.getKey(), SecretDetector.maskSecrets(entry.getValue()));
-      }
     }
 
     return message;

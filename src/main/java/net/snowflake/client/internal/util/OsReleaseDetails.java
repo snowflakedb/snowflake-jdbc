@@ -1,4 +1,4 @@
-package net.snowflake.client.internal.core.minicore;
+package net.snowflake.client.internal.util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +23,7 @@ public class OsReleaseDetails {
   private static final SFLogger logger = SFLoggerFactory.getLogger(OsReleaseDetails.class);
 
   private static final String DEFAULT_OS_RELEASE_PATH = "/etc/os-release";
+
   private static final Pattern KEY_VALUE_PATTERN = Pattern.compile("^([A-Z0-9_]+)=(.*)$");
 
   private static final Set<String> ALLOWED_KEYS =
@@ -38,24 +39,21 @@ public class OsReleaseDetails {
                   "VERSION",
                   "VERSION_ID")));
 
-  private static Path testOverridePath = null;
+  private static Map<String, String> cachedOsDetails = null;
 
-  public static void setTestOverridePath(Path path) {
-    testOverridePath = path;
-  }
-
-  static Map<String, String> load() {
-    if (testOverridePath != null) {
-      return loadFromPath(testOverridePath);
+  public static synchronized Map<String, String> load() {
+    if (cachedOsDetails != null) {
+      return cachedOsDetails;
     }
 
-    // Only collect on Linux in production
     if (Constants.getOS() != Constants.OS.LINUX) {
       logger.trace("OS details collection skipped: not running on Linux");
-      return Collections.emptyMap();
+      cachedOsDetails = Collections.emptyMap();
+      return cachedOsDetails;
     }
 
-    return loadFromPath(Paths.get(DEFAULT_OS_RELEASE_PATH));
+    cachedOsDetails = loadFromPath(Paths.get(DEFAULT_OS_RELEASE_PATH));
+    return cachedOsDetails;
   }
 
   static Map<String, String> loadFromPath(Path path) {
@@ -64,10 +62,10 @@ public class OsReleaseDetails {
       String content = new String(bytes, StandardCharsets.UTF_8);
       return parse(content);
     } catch (IOException e) {
-      logger.trace("Failed to read OS details from {}: {}", path, e.getMessage());
+      logger.debug("Failed to read OS details from {}: {}", path, e.getMessage());
       return Collections.emptyMap();
     } catch (Exception e) {
-      logger.trace("Unexpected error reading OS details from {}: {}", path, e.getMessage());
+      logger.debug("Unexpected error reading OS details from {}: {}", path, e.getMessage());
       return Collections.emptyMap();
     }
   }
@@ -85,9 +83,9 @@ public class OsReleaseDetails {
 
       Matcher matcher = KEY_VALUE_PATTERN.matcher(line);
       if (matcher.matches()) {
-        String key = matcher.group(1);
+        String key = matcher.group(1).trim();
         if (ALLOWED_KEYS.contains(key)) {
-          String value = trimQuotes(matcher.group(2));
+          String value = parseValue(matcher.group(2));
           details.put(key, value);
         }
       }
@@ -96,11 +94,31 @@ public class OsReleaseDetails {
     return Collections.unmodifiableMap(details);
   }
 
-  /** Remove surrounding double quotes from value if present. */
-  private static String trimQuotes(String value) {
-    if (value != null && value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-      return value.substring(1, value.length() - 1);
+  private static String parseValue(String value) {
+    if (value == null) {
+      return null;
     }
-    return value;
+
+    value = value.trim();
+    if (value.isEmpty()) {
+      return value;
+    }
+
+    char firstChar = value.charAt(0);
+
+    // Handle quoted values (single or double quotes)
+    if (firstChar == '"' || firstChar == '\'') {
+      int endQuote = value.indexOf(firstChar, 1);
+      return endQuote > 0 ? value.substring(1, endQuote) : value.substring(1);
+    }
+
+    // Unquoted value - strip inline comment if present
+    int commentIndex = value.indexOf('#');
+    return commentIndex > 0 ? value.substring(0, commentIndex).trim() : value;
+  }
+
+  /** Reset cached state for testing purposes. */
+  static void resetForTesting() {
+    cachedOsDetails = null;
   }
 }

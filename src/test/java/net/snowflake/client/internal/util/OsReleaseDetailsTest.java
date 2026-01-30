@@ -1,20 +1,14 @@
-package net.snowflake.client.internal.core.minicore;
+package net.snowflake.client.internal.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 public class OsReleaseDetailsTest {
-
-  @TempDir Path tempDir;
 
   @Test
   public void testParseArchLinuxOsRelease() {
@@ -147,32 +141,80 @@ public class OsReleaseDetailsTest {
   }
 
   @Test
-  public void testLoadFromFile() throws IOException {
-    String content =
-        "NAME=\"Test Linux\"\n"
-            + "PRETTY_NAME=\"Test Linux 1.0\"\n"
-            + "ID=test\n"
-            + "VERSION_ID=1.0\n";
+  public void testParseSingleQuotedValues() {
+    String content = "NAME='Ubuntu'\n" + "VERSION='22.04.3 LTS'\n" + "ID='ubuntu'\n";
 
-    Path osReleaseFile = tempDir.resolve("os-release");
-    Files.write(osReleaseFile, content.getBytes(StandardCharsets.UTF_8));
+    Map<String, String> result = OsReleaseDetails.parse(content);
+
+    assertEquals("Ubuntu", result.get("NAME"));
+    assertEquals("22.04.3 LTS", result.get("VERSION"));
+    assertEquals("ubuntu", result.get("ID"));
+  }
+
+  @Test
+  public void testParseValueWithSpacesAroundEquals() {
+    // Some implementations might have spaces around the equals sign
+    String content = "NAME= \"Ubuntu\"\n" + "ID= ubuntu\n" + "VERSION= '22.04'\n";
+
+    Map<String, String> result = OsReleaseDetails.parse(content);
+
+    assertEquals("Ubuntu", result.get("NAME"));
+    assertEquals("ubuntu", result.get("ID"));
+    assertEquals("22.04", result.get("VERSION"));
+  }
+
+  @Test
+  public void testParseValueWithInlineComment() {
+    // Unquoted values can have inline comments
+    String content = "ID=ubuntu # this is a comment\n" + "VERSION_ID=22.04 # another comment\n";
+
+    Map<String, String> result = OsReleaseDetails.parse(content);
+
+    assertEquals("ubuntu", result.get("ID"));
+    assertEquals("22.04", result.get("VERSION_ID"));
+  }
+
+  @Test
+  public void testParseQuotedValueWithHashSymbol() {
+    // Hash inside quotes should not be treated as comment
+    String content = "NAME=\"Ubuntu #1\"\n" + "PRETTY_NAME='Test #2 Distro'\n";
+
+    Map<String, String> result = OsReleaseDetails.parse(content);
+
+    assertEquals("Ubuntu #1", result.get("NAME"));
+    assertEquals("Test #2 Distro", result.get("PRETTY_NAME"));
+  }
+
+  @Test
+  public void testParseQuotedValueWithInlineComment() {
+    // Single-quoted value followed by inline comment
+    String content =
+        "NAME='Ubuntu' # the OS name\n"
+            + "ID=\"ubuntu\" # lowercase id\n"
+            + "VERSION='22.04 LTS' # long term support\n";
+
+    Map<String, String> result = OsReleaseDetails.parse(content);
+
+    assertEquals("Ubuntu", result.get("NAME"));
+    assertEquals("ubuntu", result.get("ID"));
+    assertEquals("22.04 LTS", result.get("VERSION"));
+  }
+
+  @Test
+  public void testLoadFromFile() throws Exception {
+    Path osReleaseFile =
+        Paths.get(Objects.requireNonNull(getClass().getResource("/os-release-test")).toURI());
 
     Map<String, String> result = OsReleaseDetails.loadFromPath(osReleaseFile);
 
     assertEquals("Test Linux", result.get("NAME"));
-    assertEquals("Test Linux 1.0", result.get("PRETTY_NAME"));
-    assertEquals("test", result.get("ID"));
-    assertEquals("1.0", result.get("VERSION_ID"));
-    assertEquals(4, result.size());
-  }
-
-  @Test
-  public void testLoadFromNonExistentFile() {
-    Path nonExistentFile = tempDir.resolve("non-existent-file");
-
-    Map<String, String> result = OsReleaseDetails.loadFromPath(nonExistentFile);
-
-    assertNotNull(result);
-    assertTrue(result.isEmpty());
+    assertEquals("Test Linux 1.0 LTS", result.get("PRETTY_NAME"));
+    assertEquals("testlinux", result.get("ID"));
+    assertEquals("testlinux-cloud", result.get("IMAGE_ID"));
+    assertEquals("1.0.0-cloud", result.get("IMAGE_VERSION"));
+    assertEquals("20260130", result.get("BUILD_ID"));
+    assertEquals("1.0 LTS (Test Release)", result.get("VERSION"));
+    assertEquals("1.0.0", result.get("VERSION_ID"));
+    assertEquals(8, result.size());
   }
 }
