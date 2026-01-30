@@ -1,17 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import com.google.cloud.storage.StorageException;
-import java.io.File;
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.security.InvalidKeyException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.concurrent.CompletionException;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -33,6 +22,18 @@ import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.security.InvalidKeyException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.concurrent.CompletionException;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** Test for SnowflakeS3Client handle exception function */
 @Tag(TestTags.OTHERS)
@@ -69,6 +70,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
             info.getRegion(),
             info.getEndPoint(),
             info.getIsClientSideEncrypted(),
+            info.getCiphers(),
             sfSession,
             info.getUseS3RegionalUrl());
     maxRetry = client.getMaxRetries();

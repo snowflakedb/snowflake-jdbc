@@ -1,32 +1,9 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.convertSystemPropertyToBooleanValue;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isBlank;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
@@ -58,6 +35,30 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.convertSystemPropertyToBooleanValue;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isBlank;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Encapsulates the GCS Storage client and all GCS operations and logic */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
@@ -322,10 +323,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
         }
 
-        if (!isNullOrEmpty(iv)
-            && !isNullOrEmpty(key)
-            && this.isEncrypting()
-            && this.getEncryptionKeySize() <= 256) {
+        if (this.isEncrypting() && ((stageInfo.getCiphers() == Ciphers.AES_CBC && this.getEncryptionKeySize() < 256) || stageInfo.getCiphers() == Ciphers.AES_GCM)) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
                 queryId,
@@ -338,7 +336,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // Decrypt file
           try {
             stopwatch.start();
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            CbcEncryptionProvider.decryptFile(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -518,7 +516,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           try {
             if (inputStream != null) {
 
-              inputStream = EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
+              inputStream = CbcEncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
               stopwatch.stop();
               long decryptMillis = stopwatch.elapsedMillis();
               logger.info(
@@ -864,7 +862,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           content,
           queryId);
     } catch (Exception e) {
-      handleStorageException(e, 0, StorageHelper.UPLOAD, session, queryId);
+      handleStorageException(e, 0, StorageHelper.UPLOAD, session, null, queryId);
       SnowflakeSQLException wrappedException;
       if (e instanceof SnowflakeSQLException) {
         wrappedException = (SnowflakeSQLException) e;
@@ -1030,7 +1028,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Encrypt
           stream =
-              EncryptionProvider.encrypt(
+              CbcEncryptionProvider.encryptStream(
                   meta, originalContentLength, uploadStream, this.encMat, this);
           uploadFromStream = true;
         } catch (Exception ex) {

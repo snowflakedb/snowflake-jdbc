@@ -1,34 +1,11 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createDefaultExecutorService;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
-import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
-import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.security.InvalidKeyException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.HeaderCustomizerHttpRequestInterceptor;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
@@ -75,9 +52,37 @@ import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
 import software.amazon.encryption.s3.S3AsyncEncryptionClient;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.security.InvalidKeyException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createDefaultExecutorService;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
+import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
+
 /** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
+  private static final ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String AES = "AES";
   private static final String AMZ_KEY = "x-amz-key";
@@ -97,6 +102,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private String stageEndPoint = null; // FIPS endpoint, if needed
   private SFBaseSession session = null;
   private boolean isClientSideEncrypted = true;
+  private Ciphers ciphers = null;
   private boolean isUseS3RegionalUrl = false;
 
   public SnowflakeS3Client(
@@ -107,6 +113,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
+      Ciphers ciphers,
       SFBaseSession session,
       boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
@@ -124,6 +131,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         stageRegion,
         stageEndPoint,
         isClientSideEncrypted,
+        ciphers,
         session);
   }
 
@@ -135,6 +143,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
+      Ciphers ciphers,
       SFBaseSession session)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
@@ -147,6 +156,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
     this.session = session;
     this.isClientSideEncrypted = isClientSideEncrypted;
+    this.ciphers = ciphers;
 
     logger.debug("Setting up AWS client ", false);
 
@@ -301,6 +311,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.stageRegion,
         this.stageEndPoint,
         this.isClientSideEncrypted,
+        this.ciphers,
         this.session);
   }
 
@@ -406,28 +417,21 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         HeadObjectResponse meta = metaFuture.join();
 
         Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
-        String key = metaMap.get(AMZ_KEY);
-        String iv = metaMap.get(AMZ_IV);
 
         SnowflakeUtil.assureOnlyUserAccessibleFilePermissions(
             localFile, session.isOwnerOnlyStageFilePermissionsEnabled());
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
-          stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
+        Ciphers ciphers = guessCiphers(metaMap);
+
+        if (this.isEncrypting() && ((ciphers == Ciphers.AES_CBC && this.getEncryptionKeySize() < 256) || ciphers == Ciphers.AES_GCM)) {
+          DecryptionHelper decryptionHelper = EncryptionHelperFactory.from(queryId, session, metaMap, new S3CbcMetadataProvider(metaMap), encMat);
 
           // Decrypt file
+          stopwatch.restart();
           try {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            decryptionHelper.decryptFile(localFile);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -519,22 +523,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
 
-        String key = metaMap.get(AMZ_KEY);
-        String iv = metaMap.get(AMZ_IV);
+        Ciphers ciphers = guessCiphers(metaMap);
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
-          stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
-
+        if (this.isEncrypting() && ((ciphers == Ciphers.AES_CBC && this.getEncryptionKeySize() < 256) || ciphers == Ciphers.AES_GCM)) {
           try {
-            InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
+            stopwatch.restart();
+            DecryptionHelper decryptionHelper = EncryptionHelperFactory.from(queryId, session, metaMap, new S3CbcMetadataProvider(metaMap), encMat);
+            InputStream is = decryptionHelper.decryptStream(stream);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -571,6 +566,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         StorageHelper.getOperationException(StorageHelper.DOWNLOAD).getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
+  }
+
+  // This is a workaround for spaghetti code here.
+  private Ciphers guessCiphers(Map<String, String> metaMap) {
+    if (metaMap.containsKey(EncryptionHelperFactory.formatVersionKey)) {
+      // For now only GCM sends metadata in this mode.
+      return Ciphers.AES_GCM;
+    } else {
+      return Ciphers.AES_CBC;
+    }
   }
 
   /**
@@ -759,7 +764,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.getEncryptionKeySize());
     final InputStream result;
     FileInputStream srcFileStream = null;
-    if (isEncrypting() && getEncryptionKeySize() < 256) {
+
+    if (this.isEncrypting() && ((ciphers == Ciphers.AES_CBC && this.getEncryptionKeySize() < 256) || ciphers == Ciphers.AES_GCM)) {
       try {
         final InputStream uploadStream =
             uploadFromStream
@@ -770,9 +776,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         toClose.add(srcFileStream);
 
         // Encrypt
-        result =
-            EncryptionProvider.encrypt(
-                meta, originalContentLength, uploadStream, this.encMat, this);
+        if (ciphers == Ciphers.AES_GCM) {
+          result = FloeEncryptionProvider.encryptStream(meta, originalContentLength, uploadStream,  encMat, this);
+        } else {
+          result = CbcEncryptionProvider.encryptStream(meta, originalContentLength, uploadStream, encMat, this);
+        }
         uploadFromStream = true;
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
@@ -911,6 +919,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     return false;
   }
 
+  // TODO remove
   /* Returns the material descriptor key */
   @Override
   public String getMatdescKey() {
@@ -929,6 +938,29 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
     meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
     meta.setContentLength(contentLength);
+  }
+
+  @Override
+  public void addEncryptionMetadataForGcm(StorageObjectMetadata meta, MatDesc matDesc, long contentLength,
+                                          byte[] encryptedKey, byte[] keyIv, byte[] keyAad, byte[] contentAad, byte[] contentHeader) {
+    try {
+      meta.setContentLength(contentLength);
+      meta.addUserMetadata(EncryptionHelperFactory.formatVersionKey, "1.0");
+      meta.addUserMetadata("sf-client-side-encryption-encryption-key-matdesc", matDesc.toString());
+      meta.addUserMetadata(GcmDecryptionHelper.keyCipherKey, "GCM");
+      Map<String, String> keyEncryptionParameters = new HashMap<>();
+      keyEncryptionParameters.put("iv", Base64.getEncoder().encodeToString(keyIv));
+      keyEncryptionParameters.put("aad", Base64.getEncoder().encodeToString(keyAad));
+      meta.addUserMetadata(GcmDecryptionHelper.keyEncryptionParametersKey, objectMapper.writeValueAsString(keyEncryptionParameters));
+      meta.addUserMetadata(GcmDecryptionHelper.keyKey, Base64.getEncoder().encodeToString(encryptedKey));
+      meta.addUserMetadata(GcmDecryptionHelper.contentCipherKey, "FLOE");
+      Map<String, String> contentEncryptionParameters = new HashMap<>();
+      contentEncryptionParameters.put("aad", Base64.getEncoder().encodeToString(contentAad));
+      contentEncryptionParameters.put("header", Base64.getEncoder().encodeToString(contentHeader));
+      meta.addUserMetadata(GcmDecryptionHelper.contentEncryptionParametersKey, objectMapper.writeValueAsString(contentEncryptionParameters));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /* Adds digest metadata to the StorageObjectMetadata object */
@@ -992,6 +1024,26 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     public int getSocketTimeout() {
       return socketTimeout;
+    }
+  }
+
+  private static class S3CbcMetadataProvider implements CbcMetadataProvider {
+    private final String key;
+    private final String iv;
+
+    public S3CbcMetadataProvider(Map<String, String> metaMap) {
+      key = metaMap.get(AMZ_KEY);
+      iv = metaMap.get(AMZ_IV);
+    }
+
+    @Override
+    public String getKey() {
+      return key;
+    }
+
+    @Override
+    public String getIv() {
+      return iv;
     }
   }
 }

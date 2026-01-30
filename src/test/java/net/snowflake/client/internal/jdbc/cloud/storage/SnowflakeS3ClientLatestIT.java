@@ -1,13 +1,5 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -21,6 +13,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import software.amazon.awssdk.core.exception.SdkServiceException;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(TestTags.OTHERS)
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
@@ -50,6 +51,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       assertEquals(256, client.getEncryptionKeySize());
@@ -123,6 +125,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       assertTrue(client.isClientException400Or404(servEx));
@@ -154,6 +157,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       SnowflakeS3Client spy = Mockito.spy(client);

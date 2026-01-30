@@ -1,7 +1,5 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFBaseSession;
@@ -9,6 +7,9 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Factory object for abstracting the creation of storage client objects: SnowflakeStorageClient and
@@ -27,7 +28,7 @@ public class StorageClientFactory {
    *
    * @return the storage client instance
    */
-  public static StorageClientFactory getFactory() {
+  public static synchronized StorageClientFactory getFactory() {
     if (factory == null) {
       factory = new StorageClientFactory();
     }
@@ -64,6 +65,7 @@ public class StorageClientFactory {
             stage.getRegion(),
             stage.getEndPoint(),
             stage.getIsClientSideEncrypted(),
+            stage.getCiphers(),
             session,
             useS3RegionalUrl);
 
@@ -85,13 +87,14 @@ public class StorageClientFactory {
   /**
    * Creates a SnowflakeS3ClientObject which encapsulates the Amazon S3 client
    *
-   * @param stageCredentials Map of stage credential properties
-   * @param parallel degree of parallelism
-   * @param encMat encryption material for the client
-   * @param stageRegion the region where the stage is located
-   * @param stageEndPoint the FIPS endpoint for the stage, if needed
+   * @param stageCredentials      Map of stage credential properties
+   * @param parallel              degree of parallelism
+   * @param encMat                encryption material for the client
+   * @param stageRegion           the region where the stage is located
+   * @param stageEndPoint         the FIPS endpoint for the stage, if needed
    * @param isClientSideEncrypted whether client-side encryption should be used
-   * @param session the active session
+   * @param ciphers
+   * @param session               the active session
    * @param useS3RegionalUrl
    * @return the SnowflakeS3Client instance created
    * @throws SnowflakeSQLException failure to create the S3 client
@@ -104,6 +107,7 @@ public class StorageClientFactory {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
+      Ciphers ciphers,
       SFBaseSession session,
       boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
@@ -138,6 +142,7 @@ public class StorageClientFactory {
               stageRegion,
               stageEndPoint,
               isClientSideEncrypted,
+              ciphers,
               session,
               useS3RegionalUrl);
     } catch (Exception ex) {

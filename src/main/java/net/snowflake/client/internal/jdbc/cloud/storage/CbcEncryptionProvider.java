@@ -1,8 +1,16 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
+import net.snowflake.client.internal.jdbc.MatDesc;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -17,19 +25,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Base64;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import net.snowflake.client.internal.jdbc.MatDesc;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
 
 /** Handles encryption and decryption using AES CBC (for files) and ECB (for keys). */
-public class EncryptionProvider {
+public class CbcEncryptionProvider {
   private static final String AES = "AES";
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
@@ -78,7 +79,7 @@ public class EncryptionProvider {
    * decrypt
    * Decrypts a file given the key and iv. Uses AES decryption.
    */
-  public static void decrypt(
+  public static void decryptFile(
       File file, String keyBase64, String ivBase64, RemoteStoreFileEncryptionMaterial encMat)
       throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
           IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
@@ -136,7 +137,7 @@ public class EncryptionProvider {
    * is added to the metadata object. The key and iv are added to the JSON block in the
    * encryptionData metadata object.
    */
-  public static CipherInputStream encrypt(
+  public static CipherInputStream encryptStream(
       StorageObjectMetadata meta,
       long originalContentLength,
       InputStream src,

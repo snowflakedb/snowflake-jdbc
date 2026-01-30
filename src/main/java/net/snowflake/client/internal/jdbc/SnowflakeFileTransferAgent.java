@@ -1,16 +1,45 @@
 package net.snowflake.client.internal.jdbc;
 
-import static net.snowflake.client.internal.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createOwnerOnlyPermissionDir;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
-import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.FileUtil;
+import net.snowflake.client.internal.core.HttpClientSettingsKey;
+import net.snowflake.client.internal.core.OCSPMode;
+import net.snowflake.client.internal.core.ObjectMapperFactory;
+import net.snowflake.client.internal.core.SFBaseSession;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFFixedViewResultSet;
+import net.snowflake.client.internal.core.SFSession;
+import net.snowflake.client.internal.core.SFStatement;
+import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.cloud.storage.Ciphers;
+import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeStorageClient;
+import net.snowflake.client.internal.jdbc.cloud.storage.StageInfo;
+import net.snowflake.client.internal.jdbc.cloud.storage.StorageClientFactory;
+import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectMetadata;
+import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummary;
+import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummaryCollection;
+import net.snowflake.client.internal.jdbc.cloud.storage.StorageProviderException;
+import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.internal.log.ArgSupplier;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.SecretDetector;
+import net.snowflake.common.core.FileCompressionType;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -47,38 +76,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.api.exception.ErrorCode;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.core.FileUtil;
-import net.snowflake.client.internal.core.HttpClientSettingsKey;
-import net.snowflake.client.internal.core.OCSPMode;
-import net.snowflake.client.internal.core.ObjectMapperFactory;
-import net.snowflake.client.internal.core.SFBaseSession;
-import net.snowflake.client.internal.core.SFException;
-import net.snowflake.client.internal.core.SFFixedViewResultSet;
-import net.snowflake.client.internal.core.SFSession;
-import net.snowflake.client.internal.core.SFStatement;
-import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
-import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeStorageClient;
-import net.snowflake.client.internal.jdbc.cloud.storage.StageInfo;
-import net.snowflake.client.internal.jdbc.cloud.storage.StorageClientFactory;
-import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectMetadata;
-import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummary;
-import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummaryCollection;
-import net.snowflake.client.internal.jdbc.cloud.storage.StorageProviderException;
-import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
-import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.internal.log.ArgSupplier;
-import net.snowflake.client.internal.log.SFLogger;
-import net.snowflake.client.internal.log.SFLoggerFactory;
-import net.snowflake.client.internal.util.SecretDetector;
-import net.snowflake.common.core.FileCompressionType;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
+
+import static net.snowflake.client.internal.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createOwnerOnlyPermissionDir;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Class for uploading/downloading files */
 public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
@@ -1106,6 +1108,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
 
+    Ciphers ciphers = Ciphers.AES_CBC;
+    if (!jsonNode.path("data").path("stageInfo").path("ciphers").isMissingNode()) {
+      ciphers = Ciphers.valueOf(jsonNode.path("data").path("stageInfo").path("ciphers").asText());
+    }
+
     // endPoint is currently known to be set for Azure stages or S3. For S3 it will be set
     // specifically
     // for FIPS or VPCE S3 endpoint. SNOW-652696
@@ -1173,7 +1180,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             stageRegion,
             endPoint,
             stgAcct,
-            isClientSideEncrypted);
+            isClientSideEncrypted,
+            ciphers);
 
     // Setup pre-signed URL into stage info if pre-signed URL is returned.
     if (stageInfo.getStageType() == StageInfo.StageType.GCS) {
