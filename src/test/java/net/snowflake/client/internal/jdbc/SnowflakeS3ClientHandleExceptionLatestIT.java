@@ -69,6 +69,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
             info.getRegion(),
             info.getEndPoint(),
             info.getIsClientSideEncrypted(),
+            info.getCiphers(),
             sfSession,
             info.getUseS3RegionalUrl());
     maxRetry = client.getMaxRetries();

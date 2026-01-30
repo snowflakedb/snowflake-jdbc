@@ -87,47 +87,6 @@ public interface SnowflakeStorageClient {
   /**
    * Download a file from remote storage.
    *
-   * @deprecated use {@link #download(SFSession, String, String, String, int, String, String,
-   *     String, String, String)}
-   * @param connection connection object
-   * @param command command to download file
-   * @param localLocation local file path
-   * @param destFileName destination file name
-   * @param parallelism number of threads for parallel downloading
-   * @param remoteStorageLocation remote storage location, i.e. bucket for S3
-   * @param stageFilePath stage file path
-   * @param stageRegion region name where the stage persists
-   * @param presignedUrl presigned URL for download. Used by GCP.
-   * @throws SnowflakeSQLException download failure
-   */
-  @Deprecated
-  default void download(
-      SFSession connection,
-      String command,
-      String localLocation,
-      String destFileName,
-      int parallelism,
-      String remoteStorageLocation,
-      String stageFilePath,
-      String stageRegion,
-      String presignedUrl)
-      throws SnowflakeSQLException {
-    download(
-        connection,
-        command,
-        localLocation,
-        destFileName,
-        parallelism,
-        remoteStorageLocation,
-        stageFilePath,
-        stageRegion,
-        presignedUrl,
-        null);
-  }
-
-  /**
-   * Download a file from remote storage.
-   *
    * @param connection connection object
    * @param command command to download file
    * @param localLocation local file path
@@ -156,42 +115,6 @@ public interface SnowflakeStorageClient {
   /**
    * Download a file from remote storage
    *
-   * @deprecated use {@link #download(SFSession, String, String, String, int, String, String,
-   *     String, String, String)}
-   * @param connection connection object
-   * @param command command to download file
-   * @param parallelism number of threads for parallel downloading
-   * @param remoteStorageLocation remote storage location, i.e. bucket for s3
-   * @param stageFilePath stage file path
-   * @param stageRegion region name where the stage persists
-   * @param presignedUrl presigned URL for download. Used by GCP.
-   * @return input file stream
-   * @throws SnowflakeSQLException when download failure
-   */
-  @Deprecated
-  default InputStream downloadToStream(
-      SFSession connection,
-      String command,
-      int parallelism,
-      String remoteStorageLocation,
-      String stageFilePath,
-      String stageRegion,
-      String presignedUrl)
-      throws SnowflakeSQLException {
-    return downloadToStream(
-        connection,
-        command,
-        parallelism,
-        remoteStorageLocation,
-        stageFilePath,
-        stageRegion,
-        presignedUrl,
-        null);
-  }
-
-  /**
-   * Download a file from remote storage
-   *
    * @param connection connection object
    * @param command command to download file
    * @param parallelism number of threads for parallel downloading
@@ -213,56 +136,6 @@ public interface SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException;
-
-  /**
-   * Upload a file (-stream) to remote storage
-   *
-   * @deprecated user {@link #upload(SFSession, String, int, boolean, String, File, String,
-   *     InputStream, FileBackedOutputStream, StorageObjectMetadata, String, String, String)}
-   * @param connection connection object
-   * @param command upload command
-   * @param parallelism number of threads do parallel uploading
-   * @param uploadFromStream true if upload source is stream
-   * @param remoteStorageLocation s3 bucket name
-   * @param srcFile source file if not uploading from a stream
-   * @param destFileName file name on remote storage after upload
-   * @param inputStream stream used for uploading if fileBackedOutputStream is null
-   * @param fileBackedOutputStream stream used for uploading if not null
-   * @param meta object meta data
-   * @param stageRegion region name where the stage persists
-   * @param presignedUrl presigned URL for upload. Used by GCP.
-   * @throws SnowflakeSQLException if upload failed even after retry
-   */
-  @Deprecated
-  default void upload(
-      SFSession connection,
-      String command,
-      int parallelism,
-      boolean uploadFromStream,
-      String remoteStorageLocation,
-      File srcFile,
-      String destFileName,
-      InputStream inputStream,
-      FileBackedOutputStream fileBackedOutputStream,
-      StorageObjectMetadata meta,
-      String stageRegion,
-      String presignedUrl)
-      throws SnowflakeSQLException {
-    upload(
-        connection,
-        command,
-        parallelism,
-        uploadFromStream,
-        remoteStorageLocation,
-        srcFile,
-        destFileName,
-        inputStream,
-        fileBackedOutputStream,
-        meta,
-        stageRegion,
-        presignedUrl,
-        null);
-  }
 
   /**
    * Upload a file (-stream) to remote storage
@@ -297,60 +170,6 @@ public interface SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException;
-
-  /**
-   * Upload a file (-stream) to remote storage with Pre-signed URL without JDBC connection.
-   *
-   * <p>NOTE: This function is only supported when pre-signed URL is used.
-   *
-   * @deprecated use {@link #uploadWithPresignedUrlWithoutConnection(int, HttpClientSettingsKey,
-   *     int, boolean, String, File, String, InputStream, FileBackedOutputStream,
-   *     StorageObjectMetadata, String, String, String)} This method was left to keep backward
-   *     compatibility
-   * @param networkTimeoutInMilli Network timeout for the upload
-   * @param ocspModeAndProxyKey OCSP mode and proxy settings for the upload.
-   * @param parallelism number of threads do parallel uploading
-   * @param uploadFromStream true if upload source is stream
-   * @param remoteStorageLocation s3 bucket name
-   * @param srcFile source file if not uploading from a stream
-   * @param destFileName file name on remote storage after upload
-   * @param inputStream stream used for uploading if fileBackedOutputStream is null
-   * @param fileBackedOutputStream stream used for uploading if not null
-   * @param meta object meta data
-   * @param stageRegion region name where the stage persists
-   * @param presignedUrl presigned URL for upload. Used by GCP.
-   * @throws SnowflakeSQLException if upload failed even after retry
-   */
-  @Deprecated
-  default void uploadWithPresignedUrlWithoutConnection(
-      int networkTimeoutInMilli,
-      HttpClientSettingsKey ocspModeAndProxyKey,
-      int parallelism,
-      boolean uploadFromStream,
-      String remoteStorageLocation,
-      File srcFile,
-      String destFileName,
-      InputStream inputStream,
-      FileBackedOutputStream fileBackedOutputStream,
-      StorageObjectMetadata meta,
-      String stageRegion,
-      String presignedUrl)
-      throws SnowflakeSQLException {
-    uploadWithPresignedUrlWithoutConnection(
-        networkTimeoutInMilli,
-        ocspModeAndProxyKey,
-        parallelism,
-        uploadFromStream,
-        remoteStorageLocation,
-        srcFile,
-        destFileName,
-        inputStream,
-        fileBackedOutputStream,
-        meta,
-        stageRegion,
-        presignedUrl,
-        null);
-  }
 
   /**
    * Upload a file (-stream) to remote storage with Pre-signed URL without JDBC connection.
@@ -396,27 +215,6 @@ public interface SnowflakeStorageClient {
           /*session = */ "uploadWithPresignedUrlWithoutConnection"
               + " only works for pre-signed URL.");
     }
-  }
-
-  /**
-   * Handles exceptions thrown by the remote storage provider
-   *
-   * @deprecated use {@link #handleStorageException(Exception, int, String, SFSession, String,
-   *     String)}
-   * @param ex the exception to handle
-   * @param retryCount current number of retries, incremented by the caller before each call
-   * @param operation string that indicates the function/operation that was taking place, when the
-   *     exception was raised, for example StorageHelper.UPLOAD
-   * @param connection the current SFSession object used by the client
-   * @param command the command attempted at the time of the exception
-   * @throws SnowflakeSQLException exceptions that were not handled, or retried past what the retry
-   *     policy allows, are propagated
-   */
-  @Deprecated
-  default void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession connection, String command)
-      throws SnowflakeSQLException {
-    handleStorageException(ex, retryCount, operation, connection, command, null);
   }
 
   /**
@@ -469,22 +267,18 @@ public interface SnowflakeStorageClient {
    *
    * @param meta the storage metadata object to add the encryption info to
    * @param matDesc the material descriptor
-   * @param encryptedKey encrypted key
-   * @param dataIvBytes the initialization vector for data
-   * @param keyIvBytes the initialization vector for file key
-   * @param keyAad the additional authenticated data for file key
-   * @param dataAad the additional authenticated data for data
+   * @param gcmEncryptionData the GCM encryption data
    * @param contentLength the length of the encrypted content
    */
   default void addEncryptionMetadataForGcm(
       StorageObjectMetadata meta,
       MatDesc matDesc,
+      long contentLength,
       byte[] encryptedKey,
-      byte[] dataIvBytes,
-      byte[] keyIvBytes,
+      byte[] keyIv,
       byte[] keyAad,
-      byte[] dataAad,
-      long contentLength) {
+      byte[] contentAad,
+      byte[] contentHeader) {
     // TODO GCM SNOW-1431870
   }
 

@@ -59,6 +59,7 @@ import net.snowflake.client.internal.core.SFFixedViewResultSet;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.cloud.storage.Ciphers;
 import net.snowflake.client.internal.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.internal.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.internal.jdbc.cloud.storage.StorageClientFactory;
@@ -1106,6 +1107,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
 
+    Ciphers ciphers = Ciphers.AES_CBC;
+    if (!jsonNode.path("data").path("stageInfo").path("ciphers").isMissingNode()) {
+      ciphers = Ciphers.valueOf(jsonNode.path("data").path("stageInfo").path("ciphers").asText());
+    }
+
     // endPoint is currently known to be set for Azure stages or S3. For S3 it will be set
     // specifically
     // for FIPS or VPCE S3 endpoint. SNOW-652696
@@ -1173,7 +1179,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             stageRegion,
             endPoint,
             stgAcct,
-            isClientSideEncrypted);
+            isClientSideEncrypted,
+            ciphers);
 
     // Setup pre-signed URL into stage info if pre-signed URL is returned.
     if (stageInfo.getStageType() == StageInfo.StageType.GCS) {

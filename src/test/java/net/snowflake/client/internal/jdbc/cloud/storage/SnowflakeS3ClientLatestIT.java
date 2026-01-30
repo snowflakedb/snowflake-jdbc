@@ -50,6 +50,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       assertEquals(256, client.getEncryptionKeySize());
@@ -123,6 +124,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       assertTrue(client.isClientException400Or404(servEx));
@@ -154,6 +156,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getRegion(),
               info.getEndPoint(),
               info.getIsClientSideEncrypted(),
+              info.getCiphers(),
               sfSession,
               info.getUseS3RegionalUrl());
       SnowflakeS3Client spy = Mockito.spy(client);
