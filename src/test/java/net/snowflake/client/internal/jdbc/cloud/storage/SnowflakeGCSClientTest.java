@@ -1,17 +1,18 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
+
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SnowflakeGCSClientTest {
 
@@ -22,7 +23,7 @@ class SnowflakeGCSClientTest {
   private StageInfo createGCSStageInfo(
       Map<String, String> credentials, String region, String endPoint, String storageAccount) {
     return StageInfo.createStageInfo(
-        "GCS", "test-bucket/path", credentials, region, endPoint, storageAccount, true);
+        "GCS", "test-bucket/path", credentials, region, endPoint, storageAccount, true, Ciphers.AES_CBC);
   }
 
   private SFSession createSession(boolean disableGcsDefaultCredentials) {
