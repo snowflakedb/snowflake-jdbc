@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
+import net.snowflake.client.annotations.RunOnLinux;
 import org.junit.jupiter.api.Test;
 
 public class OsReleaseDetailsTest {
@@ -201,6 +202,7 @@ public class OsReleaseDetailsTest {
   }
 
   @Test
+  @RunOnLinux
   public void testLoadFromFile() throws Exception {
     Path osReleaseFile =
         Paths.get(Objects.requireNonNull(getClass().getResource("/os-release-test")).toURI());
