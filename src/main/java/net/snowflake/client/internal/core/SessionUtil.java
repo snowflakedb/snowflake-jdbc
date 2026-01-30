@@ -57,6 +57,7 @@ import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.OsReleaseDetails;
 import net.snowflake.client.internal.util.PlatformDetector;
 import net.snowflake.client.internal.util.SecretDetector;
 import net.snowflake.client.internal.util.Stopwatch;
@@ -1088,6 +1089,13 @@ public class SessionUtil {
 
     clientEnv.put("OS", systemGetProperty("os.name"));
     clientEnv.put("OS_VERSION", systemGetProperty("os.version"));
+
+    // Add Linux distribution details from /etc/os-release (only on Linux)
+    Map<String, String> osDetails = OsReleaseDetails.load();
+    if (!osDetails.isEmpty()) {
+      clientEnv.put("OS_DETAILS", osDetails);
+    }
+
     clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
     clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
     clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));

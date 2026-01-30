@@ -27,7 +27,7 @@ import net.snowflake.client.internal.util.SecretDetector;
  *   <li><b>loadLogs</b>: List of log messages with detailed error info from the loading process
  * </ul>
  *
- * <p>Note: OS and OS_VERSION are already set by SessionUtil.createClientEnvironmentInfo()
+ * <p>Note: OS, OS_VERSION, and OS_DETAILS are set by SessionUtil.createClientEnvironmentInfo()
  */
 public class MinicoreTelemetry {
 
