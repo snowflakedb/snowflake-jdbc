@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mockStatic;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,8 +18,10 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
+import net.snowflake.client.internal.util.OsReleaseDetails;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 @Tag(TestTags.CORE)
 public class SessionUtilWiremockIT extends BaseWiremockTest {
@@ -36,6 +39,9 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       "/wiremock/mappings/session/session-util-wiremock-it-multiple-429-in-federated-step-4.json";
   private static final String UNSUPPORTED_MFA_IN_FEDERATED_STEP_3 =
       "/wiremock/mappings/session/session-util-wiremock-it-unsupported-mfa-in-federated-step-3.json";
+
+  private static final String OS_DETAILS_LOGIN_MAPPING_PATH =
+      "/wiremock/mappings/session/session-util-wiremock-it-os-details-in-login-request.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
@@ -310,5 +316,48 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
         "Found duplicate value(s) for parameter '" + parameterName + "'. Values: " + paramValues,
         distinctCount,
         equalTo((long) paramValues.size()));
+  }
+
+  @Test
+  public void testOsDetailsIncludedInLoginRequest() throws Throwable {
+    // GIVEN - Mock OsReleaseDetails.load() to return test data with all allowed keys
+    Map<String, String> mockOsDetails = new HashMap<>();
+    mockOsDetails.put("NAME", "Test Linux");
+    mockOsDetails.put("PRETTY_NAME", "Test Linux 1.0.0 LTS");
+    mockOsDetails.put("ID", "testlinux");
+    mockOsDetails.put("IMAGE_ID", "testlinux-cloud");
+    mockOsDetails.put("IMAGE_VERSION", "1.0.0-cloud");
+    mockOsDetails.put("BUILD_ID", "20260130");
+    mockOsDetails.put("VERSION", "1.0.0 LTS (Test Release)");
+    mockOsDetails.put("VERSION_ID", "1.0.0");
+
+    try (MockedStatic<OsReleaseDetails> mockedOsReleaseDetails =
+        mockStatic(OsReleaseDetails.class)) {
+      mockedOsReleaseDetails.when(OsReleaseDetails::load).thenReturn(mockOsDetails);
+
+      importMappingFromResources(OS_DETAILS_LOGIN_MAPPING_PATH);
+      setCustomTrustStorePropertyPath();
+
+      SFLoginInput loginInput = createBasicLoginInput();
+      Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+
+      verifyRequestCount(1, "/session/v1/login-request.*");
+    }
+  }
+
+  private SFLoginInput createBasicLoginInput() {
+    SFLoginInput input = new SFLoginInput();
+    input.setServerUrl(WIREMOCK_HOST_WITH_HTTPS_AND_PORT);
+    input.setUserName("TEST_USER");
+    input.setPassword("TEST_PASSWORD");
+    input.setAccountName("TEST_ACCOUNT");
+    input.setAppId("TEST_APP_ID");
+    input.setOCSPMode(OCSPMode.FAIL_OPEN);
+    input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+    input.setLoginTimeout(30);
+    input.setSessionParameters(new HashMap<>());
+    return input;
   }
 }

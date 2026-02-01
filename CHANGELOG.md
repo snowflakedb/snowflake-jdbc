@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.0.1-SNAPSHOT
+    - Add /etc/os-release data to Minicore telemetry
     - Bumped Amazon S3 Encryption Client to 4.0.0 (was: 3.4.0) to address CVE-2025-14763. Accordingly, needed to migrate our client to v4 and new (compatible) config. (snowflakedb/snowflake-jdbc#2466)
     - 
     -
