@@ -2731,6 +2731,100 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  // This test is intended to be run locally, without CloudVM.
+  // It works on your current CSP.
+  // It doesn't work on GHA, because it needs to change the account parameter.
+  @Test
+  @DontRunOnGithubActions
+  public void testPutCopyIntoWith256BitEncryption() throws SQLException {
+    try (Connection connection = getConnection()) {
+      testPutCopyIntoWith256BitEncryption(connection);
+    }
+  }
+
+  private static void testPutCopyIntoWith256BitEncryption(Connection connection)
+      throws SQLException {
+    String randomSuffix = UUID.randomUUID().toString().replace("-", "");
+    String tableName = "TEST_TABLE_256_" + randomSuffix;
+    String stageName = "TEST_STAGE_256_" + randomSuffix;
+    String originalKeySize = null;
+
+    try (Statement statement = connection.createStatement()) {
+
+      try (ResultSet rs =
+          statement.executeQuery("SHOW PARAMETERS LIKE 'CLIENT_ENCRYPTION_KEY_SIZE' IN ACCOUNT")) {
+        if (rs.next()) {
+          originalKeySize = rs.getString("value");
+        }
+      }
+
+      if (!"256".equals(originalKeySize)) {
+        statement.execute("ALTER ACCOUNT SET CLIENT_ENCRYPTION_KEY_SIZE = 256");
+      }
+
+      try {
+        statement.execute(
+            "CREATE OR REPLACE TABLE "
+                + tableName
+                + " (id INTEGER, name STRING) "
+                + "stage_file_format = (type = 'CSV' field_delimiter = ',' skip_header = 0)");
+
+        statement.execute("CREATE OR REPLACE STAGE " + stageName);
+
+        String testFileName = "test_encryption_256.csv";
+        String csvFilePath = getFullPathFileInResource(testFileName);
+        String putCommand = "PUT file://" + csvFilePath + " @" + stageName + " AUTO_COMPRESS=FALSE";
+        assertTrue(statement.execute(putCommand), "PUT command should return a result set");
+
+        int rowsCopied =
+            statement.executeUpdate(
+                "COPY INTO " + tableName + " FROM @" + stageName + "/" + testFileName);
+        assertEquals(3, rowsCopied, "Should have copied 3 rows");
+
+        try (ResultSet rs = statement.executeQuery("SELECT * FROM " + tableName + " ORDER BY id")) {
+          assertTrue(rs.next());
+          assertEquals(1, rs.getInt("ID"));
+          assertEquals("hello", rs.getString("NAME"));
+
+          assertTrue(rs.next());
+          assertEquals(2, rs.getInt("ID"));
+          assertEquals("world", rs.getString("NAME"));
+
+          assertTrue(rs.next());
+          assertEquals(3, rs.getInt("ID"));
+          assertEquals("test", rs.getString("NAME"));
+        }
+      } finally {
+        if (originalKeySize != null && !"256".equals(originalKeySize)) {
+          statement.execute("ALTER ACCOUNT SET CLIENT_ENCRYPTION_KEY_SIZE = " + originalKeySize);
+        }
+        statement.execute("DROP TABLE IF EXISTS " + tableName);
+        statement.execute("DROP STAGE IF EXISTS " + stageName);
+      }
+    }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  public void testPutCopyIntoWith256BitEncryptionOnAllAccounts() throws Throwable {
+
+    List<String> accounts =
+        Arrays.asList(
+            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+    for (int i = 0; i < accounts.size(); i++) {
+      String accountName = accounts.get(i);
+      if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
+        accountName = "gcpaccount";
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "true");
+      }
+      try (Connection connection = getConnection(accountName)) {
+        testPutCopyIntoWith256BitEncryption(connection);
+      } finally {
+        SnowflakeUtil.systemSetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS", "false");
+      }
+    }
+  }
+
   /**
    * Tests unencrypted named stages, which don't use client-side encryption to enable data lake
    * scenarios. Unencrypted named stages are specified with encryption=(TYPE='SNOWFLAKE_SSE').
