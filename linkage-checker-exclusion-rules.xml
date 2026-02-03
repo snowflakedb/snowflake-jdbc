@@ -70,6 +70,11 @@
         <Source><Package name="com.nimbusds"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.joda.time"/></Target>
+        <Source><Package name="com.nimbusds.oauth2.sdk.assertions.saml2"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
     <!-- AWS SDK v1 exclusions - com.amazonaws.util is not used in runtime -->
     <LinkageError>
         <Target><Package name="com.amazonaws.util"/></Target>

@@ -23,8 +23,6 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
@@ -73,13 +71,11 @@ import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
 import software.amazon.awssdk.transfer.s3.model.FileDownload;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
-import software.amazon.encryption.s3.S3AsyncEncryptionClient;
 
 /** Wrapper around AmazonS3Client. */
 public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private static final String localFileSep = systemGetProperty("file.separator");
-  private static final String AES = "AES";
   private static final String AMZ_KEY = "x-amz-key";
   private static final String AMZ_IV = "x-amz-iv";
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
@@ -219,17 +215,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
       encryptionKeySize = decodedKey.length * 8;
 
-      if (encryptionKeySize == 256) {
-        SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
-
-        amazonClient =
-            S3AsyncEncryptionClient.builder()
-                .wrappedClient(clientBuilder.build())
-                .aesKey(queryStageMasterKey)
-                .build();
-      } else if (encryptionKeySize == 128) {
-        amazonClient = clientBuilder.build();
-      } else {
+      if (encryptionKeySize != 128 && encryptionKeySize != 192 && encryptionKeySize != 256) {
         throw new SnowflakeSQLLoggedException(
             QueryIdHelper.queryIdFromEncMatOr(encMat, null),
             session,
@@ -238,9 +224,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "unsupported key size",
             encryptionKeySize);
       }
-    } else {
-      amazonClient = clientBuilder.build();
     }
+
+    amazonClient = clientBuilder.build();
   }
 
   static String getDomainSuffixForRegionalUrl(String regionName) {
@@ -414,7 +400,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
+        if (this.isEncrypting()) {
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
@@ -522,7 +508,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         String key = metaMap.get(AMZ_KEY);
         String iv = metaMap.get(AMZ_IV);
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
+        if (this.isEncrypting()) {
           stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
@@ -759,7 +745,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.getEncryptionKeySize());
     final InputStream result;
     FileInputStream srcFileStream = null;
-    if (isEncrypting() && getEncryptionKeySize() < 256) {
+    if (isEncrypting()) {
       try {
         final InputStream uploadStream =
             uploadFromStream
