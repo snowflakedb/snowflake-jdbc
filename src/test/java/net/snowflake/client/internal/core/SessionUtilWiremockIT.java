@@ -263,7 +263,7 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
     assertThat(
         thrown.getMessage(),
         equalTo(
-            "MFA enabled in Okta is not supported with this authenticator type. Please use 'external_browser' instead or a different authentication method."));
+            "MFA enabled in Okta is not supported with this authenticator type. Please use 'externalbrowser' instead or a different authentication method."));
   }
 
   private void assertThatTotalLoginTimeoutIsKeptWhenRetrying(

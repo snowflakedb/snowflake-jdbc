@@ -269,7 +269,7 @@ public class SessionUtilExternalBrowserTest {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn("https://testaccount.snowflakecomputing.com/");
-    when(loginInput.getAuthenticator()).thenReturn("external_browser");
+    when(loginInput.getAuthenticator()).thenReturn("externalbrowser");
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);

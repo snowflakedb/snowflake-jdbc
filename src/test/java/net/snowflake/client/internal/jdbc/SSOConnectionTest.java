@@ -261,7 +261,7 @@ public class SSOConnectionTest {
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),
-                      equalTo("EXTERNAL_BROWSER"));
+                      equalTo("EXTERNALBROWSER"));
                   resp = retInitialAuthentication;
                 } else if (callCount == 2) {
                   jsonNode = parseRequest((HttpPost) args[0]);
@@ -321,7 +321,7 @@ public class SSOConnectionTest {
       properties.put("password", "testpassword");
       properties.put("account", "testaccount");
       properties.put("insecureMode", true);
-      properties.put("authenticator", "EXTERNAL_BROWSER");
+      properties.put("authenticator", "EXTERNALBROWSER");
       properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
 
       // connect url

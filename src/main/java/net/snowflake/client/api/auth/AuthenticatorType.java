@@ -12,7 +12,7 @@ package net.snowflake.client.api.auth;
  * <pre>{@code
  * Properties props = new Properties();
  * props.put("user", "myuser");
- * props.put("authenticator", "EXTERNAL_BROWSER");
+ * props.put("authenticator", "EXTERNALBROWSER");
  * Connection conn = DriverManager.getConnection(url, props);
  * }</pre>
  */
@@ -24,7 +24,7 @@ public enum AuthenticatorType {
   OKTA,
 
   /** Web-browser-based authenticator for SAML 2.0 compliant service/application */
-  EXTERNAL_BROWSER,
+  EXTERNALBROWSER,
 
   /** OAuth 2.0 authentication flow */
   OAUTH,
