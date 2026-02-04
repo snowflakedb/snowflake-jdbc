@@ -1,8 +1,7 @@
 package net.snowflake.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.google.common.base.Strings;
+
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
@@ -18,6 +17,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {

@@ -997,22 +997,6 @@
                       <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.conscrypt</pattern>
-                      <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>opencensus</pattern>
                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
                     </relocation>
@@ -1135,6 +1119,10 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <!-- contains class name from before shading, loaded with Class.forName -->
+                    <replace file="${project.build.directory}/relocate/net/snowflake/client/jdbc/internal/software/amazon/awssdk/services/s3/execution.interceptors"
+                             token="software.amazon.awssdk"
+                             value="net.snowflake.client.jdbc.internal.software.amazon.awssdk"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
