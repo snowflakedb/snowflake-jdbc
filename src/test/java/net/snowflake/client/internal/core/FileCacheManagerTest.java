@@ -6,6 +6,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.isA;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -263,5 +264,23 @@ class FileCacheManagerTest extends BaseJDBCTest {
         .setBaseCacheFileName("cache-file")
         .build();
     assertTrue(new File(tmpDirPath).exists());
+  }
+
+  @Test
+  void shouldNotThrowExceptionsIfNoFile() throws Exception {
+    final String uniqName = "shouldNotThrowExceptionsByDefault_sf_driver_test";
+    Path cacheDir = Files.createTempDirectory(uniqName);
+    Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("r--------"));
+    System.setProperty(uniqName, cacheDir.toAbsolutePath().toString());
+
+    FileCacheManager fileCacheManager = FileCacheManager.builder()
+            .setCacheDirectorySystemProperty(uniqName)
+            .setBaseCacheFileName("cache-file")
+            .build();
+    assertNull(fileCacheManager.getCacheFilePath());
+    assertNull(fileCacheManager.readCacheFile());
+    assertDoesNotThrow(fileCacheManager::deleteCacheFile);
+    assertDoesNotThrow(() -> fileCacheManager.writeCacheFile (mapper.createObjectNode()));
+    assertDoesNotThrow(() -> fileCacheManager.withLock(() -> null));
   }
 }

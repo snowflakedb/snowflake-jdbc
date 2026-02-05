@@ -81,7 +81,7 @@ class FileCacheManager {
   }
 
   synchronized String getCacheFilePath() {
-    return cacheFile.getAbsolutePath();
+    return cacheFile == null ? null : cacheFile.getAbsolutePath();
   }
 
   /**
