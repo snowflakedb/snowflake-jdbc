@@ -273,10 +273,11 @@ class FileCacheManagerTest extends BaseJDBCTest {
     Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("r--------"));
     System.setProperty(uniqName, cacheDir.toAbsolutePath().toString());
 
-    FileCacheManager fileCacheManager = FileCacheManager.builder()
-            .setCacheDirectorySystemProperty(uniqName)
-            .setBaseCacheFileName("cache-file")
-            .build();
+    FileCacheManager fileCacheManager =
+            FileCacheManager.builder()
+                    .setCacheDirectorySystemProperty(uniqName)
+                    .setBaseCacheFileName("cache-file")
+                    .build();
     assertNull(fileCacheManager.getCacheFilePath());
     assertNull(fileCacheManager.readCacheFile());
     assertDoesNotThrow(fileCacheManager::deleteCacheFile);
