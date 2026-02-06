@@ -9,8 +9,7 @@
     - Update BouncyCastle dependencies to fix CVE-2025-8916 CVE-2025-8885 (snowflakedb/snowflake-jdbc#2479)
     - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
     - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
-    -
-    -
+    - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
     -
     -
     -
