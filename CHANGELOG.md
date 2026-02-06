@@ -7,6 +7,7 @@
     - Adjust level of logging during Driver initialization
     - Add sanitization for nonProxyHosts RegEx patterns
     - Fix bug with malformed file during S3 upload
+    - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
