@@ -720,7 +720,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         if (downloaderFuture != null) {
           downloaderFuture.cancel(true);
         }
-        HttpUtil.closeExpiredAndIdleConnections();
 
         chunks.get(nextChunkToConsume).getLock().lock();
         try {
