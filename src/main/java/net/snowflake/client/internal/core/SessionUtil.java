@@ -238,9 +238,9 @@ public class SessionUtil {
     if (loginInput.getAuthenticator() != null) {
       if (loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(AuthenticatorType.EXTERNAL_BROWSER.name())) {
+          .equalsIgnoreCase(AuthenticatorType.EXTERNALBROWSER.name())) {
         // SAML 2.0 compliant service/application
-        return AuthenticatorType.EXTERNAL_BROWSER;
+        return AuthenticatorType.EXTERNALBROWSER;
       } else if (loginInput
           .getAuthenticator()
           .equalsIgnoreCase(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name())) {
@@ -408,7 +408,7 @@ public class SessionUtil {
   }
 
   private static boolean isEligibleForTokenCaching(AuthenticatorType authenticator) {
-    return authenticator.equals(AuthenticatorType.EXTERNAL_BROWSER)
+    return authenticator.equals(AuthenticatorType.EXTERNALBROWSER)
         || authenticator.equals(AuthenticatorType.OAUTH_AUTHORIZATION_CODE)
         || authenticator.equals(AuthenticatorType.OAUTH_CLIENT_CREDENTIALS);
   }
@@ -588,7 +588,7 @@ public class SessionUtil {
         uriBuilder.addParameter(SF_QUERY_ROLE, loginInput.getRole());
       }
 
-      if (authenticatorType == AuthenticatorType.EXTERNAL_BROWSER) {
+      if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
         // try to reuse id_token if exists
         if (loginInput.getIdToken() == null) {
           // SAML 2.0 compliant service/application
@@ -647,13 +647,13 @@ public class SessionUtil {
        */
       if (authenticatorType == AuthenticatorType.SNOWFLAKE) {
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
-      } else if (authenticatorType == AuthenticatorType.EXTERNAL_BROWSER) {
+      } else if (authenticatorType == AuthenticatorType.EXTERNALBROWSER) {
         if (loginInput.getIdToken() != null) {
           data.put(ClientAuthnParameter.AUTHENTICATOR.name(), ID_TOKEN_AUTHENTICATOR);
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getIdToken());
         } else {
           data.put(
-              ClientAuthnParameter.AUTHENTICATOR.name(), AuthenticatorType.EXTERNAL_BROWSER.name());
+              ClientAuthnParameter.AUTHENTICATOR.name(), AuthenticatorType.EXTERNALBROWSER.name());
           data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
           data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
         }

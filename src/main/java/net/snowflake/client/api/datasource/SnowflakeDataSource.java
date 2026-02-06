@@ -65,7 +65,7 @@ public interface SnowflakeDataSource extends DataSource {
   /** Sets whether to use SSL (default: true). */
   void setSsl(boolean ssl);
 
-  /** Sets the authenticator type (e.g., "snowflake", "external_browser", "oauth"). */
+  /** Sets the authenticator type (e.g., "snowflake", "externalbrowser", "oauth"). */
   void setAuthenticator(String authenticator);
 
   /** Sets the token for OAuth/PAT authentication. */

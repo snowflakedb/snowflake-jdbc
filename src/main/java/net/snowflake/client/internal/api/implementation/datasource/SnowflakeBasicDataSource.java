@@ -38,7 +38,7 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
 
-  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNAL_BROWSER";
+  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
 
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
 
