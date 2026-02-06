@@ -16,6 +16,7 @@ import org.junit.platform.suite.api.ExcludeTags;
   TestTags.RESULT_SET,
   TestTags.STATEMENT,
   TestTags.AUTHENTICATION,
-  TestTags.WIF
+  TestTags.WIF,
+  TestTags.REPRO_UPLOAD_CORRUPTION
 })
 public class UnitTestSuite {}

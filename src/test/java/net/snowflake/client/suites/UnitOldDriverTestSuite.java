@@ -11,6 +11,7 @@ import org.junit.platform.suite.api.ExcludeTags;
   TestTags.LOADER,
   TestTags.OTHERS,
   TestTags.RESULT_SET,
-  TestTags.STATEMENT
+  TestTags.STATEMENT,
+  TestTags.REPRO_UPLOAD_CORRUPTION
 })
 public class UnitOldDriverTestSuite extends OldDriverTestSuite {}
