@@ -12,6 +12,7 @@
     - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
     - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
 
+__Due to some underlying issues, Snowflake recommends that AWS and Azure customers do not upgrade to this version if you use PUT or GET queries. Instead, Snowflake recommends that you upgrade directly to version 4.0.1. If you have already upgraded to this version, please upgrade to version 4.0.1 as soon as possible.__
 - v4.0.0
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
     - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
