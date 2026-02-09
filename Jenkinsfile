@@ -1,3 +1,5 @@
+@Library('pipeline-utils')
+import com.snowflake.DevEnvUtils
 import groovy.json.JsonOutput
 
 class JdbcJobDefinition {
@@ -35,6 +37,14 @@ timestamps {
       scmInfo = checkout scm
       println("${scmInfo}")
       env.GIT_BRANCH = scmInfo.GIT_BRANCH
+    }
+
+    stage('Authenticate Artifactory') {
+      script {
+        new DevEnvUtils().withSfCli {
+          sh "sf artifact oci auth"
+        }
+      }
     }
 
     stage('Build') {
@@ -82,7 +92,6 @@ timestamps {
     jobDefinitions.put('Test Authentication', {
       withCredentials([
         string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
-        string(credentialsId: 'a791118f-a1ea-46cd-b876-56da1b9bc71c', variable: 'NEXUS_PASSWORD')
       ]) {
         sh '''\
       |#!/bin/bash
