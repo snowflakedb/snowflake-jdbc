@@ -7,7 +7,6 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 
 source $THIS_DIR/_init.sh
-source $THIS_DIR/scripts/login_internal_docker.sh
 source $THIS_DIR/scripts/set_git_info.sh
 
 echo "Use /sbin/ip"
