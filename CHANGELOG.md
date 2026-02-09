@@ -7,6 +7,9 @@
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2474).
     - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2474).
     - Update BouncyCastle dependencies to fix CVE-2025-8916 CVE-2025-8885 (snowflakedb/snowflake-jdbc#2479)
+    - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
+    - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
+    -
     -
     -
     -
