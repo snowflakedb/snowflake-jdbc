@@ -12,6 +12,7 @@
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
+  <version>4.0.1</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
