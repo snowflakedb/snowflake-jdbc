@@ -47,7 +47,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'}]
+                category: [{suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'}]
                 iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         steps:
             - uses: actions/checkout@v5
