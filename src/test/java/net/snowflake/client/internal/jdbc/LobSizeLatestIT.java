@@ -2,12 +2,16 @@ package net.snowflake.client.internal.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -220,12 +225,125 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         assertEquals("UPLOADED", rsPut.getString(7));
       }
 
+      // --- Diagnostic: log original file size ---
+      long originalFileSize = tempFile.length();
+      System.out.println(
+          "[LobSizeTest Diagnostic] PUT completed. lobSize="
+              + lobSize
+              + " resultFormat="
+              + resultFormat
+              + " originalFile="
+              + fileName
+              + " originalSize="
+              + originalFileSize
+              + " bytes");
+
+      // --- Post-upload size verification via LS ---
+      long stagedFileSize;
       try (ResultSet rsFiles = stmt.executeQuery("ls @%" + tableName)) {
         // ResultSet should return a row with the zipped file name
         assertTrue(rsFiles.next());
         assertEquals(fileName + ".gz", rsFiles.getString(1));
+        stagedFileSize = rsFiles.getLong(2);
+        System.out.println(
+            "[LobSizeTest Diagnostic] Staged file: "
+                + rsFiles.getString(1)
+                + " stagedSize="
+                + stagedFileSize
+                + " bytes");
+      }
+      assertTrue(
+          stagedFileSize > 0,
+          "Staged .gz file size should be positive but was " + stagedFileSize);
+
+      // --- GZIP integrity verification: download the .gz file and decompress locally ---
+      Path verifyDir = Files.createTempDirectory("LobSizeVerify");
+      verifyDir.toFile().deleteOnExit();
+      String verifyDirEscaped = verifyDir.toString().replace("\\", "\\\\");
+
+      stmt.execute("get @%" + tableName + " 'file://" + verifyDirEscaped + "'");
+      try (ResultSet rsVerify = stmt.getResultSet()) {
+        assertTrue(rsVerify.next(), "GET for GZIP verification should return a result");
+        assertEquals(
+            "DOWNLOADED", rsVerify.getString(3), "GET for GZIP verification should succeed");
       }
 
+      File downloadedGzFile = new File(verifyDir.toFile(), fileName + ".gz");
+      assertTrue(
+          downloadedGzFile.exists(),
+          "Downloaded .gz file should exist at: " + downloadedGzFile.getAbsolutePath());
+      long downloadedGzSize = downloadedGzFile.length();
+      System.out.println(
+          "[LobSizeTest Diagnostic] Downloaded .gz file: size="
+              + downloadedGzSize
+              + " bytes (stagedSize="
+              + stagedFileSize
+              + ")");
+      assertTrue(downloadedGzSize > 0, "Downloaded .gz file should not be empty");
+
+      // Read the first bytes to confirm GZIP magic header (1f 8b)
+      try (FileInputStream headerCheck = new FileInputStream(downloadedGzFile)) {
+        int b1 = headerCheck.read();
+        int b2 = headerCheck.read();
+        System.out.println(
+            "[LobSizeTest Diagnostic] .gz magic bytes: "
+                + String.format("0x%02x 0x%02x", b1, b2)
+                + (b1 == 0x1f && b2 == 0x8b ? " (valid GZIP)" : " (NOT GZIP!)"));
+        assertTrue(
+            b1 == 0x1f && b2 == 0x8b,
+            "Downloaded file does not have GZIP magic bytes. Got: "
+                + String.format("0x%02x 0x%02x", b1, b2));
+      }
+
+      // Compute SHA-256 of the .gz file for traceability
+      String gzDigest = sha256Hex(downloadedGzFile);
+      System.out.println("[LobSizeTest Diagnostic] .gz SHA-256: " + gzDigest);
+
+      // Fully decompress to verify GZIP stream integrity
+      long decompressedSize = 0;
+      try (FileInputStream fis = new FileInputStream(downloadedGzFile);
+          GZIPInputStream gzis = new GZIPInputStream(fis)) {
+        byte[] buf = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = gzis.read(buf)) != -1) {
+          decompressedSize += bytesRead;
+        }
+        System.out.println(
+            "[LobSizeTest Diagnostic] GZIP integrity PASSED. decompressedSize="
+                + decompressedSize
+                + " originalSize="
+                + originalFileSize);
+      } catch (IOException e) {
+        System.out.println(
+            "[LobSizeTest Diagnostic] GZIP integrity FAILED: "
+                + e.getMessage()
+                + " | downloadedGzSize="
+                + downloadedGzSize
+                + " stagedSize="
+                + stagedFileSize
+                + " originalSize="
+                + originalFileSize
+                + " gzSHA256="
+                + gzDigest);
+        fail(
+            "GZIP integrity verification failed for "
+                + downloadedGzFile.getAbsolutePath()
+                + ": "
+                + e.getMessage());
+      }
+      assertEquals(
+          originalFileSize,
+          decompressedSize,
+          "Decompressed size should match original file size. decompressed="
+              + decompressedSize
+              + " original="
+              + originalFileSize);
+
+      // Clean up verification temp files
+      downloadedGzFile.delete();
+      verifyDir.toFile().delete();
+
+      // --- Proceed with COPY INTO ---
       String copyInto =
           "copy into "
               + tableName
@@ -256,6 +374,29 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         assertEquals(fileName + ".gz", rsGet.getString(1));
         assertEquals("DOWNLOADED", rsGet.getString(3));
       }
+    }
+  }
+
+  /**
+   * Compute SHA-256 hex digest of a file. Used only for diagnostic logging in tests -- does not
+   * touch any production stream or upload logic.
+   */
+  private static String sha256Hex(File file) {
+    try (FileInputStream fis = new FileInputStream(file)) {
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      byte[] buf = new byte[8192];
+      int n;
+      while ((n = fis.read(buf)) != -1) {
+        md.update(buf, 0, n);
+      }
+      byte[] digest = md.digest();
+      StringBuilder sb = new StringBuilder(digest.length * 2);
+      for (byte b : digest) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (IOException | NoSuchAlgorithmException e) {
+      return "ERROR: " + e.getMessage();
     }
   }
 }
