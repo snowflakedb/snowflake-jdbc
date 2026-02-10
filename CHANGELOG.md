@@ -1,7 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v4.0.1-SNAPSHOT
+- Upcoming release (TBD)
+
+- v4.0.1
     - Add /etc/os-release data to Minicore telemetry
     - Fix incorrect encryption algorithm chosen when a file was put to S3 with client_encryption_key_size account parameter set to 256 (snowflakedb/snowflake-jdbc#2472) 
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2474).
@@ -9,11 +11,6 @@
     - Update BouncyCastle dependencies to fix CVE-2025-8916 CVE-2025-8885 (snowflakedb/snowflake-jdbc#2479)
     - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
     - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
-    -
-    -
-    -
-    -
-    -
 
 - v4.0.0
     - Bumped netty to 4.1.130.Final to address CVE-2025-67735
