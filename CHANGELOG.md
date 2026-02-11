@@ -2,6 +2,7 @@
 
 # Changelog
 - Upcoming release (TBD)
+    - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
