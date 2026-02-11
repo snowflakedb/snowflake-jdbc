@@ -49,9 +49,9 @@ public class SFStatement extends SFBaseStatement {
 
   private HttpRequestBase httpRequest;
 
-  private Boolean isClosed = false;
+  private boolean isClosed = false;
 
-  private Integer sequenceId = -1;
+  private int sequenceId = -1;
 
   private String requestId = null;
 

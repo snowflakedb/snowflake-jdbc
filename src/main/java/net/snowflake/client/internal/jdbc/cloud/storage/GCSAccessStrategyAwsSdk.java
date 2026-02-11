@@ -151,7 +151,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       throws InterruptedException {
 
     logger.debug(
-        "Staring download of file from S3 stage path: {} to {}",
+        "Starting download of file from S3 stage path: {} to {}",
         stageFilePath,
         localFile.getAbsolutePath());
 

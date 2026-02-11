@@ -212,7 +212,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       throws SnowflakeSQLException {
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
-        "Staring download of file from GCS stage path: {} to {}", stageFilePath, localFilePath);
+        "Starting download of file from GCS stage path: {} to {}", stageFilePath, localFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
@@ -406,7 +406,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
-    logger.debug("Staring download of file from GCS stage path: {} to input stream", stageFilePath);
+    logger.debug(
+        "Starting download of file from GCS stage path: {} to input stream", stageFilePath);
     int retryCount = 0;
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
