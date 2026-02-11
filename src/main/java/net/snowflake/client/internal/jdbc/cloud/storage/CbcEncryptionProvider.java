@@ -29,7 +29,7 @@ import net.snowflake.client.internal.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 /** Handles encryption and decryption using AES CBC (for files) and ECB (for keys). */
-public class EncryptionProvider {
+public class CbcEncryptionProvider {
   private static final String AES = "AES";
   private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
@@ -78,7 +78,7 @@ public class EncryptionProvider {
    * decrypt
    * Decrypts a file given the key and iv. Uses AES decryption.
    */
-  public static void decrypt(
+  public static void decryptFile(
       File file, String keyBase64, String ivBase64, RemoteStoreFileEncryptionMaterial encMat)
       throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
           IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
@@ -136,7 +136,7 @@ public class EncryptionProvider {
    * is added to the metadata object. The key and iv are added to the JSON block in the
    * encryptionData metadata object.
    */
-  public static CipherInputStream encrypt(
+  public static CipherInputStream encryptStream(
       StorageObjectMetadata meta,
       long originalContentLength,
       InputStream src,

@@ -322,10 +322,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
         }
 
-        if (!isNullOrEmpty(iv)
-            && !isNullOrEmpty(key)
-            && this.isEncrypting()
-            && this.getEncryptionKeySize() <= 256) {
+        if (this.isEncrypting()
+            && ((stageInfo.getCiphers() == Ciphers.AES_CBC && this.getEncryptionKeySize() < 256)
+                || stageInfo.getCiphers() == Ciphers.AES_GCM)) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
                 queryId,
@@ -338,7 +337,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // Decrypt file
           try {
             stopwatch.start();
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            CbcEncryptionProvider.decryptFile(localFile, key, iv, this.encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -518,7 +517,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           try {
             if (inputStream != null) {
 
-              inputStream = EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
+              inputStream = CbcEncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
               stopwatch.stop();
               long decryptMillis = stopwatch.elapsedMillis();
               logger.info(
@@ -864,7 +863,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           content,
           queryId);
     } catch (Exception e) {
-      handleStorageException(e, 0, StorageHelper.UPLOAD, session, queryId);
+      handleStorageException(e, 0, StorageHelper.UPLOAD, session, null, queryId);
       SnowflakeSQLException wrappedException;
       if (e instanceof SnowflakeSQLException) {
         wrappedException = (SnowflakeSQLException) e;
@@ -1030,7 +1029,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
           // Encrypt
           stream =
-              EncryptionProvider.encrypt(
+              CbcEncryptionProvider.encryptStream(
                   meta, originalContentLength, uploadStream, this.encMat, this);
           uploadFromStream = true;
         } catch (Exception ex) {

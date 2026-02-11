@@ -42,6 +42,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
+    <floe.version>1.0.0-SNAPSHOT</floe.version>
     <google.api.grpc.version>2.48.0</google.api.grpc.version>
     <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
     <google.cloud.core.version>2.47.0</google.cloud.core.version>
@@ -285,6 +286,11 @@
         <artifactId>commons-pool</artifactId>
         <version>${commons.pool.version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>net.snowflake</groupId>
+        <artifactId>floe</artifactId>
+        <version>${floe.version}</version>
       </dependency>
       <dependency>
         <groupId>io.opencensus</groupId>
@@ -612,6 +618,10 @@
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>net.snowflake</groupId>
+      <artifactId>floe</artifactId>
+    </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>

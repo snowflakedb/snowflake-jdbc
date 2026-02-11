@@ -29,6 +29,7 @@ public class StageInfo implements Serializable {
   private String storageAccount; // The Azure Storage account (Azure only)
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
   private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
+  private Ciphers ciphers;
   // whether to use s3 regional URL (AWS Only)
   // TODO SNOW-1818804: this field will be deprecated when the server returns {@link
   // #useRegionalUrl}
@@ -59,7 +60,8 @@ public class StageInfo implements Serializable {
       String region,
       String endPoint,
       String storageAccount,
-      boolean isClientSideEncrypted)
+      boolean isClientSideEncrypted,
+      Ciphers ciphers)
       throws IllegalArgumentException {
     StageType stageType;
     // Ensure that all the required parameters are specified
@@ -99,7 +101,14 @@ public class StageInfo implements Serializable {
         throw new IllegalArgumentException("Invalid stage type: " + locationType);
     }
     return new StageInfo(
-        stageType, location, credentials, region, endPoint, storageAccount, isClientSideEncrypted);
+        stageType,
+        location,
+        credentials,
+        region,
+        endPoint,
+        storageAccount,
+        isClientSideEncrypted,
+        ciphers);
   }
 
   /*
@@ -122,7 +131,8 @@ public class StageInfo implements Serializable {
       String region,
       String endPoint,
       String storageAccount,
-      boolean isClientSideEncrypted) {
+      boolean isClientSideEncrypted,
+      Ciphers ciphers) {
     this.stageType = stageType;
     this.location = location;
     this.credentials = credentials;
@@ -130,6 +140,7 @@ public class StageInfo implements Serializable {
     this.endPoint = endPoint;
     this.storageAccount = storageAccount;
     this.isClientSideEncrypted = isClientSideEncrypted;
+    this.ciphers = ciphers;
   }
 
   public StageType getStageType() {
@@ -170,6 +181,10 @@ public class StageInfo implements Serializable {
 
   public boolean getIsClientSideEncrypted() {
     return isClientSideEncrypted;
+  }
+
+  public Ciphers getCiphers() {
+    return ciphers;
   }
 
   public void setUseS3RegionalUrl(boolean useS3RegionalUrl) {

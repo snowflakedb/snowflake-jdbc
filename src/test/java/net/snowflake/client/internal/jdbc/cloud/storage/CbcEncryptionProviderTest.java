@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-public class EncryptionProviderTest {
+public class CbcEncryptionProviderTest {
   private final SecureRandom random = new SecureRandom();
 
   private final ArgumentCaptor<StorageObjectMetadata> storageObjectMetadataArgumentCaptor =
@@ -49,11 +49,12 @@ public class EncryptionProviderTest {
   }
 
   @Test
-  public void testEncryptAndDecryptStream() throws Exception {
+  public void testEncryptStreamAndDecryptFileStream() throws Exception {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     CipherInputStream encrypted =
-        EncryptionProvider.encrypt(meta, plainText.length, plainTextStream, encMat, storageClient);
+        CbcEncryptionProvider.encryptStream(
+            meta, plainText.length, plainTextStream, encMat, storageClient);
     byte[] cipherText = IOUtils.toByteArray(encrypted);
     verify(storageClient)
         .addEncryptionMetadata(
@@ -64,7 +65,7 @@ public class EncryptionProviderTest {
             contentLengthArgumentCaptor.capture());
 
     InputStream inputStream =
-        EncryptionProvider.decryptStream(
+        CbcEncryptionProvider.decryptStream(
             new ByteArrayInputStream(cipherText),
             Base64.getEncoder().encodeToString(encKekArgumentCaptor.getValue()),
             Base64.getEncoder().encodeToString(ivDataArgumentCaptor.getValue()),
@@ -74,12 +75,12 @@ public class EncryptionProviderTest {
   }
 
   @Test
-  public void testEncryptAndDecryptFile() throws Exception {
+  public void testEncryptStreamAndDecryptFileFile() throws Exception {
     File tempFile = Files.createTempFile("encryption", "").toFile();
     tempFile.deleteOnExit();
 
     CipherInputStream encrypted =
-        EncryptionProvider.encrypt(
+        CbcEncryptionProvider.encryptStream(
             meta, plainText.length, new ByteArrayInputStream(plainText), encMat, storageClient);
     FileUtils.writeByteArrayToFile(tempFile, IOUtils.toByteArray(encrypted));
     verify(storageClient)
@@ -90,7 +91,7 @@ public class EncryptionProviderTest {
             encKekArgumentCaptor.capture(),
             contentLengthArgumentCaptor.capture());
 
-    EncryptionProvider.decrypt(
+    CbcEncryptionProvider.decryptFile(
         tempFile,
         Base64.getEncoder().encodeToString(encKekArgumentCaptor.getValue()),
         Base64.getEncoder().encodeToString(ivDataArgumentCaptor.getValue()),
