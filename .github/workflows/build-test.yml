@@ -47,8 +47,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
-                category: [{suites: 'ReproUploadCorruptionTestSuite', name: 'ReproUploadCorruption'}]
-                iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+                category: [{suites: 'StatementTestSuite', name: 'TestCategoryStatement'}]
+                iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
         steps:
             - uses: actions/checkout@v5
             - name: Run testPutAndGetLargeFileRepeated on AWS

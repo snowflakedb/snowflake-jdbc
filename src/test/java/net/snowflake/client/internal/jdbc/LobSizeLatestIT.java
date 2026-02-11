@@ -38,7 +38,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@Tag(TestTags.REPRO_UPLOAD_CORRUPTION)
+@Tag(TestTags.STATEMENT)
 public class LobSizeLatestIT extends BaseJDBCTest {
 
   private static final Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
