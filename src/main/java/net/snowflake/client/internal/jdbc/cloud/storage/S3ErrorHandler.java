@@ -16,6 +16,16 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 public class S3ErrorHandler {
   private static final SFLogger logger = SFLoggerFactory.getLogger(S3ErrorHandler.class);
 
+  /** Checks the status code of the exception to see if it's a 400 or 404. */
+  static boolean isClientException400Or404(Throwable ex) {
+    if (ex instanceof SdkServiceException) {
+      SdkServiceException sdkEx = (SdkServiceException) ex;
+      return sdkEx.statusCode() == HttpStatus.SC_NOT_FOUND
+          || sdkEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
+    }
+    return false;
+  }
+
   static void retryRequestWithExponentialBackoff(
       Exception ex,
       int retryCount,

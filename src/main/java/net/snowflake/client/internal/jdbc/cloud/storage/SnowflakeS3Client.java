@@ -42,7 +42,6 @@ import net.snowflake.client.internal.util.Stopwatch;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
@@ -52,7 +51,6 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -844,7 +842,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Throwable cause = ex.getCause();
     if (cause instanceof SdkException) {
       logger.debug("SdkException: " + ex.getMessage());
-      if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException400Or404(cause)) {
+      if (retryCount > s3Client.getMaxRetries()
+          || S3ErrorHandler.isClientException400Or404(cause)) {
         throwIfClientExceptionOrMaxRetryReached(
             operation, session, command, queryId, s3Client, cause);
       } else {
@@ -880,21 +879,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
-  }
-
-  /**
-   * Checks the status code of the exception to see if it's a 400 or 404
-   *
-   * @param ex exception
-   * @return true if it's a 400 or 404 status code
-   */
-  public boolean isClientException400Or404(Throwable ex) {
-    if (ex instanceof SdkServiceException) {
-      SdkServiceException asEx = (SdkServiceException) (ex);
-      return asEx.statusCode() == HttpStatus.SC_NOT_FOUND
-          || asEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
-    }
-    return false;
   }
 
   /* Returns the material descriptor key */

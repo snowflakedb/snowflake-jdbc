@@ -25,7 +25,6 @@ import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.SFPair;
-import org.apache.http.HttpStatus;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -33,7 +32,6 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -250,15 +248,6 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     }
   }
 
-  private static boolean isClientException400Or404(Throwable ex) {
-    if (ex instanceof SdkServiceException) {
-      SdkServiceException asEx = (SdkServiceException) (ex);
-      return asEx.statusCode() == HttpStatus.SC_NOT_FOUND
-          || asEx.statusCode() == HttpStatus.SC_BAD_REQUEST;
-    }
-    return false;
-  }
-
   @Override
   public boolean handleStorageException(
       Exception ex,
@@ -273,7 +262,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     if (cause instanceof SdkException) {
       logger.debug("GCSAccessStrategyAwsSdk: " + cause.getMessage());
 
-      if (retryCount > gcsClient.getMaxRetries() || isClientException400Or404(cause)) {
+      if (retryCount > gcsClient.getMaxRetries()
+          || S3ErrorHandler.isClientException400Or404(cause)) {
         throwIfClientExceptionOrMaxRetryReached(
             operation, session, command, queryId, gcsClient, cause);
       } else {
