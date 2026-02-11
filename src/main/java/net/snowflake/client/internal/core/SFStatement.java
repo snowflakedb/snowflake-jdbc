@@ -502,27 +502,14 @@ public class SFStatement extends SFBaseStatement {
           stmtOutput = StmtUtil.execute(stmtInput, execTimeData, session);
           break;
         } catch (SnowflakeSQLException ex) {
-          if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE) {
-            try {
-              // renew the session
-              session.renewSession(stmtInput.sessionToken);
-            } catch (SnowflakeReauthenticationRequest ex0) {
-              if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
-                session.open();
-              } else {
-                throw ex0;
-              }
-            }
-            // SNOW-18822: reset session token for the statement
-            stmtInput.setSessionToken(session.getSessionToken());
-            stmtInput.setRetry(true);
-            sessionRenewed = true;
-            execTimeData.incrementRetryCount();
-            execTimeData.addRetryLocation("renewSession");
-            logger.debug("Session got renewed, will retry", false);
-          } else {
-            throw ex;
-          }
+          renewSessionOnExpiry(ex, stmtInput.sessionToken);
+          // SNOW-18822: reset session token for the statement
+          stmtInput.setSessionToken(session.getSessionToken());
+          stmtInput.setRetry(true);
+          sessionRenewed = true;
+          execTimeData.incrementRetryCount();
+          execTimeData.addRetryLocation("renewSession");
+          logger.debug("Session got renewed, will retry", false);
         }
       } while (sessionRenewed && !canceling.get());
 
@@ -670,7 +657,15 @@ public class SFStatement extends SFBaseStatement {
               + ". Results not generated.");
     }
     try {
-      JsonNode jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
+      JsonNode jsonResult;
+      try {
+        jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
+      } catch (SnowflakeSQLException ex) {
+        renewSessionOnExpiry(ex, session.getSessionToken());
+        logger.debug("Session renewed during getChildQueryIds, retrying", false);
+        jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
+      }
+
       List<SFChildResult> childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
       List<String> resultList = new ArrayList<>();
       for (int i = 0; i < childResults.size(); i++) {
@@ -899,6 +894,26 @@ public class SFStatement extends SFBaseStatement {
     this.addProperty("NEW_SQL_FORMAT", useNewSqlFormat);
   }
 
+  /**
+   * Renew the session if the given exception indicates session token expiry (error code 390112). If
+   * the error is not session expiry, the original exception is re-thrown.
+   */
+  void renewSessionOnExpiry(SnowflakeSQLException ex, String prevSessionToken)
+      throws SFException, SnowflakeSQLException {
+    if (ex.getErrorCode() != Constants.SESSION_EXPIRED_GS_CODE) {
+      throw ex;
+    }
+    try {
+      session.renewSession(prevSessionToken);
+    } catch (SnowflakeReauthenticationRequest ex0) {
+      if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
+        session.open();
+      } else {
+        throw ex0;
+      }
+    }
+  }
+
   public boolean getMoreResults() throws SQLException {
     return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
@@ -920,7 +935,15 @@ public class SFStatement extends SFBaseStatement {
     // fetch next result using the query id
     SFChildResult nextResult = childResults.remove(0);
     try {
-      JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
+      JsonNode result;
+      try {
+        result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
+      } catch (SnowflakeSQLException ex) {
+        renewSessionOnExpiry(ex, session.getSessionToken());
+        logger.debug("Session renewed during getMoreResults, retrying child result fetch", false);
+        result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
+      }
+
       Object sortProperty = session.getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
       resultSet =
