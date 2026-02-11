@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -98,35 +99,19 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @DontRunOnGithubActions
-  public void testIsClientException400Or404() throws SQLException {
-    SdkServiceException servEx =
-        SdkServiceException.builder().message("S3 operation failed").statusCode(400).build();
+  public void testIsClientException400Or404() {
+    SdkServiceException badRequest =
+        SdkServiceException.builder().message("Bad Request").statusCode(400).build();
+    SdkServiceException notFound =
+        SdkServiceException.builder().message("Not Found").statusCode(404).build();
+    SdkServiceException serverError =
+        SdkServiceException.builder().message("Internal Server Error").statusCode(500).build();
 
-    try (Connection connection = getConnection("s3testaccount")) {
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionImpl.class).getSfSession();
-      String getCommand = "GET '@~/testStage' 'file://C:/temp' PARALLEL=8";
-      SnowflakeFileTransferAgent agent =
-          new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
-      RemoteStoreFileEncryptionMaterial content =
-          new RemoteStoreFileEncryptionMaterial(
-              "LHMTKHLETLKHPSTADDGAESLFKREYGHFHGHGSDHJKLMH", "123456", 123L);
-      StageInfo info = agent.getStageInfo();
-      SnowflakeS3Client.ClientConfiguration clientConfig =
-          new SnowflakeS3Client.ClientConfiguration(1, 1, 10_000, 10_000);
-      SnowflakeS3Client client =
-          new SnowflakeS3Client(
-              info.getCredentials(),
-              clientConfig,
-              content,
-              info.getProxyProperties(),
-              info.getRegion(),
-              info.getEndPoint(),
-              info.getIsClientSideEncrypted(),
-              sfSession,
-              info.getUseS3RegionalUrl());
-      assertTrue(client.isClientException400Or404(servEx));
-    }
+    assertTrue(S3ErrorHandler.isClientException400Or404(badRequest));
+    assertTrue(S3ErrorHandler.isClientException400Or404(notFound));
+    assertFalse(S3ErrorHandler.isClientException400Or404(serverError));
+    assertFalse(
+        S3ErrorHandler.isClientException400Or404(new RuntimeException("not an SDK exception")));
   }
 
   @Test
