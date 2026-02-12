@@ -11,14 +11,21 @@ WORKSPACE=${WORKSPACE:-${JDBC_ROOT}}
 
 echo "[Info] Starting revocation validation tests"
 
-# Detect JDBC version from pom.xml (already installed to ~/.m2 by the Build stage)
-JDBC_VERSION=$(grep -m1 '<version>' "$JDBC_ROOT/pom.xml" | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+# Detect JDBC version using Maven (reliable, handles property interpolation)
+JDBC_VERSION=$(cd "$JDBC_ROOT" && mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
+if [ -z "$JDBC_VERSION" ]; then
+    echo "[Error] Failed to determine JDBC version from pom.xml"
+    exit 1
+fi
 echo "[Info] JDBC driver version: $JDBC_VERSION"
 
 # Ensure parent POM is also in ~/.m2 (needed for Maven dependency resolution)
 if [ ! -f "$HOME/.m2/repository/net/snowflake/snowflake-jdbc-parent/$JDBC_VERSION/"*.pom ]; then
     echo "[Info] Installing parent POM to local Maven repo..."
-    (cd "$JDBC_ROOT" && mvn install -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode)
+    if ! (cd "$JDBC_ROOT" && mvn install -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
+        echo "[Error] Failed to install parent POM"
+        exit 1
+    fi
 fi
 
 set -e
