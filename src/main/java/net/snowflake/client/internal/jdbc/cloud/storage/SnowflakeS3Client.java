@@ -350,7 +350,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
-        "Staring download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
+        "Starting download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
     S3TransferManager tx = null;
     int retryCount = 0;
     do {

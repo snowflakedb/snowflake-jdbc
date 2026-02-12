@@ -95,14 +95,14 @@ public class SessionUtil {
 
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 
+  static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+
   // Headers
   @Deprecated
   public static final String SF_HEADER_AUTHORIZATION = SFSession.SF_HEADER_AUTHORIZATION;
 
   // Authentication type
   private static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-  private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
-      "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
