@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import net.snowflake.client.annotations.DontRunOnJenkins;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
@@ -38,7 +39,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@Tag(TestTags.REPRO_UPLOAD_CORRUPTION)
+@Tag(TestTags.STATEMENT)
 public class LobSizeLatestIT extends BaseJDBCTest {
 
   private static final Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
@@ -209,17 +210,16 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       if (lobSize > originLobSize) { // for increased LOB size (16MB < lobSize < 128MB)
         stmt.execute("alter session set ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN = true");
       }
-      // Test PUT (GZIP disabled to isolate encrypt/upload path)
-      String sqlPut =
-          "PUT 'file://" + filePathEscaped + "' @%" + tableName + " AUTO_COMPRESS=FALSE";
+      // Test PUT
+      String sqlPut = "PUT 'file://" + filePathEscaped + "' @%" + tableName;
 
       stmt.execute(sqlPut);
 
       try (ResultSet rsPut = stmt.getResultSet()) {
         assertTrue(rsPut.next());
         assertEquals(fileName, rsPut.getString(1));
-        assertEquals(fileName, rsPut.getString(2));
-        assertEquals("NONE", rsPut.getString(6));
+        assertEquals(fileName + ".gz", rsPut.getString(2));
+        assertEquals("GZIP", rsPut.getString(6));
         assertEquals("UPLOADED", rsPut.getString(7));
       }
 
@@ -240,7 +240,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       long stagedFileSize;
       try (ResultSet rsFiles = stmt.executeQuery("ls @%" + tableName)) {
         assertTrue(rsFiles.next());
-        assertEquals(fileName, rsFiles.getString(1));
+        assertEquals(fileName + ".gz", rsFiles.getString(1));
         stagedFileSize = rsFiles.getLong(2);
         System.out.println(
             "[LobSizeTest Diagnostic] Staged file: "
@@ -250,23 +250,40 @@ public class LobSizeLatestIT extends BaseJDBCTest {
                 + " bytes");
       }
       assertTrue(
-          stagedFileSize > 0, "Staged file size should be positive but was " + stagedFileSize);
+          stagedFileSize > 0,
+          "Staged .gz file size should be positive but was " + stagedFileSize);
 
-      // --- Non-fatal integrity verification (no GZIP -- raw CSV through encrypt/upload) ---
+      // --- Non-fatal GZIP integrity verification ---
       // All checks are collected as warnings so the test always proceeds to COPY INTO.
+      // This lets us correlate client-side corruption with server-side decompression errors.
       StringBuilder verificationErrors = new StringBuilder();
 
-      String originalDigest = sha256Hex(tempFile);
-      System.out.println("[LobSizeTest Diagnostic] Original file SHA-256: " + originalDigest);
+      // Download the .gz file from the stage
+      Path verifyDir = Files.createTempDirectory("LobSizeVerify");
+      verifyDir.toFile().deleteOnExit();
+      String verifyDirEscaped = verifyDir.toString().replace("\\", "\\\\");
+
+      stmt.execute("get @%" + tableName + " 'file://" + verifyDirEscaped + "'");
+      try (ResultSet rsVerify = stmt.getResultSet()) {
+        assertTrue(rsVerify.next(), "GET for GZIP verification should return a result");
+        assertEquals(
+            "DOWNLOADED", rsVerify.getString(3), "GET for GZIP verification should succeed");
+      }
+
+      File downloadedGzFile = new File(verifyDir.toFile(), fileName + ".gz");
+      assertTrue(
+          downloadedGzFile.exists(),
+          "Downloaded .gz file should exist at: " + downloadedGzFile.getAbsolutePath());
+      long downloadedGzSize = downloadedGzFile.length();
 
       // Check the size gap between LS (encrypted) and GET (decrypted) for AES-CBC padding
-      long expectedPadding = 16 - (originalFileSize % 16);
-      long sizeDiff = stagedFileSize - originalFileSize;
+      long sizeDiff = stagedFileSize - downloadedGzSize;
+      long expectedPadding = 16 - (downloadedGzSize % 16);
       System.out.println(
-          "[LobSizeTest Diagnostic] stagedSize="
+          "[LobSizeTest Diagnostic] Downloaded .gz size="
+              + downloadedGzSize
+              + " stagedSize="
               + stagedFileSize
-              + " originalSize="
-              + originalFileSize
               + " sizeDiff="
               + sizeDiff
               + " expectedAESPadding="
@@ -282,59 +299,81 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         verificationErrors.append(msg).append("\n");
       }
 
-      // Download file from stage (1st GET)
-      Path verifyDir = Files.createTempDirectory("LobSizeVerify");
-      verifyDir.toFile().deleteOnExit();
-      String verifyDirEscaped = verifyDir.toString().replace("\\", "\\\\");
-
-      stmt.execute("get @%" + tableName + " 'file://" + verifyDirEscaped + "'");
-      try (ResultSet rsVerify = stmt.getResultSet()) {
-        assertTrue(rsVerify.next(), "GET for verification should return a result");
-        assertEquals("DOWNLOADED", rsVerify.getString(3), "GET for verification should succeed");
-      }
-
-      File downloadedFile = new File(verifyDir.toFile(), fileName);
-      assertTrue(
-          downloadedFile.exists(),
-          "Downloaded file should exist at: " + downloadedFile.getAbsolutePath());
-      long downloadedSize = downloadedFile.length();
-      String downloadDigest1 = sha256Hex(downloadedFile);
-      System.out.println(
-          "[LobSizeTest Diagnostic] Downloaded file (1st GET): size="
-              + downloadedSize
-              + " SHA-256="
-              + downloadDigest1);
-
-      if (downloadedSize != originalFileSize) {
-        String msg =
-            "Size mismatch: downloaded=" + downloadedSize + " original=" + originalFileSize;
+      if (downloadedGzSize <= 0) {
+        String msg = "Downloaded .gz file is empty (size=0)";
         System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
         verificationErrors.append(msg).append("\n");
       }
-      if (!originalDigest.equals(downloadDigest1)) {
-        // Dump first 32 bytes for diagnosis
-        try (FileInputStream headerCheck = new FileInputStream(downloadedFile)) {
+
+      // Read the first bytes to check GZIP magic header (1f 8b)
+      try (FileInputStream headerCheck = new FileInputStream(downloadedGzFile)) {
+        int b1 = headerCheck.read();
+        int b2 = headerCheck.read();
+        System.out.println(
+            "[LobSizeTest Diagnostic] .gz magic bytes: "
+                + String.format("0x%02x 0x%02x", b1, b2)
+                + (b1 == 0x1f && b2 == 0x8b ? " (valid GZIP)" : " (NOT GZIP!)"));
+        if (b1 != 0x1f || b2 != 0x8b) {
+          // Dump more header bytes for diagnosis
           byte[] head = new byte[32];
-          int nRead = headerCheck.read(head, 0, head.length);
+          head[0] = (byte) b1;
+          head[1] = (byte) b2;
+          int extra = headerCheck.read(head, 2, head.length - 2);
           StringBuilder hexDump = new StringBuilder();
-          for (int i = 0; i < Math.max(0, nRead); i++) {
+          for (int i = 0; i < 2 + Math.max(0, extra); i++) {
             hexDump.append(String.format("%02x ", head[i] & 0xff));
           }
           String msg =
-              "SHA-256 MISMATCH: original="
-                  + originalDigest
-                  + " downloaded="
-                  + downloadDigest1
-                  + " firstBytes=["
+              "NOT GZIP: first bytes are ["
                   + hexDump.toString().trim()
-                  + "]. Data corrupted during encrypt/upload/decrypt.";
+                  + "]. Expected 1f 8b. This means the uploaded data is not"
+                  + " valid GZIP -- corruption occurred during compress/encrypt/upload.";
           System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
           verificationErrors.append(msg).append("\n");
         }
-      } else {
+      }
+
+      // Compute SHA-256 of the .gz file for traceability
+      String gzDigest1 = sha256Hex(downloadedGzFile);
+      System.out.println("[LobSizeTest Diagnostic] .gz SHA-256 (1st GET): " + gzDigest1);
+
+      // Attempt full decompression to verify GZIP stream integrity
+      long decompressedSize = 0;
+      try (FileInputStream fis = new FileInputStream(downloadedGzFile);
+          GZIPInputStream gzis = new GZIPInputStream(fis)) {
+        byte[] buf = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = gzis.read(buf)) != -1) {
+          decompressedSize += bytesRead;
+        }
         System.out.println(
-            "[LobSizeTest Diagnostic] SHA-256 match: downloaded file is byte-identical"
-                + " to original.");
+            "[LobSizeTest Diagnostic] GZIP decompression PASSED. decompressedSize="
+                + decompressedSize
+                + " originalSize="
+                + originalFileSize);
+        if (decompressedSize != originalFileSize) {
+          String msg =
+              "Decompressed size mismatch: decompressed="
+                  + decompressedSize
+                  + " original="
+                  + originalFileSize;
+          System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
+          verificationErrors.append(msg).append("\n");
+        }
+      } catch (IOException e) {
+        String msg =
+            "GZIP decompression FAILED: "
+                + e.getMessage()
+                + " | downloadedGzSize="
+                + downloadedGzSize
+                + " stagedSize="
+                + stagedFileSize
+                + " originalSize="
+                + originalFileSize
+                + " gzSHA256="
+                + gzDigest1;
+        System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
+        verificationErrors.append(msg).append("\n");
       }
 
       // Second independent download to detect non-deterministic S3/decryption issues
@@ -349,19 +388,28 @@ public class LobSizeLatestIT extends BaseJDBCTest {
             "DOWNLOADED", rsVerify2.getString(3), "2nd GET for verification should succeed");
       }
 
-      File downloadedFile2 = new File(verifyDir2.toFile(), fileName);
-      assertTrue(downloadedFile2.exists(), "2nd downloaded file should exist");
-      long downloadedSize2 = downloadedFile2.length();
-      String downloadDigest2 = sha256Hex(downloadedFile2);
+      File downloadedGzFile2 = new File(verifyDir2.toFile(), fileName + ".gz");
+      assertTrue(downloadedGzFile2.exists(), "2nd downloaded .gz file should exist");
+      long downloadedGzSize2 = downloadedGzFile2.length();
+      String gzDigest2 = sha256Hex(downloadedGzFile2);
       System.out.println(
-          "[LobSizeTest Diagnostic] Downloaded file (2nd GET): size="
-              + downloadedSize2
-              + " SHA-256="
-              + downloadDigest2);
+          "[LobSizeTest Diagnostic] .gz SHA-256 (2nd GET): "
+              + gzDigest2
+              + " size="
+              + downloadedGzSize2);
 
-      if (!downloadDigest1.equals(downloadDigest2)) {
+      if (downloadedGzSize != downloadedGzSize2) {
         String msg =
-            "Two GETs produced different SHA-256: " + downloadDigest1 + " vs " + downloadDigest2;
+            "Two GETs produced different sizes: "
+                + downloadedGzSize
+                + " vs "
+                + downloadedGzSize2;
+        System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
+        verificationErrors.append(msg).append("\n");
+      }
+      if (!gzDigest1.equals(gzDigest2)) {
+        String msg =
+            "Two GETs produced different SHA-256: " + gzDigest1 + " vs " + gzDigest2;
         System.out.println("[LobSizeTest Diagnostic] ERROR: " + msg);
         verificationErrors.append(msg).append("\n");
       } else {
@@ -378,9 +426,9 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       }
 
       // Clean up temp files
-      downloadedFile.delete();
+      downloadedGzFile.delete();
       verifyDir.toFile().delete();
-      downloadedFile2.delete();
+      downloadedGzFile2.delete();
       verifyDir2.toFile().delete();
 
       // --- Proceed with COPY INTO regardless of verification outcome ---
@@ -389,7 +437,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
               + tableName
               + " from @%"
               + tableName
-              + " file_format=(type=csv compression='none')";
+              + " file_format=(type=csv compression='gzip')";
       boolean copyIntoFailed = false;
       String copyIntoError = null;
       try {
@@ -408,7 +456,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
       if (clientSideCorruptionDetected && copyIntoFailed) {
         fail(
-            "Both client-side verification and server-side COPY INTO failed.\n"
+            "Both client-side GZIP verification and server-side COPY INTO failed.\n"
                 + "Client-side errors:\n"
                 + verificationErrors
                 + "COPY INTO error: "
@@ -416,17 +464,17 @@ public class LobSizeLatestIT extends BaseJDBCTest {
                 + "\nThis confirms the JDBC driver uploaded corrupt data.");
       } else if (clientSideCorruptionDetected) {
         fail(
-            "Client-side verification detected corruption, but COPY INTO succeeded.\n"
+            "Client-side GZIP verification detected corruption, but COPY INTO succeeded.\n"
                 + "Client-side errors:\n"
                 + verificationErrors
                 + "This is unexpected -- the server accepted data that failed local checks.");
       } else if (copyIntoFailed) {
         fail(
-            "Client-side verification passed, but COPY INTO failed.\n"
+            "Client-side GZIP verification passed, but COPY INTO failed.\n"
                 + "COPY INTO error: "
                 + copyIntoError
-                + "\nThis suggests corruption in the server pipeline,"
-                + " not in the JDBC driver.");
+                + "\nThis suggests corruption occurred in the server's decrypt/decompress"
+                + " pipeline, not in the JDBC driver.");
       }
 
       // Check that results are copied into table correctly
@@ -448,7 +496,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
       try (ResultSet rsGet = stmt.getResultSet()) {
         assertTrue(rsGet.next());
-        assertEquals(fileName, rsGet.getString(1));
+        assertEquals(fileName + ".gz", rsGet.getString(1));
         assertEquals("DOWNLOADED", rsGet.getString(3));
       }
     }
