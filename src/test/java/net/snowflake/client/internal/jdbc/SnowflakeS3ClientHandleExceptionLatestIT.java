@@ -132,10 +132,8 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     CompletionException ex =
         new CompletionException(
             SdkServiceException.builder().message("Bad Request").statusCode(400).build());
-    Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex.getCause());
     spyingClient.handleStorageException(ex, 0, "download", sfSession, command, null);
     // renew token
-    Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex.getCause());
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
   }
 

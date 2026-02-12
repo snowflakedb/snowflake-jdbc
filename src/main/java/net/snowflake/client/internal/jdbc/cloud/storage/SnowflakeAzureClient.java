@@ -319,7 +319,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     stopwatch.start();
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
-        "Staring download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
+        "Starting download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
     localFilePath = trimLeadingSlashIfOnWindows(localFilePath);
     int retryCount = 0;
     do {
@@ -458,7 +458,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String queryId)
       throws SnowflakeSQLException {
     logger.debug(
-        "Staring download of file from Azure stage path: {} to input stream", stageFilePath);
+        "Starting download of file from Azure stage path: {} to input stream", stageFilePath);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     int retryCount = 0;

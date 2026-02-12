@@ -63,10 +63,6 @@ public class SFSession extends SFBaseSession {
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
-  // temporarily have this variable to avoid hardcode.
-  // Need to be removed when a better way to organize session parameter is introduced.
-  private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
-      "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final int MAX_SESSION_PARAMETERS = 1000;
   // this constant was public - let's not change it
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
@@ -650,7 +646,7 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
-        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
+        sessionParametersMap.get(SessionUtil.CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED),
         connectionPropertiesMap.get(SFSessionProperty.BROWSER_RESPONSE_TIMEOUT));
 
