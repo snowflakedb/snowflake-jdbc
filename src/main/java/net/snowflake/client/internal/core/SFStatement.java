@@ -266,7 +266,7 @@ public class SFStatement extends SFBaseStatement {
       logger.error("Exception creating result", ex);
 
       throw new SFException(
-          ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("exception creating result", ex));
+          ErrorCode.INTERNAL_ERROR, SFException.oneLiner("exception creating result", ex));
     }
     logger.debug("Done creating result set", false);
 

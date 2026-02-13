@@ -909,10 +909,6 @@
                       <shadedPattern>${shadeBase}.joda</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>com.yammer</pattern>
-                      <shadedPattern>${shadeBase}.yammer</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>javax.servlet</pattern>
                       <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
                     </relocation>
