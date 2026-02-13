@@ -48,12 +48,20 @@ timestamps {
     }
 
     stage('Build') {
-      sh '''\
-        |export JAVA_HOME=/usr/java/latest
-        |export PATH=$JAVA_HOME/bin:$PATH
-        |export GIT_BRANCH=${GIT_BRANCH}
-        |$WORKSPACE/ci/build.sh
-      '''.stripMargin()
+      withCredentials([
+        usernamePassword(credentialsId: 'jenkins-snowflake-github-app-3-emu', usernameVariable: 'GITHUB_USER_EMU', passwordVariable: 'GITHUB_TOKEN_EMU'),
+      ]) {
+        sh '''\
+          |export JAVA_HOME=/usr/java/latest
+          |export PATH=$JAVA_HOME/bin:$PATH
+          |export GIT_BRANCH=${GIT_BRANCH}
+          |$WORKSPACE/ci/build.sh
+        '''.stripMargin()
+        env.SVN_REVISION = sh(returnStdout: true, script: '''
+          curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_EMU}" \
+            https://api.github.com/repos/snowflake-eng/snowflake/git/ref/tags/qa3-deployed | jq -r ".object.sha"
+        ''').trim()
+      }
     }
 
     jdkToParams = ['openjdk8': 'jdbc-centos7-openjdk8', 'openjdk11': 'jdbc-centos7-openjdk11', 'openjdk17': 'jdbc-centos7-openjdk17', 'openjdk21': 'jdbc-centos7-openjdk21'].collectEntries { jdk, image ->
@@ -66,7 +74,7 @@ timestamps {
         string(name: 'parent_build_number', value: env.BUILD_NUMBER),
         string(name: 'timeout_value', value: '420'),
         string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3)),
-        string(name: 'svn_revision', value: 'main')
+        string(name: 'svn_revision', value: env.SVN_REVISION)
       ]]
     }
 
