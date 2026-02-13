@@ -114,7 +114,10 @@ public class IncidentUtil {
       vm.threadDump(outStream);
 
       logger.debug("Dump file {} is created.", dumpFile);
-    } catch (Exception exc) {
+    } catch (Throwable exc) {
+      // Catch Throwable (not just Exception) because VirtualMachineMetrics static
+      // initialization can throw ExceptionInInitializerError on some JDK/platform
+      // combinations (e.g. cgroup v2 NullPointerException).
       logger.error("Unable to write dump file, exception: {}", exc.getMessage());
     } finally {
       if (writer != null) {

@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.core.IncidentUtil.INC_DUMP_FILE_EXT;
 import static net.snowflake.client.internal.core.IncidentUtil.INC_DUMP_FILE_NAME;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
@@ -37,8 +38,7 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
 
     String incidentId = "123456";
 
-    // write the VM metrics to the dump file
-    IncidentUtil.dumpVmMetrics(incidentId);
+    assertDoesNotThrow(() -> IncidentUtil.dumpVmMetrics(incidentId));
 
     // Get location of where file will be written
     String targetVMFileLocation =
