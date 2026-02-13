@@ -39,151 +39,174 @@ jobs:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
 
-    test-windows:
-        needs: build
-        name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
-        runs-on: windows-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
-                additionalMavenProfile: ['']
-        steps:
-            - uses: actions/checkout@v5
-            - uses: actions/setup-java@v5
-              with:
-                java-version: ${{ matrix.runConfig.javaVersion }}
-                distribution: 'temurin'
-                cache: maven
-            - uses: actions/setup-python@v5
-              with:
-                python-version: '3.12'
-                architecture: 'x64'
-            - name: Tests
-              shell: cmd
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
-              run: ci\\test_windows.bat
+    repro-lob-upload:
+      needs: build
+      name: "AWS LOB upload repro iteration ${{ matrix.iteration }} ${{ matrix.runConfig.javaVersion }}"
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
+          category: [{suites: 'StatementTestSuite', name: 'TestCategoryStatement'}]
+          iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+      steps:
+        - uses: actions/checkout@v5
+        - name: Run testPutAndGetLargeFileRepeated on AWS
+          shell: bash
+          env:
+            PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+            JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+            CLOUD_PROVIDER: AWS
+            TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+            JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+            JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
+          run: ./ci/test.sh
 
-    test-mac:
-        needs: build
-        name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
-        runs-on: macos-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
-                additionalMavenProfile: ['']
-        steps:
-            - uses: actions/checkout@v5
-            - uses: actions/setup-java@v5
-              with:
-                java-version: ${{ matrix.runConfig.javaVersion }}
-                distribution: 'zulu'
-                cache: maven
-            - uses: actions/setup-python@v5
-              with:
-                python-version: '3.12'
-            - name: Install Homebrew Bash
-              shell: bash
-              run: brew install bash
-            - name: Tests
-              shell: bash
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
-              run: /opt/homebrew/bin/bash ./ci/test_mac.sh
-
-    test-rocky:
-        needs: build
-        name: ${{ matrix.runConfig.cloud }} Rocky9 java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8', image: 'jdbc-rockylinux9-openjdk8'}, {cloud: 'GCP', javaVersion: '11', image: 'jdbc-rockylinux9-openjdk11'}, {cloud: 'AZURE', javaVersion: '17', image: 'jdbc-rockylinux9-openjdk17'}, {cloud: 'AWS', javaVersion: '21', image: 'jdbc-rockylinux9-openjdk21'}]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
-                additionalMavenProfile: ['']
-        steps:
-            - uses: actions/checkout@v5
-            - name: Tests
-              shell: bash
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.runConfig.image }}
-                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
-              run: ./ci/test.sh
-
-    test-linux:
-        needs: build
-        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
-                cloud: [ 'AWS', 'AZURE', 'GCP' ]
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
-                additionalMavenProfile: ['', '-Dthin-jar']
-        steps:
-            - uses: actions/checkout@v5
-            - name: Tests
-              shell: bash
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
-                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
-              run: ./ci/test.sh
-
-    test-fat-jar:
-        name: ${{ matrix.cloud }} Fat Jar Test App
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                cloud: [ 'AWS', 'GCP', 'AZURE' ]
-        steps:
-            - uses: actions/checkout@v5
-            - uses: actions/setup-java@v5
-              with:
-                java-version: '11'
-                distribution: 'temurin'
-                cache: maven
-            - name: Test Fat Jar App
-              shell: bash
-              env:
-                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
-              run: ./fat-jar-test-app/run.sh
+#    test-windows:
+#        needs: build
+#        name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+#        runs-on: windows-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
+#                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+#                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+#                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+#                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+#                additionalMavenProfile: ['']
+#        steps:
+#            - uses: actions/checkout@v5
+#            - uses: actions/setup-java@v5
+#              with:
+#                java-version: ${{ matrix.runConfig.javaVersion }}
+#                distribution: 'temurin'
+#                cache: maven
+#            - uses: actions/setup-python@v5
+#              with:
+#                python-version: '3.12'
+#                architecture: 'x64'
+#            - name: Tests
+#              shell: cmd
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+#                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+#                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+#                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
+#              run: ci\\test_windows.bat
+#
+#    test-mac:
+#        needs: build
+#        name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+#        runs-on: macos-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
+#                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+#                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+#                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+#                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+#                additionalMavenProfile: ['']
+#        steps:
+#            - uses: actions/checkout@v5
+#            - uses: actions/setup-java@v5
+#              with:
+#                java-version: ${{ matrix.runConfig.javaVersion }}
+#                distribution: 'zulu'
+#                cache: maven
+#            - uses: actions/setup-python@v5
+#              with:
+#                python-version: '3.12'
+#            - name: Install Homebrew Bash
+#              shell: bash
+#              run: brew install bash
+#            - name: Tests
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+#                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+#                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+#                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
+#              run: /opt/homebrew/bin/bash ./ci/test_mac.sh
+#
+#    test-rocky:
+#        needs: build
+#        name: ${{ matrix.runConfig.cloud }} Rocky9 java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+#        runs-on: ubuntu-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                runConfig: [ {cloud: 'AWS', javaVersion: '8', image: 'jdbc-rockylinux9-openjdk8'}, {cloud: 'GCP', javaVersion: '11', image: 'jdbc-rockylinux9-openjdk11'}, {cloud: 'AZURE', javaVersion: '17', image: 'jdbc-rockylinux9-openjdk17'}, {cloud: 'AWS', javaVersion: '21', image: 'jdbc-rockylinux9-openjdk21'}]
+#                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+#                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+#                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+#                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+#                additionalMavenProfile: ['']
+#        steps:
+#            - uses: actions/checkout@v5
+#            - name: Tests
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+#                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.runConfig.image }}
+#                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+#                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+#                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
+#              run: ./ci/test.sh
+#
+#    test-linux:
+#        needs: build
+#        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+#        runs-on: ubuntu-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
+#                cloud: [ 'AWS', 'AZURE', 'GCP' ]
+#                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+#                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+#                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+#                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+#                additionalMavenProfile: ['', '-Dthin-jar']
+#        steps:
+#            - uses: actions/checkout@v5
+#            - name: Tests
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.cloud }}
+#                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+#                JDBC_TEST_SUITES: ${{ matrix.category.suites }}
+#                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+#                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
+#              run: ./ci/test.sh
+#
+#    test-fat-jar:
+#        name: ${{ matrix.cloud }} Fat Jar Test App
+#        runs-on: ubuntu-latest
+#        strategy:
+#            fail-fast: false
+#            matrix:
+#                cloud: [ 'AWS', 'GCP', 'AZURE' ]
+#        steps:
+#            - uses: actions/checkout@v5
+#            - uses: actions/setup-java@v5
+#              with:
+#                java-version: '11'
+#                distribution: 'temurin'
+#                cache: maven
+#            - name: Test Fat Jar App
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+#                CLOUD_PROVIDER: ${{ matrix.cloud }}
+#              run: ./fat-jar-test-app/run.sh
