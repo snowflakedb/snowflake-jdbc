@@ -76,7 +76,7 @@ public class CSVMetricsExporter {
       try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
         if (!fileExists) {
           writer.write(
-              "sessionId,requestId,queryId,queryText,executeToSendTime,bindTime,gzipTime,httpClientTime,responseIOStreamTime,processResultChunkTime,createResultSetTime,queryTime");
+              "timestamp,sessionId,requestId,queryId,queryText,executeToSendTime,bindTime,gzipTime,httpClientTime,responseIOStreamTime,processResultChunkTime,createResultSetTime,queryTime");
           writer.newLine();
         }
 
@@ -99,6 +99,7 @@ public class CSVMetricsExporter {
   private String formatCsvRow(ExecTimeTelemetryData data) {
     return String.join(
         ",",
+        escapeCsvValue(String.valueOf(data.getTimestamp())),
         escapeCsvValue(data.getSessionId()),
         escapeCsvValue(data.getRequestId()),
         escapeCsvValue(data.getQueryId()),
