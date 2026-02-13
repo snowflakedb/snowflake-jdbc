@@ -342,8 +342,6 @@ public class DecfloatTypeLatestIT extends BaseJDBCTest {
       throws SQLException {
     Statement stmt = connection.createStatement();
     stmt.execute("ALTER SESSION SET JDBC_QUERY_RESULT_FORMAT = '" + queryResultFormat + "'");
-    stmt.execute("ALTER SESSION SET FEATURE_DECFLOAT = enabled");
-    stmt.execute("ALTER SESSION SET DECFLOAT_RESULT_COLUMN_TYPE = 2");
     return stmt;
   }
 }
