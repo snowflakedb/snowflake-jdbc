@@ -118,6 +118,15 @@ public class SFException extends Throwable {
     return params;
   }
 
+  public static String oneLiner(String prefix, Throwable thrown) {
+    StackTraceElement[] stack = thrown.getStackTrace();
+    String topOfStack = null;
+    if (stack.length > 0) {
+      topOfStack = " at " + stack[0];
+    }
+    return prefix + " " + thrown + topOfStack;
+  }
+
   @Override
   public String toString() {
     return super.toString()

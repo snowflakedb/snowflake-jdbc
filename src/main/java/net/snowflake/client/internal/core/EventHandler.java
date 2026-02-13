@@ -333,7 +333,7 @@ public class EventHandler extends Handler {
     // while accumulating the total size
     for (File file : dumpDir.listFiles()) {
       if ((!file.getName().startsWith(LOG_DUMP_FILE_NAME)
-              && !file.getName().startsWith(IncidentUtil.INC_DUMP_FILE_NAME))
+              && !file.getName().startsWith("sf_incident_"))
           || (System.currentTimeMillis() - file.lastModified() > FILE_EXPN_TIME_MS
               && file.delete())) {
         continue;
