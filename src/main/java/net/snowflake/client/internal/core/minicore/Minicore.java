@@ -92,7 +92,7 @@ public class Minicore {
     return loadResult;
   }
 
-  public static boolean hasInitializationStarted() {
+  public static synchronized boolean hasInitializationStarted() {
     return INITIALIZATION_FUTURE != null;
   }
 
