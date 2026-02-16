@@ -2,6 +2,7 @@ package net.snowflake.client.internal.jdbc.telemetry;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
+import java.time.LocalDateTime;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.util.TimeMeasurement;
@@ -38,8 +39,10 @@ public class ExecTimeTelemetryData {
   private String requestId;
   private String sessionId;
   private String queryText;
+  private final LocalDateTime timestamp;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
+    this.timestamp = LocalDateTime.now();
     this.query.setStart();
     this.executeToSend.setStart();
     this.queryFunction = queryFunction;
@@ -50,6 +53,7 @@ public class ExecTimeTelemetryData {
   }
 
   public ExecTimeTelemetryData() {
+    this.timestamp = LocalDateTime.now();
     this.sendData = false;
   }
 
@@ -209,6 +213,10 @@ public class ExecTimeTelemetryData {
     return query;
   }
 
+  public LocalDateTime getTimestamp() {
+    return timestamp;
+  }
+
   public String generateTelemetry() {
     CSVMetricsExporter.getDefaultInstance().save(this);
     if (this.sendData) {
@@ -216,6 +224,7 @@ public class ExecTimeTelemetryData {
       JSONObject value = new JSONObject();
       String valueStr;
       value.put("eventType", eventType);
+      value.put("Timestamp", this.timestamp.toString());
       value.put("QueryStart", this.query.getStart());
       value.put("ExecuteToSendStart", this.executeToSend.getStart());
       value.put("ExecuteToSendEnd", this.executeToSend.getEnd());

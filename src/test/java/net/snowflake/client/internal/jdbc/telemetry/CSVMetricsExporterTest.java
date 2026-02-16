@@ -21,13 +21,15 @@ class CSVMetricsExporterTest {
     String[] lines = content.split(System.lineSeparator());
     assertEquals(3, lines.length);
     assertEquals(
-        "sessionId,requestId,queryId,queryText,executeToSendTime,bindTime,gzipTime,httpClientTime,responseIOStreamTime,processResultChunkTime,createResultSetTime,queryTime",
+        "timestamp,sessionId,requestId,queryId,queryText,executeToSendTime,bindTime,gzipTime,httpClientTime,responseIOStreamTime,processResultChunkTime,createResultSetTime,queryTime",
         lines[0]);
     assertTrue(lines[1].contains("SELECT 1"));
     assertTrue(lines[2].contains("SELECT 2"));
     // number of fields in a header and a line should be equal
     assertEquals(lines[0].split(",").length, lines[1].split(",").length);
-    assertTrue(Pattern.matches("^sessId,reqId,queryId,SELECT 1,([-\\d]+,){7}[-\\d]+$", lines[1]));
+    assertTrue(
+        Pattern.matches(
+            "^[\\d\\-T:.]+,sessId,reqId,queryId,SELECT 1,([-\\d]+,){7}[-\\d]+$", lines[1]));
   }
 
   @Test

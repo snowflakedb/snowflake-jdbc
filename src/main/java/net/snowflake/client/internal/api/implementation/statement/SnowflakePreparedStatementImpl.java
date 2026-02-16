@@ -216,6 +216,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
         new ExecTimeTelemetryData("long PreparedStatement.executeLargeUpdate()", this.batchID);
     logger.trace("executeLargeUpdate()", false);
     long updates = executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
+    execTimeTelemetryData.setQueryEnd();
+    execTimeTelemetryData.generateTelemetry();
+    logger.debug("Query completed. {}", execTimeTelemetryData);
     return updates;
   }
 
