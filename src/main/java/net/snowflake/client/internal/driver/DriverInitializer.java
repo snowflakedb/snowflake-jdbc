@@ -215,5 +215,7 @@ public final class DriverInitializer {
 
   static synchronized void resetForTesting() {
     initialized = false;
+    arrowEnabled = true;
+    arrowDisableReason = null;
   }
 }
