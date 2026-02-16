@@ -11,8 +11,8 @@ WORKSPACE=${WORKSPACE:-${JDBC_ROOT}}
 
 echo "[Info] Starting revocation validation tests"
 
-# Detect JDBC version using Maven (reliable, handles property interpolation)
-JDBC_VERSION=$(cd "$JDBC_ROOT" && mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
+# Detect JDBC version using Maven Wrapper (reliable, handles property interpolation)
+JDBC_VERSION=$(cd "$JDBC_ROOT" && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
 if [ -z "$JDBC_VERSION" ]; then
     echo "[Error] Failed to determine JDBC version from pom.xml"
     exit 1
@@ -22,7 +22,7 @@ echo "[Info] JDBC driver version: $JDBC_VERSION"
 # Ensure parent POM is also in ~/.m2 (needed for Maven dependency resolution)
 if [ ! -f "$HOME/.m2/repository/net/snowflake/snowflake-jdbc-parent/$JDBC_VERSION/"*.pom ]; then
     echo "[Info] Installing parent POM to local Maven repo..."
-    if ! (cd "$JDBC_ROOT" && mvn install -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
+    if ! (cd "$JDBC_ROOT" && ./mvnw install -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
         echo "[Error] Failed to install parent POM"
         exit 1
     fi
@@ -45,8 +45,18 @@ cd "$REVOCATION_DIR"
 
 # Point the wrapper's pom.xml at the locally-built JDBC version (already in ~/.m2 from Build stage)
 WRAPPER_POM="$REVOCATION_DIR/validation/clients/snowflake-jdbc/java/pom.xml"
-sed -i.bak '/<artifactId>snowflake-jdbc<\/artifactId>/{n;s|<version>[^<]*</version>|<version>'"$JDBC_VERSION"'</version>|;}' "$WRAPPER_POM"
-rm -f "${WRAPPER_POM}.bak"
+awk -v ver="$JDBC_VERSION" '
+    /<groupId>net\.snowflake<\/groupId>/  { in_sf=1 }
+    in_sf && /<artifactId>snowflake-jdbc<\/artifactId>/ { found=1 }
+    found && /<version>/ { sub(/<version>[^<]*<\/version>/, "<version>" ver "</version>"); found=0; in_sf=0 }
+    { print }
+' "$WRAPPER_POM" > "${WRAPPER_POM}.tmp" && mv "${WRAPPER_POM}.tmp" "$WRAPPER_POM"
+
+# Verify the version was correctly set
+if ! grep -q "<version>${JDBC_VERSION}</version>" "$WRAPPER_POM"; then
+    echo "[Error] Failed to update JDBC version in wrapper pom.xml"
+    exit 1
+fi
 echo "[Info] Updated wrapper to use JDBC $JDBC_VERSION"
 
 echo "[Info] Running tests with Go $(go version | grep -oE 'go[0-9]+\.[0-9]+')..."
