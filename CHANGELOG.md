@@ -4,6 +4,7 @@
 - Upcoming release (TBD)
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
+    - Fix bug with malformed file during S3 upload
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
