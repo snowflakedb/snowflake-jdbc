@@ -90,7 +90,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
       throw new SFException(
           queryID,
           ErrorCode.INTERNAL_ERROR,
-          IncidentUtil.oneLiner("Error getting next row from " + "fixed view:", ex));
+          SFException.oneLiner("Error getting next row from " + "fixed view:", ex));
     }
 
     row++;

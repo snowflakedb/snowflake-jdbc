@@ -1193,7 +1193,7 @@ public class SFSession extends SFBaseSession {
         logger.error("Unexpected exception", ex);
 
         throw new SFException(
-            ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex));
+            ErrorCode.INTERNAL_ERROR, SFException.oneLiner("unexpected exception", ex));
       }
     } while (retry);
     stopwatch.stop();
