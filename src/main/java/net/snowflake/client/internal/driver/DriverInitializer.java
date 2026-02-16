@@ -212,4 +212,10 @@ public final class DriverInitializer {
   public static boolean isInitialized() {
     return initialized;
   }
+
+  static synchronized void resetForTesting() {
+    initialized = false;
+    arrowEnabled = true;
+    arrowDisableReason = null;
+  }
 }
