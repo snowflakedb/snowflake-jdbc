@@ -113,6 +113,32 @@ timestamps {
       }
     })
 
+    jobDefinitions.put('Test Revocation Validation', {
+      withCredentials([
+        usernamePassword(credentialsId: 'jenkins-snowflakedb-github-app',
+          usernameVariable: 'GITHUB_USER',
+          passwordVariable: 'GITHUB_TOKEN')
+      ]) {
+        try {
+          sh '''\
+        |#!/bin/bash -e
+        |chmod +x $WORKSPACE/ci/test_revocation.sh
+        |$WORKSPACE/ci/test_revocation.sh
+      '''.stripMargin()
+        } finally {
+          archiveArtifacts artifacts: 'revocation-results.json,revocation-report.html', allowEmptyArchive: true
+          publishHTML(target: [
+            allowMissing: true,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'revocation-report.html',
+            reportName: 'Revocation Validation Report'
+          ])
+        }
+      }
+    })
+
     stage('Test') {
       parallel (jobDefinitions)
     }
