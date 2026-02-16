@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Test certificate revocation validation using the revocation-validation framework.
 #
@@ -27,8 +27,6 @@ if [ ! -f "$HOME/.m2/repository/net/snowflake/snowflake-jdbc-parent/$JDBC_VERSIO
         exit 1
     fi
 fi
-
-set -e
 
 # Clone revocation-validation framework
 REVOCATION_DIR="/tmp/revocation-validation"
