@@ -3,6 +3,7 @@ package net.snowflake.client.internal.driver;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import net.snowflake.client.internal.core.SecurityUtil;
+import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.SFLogger;
@@ -51,6 +52,7 @@ public final class DriverInitializer {
     initializeArrowSupport();
     initializeSecurityProvider();
     initializeTelemetry();
+    initializeMinicore();
 
     initialized = true;
     logger.info("Snowflake JDBC Driver initialization complete");
@@ -164,6 +166,21 @@ public final class DriverInitializer {
       logger.debug("Out-of-band telemetry disabled");
     } catch (Throwable t) {
       logger.warn("Failed to configure telemetry: {}", t.getMessage());
+    }
+  }
+
+  /**
+   * Start asynchronous minicore native library loading.
+   *
+   * <p>Minicore is loaded in the background so it can overlap with connection setup. The loading
+   * result is reported via telemetry during session establishment.
+   */
+  private static void initializeMinicore() {
+    try {
+      Minicore.initializeAsync();
+      logger.debug("Minicore async initialization started");
+    } catch (Throwable t) {
+      logger.trace("Failed to start minicore initialization", t);
     }
   }
 
