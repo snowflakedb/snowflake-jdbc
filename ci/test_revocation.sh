@@ -59,19 +59,20 @@ echo "[Info] Updated wrapper to use JDBC $JDBC_VERSION"
 
 echo "[Info] Running tests with Go $(go version | grep -oE 'go[0-9]+\.[0-9]+')..."
 
+set +e
 go run . \
     --client snowflake-jdbc \
     --output "${WORKSPACE}/revocation-results.json" \
     --output-html "${WORKSPACE}/revocation-report.html" \
     --log-level debug
-
 EXIT_CODE=$?
+set -e
 
-if [ -f "${WORKSPACE}/revocation-results.json" ]; then
+if [ -f "${WORKSPACE}/revocation-results.json" ] && [ -f "${WORKSPACE}/revocation-report.html" ]; then
     echo "[Info] Results: ${WORKSPACE}/revocation-results.json"
-fi
-if [ -f "${WORKSPACE}/revocation-report.html" ]; then
     echo "[Info] Report: ${WORKSPACE}/revocation-report.html"
+else
+    echo "[Warn] Expected output files were not generated"
 fi
 
 exit $EXIT_CODE
