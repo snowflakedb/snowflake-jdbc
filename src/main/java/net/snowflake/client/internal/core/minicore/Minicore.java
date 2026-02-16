@@ -92,6 +92,10 @@ public class Minicore {
     return loadResult;
   }
 
+  public static boolean hasInitializationStarted() {
+    return INITIALIZATION_FUTURE != null;
+  }
+
   public static boolean isDisabledViaEnvVar() {
     return DISABLED_VIA_ENV_VAR;
   }
