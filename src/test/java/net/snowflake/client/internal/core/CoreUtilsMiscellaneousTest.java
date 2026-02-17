@@ -3,6 +3,7 @@ package net.snowflake.client.internal.core;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,7 +115,7 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals("snowflakecomputing.com", proxyConfiguration.host());
     assertEquals(443, proxyConfiguration.port());
     assertEquals(
-        new HashSet<>(Collections.singletonList(".*?\\.foo\\.com")),
+        new HashSet<>(Collections.singletonList("\\Q\\E.*\\Q.foo.com\\E")),
         proxyConfiguration.nonProxyHosts());
     assertEquals("pw", proxyConfiguration.password());
     assertEquals("testuser", proxyConfiguration.username());
@@ -136,7 +137,8 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals("localhost", proxyConfiguration.host());
     assertEquals(8084, proxyConfiguration.port());
     assertEquals(
-        new HashSet<>(Arrays.asList("baz\\.com", "foo\\.com")), proxyConfiguration.nonProxyHosts());
+        new HashSet<>(Arrays.asList("\\Qbaz.com\\E", "\\Qfoo.com\\E")),
+        proxyConfiguration.nonProxyHosts());
     assertEquals("pw", proxyConfiguration.password());
     assertEquals("testuser", proxyConfiguration.username());
     // Test that exception is thrown when port number is invalid
@@ -288,6 +290,38 @@ public class CoreUtilsMiscellaneousTest {
     HttpUtil.getHttpClient(key3);
     // Assert there are 3 entries because userAgentSuffix has changed
     assertEquals(3, HttpUtil.httpClient.size());
+  }
+
+  @Test
+  public void testSdkProxyRoutePlannerNonProxyHostsBypassesProxy() throws Exception {
+    SdkProxyRoutePlanner planner =
+        new SdkProxyRoutePlanner(
+            "proxy.example.com", 8080, HttpProtocol.HTTP, "*.internal.com|localhost");
+    // Hosts matching nonProxyHosts should bypass proxy (determineProxy returns null)
+    org.apache.http.HttpHost internalHost = new org.apache.http.HttpHost("app.internal.com");
+    org.apache.http.HttpHost localhostHost = new org.apache.http.HttpHost("localhost");
+    org.apache.http.HttpHost externalHost = new org.apache.http.HttpHost("external.com");
+
+    assertNull(planner.determineProxy(internalHost, null, null));
+    assertNull(planner.determineProxy(localhostHost, null, null));
+    assertNotNull(planner.determineProxy(externalHost, null, null));
+  }
+
+  @Test
+  public void testSdkProxyRoutePlannerReDoSPatternDoesNotHang() throws Exception {
+    // The exact ReDoS payload from the vulnerability report
+    SdkProxyRoutePlanner planner =
+        new SdkProxyRoutePlanner("proxy.example.com", 8080, HttpProtocol.HTTP, "(a+)+");
+    String maliciousHost =
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac";
+    org.apache.http.HttpHost target = new org.apache.http.HttpHost(maliciousHost);
+
+    long start = System.currentTimeMillis();
+    assertNotNull(planner.determineProxy(target, null, null));
+    long elapsed = System.currentTimeMillis() - start;
+    assertTrue(
+        elapsed < 1000,
+        "Non-proxy host matching should complete nearly instantly, took " + elapsed + "ms");
   }
 
   @Test

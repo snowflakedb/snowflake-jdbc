@@ -22,13 +22,8 @@ public class SdkProxyRoutePlanner extends DefaultRoutePlanner {
       String proxyHost, int proxyPort, HttpProtocol proxyProtocol, String nonProxyHosts) {
     super(DefaultSchemePortResolver.INSTANCE);
     proxy = new HttpHost(proxyHost, proxyPort, proxyProtocol.toString());
-    // parseNonProxyHosts
     if (!SnowflakeUtil.isNullOrEmpty(nonProxyHosts)) {
-      String[] hosts = nonProxyHosts.split("\\|");
-      hostPatterns = new String[hosts.length];
-      for (int i = 0; i < hosts.length; ++i) {
-        hostPatterns[i] = hosts[i].toLowerCase().replace("*", ".*?");
-      }
+      hostPatterns = nonProxyHosts.split("\\|");
     } else {
       hostPatterns = null;
     }
@@ -39,7 +34,8 @@ public class SdkProxyRoutePlanner extends DefaultRoutePlanner {
       return false;
     }
     String targetHost = target.getHostName().toLowerCase();
-    return Arrays.stream(hostPatterns).anyMatch(targetHost::matches);
+    return Arrays.stream(hostPatterns)
+        .anyMatch(pattern -> SnowflakeUtil.hostnameMatchesGlob(targetHost, pattern));
   }
 
   @Override

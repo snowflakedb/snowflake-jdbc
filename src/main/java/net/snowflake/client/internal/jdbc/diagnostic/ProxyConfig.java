@@ -2,7 +2,7 @@ package net.snowflake.client.internal.jdbc.diagnostic;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.regex.Pattern;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -172,10 +172,13 @@ class ProxyConfig {
   }
 
   protected boolean isBypassProxy(String hostname) {
-    String nonProxyHosts = getNonProxyHosts().replace(".", "\\.").replace("*", ".*");
+    String nonProxyHosts = getNonProxyHosts();
+    if (nonProxyHosts == null || nonProxyHosts.isEmpty()) {
+      return false;
+    }
     String[] nonProxyHostsArray = nonProxyHosts.split("\\|");
-    for (String i : nonProxyHostsArray) {
-      if (Pattern.compile(i).matcher(hostname).matches()) {
+    for (String pattern : nonProxyHostsArray) {
+      if (SnowflakeUtil.hostnameMatchesGlob(hostname, pattern)) {
         return true;
       }
     }
