@@ -45,7 +45,7 @@ public class SnowflakeDriver implements Driver {
   static {
     try {
       DriverManager.registerDriver(INSTANCE = new SnowflakeDriver());
-      logger.info("Snowflake JDBC Driver {} registered successfully", VERSION.getFullVersion());
+      logger.debug("Snowflake JDBC Driver {} registered successfully", VERSION.getFullVersion());
     } catch (SQLException ex) {
       throw new IllegalStateException("Unable to register " + SnowflakeDriver.class.getName(), ex);
     }
