@@ -20,6 +20,7 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.cloud.storage.S3HttpUtil;
+import org.apache.http.HttpHost;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 
@@ -298,9 +299,9 @@ public class CoreUtilsMiscellaneousTest {
         new SdkProxyRoutePlanner(
             "proxy.example.com", 8080, HttpProtocol.HTTP, "*.internal.com|localhost");
     // Hosts matching nonProxyHosts should bypass proxy (determineProxy returns null)
-    org.apache.http.HttpHost internalHost = new org.apache.http.HttpHost("app.internal.com");
-    org.apache.http.HttpHost localhostHost = new org.apache.http.HttpHost("localhost");
-    org.apache.http.HttpHost externalHost = new org.apache.http.HttpHost("external.com");
+    HttpHost internalHost = new HttpHost("app.internal.com");
+    HttpHost localhostHost = new HttpHost("localhost");
+    HttpHost externalHost = new HttpHost("external.com");
 
     assertNull(planner.determineProxy(internalHost, null, null));
     assertNull(planner.determineProxy(localhostHost, null, null));
@@ -314,7 +315,7 @@ public class CoreUtilsMiscellaneousTest {
         new SdkProxyRoutePlanner("proxy.example.com", 8080, HttpProtocol.HTTP, "(a+)+");
     String maliciousHost =
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac";
-    org.apache.http.HttpHost target = new org.apache.http.HttpHost(maliciousHost);
+    HttpHost target = new HttpHost(maliciousHost);
 
     long start = System.currentTimeMillis();
     assertNotNull(planner.determineProxy(target, null, null));
