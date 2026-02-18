@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -1005,5 +1006,23 @@ public class SnowflakeUtil {
       hexChars[j * 2 + 1] = hexArray[v & 0x0F];
     }
     return new String(hexChars);
+  }
+
+  /**
+   * Converts a simple wildcard pattern (where only '*' is special) into a safe regex string by
+   * quoting all literal parts via Pattern.quote(), preventing any regex metacharacters from being
+   * interpreted. This avoids ReDoS vulnerabilities when patterns originate from user input.
+   */
+  public static Pattern globToSafePattern(String glob) {
+    String safeRegex =
+        Arrays.stream(glob.split("\\*", -1)).map(Pattern::quote).collect(Collectors.joining(".*"));
+    return Pattern.compile(safeRegex, Pattern.CASE_INSENSITIVE);
+  }
+
+  public static boolean hostnameMatchesGlob(String hostname, String pattern) {
+    if (hostname == null || pattern == null) {
+      return false;
+    }
+    return globToSafePattern(pattern.trim()).matcher(hostname).matches();
   }
 }
