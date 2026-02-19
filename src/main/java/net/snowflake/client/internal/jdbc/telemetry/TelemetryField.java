@@ -38,7 +38,9 @@ public enum TelemetryField {
   METADATA_METRICS("client_metadata_api_metrics"),
 
   HTTP_EXCEPTION("client_http_exception"),
-  OCSP_EXCEPTION("client_ocsp_exception");
+  OCSP_EXCEPTION("client_ocsp_exception"),
+
+  INTERNAL_API_USAGE("client_internal_api_usage");
 
   public final String field;
 

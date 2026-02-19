@@ -7,6 +7,7 @@
     - Adjust level of logging during Driver initialization
     - Add sanitization for nonProxyHosts RegEx patterns
     - Fix bug with malformed file during S3 upload
+    - Add internal API usage telemetry tracker
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
