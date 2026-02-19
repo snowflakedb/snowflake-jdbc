@@ -6,6 +6,7 @@
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
     - Adjust level of logging during Driver initialization
     - Add sanitization for nonProxyHosts RegEx patterns
+    - Fix bug with malformed file during S3 upload
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
