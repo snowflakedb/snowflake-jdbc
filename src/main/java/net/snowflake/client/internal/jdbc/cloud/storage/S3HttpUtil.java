@@ -11,6 +11,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SFSessionProperty;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
@@ -150,15 +151,7 @@ public class S3HttpUtil {
   static Set<String> prepareNonProxyHosts(String nonProxyHosts) {
     return Arrays.stream(nonProxyHosts.split("\\|"))
         .map(String::trim)
-        .map(
-            host -> {
-              // AWS SDK v2 Netty client expects proper Java regex patterns for non-proxy hosts.
-              // Transform traditional proxy patterns to valid regex:
-              // 1. Escape dots to match literal periods
-              // 2. Replace wildcards (*) with regex equivalent (.*)
-              // This differs from SdkProxyRoutePlanner which uses simple pattern matching
-              return host.replace(".", "\\.").replace("*", ".*?");
-            })
+        .map(host -> SnowflakeUtil.globToSafePattern(host).pattern())
         .collect(Collectors.toSet());
   }
 }

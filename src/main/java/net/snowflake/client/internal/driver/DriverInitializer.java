@@ -47,7 +47,7 @@ public final class DriverInitializer {
       return;
     }
 
-    logger.info("Initializing Snowflake JDBC Driver...");
+    logger.debug("Initializing Snowflake JDBC Driver...");
 
     initializeArrowSupport();
     initializeSecurityProvider();
@@ -55,7 +55,7 @@ public final class DriverInitializer {
     initializeMinicore();
 
     initialized = true;
-    logger.info("Snowflake JDBC Driver initialization complete");
+    logger.debug("Snowflake JDBC Driver initialization complete");
   }
 
   /**
@@ -74,7 +74,7 @@ public final class DriverInitializer {
       suppressIllegalReflectiveAccessWarnings();
 
       arrowEnabled = true;
-      logger.info("Arrow result format enabled successfully");
+      logger.debug("Arrow result format enabled successfully");
     } catch (Throwable t) {
       arrowEnabled = false;
       arrowDisableReason = t.getLocalizedMessage();
@@ -211,5 +211,11 @@ public final class DriverInitializer {
    */
   public static boolean isInitialized() {
     return initialized;
+  }
+
+  static synchronized void resetForTesting() {
+    initialized = false;
+    arrowEnabled = true;
+    arrowDisableReason = null;
   }
 }

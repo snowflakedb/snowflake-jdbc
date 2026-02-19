@@ -13,16 +13,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 class S3HttpUtilTest {
   static Stream<Arguments> prepareNonProxyHostsTestCases() {
     return Stream.of(
-        Arguments.of("example.com", new HashSet<>(Arrays.asList("example\\.com"))),
+        Arguments.of("example.com", new HashSet<>(Arrays.asList("\\Qexample.com\\E"))),
         Arguments.of(
             "example.com|test.org | localhost",
-            new HashSet<>(Arrays.asList("example\\.com", "test\\.org", "localhost"))),
-        Arguments.of("*.example.com", new HashSet<>(Arrays.asList(".*?\\.example\\.com"))),
+            new HashSet<>(Arrays.asList("\\Qexample.com\\E", "\\Qtest.org\\E", "\\Qlocalhost\\E"))),
+        Arguments.of("*.example.com", new HashSet<>(Arrays.asList("\\Q\\E.*\\Q.example.com\\E"))),
         Arguments.of(
             "example.com|*.test.org|localhost|*.internal.*",
             new HashSet<>(
                 Arrays.asList(
-                    "example\\.com", ".*?\\.test\\.org", "localhost", ".*?\\.internal\\..*?"))));
+                    "\\Qexample.com\\E",
+                    "\\Q\\E.*\\Q.test.org\\E",
+                    "\\Qlocalhost\\E",
+                    "\\Q\\E.*\\Q.internal.\\E.*\\Q\\E"))));
   }
 
   @ParameterizedTest

@@ -151,9 +151,9 @@ public class CRLCacheManagerLatestIT {
   void testCacheManagerPeriodicCleanup() throws Exception {
     CRLCacheManager managerWithCleanup =
         CRLCacheManager.build(
-            true, true, tempCacheDir, Duration.ofMillis(100), Duration.ofMillis(10));
-    managerWithCleanup.put(TEST_CRL_URL, testCRL, downloadTime.minus(200, ChronoUnit.MILLIS));
-    managerWithCleanup.put(TEST_CRL_URL_2, testCRL2, downloadTime);
+            true, true, tempCacheDir, Duration.ofSeconds(1), Duration.ofMillis(10));
+    managerWithCleanup.put(TEST_CRL_URL, testCRL, downloadTime.minus(2, ChronoUnit.SECONDS));
+    managerWithCleanup.put(TEST_CRL_URL_2, testCRL2, downloadTime.minus(2, ChronoUnit.SECONDS));
 
     assertNotNull(managerWithCleanup.get(TEST_CRL_URL));
     assertNotNull(managerWithCleanup.get(TEST_CRL_URL_2));
