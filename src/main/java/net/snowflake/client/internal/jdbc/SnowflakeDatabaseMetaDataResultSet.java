@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -57,7 +59,10 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.showObjectResultSet = showObjectResultSet;
 
     SFBaseSession session =
-        statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+        statement
+            .getConnection()
+            .unwrap(SnowflakeConnectionImpl.class)
+            .getSFBaseSession(internalCallMarker());
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
@@ -89,7 +94,10 @@ public class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.rows = rows;
 
     SFBaseSession session =
-        statement.getConnection().unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+        statement
+            .getConnection()
+            .unwrap(SnowflakeConnectionImpl.class)
+            .getSFBaseSession(internalCallMarker());
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
