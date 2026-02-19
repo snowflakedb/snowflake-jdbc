@@ -164,7 +164,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
         Statement statement = connection.createStatement()) {
       for (int i = 0; i < 6; i++) {
         int resultSize = 1000000 + i;
-        statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
+        statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=100");
         try (ResultSet resultSet =
             statement.executeQuery(
                 "select randstr(80, random()) from table(generator(rowcount => "
