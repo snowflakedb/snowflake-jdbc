@@ -16,6 +16,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.HttpUtil;
 import net.snowflake.client.internal.core.SecurityUtil;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,6 +30,11 @@ public class PrivateKeyAuthenticationExceptionHandlingLatestIT {
 
   static Stream<String> timeOutSettings() {
     return Stream.of("HTTP_CLIENT_CONNECTION_TIMEOUT", "HTTP_CLIENT_SOCKET_TIMEOUT");
+  }
+
+  @BeforeEach
+  void setup() {
+    HttpUtil.reset();
   }
 
   @AfterEach

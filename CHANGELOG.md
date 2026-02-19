@@ -6,6 +6,7 @@
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
     - Adjust level of logging during Driver initialization
     - Add sanitization for nonProxyHosts RegEx patterns
+    - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
