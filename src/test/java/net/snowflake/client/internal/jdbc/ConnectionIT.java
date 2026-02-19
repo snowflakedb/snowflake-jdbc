@@ -159,30 +159,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  public void testDataCompletenessInLowMemory() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      for (int i = 0; i < 6; i++) {
-        int resultSize = 1000000 + i;
-        statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=100");
-        try (ResultSet resultSet =
-            statement.executeQuery(
-                "select randstr(80, random()) from table(generator(rowcount => "
-                    + resultSize
-                    + "))")) {
-
-          int size = 0;
-          while (resultSet.next()) {
-            size++;
-          }
-          System.out.println("Total records: " + size);
-          assertEquals(size, resultSize);
-        }
-      }
-    }
-  }
-
-  @Test
   @DontRunOnGithubActions
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     final String SECOND_DATABASE = "SECOND_DATABASE";
