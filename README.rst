@@ -195,6 +195,12 @@ Set the environment variables to specify the target database.
     export SNOWFLAKE_TEST_WAREHOUSE=<your_warehouse>
     export SNOWFLAKE_TEST_ROLE=<your_role>
 
+Locale settings may cause some tests to fail unless you set the following:
+
+.. code-block:: bash
+
+    export LC_ALL=C
+
 Run the maven ``verify`` goal.
 
 .. code-block:: bash
