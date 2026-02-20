@@ -597,6 +597,7 @@ public class SFSession extends SFBaseSession {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "open");
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     performSanityCheckOnProperties();
@@ -981,6 +982,7 @@ public class SFSession extends SFBaseSession {
    * @return session token
    */
   public String getSessionToken() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getSessionToken");
     return sessionToken;
   }
 
@@ -992,6 +994,7 @@ public class SFSession extends SFBaseSession {
    */
   @Override
   public void close() throws SFException, SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "close");
     logger.debug("Closing session {}", getSessionId());
 
     // stop heartbeat for this session
@@ -1276,6 +1279,7 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public synchronized Telemetry getTelemetryClient() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getTelemetryClient");
     // initialize for the first time. this should only be done after session
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
@@ -1303,14 +1307,17 @@ public class SFSession extends SFBaseSession {
   }
 
   public String getIdToken() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getIdToken");
     return idToken;
   }
 
   public String getAccessToken() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getAccessToken");
     return oauthAccessToken;
   }
 
   public String getMfaToken() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getMfaToken");
     return mfaToken;
   }
 
