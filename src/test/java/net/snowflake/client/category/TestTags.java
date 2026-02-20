@@ -14,4 +14,5 @@ public class TestTags {
   public static final String AUTHENTICATION = "authentication";
   public static final String WIF = "wif";
   public static final String TESTING = "testing";
+  public static final String REPRO_UPLOAD_CORRUPTION = "reproUploadCorruption";
 }
