@@ -1,8 +1,10 @@
 package net.snowflake.client.internal.jdbc.telemetry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -65,7 +67,6 @@ class InternalApiTelemetryTrackerTest {
   @Test
   void shouldNotFlushWhenNoCallsRecorded() {
     InternalApiTelemetryTracker.flush(mockClient);
-
     verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
   }
 
@@ -132,5 +133,58 @@ class InternalApiTelemetryTrackerTest {
     InternalApiTelemetryTracker.flush(mockClient);
 
     verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void isExternalClassReturnsTrueForNonDriverPackages() {
+    assertTrue(InternalApiTelemetryTracker.isExternalClass("com.customer.app.MyClass"));
+    assertTrue(InternalApiTelemetryTracker.isExternalClass("org.apache.spark.sql.Driver"));
+    assertTrue(InternalApiTelemetryTracker.isExternalClass("net.snowflake.ingest.SomeClass"));
+  }
+
+  @Test
+  void isExternalClassReturnsFalseForDriverPackages() {
+    assertFalse(
+        InternalApiTelemetryTracker.isExternalClass(
+            "net.snowflake.client.internal.core.SFSession"));
+    assertFalse(
+        InternalApiTelemetryTracker.isExternalClass(
+            "net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker"));
+    assertFalse(
+        InternalApiTelemetryTracker.isExternalClass(
+            "net.snowflake.client.api.driver.SnowflakeDriver"));
+  }
+
+  @Test
+  void recordIfExternalShouldNotRecordWhenCalledFromDriverPackage() {
+    simulateInternalApiCall();
+    InternalApiTelemetryTracker.flush(mockClient);
+    verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void recordIfExternalShouldRecordWhenCalledFromExternalPackage() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SFSession", "getDatabase", "com.customer.app.MyApp");
+    InternalApiTelemetryTracker.flush(mockClient);
+
+    ArgumentCaptor<TelemetryData> captor = forClass(TelemetryData.class);
+    verify(mockClient).addLogToBatch(captor.capture());
+
+    JsonNode methods = captor.getValue().getMessage().get("methods");
+    assertNotNull(methods);
+    assertEquals(1, methods.get("SFSession#getDatabase").asLong());
+  }
+
+  @Test
+  void recordIfExternalShouldNotRecordWhenCallerIsInDriverPackage() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SFSession", "getDatabase", "net.snowflake.client.internal.jdbc.SomeInternalClass");
+    InternalApiTelemetryTracker.flush(mockClient);
+    verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
+  }
+
+  private void simulateInternalApiCall() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFSession", "getDatabase");
   }
 }

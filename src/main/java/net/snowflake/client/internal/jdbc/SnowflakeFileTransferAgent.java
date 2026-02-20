@@ -67,6 +67,7 @@ import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummary;
 import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummaryCollection;
 import net.snowflake.client.internal.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
@@ -884,6 +885,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   public SnowflakeFileTransferAgent(String command, SFSession session, SFStatement statement)
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SnowflakeFileTransferAgent", "<init>");
     this.command = command;
     this.session = session;
     this.statement = statement;
@@ -1394,6 +1396,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas()
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeFileTransferAgent", "getFileTransferMetadatas");
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
     if (stageInfo.getStageType() != StageInfo.StageType.GCS
         && stageInfo.getStageType() != StageInfo.StageType.AZURE
@@ -1444,6 +1448,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeFileTransferAgent", "getFileTransferMetadatas");
     return getFileTransferMetadatas(jsonNode, null);
   }
 
@@ -1461,6 +1467,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(
       JsonNode jsonNode, String queryId) throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeFileTransferAgent", "getFileTransferMetadatas");
     CommandType commandType =
         !jsonNode.path("data").path("command").isMissingNode()
             ? CommandType.valueOf(jsonNode.path("data").path("command").asText())

@@ -52,6 +52,7 @@ import net.snowflake.client.internal.jdbc.RetryContextManager;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeSQLExceptionWithRetryContext;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -2074,6 +2075,7 @@ public class SessionUtil {
       String accountName,
       String userName)
       throws SFException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SessionUtil", "generateJWTToken");
     SessionUtilKeyPair s =
         new SessionUtilKeyPair(
             privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd, accountName, userName);
@@ -2100,6 +2102,7 @@ public class SessionUtil {
       String accountName,
       String userName)
       throws SFException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SessionUtil", "generateJWTToken");
     return generateJWTToken(
         privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName);
   }

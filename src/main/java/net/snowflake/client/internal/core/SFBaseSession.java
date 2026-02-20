@@ -25,6 +25,7 @@ import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.SFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -217,6 +218,7 @@ public abstract class SFBaseSession {
    * @return Map of common parameters
    */
   public Map<String, Object> getCommonParameters() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFBaseSession", "getCommonParameters");
     return this.commonParameters;
   }
 
@@ -236,6 +238,7 @@ public abstract class SFBaseSession {
    * @return unique id for session
    */
   public String getSessionId() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFBaseSession", "getSessionId");
     return sessionId;
   }
 
@@ -472,6 +475,7 @@ public abstract class SFBaseSession {
    */
   public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue)
       throws SFException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFBaseSession", "addProperty");
     addProperty(sfSessionProperty.getPropertyKey(), propertyValue);
   }
 
@@ -487,6 +491,7 @@ public abstract class SFBaseSession {
    *     if the value is invalid.
    */
   public void addProperty(String propertyName, Object propertyValue) throws SFException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFBaseSession", "addProperty");
     SFSessionProperty connectionProperty = SFSessionProperty.lookupByKey(propertyName);
     // check if the value type is as expected
     propertyValue = SFSessionProperty.checkPropertyValue(connectionProperty, propertyValue);
@@ -517,6 +522,8 @@ public abstract class SFBaseSession {
    * @return the connection properties map
    */
   public Map<SFSessionProperty, Object> getConnectionPropertiesMap() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SFBaseSession", "getConnectionPropertiesMap");
     return connectionPropertiesMap;
   }
 
@@ -527,6 +534,7 @@ public abstract class SFBaseSession {
    * @throws SnowflakeSQLException if exception encountered
    */
   public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SFBaseSession", "getHttpClientKey");
     // if key is already created, return it without making a new one
     if (ocspAndProxyAndGzipKey != null) {
       return ocspAndProxyAndGzipKey;

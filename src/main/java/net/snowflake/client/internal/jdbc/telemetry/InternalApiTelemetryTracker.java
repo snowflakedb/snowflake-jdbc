@@ -14,6 +14,8 @@ public class InternalApiTelemetryTracker {
       SFLoggerFactory.getLogger(InternalApiTelemetryTracker.class);
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
+  static final String DRIVER_PACKAGE_PREFIX = "net.snowflake.client.";
+
   private static final ConcurrentHashMap<String, AtomicLong> methodCallCounts =
       new ConcurrentHashMap<>();
 
@@ -33,6 +35,28 @@ public class InternalApiTelemetryTracker {
   public static void recordIfExternal(
       String className, String methodName, InternalCallMarker internalCallMarker) {
     if (internalCallMarker == null) {
+      recordIfCalledExternally(className, methodName);
+    }
+  }
+
+  /**
+   * Records a call only if the caller of the method is outside the driver. Expected stack: [0] this
+   * method, [1] the instrumented internal method, [2] the actual caller to inspect.
+   */
+  public static void recordIfCalledExternally(String className, String methodName) {
+    try {
+      StackTraceElement[] stack = new Throwable().getStackTrace();
+      if (stack.length > 2) {
+        recordIfCalledExternally(className, methodName, stack[2].getClassName());
+      }
+    } catch (Exception e) {
+      logger.debug("Failed to record internal API usage: {}", e.getMessage());
+    }
+  }
+
+  static void recordIfCalledExternally(
+      String className, String methodName, String callerClassName) {
+    if (isExternalClass(callerClassName)) {
       record(className, methodName);
     }
   }
@@ -41,6 +65,10 @@ public class InternalApiTelemetryTracker {
     methodCallCounts
         .computeIfAbsent(className + "#" + methodName, k -> new AtomicLong(0))
         .incrementAndGet();
+  }
+
+  static boolean isExternalClass(String className) {
+    return !className.startsWith(DRIVER_PACKAGE_PREFIX);
   }
 
   public static void flush(Telemetry client) {
