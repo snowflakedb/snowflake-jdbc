@@ -60,6 +60,7 @@ import net.snowflake.client.internal.jdbc.SFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SnowflakeClob;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
@@ -848,6 +849,7 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   public SFConnectionHandler getHandler() {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SnowflakeConnectionImpl", "getHandler");
     return sfConnectionHandler;
   }
 
@@ -1086,12 +1088,15 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   public SFBaseSession getSFBaseSession() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeConnectionImpl", "getSFBaseSession");
     return sfSession;
   }
 
   // Convenience method to return an SFSession-typed SFBaseSession object, but
   // performs the type-checking as necessary.
   public SFSession getSfSession() throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally("SnowflakeConnectionImpl", "getSfSession");
     if (sfSession instanceof SFSession) {
       return (SFSession) sfSession;
     }

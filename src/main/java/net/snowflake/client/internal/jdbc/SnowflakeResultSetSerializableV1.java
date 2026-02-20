@@ -48,6 +48,7 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatementType;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -502,10 +503,14 @@ public class SnowflakeResultSetSerializableV1
   }
 
   public ResultStreamProvider getResultStreamProvider() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "getResultStreamProvider");
     return resultStreamProvider;
   }
 
   public SFResultSetMetaData getSFResultSetMetaData() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "getSFResultSetMetaData");
     return resultSetMetaData;
   }
 
@@ -716,6 +721,8 @@ public class SnowflakeResultSetSerializableV1
   }
 
   public Optional<SFBaseSession> getSession() {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "getSession");
     return possibleSession;
   }
 
@@ -732,6 +739,8 @@ public class SnowflakeResultSetSerializableV1
   public static SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "create");
     return create(rootNode, sfSession, sfStatement, new DefaultResultStreamProvider());
   }
 
@@ -753,6 +762,8 @@ public class SnowflakeResultSetSerializableV1
       SFBaseStatement sfStatement,
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "create");
     logger.trace("Entering create()", false);
     return new SnowflakeResultSetSerializableV1(
         rootNode, sfSession, sfStatement, resultStreamProvider, false);
@@ -771,6 +782,8 @@ public class SnowflakeResultSetSerializableV1
   public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "createWithChunksPrefetchDisabled");
     logger.trace("Entering create()", false);
     return new SnowflakeResultSetSerializableV1(
         rootNode, sfSession, sfStatement, new DefaultResultStreamProvider(), true);
@@ -1036,6 +1049,8 @@ public class SnowflakeResultSetSerializableV1
    * @throws SQLException if fails to split objects.
    */
   public List<SnowflakeResultSetSerializable> splitBySize(long maxSizeInBytes) throws SQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "splitBySize");
     List<SnowflakeResultSetSerializable> resultSetSerializables = new ArrayList<>();
 
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null) {
@@ -1094,6 +1109,8 @@ public class SnowflakeResultSetSerializableV1
    */
   public ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig)
       throws SQLException {
+    InternalApiTelemetryTracker.recordIfCalledExternally(
+        "SnowflakeResultSetSerializableV1", "getResultSet");
     // Adjust OCSP cache server if necessary.
     try {
       SessionUtil.resetOCSPUrlIfNecessary(resultSetRetrieveConfig.getSfFullURL());
