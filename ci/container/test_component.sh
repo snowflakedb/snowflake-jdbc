@@ -92,6 +92,7 @@ if [[ "$is_old_driver" == "true" ]]; then
         JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
         echo "[INFO] Run JDBC $JDBC_VERSION tests"
         $MVNW_EXE -DjenkinsIT \
+            -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
@@ -103,6 +104,7 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
         $MVNW_EXE -DjenkinsIT \
+            -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites=FipsTestSuite \
@@ -114,6 +116,7 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
 else
     echo "[INFO] Run $JDBC_TEST_SUITES tests"
     $MVNW_EXE -DjenkinsIT \
+        -Dskip.unitTests=true \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \
         -DintegrationTestSuites="$JDBC_TEST_SUITES" \

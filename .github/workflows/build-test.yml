@@ -22,6 +22,9 @@ on:
           tags:
             description: "Test scenario tags"
 
+permissions:
+  contents: read
+
 concurrency:
   # older builds for the same pull request numer or branch should be cancelled
   cancel-in-progress: true
