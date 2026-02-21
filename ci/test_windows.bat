@@ -124,6 +124,7 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
     echo "[INFO] Run Fips tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Dskip.unitTests=true ^
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites=FipsTestSuite ^
@@ -144,6 +145,7 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
 ) else (
     echo "[INFO] Run %JDBC_TEST_SUITES% tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Dskip.unitTests=true ^
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
