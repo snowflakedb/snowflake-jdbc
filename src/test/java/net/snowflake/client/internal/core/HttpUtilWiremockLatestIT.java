@@ -102,7 +102,11 @@ public class HttpUtilWiremockLatestIT extends BaseWiremockTest {
         };
 
     try (CloseableHttpClient httpClient =
-        HttpUtil.buildHttpClient(null, null, false, Collections.singletonList(customizer))) {
+        HttpUtil.buildHttpClient(
+            new HttpClientSettingsKey(OCSPMode.DISABLE_OCSP_CHECKS),
+            null,
+            false,
+            Collections.singletonList(customizer))) {
       CloseableHttpResponse response =
           httpClient.execute(
               new HttpGet(

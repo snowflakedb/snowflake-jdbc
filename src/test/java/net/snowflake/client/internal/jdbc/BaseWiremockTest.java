@@ -75,7 +75,7 @@ public abstract class BaseWiremockTest {
   public void tearDown() {
     restoreTrustStorePathProperty();
     resetWiremock();
-    HttpUtil.httpClient.clear();
+    HttpUtil.reset();
   }
 
   @AfterAll

@@ -973,6 +973,11 @@ public class RestRequest {
                   + " The HttpClient was shut down due to connection closure. "
                   + "Attempting to rebuild the HttpClient and retry the request.");
           // Clear the httpClient cache.
+          try {
+            httpClient.close();
+          } catch (IOException e) {
+            logger.warn("Cannot close http client", e);
+          }
           HttpUtil.httpClient.remove(key);
           // rebuild the http client.
           if (isHttpClientWithoutDecompression) {
