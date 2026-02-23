@@ -203,6 +203,18 @@ jobs:
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['', '-Dthin-jar']
+                exclude:
+                    # Keep thin-jar only for AWS on JDK 8 and 21 (all categories).
+                    - cloud: 'AZURE'
+                      additionalMavenProfile: '-Dthin-jar'
+                    - cloud: 'GCP'
+                      additionalMavenProfile: '-Dthin-jar'
+                    - cloud: 'AWS'
+                      image: 'jdbc-centos7-openjdk11'
+                      additionalMavenProfile: '-Dthin-jar'
+                    - cloud: 'AWS'
+                      image: 'jdbc-centos7-openjdk17'
+                      additionalMavenProfile: '-Dthin-jar'
         steps:
             - uses: actions/checkout@v5
             - name: Tests
