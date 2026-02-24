@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.jdbc.telemetry;
 
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -143,7 +145,9 @@ public class TelemetryClient implements Telemetry {
   public static Telemetry createTelemetry(Connection conn, int flushSize) {
     try {
       return createTelemetry(
-          (SFSession) conn.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession(), flushSize);
+          (SFSession)
+              conn.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession(internalCallMarker()),
+          flushSize);
     } catch (SQLException ex) {
       logger.debug("Input connection is not a SnowflakeConnection", false);
       return null;

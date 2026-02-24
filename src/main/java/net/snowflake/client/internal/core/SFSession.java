@@ -39,6 +39,7 @@ import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.diagnostic.DiagnosticContext;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -853,6 +854,9 @@ public class SFSession extends SFBaseSession {
     startHeartbeatForThisSession();
     this.getTelemetryClient();
 
+    // Flush any internal API usage telemetry that accumulated before session login
+    InternalApiTelemetryTracker.flush(getTelemetryClient());
+
     // Send minicore telemetry after session is established
     sendMinicoreTelemetry();
 
@@ -1010,6 +1014,7 @@ public class SFSession extends SFBaseSession {
         .setHttpClientSettingsKey(getHttpClientKey());
 
     SessionUtil.closeSession(loginInput, this);
+    InternalApiTelemetryTracker.flush(getTelemetryClient());
     closeTelemetryClient();
     getClientInfo().clear();
 

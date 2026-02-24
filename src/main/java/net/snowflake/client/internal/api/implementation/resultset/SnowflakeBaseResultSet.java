@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.api.implementation.resultset;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -88,7 +89,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet, SnowflakeResu
 
   private static SFBaseSession maybeGetSession(Statement statement) {
     try {
-      return ((SnowflakeConnectionImpl) statement.getConnection()).getSFBaseSession();
+      return ((SnowflakeConnectionImpl) statement.getConnection())
+          .getSFBaseSession(internalCallMarker());
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(

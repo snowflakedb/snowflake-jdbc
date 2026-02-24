@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.api.implementation.statement;
 
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
@@ -140,7 +142,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     this.sql = sql;
     this.preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
     showStatementParameters = connection.getShowStatementParameters();
-    objectMapper = ObjectMapperFactory.getObjectMapperForSession(connection.getSFBaseSession());
+    objectMapper =
+        ObjectMapperFactory.getObjectMapperForSession(
+            connection.getSFBaseSession(internalCallMarker()));
   }
 
   /**
@@ -160,7 +164,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
               sql);
         }
       } catch (SFException e) {
-        throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(), e);
+        throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(internalCallMarker()), e);
       } catch (SnowflakeSQLException e) {
         if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode())) {
           throw e;
@@ -245,7 +249,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace("setBoolean(parameterIndex: {}, boolean x)", parameterIndex);
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.BOOLEAN, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -255,7 +260,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     logger.trace("setByte(parameterIndex: {}, byte x)", parameterIndex);
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.TINYINT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.TINYINT, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -266,7 +272,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.SMALLINT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.SMALLINT, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -277,7 +284,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.INTEGER, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.INTEGER, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -288,7 +296,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.BIGINT, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -299,7 +308,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.BIGINT, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -310,7 +320,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.FLOAT, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -321,7 +332,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.DOUBLE, connection.getSFBaseSession(internalCallMarker())),
             String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -335,7 +347,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.DECIMAL, connection.getSFBaseSession(internalCallMarker())),
               String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -347,7 +360,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR, connection.getSFBaseSession()), x);
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.VARCHAR, connection.getSFBaseSession(internalCallMarker())),
+            x);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -357,7 +372,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BINARY, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.BINARY, connection.getSFBaseSession(internalCallMarker())),
             new SFBinary(x).toHex());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
@@ -365,12 +381,14 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
   private void setObjectInternal(int parameterIndex, SQLData sqlData) throws SQLException {
     logger.debug("setObjectInternal(parameterIndex: {}, SqlData sqlData)", parameterIndex);
 
-    JsonSqlOutput stream = new JsonSqlOutput(sqlData, connection.getSFBaseSession());
+    JsonSqlOutput stream =
+        new JsonSqlOutput(sqlData, connection.getSFBaseSession(internalCallMarker()));
     sqlData.writeSQL(stream);
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
             "json",
-            SnowflakeUtil.javaTypeToSFTypeString(Types.STRUCT, connection.getSFBaseSession()),
+            SnowflakeUtil.javaTypeToSFTypeString(
+                Types.STRUCT, connection.getSFBaseSession(internalCallMarker())),
             stream.getJsonString(),
             stream.getSchema());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
@@ -385,7 +403,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.DATE, connection.getSFBaseSession(internalCallMarker())),
               String.valueOf(
                   x.getTime()
                       + TimeZone.getDefault().getOffset(x.getTime())
@@ -403,7 +422,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       setNull(parameterIndex, Types.TIME);
     } else {
       String value;
-      if (connection.getSFBaseSession().getTreatTimeAsWallClockTime()) {
+      if (connection.getSFBaseSession(internalCallMarker()).getTreatTimeAsWallClockTime()) {
         value = String.valueOf(x.toLocalTime().toNanoOfDay());
       } else {
         value = String.valueOf(SfTimestampUtil.getTimeInNanoseconds(x));
@@ -411,7 +430,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.TIME, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.TIME, connection.getSFBaseSession(internalCallMarker())),
               value);
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
@@ -444,7 +464,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
         bindingTypeName = SnowflakeType.TIMESTAMP_NTZ.name();
         break;
       default:
-        bindingTypeName = connection.getSFBaseSession().getTimestampMappedType().name();
+        bindingTypeName =
+            connection.getSFBaseSession(internalCallMarker()).getTimestampMappedType().name();
         break;
     }
 
@@ -454,18 +475,21 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   @Deprecated
   public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
@@ -500,7 +524,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  targetSqlType, connection.getSFBaseSession(internalCallMarker())),
               String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -576,7 +601,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       setObjectInternal(parameterIndex, (SQLData) x);
     } else {
       throw new SnowflakeSQLLoggedException(
-          connection.getSFBaseSession(),
+          connection.getSFBaseSession(internalCallMarker()),
           ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
           SqlState.FEATURE_NOT_SUPPORTED,
           "Object type: " + x.getClass());
@@ -649,7 +674,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
               row = Integer.toString(values.size() + 1);
             }
             throw new SnowflakeSQLLoggedException(
-                connection.getSFBaseSession(),
+                connection.getSFBaseSession(internalCallMarker()),
                 ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                 SqlState.FEATURE_NOT_SUPPORTED,
                 SnowflakeTypeUtil.getJavaType(SnowflakeTypeUtil.fromString(prevType), false).name(),
@@ -677,17 +702,20 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, int length)
       throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setRef(int parameterIndex, Ref x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBlob(int parameterIndex, Blob x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
@@ -702,17 +730,23 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               "json",
-              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.ARRAY, connection.getSFBaseSession(internalCallMarker())),
               sfArray.getJsonString(),
               sfArray.getSchema());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
       SfSqlArray sfArray =
-          new SfSqlArray(Types.INTEGER, array, connection.getSFBaseSession(), objectMapper);
+          new SfSqlArray(
+              Types.INTEGER,
+              array,
+              connection.getSFBaseSession(internalCallMarker()),
+              objectMapper);
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
               "json",
-              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.ARRAY, connection.getSFBaseSession(internalCallMarker())),
               sfArray.getJsonString(),
               sfArray.getSchema());
       parameterBindings.put(String.valueOf(parameterIndex), binding);
@@ -724,7 +758,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     BindingParameterMetadata valueTypeSchema;
     if (Types.STRUCT == type) {
       SQLData sqlData = (SQLData) map.values().stream().findFirst().orElse(null);
-      JsonSqlOutput stream = new JsonSqlOutput(sqlData, connection.getSFBaseSession());
+      JsonSqlOutput stream =
+          new JsonSqlOutput(sqlData, connection.getSFBaseSession(internalCallMarker()));
       sqlData.writeSQL(stream);
       valueTypeSchema = stream.getSchema();
     } else {
@@ -744,7 +779,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       binding =
           new ParameterBindingDTO(
               "json",
-              SnowflakeUtil.javaTypeToSFTypeString(Types.STRUCT, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.STRUCT, connection.getSFBaseSession(internalCallMarker())),
               SnowflakeUtil.mapJson(map),
               schema);
     } catch (JsonProcessingException e) {
@@ -780,7 +816,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSFBaseSession()),
+              SnowflakeUtil.javaTypeToSFTypeString(
+                  Types.DATE, connection.getSFBaseSession(internalCallMarker())),
               value);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -801,12 +838,13 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
     // convert the time from being in UTC to be in local time zone
     String value = null;
     SnowflakeType sfType =
-        SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP, connection.getSFBaseSession());
+        SnowflakeUtil.javaTypeToSFType(
+            Types.TIMESTAMP, connection.getSFBaseSession(internalCallMarker()));
     if (x != null) {
       long milliSecSinceEpoch = x.getTime();
 
       if (sfType == SnowflakeType.TIMESTAMP) {
-        sfType = connection.getSFBaseSession().getTimestampMappedType();
+        sfType = connection.getSFBaseSession(internalCallMarker()).getTimestampMappedType();
       }
       // if type is timestamp_tz, keep the offset and the time value separate.
       // store the offset, in minutes, as amount it's off from UTC
@@ -843,55 +881,65 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
   @Override
   public void setURL(int parameterIndex, URL x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public ParameterMetaData getParameterMetaData() throws SQLException {
     describeSqlIfNotTried();
-    return new SnowflakeParameterMetadata(preparedStatementMetaData, connection.getSFBaseSession());
+    return new SnowflakeParameterMetadata(
+        preparedStatementMetaData, connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setRowId(int parameterIndex, RowId x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNString(int parameterIndex, String value) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value, long length)
       throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNClob(int parameterIndex, NClob value) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream, long length)
       throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
@@ -914,53 +962,63 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, long length)
       throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
@@ -1094,32 +1152,38 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
   @Override
   public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   @Override
   public boolean execute(String sql, String[] columnNames) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        connection.getSFBaseSession(internalCallMarker()));
   }
 
   // For testing use only

@@ -14,6 +14,7 @@ import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 import static net.snowflake.client.internal.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 import static net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper.convertStringToType;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -181,7 +182,8 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     logger.trace("SnowflakeDatabaseMetaDataImpl(SnowflakeConnection connection)", false);
 
     this.connection = connection;
-    this.session = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession();
+    this.session =
+        connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession(internalCallMarker());
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.isStringQuoted();

@@ -3,6 +3,7 @@ package net.snowflake.client.internal.api.implementation.connection;
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -60,6 +61,7 @@ import net.snowflake.client.internal.jdbc.SFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SnowflakeClob;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
@@ -848,6 +850,11 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   public SFConnectionHandler getHandler() {
+    return getHandler(null);
+  }
+
+  public SFConnectionHandler getHandler(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SnowflakeConnectionImpl", "getHandler", internalCallMarker);
     return sfConnectionHandler;
   }
 
@@ -1086,12 +1093,23 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   public SFBaseSession getSFBaseSession() {
+    return getSFBaseSession(null);
+  }
+
+  public SFBaseSession getSFBaseSession(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SnowflakeConnectionImpl", "getSFBaseSession", internalCallMarker);
     return sfSession;
   }
 
   // Convenience method to return an SFSession-typed SFBaseSession object, but
   // performs the type-checking as necessary.
   public SFSession getSfSession() throws SnowflakeSQLException {
+    return getSfSession(null);
+  }
+
+  public SFSession getSfSession(InternalCallMarker internalCallMarker)
+      throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeConnectionImpl", "getSfSession", internalCallMarker);
     if (sfSession instanceof SFSession) {
       return (SFSession) sfSession;
     }
