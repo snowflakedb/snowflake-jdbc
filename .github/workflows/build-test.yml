@@ -13,6 +13,7 @@ on:
             - master
             - SNOW-**
             - NO-SNOW-**
+        types: [opened, synchronize, reopened]
     workflow_dispatch:
         inputs:
           logLevel:
@@ -97,7 +98,25 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
+                runConfig: >-
+                    ${{
+                        fromJSON(
+                            (
+                                github.event_name == 'pull_request' &&
+                                '[
+                                    {"cloud":"AWS","javaVersion":"8"},
+                                    {"cloud":"GCP","javaVersion":"17"},
+                                    {"cloud":"AZURE","javaVersion":"21"}
+                                  ]'
+                            ) ||
+                            '[
+                                {"cloud":"AWS","javaVersion":"8"},
+                                {"cloud":"GCP","javaVersion":"11"},
+                                {"cloud":"AZURE","javaVersion":"17"},
+                                {"cloud":"AWS","javaVersion":"21"}
+                              ]'
+                        )
+                    }}
                 category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
@@ -132,7 +151,26 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
+                runConfig: >-
+                    ${{
+                        fromJSON(
+                            (
+                                github.event_name == 'pull_request' &&
+                                '[
+                                    {"cloud":"AWS","javaVersion":"8"},
+                                    {"cloud":"GCP","javaVersion":"17"},
+                                    {"cloud":"AZURE","javaVersion":"21"}
+                                  ]'
+                            ) ||
+                            '[
+                                {"cloud":"AWS","javaVersion":"8"},
+                                {"cloud":"AWS","javaVersion":"21"},
+                                {"cloud":"GCP","javaVersion":"11"},
+                                {"cloud":"AZURE","javaVersion":"17"},
+                                {"cloud":"AWS","javaVersion":"21"}
+                              ]'
+                        )
+                    }}
                 category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
@@ -169,7 +207,23 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8', image: 'jdbc-rockylinux9-openjdk8'}, {cloud: 'GCP', javaVersion: '11', image: 'jdbc-rockylinux9-openjdk11'}, {cloud: 'AZURE', javaVersion: '17', image: 'jdbc-rockylinux9-openjdk17'}, {cloud: 'AWS', javaVersion: '21', image: 'jdbc-rockylinux9-openjdk21'}]
+                runConfig: >-
+                    ${{
+                        fromJSON(
+                            (
+                                github.event_name == 'pull_request' &&
+                                '[
+                                    {"cloud":"AWS","javaVersion":"17","image":"jdbc-rockylinux9-openjdk17"}
+                                  ]'
+                            ) ||
+                            '[
+                                {"cloud":"AWS","javaVersion":"8","image":"jdbc-rockylinux9-openjdk8"},
+                                {"cloud":"GCP","javaVersion":"11","image":"jdbc-rockylinux9-openjdk11"},
+                                {"cloud":"AZURE","javaVersion":"17","image":"jdbc-rockylinux9-openjdk17"},
+                                {"cloud":"AWS","javaVersion":"21","image":"jdbc-rockylinux9-openjdk21"}
+                              ]'
+                        )
+                    }}
                 category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
@@ -191,30 +245,51 @@ jobs:
 
     test-linux:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
-        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
+        name: ${{ matrix.runConfig.cloud }} Linux java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
-                cloud: [ 'AWS', 'AZURE', 'GCP' ]
+                runConfig: >-
+                    ${{
+                        fromJSON(
+                            (
+                                github.event_name == 'pull_request' &&
+                                '[
+                                    {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk11","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk17","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":""},
+                                    {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                    {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"}
+                                  ]'
+                            ) ||
+                            '[
+                                {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk11","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk17","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk8","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk11","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk21","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk8","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk11","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk21","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":"-Dthin-jar"},
+                              ]'
+                        )
+                    }}
                 category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
-                additionalMavenProfile: ['', '-Dthin-jar']
-                exclude:
-                    # Keep thin-jar only for AWS on JDK 8 and 21 (all categories).
-                    - cloud: 'AZURE'
-                      additionalMavenProfile: '-Dthin-jar'
-                    - cloud: 'GCP'
-                      additionalMavenProfile: '-Dthin-jar'
-                    - cloud: 'AWS'
-                      image: 'jdbc-centos7-openjdk11'
-                      additionalMavenProfile: '-Dthin-jar'
-                    - cloud: 'AWS'
-                      image: 'jdbc-centos7-openjdk17'
-                      additionalMavenProfile: '-Dthin-jar'
         steps:
             - uses: actions/checkout@v5
             - name: Tests
@@ -222,10 +297,10 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
-                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.runConfig.image }}
                 JDBC_TEST_SUITES: ${{ matrix.category.suites }}
-                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.runConfig.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
 
