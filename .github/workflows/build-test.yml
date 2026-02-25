@@ -13,7 +13,7 @@ on:
             - master
             - SNOW-**
             - NO-SNOW-**
-        types: [opened, synchronize, reopened]
+        types: [opened, synchronize, reopened, labeled, unlabeled]
     workflow_dispatch:
         inputs:
           logLevel:
@@ -102,7 +102,7 @@ jobs:
                     ${{
                         fromJSON(
                             (
-                                github.event_name == 'pull_request' &&
+                                github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'FULL-TEST-MATRIX') &&
                                 '[
                                     {"cloud":"AWS","javaVersion":"8"},
                                     {"cloud":"GCP","javaVersion":"17"},
@@ -155,7 +155,7 @@ jobs:
                     ${{
                         fromJSON(
                             (
-                                github.event_name == 'pull_request' &&
+                                github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'FULL-TEST-MATRIX') &&
                                 '[
                                     {"cloud":"AWS","javaVersion":"8"},
                                     {"cloud":"GCP","javaVersion":"17"},
@@ -211,7 +211,7 @@ jobs:
                     ${{
                         fromJSON(
                             (
-                                github.event_name == 'pull_request' &&
+                                github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'FULL-TEST-MATRIX') &&
                                 '[
                                     {"cloud":"AWS","javaVersion":"17","image":"jdbc-rockylinux9-openjdk17"}
                                   ]'
@@ -254,7 +254,7 @@ jobs:
                     ${{
                         fromJSON(
                             (
-                                github.event_name == 'pull_request' &&
+                                github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'FULL-TEST-MATRIX') &&
                                 '[
                                     {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":""},
                                     {"image":"jdbc-centos7-openjdk11","cloud":"AWS","additionalMavenProfile":""},
