@@ -9,9 +9,6 @@ JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 source $THIS_DIR/_init.sh
 source $THIS_DIR/scripts/set_git_info.sh
 
-echo "Use /sbin/ip"
-IP_ADDR=$(/sbin/ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1)
-
 declare -A TARGET_TEST_IMAGES
 if [[ -n "$TARGET_DOCKER_TEST_IMAGE" ]]; then
     echo "[INFO] TARGET_DOCKER_TEST_IMAGE: $TARGET_DOCKER_TEST_IMAGE"
@@ -40,6 +37,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
     # docker pull "${TEST_IMAGE_NAMES[$name]}"
     docker container run \
         --rm \
+        --network=host \
         -v $JDBC_ROOT:/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u ${USER}) \
@@ -59,11 +57,6 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e ADDITIONAL_MAVEN_PROFILE \
         -e CLOUD_PROVIDER \
         -e is_old_driver \
-        --add-host=snowflake.reg.local:${IP_ADDR} \
-        --add-host=s3testaccount.reg.local:${IP_ADDR} \
-        --add-host=azureaccount.reg.local:${IP_ADDR} \
-        --add-host=gcpaccount.reg.local:${IP_ADDR} \
-        --add-host=wrongaccount.reg.local:${IP_ADDR} \
         ${TEST_IMAGE_NAMES[$name]} \
         /mnt/host/ci/container/test_component.sh
 done
