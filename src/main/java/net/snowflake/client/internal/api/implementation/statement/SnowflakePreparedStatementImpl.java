@@ -1135,13 +1135,13 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
         }
       }
       if (this.getSFBaseStatement()
-          .getSFBaseSession()
+          .getSFBaseSession(internalCallMarker())
           .getClearBatchOnlyAfterSuccessfulExecution()) {
         clearBatch();
       }
     } finally {
       if (!this.getSFBaseStatement()
-          .getSFBaseSession()
+          .getSFBaseSession(internalCallMarker())
           .getClearBatchOnlyAfterSuccessfulExecution()) {
         clearBatch();
       }

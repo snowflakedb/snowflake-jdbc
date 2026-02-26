@@ -4,6 +4,7 @@ import static net.snowflake.client.internal.core.SFTrustManager.resetOCSPRespons
 import static net.snowflake.client.internal.core.SFTrustManager.setOCSPResponseCacheServerURL;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +53,7 @@ import net.snowflake.client.internal.jdbc.RetryContextManager;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeSQLExceptionWithRetryContext;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -2074,6 +2076,20 @@ public class SessionUtil {
       String accountName,
       String userName)
       throws SFException {
+    return generateJWTToken(
+        privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd, accountName, userName, null);
+  }
+
+  public static String generateJWTToken(
+      PrivateKey privateKey,
+      String privateKeyFile,
+      String privateKeyBase64,
+      String privateKeyPwd,
+      String accountName,
+      String userName,
+      InternalCallMarker internalCallMarker)
+      throws SFException {
+    recordIfExternal("SessionUtil", "generateJWTToken", internalCallMarker);
     SessionUtilKeyPair s =
         new SessionUtilKeyPair(
             privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd, accountName, userName);
@@ -2101,7 +2117,7 @@ public class SessionUtil {
       String userName)
       throws SFException {
     return generateJWTToken(
-        privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName);
+        privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName, null);
   }
 
   /**

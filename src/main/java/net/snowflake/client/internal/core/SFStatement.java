@@ -5,6 +5,8 @@ import static net.snowflake.client.internal.core.SessionUtil.DEFAULT_CLIENT_PREF
 import static net.snowflake.client.internal.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
 import static net.snowflake.client.internal.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
@@ -29,6 +31,7 @@ import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
@@ -379,7 +382,7 @@ public class SFStatement extends SFBaseStatement {
                   + " binds in payload instead. ",
               ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
-          this.session.getTelemetryClient().addLogToBatch(errorLog);
+          this.session.getTelemetryClient(internalCallMarker()).addLogToBatch(errorLog);
         } catch (SQLException ex) {
           logger.debug(
               "Exception encountered trying to upload binds to stage with input stream. Attaching"
@@ -387,7 +390,7 @@ public class SFStatement extends SFBaseStatement {
               ex);
           TelemetryData errorLog =
               TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
-          this.session.getTelemetryClient().addLogToBatch(errorLog);
+          this.session.getTelemetryClient(internalCallMarker()).addLogToBatch(errorLog);
         }
       }
 
@@ -407,7 +410,7 @@ public class SFStatement extends SFBaseStatement {
           .setRequestId(requestId)
           .setSequenceId(sequenceId)
           .setParametersMap(statementParametersMap)
-          .setSessionToken(session.getSessionToken())
+          .setSessionToken(session.getSessionToken(internalCallMarker()))
           .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
           .setInjectSocketTimeout(session.getInjectSocketTimeout())
           .setInjectClientPause(session.getInjectClientPause())
@@ -504,7 +507,7 @@ public class SFStatement extends SFBaseStatement {
         } catch (SnowflakeSQLException ex) {
           renewSessionOnExpiry(ex, stmtInput.sessionToken);
           // SNOW-18822: reset session token for the statement
-          stmtInput.setSessionToken(session.getSessionToken());
+          stmtInput.setSessionToken(session.getSessionToken(internalCallMarker()));
           stmtInput.setRetry(true);
           sessionRenewed = true;
           execTimeData.incrementRetryCount();
@@ -661,7 +664,7 @@ public class SFStatement extends SFBaseStatement {
       try {
         jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
       } catch (SnowflakeSQLException ex) {
-        renewSessionOnExpiry(ex, session.getSessionToken());
+        renewSessionOnExpiry(ex, session.getSessionToken(internalCallMarker()));
         logger.debug("Session renewed during getChildQueryIds, retrying", false);
         jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
       }
@@ -715,7 +718,7 @@ public class SFStatement extends SFBaseStatement {
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
-        .setSessionToken(session.getSessionToken())
+        .setSessionToken(session.getSessionToken(internalCallMarker()))
         .setServiceName(session.getServiceName())
         .setOCSPMode(session.getOCSPMode())
         .setMaxRetries(session.getMaxHttpRetries())
@@ -782,7 +785,7 @@ public class SFStatement extends SFBaseStatement {
     logger.debug("Entering executeFileTransfer", false);
 
     isFileTransfer = true;
-    transferAgent = new SnowflakeFileTransferAgent(sql, session, this);
+    transferAgent = new SnowflakeFileTransferAgent(sql, session, this, internalCallMarker());
 
     try {
       transferAgent.execute();
@@ -822,7 +825,7 @@ public class SFStatement extends SFBaseStatement {
       httpRequest = null;
     }
 
-    session.getTelemetryClient().sendBatchAsync();
+    session.getTelemetryClient(internalCallMarker()).sendBatchAsync();
 
     isFileTransfer = false;
     transferAgent = null;
@@ -886,6 +889,11 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseSession getSFBaseSession() {
+    return getSFBaseSession(null);
+  }
+
+  public SFBaseSession getSFBaseSession(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFStatement", "getSFBaseSession", internalCallMarker);
     return session;
   }
 
@@ -907,7 +915,7 @@ public class SFStatement extends SFBaseStatement {
       session.renewSession(prevSessionToken);
     } catch (SnowflakeReauthenticationRequest ex0) {
       if (session.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
-        session.open();
+        session.open(internalCallMarker());
       } else {
         throw ex0;
       }
@@ -939,7 +947,7 @@ public class SFStatement extends SFBaseStatement {
       try {
         result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
       } catch (SnowflakeSQLException ex) {
-        renewSessionOnExpiry(ex, session.getSessionToken());
+        renewSessionOnExpiry(ex, session.getSessionToken(internalCallMarker()));
         logger.debug("Session renewed during getMoreResults, retrying child result fetch", false);
         result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
       }

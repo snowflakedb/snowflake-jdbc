@@ -187,7 +187,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.isStringQuoted();
-    this.ibInstance = session.getTelemetryClient();
+    this.ibInstance = session.getTelemetryClient(internalCallMarker());
     this.procedureResultsetColumnNum = -1;
     this.isPatternMatchingEnabled = session.getEnablePatternSearch();
     this.exactSchemaSearchEnabled = session.getEnableExactSchemaSearch();
