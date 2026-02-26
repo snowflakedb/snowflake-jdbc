@@ -40,6 +40,12 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcutil-jdk18on</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <version>1.4.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
