@@ -9,6 +9,8 @@ import static net.snowflake.client.internal.core.SessionUtil.CLIENT_RESULT_CHUNK
 import static net.snowflake.client.internal.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.internal.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
 import static net.snowflake.client.internal.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +50,7 @@ import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatementType;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.ArgSupplier;
@@ -502,10 +505,22 @@ public class SnowflakeResultSetSerializableV1
   }
 
   public ResultStreamProvider getResultStreamProvider() {
+    return getResultStreamProvider(null);
+  }
+
+  public ResultStreamProvider getResultStreamProvider(InternalCallMarker internalCallMarker) {
+    recordIfExternal(
+        "SnowflakeResultSetSerializableV1", "getResultStreamProvider", internalCallMarker);
     return resultStreamProvider;
   }
 
   public SFResultSetMetaData getSFResultSetMetaData() {
+    return getSFResultSetMetaData(null);
+  }
+
+  public SFResultSetMetaData getSFResultSetMetaData(InternalCallMarker internalCallMarker) {
+    recordIfExternal(
+        "SnowflakeResultSetSerializableV1", "getSFResultSetMetaData", internalCallMarker);
     return resultSetMetaData;
   }
 
@@ -716,6 +731,11 @@ public class SnowflakeResultSetSerializableV1
   }
 
   public Optional<SFBaseSession> getSession() {
+    return getSession(null);
+  }
+
+  public Optional<SFBaseSession> getSession(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SnowflakeResultSetSerializableV1", "getSession", internalCallMarker);
     return possibleSession;
   }
 
@@ -732,7 +752,18 @@ public class SnowflakeResultSetSerializableV1
   public static SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {
-    return create(rootNode, sfSession, sfStatement, new DefaultResultStreamProvider());
+    return create(rootNode, sfSession, sfStatement, (InternalCallMarker) null);
+  }
+
+  public static SnowflakeResultSetSerializableV1 create(
+      JsonNode rootNode,
+      SFBaseSession sfSession,
+      SFBaseStatement sfStatement,
+      InternalCallMarker internalCallMarker)
+      throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeResultSetSerializableV1", "create", internalCallMarker);
+    return create(
+        rootNode, sfSession, sfStatement, new DefaultResultStreamProvider(), internalCallMarker);
   }
 
   /**
@@ -753,6 +784,17 @@ public class SnowflakeResultSetSerializableV1
       SFBaseStatement sfStatement,
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
+    return create(rootNode, sfSession, sfStatement, resultStreamProvider, null);
+  }
+
+  public static SnowflakeResultSetSerializableV1 create(
+      JsonNode rootNode,
+      SFBaseSession sfSession,
+      SFBaseStatement sfStatement,
+      ResultStreamProvider resultStreamProvider,
+      InternalCallMarker internalCallMarker)
+      throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeResultSetSerializableV1", "create", internalCallMarker);
     logger.trace("Entering create()", false);
     return new SnowflakeResultSetSerializableV1(
         rootNode, sfSession, sfStatement, resultStreamProvider, false);
@@ -928,9 +970,9 @@ public class SnowflakeResultSetSerializableV1
           Runtime.getRuntime().maxMemory(),
           maxChunkSize);
     }
-    if (sfStatement.getSFBaseSession().getMemoryLimitForTesting()
+    if (sfStatement.getSFBaseSession(internalCallMarker()).getMemoryLimitForTesting()
         != SFBaseSession.MEMORY_LIMIT_UNSET) {
-      memoryLimit = sfStatement.getSFBaseSession().getMemoryLimitForTesting();
+      memoryLimit = sfStatement.getSFBaseSession(internalCallMarker()).getMemoryLimitForTesting();
       logger.debug("memoryLimit changed for testing purposes to {}", memoryLimit);
     }
   }
@@ -1094,6 +1136,13 @@ public class SnowflakeResultSetSerializableV1
    */
   public ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig)
       throws SQLException {
+    return getResultSet(resultSetRetrieveConfig, null);
+  }
+
+  public ResultSet getResultSet(
+      ResultSetRetrieveConfig resultSetRetrieveConfig, InternalCallMarker internalCallMarker)
+      throws SQLException {
+    recordIfExternal("SnowflakeResultSetSerializableV1", "getResultSet", internalCallMarker);
     // Adjust OCSP cache server if necessary.
     try {
       SessionUtil.resetOCSPUrlIfNecessary(resultSetRetrieveConfig.getSfFullURL());
@@ -1106,7 +1155,7 @@ public class SnowflakeResultSetSerializableV1
               + e.getMessage());
     }
 
-    return getResultSetInternal(resultSetRetrieveConfig.getProxyProperties());
+    return getResultSetInternal(resultSetRetrieveConfig.getProxyProperties(), internalCallMarker);
   }
 
   /**
@@ -1115,7 +1164,8 @@ public class SnowflakeResultSetSerializableV1
    * @param info The proxy sever information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
    */
-  private ResultSet getResultSetInternal(Properties info) throws SQLException {
+  private ResultSet getResultSetInternal(Properties info, InternalCallMarker internalCallMarker)
+      throws SQLException {
     // Setup proxy info if necessary
     this.httpClientKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, info);
 
@@ -1138,7 +1188,10 @@ public class SnowflakeResultSetSerializableV1
         {
           sfBaseResultSet =
               new SFResultSet(
-                  this, getSession().orElse(new SFSession()), telemetryClient, sortResult);
+                  this,
+                  getSession(internalCallMarker).orElse(new SFSession()),
+                  telemetryClient,
+                  sortResult);
           break;
         }
       default:
