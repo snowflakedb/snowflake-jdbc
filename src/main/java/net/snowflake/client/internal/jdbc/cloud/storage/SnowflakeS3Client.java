@@ -79,6 +79,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final String AMZ_IV = "x-amz-iv";
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
   private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
+  private static final String S3_SINGLE_UPLOAD_MAX_BYTES_PROPERTY =
+      "snowflake.jdbc.s3.singleUpload.maxBytes";
+  private static final long DEFAULT_S3_SINGLE_UPLOAD_MAX_BYTES = 16L * 1024L * 1024L;
 
   // expired AWS token error code
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
@@ -194,7 +197,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             .connectionTimeout(Duration.ofMillis(clientConfig.connectionTimeout))
             .readTimeout(Duration.ofMillis(clientConfig.socketTimeout))
             .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout)));
-    clientBuilder.multipartEnabled(true);
+    // Keep automatic multipart disabled at S3 client level so we can explicitly route
+    // small uploads through a single putObject call and large uploads through TransferManager.
+    clientBuilder.multipartEnabled(false);
 
     ClientOverrideConfiguration.Builder configurationBuilder =
         ClientOverrideConfiguration.builder();
@@ -207,7 +212,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             new HeaderCustomizerHttpRequestInterceptor(headersCustomizers));
       }
     }
-
     clientBuilder.overrideConfiguration(configurationBuilder.build());
 
     if (encMat != null) {
@@ -614,22 +618,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     do {
+      ThreadPoolExecutor executorService = null;
+      ThreadPoolExecutor singleUploadExecutor = null;
       try {
         PutObjectRequest.Builder putRequestBuilder =
             ((S3ObjectMetadata) meta)
                 .getS3PutObjectRequest().toBuilder()
                     .bucket(remoteStorageLocation)
                     .key(destFileName);
-
-        logger.debug(
-            "Creating executor service for transfer" + "manager with {} threads", parallelism);
-
-        ThreadPoolExecutor executorService =
-            createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
-        // upload files to s3
-        tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
-
-        final Upload myUpload;
 
         if (!this.isClientSideEncrypted) {
           // since we're not client-side encrypting, make sure we're server-side encrypting with
@@ -638,30 +634,58 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
 
         PutObjectRequest request = putRequestBuilder.build();
-
-        if (uploadStreamInfo.right) {
-          myUpload =
-              tx.upload(
-                  UploadRequest.builder()
-                      .putObjectRequest(request)
-                      .requestBody(
-                          AsyncRequestBody.fromInputStream(
-                              // wrapping with BufferedInputStream to mitigate
-                              // https://github.com/aws/aws-sdk-java-v2/issues/6174
-                              new BufferedInputStream(uploadStreamInfo.left),
-                              request.contentLength(),
-                              executorService))
-                      .build());
+        boolean useSingleUpload = shouldUseSingleUpload(request);
+        if (useSingleUpload) {
+          logger.debug(
+              "Using single-part putObject upload for key {} and size {}",
+              destFileName,
+              request.contentLength());
+          if (uploadStreamInfo.right) {
+            singleUploadExecutor =
+                createDefaultExecutorService("s3-single-uploader-", Math.max(1, parallelism));
+            amazonClient
+                .putObject(
+                    request,
+                    AsyncRequestBody.fromInputStream(
+                        // wrapping with BufferedInputStream to mitigate
+                        // https://github.com/aws/aws-sdk-java-v2/issues/6174
+                        new BufferedInputStream(uploadStreamInfo.left),
+                        request.contentLength(),
+                        singleUploadExecutor))
+                .join();
+          } else {
+            amazonClient.putObject(request, AsyncRequestBody.fromFile(srcFile)).join();
+          }
         } else {
-          myUpload =
-              tx.upload(
-                  UploadRequest.builder()
-                      .putObjectRequest(request)
-                      .requestBody(AsyncRequestBody.fromFile(srcFile))
-                      .build());
-        }
+          logger.debug(
+              "Creating executor service for transfer manager with {} threads", parallelism);
+          executorService = createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
+          tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
 
-        myUpload.completionFuture().join();
+          final Upload myUpload;
+          if (uploadStreamInfo.right) {
+            myUpload =
+                tx.upload(
+                    UploadRequest.builder()
+                        .putObjectRequest(request)
+                        .requestBody(
+                            AsyncRequestBody.fromInputStream(
+                                // wrapping with BufferedInputStream to mitigate
+                                // https://github.com/aws/aws-sdk-java-v2/issues/6174
+                                new BufferedInputStream(uploadStreamInfo.left),
+                                request.contentLength(),
+                                executorService))
+                        .build());
+          } else {
+            myUpload =
+                tx.upload(
+                    UploadRequest.builder()
+                        .putObjectRequest(request)
+                        .requestBody(AsyncRequestBody.fromFile(srcFile))
+                        .build());
+          }
+          myUpload.completionFuture().join();
+        }
         stopwatch.stop();
         long uploadMillis = stopwatch.elapsedMillis();
 
@@ -710,6 +734,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } finally {
         if (tx != null) {
           tx.close();
+        }
+        if (executorService != null) {
+          executorService.shutdown();
+        }
+        if (singleUploadExecutor != null) {
+          singleUploadExecutor.shutdown();
         }
       }
     } while (retryCount <= getMaxRetries());
@@ -967,6 +997,28 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     public int getSocketTimeout() {
       return socketTimeout;
+    }
+  }
+
+  private static boolean shouldUseSingleUpload(PutObjectRequest request) {
+    Long contentLength = request.contentLength();
+    return contentLength != null && contentLength > 0 && contentLength <= getSingleUploadMaxBytes();
+  }
+
+  private static long getSingleUploadMaxBytes() {
+    String configuredValue = systemGetProperty(S3_SINGLE_UPLOAD_MAX_BYTES_PROPERTY);
+    if (configuredValue == null || configuredValue.isEmpty()) {
+      return DEFAULT_S3_SINGLE_UPLOAD_MAX_BYTES;
+    }
+    try {
+      return Long.parseLong(configuredValue);
+    } catch (NumberFormatException ex) {
+      logger.debug(
+          "Invalid value for {}: {}. Falling back to {}",
+          S3_SINGLE_UPLOAD_MAX_BYTES_PROPERTY,
+          configuredValue,
+          DEFAULT_S3_SINGLE_UPLOAD_MAX_BYTES);
+      return DEFAULT_S3_SINGLE_UPLOAD_MAX_BYTES;
     }
   }
 }
