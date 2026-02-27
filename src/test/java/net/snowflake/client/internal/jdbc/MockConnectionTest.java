@@ -55,6 +55,7 @@ import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -619,6 +620,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public SFBaseSession getSFBaseSession(InternalCallMarker internalCallMarker) {
+      return getSFBaseSession();
+    }
+
+    @Override
     public boolean getMoreResults(int current) {
       return false;
     }
@@ -732,6 +738,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void close() {}
 
     @Override
+    public void close(InternalCallMarker internalCallMarker) {}
+
+    @Override
     public QueryStatus getQueryStatus(String queryID) {
       return null;
     }
@@ -756,6 +765,11 @@ public class MockConnectionTest extends BaseJDBCTest {
           errorsEncountered.add(ex.getMessage() + "_" + sqlState);
         }
       };
+    }
+
+    @Override
+    public Telemetry getTelemetryClient(InternalCallMarker internalCallMarker) {
+      return getTelemetryClient();
     }
 
     @Override

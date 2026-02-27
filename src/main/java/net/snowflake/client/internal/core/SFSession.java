@@ -2,6 +2,8 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.core.SFLoginInput.getBooleanValue;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +42,7 @@ import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -262,7 +265,7 @@ public class SFSession extends SFBaseSession {
             if (ex instanceof SnowflakeReauthenticationRequest
                 && this.isExternalbrowserOrOAuthFullFlowAuthenticator()) {
               try {
-                this.open();
+                this.open(internalCallMarker());
               } catch (SFException e) {
                 throw new SnowflakeSQLException(e);
               }
@@ -597,6 +600,12 @@ public class SFSession extends SFBaseSession {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
+    open(null);
+  }
+
+  public synchronized void open(InternalCallMarker internalCallMarker)
+      throws SFException, SnowflakeSQLException {
+    recordIfExternal("SFSession", "open", internalCallMarker);
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     performSanityCheckOnProperties();
@@ -852,10 +861,10 @@ public class SFSession extends SFBaseSession {
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
-    this.getTelemetryClient();
+    this.getTelemetryClient(internalCallMarker());
 
     // Flush any internal API usage telemetry that accumulated before session login
-    InternalApiTelemetryTracker.flush(getTelemetryClient());
+    InternalApiTelemetryTracker.flush(getTelemetryClient(internalCallMarker()));
 
     // Send minicore telemetry after session is established
     sendMinicoreTelemetry();
@@ -866,7 +875,7 @@ public class SFSession extends SFBaseSession {
 
   private void sendMinicoreTelemetry() {
     try {
-      Telemetry telemetry = getTelemetryClient();
+      Telemetry telemetry = getTelemetryClient(internalCallMarker());
       if (!(telemetry instanceof TelemetryClient)) {
         logger.trace("Telemetry client not available, skipping minicore telemetry");
         return;
@@ -981,6 +990,11 @@ public class SFSession extends SFBaseSession {
    * @return session token
    */
   public String getSessionToken() {
+    return getSessionToken(null);
+  }
+
+  public String getSessionToken(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFSession", "getSessionToken", internalCallMarker);
     return sessionToken;
   }
 
@@ -992,6 +1006,12 @@ public class SFSession extends SFBaseSession {
    */
   @Override
   public void close() throws SFException, SnowflakeSQLException {
+    close(null);
+  }
+
+  public void close(InternalCallMarker internalCallMarker)
+      throws SFException, SnowflakeSQLException {
+    recordIfExternal("SFSession", "close", internalCallMarker);
     logger.debug("Closing session {}", getSessionId());
 
     // stop heartbeat for this session
@@ -1014,7 +1034,7 @@ public class SFSession extends SFBaseSession {
         .setHttpClientSettingsKey(getHttpClientKey());
 
     SessionUtil.closeSession(loginInput, this);
-    InternalApiTelemetryTracker.flush(getTelemetryClient());
+    InternalApiTelemetryTracker.flush(getTelemetryClient(internalCallMarker()));
     closeTelemetryClient();
     getClientInfo().clear();
 
@@ -1276,6 +1296,11 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public synchronized Telemetry getTelemetryClient() {
+    return getTelemetryClient(null);
+  }
+
+  public synchronized Telemetry getTelemetryClient(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFSession", "getTelemetryClient", internalCallMarker);
     // initialize for the first time. this should only be done after session
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
@@ -1303,14 +1328,29 @@ public class SFSession extends SFBaseSession {
   }
 
   public String getIdToken() {
+    return getIdToken(null);
+  }
+
+  public String getIdToken(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFSession", "getIdToken", internalCallMarker);
     return idToken;
   }
 
   public String getAccessToken() {
+    return getAccessToken(null);
+  }
+
+  public String getAccessToken(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFSession", "getAccessToken", internalCallMarker);
     return oauthAccessToken;
   }
 
   public String getMfaToken() {
+    return getMfaToken(null);
+  }
+
+  public String getMfaToken(InternalCallMarker internalCallMarker) {
+    recordIfExternal("SFSession", "getMfaToken", internalCallMarker);
     return mfaToken;
   }
 

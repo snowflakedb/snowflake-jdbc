@@ -583,7 +583,9 @@ public class SnowflakeStatementImpl implements Statement, SnowflakeStatement {
           updateCounts.intArr,
           exceptionReturned);
     }
-    if (this.getSFBaseStatement().getSFBaseSession().getClearBatchOnlyAfterSuccessfulExecution()) {
+    if (this.getSFBaseStatement()
+        .getSFBaseSession(internalCallMarker())
+        .getClearBatchOnlyAfterSuccessfulExecution()) {
       clearBatch();
     }
     return updateCounts;

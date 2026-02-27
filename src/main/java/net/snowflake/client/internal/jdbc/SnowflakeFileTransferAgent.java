@@ -4,6 +4,7 @@ import static net.snowflake.client.internal.core.Constants.NO_SPACE_LEFT_ON_DEVI
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createOwnerOnlyPermissionDir;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -67,6 +68,7 @@ import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummary;
 import net.snowflake.client.internal.jdbc.cloud.storage.StorageObjectSummaryCollection;
 import net.snowflake.client.internal.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
@@ -891,6 +893,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   public SnowflakeFileTransferAgent(String command, SFSession session, SFStatement statement)
       throws SnowflakeSQLException {
+    this(command, session, statement, null);
+  }
+
+  public SnowflakeFileTransferAgent(
+      String command,
+      SFSession session,
+      SFStatement statement,
+      InternalCallMarker internalCallMarker)
+      throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeFileTransferAgent", "<init>", internalCallMarker);
     this.command = command;
     this.session = session;
     this.statement = statement;
@@ -1401,6 +1413,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas()
       throws SnowflakeSQLException {
+    return getFileTransferMetadatas((InternalCallMarker) null);
+  }
+
+  public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(
+      InternalCallMarker internalCallMarker) throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeFileTransferAgent", "getFileTransferMetadatas", internalCallMarker);
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
     if (stageInfo.getStageType() != StageInfo.StageType.GCS
         && stageInfo.getStageType() != StageInfo.StageType.AZURE
@@ -1451,7 +1469,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
       throws SnowflakeSQLException {
-    return getFileTransferMetadatas(jsonNode, null);
+    return getFileTransferMetadatas(jsonNode, null, null);
   }
 
   /**
@@ -1468,6 +1486,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(
       JsonNode jsonNode, String queryId) throws SnowflakeSQLException {
+    return getFileTransferMetadatas(jsonNode, queryId, null);
+  }
+
+  public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(
+      JsonNode jsonNode, String queryId, InternalCallMarker internalCallMarker)
+      throws SnowflakeSQLException {
+    recordIfExternal("SnowflakeFileTransferAgent", "getFileTransferMetadatas", internalCallMarker);
     CommandType commandType =
         !jsonNode.path("data").path("command").isMissingNode()
             ? CommandType.valueOf(jsonNode.path("data").path("command").asText())

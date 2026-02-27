@@ -3,7 +3,9 @@ package net.snowflake.client.internal.jdbc.telemetry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentCaptor.forClass;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -12,6 +14,9 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSession;
+import net.snowflake.client.internal.core.SessionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -66,7 +71,7 @@ class InternalApiTelemetryTrackerTest {
   void shouldNotFlushWhenNoCallsRecorded() {
     InternalApiTelemetryTracker.flush(mockClient);
 
-    verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
+    verify(mockClient, never()).addLogToBatch(any());
   }
 
   @Test
@@ -131,6 +136,63 @@ class InternalApiTelemetryTrackerTest {
 
     InternalApiTelemetryTracker.flush(mockClient);
 
-    verify(mockClient, never()).addLogToBatch(org.mockito.ArgumentMatchers.any());
+    verify(mockClient, never()).addLogToBatch(any());
+  }
+
+  @Test
+  void sfSessionMethodShouldRecordWithoutMarker() {
+    SFSession session = new SFSession();
+    session.getSessionToken();
+
+    InternalApiTelemetryTracker.flush(mockClient);
+
+    ArgumentCaptor<TelemetryData> captor = forClass(TelemetryData.class);
+    verify(mockClient).addLogToBatch(captor.capture());
+    assertEquals(
+        1, captor.getValue().getMessage().get("methods").get("SFSession#getSessionToken").asLong());
+  }
+
+  @Test
+  void sfSessionMethodShouldNotRecordWithMarker() {
+    SFSession session = new SFSession();
+    session.getSessionToken(InternalApiTelemetryTracker.internalCallMarker());
+
+    InternalApiTelemetryTracker.flush(mockClient);
+
+    verify(mockClient, never()).addLogToBatch(any());
+  }
+
+  @Test
+  void sessionUtilGenerateJwtShouldRecordWithoutMarkerEvenWhenItFails() {
+    assertThrows(
+        SFException.class,
+        () -> SessionUtil.generateJWTToken(null, null, null, null, "account", "user"));
+
+    InternalApiTelemetryTracker.flush(mockClient);
+
+    ArgumentCaptor<TelemetryData> captor = forClass(TelemetryData.class);
+    verify(mockClient).addLogToBatch(captor.capture());
+    assertEquals(
+        1,
+        captor.getValue().getMessage().get("methods").get("SessionUtil#generateJWTToken").asLong());
+  }
+
+  @Test
+  void sessionUtilGenerateJwtShouldNotRecordWithMarker() {
+    assertThrows(
+        SFException.class,
+        () ->
+            SessionUtil.generateJWTToken(
+                null,
+                null,
+                null,
+                null,
+                "account",
+                "user",
+                InternalApiTelemetryTracker.internalCallMarker()));
+
+    InternalApiTelemetryTracker.flush(mockClient);
+
+    verify(mockClient, never()).addLogToBatch(any());
   }
 }

@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.core;
 
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import net.snowflake.client.api.exception.ErrorCode;
@@ -32,7 +34,11 @@ class SFResultSetFactory {
 
     execTimeData.setProcessResultChunkStart();
     SnowflakeResultSetSerializableV1 resultSetSerializable =
-        SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
+        SnowflakeResultSetSerializableV1.create(
+            result,
+            statement.getSFBaseSession(internalCallMarker()),
+            statement,
+            internalCallMarker());
     execTimeData.setProcessResultChunkEnd();
     SFBaseResultSet rs;
     execTimeData.setCreateResultSetStart();
@@ -41,7 +47,10 @@ class SFResultSetFactory {
         logger.debug("Query result received in ARROW format. Processing with SFArrowResultSet.");
         rs =
             new SFArrowResultSet(
-                resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
+                resultSetSerializable,
+                statement.getSFBaseSession(internalCallMarker()),
+                statement,
+                sortResult);
         break;
       case JSON:
         rs = new SFResultSet(resultSetSerializable, statement, sortResult);
@@ -53,7 +62,7 @@ class SFResultSetFactory {
     execTimeData.setCreateResultSetEnd();
     if (rs == null) {
       throw new SnowflakeSQLLoggedException(
-          statement.getSFBaseSession(),
+          statement.getSFBaseSession(internalCallMarker()),
           ErrorCode.INTERNAL_ERROR,
           "Unsupported query result format: "
               + resultSetSerializable.getQueryResultFormat().name());

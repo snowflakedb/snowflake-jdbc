@@ -5,6 +5,7 @@ import static net.snowflake.client.internal.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.internal.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -145,7 +146,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initHttpHeaderCustomizers(properties);
       logger.debug("Trying to establish session, JDBC driver: {}", DriverUtil.getJdbcJarname());
       if (!skipOpen) {
-        sfSession.open();
+        sfSession.open(internalCallMarker());
       }
 
     } catch (SFException ex) {
@@ -407,7 +408,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
           "getFileTransferAgent() called with an incompatible SFBaseStatement type. Requires an"
               + " SFStatement.");
     }
-    return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
+    return new SnowflakeFileTransferAgent(
+        command, sfSession, (SFStatement) statement, internalCallMarker());
   }
 
   private void initHttpHeaderCustomizers(Properties properties) {

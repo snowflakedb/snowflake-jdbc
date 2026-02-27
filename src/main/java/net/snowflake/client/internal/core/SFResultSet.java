@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.core.StmtUtil.eventHandler;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
@@ -85,12 +86,12 @@ public class SFResultSet extends SFJsonResultSet {
       throws SQLException {
     this(
         resultSetSerializable,
-        statement.getSFBaseSession(),
-        statement.getSFBaseSession().getTelemetryClient(),
+        statement.getSFBaseSession(internalCallMarker()),
+        statement.getSFBaseSession(internalCallMarker()).getTelemetryClient(internalCallMarker()),
         sortResult);
 
     this.statement = statement;
-    SFBaseSession session = statement.getSFBaseSession();
+    SFBaseSession session = statement.getSFBaseSession(internalCallMarker());
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
@@ -99,7 +100,8 @@ public class SFResultSet extends SFJsonResultSet {
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSFBaseSession());
+    SessionUtil.updateSfDriverParamValues(
+        this.parameters, statement.getSFBaseSession(internalCallMarker()));
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {
@@ -172,7 +174,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
     this.arrayBindSupported = resultSetSerializable.isArrayBindSupported();
     this.metaDataOfBinds = resultSetSerializable.getMetaDataOfBinds();
-    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
+    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData(internalCallMarker());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 

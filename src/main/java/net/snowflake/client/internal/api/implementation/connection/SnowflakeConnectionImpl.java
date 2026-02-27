@@ -3,6 +3,7 @@ package net.snowflake.client.internal.api.implementation.connection;
 import static net.snowflake.client.api.exception.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.api.exception.ErrorCode.INVALID_CONNECT_STRING;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -279,7 +280,7 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     isClosed = true;
     try {
       if (sfSession != null && sfSession.isSafeToClose()) {
-        sfSession.close();
+        sfSession.close(internalCallMarker());
         sfSession = null;
       }
       // make sure to close all created statements

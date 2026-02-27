@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.core.Constants.MB;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
@@ -227,8 +228,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
     // session may be null. Its only use is for in-band telemetry in this class
     this.session =
-        (resultSetSerializable.getSession() != null)
-            ? resultSetSerializable.getSession().orElse(null)
+        (resultSetSerializable.getSession(internalCallMarker()) != null)
+            ? resultSetSerializable.getSession(internalCallMarker()).orElse(null)
             : null;
     if (this.session != null) {
       Object prefetchMaxRetry =
@@ -255,7 +256,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
 
-    this.resultStreamProvider = resultSetSerializable.getResultStreamProvider();
+    this.resultStreamProvider = resultSetSerializable.getResultStreamProvider(internalCallMarker());
 
     if (resultSetSerializable.getChunkFileCount() < 1) {
       throw new SnowflakeSQLLoggedException(

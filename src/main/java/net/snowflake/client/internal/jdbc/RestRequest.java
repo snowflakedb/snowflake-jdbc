@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1543,7 +1544,7 @@ public class RestRequest {
             errorMessage,
             null);
     TelemetryData td = TelemetryUtil.buildJobData(ibValue);
-    session.getTelemetryClient().addLogToBatch(td);
+    session.getTelemetryClient(internalCallMarker()).addLogToBatch(td);
   }
 
   private static void sendIBOCSPErrorEvent(
@@ -1564,7 +1565,7 @@ public class RestRequest {
             errorMessage,
             ex.toString());
     TelemetryData td = TelemetryUtil.buildJobData(ibValue);
-    session.getTelemetryClient().addLogToBatch(td);
+    session.getTelemetryClient(internalCallMarker()).addLogToBatch(td);
   }
 
   private static boolean handleMaxRetriesExceeded(
