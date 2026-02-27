@@ -12,12 +12,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
@@ -608,5 +613,119 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
     }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  public void testRepeatedPutLargeFileToTemporaryStage() throws Exception {
+    int iterations = Integer.getInteger("snowflake.test.putLargeFile.iterations", 10);
+    int fileSizeMb = Integer.getInteger("snowflake.test.putLargeFile.sizeMb", 12);
+    assertTrue(iterations > 0, "Iterations must be positive");
+    assertTrue(fileSizeMb > 0, "File size must be positive");
+
+    File largeFile = new File(tmpFolder, "put_perf_" + fileSizeMb + "mb.csv");
+    createCsvFileOfSize(largeFile, fileSizeMb * 1024L * 1024L);
+    String stageName = "TEMP_PUT_PERF_STAGE_" + SnowflakeUtil.randomAlphaNumeric(10);
+
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("create or replace temporary stage " + stageName);
+
+      long startNanos = System.nanoTime();
+      for (int i = 0; i < iterations; i++) {
+        String putCommand =
+            "PUT file://"
+                + largeFile.getCanonicalPath()
+                + " @"
+                + stageName
+                + " AUTO_COMPRESS=FALSE OVERWRITE=TRUE PARALLEL=4";
+        try (ResultSet rs = statement.executeQuery(putCommand)) {
+          int uploadedRows = 0;
+          while (rs.next()) {
+            uploadedRows++;
+          }
+          assertTrue(uploadedRows > 0, "PUT returned no rows for iteration " + i);
+        }
+      }
+      long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+      System.out.println(
+          String.format(
+              "PUT perf simulation: sizeMb=%d iterations=%d totalMs=%d avgMs=%.2f",
+              fileSizeMb, iterations, elapsedMs, elapsedMs / (double) iterations));
+      assertTrue(elapsedMs > 0, "Elapsed time should be positive");
+    }
+  }
+
+  @Test
+  @DontRunOnGithubActions
+  public void testClientsPerfStylePutFilesWildcard() throws Exception {
+    int fileCount = Integer.getInteger("snowflake.test.putFiles.count", 100);
+    int runs = Integer.getInteger("snowflake.test.putFiles.runs", 3);
+    int fileSizeMb = Integer.getInteger("snowflake.test.putFiles.sizeMb", 12);
+    assertTrue(fileCount > 0, "File count must be positive");
+    assertTrue(runs > 0, "Runs must be positive");
+    assertTrue(fileSizeMb > 0, "File size must be positive");
+
+    File inputDir = preparePutPerfFiles(fileCount, fileSizeMb);
+    String stageName = "TEMP_PUT_PERF_BATCH_STAGE_" + SnowflakeUtil.randomAlphaNumeric(10);
+
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("create or replace temporary stage " + stageName);
+      for (int run = 1; run <= runs; run++) {
+        String putCommand =
+            "PUT file://"
+                + inputDir.getCanonicalPath()
+                + "/* @"
+                + stageName
+                + " AUTO_COMPRESS=FALSE SOURCE_COMPRESSION=NONE OVERWRITE=TRUE";
+
+        long serverStartNanos = System.nanoTime();
+        try (ResultSet rs = statement.executeQuery(putCommand)) {
+          long serverMs = (System.nanoTime() - serverStartNanos) / 1_000_000L;
+
+          long clientStartNanos = System.nanoTime();
+          int uploadedRows = 0;
+          while (rs.next()) {
+            uploadedRows++;
+          }
+          long clientMs = (System.nanoTime() - clientStartNanos) / 1_000_000L;
+
+          assertEquals(fileCount, uploadedRows, "Unexpected number of uploaded files in run " + run);
+          System.out.println(
+              String.format(
+                  "PUT clientsperf simulation: run=%d sizeMb=%d fileCount=%d serverMs=%d clientScanMs=%d totalMs=%d",
+                  run, fileSizeMb, fileCount, serverMs, clientMs, serverMs + clientMs));
+        }
+      }
+    }
+  }
+
+  private static void createCsvFileOfSize(File targetFile, long targetBytes) throws Exception {
+    byte[] line = "1,abcdefghijklmnopqrstuvwxyz,2026-01-01T00:00:00Z\n".getBytes(StandardCharsets.US_ASCII);
+    try (FileOutputStream outputStream = new FileOutputStream(targetFile)) {
+      long written = 0;
+      while (written < targetBytes) {
+        int chunkSize = (int) Math.min(line.length, targetBytes - written);
+        outputStream.write(line, 0, chunkSize);
+        written += chunkSize;
+      }
+    }
+  }
+
+  private File preparePutPerfFiles(int fileCount, int fileSizeMb) throws Exception {
+    File inputDir = new File(tmpFolder, "put_clientsperf_" + fileCount + "x" + fileSizeMb + "mb");
+    assertTrue(inputDir.mkdirs() || inputDir.exists(), "Failed to create input directory");
+
+    File templateFile = new File(tmpFolder, "put_clientsperf_template_" + fileSizeMb + "mb.csv");
+    createCsvFileOfSize(templateFile, fileSizeMb * 1024L * 1024L);
+
+    for (int i = 0; i < fileCount; i++) {
+      Path targetPath = new File(inputDir, String.format("put_file_%05d.csv", i)).toPath();
+      try {
+        Files.createLink(targetPath, templateFile.toPath());
+      } catch (UnsupportedOperationException | IOException ex) {
+        Files.copy(templateFile.toPath(), targetPath);
+      }
+    }
+    return inputDir;
   }
 }
