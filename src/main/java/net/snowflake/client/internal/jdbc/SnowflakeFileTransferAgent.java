@@ -713,6 +713,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (inputStream == null) {
             IOUtils.closeQuietly(uploadStream);
           }
+          if (client != null) {
+            client.shutdown();
+          }
         }
 
         logger.debug("FilePath: {}", srcFilePath);
@@ -864,6 +867,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           metadata.resultStatus = ResultStatus.ERROR;
           metadata.errorDetails = ex.getMessage();
           throw ex;
+        } finally {
+          if (client != null) {
+            client.shutdown();
+          }
         }
 
         logger.debug("FilePath: {}", srcFilePath);
