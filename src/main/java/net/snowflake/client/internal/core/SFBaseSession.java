@@ -25,6 +25,7 @@ import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.jdbc.SFConnectionHandler;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -1300,13 +1301,27 @@ public abstract class SFBaseSession {
    * @throws SnowflakeSQLException if failed to close the connection
    * @throws SFException if failed to close the connection
    */
-  public abstract void close() throws SFException, SnowflakeSQLException;
+  public void close() throws SFException, SnowflakeSQLException {
+    close(null);
+  }
+
+  /** Marker-aware overload for internal call paths. */
+  public abstract void close(InternalCallMarker internalCallMarker)
+      throws SFException, SnowflakeSQLException;
 
   /**
    * @return Returns the telemetry client, if supported, by this session. If not, should return a
    *     NoOpTelemetryClient.
    */
-  public abstract Telemetry getTelemetryClient();
+  public Telemetry getTelemetryClient() {
+    return getTelemetryClient(null);
+  }
+
+  /**
+   * Marker-aware overload for internal call paths. Implementations may override to bypass
+   * external-usage telemetry tracking.
+   */
+  public abstract Telemetry getTelemetryClient(InternalCallMarker internalCallMarker);
 
   /**
    * Makes a heartbeat call to check for session validity.

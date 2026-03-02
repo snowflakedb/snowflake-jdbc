@@ -353,7 +353,7 @@ public class TelemetryClient implements Telemetry {
       } else {
         post.setHeader(
             HttpHeaders.AUTHORIZATION,
-            "Snowflake Token=\"" + this.session.getSessionToken() + "\"");
+            "Snowflake Token=\"" + this.session.getSessionToken(internalCallMarker()) + "\"");
       }
 
       String response = null;

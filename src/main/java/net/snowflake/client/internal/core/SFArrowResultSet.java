@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.core.StmtUtil.eventHandler;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -133,7 +134,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(resultSetSerializable, session.getTelemetryClient(), sortResult);
+    this(resultSetSerializable, session.getTelemetryClient(internalCallMarker()), sortResult);
     this.converters =
         new Converters(
             resultSetSerializable.getTimeZone(),
@@ -161,7 +162,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     useSessionTimezone = resultSetSerializable.getUseSessionTimezone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSFBaseSession());
+    SessionUtil.updateSfDriverParamValues(
+        this.parameters, statement.getSFBaseSession(internalCallMarker()));
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {
@@ -211,7 +213,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
     this.sessionTimeZone = resultSetSerializable.getTimeZone();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
-    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
+    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData(internalCallMarker());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
     this.useSessionTimezone = resultSetSerializable.getUseSessionTimezone();

@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -715,7 +716,7 @@ public class StmtUtil {
     StmtInput stmtInput =
         new StmtInput()
             .setServerUrl(session.getServerUrl())
-            .setSessionToken(session.getSessionToken())
+            .setSessionToken(session.getSessionToken(internalCallMarker()))
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
             .setSocketTimeout(session.getHttpClientSocketTimeout())
             .setMediaType(SF_MEDIA_TYPE)

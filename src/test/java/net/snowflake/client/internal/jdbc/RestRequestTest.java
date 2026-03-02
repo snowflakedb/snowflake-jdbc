@@ -47,6 +47,7 @@ import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFTrustManager;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
@@ -996,7 +997,8 @@ public class RestRequestTest {
     Telemetry mockTelemetryClient = mock(Telemetry.class);
 
     when(mockContext.getSfSession()).thenReturn(mockSession);
-    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockSession.getTelemetryClient(any(InternalCallMarker.class)))
+        .thenReturn(mockTelemetryClient);
     when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
     when(mockStatusLine.getStatusCode()).thenReturn(500);
     when(mockStatusLine.getReasonPhrase()).thenReturn("Internal Server Error");
@@ -1029,7 +1031,7 @@ public class RestRequestTest {
       method.invoke(null, mockRequest, mockResponse, mockContext);
 
       Mockito.verify(mockContext).getSfSession();
-      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockSession).getTelemetryClient(any(InternalCallMarker.class));
       Mockito.verify(mockResponse).getStatusLine();
       Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getStatusCode();
       Mockito.verify(mockStatusLine, Mockito.atLeast(1)).getReasonPhrase();
@@ -1066,7 +1068,8 @@ public class RestRequestTest {
     SFBaseSession mockSession = mock(SFBaseSession.class);
     TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
 
-    when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+    when(mockSession.getTelemetryClient(any(InternalCallMarker.class)))
+        .thenReturn(mockTelemetryClient);
     when(mockContext.getSfSession()).thenReturn(mockSession);
 
     HttpExecutingContext mockHttpExecutingContext = mock(HttpExecutingContext.class);
@@ -1096,7 +1099,7 @@ public class RestRequestTest {
 
     ArgumentCaptor<TelemetryData> telemetryDataCaptor =
         ArgumentCaptor.forClass(TelemetryData.class);
-    Mockito.verify(mockSession).getTelemetryClient();
+    Mockito.verify(mockSession).getTelemetryClient(any(InternalCallMarker.class));
     Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
 
     TelemetryData capturedData = telemetryDataCaptor.getValue();
@@ -1135,7 +1138,8 @@ public class RestRequestTest {
     try {
       SFBaseSession mockSession = mock(SFBaseSession.class);
       TelemetryClient mockTelemetryClient = mock(TelemetryClient.class);
-      when(mockSession.getTelemetryClient()).thenReturn(mockTelemetryClient);
+      when(mockSession.getTelemetryClient(any(InternalCallMarker.class)))
+          .thenReturn(mockTelemetryClient);
 
       HttpClientSettingsKey settingsKey = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED);
       CloseableHttpClient httpClient = HttpUtil.buildHttpClient(settingsKey, null, false);
@@ -1162,7 +1166,7 @@ public class RestRequestTest {
 
       ArgumentCaptor<TelemetryData> telemetryDataCaptor =
           ArgumentCaptor.forClass(TelemetryData.class);
-      Mockito.verify(mockSession).getTelemetryClient();
+      Mockito.verify(mockSession).getTelemetryClient(any(InternalCallMarker.class));
       Mockito.verify(mockTelemetryClient).addLogToBatch(telemetryDataCaptor.capture());
 
       TelemetryData capturedData = telemetryDataCaptor.getValue();

@@ -1,10 +1,13 @@
 package net.snowflake.client.internal.core;
 
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
+
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -148,10 +151,10 @@ public abstract class SFBaseStatement {
       if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
         logger.debug("Setting sort on", false);
 
-        this.getSFBaseSession().setSessionPropertyByKey("sort", true);
+        this.getSFBaseSession(internalCallMarker()).setSessionPropertyByKey("sort", true);
       } else {
         logger.debug("Setting sort off", false);
-        this.getSFBaseSession().setSessionPropertyByKey("sort", false);
+        this.getSFBaseSession(internalCallMarker()).setSessionPropertyByKey("sort", false);
       }
     }
   }
@@ -181,6 +184,12 @@ public abstract class SFBaseStatement {
    * @return The SFBaseSession associated with this SFBaseStatement.
    */
   public abstract SFBaseSession getSFBaseSession();
+
+  /**
+   * Marker-aware overload for internal call paths. Implementations may override to bypass
+   * external-usage telemetry tracking.
+   */
+  public abstract SFBaseSession getSFBaseSession(InternalCallMarker internalCallMarker);
 
   /**
    * Retrieves the current result as a ResultSet, if any. This is invoked by SnowflakeStatement and

@@ -3,6 +3,7 @@ package net.snowflake.client.internal.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.sql.SQLException;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
 import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,7 +78,7 @@ class SFStatementTest {
     // Should call session.open() and not throw
     statement.renewSessionOnExpiry(sessionExpiredException, "old-token");
 
-    verify(mockSession).open();
+    verify(mockSession).open(any(InternalCallMarker.class));
   }
 
   @Test
