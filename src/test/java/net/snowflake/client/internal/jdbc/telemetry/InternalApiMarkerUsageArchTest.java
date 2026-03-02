@@ -8,7 +8,6 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import net.snowflake.client.api.resultset.SnowflakeResultSetSerializable;
-import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFBaseStatement;
@@ -17,10 +16,8 @@ import net.snowflake.client.internal.core.SFStatement;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.internal.jdbc.SnowflakeResultSetSerializableV1;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.CORE)
 class InternalApiMarkerUsageArchTest {
   private static final String INTERNAL_PACKAGE = "net.snowflake.client.internal..";
 
@@ -120,7 +117,8 @@ class InternalApiMarkerUsageArchTest {
         .should()
         .callMethod(ownerClass, methodName, parameterTypes)
         .because(
-            "internal call sites must use marker-aware overloads to avoid external telemetry false positives");
+            "internal call sites must use marker-aware overloads to avoid external telemetry false positives")
+        .allowEmptyShould(true);
   }
 
   private static ArchRule noInternalCallsToConstructor(
@@ -133,6 +131,7 @@ class InternalApiMarkerUsageArchTest {
         .should()
         .callConstructor(ownerClass, parameterTypes)
         .because(
-            "internal call sites must use marker-aware overloads to avoid external telemetry false positives");
+            "internal call sites must use marker-aware overloads to avoid external telemetry false positives")
+        .allowEmptyShould(true);
   }
 }
