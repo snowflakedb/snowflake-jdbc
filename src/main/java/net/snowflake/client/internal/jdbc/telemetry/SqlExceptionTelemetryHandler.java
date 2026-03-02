@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc.telemetry;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.PrintWriter;
@@ -42,7 +43,7 @@ public class SqlExceptionTelemetryHandler {
     Telemetry ibInstance = null;
     // if session is not null, try sending data using in-band telemetry
     if (session != null) {
-      ibInstance = session.getTelemetryClient();
+      ibInstance = session.getTelemetryClient(internalCallMarker());
     }
     // if in-band instance is successfully created, compile sql exception data into an in-band
     // telemetry log
