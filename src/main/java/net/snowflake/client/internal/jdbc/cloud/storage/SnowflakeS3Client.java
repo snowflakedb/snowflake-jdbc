@@ -65,6 +65,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
+import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
 import software.amazon.awssdk.transfer.s3.model.FileDownload;
@@ -195,6 +196,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             .readTimeout(Duration.ofMillis(clientConfig.socketTimeout))
             .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout)));
     clientBuilder.multipartEnabled(true);
+    clientBuilder.multipartConfiguration(
+        MultipartConfiguration.builder().thresholdInBytes(16L * 1024 * 1024).build());
 
     ClientOverrideConfiguration.Builder configurationBuilder =
         ClientOverrideConfiguration.builder();
