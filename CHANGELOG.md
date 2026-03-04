@@ -10,6 +10,8 @@
     - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
     - Add internal API usage telemetry tracker
     - Change S3 Client's multipart threshold to 16MB
+    - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
+    - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry

@@ -11,6 +11,23 @@ import java.util.Arrays;
 import java.util.Properties;
 
 public class FatJarTestApp {
+
+  // Static initializer to load FIPS configuration if available
+  static {
+    try {
+      // This will only succeed when FipsInitializer.class is on the classpath
+      // (i.e., when compiled with the fips profile)
+      Class<?> fipsInitializer = Class.forName("net.snowflake.FipsInitializer");
+      fipsInitializer.getMethod("ensureInitialized").invoke(null);
+      System.out.println("[INFO] Running in FIPS mode");
+    } catch (ClassNotFoundException e) {
+      // FIPS not available - normal mode
+      System.out.println("[INFO] Running in normal (non-FIPS) mode");
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to initialize FIPS mode", e);
+    }
+  }
+
   public static void main(String[] args) throws Exception {
     try(Connection connection = getConnection(args); Statement stmt = connection.createStatement()) {
       System.out.println("RUNNING SELECT 1");

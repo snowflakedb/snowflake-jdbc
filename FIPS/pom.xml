@@ -575,22 +575,6 @@
                       <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.conscrypt</pattern>
-                      <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>opencensus</pattern>
                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
                     </relocation>
@@ -679,6 +663,7 @@
             <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
+            <version>${version.plugin.antrun}</version>
             <executions>
               <execution>
                 <id>repack</id>

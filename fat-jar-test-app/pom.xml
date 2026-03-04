@@ -12,20 +12,105 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <exec.mainClass>net.snowflake.FatJarTestApp</exec.mainClass>
+        <additional.classpath></additional.classpath>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-cp</argument>
+                        <argument>${project.build.outputDirectory}:${snowflake.jdbc.jar}:${settings.localRepository}/org/slf4j/slf4j-api/2.0.4/slf4j-api-2.0.4.jar${additional.classpath}</argument>
+                        <argument>${exec.mainClass}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
-        <dependency>
-            <groupId>net.snowflake</groupId>
-            <artifactId>snowflake-jdbc</artifactId>
-            <version>ignored</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/../target/snowflake-jdbc.jar</systemPath>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>2.0.4</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <snowflake.jdbc.jar>${project.basedir}/../target/snowflake-jdbc.jar</snowflake.jdbc.jar>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>net.snowflake</groupId>
+                    <artifactId>snowflake-jdbc</artifactId>
+                    <version>ignored</version>
+                    <scope>system</scope>
+                    <systemPath>${project.basedir}/../target/snowflake-jdbc.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>fips</id>
+            <properties>
+                <snowflake.jdbc.jar>${project.basedir}/../FIPS/target/snowflake-jdbc-fips.jar</snowflake.jdbc.jar>
+                <additional.classpath>:${settings.localRepository}/org/bouncycastle/bc-fips/1.0.2.6/bc-fips-1.0.2.6.jar:${settings.localRepository}/org/bouncycastle/bcpkix-fips/1.0.8/bcpkix-fips-1.0.8.jar</additional.classpath>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Add FIPS-specific source directory -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-fips-sources</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>${project.basedir}/src/main/fips-java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>net.snowflake</groupId>
+                    <artifactId>snowflake-jdbc-fips</artifactId>
+                    <version>ignored</version>
+                    <scope>system</scope>
+                    <systemPath>${project.basedir}/../FIPS/target/snowflake-jdbc-fips.jar</systemPath>
+                </dependency>
+                <dependency>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bc-fips</artifactId>
+                    <version>1.0.2.6</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-fips</artifactId>
+                    <version>1.0.8</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

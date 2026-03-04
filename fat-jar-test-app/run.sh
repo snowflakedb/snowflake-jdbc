@@ -6,6 +6,8 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 
+JDBC_JAR=$1
+
 mkdir -p $THIS_DIR/target
 
 # Setup GPG home directory if running in GitHub Actions
@@ -51,14 +53,14 @@ fi
 
 echo "[INFO] Building fat jar"
 cd "$JDBC_ROOT"
-./mvnw package -DskipTests -Dmaven.test.skip=true --quiet
+if [ "$JDBC_JAR" == "fips" ] ; then
+    MAVEN_PROFILE="fips"
+    ./mvnw -f FIPS/pom.xml package -DskipTests -Dmaven.test.skip=true --quiet
+else
+    MAVEN_PROFILE="default"
+    ./mvnw package -DskipTests -Dmaven.test.skip=true --quiet
+fi
 
-echo "[INFO] Compiling fat jar test app"
+echo "[INFO] Running fat jar test app with Maven profile: $MAVEN_PROFILE"
 cd "$THIS_DIR"
-../mvnw compile
-
-echo "[INFO] Getting slf4j"
-wget https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar -P target
-
-echo "[INFO] Running fat jar test app"
-java -cp "target/classes:$JDBC_ROOT/target/snowflake-jdbc.jar:$THIS_DIR/target/slf4j-api-2.0.17.jar" net.snowflake.FatJarTestApp
+../mvnw compile exec:exec -P "$MAVEN_PROFILE"
