@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.log;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -10,5 +11,10 @@ public class SFLoggerFactoryTest {
   public void testGetLoggerByNameDefault() {
     SFLogger sflogger = SFLoggerFactory.getLogger("SnowflakeConnectionImpl");
     assertTrue(sflogger instanceof JDK14Logger);
+  }
+
+  @Test
+  public void testGetLoggerImplementationNameDefaultsToJUL() {
+    assertEquals("JUL", SFLoggerFactory.getLoggerImplementationName());
   }
 }

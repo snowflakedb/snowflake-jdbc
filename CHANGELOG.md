@@ -12,6 +12,7 @@
     - Change S3 Client's multipart threshold to 16MB
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
     - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
+    - Add logging implementation to CLIENT_ENVIRONMENT telemetry
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry

@@ -351,6 +351,14 @@ public class SessionUtilTest {
     String applicationPath = (String) clientEnv.get("APPLICATION_PATH");
     assertThat("APPLICATION_PATH should not be empty", !applicationPath.isEmpty());
     assertThat("APPLICATION_PATH should contain file path", isValidPath(applicationPath));
+
+    // Verify logging implementation is reported
+    assertThat(
+        "LOGGING_IMPLEMENTATION should be set", clientEnv.containsKey("LOGGING_IMPLEMENTATION"));
+    String loggingImpl = (String) clientEnv.get("LOGGING_IMPLEMENTATION");
+    assertThat(
+        "LOGGING_IMPLEMENTATION should be JUL or SLF4J",
+        "JUL".equals(loggingImpl) || "SLF4J".equals(loggingImpl));
   }
 
   @Test

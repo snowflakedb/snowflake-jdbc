@@ -58,6 +58,20 @@ public class SFLoggerFactory {
     }
   }
 
+  public static String getLoggerImplementationName() {
+    // Ensure the implementation is initialized
+    if (loggerImplementation == null) {
+      getLogger(SFLoggerFactory.class);
+    }
+    switch (loggerImplementation) {
+      case SLF4JLOGGER:
+        return "SLF4J";
+      case JDK14LOGGER:
+      default:
+        return "JUL";
+    }
+  }
+
   /**
    * A replacement for getLogger function, whose parameter is Class&lt;?&gt;, when Class&lt;?&gt; is
    * inaccessible. For example, the name we have is an alias name of a class, we can't get the
