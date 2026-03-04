@@ -1173,6 +1173,7 @@ public class SessionUtil {
     }
 
     clientEnv.put("JDBC_JAR_NAME", DriverUtil.getJdbcJarname());
+    clientEnv.put("LOGGING_IMPLEMENTATION", SFLoggerFactory.getLoggerImplementationName());
 
     // Add platform detection (if not disabled)
     if (!loginInput.isDisablePlatformDetection()) {
