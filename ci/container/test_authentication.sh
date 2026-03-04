@@ -19,5 +19,5 @@ $MVNW_EXE -DjenkinsIT \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     -Dnot-self-contained-jar \
     -Denforcer.skip=true \
-    verify \
+    clean verify \
     --batch-mode --show-version
