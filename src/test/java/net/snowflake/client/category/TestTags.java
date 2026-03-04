@@ -8,6 +8,7 @@ public class TestTags {
   public static final String CORE = "core";
   public static final String DIAGNOSTIC = "diagnostic";
   public static final String LOADER = "loader";
+  public static final String DATABASE_META_DATA = "databaseMetaData";
   public static final String OTHERS = "others";
   public static final String RESULT_SET = "resultSet";
   public static final String STATEMENT = "statement";
