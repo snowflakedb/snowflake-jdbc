@@ -117,7 +117,8 @@ jobs:
                               ]'
                         )
                     }}
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
+                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
@@ -171,7 +172,8 @@ jobs:
                               ]'
                         )
                     }}
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
+                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
@@ -224,7 +226,8 @@ jobs:
                               ]'
                         )
                     }}
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
+                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
@@ -286,7 +289,8 @@ jobs:
                               ]'
                         )
                     }}
-                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
+                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
