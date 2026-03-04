@@ -8,6 +8,7 @@ import org.junit.platform.suite.api.ExcludeTags;
   TestTags.ARROW,
   TestTags.DIAGNOSTIC,
   TestTags.CONNECTION,
+  TestTags.DATABASE_META_DATA,
   TestTags.LOADER,
   TestTags.OTHERS,
   TestTags.RESULT_SET,

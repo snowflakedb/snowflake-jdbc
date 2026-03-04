@@ -120,6 +120,7 @@ jobs:
                 category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
                            {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['']
@@ -175,6 +176,7 @@ jobs:
                 category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
                            {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['']
@@ -229,6 +231,7 @@ jobs:
                 category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
                            {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['']
@@ -292,6 +295,7 @@ jobs:
                 category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
                            {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
                            {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData'},
                            {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
                            {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
         steps:
