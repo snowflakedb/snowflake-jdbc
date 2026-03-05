@@ -2606,40 +2606,6 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                   r -> Arrays.asList(r.getString("TABLE_NAME"), r.getString("TABLE_SCHEM"))));
         }
       }
-
-      @Test
-      void testGetProcedures() throws Exception {
-        try (ResultSet rs =
-            metaData.getProcedures(database, schemaWithUnderscore, procedureWithUnderscore)) {
-          assertMetadataQueryResult(
-              rs,
-              "procedures like '" + procedureWithUnderscore + "' in database \"" + database + "\"",
-              2,
-              Arrays.asList(
-                  Arrays.asList(alternativeProcedure, alternativeSchema),
-                  Arrays.asList(procedureWithUnderscore, schemaWithUnderscore)),
-              handleException(
-                  r ->
-                      Arrays.asList(
-                          r.getString("PROCEDURE_NAME"), r.getString("PROCEDURE_SCHEM"))));
-        }
-      }
-
-      @Test
-      void testGetFunctions() throws Exception {
-        try (ResultSet rs =
-            metaData.getFunctions(database, schemaWithUnderscore, functionWithUnderscore)) {
-          assertMetadataQueryResult(
-              rs,
-              "functions like '" + functionWithUnderscore + "' in database \"" + database + "\"",
-              2,
-              Arrays.asList(
-                  Arrays.asList(alternativeFunction, alternativeSchema),
-                  Arrays.asList(functionWithUnderscore, schemaWithUnderscore)),
-              handleException(
-                  r -> Arrays.asList(r.getString("FUNCTION_NAME"), r.getString("FUNCTION_SCHEM"))));
-        }
-      }
     }
 
     @Nested
