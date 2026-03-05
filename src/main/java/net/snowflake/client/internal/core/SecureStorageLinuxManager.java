@@ -28,14 +28,12 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
 
   private SecureStorageLinuxManager() {
     fileCacheManager =
-        FileCacheManager.builder()
+        new FileCacheManagerBuilder()
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
             .build();
-    logger.debug(
-        "Using temporary file: {} as a token cache storage", fileCacheManager.getCacheFilePath());
   }
 
   private static class SecureStorageLinuxManagerHolder {

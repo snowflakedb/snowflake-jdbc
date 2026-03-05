@@ -13,6 +13,7 @@
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
     - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
     - Add logging implementation to CLIENT_ENVIRONMENT telemetry
+    - Fix NPE when HOME directory cache is not available
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
