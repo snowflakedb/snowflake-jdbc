@@ -22,7 +22,7 @@ echo "[Info] JDBC driver version: $JDBC_VERSION"
 # Ensure parent POM is also in ~/.m2 (needed for Maven dependency resolution)
 if [ ! -f "$HOME/.m2/repository/net/snowflake/snowflake-jdbc-parent/$JDBC_VERSION/"*.pom ]; then
     echo "[Info] Installing parent POM to local Maven repo..."
-    if ! (cd "$JDBC_ROOT" && ./mvnw install -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
+    if ! (cd "$JDBC_ROOT" && ./mvnw install -N -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
         echo "[Error] Failed to install parent POM"
         exit 1
     fi
