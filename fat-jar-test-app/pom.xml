@@ -26,7 +26,7 @@
                     <executable>java</executable>
                     <arguments>
                         <argument>-cp</argument>
-                        <argument>${project.build.outputDirectory}:${snowflake.jdbc.jar}:${settings.localRepository}/org/slf4j/slf4j-api/2.0.4/slf4j-api-2.0.4.jar${additional.classpath}</argument>
+                        <argument>${project.build.outputDirectory}:${snowflake.jdbc.jar}${additional.classpath}</argument>
                         <argument>${exec.mainClass}</argument>
                     </arguments>
                 </configuration>
@@ -35,11 +35,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.4</version>
-        </dependency>
     </dependencies>
 
     <profiles>
