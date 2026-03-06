@@ -5,14 +5,12 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
-import com.azure.core.http.ProxyOptions;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
@@ -22,14 +20,12 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.api.driver.SnowflakeDriver;
-import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
@@ -170,88 +166,6 @@ public class HttpUtil {
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
-  }
-
-  /**
-   * A static function to create Azure proxy params for sessionless connections using the proxy
-   * params from the StageInfo
-   *
-   * @param proxyProperties proxy properties
-   * @throws SnowflakeSQLException when invalid proxy properties encountered
-   */
-  public static ProxyOptions createSessionlessProxyOptionsForAzure(Properties proxyProperties)
-      throws SnowflakeSQLException {
-    if (proxyProperties != null
-        && proxyProperties.size() > 0
-        && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
-      Boolean useProxy =
-          Boolean.valueOf(
-              proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
-      if (useProxy) {
-        String proxyHost =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
-        int proxyPort;
-        try {
-          proxyPort =
-              Integer.parseInt(
-                  proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new SnowflakeSQLException(
-              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
-        }
-        String proxyUser =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
-        String proxyPassword =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
-        String nonProxyHosts =
-            proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
-
-        ProxyOptions proxyOptions =
-            new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        proxyOptions.setCredentials(proxyUser, proxyPassword);
-        proxyOptions.setNonProxyHosts(nonProxyHosts);
-        logger.debug(
-            "Setting sessionless Azure proxy. Host: {}, port: {}, user: {}, passwordProvided: {}, nonProxyHosts: {}",
-            proxyHost,
-            proxyPort,
-            proxyUser,
-            SFLoggerUtil.isVariableProvided(proxyPassword),
-            nonProxyHosts);
-        return proxyOptions;
-      } else {
-        logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
-      }
-    } else {
-      logger.debug("Omitting sessionless Azure proxy setup");
-    }
-    return null;
-  }
-
-  /**
-   * A static function to set Azure proxy params when there is a valid session
-   *
-   * @param key key to HttpClient map containing OCSP and proxy info
-   */
-  public static ProxyOptions createProxyOptionsForAzure(HttpClientSettingsKey key) {
-    if (key != null && key.usesProxy()) {
-      ProxyOptions proxyOptions =
-          new ProxyOptions(
-              ProxyOptions.Type.HTTP,
-              new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
-      proxyOptions.setCredentials(key.getProxyUser(), key.getProxyPassword());
-      proxyOptions.setNonProxyHosts(key.getNonProxyHosts());
-      logger.debug(
-          "Setting Azure proxy. Host: {}, port: {}, user: {}, passwordProvided: {}, nonProxyHosts: {}",
-          key.getProxyHost(),
-          key.getProxyPort(),
-          key.getProxyUser(),
-          SFLoggerUtil.isVariableProvided(key.getProxyPassword()),
-          key.getNonProxyHosts());
-      return proxyOptions;
-    } else {
-      logger.debug("Omitting Azure proxy setup");
-      return null;
-    }
   }
 
   /**

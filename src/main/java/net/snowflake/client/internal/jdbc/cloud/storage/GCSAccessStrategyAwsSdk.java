@@ -86,10 +86,12 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
-      proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(session.getHttpClientKey());
+      proxyConfiguration =
+          CloudStorageProxyFactory.createProxyConfigurationForS3(session.getHttpClientKey());
     } else {
       proxyConfiguration =
-          S3HttpUtil.createSessionlessProxyConfigurationForS3(stage.getProxyProperties());
+          CloudStorageProxyFactory.createSessionlessProxyConfigurationForS3(
+              stage.getProxyProperties());
     }
 
     if (session instanceof SFSession) {
