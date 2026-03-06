@@ -17,7 +17,9 @@ import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.HttpUtil;
+import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -216,7 +218,8 @@ public class TelemetryIT extends AbstractDriverIT {
             parameters.get("account"),
             parameters.get("user"));
 
-    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    CloseableHttpClient httpClient =
+        HttpUtil.buildHttpClient(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN), null, false);
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
@@ -240,7 +243,8 @@ public class TelemetryIT extends AbstractDriverIT {
             parameters.get("account"),
             parameters.get("user"));
 
-    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    CloseableHttpClient httpClient =
+        HttpUtil.buildHttpClient(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN), null, false);
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
@@ -271,7 +275,8 @@ public class TelemetryIT extends AbstractDriverIT {
       throws SFException, SQLException, IOException {
     String oAuthToken = getOAuthToken();
     Map<String, String> parameters = getConnectionParameters();
-    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    CloseableHttpClient httpClient =
+        HttpUtil.buildHttpClient(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN), null, false);
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
