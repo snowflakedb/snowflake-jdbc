@@ -204,7 +204,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   static {
     // init OCSP response cache file manager
     fileCacheManager =
-        FileCacheManager.builder()
+        new FileCacheManagerBuilder()
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
