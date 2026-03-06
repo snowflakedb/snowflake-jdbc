@@ -83,7 +83,7 @@
     <slf4j.version>2.0.13</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <integrationTestSuites>UnitTestSuite</integrationTestSuites>
-    <tika.version>2.4.1</tika.version>
+    <tika.version>3.2.2</tika.version>
     <tukaani.version>1.9</tukaani.version>
     <version.maven>3.6.3</version.maven>
     <version.plugin.antrun>3.1.0</version.plugin.antrun>
