@@ -4,9 +4,11 @@ import static net.snowflake.client.internal.core.Constants.CLOUD_STORAGE_CREDENT
 
 import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.NoCredentials;
+import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -32,7 +34,16 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSDefaultAccessStrategy.class);
   private Storage gcsClient = null;
 
-  GCSDefaultAccessStrategy(StageInfo stage, SFSession session) {
+  GCSDefaultAccessStrategy(StageInfo stage, SFSession session) throws SnowflakeSQLException {
+    HttpTransportFactory transportFactory;
+    if (session != null) {
+      transportFactory =
+          CloudStorageProxyFactory.createHttpTransportForGCS(session.getHttpClientKey());
+    } else {
+      transportFactory =
+          CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(stage.getProxyProperties());
+    }
+
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
 
     if (accessToken != null) {
@@ -44,6 +55,11 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
         logger.debug(
             "Adding explicit credentials to avoid default credential lookup by the GCS client");
         builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
+      }
+
+      if (transportFactory != null) {
+        builder.setTransportOptions(
+            HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build());
       }
 
       // Using GoogleCredential with access token will cause IllegalStateException when the token
@@ -60,6 +76,10 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       HttpStorageOptions.Builder builder =
           HttpStorageOptions.newBuilder().setCredentials(NoCredentials.getInstance());
       overrideHost(stage, builder);
+      if (transportFactory != null) {
+        builder.setTransportOptions(
+            HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build());
+      }
       this.gcsClient = builder.build().getService();
     }
   }
