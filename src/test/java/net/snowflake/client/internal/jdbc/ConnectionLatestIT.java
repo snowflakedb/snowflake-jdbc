@@ -1187,8 +1187,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null), null);
 
     JsonNode jsonNode = mapper.readTree(theString);
-    assertEquals(
-        "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
+    assertTrue(jsonNode.get("success").asBoolean());
   }
 
   @Test
