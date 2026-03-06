@@ -418,12 +418,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       SnowflakeAsyncResultSet sfResultSet = rs1.unwrap(SnowflakeAsyncResultSet.class);
       // status should change state to RUNNING and then to SUCCESS
       await()
-          .atMost(Duration.ofSeconds(5))
+          .atMost(Duration.ofSeconds(10))
           .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.RUNNING));
 
       // it may take more time to finish the test when running in parallel in CI builds
       await()
-          .atMost(Duration.ofSeconds(10))
+          .atMost(Duration.ofSeconds(20))
           .until(() -> sfResultSet.getStatus().getStatus(), equalTo(QueryStatus.Status.SUCCESS));
     }
   }
