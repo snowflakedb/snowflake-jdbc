@@ -10,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class S3HttpUtilTest {
+class CloudStorageProxyFactoryTest {
   static Stream<Arguments> prepareNonProxyHostsTestCases() {
     return Stream.of(
         Arguments.of("example.com", new HashSet<>(Arrays.asList("\\Qexample.com\\E"))),
@@ -31,7 +31,7 @@ class S3HttpUtilTest {
   @ParameterizedTest
   @MethodSource("prepareNonProxyHostsTestCases")
   void testPrepareNonProxyHosts(String input, Set<String> expected) {
-    Set<String> result = S3HttpUtil.prepareNonProxyHosts(input);
+    Set<String> result = CloudStorageProxyFactory.prepareNonProxyHostsForS3(input);
     assertEquals(expected, result);
   }
 }

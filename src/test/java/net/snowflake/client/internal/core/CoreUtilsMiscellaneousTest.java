@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.azure.core.http.ProxyOptions;
+import com.google.auth.http.HttpTransportFactory;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,7 +20,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
-import net.snowflake.client.internal.jdbc.cloud.storage.S3HttpUtil;
+import net.snowflake.client.internal.jdbc.cloud.storage.CloudStorageProxyFactory;
 import org.apache.http.HttpHost;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
@@ -111,7 +112,8 @@ public class CoreUtilsMiscellaneousTest {
             "https",
             "jdbc",
             false);
-    ProxyConfiguration proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(testKey);
+    ProxyConfiguration proxyConfiguration =
+        CloudStorageProxyFactory.createProxyConfigurationForS3(testKey);
     assertEquals(HttpProtocol.HTTPS.toString(), proxyConfiguration.scheme().toUpperCase());
     assertEquals("snowflakecomputing.com", proxyConfiguration.host());
     assertEquals(443, proxyConfiguration.port());
@@ -133,7 +135,7 @@ public class CoreUtilsMiscellaneousTest {
     props.put("nonProxyHosts", "baz.com | foo.com");
     props.put("proxyProtocol", "http");
     ProxyConfiguration proxyConfiguration =
-        S3HttpUtil.createSessionlessProxyConfigurationForS3(props);
+        CloudStorageProxyFactory.createSessionlessProxyConfigurationForS3(props);
     assertEquals(HttpProtocol.HTTP.toString(), proxyConfiguration.scheme().toUpperCase());
     assertEquals("localhost", proxyConfiguration.host());
     assertEquals(8084, proxyConfiguration.port());
@@ -148,7 +150,60 @@ public class CoreUtilsMiscellaneousTest {
         assertThrows(
             SnowflakeSQLException.class,
             () -> {
-              S3HttpUtil.createSessionlessProxyConfigurationForS3(props);
+              CloudStorageProxyFactory.createSessionlessProxyConfigurationForS3(props);
+            });
+    assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+  }
+
+  @Test
+  public void testSetProxyForGCS() {
+    HttpClientSettingsKey testKey =
+        new HttpClientSettingsKey(
+            OCSPMode.FAIL_OPEN,
+            "snowflakecomputing.com",
+            443,
+            "*.foo.com",
+            "testuser",
+            "pw",
+            "https",
+            "jdbc",
+            false);
+    HttpTransportFactory transportFactory =
+        CloudStorageProxyFactory.createHttpTransportForGCS(testKey);
+    assertNotNull(transportFactory);
+    assertNotNull(transportFactory.create());
+    // Verify null is returned when no proxy is configured
+    HttpClientSettingsKey noProxyKey = new HttpClientSettingsKey(OCSPMode.FAIL_OPEN);
+    assertNull(CloudStorageProxyFactory.createHttpTransportForGCS(noProxyKey));
+    assertNull(CloudStorageProxyFactory.createHttpTransportForGCS(null));
+  }
+
+  @Test
+  public void testSetSessionlessProxyForGCS() throws SnowflakeSQLException {
+    Properties props = new Properties();
+    props.put("useProxy", "true");
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8084");
+    props.put("proxyUser", "testuser");
+    props.put("proxyPassword", "pw");
+    props.put("nonProxyHosts", "baz.com | foo.com");
+    props.put("proxyProtocol", "http");
+    HttpTransportFactory transportFactory =
+        CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(props);
+    assertNotNull(transportFactory);
+    assertNotNull(transportFactory.create());
+    // Verify null is returned when proxy is disabled
+    Properties noProxyProps = new Properties();
+    noProxyProps.put("useProxy", "false");
+    assertNull(CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(noProxyProps));
+    assertNull(CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(null));
+    // Test that exception is thrown when port number is invalid
+    props.put("proxyPort", "invalidnumber");
+    SnowflakeSQLException e =
+        assertThrows(
+            SnowflakeSQLException.class,
+            () -> {
+              CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(props);
             });
     assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
@@ -166,7 +221,7 @@ public class CoreUtilsMiscellaneousTest {
             "https",
             "jdbc",
             false);
-    ProxyOptions proxyOptions = HttpUtil.createProxyOptionsForAzure(testKey);
+    ProxyOptions proxyOptions = CloudStorageProxyFactory.createProxyOptionsForAzure(testKey);
     assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
     assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxyOptions.getAddress());
     assertEquals("testuser", proxyOptions.getUsername());
@@ -183,7 +238,8 @@ public class CoreUtilsMiscellaneousTest {
     props.put("proxyUser", "testuser");
     props.put("proxyPassword", "pw");
     props.put("nonProxyHosts", "*");
-    ProxyOptions proxyOptions = HttpUtil.createSessionlessProxyOptionsForAzure(props);
+    ProxyOptions proxyOptions =
+        CloudStorageProxyFactory.createSessionlessProxyOptionsForAzure(props);
     assertEquals(ProxyOptions.Type.HTTP, proxyOptions.getType());
     assertEquals(new InetSocketAddress("localhost", 8084), proxyOptions.getAddress());
     assertEquals("testuser", proxyOptions.getUsername());
@@ -195,7 +251,7 @@ public class CoreUtilsMiscellaneousTest {
         assertThrows(
             SnowflakeSQLException.class,
             () -> {
-              HttpUtil.createSessionlessProxyOptionsForAzure(props);
+              CloudStorageProxyFactory.createSessionlessProxyOptionsForAzure(props);
             });
     assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
   }
@@ -397,7 +453,8 @@ public class CoreUtilsMiscellaneousTest {
   public void testNullAndEmptyProxySettingsForS3() {
     HttpClientSettingsKey testKey =
         new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
-    ProxyConfiguration proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(testKey);
+    ProxyConfiguration proxyConfiguration =
+        CloudStorageProxyFactory.createProxyConfigurationForS3(testKey);
     assertEquals(HttpProtocol.HTTP.toString(), proxyConfiguration.scheme().toUpperCase());
     assertEquals("", proxyConfiguration.host());
     assertEquals(443, proxyConfiguration.port());
