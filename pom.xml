@@ -771,7 +771,30 @@
         </property>
       </activation>
       <build>
+        <resources>
+          <resource>
+            <directory>${basedir}/src/main/resources-fat-jar</directory>
+          </resource>
+        </resources>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>add-fat-jar-sources</id>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <phase>generate-sources</phase>
+                <configuration>
+                  <sources>
+                    <source>${basedir}/src/main/java-fat-jar</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
             <groupId>org.apache.maven.plugins</groupId>
@@ -812,6 +835,10 @@
                       <excludes>
                         <exclude>org.apache.log4j.*</exclude>
                       </excludes>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.slf4j</pattern>
+                      <shadedPattern>${shadeBase}.org.slf4j</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>software.amazon.awssdk</pattern>
@@ -1123,9 +1150,15 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- contains class name from before shading, loaded with Class.forName -->
-                    <replace file="${project.build.directory}/relocate/net/snowflake/client/jdbc/internal/software/amazon/awssdk/services/s3/execution.interceptors"
-                             token="software.amazon.awssdk"
-                             value="net.snowflake.client.jdbc.internal.software.amazon.awssdk"/>
+                    <replace file="${project.build.directory}/relocate/net/snowflake/client/jdbc/internal/software/amazon/awssdk/services/s3/execution.interceptors" token="software.amazon.awssdk" value="net.snowflake.client.jdbc.internal.software.amazon.awssdk"/>
+                    <!-- Overwrite shaded SLF4JLogger with unshaded version.
+                         The shade plugin rewrites org.slf4j references to the shaded namespace,
+                         but SLF4JLogger must reference the user's real org.slf4j for SLF4J opt-in.
+                         SLF4JJCLWrapper is left shaded since it also implements the shaded
+                         org.apache.commons.logging.Log interface. -->
+                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class"
+                          todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"
+                          overwrite="true"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1263,11 +1296,11 @@
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
-              <configuration>
-                <systemPropertyVariables>
-                  <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
-                  <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
-                </systemPropertyVariables>
+                <configuration>
+                  <systemPropertyVariables>
+                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+                  </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>

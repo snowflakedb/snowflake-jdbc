@@ -7,6 +7,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 
 JDBC_JAR=$1
+LOGGING_MODE=${2:-}
 
 mkdir -p $THIS_DIR/target
 
@@ -61,6 +62,12 @@ else
     ./mvnw package -DskipTests -Dmaven.test.skip=true --quiet
 fi
 
-echo "[INFO] Running fat jar test app with Maven profile: $MAVEN_PROFILE"
+# Build Maven profiles list
+PROFILES="$MAVEN_PROFILE"
+if [[ "$LOGGING_MODE" == "slf4j" ]]; then
+    PROFILES="$PROFILES,slf4j"
+fi
+
+echo "[INFO] Running fat jar test app with Maven profiles: $PROFILES"
 cd "$THIS_DIR"
-../mvnw compile exec:exec -P "$MAVEN_PROFILE"
+../mvnw compile exec:exec -P "$PROFILES"
