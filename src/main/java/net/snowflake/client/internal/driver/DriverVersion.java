@@ -15,13 +15,13 @@ import net.snowflake.common.core.SqlState;
  */
 public final class DriverVersion {
 
-  private static final String implementVersion = DriverVersionProperties.get("version");
+  private static final String implementVersion = readAndNormalizeVersion();
 
   private final int major;
+
   private final int minor;
   private final long patch;
   private final String fullVersion;
-
   private static final DriverVersion INSTANCE = parseFromStaticVersion();
 
   private DriverVersion(int major, int minor, long patch, String fullVersion) {
@@ -38,6 +38,17 @@ public final class DriverVersion {
    */
   public static DriverVersion getInstance() {
     return INSTANCE;
+  }
+
+  private static String readAndNormalizeVersion() {
+    String version = DriverVersionProperties.get("version");
+    if (version == null) {
+      return null;
+    }
+    if (version.endsWith("-SNAPSHOT")) {
+      version = version.substring(0, version.length() - "-SNAPSHOT".length());
+    }
+    return version;
   }
 
   /**
