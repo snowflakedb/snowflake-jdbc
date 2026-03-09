@@ -14,6 +14,7 @@
     - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
     - Add logging implementation to CLIENT_ENVIRONMENT telemetry 
     - Bumped `commons-compress` dependency to latest (1.28.0) to address CVE-2024-25710 and CVE-2024-26308 (snowflakedb/snowflake-jdbc#2538)
+    - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry
