@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.log;
 
+import net.snowflake.client.internal.driver.DriverProperties;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.IMarkerFactory;
 import org.slf4j.helpers.BasicMarkerFactory;
@@ -22,7 +23,8 @@ import org.slf4j.spi.SLF4JServiceProvider;
  */
 public class SFBridgeServiceProvider implements SLF4JServiceProvider {
 
-  private static final String REQUESTED_API_VERSION = "2.0.13";
+  private static final String REQUESTED_API_VERSION =
+      DriverProperties.get("slf4j.version");
 
   private ILoggerFactory loggerFactory;
   private IMarkerFactory markerFactory;

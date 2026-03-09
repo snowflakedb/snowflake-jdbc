@@ -17,7 +17,7 @@ public class FatJarTestApp {
   private static final String LOGGER_IMPL_PROPERTY = "net.snowflake.jdbc.loggerImpl";
   private static final String SLF4J_LOGGER_CLASS = "net.snowflake.client.log.SLF4JLogger";
 
-  private static final String loggerImpl = System.getProperty(LOGGER_IMPL_PROPERTY);
+  private static final String LOGGER_IMPL = System.getProperty(LOGGER_IMPL_PROPERTY);
 
   private static final String[] CLOUD_SDK_LOGGER_PATTERNS = {
     "net.snowflake.client.jdbc.internal.software.amazon",
@@ -69,7 +69,7 @@ public class FatJarTestApp {
   }
 
   private static void setupLogging() throws Exception {
-    if (SLF4J_LOGGER_CLASS.equals(loggerImpl)) {
+    if (SLF4J_LOGGER_CLASS.equals(LOGGER_IMPL)) {
       System.setProperty("fatjar.logfile", logFile.getAbsolutePath());
       System.out.println("[INFO] SLF4J logging to: " + logFile.getAbsolutePath());
     } else {
@@ -82,7 +82,7 @@ public class FatJarTestApp {
 
   private static void verifyLogs() throws Exception {
     String logOutput = new String(Files.readAllBytes(logFile.toPath()));
-    String mode = SLF4J_LOGGER_CLASS.equals(loggerImpl) ? "SLF4J" : "JUL";
+    String mode = SLF4J_LOGGER_CLASS.equals(LOGGER_IMPL) ? "SLF4J" : "JUL";
     System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
     String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
 

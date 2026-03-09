@@ -8,13 +8,14 @@ import net.snowflake.common.core.SqlState;
  * Manages Snowflake JDBC driver version information.
  *
  * <p>This class is responsible for parsing and providing access to the driver's version numbers
- * (major, minor, and patch). The version is parsed from a version string in the format
- * "major.minor.patch".
+ * (major, minor, and patch). The version is read from {@code version.properties} on the classpath,
+ * which is populated by Maven resource filtering at build time.
  *
  * <p>This class is thread-safe and immutable.
  */
 public final class DriverVersion {
-  private static final String implementVersion = "4.0.2";
+
+  private static final String implementVersion = DriverVersionProperties.get("version");
 
   private final int major;
   private final int minor;
