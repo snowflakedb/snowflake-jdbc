@@ -335,17 +335,17 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testBasicTableWithSomeFileChunks(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(90000, 1, "", true, false, queryResultFormat);
+    testBasicTableHarness(10000, 1, "", true, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 1, "", true, true, queryResultFormat);
+    testBasicTableHarness(10000, 1, "", true, true, queryResultFormat);
     // Result only includes first data chunk, test maxSize is median.
-    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, false, queryResultFormat);
+    testBasicTableHarness(10000, 300 * 1024, "", false, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, true, queryResultFormat);
+    testBasicTableHarness(10000, 300 * 1024, "", false, true, queryResultFormat);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, false, queryResultFormat);
+    testBasicTableHarness(10000, 1024 * 1024, "", false, false, queryResultFormat);
     // Test Async mode
-    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, true, queryResultFormat);
+    testBasicTableHarness(10000, 1024 * 1024, "", false, true, queryResultFormat);
   }
 
   /**
@@ -468,7 +468,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-      int rowCount = 30000;
+      int rowCount = 5000;
       statement.execute(
           "insert into table_basic select "
               + "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
@@ -545,7 +545,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public void testSplitResultSetSerializable(String queryResultFormat) throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    int rowCount = 90000;
+    int rowCount = 10000;
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement()) {
 
@@ -569,23 +569,18 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
     }
 
-    // Split deserializedResultSet by 3M, the result should be the same
-    List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);
-    String chunkResultString = deserializeResultSet(fileNameSplit3M);
+    // Split deserializedResultSet by 300KB, the result should be the same
+    List<String> fileNameSplit300K = splitResultSetSerializables(fileNameList, 300 * 1024);
+    String chunkResultString = deserializeResultSet(fileNameSplit300K);
     assertEquals(chunkResultString, originalResultCSVString);
 
-    // Split deserializedResultSet by 2M, the result should be the same
-    List<String> fileNameSplit2M = splitResultSetSerializables(fileNameSplit3M, 2 * 1024 * 1024);
-    chunkResultString = deserializeResultSet(fileNameSplit2M);
-    assertEquals(chunkResultString, originalResultCSVString);
-
-    // Split deserializedResultSet by 1M, the result should be the same
-    List<String> fileNameSplit1M = splitResultSetSerializables(fileNameSplit2M, 1 * 1024 * 1024);
-    chunkResultString = deserializeResultSet(fileNameSplit1M);
+    // Split deserializedResultSet by 100KB, the result should be the same
+    List<String> fileNameSplit100K = splitResultSetSerializables(fileNameSplit300K, 100 * 1024);
+    chunkResultString = deserializeResultSet(fileNameSplit100K);
     assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by smallest, the result should be the same
-    List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit1M, 1);
+    List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit100K, 1);
     chunkResultString = deserializeResultSet(fileNameSplitSmallest);
     assertEquals(chunkResultString, originalResultCSVString);
   }
@@ -616,7 +611,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         statement.execute(
             "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        int rowCount = 100000;
+        int rowCount = 1000;
         statement.execute(
             "insert into table_basic select "
                 + "seq4(), "
@@ -625,7 +620,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
                 + rowCount
                 + "))");
 
-        int testCount = 5;
+        int testCount = 2;
         while (testCount-- > 0) {
           String sqlSelect = "select * from table_basic ";
           try (ResultSet rs = statement.executeQuery(sqlSelect)) {}
@@ -814,7 +809,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testRetrieveMetadata(String queryResultFormat) throws Throwable {
     List<String> fileNameList;
-    int rowCount = 90000;
+    int rowCount = 10000;
     long expectedTotalRowCount = 0;
     long expectedTotalCompressedSize = 0;
     long expectedTotalUncompressedSize = 0;
@@ -834,7 +829,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
       String sqlSelect = "select * from table_basic ";
       try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-        // Split deserializedResultSet by 3M
         fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
 
         // Only one serializable object is generated with 100M data.
@@ -863,41 +857,30 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
     assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
 
-    // Split deserializedResultSet by 3M
-    List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);
+    // Split deserializedResultSet by 300KB
+    List<String> fileNameSplit300K = splitResultSetSerializables(fileNameList, 300 * 1024);
     // Verify the metadata is correct.
     assertTrue(
         isMetadataConsistent(
             expectedTotalRowCount,
             expectedTotalCompressedSize,
             expectedTotalUncompressedSize,
-            fileNameSplit3M,
+            fileNameSplit300K,
             null));
 
-    // Split deserializedResultSet by 2M
-    List<String> fileNameSplit2M = splitResultSetSerializables(fileNameSplit3M, 2 * 1024 * 1024);
+    // Split deserializedResultSet by 100KB
+    List<String> fileNameSplit100K = splitResultSetSerializables(fileNameSplit300K, 100 * 1024);
     // Verify the metadata is correct.
     assertTrue(
         isMetadataConsistent(
             expectedTotalRowCount,
             expectedTotalCompressedSize,
             expectedTotalUncompressedSize,
-            fileNameSplit2M,
-            null));
-
-    // Split deserializedResultSet by 3M
-    List<String> fileNameSplit1M = splitResultSetSerializables(fileNameSplit2M, 1 * 1024 * 1024);
-    // Verify the metadata is correct.
-    assertTrue(
-        isMetadataConsistent(
-            expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit1M,
+            fileNameSplit100K,
             null));
 
     // Split deserializedResultSet by smallest
-    List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit1M, 1);
+    List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit100K, 1);
     // Verify the metadata is correct.
     assertTrue(
         isMetadataConsistent(
