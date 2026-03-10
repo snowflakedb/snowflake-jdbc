@@ -28,18 +28,6 @@ public class ProxyLatestIT extends BaseWiremockTest {
     unsetJvmProperties();
   }
 
-  private String getProxyProtocol(Properties props) {
-    return props.get("ssl").toString().equals("on") ? "https" : "http";
-  }
-
-  private int getProxyPort(String proxyProtocol) {
-    if (Objects.equals(proxyProtocol, "http")) {
-      return wiremockHttpPort;
-    } else {
-      return wiremockHttpsPort;
-    }
-  }
-
   private void addProxyProperties(Properties props) {
     String proxyProtocol = getProxyProtocol(props);
     props.put("useProxy", "true");

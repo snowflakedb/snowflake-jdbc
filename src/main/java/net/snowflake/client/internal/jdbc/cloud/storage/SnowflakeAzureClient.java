@@ -1,9 +1,9 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import static net.snowflake.client.internal.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
-import static net.snowflake.client.internal.core.HttpUtil.createProxyOptionsForAzure;
-import static net.snowflake.client.internal.core.HttpUtil.createSessionlessProxyOptionsForAzure;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.internal.jdbc.cloud.storage.CloudStorageProxyFactory.createProxyOptionsForAzure;
+import static net.snowflake.client.internal.jdbc.cloud.storage.CloudStorageProxyFactory.createSessionlessProxyOptionsForAzure;
 
 import com.azure.core.http.ProxyOptions;
 import com.azure.core.http.rest.Response;
