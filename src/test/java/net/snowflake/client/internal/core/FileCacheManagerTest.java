@@ -4,6 +4,7 @@ import static net.snowflake.client.internal.core.StmtUtil.mapper;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
@@ -46,7 +47,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
   @BeforeEach
   public void setup() throws IOException {
     fileCacheManager =
-        FileCacheManager.builder()
+        new FileCacheManagerBuilder()
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
@@ -112,7 +113,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
       Files.setPosixFilePermissions(
           cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("---------"));
       FileCacheManager fcm =
-          FileCacheManager.builder()
+          new FileCacheManagerBuilder()
               .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
               .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
               .setBaseCacheFileName(CACHE_FILE_NAME)
@@ -122,6 +123,27 @@ class FileCacheManagerTest extends BaseJDBCTest {
     } finally {
       Files.setPosixFilePermissions(
           cacheFile.getParentFile().toPath(), PosixFilePermissions.fromString("rwx------"));
+    }
+  }
+
+  @Test
+  public void shouldEnterNoopModeWhenCacheDirectoryIsNotAvailable() {
+    try (MockedStatic<FileCacheUtil> fileCacheUtilMock =
+        Mockito.mockStatic(FileCacheUtil.class, Mockito.CALLS_REAL_METHODS)) {
+      fileCacheUtilMock.when(FileCacheUtil::getDefaultCacheDir).thenReturn(null);
+      FileCacheManager fcm =
+          new FileCacheManagerBuilder()
+              .setCacheDirectorySystemProperty("nonexistent.system.property")
+              .setCacheDirectoryEnvironmentVariable("NONEXISTENT_ENV_VAR")
+              .setBaseCacheFileName(CACHE_FILE_NAME)
+              .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+              .build();
+      assertTrue(fcm instanceof NoOpFileCacheManager);
+      assertNull(fcm.getCacheFilePath());
+      assertDoesNotThrow(fcm::readCacheFile);
+      assertDoesNotThrow(() -> fcm.writeCacheFile(mapper.createObjectNode()));
+      assertDoesNotThrow(fcm::deleteCacheFile);
+      assertNull(fcm.withLock(() -> "test"));
     }
   }
 
@@ -137,7 +159,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
           PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("---------")));
 
       FileCacheManager fcm =
-          FileCacheManager.builder()
+          new FileCacheManagerBuilder()
               .setOnlyOwnerPermissions(false)
               .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_CACHE_PATH")
               .setCacheDirectoryEnvironmentVariable("NONEXISTENT")
@@ -166,9 +188,17 @@ class FileCacheManagerTest extends BaseJDBCTest {
   @RunOnLinuxOrMac
   public void notThrowForToWidePermissionsWhenOnlyOwnerPermissionsSetFalseTest()
       throws IOException {
-    fileCacheManager.setOnlyOwnerPermissions(false);
+    FileCacheManager fcm =
+        new FileCacheManagerBuilder()
+            .setOnlyOwnerPermissions(false)
+            .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
+            .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
+            .setBaseCacheFileName(CACHE_FILE_NAME)
+            .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
+            .build();
+    fcm.overrideCacheFile(cacheFile);
     Files.setPosixFilePermissions(cacheFile.toPath(), PosixFilePermissions.fromString("rwxrwx---"));
-    assertDoesNotThrow(() -> fileCacheManager.readCacheFile());
+    assertDoesNotThrow(fcm::readCacheFile);
   }
 
   @Test
@@ -257,7 +287,7 @@ class FileCacheManagerTest extends BaseJDBCTest {
     String tmpDirPath = System.getProperty("java.io.tmpdir");
     String cacheDirPath = tmpDirPath + File.separator + "snowflake-cache-dir";
     System.setProperty("FILE_CACHE_MANAGER_SHOULD_CREATE_DIR_AND_FILE", cacheDirPath);
-    FileCacheManager.builder()
+    new FileCacheManagerBuilder()
         .setOnlyOwnerPermissions(false)
         .setCacheDirectorySystemProperty("FILE_CACHE_MANAGER_SHOULD_CREATE_DIR_AND_FILE")
         .setBaseCacheFileName("cache-file")

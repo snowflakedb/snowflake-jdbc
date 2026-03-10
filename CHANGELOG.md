@@ -12,7 +12,8 @@
     - Change S3 Client's multipart threshold to 16MB
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
     - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
-    - Add logging implementation to CLIENT_ENVIRONMENT telemetry 
+    - Add logging implementation to CLIENT_ENVIRONMENT telemetry
+    - Fix NPE when HOME directory cache is not available
     - Bumped `commons-compress` dependency to latest (1.28.0) to address CVE-2024-25710 and CVE-2024-26308 (snowflakedb/snowflake-jdbc#2538)
     - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
     - Fixed proxy authentication when connecting to GCP (snowflakedb/snowflake-jdbc#2540)
