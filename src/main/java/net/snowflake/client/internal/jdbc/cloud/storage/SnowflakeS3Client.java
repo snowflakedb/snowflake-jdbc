@@ -159,9 +159,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
-      proxyConfiguration = S3HttpUtil.createProxyConfigurationForS3(session.getHttpClientKey());
+      proxyConfiguration =
+          CloudStorageProxyFactory.createProxyConfigurationForS3(session.getHttpClientKey());
     } else {
-      proxyConfiguration = S3HttpUtil.createSessionlessProxyConfigurationForS3(proxyProperties);
+      proxyConfiguration =
+          CloudStorageProxyFactory.createSessionlessProxyConfigurationForS3(proxyProperties);
     }
 
     S3AsyncClientBuilder clientBuilder =
