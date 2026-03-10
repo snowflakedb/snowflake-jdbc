@@ -122,7 +122,9 @@ public class CloudStorageProxyFactory {
   static ProxyOptions toAzureProxyOptions(ProxySettings s) {
     ProxyOptions proxyOptions =
         new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(s.getHost(), s.getPort()));
-    proxyOptions.setCredentials(s.getUser(), s.getPassword());
+    if (s.hasCredentials()) {
+      proxyOptions.setCredentials(s.getUser(), s.getPassword());
+    }
     proxyOptions.setNonProxyHosts(s.getNonProxyHosts());
     return proxyOptions;
   }
@@ -130,7 +132,7 @@ public class CloudStorageProxyFactory {
   static HttpTransportFactory toGCSHttpTransportFactory(ProxySettings s) {
     HttpClientBuilder clientBuilder = HttpClientBuilder.create();
 
-    clientBuilder.setProxy(new HttpHost(s.getHost(), s.getPort(), s.getProtocol().toString()));
+    clientBuilder.setProxy(new HttpHost(s.getHost(), s.getPort(), s.getProtocol().getScheme()));
 
     SdkProxyRoutePlanner routePlanner =
         new SdkProxyRoutePlanner(s.getHost(), s.getPort(), s.getProtocol(), s.getNonProxyHosts());
@@ -227,24 +229,14 @@ public class CloudStorageProxyFactory {
   }
 
   private static void logProxySettings(String label, ProxySettings s) {
-    String logMessage =
-        "Setting "
-            + label
-            + " proxy. Host: "
-            + s.getHost()
-            + ", port: "
-            + s.getPort()
-            + ", protocol: "
-            + s.getProtocol()
-            + ", non-proxy hosts: "
-            + s.getNonProxyHosts();
-    if (s.hasCredentials()) {
-      logMessage +=
-          ", user: "
-              + s.getUser()
-              + ", password is "
-              + SFLoggerUtil.isVariableProvided(s.getPassword());
-    }
-    logger.debug(logMessage);
+    logger.debug(
+        "Setting {}, proxy. Host: {}, port: {}, protocol: {}, non-proxy hosts: {}, user: {}, password is {}",
+        label,
+        s.getHost(),
+        s.getPort(),
+        s.getProtocol(),
+        s.getNonProxyHosts(),
+        s.getUser(),
+        SFLoggerUtil.isVariableProvided(s.getPassword()));
   }
 }
