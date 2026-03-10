@@ -317,31 +317,27 @@ public class ResultSetLatestIT extends ResultSet0IT {
           connection.unwrap(SnowflakeConnectionImpl.class).getSfSession().getTelemetryClient();
       LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
 
-      // there should be a log for each of the following fields
+      // These fields are always expected when results span multiple chunks
       TelemetryField[] expectedFields = {
-        TelemetryField.TIME_CONSUME_FIRST_RESULT, TelemetryField.TIME_CONSUME_LAST_RESULT,
-        TelemetryField.TIME_WAITING_FOR_CHUNKS, TelemetryField.TIME_DOWNLOADING_CHUNKS,
-        TelemetryField.TIME_PARSING_CHUNKS
+        TelemetryField.TIME_CONSUME_LAST_RESULT, TelemetryField.TIME_WAITING_FOR_CHUNKS,
+        TelemetryField.TIME_DOWNLOADING_CHUNKS, TelemetryField.TIME_PARSING_CHUNKS
       };
-      boolean[] succeeded = new boolean[expectedFields.length];
+      // TIME_CONSUME_FIRST_RESULT is only logged when the server provides sendResultTime,
+      // which is not guaranteed, so it is not asserted here.
 
-      for (int i = 0; i < expectedFields.length; i++) {
-        succeeded[i] = false;
+      for (TelemetryField expectedField : expectedFields) {
+        boolean found = false;
         for (TelemetryData log : logs) {
           if (log.getMessage()
               .get(TelemetryField.TYPE.toString())
               .textValue()
-              .equals(expectedFields[i].field)) {
-            succeeded[i] = true;
+              .equals(expectedField.field)) {
+            found = true;
             break;
           }
         }
-      }
-
-      for (int i = 0; i < expectedFields.length; i++) {
         assertThat(
-            String.format("%s field not found in telemetry logs\n", expectedFields[i].field),
-            succeeded[i]);
+            String.format("%s field not found in telemetry logs\n", expectedField.field), found);
       }
       telemetry.sendBatchAsync();
     }
