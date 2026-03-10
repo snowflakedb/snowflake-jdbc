@@ -1,0 +1,212 @@
+name: Snyk Scan
+
+on:
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: Detect Changed Files
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      any-pom: ${{ steps.changes.outputs.any-pom }}
+      parent-pom: ${{ steps.changes.outputs.parent-pom }}
+      public-pom: ${{ steps.changes.outputs.public-pom }}
+      thin-public-pom: ${{ steps.changes.outputs.thin-public-pom }}
+      fips-public-pom: ${{ steps.changes.outputs.fips-public-pom }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            any-pom:
+              - '**/pom.xml'
+            parent-pom:
+              - 'parent-pom.xml'
+            public-pom:
+              - 'public_pom.xml'
+            thin-public-pom:
+              - 'thin_public_pom.xml'
+            fips-public-pom:
+              - 'FIPS/public_pom.xml'
+
+  snyk-aggregate-test:
+    name: Snyk Aggregate Project Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Snyk aggregate project test
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --maven-aggregate-project --all-projects
+          command: test
+
+  snyk-parent-pom-test:
+    name: Snyk Parent POM Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.parent-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Snyk parent-pom test
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=parent-pom.xml --package-manager=maven
+          command: test
+
+  snyk-public-pom-test:
+    name: Snyk Public POM Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.public-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Snyk public-pom test
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=public_pom.xml --package-manager=maven
+          command: test
+
+  snyk-thin-public-pom-test:
+    name: Snyk Thin Public POM Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.thin-public-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Snyk thin-public-pom test
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=thin_public_pom.xml --package-manager=maven
+          command: test
+
+  snyk-fips-public-pom-test:
+    name: Snyk FIPS Public POM Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.fips-public-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Snyk FIPS public-pom test
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=FIPS/public_pom.xml --package-manager=maven
+          command: test
+
+  snyk-monitor:
+    name: Snyk Monitor
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Snyk monitor aggregate
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --maven-aggregate-project --all-projects --project-name=snowflakedb/jdbc
+          command: monitor
+
+      - name: Snyk monitor parent-pom
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=parent-pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+          command: monitor
+
+      - name: Snyk monitor public-pom
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+          command: monitor
+
+      - name: Snyk monitor thin-public-pom
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=thin_public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+          command: monitor
+
+      - name: Snyk monitor FIPS public-pom
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        with:
+          args: --file=FIPS/public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+          command: monitor

@@ -13,7 +13,6 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>net.snowflake.FatJarTestApp</exec.mainClass>
-        <additional.classpath></additional.classpath>
     </properties>
 
     <build>
@@ -25,22 +24,15 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-cp</argument>
-                        <argument>${project.build.outputDirectory}:${snowflake.jdbc.jar}:${settings.localRepository}/org/slf4j/slf4j-api/2.0.4/slf4j-api-2.0.4.jar${additional.classpath}</argument>
+                        <argument>-classpath</argument>
+                        <classpath/>
                         <argument>${exec.mainClass}</argument>
                     </arguments>
+                    <classpathScope>compile</classpathScope>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.4</version>
-        </dependency>
-    </dependencies>
 
     <profiles>
         <profile>
@@ -48,9 +40,6 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
-            <properties>
-                <snowflake.jdbc.jar>${project.basedir}/../target/snowflake-jdbc.jar</snowflake.jdbc.jar>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>net.snowflake</groupId>
@@ -64,10 +53,6 @@
 
         <profile>
             <id>fips</id>
-            <properties>
-                <snowflake.jdbc.jar>${project.basedir}/../FIPS/target/snowflake-jdbc-fips.jar</snowflake.jdbc.jar>
-                <additional.classpath>:${settings.localRepository}/org/bouncycastle/bc-fips/1.0.2.6/bc-fips-1.0.2.6.jar:${settings.localRepository}/org/bouncycastle/bcpkix-fips/1.0.8/bcpkix-fips-1.0.8.jar</additional.classpath>
-            </properties>
             <build>
                 <plugins>
                     <!-- Add FIPS-specific source directory -->
@@ -109,6 +94,43 @@
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcpkix-fips</artifactId>
                     <version>1.0.8</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>slf4j</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <arguments combine.children="replace">
+                                <argument>-Dnet.snowflake.jdbc.loggerImpl=net.snowflake.client.log.SLF4JLogger</argument>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <argument>${exec.mainClass}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                    <version>2.0.13</version>
+                </dependency>
+                <dependency>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                    <version>1.3.14</version>
+                </dependency>
+                <dependency>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                    <version>1.3.14</version>
                 </dependency>
             </dependencies>
         </profile>

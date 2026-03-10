@@ -1,16 +1,32 @@
 package net.snowflake;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.util.logging.LogManager;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Properties;
 
 public class FatJarTestApp {
+
+  private static final String LOGGER_IMPL_PROPERTY = "net.snowflake.jdbc.loggerImpl";
+  private static final String SLF4J_LOGGER_CLASS = "net.snowflake.client.log.SLF4JLogger";
+
+  private static final String LOGGER_IMPL = System.getProperty(LOGGER_IMPL_PROPERTY);
+
+  private static final String[] CLOUD_SDK_LOGGER_PATTERNS = {
+    "net.snowflake.client.jdbc.internal.software.amazon",
+    "net.snowflake.client.jdbc.internal.google",
+    "net.snowflake.client.jdbc.internal.azure"
+  };
+
+  private static final File logFile =
+      new File(System.getProperty("java.io.tmpdir"), "fat-jar-test.log");
 
   // Static initializer to load FIPS configuration if available
   static {
@@ -29,7 +45,13 @@ public class FatJarTestApp {
   }
 
   public static void main(String[] args) throws Exception {
-    try(Connection connection = getConnection(args); Statement stmt = connection.createStatement()) {
+    setupLogging();
+    runQueries(args);
+    verifyLogs();
+  }
+
+  private static void runQueries(String[] args) throws Exception {
+    try (Connection connection = getConnection(args); Statement stmt = connection.createStatement()) {
       System.out.println("RUNNING SELECT 1");
       ResultSet resultSet = stmt.executeQuery("SELECT 1");
       if (!resultSet.next()) {
@@ -46,6 +68,52 @@ public class FatJarTestApp {
     }
   }
 
+  private static void setupLogging() throws Exception {
+    if (SLF4J_LOGGER_CLASS.equals(LOGGER_IMPL)) {
+      System.setProperty("fatjar.logfile", logFile.getAbsolutePath());
+      System.out.println("[INFO] SLF4J logging to: " + logFile.getAbsolutePath());
+    } else {
+      try (InputStream is = FatJarTestApp.class.getResourceAsStream("/logging.properties")) {
+        LogManager.getLogManager().readConfiguration(is);
+      }
+      System.out.println("[INFO] JUL logging to: " + logFile.getAbsolutePath());
+    }
+  }
+
+  private static void verifyLogs() throws Exception {
+    String logOutput = new String(Files.readAllBytes(logFile.toPath()));
+    String mode = SLF4J_LOGGER_CLASS.equals(LOGGER_IMPL) ? "SLF4J" : "JUL";
+    System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
+    String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
+
+    boolean hasOpeningSession = logOutput.contains("Opening session");
+    if (!hasOpeningSession) {
+      System.err.println("[FAIL] Log output does not contain 'Opening session' (expected from SFSession)");
+      System.err.println("[DEBUG] First 2000 chars of log output:");
+      System.err.println(logsPrelude);
+      System.exit(1);
+    }
+    System.out.println("[PASS] Found 'Opening session' in " + mode + " log output");
+
+    boolean hasCloudSdkLog = false;
+    for (String pattern : CLOUD_SDK_LOGGER_PATTERNS) {
+      if (logOutput.contains(pattern)) {
+        hasCloudSdkLog = true;
+        System.out.println("[PASS] Found cloud SDK logger: " + pattern);
+        break;
+      }
+    }
+    if (!hasCloudSdkLog) {
+      System.err.println("[FAIL] Log output does not contain any cloud SDK logger name");
+      System.err.println("[FAIL] Expected one of: " + Arrays.toString(CLOUD_SDK_LOGGER_PATTERNS));
+      System.err.println("[DEBUG] First 2000 chars of log output:");
+      System.err.println(logsPrelude);
+      System.exit(1);
+    }
+
+    System.out.println("[PASS] All " + mode + " logging verifications passed");
+  }
+
   private static String getTestFilePath() throws URISyntaxException {
     if (new File("/tmp/test.csv").exists()) {
       return "/tmp/test.csv";
@@ -54,7 +122,7 @@ public class FatJarTestApp {
     }
   }
 
-  private static Connection getConnection(String[] args) throws ClassNotFoundException, SQLException {
+  private static Connection getConnection(String[] args) throws Exception {
     Properties properties = new Properties();
     properties.put("user", getSfEnv("USER"));
     String authenticator = getSfEnv("AUTHENTICATOR");
