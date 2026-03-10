@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Tag(TestTags.OTHERS)
+@Tag(TestTags.DATABASE_META_DATA)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   @BeforeEach

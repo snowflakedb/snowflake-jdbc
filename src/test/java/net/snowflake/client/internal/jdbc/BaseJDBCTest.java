@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -38,6 +39,12 @@ import net.snowflake.client.internal.core.SFException;
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
   static final String TEST_UUID = UUID.randomUUID().toString();
+
+  protected static Connection getConnectionWithWildcardsDisabled() throws SQLException {
+    Properties props = new Properties();
+    props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
+    return getConnection(props);
+  }
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
