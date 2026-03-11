@@ -17,7 +17,7 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag(TestTags.RESULT_SET)
+@Tag(TestTags.DATABASE_META_DATA)
 public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
 
   @Test
@@ -42,7 +42,7 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
   /** Added in > 3.17.0 */
   @Test
   public void testObjectColumn() throws SQLException {
-    try (Connection connection = getConnection();
+    try (Connection connection = getConnectionWithWildcardsDisabled();
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET ENABLE_STRUCTURED_TYPES_IN_FDN_TABLES = TRUE");
       statement.execute(

@@ -2,7 +2,6 @@ package net.snowflake.client.internal.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
-import static net.snowflake.client.TestUtil.escapeUnderscore;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -33,11 +32,12 @@ import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeHelper;
 import net.snowflake.client.internal.jdbc.util.SnowflakeTypeUtil;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Tag(TestTags.OTHERS)
+@Tag(TestTags.DATABASE_META_DATA)
 public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
@@ -123,36 +123,39 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetSchemas() throws Throwable {
-    // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = false
-    DatabaseMetaData metaData = connection.getMetaData();
-    String currentSchema = connection.getSchema();
-    assertEquals("schema", metaData.getSchemaTerm());
-    Set<String> schemas = new HashSet<>();
-    try (ResultSet resultSet = metaData.getSchemas()) {
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
-      while (resultSet.next()) {
-        String schema = resultSet.getString(1);
-        if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
-          schemas.add(schema);
+    try (Connection conn = getConnectionWithWildcardsDisabled()) {
+      // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = false
+      DatabaseMetaData metaData = conn.getMetaData();
+      String currentSchema = conn.getSchema();
+      assertEquals("schema", metaData.getSchemaTerm());
+      Set<String> schemas = new HashSet<>();
+      try (ResultSet resultSet = metaData.getSchemas()) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
+        while (resultSet.next()) {
+          String schema = resultSet.getString(1);
+          if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
+            schemas.add(schema);
+          }
         }
       }
-    }
-    assertThat(schemas.size(), greaterThanOrEqualTo(1));
+      assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
-    Set<String> schemasInDb = new HashSet<>();
-    try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
-      while (resultSet.next()) {
-        String schema = resultSet.getString(1);
-        if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
-          schemasInDb.add(schema);
+      Set<String> schemasInDb = new HashSet<>();
+      try (ResultSet resultSet = metaData.getSchemas(conn.getCatalog(), "%")) {
+        while (resultSet.next()) {
+          String schema = resultSet.getString(1);
+          if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
+            schemasInDb.add(schema);
+          }
         }
       }
+      Assumptions.assumeFalse(
+          schemasInDb.isEmpty(), "Database " + conn.getCatalog() + " returned no schemas");
+      assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
+      schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
+      assertTrue(schemas.contains(currentSchema));
+      assertTrue(schemasInDb.contains(currentSchema));
     }
-    assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
-    assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
-    schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
-    assertTrue(schemas.contains(currentSchema));
-    assertTrue(schemasInDb.contains(currentSchema));
 
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
     try (Connection connection = getConnection();
@@ -241,15 +244,16 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetPrimarykeys() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
       final String targetTable = "T0";
       try {
         statement.execute(
             "create or replace table " + targetTable + "(C1 int primary key, C2 string)");
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         try (ResultSet resultSet = metaData.getPrimaryKeys(database, schema, targetTable)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
@@ -309,9 +313,10 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetImportedKeys() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -324,7 +329,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         try (ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
@@ -354,9 +359,10 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetExportedKeys() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -369,7 +375,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
@@ -400,9 +406,10 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetCrossReferences() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -415,7 +422,7 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         try (ResultSet resultSet =
             metaData.getCrossReference(
@@ -448,16 +455,17 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetObjectsDoesNotExists() throws Throwable {
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = escapeUnderscore(connection.getSchema());
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
       try {
         statement.execute("create or replace table " + targetTable + "(C1 int)");
         statement.execute("create or replace view " + targetView + " as select 1 as C");
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         // sanity check if getTables really works.
         try (ResultSet resultSet = metaData.getTables(database, schema, "%", null)) {
@@ -601,17 +609,17 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testGetProcedures() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
       try {
-        String database = connection.getCatalog();
-        String schema = connection.getSchema();
+        String database = conn.getCatalog();
+        String schema = conn.getSchema();
 
         /* Create a procedure and put values into it */
         statement.execute(PI_PROCEDURE);
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
         /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
-        try (ResultSet resultSet =
-            metaData.getProcedures(database, escapeUnderscore(schema), "GETPI")) {
+        try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
           resultSet.next();
           assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));

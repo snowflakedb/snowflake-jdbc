@@ -1652,17 +1652,18 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   public void testGetStreams() throws SQLException {
     final String targetStream = "S0";
     final String targetTable = "T0";
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
-      String owner = connection.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession().getRole();
+    try (Connection conn = getConnectionWithWildcardsDisabled();
+        Statement statement = conn.createStatement()) {
+      String database = conn.getCatalog();
+      String schema = conn.getSchema();
+      String owner = conn.unwrap(SnowflakeConnectionImpl.class).getSFBaseSession().getRole();
       String tableName = database + "." + schema + "." + targetTable;
 
       try {
         statement.execute("create or replace table " + targetTable + "(C1 int)");
         statement.execute("create or replace stream " + targetStream + " on table " + targetTable);
 
-        DatabaseMetaData metaData = connection.getMetaData();
+        DatabaseMetaData metaData = conn.getMetaData();
 
         // match stream
         try (ResultSet resultSet =
@@ -2616,9 +2617,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
 
       @BeforeAll
       void setUp() throws Exception {
-        Properties props = new Properties();
-        props.put("ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", "false");
-        connection = getConnection(props);
+        connection = getConnectionWithWildcardsDisabled();
         metaData = connection.getMetaData();
       }
 
