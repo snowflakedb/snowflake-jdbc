@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,17 +70,25 @@ public class FlatfileReadMultithreadIT {
             String.format(
                 "CREATE OR REPLACE TABLE %s.%s.%s (" + "ID int, " + "C1 timestamp)",
                 TARGET_DB, TARGET_SCHEMA, targetTable));
-        Thread t1 =
-            new Thread(
-                new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
-        Thread t2 =
-            new Thread(
-                new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
+        FlatfileRead r1 =
+            new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable);
+        FlatfileRead r2 =
+            new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable);
+        Thread t1 = new Thread(r1);
+        Thread t2 = new Thread(r2);
 
         t1.start();
         t2.start();
         t1.join();
         t2.join();
+
+        if (r1.getError() != null) {
+          throw new AssertionError("Thread 1 failed", r1.getError());
+        }
+        if (r2.getError() != null) {
+          throw new AssertionError("Thread 2 failed", r2.getError());
+        }
+
         try (ResultSet rs =
             statement.executeQuery(
                 String.format(
@@ -103,6 +110,7 @@ public class FlatfileReadMultithreadIT {
     private final String schemaName;
     private final String tableName;
     private final String stageName;
+    private volatile Throwable error;
 
     FlatfileRead(
         int totalRows, String dbName, String schemaName, String stageName, String tableName) {
@@ -113,6 +121,10 @@ public class FlatfileReadMultithreadIT {
       this.tableName = tableName;
     }
 
+    Throwable getError() {
+      return error;
+    }
+
     @Override
     public void run() {
       try (Connection testConnection = AbstractDriverIT.getConnection();
@@ -120,7 +132,6 @@ public class FlatfileReadMultithreadIT {
 
         ResultListener _resultListener = new ResultListener();
 
-        // init properties
         Map<LoaderProperty, Object> prop = new HashMap<>();
         prop.put(LoaderProperty.tableName, this.tableName);
         prop.put(LoaderProperty.schemaName, this.schemaName);
@@ -142,25 +153,21 @@ public class FlatfileReadMultithreadIT {
         for (int i = 0; i < this.totalRows; ++i) {
           Object[] row = new Object[2];
           row[0] = i;
-          // random timestamp data
           long ms = -946771200000L + (Math.abs(rnd.nextLong()) % (70L * 365 * 24 * 60 * 60 * 1000));
           row[1] = new Date(ms);
           underTest.submitRow(row);
         }
 
-        try {
-          underTest.finish();
-          underTest.close();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+        underTest.finish();
+        underTest.close();
+
         assertThat("must be no error", _resultListener.getErrorCount(), equalTo(0));
         assertThat(
             "total number of rows",
             _resultListener.getSubmittedRowCount(),
             equalTo(this.totalRows));
-      } catch (SQLException e) {
-        e.printStackTrace();
+      } catch (Throwable e) {
+        error = e;
       }
     }
 
