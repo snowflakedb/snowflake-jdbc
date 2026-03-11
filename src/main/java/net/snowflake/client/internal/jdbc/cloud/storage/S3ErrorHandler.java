@@ -62,9 +62,9 @@ public class S3ErrorHandler {
     // we need to refresh our S3 client with the new token
     if (cause instanceof S3Exception) {
       S3Exception e = (S3Exception) cause;
-      if (e.awsErrorDetails()
-          .errorCode()
-          .equalsIgnoreCase(SnowflakeS3Client.EXPIRED_AWS_TOKEN_ERROR_CODE)) {
+      if (e.awsErrorDetails() != null
+          && SnowflakeS3Client.EXPIRED_AWS_TOKEN_ERROR_CODE.equalsIgnoreCase(
+              e.awsErrorDetails().errorCode())) {
         // If session is null we cannot renew the token so throw the ExpiredToken exception
         if (session != null) {
           SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
