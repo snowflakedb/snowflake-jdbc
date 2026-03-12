@@ -2,6 +2,7 @@
 
 # Changelog
 - Upcoming release (TBD)
+    - Fix StreamLoader vector metadata detection to handle empty metadata result sets safely and avoid aborting load jobs on non-critical metadata lookup failures.
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
     - Adjust level of logging during Driver initialization
