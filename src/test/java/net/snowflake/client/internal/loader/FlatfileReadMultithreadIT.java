@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,8 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.LOADER)
 public class FlatfileReadMultithreadIT {
   private final int NUM_RECORDS = 100000;
+  private static final String FAIL_ON_MISSING_COLUMN_METADATA_KEY =
+      "net.snowflake.client.loader.failOnMissingColumnMetadata";
 
   private static final String TARGET_STAGE = "STAGE_MULTITHREAD_LOADER";
   private static String TARGET_SCHEMA;
@@ -64,6 +67,9 @@ public class FlatfileReadMultithreadIT {
   @Test
   public void testIssueSimpleDateFormat() throws Throwable {
     final String targetTable = "TABLE_ISSUE_SIMPLEDATEFORMAT";
+    String originalFailOnMissingMetadataValue =
+        System.getProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY);
+    System.setProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY, "true");
     try (Connection testConnection = AbstractDriverIT.getConnection();
         Statement statement = testConnection.createStatement()) {
       try {
@@ -77,11 +83,15 @@ public class FlatfileReadMultithreadIT {
         Thread t2 =
             new Thread(
                 new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
+        List<Throwable> threadFailures = Collections.synchronizedList(new ArrayList<>());
+        t1.setUncaughtExceptionHandler((thread, throwable) -> threadFailures.add(throwable));
+        t2.setUncaughtExceptionHandler((thread, throwable) -> threadFailures.add(throwable));
 
         t1.start();
         t2.start();
         t1.join();
         t2.join();
+        assertThat("worker thread failures", threadFailures.isEmpty(), equalTo(true));
         try (ResultSet rs =
             statement.executeQuery(
                 String.format(
@@ -93,6 +103,12 @@ public class FlatfileReadMultithreadIT {
       } finally {
         statement.execute(
             String.format("DROP TABLE IF EXISTS %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable));
+        if (originalFailOnMissingMetadataValue == null) {
+          System.clearProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY);
+        } else {
+          System.setProperty(
+              FAIL_ON_MISSING_COLUMN_METADATA_KEY, originalFailOnMissingMetadataValue);
+        }
       }
     }
   }
