@@ -15,7 +15,7 @@ import net.snowflake.common.core.SqlState;
  */
 public final class DriverVersion {
 
-  private static final String implementVersion = readAndNormalizeVersion();
+  private static final String implementVersion = "4.0.2";
 
   private final int major;
 
