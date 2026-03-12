@@ -18,6 +18,7 @@
     - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
     - Fixed proxy authentication when connecting to GCP (snowflakedb/snowflake-jdbc#2540)
     - Fixed bug where called-provided schema was ignored in getStreams()
+    - Fixed S3 error handling manifested with `NullPointerException`
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry

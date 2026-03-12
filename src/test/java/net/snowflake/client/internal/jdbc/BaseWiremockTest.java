@@ -84,10 +84,6 @@ public abstract class BaseWiremockTest {
   }
 
   protected static void startWiremockStandAlone() {
-    startWiremockStandAlone(false);
-  }
-
-  protected static void startWiremockStandAlone(boolean proxyPassThrough) {
     // retrying in case of fail in port bindings
     await()
         .alias("wait for wiremock responding")
@@ -97,8 +93,7 @@ public abstract class BaseWiremockTest {
               try {
                 wiremockHttpPort = findFreePort();
                 wiremockHttpsPort = findFreePort();
-                wiremockStandalone =
-                    startWiremockProcess(wiremockHttpPort, wiremockHttpsPort, proxyPassThrough);
+                wiremockStandalone = startWiremockProcess(wiremockHttpPort, wiremockHttpsPort);
                 waitForWiremockOnPort(wiremockHttpPort);
                 return true;
               } catch (Exception e) {
@@ -110,11 +105,6 @@ public abstract class BaseWiremockTest {
 
   protected static Process startWiremockProcess(int wiremockHttpPort, int wiremockHttpsPort)
       throws IOException {
-    return startWiremockProcess(wiremockHttpPort, wiremockHttpsPort, false);
-  }
-
-  protected static Process startWiremockProcess(
-      int wiremockHttpPort, int wiremockHttpsPort, boolean proxyPassThrough) throws IOException {
     String javaExecutable =
         System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
     return new ProcessBuilder(
@@ -125,7 +115,8 @@ public abstract class BaseWiremockTest {
             System.getProperty("user.dir") + File.separator + WIREMOCK_HOME_DIR + File.separator,
             "--enable-browser-proxying", // work as forward proxy
             "--proxy-pass-through",
-            String.valueOf(proxyPassThrough),
+            "true",
+            "--preserve-host-header",
             "--port",
             String.valueOf(wiremockHttpPort),
             "--https-port",

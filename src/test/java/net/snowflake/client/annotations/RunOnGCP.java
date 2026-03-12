@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @EnabledIfEnvironmentVariable(named = "CLOUD_PROVIDER", matches = "(?i)GCP(?-i)")
 public @interface RunOnGCP {}
