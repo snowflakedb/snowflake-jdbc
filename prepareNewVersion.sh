@@ -6,16 +6,10 @@ if [[ -z "$1" ]]; then
 fi
 
 version=$1
-
-# prepare release with maven
-./mvnw -f parent-pom.xml versions:set -DnewVersion=$version -DgenerateBackupPoms=false
-
-# update version in Driver code
 version_without_snapshot=${version%-*}
-file_with_version=src/main/java/net/snowflake/client/internal/driver/DriverVersion.java
-tmp_file_with_version=${file_with_version}.tmp
-sed -E "s/( implementVersion = )(.+)(;)/\1\"${version_without_snapshot}\"\3/" src/main/java/net/snowflake/client/internal/driver/DriverVersion.java > $tmp_file_with_version
-mv $tmp_file_with_version $file_with_version
+
+# prepare release with maven (version.properties is populated by Maven resource filtering)
+./mvnw -f parent-pom.xml versions:set -DnewVersion=$version -DgenerateBackupPoms=false
 
 if [[ "$version" == *-SNAPSHOT ]]; then
 sed -i '' '3a\
