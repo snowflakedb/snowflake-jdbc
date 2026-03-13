@@ -33,7 +33,14 @@ class OAuthUtil {
         !isNullOrEmpty(oauthLoginInput.getTokenRequestUrl())
             ? URI.create(oauthLoginInput.getTokenRequestUrl())
             : URI.create(serverUrl + SNOWFLAKE_TOKEN_REQUEST_ENDPOINT);
+    logIfHttpInUse(uri);
     return uri.normalize();
+  }
+
+  private static void logIfHttpInUse(URI uri) {
+    if (uri.getScheme().equalsIgnoreCase("http")) {
+      logger.warn("OAuth URL uses insecure HTTP protocol: {}", uri);
+    }
   }
 
   static HttpRequestBase convertToBaseRequest(HTTPRequest request) {
@@ -50,6 +57,7 @@ class OAuthUtil {
         !isNullOrEmpty(oauthLoginInput.getAuthorizationUrl())
             ? URI.create(oauthLoginInput.getAuthorizationUrl())
             : URI.create(serverUrl + SNOWFLAKE_AUTHORIZE_ENDPOINT);
+    logIfHttpInUse(uri);
     return uri.normalize();
   }
 
