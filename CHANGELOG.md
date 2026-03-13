@@ -1,6 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- Upcoming release
+    - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
+
 - v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
