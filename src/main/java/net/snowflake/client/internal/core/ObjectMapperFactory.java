@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.SimpleDateFormat;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /**
  * Factor method used to create ObjectMapper instance. All object mapper in JDBC should be created
@@ -45,7 +46,10 @@ public class ObjectMapperFactory {
       // Set the mapper to use the session's object mapper settings
       Object dateOutputFormat = session.getCommonParameters().get("DATE_OUTPUT_FORMAT");
       if (dateOutputFormat != null) {
-        mapper.setDateFormat(new SimpleDateFormat(String.valueOf(dateOutputFormat)));
+        String dateFormat =
+            SnowflakeDateTimeFormat.fromSqlFormat(String.valueOf(dateOutputFormat))
+                .toSimpleDateTimePattern();
+        mapper.setDateFormat(new SimpleDateFormat(dateFormat));
       } else {
         log.debug("DATE_OUTPUT_FORMAT is not set in session parameters.");
       }

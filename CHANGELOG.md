@@ -1,13 +1,16 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- Upcoming release (TBD)
+  - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified
+
 - v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
     - Adjust level of logging during Driver initialization
     - Add sanitization for nonProxyHosts RegEx patterns
     - Fix bug with malformed file during S3 upload
-    - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
+    - Added periodic closure ozf sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
     - Add internal API usage telemetry tracker
     - Change S3 Client's multipart threshold to 16MB
     - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
