@@ -670,7 +670,8 @@
                       <include>net.snowflake:snowflake-common</include>
                       <include>org.apache.arrow:*</include>
                       <include>org.apache.tika:tika-core</include>
-                      <include>io.netty:*</include>
+                      <include>io.netty:netty-common</include>
+                      <include>io.netty:netty-buffer</include>
                     </includes>
                   </artifactSet>
                   <relocations>

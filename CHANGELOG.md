@@ -4,6 +4,7 @@
 - Upcoming release
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
     - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
+    - Fix Netty native library conflict in thin JAR (snowflakedb/snowflake-jdbc#2559)
 
 - v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
