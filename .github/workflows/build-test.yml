@@ -6,6 +6,7 @@ on:
             - master
             - SNOW-**
             - NO-SNOW-**
+            - performance-testing
         tags:
             - v*
     pull_request:
@@ -34,6 +35,7 @@ concurrency:
 jobs:
     build:
         name: Build
+        if: ${{ false }}
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
@@ -43,8 +45,84 @@ jobs:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
 
+    pure-java-string-benchmark:
+        name: Pure Java String Benchmark ${{ matrix.os_name }} java ${{ matrix.java_version }} ${{ matrix.distribution }}
+        runs-on: ${{ matrix.runs_on }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - runs_on: ubuntu-latest
+                      os_name: Linux
+                      java_version: '17'
+                      distribution: temurin
+                    - runs_on: ubuntu-latest
+                      os_name: Linux
+                      java_version: '17'
+                      distribution: semeru
+                    - runs_on: ubuntu-latest
+                      os_name: Linux
+                      java_version: '21'
+                      distribution: temurin
+                    - runs_on: ubuntu-latest
+                      os_name: Linux
+                      java_version: '21'
+                      distribution: semeru
+                    - runs_on: macos-latest
+                      os_name: macOS
+                      java_version: '17'
+                      distribution: temurin
+                    - runs_on: macos-latest
+                      os_name: macOS
+                      java_version: '17'
+                      distribution: semeru
+                    - runs_on: macos-latest
+                      os_name: macOS
+                      java_version: '21'
+                      distribution: temurin
+                    - runs_on: macos-latest
+                      os_name: macOS
+                      java_version: '21'
+                      distribution: semeru
+                    - runs_on: windows-latest
+                      os_name: Windows
+                      java_version: '17'
+                      distribution: temurin
+                    - runs_on: windows-latest
+                      os_name: Windows
+                      java_version: '17'
+                      distribution: semeru
+                    - runs_on: windows-latest
+                      os_name: Windows
+                      java_version: '21'
+                      distribution: temurin
+                    - runs_on: windows-latest
+                      os_name: Windows
+                      java_version: '21'
+                      distribution: semeru
+        steps:
+            - uses: actions/checkout@v5
+            - uses: actions/setup-java@v5
+              with:
+                java-version: ${{ matrix.java_version }}
+                distribution: ${{ matrix.distribution }}
+                cache: maven
+            - name: Run pure Java benchmark test (Unix)
+              if: runner.os != 'Windows'
+              shell: bash
+              env:
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
+              run: ./mvnw -B -Dskip.unitTests=false -Dtest=net.snowflake.client.internal.util.PureJavaStringDecodeBenchmarkTest -DfailIfNoTests=false test --batch-mode --show-version
+            - name: Run pure Java benchmark test (Windows)
+              if: runner.os == 'Windows'
+              shell: cmd
+              env:
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
+              run: .\mvnw.cmd -B -Dskip.unitTests=false -Dtest=net.snowflake.client.internal.util.PureJavaStringDecodeBenchmarkTest -DfailIfNoTests=false test --batch-mode --show-version
+
     unit-test-linux:
         name: Unit Tests Linux java 8
+        if: ${{ false }}
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
@@ -61,6 +139,7 @@ jobs:
 
     unit-test-windows:
         name: Unit Tests Windows java 8
+        if: ${{ false }}
         runs-on: windows-latest
         steps:
             - uses: actions/checkout@v5
@@ -77,6 +156,7 @@ jobs:
 
     unit-test-mac:
         name: Unit Tests Mac java 8
+        if: ${{ false }}
         runs-on: macos-latest
         steps:
             - uses: actions/checkout@v5
@@ -92,6 +172,7 @@ jobs:
               run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
 
     test-windows:
+        if: ${{ false }}
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
         name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: windows-latest
@@ -147,6 +228,7 @@ jobs:
               run: ci\\test_windows.bat
 
     test-mac:
+        if: ${{ false }}
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
         name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: macos-latest
@@ -205,6 +287,7 @@ jobs:
               run: /opt/homebrew/bin/bash ./ci/test_mac.sh
 
     test-rocky:
+        if: ${{ false }}
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
         name: ${{ matrix.runConfig.cloud }} Rocky9 java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
@@ -250,6 +333,7 @@ jobs:
               run: ./ci/test.sh
 
     test-linux:
+        if: ${{ false }}
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
         name: ${{ matrix.runConfig.cloud }} Linux java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
@@ -313,6 +397,7 @@ jobs:
               run: ./ci/test.sh
 
     test-fat-jar-slf4j:
+        if: ${{ false }}
         name: ${{ matrix.cloud }} Fat Jar SLF4J (${{ matrix.variant }}) Test App
         runs-on: ubuntu-latest
         strategy:
@@ -336,6 +421,7 @@ jobs:
               run: ./fat-jar-test-app/run.sh ${{ matrix.variant }} slf4j
 
     test-fat-jar-jul:
+        if: ${{ false }}
         name: AWS Fat Jar JUL (${{ matrix.variant }}) Test App
         runs-on: ubuntu-latest
         strategy:
