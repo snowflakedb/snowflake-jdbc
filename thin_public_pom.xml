@@ -33,6 +33,7 @@
   </scm>
 
   <properties>
+    <animal.sniffer.annotations.version>1.26</animal.sniffer.annotations.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>2.37.5</awssdk.version>
@@ -105,6 +106,11 @@
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-annotations</artifactId>
+        <version>${animal.sniffer.annotations.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
