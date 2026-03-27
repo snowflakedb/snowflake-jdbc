@@ -1,7 +1,10 @@
 package net.snowflake.client.internal.jdbc.diagnostic;
 
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Optional;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -81,33 +84,20 @@ class ProxyConfig {
   }
 
   public ProxyConfig(String proxyHost, int proxyPort, String nonProxyHosts) {
-    jvmHttpProxyHost =
-        (System.getProperty(JVM_HTTP_PROXY_HOST) == null)
-            ? ""
-            : System.getProperty(JVM_HTTP_PROXY_HOST);
-
-    jvmHttpsProxyHost =
-        (System.getProperty(JVM_HTTPS_PROXY_HOST) == null)
-            ? ""
-            : System.getProperty(JVM_HTTPS_PROXY_HOST);
-
+    jvmHttpProxyHost = Optional.ofNullable(systemGetProperty(JVM_HTTP_PROXY_HOST)).orElse("");
+    jvmHttpsProxyHost = Optional.ofNullable(systemGetProperty(JVM_HTTPS_PROXY_HOST)).orElse("");
     jvmHttpProxyPort =
-        (System.getProperty(JVM_HTTP_PROXY_PORT) == null)
-            ? -1
-            : Integer.parseInt(System.getProperty(JVM_HTTP_PROXY_PORT));
-
+        Optional.ofNullable(systemGetProperty(JVM_HTTP_PROXY_PORT))
+            .map(Integer::parseInt)
+            .orElse(-1);
     jvmHttpsProxyPort =
-        (System.getProperty(JVM_HTTPS_PROXY_PORT) == null)
-            ? -1
-            : Integer.parseInt(System.getProperty(JVM_HTTPS_PROXY_PORT));
-
-    jvmNonProxyHosts =
-        (System.getProperty(JVM_HTTP_NON_PROXY_HOSTS) == null)
-            ? ""
-            : System.getProperty(JVM_HTTP_NON_PROXY_HOSTS);
-    this.proxyHost = (proxyHost == null) ? "" : proxyHost;
+        Optional.ofNullable(systemGetProperty(JVM_HTTPS_PROXY_PORT))
+            .map(Integer::parseInt)
+            .orElse(-1);
+    jvmNonProxyHosts = Optional.ofNullable(systemGetProperty(JVM_HTTP_NON_PROXY_HOSTS)).orElse("");
+    this.proxyHost = Optional.ofNullable(proxyHost).orElse("");
     this.proxyPort = proxyPort;
-    this.nonProxyHosts = (nonProxyHosts == null) ? "" : nonProxyHosts;
+    this.nonProxyHosts = Optional.ofNullable(nonProxyHosts).orElse("");
     resolveProxyConfigurations();
   }
 

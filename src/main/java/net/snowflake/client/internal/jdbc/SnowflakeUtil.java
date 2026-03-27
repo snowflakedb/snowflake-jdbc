@@ -676,7 +676,10 @@ public class SnowflakeUtil {
     try {
       return System.getProperty(property);
     } catch (SecurityException ex) {
-      logger.debug("Security exception raised: {}", ex.getMessage());
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug("Security exception raised: {}", ex.getMessage());
+      }
       return null;
     }
   }
@@ -692,10 +695,13 @@ public class SnowflakeUtil {
     try {
       return System.getenv(env);
     } catch (SecurityException ex) {
-      logger.debug(
-          "Failed to get environment variable {}. Security exception raised: {}",
-          env,
-          ex.getMessage());
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug(
+            "Failed to get environment variable {}. Security exception raised: {}",
+            env,
+            ex.getMessage());
+      }
     }
     return null;
   }

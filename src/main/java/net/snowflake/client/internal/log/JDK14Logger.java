@@ -43,10 +43,10 @@ public class JDK14Logger implements SFLogger {
 
   static {
     String javaLoggingConsoleStdOut =
-        System.getProperty(SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT.getPropertyKey());
+        systemGetProperty(SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT.getPropertyKey());
     if ("true".equalsIgnoreCase(javaLoggingConsoleStdOut)) {
       String javaLoggingConsoleStdOutThreshold =
-          System.getProperty(
+          systemGetProperty(
               SFSessionProperty.JAVA_LOGGING_CONSOLE_STD_OUT_THRESHOLD.getPropertyKey());
       useStdOutConsoleHandler(javaLoggingConsoleStdOutThreshold);
     }

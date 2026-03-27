@@ -5,6 +5,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createCaseInsensi
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -1240,7 +1241,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     try {
       boolean overrideAwsAccessStrategy =
-          Boolean.valueOf(System.getenv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
+          Boolean.valueOf(systemGetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
       if (stage.getUseVirtualUrl() || overrideAwsAccessStrategy) {
         this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
       } else {

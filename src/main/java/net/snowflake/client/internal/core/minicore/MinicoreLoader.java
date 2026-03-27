@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.core.minicore;
 
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.sun.jna.Native;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +99,11 @@ public class MinicoreLoader {
         return null;
       }
       // Track if this is a temp directory we created (so we can clean it up on failure)
-      if (directory.toString().startsWith(System.getProperty("java.io.tmpdir"))) {
+      String tmpDir = systemGetProperty("java.io.tmpdir");
+      if (tmpDir == null) {
+        logger.debug("cannot determine temp directory");
+      }
+      if (tmpDir != null && directory.toString().startsWith(tmpDir)) {
         createdTempDir = directory;
       }
 
@@ -131,7 +137,7 @@ public class MinicoreLoader {
   }
 
   private Path getWorkingDirectory() {
-    String cwd = System.getProperty("user.dir");
+    String cwd = systemGetProperty("user.dir");
     return (cwd != null && !cwd.isEmpty()) ? Paths.get(cwd) : null;
   }
 
@@ -145,7 +151,7 @@ public class MinicoreLoader {
    * </ul>
    */
   Path getHomeCacheDirectory() {
-    String home = System.getProperty("user.home");
+    String home = systemGetProperty("user.home");
     if (home == null || home.isEmpty()) {
       return null;
     }
