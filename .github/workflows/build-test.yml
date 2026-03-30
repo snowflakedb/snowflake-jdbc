@@ -111,13 +111,13 @@ jobs:
               if: runner.os != 'Windows'
               shell: bash
               env:
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
+                JAVA_TOOL_OPTIONS: "-Xms2g -Xmx4g"
               run: ./mvnw -B -Dskip.unitTests=false -Dtest=net.snowflake.client.internal.util.PureJavaCustomerLikeBenchmarkTest -DfailIfNoTests=false test --batch-mode --show-version
             - name: Run pure Java benchmark test (Windows)
               if: runner.os == 'Windows'
               shell: cmd
               env:
-                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
+                JAVA_TOOL_OPTIONS: "-Xms2g -Xmx4g"
               run: .\mvnw.cmd -B -Dskip.unitTests=false -Dtest=net.snowflake.client.internal.util.PureJavaCustomerLikeBenchmarkTest -DfailIfNoTests=false test --batch-mode --show-version
 
     unit-test-linux:

@@ -8,17 +8,19 @@ import org.junit.jupiter.api.Test;
  *
  * <ul>
  *   <li>Iterate rows and columns
- *   <li>Convert per-cell byte[] payloads to String
+ *   <li>Convert per-cell byte[] payloads to String (UTF-8 decode)
  *   <li>Append values into a CSV-like StringBuilder
  *   <li>Periodically flush/reset the buffer
- *   <li>Optionally reproduce the customer's double-getString pattern
  * </ul>
  *
  * <p>This test has no JDBC, Arrow, or Snowflake dependency. It is intended to show whether AIX is
  * generally slower for this Java-side workload shape.
+ *
+ * <p>Data is generated on-the-fly during each iteration using deterministic functions. This avoids
+ * pre-allocating all rows in memory, which would cause GC artifacts at large row counts (the
+ * pre-allocated byte[][][] for 500k+ rows exceeds several GB and fills tenure space).
  */
 public class PureJavaCustomerLikeBenchmarkTest {
-  private static final int DEFAULT_ROWS = 100_000;
   private static final int DEFAULT_TEXT_COLUMNS = 38;
   private static final int DEFAULT_NUMERIC_COLUMNS = 10;
   private static final int DEFAULT_DATE_COLUMNS = 27;
@@ -29,7 +31,14 @@ public class PureJavaCustomerLikeBenchmarkTest {
 
   @Test
   public void benchmarkCustomerLikeWorkload() {
-    int rowCount = Integer.getInteger("benchmark.rows", DEFAULT_ROWS);
+    int[] rowCounts = {100_000, 500_000};
+
+    for (int rowCount : rowCounts) {
+      runForRowCount(rowCount);
+    }
+  }
+
+  private void runForRowCount(int rowCount) {
     int textColumns = Integer.getInteger("benchmark.textColumns", DEFAULT_TEXT_COLUMNS);
     int numericColumns = Integer.getInteger("benchmark.numericColumns", DEFAULT_NUMERIC_COLUMNS);
     int dateColumns = Integer.getInteger("benchmark.dateColumns", DEFAULT_DATE_COLUMNS);
@@ -38,6 +47,10 @@ public class PureJavaCustomerLikeBenchmarkTest {
     int warmupRuns = Integer.getInteger("benchmark.warmup", DEFAULT_WARMUP);
     int measuredRuns = Integer.getInteger("benchmark.runs", DEFAULT_RUNS);
 
+    Config config =
+        new Config(rowCount, textColumns, numericColumns, dateColumns, textLength, bufferRows);
+
+    System.out.println();
     System.out.println("Pure Java Customer-Like Benchmark");
     System.out.println("=================================");
     System.out.println("Rows: " + rowCount);
@@ -52,92 +65,40 @@ public class PureJavaCustomerLikeBenchmarkTest {
     System.out.println("VM name: " + System.getProperty("java.vm.name"));
     System.out.println("OS name: " + System.getProperty("os.name"));
     System.out.println("OS arch: " + System.getProperty("os.arch"));
-
-    Dataset dataset =
-        createDataset(rowCount, textColumns, numericColumns, dateColumns, textLength, bufferRows);
-
-    System.out.println("Total columns: " + dataset.columnCount);
-    System.out.println("Total payload bytes: " + dataset.totalPayloadBytes);
+    System.out.println("Total columns: " + config.columnCount);
+    System.out.println("Total payload bytes: " + config.totalPayloadBytes);
 
     for (int i = 0; i < warmupRuns; i++) {
-      runMode(dataset, false);
-      runMode(dataset, true);
+      runBenchmark(config);
     }
 
-    BenchmarkStats singleDecodeStats = measure(dataset, measuredRuns, false);
-    BenchmarkStats doubleDecodeStats = measure(dataset, measuredRuns, true);
-
-    printStats("Single decode per cell", singleDecodeStats, dataset);
-    printStats("Double decode per non-null cell", doubleDecodeStats, dataset);
-
-    double avgRatio = doubleDecodeStats.averageNs / (double) singleDecodeStats.averageNs;
-    double bestRatio = doubleDecodeStats.bestNs / (double) singleDecodeStats.bestNs;
-    System.out.printf("Double/single slowdown ratio (avg): %.2fx%n", avgRatio);
-    System.out.printf("Double/single slowdown ratio (best): %.2fx%n", bestRatio);
+    BenchmarkStats stats = measure(config, measuredRuns);
+    printStats("Single decode per cell", stats, config);
   }
 
-  private static Dataset createDataset(
-      int rowCount,
-      int textColumns,
-      int numericColumns,
-      int dateColumns,
-      int textLength,
-      int bufferRows) {
-    int columnCount = textColumns + numericColumns + dateColumns;
-    byte[][][] rows = new byte[rowCount][columnCount][];
-    int totalPayloadBytes = 0;
-
+  private static long calculatePayloadBytes(
+      int rowCount, int textColumns, int numericColumns, int dateColumns, int textLength) {
+    long total = 0;
     for (int row = 0; row < rowCount; row++) {
-      int columnIndex = 0;
-      for (int i = 0; i < textColumns; i++, columnIndex++) {
-        byte[] value = makeAsciiValue(row, i, textLength + ((row + i) % 17));
-        rows[row][columnIndex] = value;
-        totalPayloadBytes += value.length;
+      for (int i = 0; i < textColumns; i++) {
+        total += textLength + ((row + i) % 17);
       }
-      for (int i = 0; i < numericColumns; i++, columnIndex++) {
-        byte[] value = makeNumericValue(row, i);
-        rows[row][columnIndex] = value;
-        totalPayloadBytes += value.length;
+      for (int i = 0; i < numericColumns; i++) {
+        total += Integer.toString((row * 31 + i * 17) % 1_000_000).length();
       }
-      for (int i = 0; i < dateColumns; i++, columnIndex++) {
-        byte[] value = makeDateValue(row, i);
-        rows[row][columnIndex] = value;
-        totalPayloadBytes += value.length;
-      }
+      total += (long) dateColumns * 10;
     }
-
-    return new Dataset(rows, rowCount, columnCount, totalPayloadBytes, bufferRows);
+    return total;
   }
 
-  private static byte[] makeAsciiValue(int row, int column, int length) {
-    byte[] value = new byte[length];
-    for (int i = 0; i < length; i++) {
-      value[i] = (byte) ('A' + ((row + column + i) % 26));
-    }
-    return value;
-  }
-
-  private static byte[] makeNumericValue(int row, int column) {
-    String value = Integer.toString((row * 31 + column * 17) % 1_000_000);
-    return value.getBytes(StandardCharsets.UTF_8);
-  }
-
-  private static byte[] makeDateValue(int row, int column) {
-    int year = 2020 + ((row + column) % 5);
-    int month = 1 + ((row + column) % 12);
-    int day = 1 + ((row + column) % 28);
-    String value = String.format("%04d-%02d-%02d", year, month, day);
-    return value.getBytes(StandardCharsets.UTF_8);
-  }
-
-  private static BenchmarkStats measure(Dataset dataset, int runs, boolean doubleDecode) {
+  private static BenchmarkStats measure(Config config, int runs) {
     long bestNs = Long.MAX_VALUE;
     long totalNs = 0;
     long checksum = 0;
 
     for (int run = 0; run < runs; run++) {
       long start = System.nanoTime();
-      checksum ^= runMode(dataset, doubleDecode);
+      checksum ^= runBenchmark(config);
       long elapsed = System.nanoTime() - start;
       bestNs = Math.min(bestNs, elapsed);
       totalNs += elapsed;
@@ -146,32 +107,49 @@ public class PureJavaCustomerLikeBenchmarkTest {
     return new BenchmarkStats(bestNs, totalNs / runs, checksum);
   }
 
-  private static long runMode(Dataset dataset, boolean doubleDecode) {
+  private static long runBenchmark(Config config) {
     long checksum = 0;
-    long decodeCalls = 0;
-    StringBuilder raw = new StringBuilder(dataset.bufferRows * dataset.columnCount * 16);
+    StringBuilder raw = new StringBuilder(config.bufferRows * config.columnCount * 16);
     int bufferedRows = 0;
 
-    for (int row = 0; row < dataset.rowCount; row++) {
-      for (int column = 0; column < dataset.columnCount; column++) {
-        String firstDecode = new String(dataset.rows[row][column], StandardCharsets.UTF_8);
-        decodeCalls++;
+    byte[] textBuf = new byte[config.textLength + 16];
+    byte[] dateBuf = new byte[10];
 
-        if (doubleDecode) {
-          if (firstDecode != null) {
-            String secondDecode = new String(dataset.rows[row][column], StandardCharsets.UTF_8);
-            decodeCalls++;
-            raw.append(secondDecode);
-            checksum += secondDecode.length();
-            checksum += secondDecode.charAt(0);
-          }
-        } else {
-          raw.append(firstDecode);
-          checksum += firstDecode.length();
-          checksum += firstDecode.charAt(0);
+    for (int row = 0; row < config.rowCount; row++) {
+      int column = 0;
+
+      for (int i = 0; i < config.textColumns; i++, column++) {
+        int len = config.textLength + ((row + i) % 17);
+        fillAsciiValue(textBuf, row, i, len);
+        String decoded = new String(textBuf, 0, len, StandardCharsets.UTF_8);
+        raw.append(decoded);
+        checksum += decoded.length();
+        checksum += decoded.charAt(0);
+        if (column < config.columnCount - 1) {
+          raw.append(',');
+          checksum += ',';
         }
+      }
 
-        if (column < dataset.columnCount - 1) {
+      for (int i = 0; i < config.numericColumns; i++, column++) {
+        byte[] value = makeNumericValue(row, i);
+        String decoded = new String(value, StandardCharsets.UTF_8);
+        raw.append(decoded);
+        checksum += decoded.length();
+        checksum += decoded.charAt(0);
+        if (column < config.columnCount - 1) {
+          raw.append(',');
+          checksum += ',';
+        }
+      }
+
+      for (int i = 0; i < config.dateColumns; i++, column++) {
+        fillDateValue(dateBuf, row, i);
+        String decoded = new String(dateBuf, 0, 10, StandardCharsets.UTF_8);
+        raw.append(decoded);
+        checksum += decoded.length();
+        checksum += decoded.charAt(0);
+        if (column < config.columnCount - 1) {
           raw.append(',');
           checksum += ',';
         }
@@ -181,7 +159,7 @@ public class PureJavaCustomerLikeBenchmarkTest {
       checksum += '\n';
       bufferedRows++;
 
-      if (bufferedRows >= dataset.bufferRows) {
+      if (bufferedRows >= config.bufferRows) {
         checksum += raw.length();
         raw.setLength(0);
         bufferedRows = 0;
@@ -191,51 +169,89 @@ public class PureJavaCustomerLikeBenchmarkTest {
     if (raw.length() > 0) {
       checksum += raw.length();
     }
-    checksum += decodeCalls;
     return checksum;
   }
 
-  private static void printStats(String label, BenchmarkStats stats, Dataset dataset) {
+  private static void fillAsciiValue(byte[] buf, int row, int column, int length) {
+    for (int i = 0; i < length; i++) {
+      buf[i] = (byte) ('A' + ((row + column + i) % 26));
+    }
+  }
+
+  private static byte[] makeNumericValue(int row, int column) {
+    String value = Integer.toString((row * 31 + column * 17) % 1_000_000);
+    return value.getBytes(StandardCharsets.UTF_8);
+  }
+
+  private static void fillDateValue(byte[] buf, int row, int column) {
+    int year = 2020 + ((row + column) % 5);
+    int month = 1 + ((row + column) % 12);
+    int day = 1 + ((row + column) % 28);
+    buf[0] = (byte) ('0' + year / 1000);
+    buf[1] = (byte) ('0' + (year / 100) % 10);
+    buf[2] = (byte) ('0' + (year / 10) % 10);
+    buf[3] = (byte) ('0' + year % 10);
+    buf[4] = '-';
+    buf[5] = (byte) ('0' + month / 10);
+    buf[6] = (byte) ('0' + month % 10);
+    buf[7] = '-';
+    buf[8] = (byte) ('0' + day / 10);
+    buf[9] = (byte) ('0' + day % 10);
+  }
+
+  private static void printStats(String label, BenchmarkStats stats, Config config) {
     System.out.println();
     System.out.println(label);
     System.out.println("-------------------------");
-    printLine("Average", stats.averageNs, dataset.rowCount, dataset.columnCount, stats.checksum);
-    printLine("Best", stats.bestNs, dataset.rowCount, dataset.columnCount, stats.checksum);
+    printLine("Average", stats.averageNs, config.rowCount, config.columnCount, stats.checksum);
+    printLine("Best", stats.bestNs, config.rowCount, config.columnCount, stats.checksum);
   }
 
   private static void printLine(
       String label, long elapsedNs, int rows, int columns, long checksum) {
     double totalMs = elapsedNs / 1_000_000.0;
     double nsPerRow = elapsedNs / (double) rows;
-    double nsPerCell = elapsedNs / (double) (rows * columns);
+    double nsPerCell = elapsedNs / (double) ((long) rows * columns);
     System.out.printf(
         "%-8s total=%.3f ms  ns/row=%.2f  ns/cell=%.2f  checksum=%d%n",
         label, totalMs, nsPerRow, nsPerCell, checksum);
   }
 
-  private static final class Dataset {
-    private final byte[][][] rows;
-    private final int rowCount;
-    private final int columnCount;
-    private final int totalPayloadBytes;
-    private final int bufferRows;
+  private static final class Config {
+    final int rowCount;
+    final int textColumns;
+    final int numericColumns;
+    final int dateColumns;
+    final int textLength;
+    final int columnCount;
+    final int bufferRows;
+    final long totalPayloadBytes;
 
-    private Dataset(
-        byte[][][] rows, int rowCount, int columnCount, int totalPayloadBytes, int bufferRows) {
-      this.rows = rows;
+    Config(
+        int rowCount,
+        int textColumns,
+        int numericColumns,
+        int dateColumns,
+        int textLength,
+        int bufferRows) {
       this.rowCount = rowCount;
-      this.columnCount = columnCount;
-      this.totalPayloadBytes = totalPayloadBytes;
+      this.textColumns = textColumns;
+      this.numericColumns = numericColumns;
+      this.dateColumns = dateColumns;
+      this.textLength = textLength;
+      this.columnCount = textColumns + numericColumns + dateColumns;
       this.bufferRows = bufferRows;
+      this.totalPayloadBytes =
+          calculatePayloadBytes(rowCount, textColumns, numericColumns, dateColumns, textLength);
     }
   }
 
   private static final class BenchmarkStats {
-    private final long bestNs;
-    private final long averageNs;
-    private final long checksum;
+    final long bestNs;
+    final long averageNs;
+    final long checksum;
 
-    private BenchmarkStats(long bestNs, long averageNs, long checksum) {
+    BenchmarkStats(long bestNs, long averageNs, long checksum) {
       this.bestNs = bestNs;
       this.averageNs = averageNs;
       this.checksum = checksum;
