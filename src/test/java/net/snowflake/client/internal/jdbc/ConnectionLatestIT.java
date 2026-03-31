@@ -1566,4 +1566,75 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
+
+  @Test
+  public void testGetRoleWarehouseAndDatabase() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      SnowflakeConnection sfCon = con.unwrap(SnowflakeConnection.class);
+
+      try (ResultSet rs = statement.executeQuery("select current_role()")) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), sfCon.getRole());
+      }
+
+      try (ResultSet rs = statement.executeQuery("select current_warehouse()")) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), sfCon.getWarehouse());
+      }
+
+      try (ResultSet rs = statement.executeQuery("select current_database()")) {
+        assertTrue(rs.next());
+        String currentDatabase = rs.getString(1);
+        assertEquals(currentDatabase, sfCon.getDatabase());
+        assertEquals(con.getCatalog(), sfCon.getDatabase());
+      }
+    }
+  }
+
+  @Test
+  @RunOnAWS
+  public void testSessionContextReflectsSwitches() throws SQLException {
+    final String SECOND_DATABASE = "JDBC_SESSION_CTX_TEST_DB";
+    final String SECOND_SCHEMA = "JDBC_SESSION_CTX_TEST_SCHEMA";
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      SnowflakeConnection sfCon = con.unwrap(SnowflakeConnection.class);
+      String originalDatabase = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
+      String originalSchema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
+      String originalRole = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ROLE").toUpperCase();
+      String originalWarehouse = TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE").toUpperCase();
+      try {
+        assertEquals(originalDatabase, sfCon.getDatabase());
+        assertEquals(originalSchema, con.getSchema());
+        assertEquals(originalRole, sfCon.getRole());
+        assertEquals(originalWarehouse, sfCon.getWarehouse());
+
+        statement.execute(String.format("create or replace database %s", SECOND_DATABASE));
+        con.setCatalog(SECOND_DATABASE);
+        assertEquals(SECOND_DATABASE, sfCon.getDatabase());
+        assertEquals(con.getCatalog(), sfCon.getDatabase());
+
+        statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
+        con.setSchema(SECOND_SCHEMA);
+        assertEquals(SECOND_SCHEMA, con.getSchema());
+
+        statement.execute("use role PUBLIC");
+        assertEquals("PUBLIC", sfCon.getRole());
+
+        statement.execute(String.format("use role %s", originalRole));
+        assertEquals(originalRole, sfCon.getRole());
+
+        statement.execute(String.format("use database %s", originalDatabase));
+        statement.execute(String.format("use schema %s", originalSchema));
+        assertEquals(originalDatabase, sfCon.getDatabase());
+        assertEquals(originalSchema, con.getSchema());
+      } finally {
+        statement.execute(String.format("use role %s", originalRole));
+        statement.execute(String.format("use database %s", originalDatabase));
+        statement.execute(String.format("use schema %s", originalSchema));
+        statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
+      }
+    }
+  }
 }

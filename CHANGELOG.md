@@ -6,6 +6,7 @@
     - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
     - Fix Netty native library conflict in thin JAR (snowflakedb/snowflake-jdbc#2559)
     - Bumped netty to 4.1.132.Final to address CVE-2026-33870 (High) and CVE-2026-33871 (High) (snowflakedb/snowflake-jdbc#2561)
+    - Added getRole, getWarehouse and getDatabase API extension methods
 
 - v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   

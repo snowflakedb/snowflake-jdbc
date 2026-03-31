@@ -325,6 +325,24 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   }
 
   @Override
+  public String getRole() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getRole();
+  }
+
+  @Override
+  public String getWarehouse() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getWarehouse();
+  }
+
+  @Override
+  public String getDatabase() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getDatabase();
+  }
+
+  @Override
   public boolean isClosed() throws SQLException {
     logger.trace("boolean isClosed()", false);
 
