@@ -91,14 +91,17 @@ public class AwsAttestationService {
     return aws4Signer.sign(signRequest).request();
   }
 
-  AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn) throws SFException {
+  AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn, String externalId) throws SFException {
     try (StsClient stsClient = createStsClient(currentCredentials, TIMEOUT_MS)) {
 
-      AssumeRoleRequest assumeRoleRequest =
+      AssumeRoleRequest.Builder assumeRoleRequestBuilder =
           AssumeRoleRequest.builder()
               .roleArn(roleArn)
-              .roleSessionName("identity-federation-session")
-              .build();
+              .roleSessionName("identity-federation-session");
+      if (externalId != null && !externalId.isEmpty()) {
+               assumeRoleRequestBuilder.externalId(externalId);
+              }
+      AssumeRoleRequest assumeRoleRequest = assumeRoleRequestBuilder.build();
 
       AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(assumeRoleRequest);
       Credentials credentials = assumeRoleResponse.credentials();
@@ -126,7 +129,7 @@ public class AwsAttestationService {
 
     for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
       logger.debug("Assuming role: {}", roleArn);
-      currentCredentials = assumeRole(currentCredentials, roleArn);
+      currentCredentials = assumeRole(currentCredentials, roleArn, loginInput.getWorkloadIdentityImpersonationExternalId());
       if (currentCredentials == null) {
         throw new SFException(
             ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);

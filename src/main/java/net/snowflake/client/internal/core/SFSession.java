@@ -63,6 +63,8 @@ public class SFSession extends SFBaseSession {
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
+  private static final String SF_ENABLE_WIF_IMPERSONATION_EXTERNAL_ID =
+          "SF_ENABLE_WIF_IMPERSONATION_EXTERNAL_ID";
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
@@ -733,6 +735,13 @@ public class SFSession extends SFBaseSession {
         .setWorkloadIdentityImpersonationPath(
             (String)
                 connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_IMPERSONATION_PATH))
+        .setWorkloadIdentityImpersonationExternalId(
+                SnowflakeUtil.convertSystemGetEnvToBooleanValue(
+                        SF_ENABLE_WIF_IMPERSONATION_EXTERNAL_ID, false)
+                        ? (String)
+                        connectionPropertiesMap.get(
+                                SFSessionProperty.WORKLOAD_IDENTITY_IMPERSONATION_EXTERNAL_ID)
+                        : null)
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
