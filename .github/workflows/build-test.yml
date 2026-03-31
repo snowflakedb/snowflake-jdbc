@@ -31,13 +31,13 @@ concurrency:
 
 jobs:
     check-no-raw-system-calls:
-        name: Check No Raw System.getProperty/getenv
+        name: Check No Raw System.getProperty/getenv/setProperty
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
-            - name: Check for raw System.getProperty/getenv calls
+            - name: Check for raw System.getProperty/getenv/setProperty calls
               shell: bash
-              run: ./ci/check_no_raw_system_calls.sh
+              run: ./ci/scripts/check_no_raw_system_calls.sh
 
     build:
         name: Build

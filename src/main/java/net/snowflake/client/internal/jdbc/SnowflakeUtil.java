@@ -666,8 +666,8 @@ public class SnowflakeUtil {
   }
 
   /**
-   * System.getProperty wrapper. If System.getProperty raises an SecurityException, it is ignored
-   * and returns null.
+   * System.getProperty wrapper. If System.getProperty raises a SecurityException, it is ignored and
+   * returns null.
    *
    * @param property the property name
    * @return the property value if set, otherwise null.
@@ -685,7 +685,24 @@ public class SnowflakeUtil {
   }
 
   /**
-   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * System.setProperty wrapper. If System.setProperty raises a SecurityException, it is ignored.
+   *
+   * @param property the property name
+   * @param value the property value
+   */
+  public static void systemSetProperty(String property, String value) {
+    try {
+      System.setProperty(property, value);
+    } catch (SecurityException ex) {
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug("Security exception raised: {}", ex.getMessage());
+      }
+    }
+  }
+
+  /**
+   * System.getenv wrapper. If System.getenv raises a SecurityException, it is ignored and returns
    * null.
    *
    * @param env the environment variable name.

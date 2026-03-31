@@ -134,7 +134,7 @@ public class SFClientConfigParser {
 
   public static void checkConfigFilePermissions(String derivedConfigFilePath) throws IOException {
     try {
-      if (Constants.getOS() != Constants.OS.WINDOWS) {
+      if (Constants.getOS().isPosix()) {
         // Check permissions of config file
         if (checkGroupOthersWritePermissions(derivedConfigFilePath)) {
           String error =

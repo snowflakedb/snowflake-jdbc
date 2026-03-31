@@ -33,7 +33,15 @@ public final class Constants {
     LINUX,
     MAC,
     SOLARIS,
-    UNKNOWN
+    UNKNOWN;
+
+    /**
+     * Returns true if this OS supports POSIX file APIs (e.g., PosixFilePermissions). UNKNOWN
+     * returns false to fail safely when OS cannot be determined.
+     */
+    public boolean isPosix() {
+      return this == LINUX || this == MAC || this == SOLARIS;
+    }
   }
 
   public enum Architecture {

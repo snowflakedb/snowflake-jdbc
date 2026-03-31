@@ -71,7 +71,7 @@ class CRLFileCache implements CRLCache {
       cacheLock.lock();
       Path crlFilePath = getCrlFilePath(crlUrl);
 
-      if (Constants.getOS() != Constants.OS.WINDOWS) {
+      if (Constants.getOS().isPosix()) {
         Files.deleteIfExists(crlFilePath);
         Files.createFile(
             crlFilePath,
@@ -160,7 +160,7 @@ class CRLFileCache implements CRLCache {
     try {
       boolean exists = Files.exists(cacheDir);
       if (!exists) {
-        if (Constants.getOS() != Constants.OS.WINDOWS) {
+        if (Constants.getOS().isPosix()) {
           Files.createDirectories(
               cacheDir,
               PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
@@ -170,7 +170,7 @@ class CRLFileCache implements CRLCache {
         }
       }
 
-      if (Constants.getOS() != Constants.OS.WINDOWS && !ownerOnlyPermissions(cacheDir)) {
+      if (Constants.getOS().isPosix() && !ownerOnlyPermissions(cacheDir)) {
         Files.setPosixFilePermissions(cacheDir, PosixFilePermissions.fromString("rwx------"));
         logger.debug("Set CRL cache directory permissions to 'rwx------");
       }

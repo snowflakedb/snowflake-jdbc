@@ -16,6 +16,17 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.commons.io.IOUtils;
 
 public class MinicoreLoader {
+  private enum DirectoryType {
+    TEMP("temp"),
+    HOME("home cache"),
+    CWD("working");
+
+    private String name;
+
+    DirectoryType(String name) {
+      this.name = name;
+    }
+  }
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(MinicoreLoader.class);
   private static final String TEMP_DIR_PREFIX = "snowflake-minicore-";
@@ -56,17 +67,18 @@ public class MinicoreLoader {
       return failure("Library resource not found in JAR: " + resourcePath, null);
     }
 
-    MinicoreLoadResult result = tryDirectory("temp", libraryBytes, this::createTempDirectory);
+    MinicoreLoadResult result =
+        tryDirectory(DirectoryType.TEMP, libraryBytes, this::createTempDirectory);
     if (result != null) {
       return result;
     }
 
-    result = tryDirectory("home cache", libraryBytes, this::getOrCreateHomeCacheDirectory);
+    result = tryDirectory(DirectoryType.HOME, libraryBytes, this::getOrCreateHomeCacheDirectory);
     if (result != null) {
       return result;
     }
 
-    result = tryDirectory("working", libraryBytes, this::getWorkingDirectory);
+    result = tryDirectory(DirectoryType.CWD, libraryBytes, this::getWorkingDirectory);
     if (result != null) {
       return result;
     }
@@ -90,7 +102,7 @@ public class MinicoreLoader {
   }
 
   private MinicoreLoadResult tryDirectory(
-      String name, byte[] libraryBytes, DirectorySupplier supplier) {
+      DirectoryType directoryType, byte[] libraryBytes, DirectorySupplier supplier) {
     Path targetPath = null;
     Path createdTempDir = null;
     try {
@@ -99,19 +111,15 @@ public class MinicoreLoader {
         return null;
       }
       // Track if this is a temp directory we created (so we can clean it up on failure)
-      String tmpDir = systemGetProperty("java.io.tmpdir");
-      if (tmpDir == null) {
-        logger.debug("cannot determine temp directory");
-      }
-      if (tmpDir != null && directory.toString().startsWith(tmpDir)) {
+      if (directoryType == DirectoryType.TEMP) {
         createdTempDir = directory;
       }
 
       targetPath = directory.resolve(platform.getLibraryFileName());
-      loadLogger.log("Trying " + name + " directory: " + directory);
+      loadLogger.log("Trying " + directoryType.name + " directory: " + directory);
       return writeLoadAndCleanup(targetPath, libraryBytes);
     } catch (Exception e) {
-      loadLogger.log("Failed to use " + name + " directory: " + e.getMessage());
+      loadLogger.log("Failed to use " + directoryType.name + " directory: " + e.getMessage());
       cleanup(targetPath, createdTempDir);
       return null;
     }

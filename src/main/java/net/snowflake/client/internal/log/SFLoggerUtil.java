@@ -3,6 +3,7 @@ package net.snowflake.client.internal.log;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.apache.commons.logging.LogFactory;
 
 public class SFLoggerUtil {
@@ -22,12 +23,11 @@ public class SFLoggerUtil {
     }
 
     try {
-      System.setProperty(
+      SnowflakeUtil.systemSetProperty(
           "org.apache.commons.logging.LogFactory",
           "org.apache.commons.logging.impl.LogFactoryImpl");
     } catch (SecurityException ex) {
       // SecurityManager denied setProperty; logging still works with default backend
-      return;
     }
     LogFactory logFactory = LogFactory.getFactory();
     if (commonsLoggingWrapperMode == CommonsLoggingWrapperMode.ALL) {

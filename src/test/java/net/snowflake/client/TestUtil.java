@@ -66,7 +66,7 @@ public class TestUtil {
   }
 
   /**
-   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * System.getenv wrapper. If System.getenv raises a SecurityException, it is ignored and returns
    * null.
    *
    * @deprecated This method should be replaced by SnowflakeUtil.systemGetEnv.
