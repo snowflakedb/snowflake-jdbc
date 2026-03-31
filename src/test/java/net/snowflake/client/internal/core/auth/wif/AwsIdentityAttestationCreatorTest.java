@@ -150,7 +150,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
     Mockito.when(
             attestationServiceMock.assumeRole(
-                initialCredentials, "arn:aws:iam::123456789012:role/TestRole"))
+                initialCredentials, "arn:aws:iam::123456789012:role/TestRole",null))
         .thenReturn(assumedCredentials);
 
     Mockito.doNothing().when(attestationServiceMock).initializeSignerRegion();
@@ -170,6 +170,6 @@ public class AwsIdentityAttestationCreatorTest {
     assertNotNull(attestation.getCredential());
 
     Mockito.verify(attestationServiceMock)
-        .assumeRole(initialCredentials, "arn:aws:iam::123456789012:role/TestRole");
+        .assumeRole(initialCredentials, "arn:aws:iam::123456789012:role/TestRole", null);
   }
 }

@@ -72,6 +72,7 @@ public class SFLoginInput {
   private WorkloadIdentityAttestation workloadIdentityAttestation;
   private String workloadIdentityEntraResource;
   private List<String> workloadIdentityImpersonationPath = Collections.emptyList();
+  private String workloadIdentityImpersonationExternalId;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -633,6 +634,16 @@ public class SFLoginInput {
               .filter(s -> !s.isEmpty())
               .collect(Collectors.toList());
     }
+    return this;
+  }
+
+  public String getWorkloadIdentityImpersonationExternalId() {
+    return workloadIdentityImpersonationExternalId;
+  }
+
+  public SFLoginInput setWorkloadIdentityImpersonationExternalId(
+          String workloadIdentityImpersonationExternalId) {
+    this.workloadIdentityImpersonationExternalId = workloadIdentityImpersonationExternalId;
     return this;
   }
 
