@@ -132,7 +132,7 @@ public class DiagnosticContext {
     if (isNullOrEmpty(javaHome)) {
       return "<cannot be determined due to missing/unaccessible java.home property>";
     }
-    Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "/lib/security");
+    Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "lib", "security");
     logger.info("JAVA_HOME: " + javaHome);
 
     if (isNullOrEmpty(trustStore)) {
