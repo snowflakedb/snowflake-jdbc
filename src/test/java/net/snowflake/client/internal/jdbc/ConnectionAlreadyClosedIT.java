@@ -2,6 +2,7 @@ package net.snowflake.client.internal.jdbc;
 
 import java.sql.Connection;
 import java.util.Properties;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -33,5 +34,10 @@ public class ConnectionAlreadyClosedIT extends BaseJDBCTest {
         () -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
     expectSQLClientInfoException(() -> connection.setClientInfo(new Properties()));
     expectSQLClientInfoException(() -> connection.setClientInfo("name", "value"));
+
+    SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
+    expectConnectionAlreadyClosedException(sfConnection::getRole);
+    expectConnectionAlreadyClosedException(sfConnection::getWarehouse);
+    expectConnectionAlreadyClosedException(sfConnection::getDatabase);
   }
 }

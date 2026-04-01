@@ -137,4 +137,31 @@ public interface SnowflakeConnection {
    * @throws SQLException if an error occurs
    */
   String getDatabaseVersion() throws SQLException;
+
+  /**
+   * Get the current role for the session.
+   *
+   * @return the current role name, or null if no role is set
+   * @throws SQLException if the connection is closed or an error occurs
+   */
+  String getRole() throws SQLException;
+
+  /**
+   * Get the current warehouse for the session.
+   *
+   * @return the current warehouse name, or null if no warehouse is set
+   * @throws SQLException if the connection is closed or an error occurs
+   */
+  String getWarehouse() throws SQLException;
+
+  /**
+   * Get the current database for the session.
+   *
+   * <p>This is equivalent to {@link java.sql.Connection#getCatalog()} but uses Snowflake-specific
+   * terminology for discoverability.
+   *
+   * @return the current database name, or null if no database is set
+   * @throws SQLException if the connection is closed or an error occurs
+   */
+  String getDatabase() throws SQLException;
 }
