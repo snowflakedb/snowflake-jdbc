@@ -40,7 +40,9 @@ public enum TelemetryField {
   HTTP_EXCEPTION("client_http_exception"),
   OCSP_EXCEPTION("client_ocsp_exception"),
 
-  INTERNAL_API_USAGE("client_internal_api_usage");
+  INTERNAL_API_USAGE("client_internal_api_usage"),
+
+  HEARTBEAT_MAX_THREADS_EXCEEDED("client_heartbeat_max_threads_exceeded");
 
   public final String field;
 

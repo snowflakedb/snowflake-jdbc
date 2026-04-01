@@ -1097,7 +1097,7 @@ public class SFSession extends SFBaseSession {
           getSessionId(),
           masterTokenValidityInSeconds);
 
-      HeartbeatBackground.getInstance()
+      HeartbeatRegistry.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
       logger.debug("Heartbeat not enabled for the session {}", getSessionId());
@@ -1109,7 +1109,7 @@ public class SFSession extends SFBaseSession {
     if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug("Session {} stop heartbeat", getSessionId());
 
-      HeartbeatBackground.getInstance().removeSession(this);
+      HeartbeatRegistry.getInstance().removeSession(this);
     } else {
       logger.debug("Heartbeat not enabled for the session {}", getSessionId());
     }
