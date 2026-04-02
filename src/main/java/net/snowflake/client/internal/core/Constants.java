@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
+import java.util.Optional;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /*
@@ -31,7 +32,16 @@ public final class Constants {
     WINDOWS,
     LINUX,
     MAC,
-    SOLARIS
+    SOLARIS,
+    UNKNOWN;
+
+    /**
+     * Returns true if this OS supports POSIX file APIs (e.g., PosixFilePermissions). UNKNOWN
+     * returns false to fail safely when OS cannot be determined.
+     */
+    public boolean isPosix() {
+      return this == LINUX || this == MAC || this == SOLARIS;
+    }
   }
 
   public enum Architecture {
@@ -58,7 +68,8 @@ public final class Constants {
 
   public static synchronized OS getOS() {
     if (os == null) {
-      String operSys = systemGetProperty("os.name").toLowerCase();
+      String operSys =
+          Optional.ofNullable(systemGetProperty("os.name")).map(String::toLowerCase).orElse("");
       if (operSys.contains("win")) {
         os = OS.WINDOWS;
       } else if (operSys.contains("nix") || operSys.contains("nux") || operSys.contains("aix")) {
@@ -67,6 +78,8 @@ public final class Constants {
         os = OS.MAC;
       } else if (operSys.contains("sunos")) {
         os = OS.SOLARIS;
+      } else {
+        os = OS.UNKNOWN;
       }
     }
     return os;

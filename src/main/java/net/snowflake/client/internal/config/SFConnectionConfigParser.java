@@ -5,6 +5,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
@@ -138,9 +139,15 @@ public class SFConnectionConfigParser {
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
-    String configDirectory =
-        Optional.ofNullable(systemGetEnv(SNOWFLAKE_HOME_KEY))
-            .orElse(Paths.get(System.getProperty("user.home"), SNOWFLAKE_DIR).toString());
+    String configDirectory = systemGetEnv(SNOWFLAKE_HOME_KEY);
+    if (configDirectory == null) {
+      String homeDir = systemGetProperty("user.home");
+      if (homeDir == null) {
+        logger.debug("cannot determine user home directory");
+        return new HashMap<>();
+      }
+      configDirectory = Paths.get(homeDir, SNOWFLAKE_DIR).toString();
+    }
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
 
     if (Files.exists(configFilePath)) {

@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.jdbc.diagnostic;
 
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -95,11 +97,11 @@ public class DiagnosticContext {
   public void logEnvironmentInfo() {
     logger.info("Getting environment information");
     logger.info("Current truststore used: " + getTrustStoreLocation());
-    logger.info("-Dnetworkaddress.cache.ttl: " + System.getProperty("networkaddress.cache.ttl"));
+    logger.info("-Dnetworkaddress.cache.ttl: " + systemGetProperty("networkaddress.cache.ttl"));
     logger.info(
         "-Dnetworkaddress.cache.negative.ttl: "
-            + System.getProperty("networkaddress.cache.negative.ttl"));
-    logger.info("-Djavax.net.debug: " + System.getProperty(JAVAX_NET_DEBUG));
+            + systemGetProperty("networkaddress.cache.negative.ttl"));
+    logger.info("-Djavax.net.debug: " + systemGetProperty(JAVAX_NET_DEBUG));
   }
 
   private boolean isNullOrEmpty(String a) {
@@ -125,9 +127,12 @@ public class DiagnosticContext {
    * need a truststore.
    */
   private String getTrustStoreLocation() {
-    String trustStore = System.getProperty(JAVAX_TRUSTSTORE);
-    String javaHome = System.getProperty("java.home");
-    Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "/lib/security");
+    String trustStore = systemGetProperty(JAVAX_TRUSTSTORE);
+    String javaHome = systemGetProperty("java.home");
+    if (isNullOrEmpty(javaHome)) {
+      return "<cannot be determined due to missing/inaccessible java.home property>";
+    }
+    Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "lib", "security");
     logger.info("JAVA_HOME: " + javaHome);
 
     if (isNullOrEmpty(trustStore)) {

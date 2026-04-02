@@ -30,6 +30,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
+    check-no-raw-system-calls:
+        name: Check No Raw System.getProperty/getenv/setProperty
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Check for raw System.getProperty/getenv/setProperty calls
+              shell: bash
+              run: ./ci/scripts/check_no_raw_system_calls.sh
+
     build:
         name: Build
         runs-on: ubuntu-latest

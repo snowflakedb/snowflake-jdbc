@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc.telemetry;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -37,11 +38,10 @@ public class CSVMetricsExporter {
 
   public static synchronized CSVMetricsExporter getDefaultInstance() {
     if (instance == null) {
-      String filePath = System.getProperty(CSV_EXPORTER_FILE_PROPERTY);
+      String filePath = systemGetProperty(CSV_EXPORTER_FILE_PROPERTY);
       int limit =
           Integer.parseInt(
-              Optional.ofNullable(System.getProperty(CSV_EXPORTER_FLUSH_SIZE_PROPERTY))
-                  .orElse("1"));
+              Optional.ofNullable(systemGetProperty(CSV_EXPORTER_FLUSH_SIZE_PROPERTY)).orElse("1"));
       instance = new CSVMetricsExporter(filePath, limit);
     }
     return instance;

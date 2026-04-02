@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.jdbc;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -711,7 +712,7 @@ public class RestRequest {
      */
     URIBuilder builder = new URIBuilder(httpRequest.getURI());
     // If HTAP
-    if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+    if ("true".equalsIgnoreCase(systemGetEnv("HTAP_SIMULATION"))
         && builder.getPathSegments().contains("query-request")) {
       logger.debug("{}Setting htap simulation", requestIdStr);
       builder.setParameter("target", "htap_simulation");
