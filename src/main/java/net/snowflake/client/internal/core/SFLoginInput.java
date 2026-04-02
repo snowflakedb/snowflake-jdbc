@@ -72,7 +72,7 @@ public class SFLoginInput {
   private WorkloadIdentityAttestation workloadIdentityAttestation;
   private String workloadIdentityEntraResource;
   private List<String> workloadIdentityImpersonationPath = Collections.emptyList();
-  private String workloadIdentityImpersonationExternalId;
+  private String workloadIdentityAwsExternalId;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -637,13 +637,12 @@ public class SFLoginInput {
     return this;
   }
 
-  public String getWorkloadIdentityImpersonationExternalId() {
-    return workloadIdentityImpersonationExternalId;
+  public String getWorkloadIdentityAwsExternalId() {
+    return workloadIdentityAwsExternalId;
   }
 
-  public SFLoginInput setWorkloadIdentityImpersonationExternalId(
-          String workloadIdentityImpersonationExternalId) {
-    this.workloadIdentityImpersonationExternalId = workloadIdentityImpersonationExternalId;
+  public SFLoginInput setWorkloadIdentityAwsExternalId(String workloadIdentityAwsExternalId) {
+    this.workloadIdentityAwsExternalId = workloadIdentityAwsExternalId;
     return this;
   }
 

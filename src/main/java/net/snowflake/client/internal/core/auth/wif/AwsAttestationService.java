@@ -129,7 +129,7 @@ public class AwsAttestationService {
 
     for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
       logger.debug("Assuming role: {}", roleArn);
-      currentCredentials = assumeRole(currentCredentials, roleArn, loginInput.getWorkloadIdentityImpersonationExternalId());
+      currentCredentials = assumeRole(currentCredentials, roleArn, loginInput.getWorkloadIdentityAwsExternalId());
       if (currentCredentials == null) {
         throw new SFException(
             ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);

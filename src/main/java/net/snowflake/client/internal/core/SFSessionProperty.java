@@ -32,8 +32,8 @@ public enum SFSessionProperty {
   WORKLOAD_IDENTITY_PROVIDER("workloadIdentityProvider", false, String.class),
   WORKLOAD_IDENTITY_ENTRA_RESOURCE("workloadIdentityEntraResource", false, String.class),
   WORKLOAD_IDENTITY_IMPERSONATION_PATH("workloadIdentityImpersonationPath", false, String.class),
-  WORKLOAD_IDENTITY_IMPERSONATION_EXTERNAL_ID(
-          "workloadIdentityImpersonationExternalId", false, String.class),
+  WORKLOAD_IDENTITY_AWS_EXTERNAL_ID(
+          "workloadIdentityAwsExternalId", false, String.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
