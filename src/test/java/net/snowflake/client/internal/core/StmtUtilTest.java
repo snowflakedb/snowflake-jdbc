@@ -1,9 +1,13 @@
 package net.snowflake.client.internal.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -90,6 +94,37 @@ public class StmtUtilTest extends BaseJDBCTest {
       // No calls should have happened without additional headers.
       mockedHttpUtil.verify(httpCalledWithHeaders, times(1));
     }
+  }
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  /** SNOW-3063492 Verify QCC is merged from a failed query response */
+  @Test
+  public void testUpdateQueryContextFromFailedResponse() throws Exception {
+    String failedResponse =
+        "{\"data\":{\"errorCode\":\"200001\",\"sqlState\":\"22000\","
+            + "\"queryId\":\"test-query-id\","
+            + "\"queryContext\":{\"entries\":[{\"id\":0,\"timestamp\":123456789,\"priority\":0,\"context\":\"opaque\"}]}"
+            + "},\"code\":\"200001\","
+            + "\"message\":\"A primary key already exists.\","
+            + "\"success\":false}";
+
+    JsonNode responseJson = MAPPER.readTree(failedResponse);
+    SFSession session = createSessionWithQCC();
+
+    StmtUtil.updateQueryContextFromResponse(responseJson, session);
+
+    QueryContextDTO qcc = session.getQueryContextDTO();
+    assertNotNull(qcc, "QCC should be populated from failed response");
+    assertEquals(1, qcc.getEntries().size());
+    assertEquals(0, qcc.getEntries().get(0).getId());
+    assertEquals(123456789L, qcc.getEntries().get(0).getTimestamp());
+  }
+
+  private static SFSession createSessionWithQCC() {
+    SFSession session = new SFSession();
+    session.qcc = new QueryContextCache(session.getQueryContextCacheSize());
+    return session;
   }
 
   private SFLoginInput createLoginInput() {

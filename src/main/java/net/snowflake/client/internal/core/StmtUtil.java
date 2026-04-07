@@ -443,6 +443,16 @@ public class StmtUtil {
     }
   }
 
+  static void updateQueryContextFromResponse(JsonNode responseJson, SFBaseSession session) {
+    if (session == null) {
+      return;
+    }
+    JsonNode queryContextNode = responseJson.path("data").path("queryContext");
+    if (SnowflakeUtil.isJsonNodePresent(queryContextNode)) {
+      session.setQueryContext(queryContextNode.toString());
+    }
+  }
+
   private static void setServiceNameHeader(StmtInput stmtInput, HttpRequestBase httpRequest) {
     if (!isNullOrEmpty(stmtInput.serviceName)) {
       httpRequest.setHeader(SessionUtil.SF_HEADER_SERVICE_NAME, stmtInput.serviceName);
@@ -505,11 +515,12 @@ public class StmtUtil {
         }
       } else {
         retries = 0; // reset retry counter after a successful response
-      }
 
-      if (pingPongResponseJson != null)
-      // raise server side error as an exception if any
-      {
+        // Merge QueryContext before error checking so that QCC is updated
+        // even for failed queries (e.g. DPO changes from aborted transactions).
+        updateQueryContextFromResponse(pingPongResponseJson, session);
+
+        // raise server side error as an exception if any
         SnowflakeUtil.checkErrorAndThrowException(pingPongResponseJson);
       }
 
