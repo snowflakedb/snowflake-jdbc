@@ -2461,6 +2461,172 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
+  @Test
+  public void testGetColumnsWithCommonTypes() throws Throwable {
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      final String targetTable =
+          "TESTCOMMONTYPES" + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
+      try {
+        statement.execute(
+            "create or replace table "
+                + targetTable
+                + "(C1 int, C2 varchar(100), C3 number(18,4), C4 double,"
+                + " C5 boolean, C6 date not null, C7 time, C8 timestamp_ntz(7),"
+                + " C9 timestamp_ltz(8), C10 timestamp_tz(3), C11 binary(100), C12 variant)");
+
+        DatabaseMetaData metaData = connection.getMetaData();
+
+        try (ResultSet resultSet =
+            metaData.getColumns(database, escapeUnderscore(schema), targetTable, "%")) {
+          // C1 - int
+          assertTrue(resultSet.next());
+          assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.BIGINT, resultSet.getInt("DATA_TYPE"));
+          assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+          assertEquals(38, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+          assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
+
+          // C2 - varchar(100)
+          assertTrue(resultSet.next());
+          assertEquals("C2", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+          assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+          assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(100, resultSet.getInt("CHAR_OCTET_LENGTH"));
+
+          // C3 - number(18,4)
+          assertTrue(resultSet.next());
+          assertEquals("C3", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.DECIMAL, resultSet.getInt("DATA_TYPE"));
+          assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+          assertEquals(18, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(4, resultSet.getInt("DECIMAL_DIGITS"));
+
+          // C4 - double
+          assertTrue(resultSet.next());
+          assertEquals("C4", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.DOUBLE, resultSet.getInt("DATA_TYPE"));
+          assertEquals("DOUBLE", resultSet.getString("TYPE_NAME"));
+
+          // C5 - boolean
+          assertTrue(resultSet.next());
+          assertEquals("C5", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.BOOLEAN, resultSet.getInt("DATA_TYPE"));
+          assertEquals("BOOLEAN", resultSet.getString("TYPE_NAME"));
+
+          // C6 - date not null
+          assertTrue(resultSet.next());
+          assertEquals("C6", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.DATE, resultSet.getInt("DATA_TYPE"));
+          assertEquals("DATE", resultSet.getString("TYPE_NAME"));
+          assertEquals(ResultSetMetaData.columnNoNulls, resultSet.getInt("NULLABLE"));
+          assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+
+          // C7 - time
+          assertTrue(resultSet.next());
+          assertEquals("C7", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.TIME, resultSet.getInt("DATA_TYPE"));
+          assertEquals("TIME", resultSet.getString("TYPE_NAME"));
+
+          // C8 - timestamp_ntz(7)
+          assertTrue(resultSet.next());
+          assertEquals("C8", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.TIMESTAMP, resultSet.getInt("DATA_TYPE"));
+          assertEquals("TIMESTAMPNTZ", resultSet.getString("TYPE_NAME"));
+
+          // C9 - timestamp_ltz(8)
+          assertTrue(resultSet.next());
+          assertEquals("C9", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.TIMESTAMP, resultSet.getInt("DATA_TYPE"));
+          assertEquals("TIMESTAMPLTZ", resultSet.getString("TYPE_NAME"));
+
+          // C10 - timestamp_tz(3)
+          assertTrue(resultSet.next());
+          assertEquals("C10", resultSet.getString("COLUMN_NAME"));
+          int expectedTzType =
+              connection
+                      .unwrap(SnowflakeConnectionImpl.class)
+                      .getSFBaseSession()
+                      .getEnableReturnTimestampWithTimeZone()
+                  ? Types.TIMESTAMP_WITH_TIMEZONE
+                  : Types.TIMESTAMP;
+          assertEquals(expectedTzType, resultSet.getInt("DATA_TYPE"));
+          assertEquals("TIMESTAMPTZ", resultSet.getString("TYPE_NAME"));
+
+          // C11 - binary(100)
+          assertTrue(resultSet.next());
+          assertEquals("C11", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
+          assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
+          assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
+
+          // C12 - variant
+          assertTrue(resultSet.next());
+          assertEquals("C12", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+          assertEquals("VARIANT", resultSet.getString("TYPE_NAME"));
+
+          assertFalse(resultSet.next());
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable);
+      }
+    }
+  }
+
+  @Test
+  public void testGetColumnsWithUnrecognisedType() throws Throwable {
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      final String targetTable =
+          "TESTUUIDTABLE" + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
+      try {
+        statement.execute(
+            "create or replace table " + targetTable + "(C1 int, C2 UUID, C3 varchar(100))");
+
+        DatabaseMetaData metaData = connection.getMetaData();
+
+        try (ResultSet resultSet =
+            metaData.getColumns(database, escapeUnderscore(schema), targetTable, "%")) {
+          // C1 - int column
+          assertTrue(resultSet.next());
+          assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.BIGINT, resultSet.getInt("DATA_TYPE"));
+          assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+
+          // C2 - UUID column (unknown type, reported as OTHER with actual type name)
+          assertTrue(resultSet.next());
+          assertEquals("C2", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
+          assertEquals("UUID", resultSet.getString("TYPE_NAME"));
+          assertEquals(database, resultSet.getString("TABLE_CAT"));
+          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
+          assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+          assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+          assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+          assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+          assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+          // C3 - varchar column
+          assertTrue(resultSet.next());
+          assertEquals("C3", resultSet.getString("COLUMN_NAME"));
+          assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+          assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+          assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
+
+          assertFalse(resultSet.next());
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable);
+      }
+    }
+  }
+
   @Nested
   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   class WildcardsInShowMetadataQueries {

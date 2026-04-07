@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -205,7 +206,14 @@ public class SnowflakeUtil {
       boolean isStructuredType,
       boolean isVectorType)
       throws SnowflakeSQLLoggedException {
-    SnowflakeType baseType = SnowflakeTypeUtil.fromString(internalColTypeName);
+    SnowflakeType baseType = SnowflakeTypeUtil.fromStringOrNull(internalColTypeName);
+    if (baseType == null) {
+      // Unknown Snowflake type (e.g. UUID) — report as OTHER with the actual type name
+      return new ColumnTypeInfo(
+          Types.OTHER,
+          defaultIfNull(extColTypeName, internalColTypeName.toUpperCase(Locale.ROOT)),
+          SnowflakeType.ANY);
+    }
     ColumnTypeInfo columnTypeInfo;
 
     switch (baseType) {
@@ -347,14 +355,16 @@ public class SnowflakeUtil {
         extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
 
         if (!udtOutputType.isMissingNode()) {
-          SnowflakeType outputType = SnowflakeTypeUtil.fromString(udtOutputType.asText());
-          switch (outputType) {
-            case OBJECT:
-            case TEXT:
-              colType = Types.VARCHAR;
-              break;
-            case BINARY:
-              colType = Types.BINARY;
+          SnowflakeType outputType = SnowflakeTypeUtil.fromStringOrNull(udtOutputType.asText());
+          if (outputType != null) {
+            switch (outputType) {
+              case OBJECT:
+              case TEXT:
+                colType = Types.VARCHAR;
+                break;
+              case BINARY:
+                colType = Types.BINARY;
+            }
           }
         }
         columnTypeInfo = new ColumnTypeInfo(colType, extColTypeName, baseType);
