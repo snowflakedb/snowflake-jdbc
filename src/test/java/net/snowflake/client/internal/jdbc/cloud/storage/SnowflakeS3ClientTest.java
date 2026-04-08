@@ -46,7 +46,7 @@ public class SnowflakeS3ClientTest {
             false,
             /* isClientSideEncrypted */ false);
     try {
-      URI override = endpointOverride(client).orElseThrow();
+      URI override = endpointOverride(client).get();
       assertEquals("https", override.getScheme());
       assertEquals("s3.eu-west-1.amazonaws.com", override.getHost());
     } finally {
@@ -60,7 +60,7 @@ public class SnowflakeS3ClientTest {
     SnowflakeS3Client client =
         newClient("us-gov-west-1", url, false, /* isClientSideEncrypted */ false);
     try {
-      URI override = endpointOverride(client).orElseThrow();
+      URI override = endpointOverride(client).get();
       assertEquals(URI.create(url), override);
     } finally {
       client.shutdown();
@@ -73,7 +73,7 @@ public class SnowflakeS3ClientTest {
     SnowflakeS3Client client =
         newClient("us-east-1", url, false, /* isClientSideEncrypted */ false);
     try {
-      URI override = endpointOverride(client).orElseThrow();
+      URI override = endpointOverride(client).get();
       assertEquals("http", override.getScheme());
       assertEquals("minio.local", override.getHost());
       assertEquals(9000, override.getPort());
@@ -91,7 +91,7 @@ public class SnowflakeS3ClientTest {
             /* useS3RegionalUrl */ true,
             /* isClientSideEncrypted */ false);
     try {
-      URI override = endpointOverride(client).orElseThrow();
+      URI override = endpointOverride(client).get();
       assertEquals(URI.create("https://s3.us-west-2.amazonaws.com"), override);
     } finally {
       client.shutdown();
@@ -107,7 +107,7 @@ public class SnowflakeS3ClientTest {
             /* useS3RegionalUrl */ true,
             /* isClientSideEncrypted */ false);
     try {
-      URI override = endpointOverride(client).orElseThrow();
+      URI override = endpointOverride(client).get();
       assertEquals(URI.create("https://s3.cn-northwest-1.amazonaws.com.cn"), override);
     } finally {
       client.shutdown();
