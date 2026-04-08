@@ -129,7 +129,7 @@ public class SFSession extends SFBaseSession {
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
   // The cache of query context sent from Cloud Service.
-  private QueryContextCache qcc;
+  QueryContextCache qcc;
 
   // Max retries for outgoing http requests.
   private int maxHttpRetries = 7;

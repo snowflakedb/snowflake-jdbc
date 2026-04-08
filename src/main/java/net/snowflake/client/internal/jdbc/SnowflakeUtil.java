@@ -1024,6 +1024,11 @@ public class SnowflakeUtil {
     return str == null || str.isEmpty();
   }
 
+  /** Returns {@code true} when the node exists and carries a non-null value. */
+  public static boolean isJsonNodePresent(JsonNode node) {
+    return !node.isMissingNode() && !node.isNull();
+  }
+
   /**
    * Converts Byte array to hex string
    *
