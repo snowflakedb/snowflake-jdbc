@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.core.auth.wif;
 
 import java.time.Duration;
+import java.util.List;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
@@ -127,11 +128,12 @@ public class AwsAttestationService {
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
           "No initial AWS credentials found for role chaining");
     }
-
-    for (String roleArn : loginInput.getWorkloadIdentityImpersonationPath()) {
+    List<String> impersonationPath = loginInput.getWorkloadIdentityImpersonationPath();
+    for (int i = 0; i < impersonationPath.size(); i++) {
+      String roleArn = impersonationPath.get(i);
       logger.debug("Assuming role: {}", roleArn);
       currentCredentials =
-          assumeRole(currentCredentials, roleArn, loginInput.getWorkloadIdentityAwsExternalId());
+          assumeRole(currentCredentials, roleArn, (i == impersonationPath.size() - 1) ? loginInput.getWorkloadIdentityAwsExternalId() : null);
       if (currentCredentials == null) {
         throw new SFException(
             ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "Failed to assume role: " + roleArn);
