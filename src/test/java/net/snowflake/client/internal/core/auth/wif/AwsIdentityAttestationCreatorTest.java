@@ -150,7 +150,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
     Mockito.when(
             attestationServiceMock.assumeRole(
-                initialCredentials, "arn:aws:iam::123456789012:role/TestRole",null))
+                initialCredentials, "arn:aws:iam::123456789012:role/TestRole", null))
         .thenReturn(assumedCredentials);
 
     Mockito.doNothing().when(attestationServiceMock).initializeSignerRegion();
@@ -172,6 +172,7 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.verify(attestationServiceMock)
         .assumeRole(initialCredentials, "arn:aws:iam::123456789012:role/TestRole", null);
   }
+
   @Test
   public void shouldPassExternalIdToAssumeRoleWhenProvided() throws SFException {
     AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
@@ -180,34 +181,34 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.when(requestMock.method()).thenReturn(SdkHttpMethod.GET);
 
     AwsSessionCredentials initialCredentials =
-            AwsSessionCredentials.create("initial-key", "initial-secret", "initial-token");
+        AwsSessionCredentials.create("initial-key", "initial-secret", "initial-token");
     AwsSessionCredentials assumedCredentials =
-            AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
+        AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
 
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
     Mockito.when(
-                    attestationServiceMock.assumeRole(
-                            initialCredentials, "arn:aws:iam::123456789012:role/TestRole", "my-external-id"))
-            .thenReturn(assumedCredentials);
+            attestationServiceMock.assumeRole(
+                initialCredentials, "arn:aws:iam::123456789012:role/TestRole", "my-external-id"))
+        .thenReturn(assumedCredentials);
     Mockito.doNothing().when(attestationServiceMock).initializeSignerRegion();
     Mockito.when(attestationServiceMock.signRequestWithSigV4(any(), Mockito.eq(assumedCredentials)))
-            .thenReturn(requestMock);
+        .thenReturn(requestMock);
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput.setWorkloadIdentityImpersonationPath("arn:aws:iam::123456789012:role/TestRole");
     loginInput.setWorkloadIdentityAwsExternalId("my-external-id");
 
     AwsIdentityAttestationCreator attestationCreator =
-            new AwsIdentityAttestationCreator(attestationServiceMock, loginInput);
+        new AwsIdentityAttestationCreator(attestationServiceMock, loginInput);
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
 
     assertNotNull(attestation);
     assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
     assertNotNull(attestation.getCredential());
     Mockito.verify(attestationServiceMock)
-            .assumeRole(
-                    initialCredentials, "arn:aws:iam::123456789012:role/TestRole", "my-external-id");
+        .assumeRole(
+            initialCredentials, "arn:aws:iam::123456789012:role/TestRole", "my-external-id");
   }
 }
