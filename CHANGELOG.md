@@ -10,6 +10,7 @@
     - Fix driver failure when security manager prohibits access to system properties, environment variables and modifying security providers (snowflakedb/snowflake-jdbc#2563)
     - Removed the io.netty.tryReflectionSetAccessible system property setting as it's no longer needed with modern Arrow/Netty versions (snowflakedb/snowflake-jdbc#2563)
     - Fixed crash in getColumns operation when table contained unrecognised column type (snowflakedb/snowflake-jdbc#2568).
+    - Fixed session expiration when multiple sessions have different heartbeat intervals (snowflakedb/snowflake-jdbc#2566).
 
 - v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
