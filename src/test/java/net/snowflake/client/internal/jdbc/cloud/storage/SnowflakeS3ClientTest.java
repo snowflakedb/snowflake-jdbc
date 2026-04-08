@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 /**
- * Unit tests for {@link SnowflakeS3Client} endpoint selection (GS {@code stageInfo.endPoint} and
+ * Unit tests for {@link SnowflakeS3Client} endpoint selection ({@code stageInfo.endPoint} and
  * regional URL mode). Uses {@link S3AsyncClient#serviceClientConfiguration()}{@code
  * .endpointOverride()} to read the effective override.
  */
