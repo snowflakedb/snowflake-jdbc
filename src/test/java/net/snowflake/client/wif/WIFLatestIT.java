@@ -151,6 +151,9 @@ public class WIFLatestIT {
       named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID",
       matches = ".+")
   @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID", matches = ".+")
+  @EnabledIfEnvironmentVariable(
+      named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID",
+      matches = ".+")
   void shouldAuthenticateUsingWIFWithImpersonationAndExternalId() {
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);

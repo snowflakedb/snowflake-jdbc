@@ -678,7 +678,7 @@ public class SFSession extends SFBaseSession {
             != null) {
       throw new SFException(
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
-          "Connection property workloadIdentityAwsExternalId is not supported");
+          "Connection property workloadIdentityAwsExternalId is not enabled");
     }
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
