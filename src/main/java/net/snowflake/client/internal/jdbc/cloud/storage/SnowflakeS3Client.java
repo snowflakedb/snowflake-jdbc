@@ -178,7 +178,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       if (!endpointForOverride.startsWith("https://")
           && !endpointForOverride.startsWith("http://")) {
         logger.debug(
-            "SNOW-3344317: stageEndPoint has no scheme: {}", this.stageEndPoint);
+            "AWS S3 Client: stage endpoint {} has no scheme, normalizing for URI creation.", this.stageEndPoint);
         endpointForOverride = "https://" + endpointForOverride;
       }
       clientBuilder.endpointOverride(URI.create(endpointForOverride));
