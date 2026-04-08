@@ -139,9 +139,9 @@ public class WifTestHelper {
             pb.environment().put("SF_ENABLE_WIF_AWS_EXTERNAL_ID", "true");
             pb.environment().put("IS_GCP_FUNCTION", queryParams.getOrDefault("IS_GCP_FUNCTION", "false"));
 
-            String externalId = queryParams.get("SNOWFLAKE_TEST_WIF_IMPERSONATION_EXTERNAL_ID");
+            String externalId = queryParams.get("SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID");
             if (externalId != null) {
-                pb.environment().put("SNOWFLAKE_TEST_WIF_IMPERSONATION_EXTERNAL_ID", externalId);
+                pb.environment().put("SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID", externalId);
             }
 
             process = pb.start();
