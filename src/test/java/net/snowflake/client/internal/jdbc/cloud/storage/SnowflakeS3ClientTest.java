@@ -41,10 +41,7 @@ public class SnowflakeS3ClientTest {
   public void shouldPrependHttpsWhenStageEndpointHasNoScheme() throws Exception {
     SnowflakeS3Client client =
         newClient(
-            "eu-west-1",
-            "s3.eu-west-1.amazonaws.com",
-            false,
-            /* isClientSideEncrypted */ false);
+            "eu-west-1", "s3.eu-west-1.amazonaws.com", false, /* isClientSideEncrypted */ false);
     try {
       URI override = endpointOverride(client).get();
       assertEquals("https", override.getScheme());
@@ -154,10 +151,7 @@ public class SnowflakeS3ClientTest {
     try {
       client =
           newClient(
-              "us-west-2",
-              "s3.us-west-2.amazonaws.com",
-              false,
-              /* isClientSideEncrypted */ false);
+              "us-west-2", "s3.us-west-2.amazonaws.com", false, /* isClientSideEncrypted */ false);
       assertNotNull(client);
       assertTrue(endpointOverride(client).isPresent());
       assertNotNull(endpointOverride(client).get().getScheme());
