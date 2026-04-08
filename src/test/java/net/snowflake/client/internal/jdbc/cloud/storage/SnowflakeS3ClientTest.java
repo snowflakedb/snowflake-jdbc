@@ -33,12 +33,12 @@ public class SnowflakeS3ClientTest {
 
   /** Documents why bare hostnames must be normalized before {@code endpointOverride(URI)}. */
   @Test
-  public void uriCreate_bareAwsHostname_hasNullScheme() {
+  public void shouldDocumentBareAwsHostnameHasNullUriScheme() {
     assertNull(URI.create("s3.us-west-2.amazonaws.com").getScheme());
   }
 
   @Test
-  public void endpointOverride_stageEndPointWithoutScheme_prependsHttps() throws Exception {
+  public void shouldPrependHttpsWhenStageEndpointHasNoScheme() throws Exception {
     SnowflakeS3Client client =
         newClient(
             "eu-west-1",
@@ -55,7 +55,7 @@ public class SnowflakeS3ClientTest {
   }
 
   @Test
-  public void endpointOverride_stageEndPointWithHttps_unchanged() throws Exception {
+  public void shouldKeepHttpsStageEndpointUnchanged() throws Exception {
     String url = "https://s3-fips.us-gov-west-1.amazonaws.com";
     SnowflakeS3Client client =
         newClient("us-gov-west-1", url, false, /* isClientSideEncrypted */ false);
@@ -67,8 +67,26 @@ public class SnowflakeS3ClientTest {
     }
   }
 
+  /**
+   * RFC 3986: scheme is case-insensitive; must not prepend a second {@code https://} (e.g. to
+   * {@code HTTPS://...}).
+   */
   @Test
-  public void endpointOverride_stageEndPointWithHttp_unchanged() throws Exception {
+  public void shouldAcceptUppercaseHttpsSchemeInStageEndpoint() throws Exception {
+    String url = "HTTPS://s3-fips.us-gov-west-1.amazonaws.com";
+    SnowflakeS3Client client =
+        newClient("us-gov-west-1", url, false, /* isClientSideEncrypted */ false);
+    try {
+      URI override = endpointOverride(client).get();
+      assertTrue(override.getScheme().equalsIgnoreCase("https"));
+      assertEquals("s3-fips.us-gov-west-1.amazonaws.com", override.getHost());
+    } finally {
+      client.shutdown();
+    }
+  }
+
+  @Test
+  public void shouldKeepHttpStageEndpointUnchanged() throws Exception {
     String url = "http://minio.local:9000";
     SnowflakeS3Client client =
         newClient("us-east-1", url, false, /* isClientSideEncrypted */ false);
@@ -83,7 +101,7 @@ public class SnowflakeS3ClientTest {
   }
 
   @Test
-  public void endpointOverride_useS3RegionalUrl_commercialRegion() throws Exception {
+  public void shouldSetRegionalS3EndpointForCommercialRegion() throws Exception {
     SnowflakeS3Client client =
         newClient(
             "us-west-2",
@@ -99,7 +117,7 @@ public class SnowflakeS3ClientTest {
   }
 
   @Test
-  public void endpointOverride_useS3RegionalUrl_chinaRegion() throws Exception {
+  public void shouldSetRegionalS3EndpointForChinaRegion() throws Exception {
     SnowflakeS3Client client =
         newClient(
             "cn-northwest-1",
@@ -115,7 +133,7 @@ public class SnowflakeS3ClientTest {
   }
 
   @Test
-  public void endpointOverride_noStageEndPoint_noRegionalUrl_noOverride() throws Exception {
+  public void shouldOmitEndpointOverrideWhenNotConfigured() throws Exception {
     SnowflakeS3Client client =
         newClient(
             "eu-central-1",
@@ -131,7 +149,7 @@ public class SnowflakeS3ClientTest {
 
   /** Regression: scheme-less {@code stageEndPoint} must not NPE inside AWS SDK v2 client build. */
   @Test
-  public void constructor_schemeLessStageEndPoint_doesNotThrowNpe() throws Exception {
+  public void shouldBuildClientWithoutNpeWhenStageEndpointIsSchemelessHost() throws Exception {
     SnowflakeS3Client client = null;
     try {
       client =

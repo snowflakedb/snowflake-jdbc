@@ -174,14 +174,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (this.stageEndPoint != null
         && !this.stageEndPoint.isEmpty()
         && !"null".equals(this.stageEndPoint)) {
-      String endpointForOverride = this.stageEndPoint;
-      if (!endpointForOverride.startsWith("https://")
-          && !endpointForOverride.startsWith("http://")) {
-        logger.debug(
-            "AWS S3 Client: stage endpoint {} has no scheme, normalizing for URI creation.", this.stageEndPoint);
-        endpointForOverride = "https://" + endpointForOverride;
-      }
-      clientBuilder.endpointOverride(URI.create(endpointForOverride));
+      clientBuilder.endpointOverride(resolveStageEndpointUriForOverride(this.stageEndPoint));
       clientBuilder.region(region);
     } else {
       if (this.isUseS3RegionalUrl) {
@@ -238,6 +231,38 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     amazonClient = clientBuilder.build();
+  }
+
+  /**
+   * Builds a {@link URI} for {@code endpointOverride} with a non-null scheme (required by AWS SDK
+   * v2). Uses {@link URI#getScheme()} and compares {@code http}/{@code https} case-insensitively
+   * per RFC 3986; bare hostnames get an {@code https://} prefix.
+   *
+   * <p>{@link URI#create(String)} only throws {@link IllegalArgumentException}, wrapping {@link
+   * java.net.URISyntaxException} when the string violates RFC&nbsp;2396 / RFC&nbsp;3986.
+   */
+  private URI resolveStageEndpointUriForOverride(String raw) {
+    URI parsed;
+    try {
+      parsed = URI.create(raw);
+    } catch (IllegalArgumentException ex) {
+      logger.debug(
+          "AWS S3 Client: could not parse stage endpoint as URI; raw=\""
+              + raw
+              + "\"; prefixing https://",
+          ex);
+      return URI.create("https://" + raw);
+    }
+    String scheme = parsed.getScheme();
+    if (scheme == null || scheme.isEmpty()) {
+      logger.debug(
+          "AWS S3 Client: stage endpoint {} has no scheme, normalizing for URI creation.", raw);
+      return URI.create("https://" + raw);
+    }
+    if (scheme.equalsIgnoreCase("https") || scheme.equalsIgnoreCase("http")) {
+      return parsed;
+    }
+    return parsed;
   }
 
   static String getDomainSuffixForRegionalUrl(String regionName) {
