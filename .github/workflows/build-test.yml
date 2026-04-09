@@ -258,7 +258,7 @@ jobs:
 
     test-linux:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
-        name: ${{ matrix.runConfig.cloud }} Rocky8 java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
+        name: ${{ matrix.runConfig.cloud }} Linux java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false

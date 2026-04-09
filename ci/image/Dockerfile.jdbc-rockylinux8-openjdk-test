@@ -1,5 +1,4 @@
 FROM rockylinux:8 AS jdbc-rockylinux8-openjdk-base
-ARG JDK_PACKAGE
 
 # update OS
 RUN dnf -y update && \
@@ -20,8 +19,6 @@ RUN pip3.9 install -U snowflake-connector-python
 
 # aws
 RUN pip3.9 install -U awscli
-COPY scripts/aws.sh /usr/local/bin/aws
-RUN chmod a+x /usr/local/bin/aws
 
 # zstd
 RUN dnf -y install zstd
