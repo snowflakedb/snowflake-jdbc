@@ -258,7 +258,7 @@ jobs:
 
     test-linux:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
-        name: ${{ matrix.runConfig.cloud }} Linux java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
+        name: ${{ matrix.runConfig.cloud }} Rocky8 java on ${{ matrix.runConfig.image }} JDBC${{ matrix.runConfig.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
@@ -269,33 +269,33 @@ jobs:
                             (
                                 github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'FULL-TEST-MATRIX') &&
                                 '[
-                                    {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk11","cloud":"AWS","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk17","cloud":"AWS","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":""},
-                                    {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
-                                    {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"}
+                                    {"image":"jdbc-rockylinux8-openjdk8","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk11","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk17","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk21","cloud":"AWS","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk17","cloud":"GCP","additionalMavenProfile":""},
+                                    {"image":"jdbc-rockylinux8-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                    {"image":"jdbc-rockylinux8-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"}
                                   ]'
                             ) ||
                             '[
-                                {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk11","cloud":"AWS","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk17","cloud":"AWS","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk8","cloud":"AZURE","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk11","cloud":"AZURE","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk21","cloud":"AZURE","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk8","cloud":"GCP","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk11","cloud":"GCP","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk21","cloud":"GCP","additionalMavenProfile":""},
-                                {"image":"jdbc-centos7-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
-                                {"image":"jdbc-centos7-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
-                                {"image":"jdbc-centos7-openjdk17","cloud":"AZURE","additionalMavenProfile":"-Dthin-jar"},
-                                {"image":"jdbc-centos7-openjdk17","cloud":"GCP","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-rockylinux8-openjdk8","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk11","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk17","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk21","cloud":"AWS","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk8","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk11","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk17","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk21","cloud":"AZURE","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk8","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk11","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk17","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk21","cloud":"GCP","additionalMavenProfile":""},
+                                {"image":"jdbc-rockylinux8-openjdk8","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-rockylinux8-openjdk21","cloud":"AWS","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-rockylinux8-openjdk17","cloud":"AZURE","additionalMavenProfile":"-Dthin-jar"},
+                                {"image":"jdbc-rockylinux8-openjdk17","cloud":"GCP","additionalMavenProfile":"-Dthin-jar"},
                               ]'
                         )
                     }}
