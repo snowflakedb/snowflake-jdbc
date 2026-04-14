@@ -445,7 +445,7 @@ public class SFSession extends SFBaseSession {
           if (propertyValue != null) {
             maxHttpRetries = (Integer) propertyValue;
           }
-          break;
+          break
 
         case ENABLE_PUT_GET:
           if (propertyValue != null) {
