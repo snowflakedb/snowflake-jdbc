@@ -3,6 +3,7 @@
 # Changelog
 - v4.1.1-SNAPSHOT
     - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8
+    - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
 - v4.1.0
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
     - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
