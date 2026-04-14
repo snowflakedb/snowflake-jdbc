@@ -32,7 +32,7 @@ run_tests_and_set_result() {
         -e SNOWFLAKE_TEST_WIF_USERNAME \
         -e SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH \
         -e SNOWFLAKE_TEST_WIF_USERNAME_IMPERSONATION \
-        snowflakedb/client-jdbc-centos7-openjdk17-test:1 \
+        snowflakedb/client-jdbc-rockylinux8-openjdk17-test:1 \
           bash -c "
             echo 'Running tests on branch: \$BRANCH'
             mkdir -p /tmp/maven-repo /tmp/workspace
