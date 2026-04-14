@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -174,7 +175,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (this.stageEndPoint != null
         && !this.stageEndPoint.isEmpty()
         && !"null".equals(this.stageEndPoint)) {
-      clientBuilder.endpointOverride(URI.create(this.stageEndPoint));
+      String endpointForOverride = this.stageEndPoint;
+      String lower = endpointForOverride.toLowerCase(Locale.ROOT);
+      if (!lower.startsWith("https://") && !lower.startsWith("http://")) {
+        logger.debug(
+            "AWS S3 Client: stage endpoint {} has no scheme, normalizing for URI creation.",
+            this.stageEndPoint);
+        endpointForOverride = "https://" + endpointForOverride;
+      }
+      clientBuilder.endpointOverride(URI.create(endpointForOverride));
       clientBuilder.region(region);
     } else {
       if (this.isUseS3RegionalUrl) {
