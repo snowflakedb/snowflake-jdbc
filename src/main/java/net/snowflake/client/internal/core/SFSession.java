@@ -432,7 +432,7 @@ public class SFSession extends SFBaseSession {
           if (propertyValue != null) {
             privateKeyBase64 = (String) propertyValue;
           }
-          break;
+          break
 
         case PRIVATE_KEY_FILE_PWD:
         case PRIVATE_KEY_PWD:
