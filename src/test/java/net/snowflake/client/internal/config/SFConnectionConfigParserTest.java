@@ -154,6 +154,88 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
+  public void testProtocolFromTomlIsPreservedInUrl() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", "8082");
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "http");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://http://snowflake.reg.local:8082", data.getUrl());
+  }
+
+  @Test
+  public void testHttpsProtocolFromTomlIsPreservedInUrl()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", "8082");
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "https");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIsSelectedBasedOnProtocol() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", null);
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "http");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://http://snowflake.reg.local:80", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIs443WhenNoProtocolSpecified()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", null);
+    extraparams.put("token", "testToken");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:443", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIs443WhenProtocolIsEmptyString()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", null);
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:443", data.getUrl());
+  }
+
+  @Test
   public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
