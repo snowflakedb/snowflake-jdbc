@@ -29,7 +29,7 @@ public class CRLCacheConfig {
 
   public static Duration getCacheValidityTime() {
     String validityTime = SnowflakeUtil.systemGetProperty(CRL_CACHE_VALIDITY_TIME);
-    if (validityTime != null && !validityTime.isEmpty()) {
+    if (!SnowflakeUtil.isNullOrEmpty(validityTime)) {
       try {
         long seconds = Long.parseLong(validityTime);
         if (seconds <= 0) {
@@ -46,7 +46,7 @@ public class CRLCacheConfig {
 
   public static Path getOnDiskCacheDir() {
     String cacheDir = SnowflakeUtil.systemGetProperty(CRL_RESPONSE_CACHE_DIR);
-    if (cacheDir == null || cacheDir.isEmpty()) {
+    if (SnowflakeUtil.isNullOrEmpty(cacheDir)) {
       File defaultCacheDir = FileCacheUtil.getDefaultCacheDir();
       if (defaultCacheDir != null) {
         return Paths.get(defaultCacheDir.getAbsolutePath(), "crls");
@@ -61,7 +61,7 @@ public class CRLCacheConfig {
 
   public static long getCrlDownloadMaxSizeBytes() {
     String value = SnowflakeUtil.systemGetProperty(CRL_DOWNLOAD_MAX_SIZE_BYTES);
-    if (value != null && !value.isEmpty()) {
+    if (!SnowflakeUtil.isNullOrEmpty(value)) {
       try {
         long bytes = Long.parseLong(value);
         if (bytes <= 0) {
@@ -81,7 +81,7 @@ public class CRLCacheConfig {
 
   public static Duration getCrlOnDiskCacheRemovalDelay() {
     String removalDelay = SnowflakeUtil.systemGetProperty(CRL_ON_DISK_CACHE_REMOVAL_DELAY);
-    if (removalDelay != null && !removalDelay.isEmpty()) {
+    if (!SnowflakeUtil.isNullOrEmpty(removalDelay)) {
       try {
         long seconds = Long.parseLong(removalDelay);
         if (seconds <= 0) {

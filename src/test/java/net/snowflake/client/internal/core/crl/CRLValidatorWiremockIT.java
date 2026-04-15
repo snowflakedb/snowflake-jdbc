@@ -241,10 +241,15 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
     String previousValue = System.getProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES);
     try {
       System.setProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES, "1024");
-      // Create a CRL response that exceeds the configured max download size (1 KB)
-      byte[] oversizedContent = new byte[2048];
-      Arrays.fill(oversizedContent, (byte) 0xFF);
-      setupCRLMapping("/oversized-ca.crl", oversizedContent, 200);
+      // Generate a valid CRL with many revoked entries so its encoded size exceeds 1 KB
+      for (int i = 0; i < 50; i++) {
+        certGen.generateCRLWithRevokedCertificate(java.math.BigInteger.valueOf(1000 + i));
+      }
+      byte[] largeCrl = certGen.generateValidCRL();
+      assertTrue(
+          largeCrl.length > 1024,
+          "Test precondition: CRL should be larger than 1024 bytes, but was " + largeCrl.length);
+      setupCRLMapping("/oversized-ca.crl", largeCrl, 200);
 
       X509Certificate cert =
           certGen.createCertificateWithCRLDistributionPoints(
