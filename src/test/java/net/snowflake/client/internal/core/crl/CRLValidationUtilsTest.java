@@ -17,6 +17,7 @@ import java.util.List;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.core.crl.CertificateGeneratorUtil.CertificateChain;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.ReasonFlags;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -232,6 +233,19 @@ class CRLValidationUtilsTest {
 
       assertTrue(
           verifyIssuingDistributionPoint(crl, chain.leafCert, "http://snowflake.com/test.crl"));
+    }
+
+    @Test
+    void shouldRejectCRLWithOnlySomeReasons() throws Exception {
+      CertificateChain chain = certGen.createSimpleChain();
+      ReasonFlags reasons = new ReasonFlags(ReasonFlags.keyCompromise);
+      IssuingDistributionPoint idp =
+          new IssuingDistributionPoint(null, false, false, reasons, false, false);
+      X509CRL crl = certGen.createCRLWithIDP(chain.rootCert, idp);
+
+      assertFalse(
+          verifyIssuingDistributionPoint(crl, chain.leafCert, "http://snowflake.com/test.crl"),
+          "Should reject CRL that only covers specific revocation reasons");
     }
   }
 }

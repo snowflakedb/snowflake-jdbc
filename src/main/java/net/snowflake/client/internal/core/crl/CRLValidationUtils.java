@@ -134,6 +134,14 @@ class CRLValidationUtils {
         return false;
       }
 
+      // Check if this CRL only covers specific revocation reasons
+      if (idp.getOnlySomeReasons() != null) {
+        logger.debug(
+            "CRL only covers specific revocation reasons (onlySomeReasons is set) - "
+                + "treating as not authoritative for full revocation checking");
+        return false;
+      }
+
       DistributionPointName dpName = idp.getDistributionPoint();
       if (dpName != null) {
         if (dpName.getType() == DistributionPointName.FULL_NAME) {

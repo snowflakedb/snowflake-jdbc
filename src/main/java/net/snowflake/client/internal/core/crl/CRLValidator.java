@@ -37,6 +37,7 @@ import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -331,7 +332,18 @@ public class CRLValidator {
       long start = System.currentTimeMillis();
       try (CloseableHttpResponse response = this.httpClient.execute(get)) {
         try (InputStream inputStream = response.getEntity().getContent()) {
-          byte[] crlData = IOUtils.toByteArray(inputStream);
+          long maxSize = CRLCacheConfig.getCrlDownloadMaxSizeBytes();
+          InputStream bounded =
+              BoundedInputStream.builder()
+                  .setInputStream(inputStream)
+                  .setMaxCount(maxSize + 1)
+                  .get();
+          byte[] crlData = IOUtils.toByteArray(bounded);
+          if (crlData.length > maxSize) {
+            logger.warn(
+                "CRL from {} exceeds max download size of {} bytes, aborting", crlUrl, maxSize);
+            return null;
+          }
           revocationTelemetry.setTimeDownloadingCrl(System.currentTimeMillis() - start);
           start = System.currentTimeMillis();
           X509CRL crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(crlData));

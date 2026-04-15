@@ -16,6 +16,8 @@ public class CRLCacheConfig {
   public static final String CRL_CACHE_VALIDITY_TIME = "CRL_CACHE_VALIDITY_TIME";
   public static final String CRL_RESPONSE_CACHE_DIR = "CRL_RESPONSE_CACHE_DIR";
   public static final String CRL_ON_DISK_CACHE_REMOVAL_DELAY = "CRL_ON_DISK_CACHE_REMOVAL_DELAY";
+  public static final String CRL_DOWNLOAD_MAX_SIZE_BYTES = "CRL_DOWNLOAD_MAX_SIZE_BYTES";
+  private static final long DEFAULT_CRL_DOWNLOAD_MAX_SIZE_BYTES = 20L * 1024 * 1024; // 20 MB
 
   public static boolean getInMemoryCacheEnabled() {
     return SnowflakeUtil.convertSystemPropertyToBooleanValue(ENABLE_CRL_IN_MEMORY_CACHING, true);
@@ -55,6 +57,26 @@ public class CRLCacheConfig {
     } else {
       return Paths.get(cacheDir);
     }
+  }
+
+  public static long getCrlDownloadMaxSizeBytes() {
+    String value = SnowflakeUtil.systemGetProperty(CRL_DOWNLOAD_MAX_SIZE_BYTES);
+    if (value != null && !value.isEmpty()) {
+      try {
+        long bytes = Long.parseLong(value);
+        if (bytes <= 0) {
+          throw new IllegalArgumentException("CRL download max size must be positive");
+        }
+        if (bytes > Integer.MAX_VALUE - 1) {
+          throw new IllegalArgumentException(
+              "CRL download max size must not exceed " + (Integer.MAX_VALUE - 1) + " bytes");
+        }
+        return bytes;
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Invalid CRL download max size: " + value, e);
+      }
+    }
+    return DEFAULT_CRL_DOWNLOAD_MAX_SIZE_BYTES;
   }
 
   public static Duration getCrlOnDiskCacheRemovalDelay() {

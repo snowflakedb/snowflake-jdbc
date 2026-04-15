@@ -163,7 +163,7 @@ class CRLFileCache implements CRLCache {
         if (Constants.getOS().isPosix()) {
           Files.createDirectories(
               cacheDir,
-              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
           logger.debug("Initialized CRL cache directory: {}", cacheDir);
         } else {
           Files.createDirectories(cacheDir);
