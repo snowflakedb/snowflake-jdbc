@@ -415,7 +415,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
     // Decrypt file
     try {
-      EncryptionProvider.decrypt(localFile, encryptionData.key, encryptionData.iv, this.encMat);
+      CbcEncryptionProvider.decryptFile(
+          localFile, encryptionData.key, encryptionData.iv, this.encMat);
       stopwatch.stop();
       long decryptMillis = stopwatch.elapsedMillis();
       logger.info(
@@ -526,7 +527,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
     try {
       InputStream is =
-          EncryptionProvider.decryptStream(stream, encryptionData.key, encryptionData.iv, encMat);
+          CbcEncryptionProvider.decryptStream(
+              stream, encryptionData.key, encryptionData.iv, encMat);
       stopwatch.stop();
       long decryptMillis = stopwatch.elapsedMillis();
       logger.info(
@@ -771,7 +773,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
           // Encrypt
           stream =
-              EncryptionProvider.encrypt(
+              CbcEncryptionProvider.encryptStream(
                   meta, originalContentLength, uploadStream, this.encMat, this);
           uploadFromStream = true;
         } catch (Exception ex) {
