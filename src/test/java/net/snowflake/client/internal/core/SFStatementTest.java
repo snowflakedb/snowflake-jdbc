@@ -119,4 +119,5 @@ class SFStatementTest {
     assertEquals(originalErrorCode, thrown.getErrorCode());
     assertEquals("qid-123", thrown.getQueryId());
   }
+
 }
