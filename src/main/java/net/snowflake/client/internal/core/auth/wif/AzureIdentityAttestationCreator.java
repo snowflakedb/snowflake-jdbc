@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.core.auth.wif;
 
-import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.DEFAULT_METADATA_SERVICE_BASE_URL;
+import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.DEFAULT_AZURE_METADATA_SERVICE_BASE_URL;
 import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.SubjectAndIssuer;
 import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.extractClaimsWithoutVerifyingSignature;
 
@@ -31,7 +31,7 @@ public class AzureIdentityAttestationCreator implements WorkloadIdentityAttestat
   public AzureIdentityAttestationCreator(
       AzureAttestationService azureAttestationService, SFLoginInput loginInput) {
     this.azureAttestationService = azureAttestationService;
-    this.azureMetadataServiceBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
+    this.azureMetadataServiceBaseUrl = DEFAULT_AZURE_METADATA_SERVICE_BASE_URL;
     this.loginInput = loginInput;
     this.workloadIdentityEntraResource = getEntraResource(loginInput);
   }
