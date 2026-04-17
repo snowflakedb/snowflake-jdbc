@@ -22,8 +22,11 @@ public class WorkloadIdentityUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(WorkloadIdentityUtil.class);
 
-  // Address commonly used by AWS, Azure & GCP to host instance metadata service
-  public static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
+  // GCP metadata service uses a hostname that resolves to both IPv4 and IPv6 via DNS
+  public static final String DEFAULT_GCP_METADATA_SERVICE_BASE_URL =
+      "http://metadata.google.internal";
+  // Azure instance metadata service (IPv4 only; Azure does not expose an IPv6 IMDS endpoint)
+  public static final String DEFAULT_AZURE_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
 
   public static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
   public static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
