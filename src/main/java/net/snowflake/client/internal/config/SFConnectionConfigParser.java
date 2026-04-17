@@ -274,14 +274,11 @@ public class SFConnectionConfigParser {
     logger.debug("Host created using parameters from connection configuration file: {}", host);
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
-    if (isNullOrEmpty(port)) {
-      if ("https".equals(protocol)) {
-        port = "443";
-      } else {
-        port = "80";
-      }
+    if ("http".equals(protocol)) {
+      return String.format(
+          "jdbc:snowflake://http://%s:%s", host, isNullOrEmpty(port) ? "80" : port);
     }
-    return String.format("jdbc:snowflake://%s:%s", host, port);
+    return String.format("jdbc:snowflake://%s:%s", host, isNullOrEmpty(port) ? "443" : port);
   }
 
   private static void putPropertyIfNotNull(Properties props, Object key, Object value) {
