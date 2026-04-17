@@ -102,7 +102,8 @@ public class SFSessionPropertyTest {
   @Test
   void testEnableCopyResultSetDefaultFalse() {
     SFBaseSession session = mock(SFBaseSession.class, CALLS_REAL_METHODS);
-    assertFalse(session.isEnableCopyResultSet(), "default must be false for backwards compatibility");
+    assertFalse(
+        session.isEnableCopyResultSet(), "default must be false for backwards compatibility");
   }
 
   @Test
@@ -121,7 +122,8 @@ public class SFSessionPropertyTest {
   }
 
   @Test
-  void testAddSFSessionPropertyWiresEnableCopyResultSet() throws SFException, ReflectiveOperationException {
+  void testAddSFSessionPropertyWiresEnableCopyResultSet()
+      throws SFException, ReflectiveOperationException {
     SFSession session = mock(SFSession.class, CALLS_REAL_METHODS);
     Field mapField = SFBaseSession.class.getDeclaredField("connectionPropertiesMap");
     mapField.setAccessible(true);
