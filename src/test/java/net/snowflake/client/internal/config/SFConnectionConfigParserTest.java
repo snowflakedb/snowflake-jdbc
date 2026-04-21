@@ -162,32 +162,27 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol(null, null);
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
   }
 
   @Test
-  public void testDefaultPortIs443WhenProtocolIsHttps()
-      throws SnowflakeSQLException, IOException {
+  public void testDefaultPortIs443WhenProtocolIsHttps() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     prepareTomlWithPortAndProtocol(null, "https");
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
   }
 
   @Test
-  public void testDefaultPortIs80WhenProtocolIsHttp()
-      throws SnowflakeSQLException, IOException {
+  public void testDefaultPortIs80WhenProtocolIsHttp() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     prepareTomlWithPortAndProtocol(null, "http");
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:80", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:80", data.getUrl());
   }
 
   @Test
@@ -198,8 +193,7 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol("8082", "http");
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
   }
 
   @Test
@@ -212,8 +206,7 @@ public class SFConnectionConfigParserTest {
         SFConnectionConfigParser.buildConnectionParameters(
             "jdbc:snowflake:auto?connectionName=default&tracing=ALL&disablePlatformDetection=true");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
     assertEquals("ALL", data.getParams().get("tracing"));
     assertEquals("true", data.getParams().get("disablePlatformDetection"));
     assertEquals("user1", data.getParams().get("user"));
@@ -231,8 +224,7 @@ public class SFConnectionConfigParserTest {
         SFConnectionConfigParser.buildConnectionParameters(
             "jdbc:snowflake:auto?connectionName=default&port=443&protocol=https&warehouse=OTHER_WH&tracing=ALL");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
     assertEquals("443", data.getParams().get("port"));
     assertEquals("https", data.getParams().get("protocol"));
     assertEquals("OTHER_WH", data.getParams().get("warehouse"));
@@ -249,8 +241,7 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
-  public void testUrlParameterOverridesTomlUser()
-      throws SnowflakeSQLException, IOException {
+  public void testUrlParameterOverridesTomlUser() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     prepareTomlWithPortAndProtocol(null, null);
@@ -271,8 +262,7 @@ public class SFConnectionConfigParserTest {
         SFConnectionConfigParser.buildConnectionParameters(
             "jdbc:snowflake:auto?connectionName=default");
     assertNotNull(data);
-    assertEquals(
-        "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
+    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
     assertEquals("user1", data.getParams().get("user"));
     assertEquals("pass1", data.getParams().get("password"));
     assertEquals("MY_WH", data.getParams().get("warehouse"));
