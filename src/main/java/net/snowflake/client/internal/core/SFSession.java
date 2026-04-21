@@ -453,6 +453,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_COPY_RESULT_SET:
+          if (propertyValue != null) {
+            setEnableCopyResultSet(getBooleanValue(propertyValue));
+          }
+          break;
+
         case RETRY_TIMEOUT:
           if (propertyValue != null) {
             int timeoutValue = (Integer) propertyValue;
