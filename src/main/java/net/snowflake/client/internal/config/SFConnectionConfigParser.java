@@ -49,7 +49,8 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
-    String defaultConnectionName = getConnectionNameFromUrl(connectionUrl);
+    Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
+    String defaultConnectionName = urlParameters.get("connectionName");
     if (isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
@@ -59,6 +60,8 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
+      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters);
+
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
 
@@ -135,6 +138,25 @@ public class SFConnectionConfigParser {
     }
 
     return paramMap;
+  }
+
+  private static void mergeUrlParametersIntoConfiguration(
+      Map<String, String> fileConfig, Map<String, String> urlParameters) {
+    for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
+      String key = entry.getKey();
+      if ("connectionName".equalsIgnoreCase(key)) {
+        continue;
+      }
+      String urlValue = entry.getValue();
+      String tomlValue = fileConfig.get(key);
+      if (tomlValue != null && !tomlValue.equalsIgnoreCase(urlValue)) {
+        logger.debug(
+            "For config item '{}' the values from connections.toml and the connection string"
+                + " differ; the connection string value will be applied.",
+            key);
+      }
+      fileConfig.put(key, urlValue);
+    }
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
@@ -275,10 +297,10 @@ public class SFConnectionConfigParser {
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (isNullOrEmpty(port)) {
-      if ("https".equals(protocol)) {
-        port = "443";
-      } else {
+      if ("http".equalsIgnoreCase(protocol)) {
         port = "80";
+      } else {
+        port = "443";
       }
     }
     return String.format("jdbc:snowflake://%s:%s", host, port);
