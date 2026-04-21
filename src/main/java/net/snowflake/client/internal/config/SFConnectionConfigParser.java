@@ -49,7 +49,8 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
-    String defaultConnectionName = getConnectionNameFromUrl(connectionUrl);
+    Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
+    String defaultConnectionName = urlParameters.get("connectionName");
     if (isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
@@ -59,7 +60,6 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
-      Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
       mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters);
 
       Properties connectionProperties = new Properties();
@@ -297,7 +297,7 @@ public class SFConnectionConfigParser {
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (isNullOrEmpty(port)) {
-      if ("http".equals(protocol)) {
+      if ("http".equalsIgnoreCase(protocol)) {
         port = "80";
       } else {
         port = "443";
