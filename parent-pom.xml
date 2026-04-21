@@ -30,7 +30,7 @@
     <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
     <azure.storage.common.version>12.31.0</azure.storage.common.version>
     <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
-    <bouncycastle.version>1.82</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.6</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
