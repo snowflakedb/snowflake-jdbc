@@ -144,12 +144,12 @@ public class SFConnectionConfigParser {
       Map<String, String> fileConfig, Map<String, String> urlParameters) {
     for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
       String key = entry.getKey();
-      if ("connectionName".equals(key)) {
+      if ("connectionName".equalsIgnoreCase(key)) {
         continue;
       }
       String urlValue = entry.getValue();
       String tomlValue = fileConfig.get(key);
-      if (tomlValue != null && !tomlValue.equals(urlValue)) {
+      if (tomlValue != null && !tomlValue.equalsIgnoreCase(urlValue)) {
         logger.debug(
             "For config item '{}' the values from connections.toml and the connection string"
                 + " differ; the connection string value will be applied.",
