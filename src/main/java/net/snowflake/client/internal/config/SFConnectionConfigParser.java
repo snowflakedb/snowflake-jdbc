@@ -59,6 +59,9 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
+      Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
+      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters);
+
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
 
@@ -135,6 +138,27 @@ public class SFConnectionConfigParser {
     }
 
     return paramMap;
+  }
+
+  private static void mergeUrlParametersIntoConfiguration(
+      Map<String, String> fileConfig, Map<String, String> urlParameters) {
+    for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
+      String key = entry.getKey();
+      if ("connectionName".equals(key)) {
+        continue;
+      }
+      String urlValue = entry.getValue();
+      String tomlValue = fileConfig.get(key);
+      if (tomlValue != null && !tomlValue.equals(urlValue)) {
+        logger.debug(
+            "For config item '{}' the value from connections.toml ('{}') and the connection"
+                + " string ('{}') differ; the connection string value will be applied.",
+            key,
+            tomlValue,
+            urlValue);
+      }
+      fileConfig.put(key, urlValue);
+    }
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
