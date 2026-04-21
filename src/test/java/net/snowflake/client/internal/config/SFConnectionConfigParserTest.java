@@ -154,6 +154,54 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
+  public void testDefaultPortIs443WhenNeitherPortNorProtocolIsSet()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, null);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.us-west-2.aws.snowflakecomputing.com:443", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIs443WhenProtocolIsHttps()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, "https");
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.us-west-2.aws.snowflakecomputing.com:443", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIs80WhenProtocolIsHttp()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, "http");
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.us-west-2.aws.snowflakecomputing.com:80", data.getUrl());
+  }
+
+  @Test
+  public void testExplicitPortIsPreservedRegardlessOfProtocol()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol("8082", "http");
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.us-west-2.aws.snowflakecomputing.com:8082", data.getUrl());
+  }
+
+  @Test
   public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
@@ -232,6 +280,27 @@ public class SFConnectionConfigParserTest {
               onlyUserPermissionToken);
       Files.write(emptyTokenFilePath, "".getBytes());
     }
+  }
+
+  private void prepareTomlWithPortAndProtocol(String port, String protocol) throws IOException {
+    Path path = Paths.get(tempPath.toString(), "connections.toml");
+    Path filePath = createFilePathWithPermission(path, true);
+    File file = filePath.toFile();
+
+    Map<String, Object> configurationParams = new HashMap<>();
+    configurationParams.put("account", "snowaccount.us-west-2.aws");
+    configurationParams.put("user", "user1");
+    configurationParams.put("password", "pass1");
+    if (port != null) {
+      configurationParams.put("port", port);
+    }
+    if (protocol != null) {
+      configurationParams.put("protocol", protocol);
+    }
+
+    Map<String, Object> configuration = new HashMap<>();
+    configuration.put("default", configurationParams);
+    tomlMapper.writeValue(file, configuration);
   }
 
   private Path createFilePathWithPermission(Path path, boolean onlyUserPermission)

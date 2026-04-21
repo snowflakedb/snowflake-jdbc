@@ -275,10 +275,10 @@ public class SFConnectionConfigParser {
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (isNullOrEmpty(port)) {
-      if ("https".equals(protocol)) {
-        port = "443";
-      } else {
+      if ("http".equals(protocol)) {
         port = "80";
+      } else {
+        port = "443";
       }
     }
     return String.format("jdbc:snowflake://%s:%s", host, port);
