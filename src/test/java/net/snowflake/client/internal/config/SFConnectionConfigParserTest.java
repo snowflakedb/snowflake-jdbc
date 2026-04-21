@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -217,6 +218,7 @@ public class SFConnectionConfigParserTest {
     assertEquals("true", data.getParams().get("disablePlatformDetection"));
     assertEquals("user1", data.getParams().get("user"));
     assertEquals("pass1", data.getParams().get("password"));
+    assertEquals("MY_WH", data.getParams().get("warehouse"));
   }
 
   @Test
@@ -227,11 +229,26 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol("8082", "http");
     ConnectionParameters data =
         SFConnectionConfigParser.buildConnectionParameters(
-            "jdbc:snowflake:auto?connectionName=default&port=443&protocol=https");
+            "jdbc:snowflake:auto?connectionName=default&port=443&protocol=https&warehouse=OTHER_WH&tracing=ALL");
     assertNotNull(data);
     assertEquals(
         "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
+    assertEquals("443", data.getParams().get("port"));
     assertEquals("https", data.getParams().get("protocol"));
+    assertEquals("OTHER_WH", data.getParams().get("warehouse"));
+    assertEquals("ALL", data.getParams().get("tracing"));
+    assertEquals("user1", data.getParams().get("user"));
+    assertEquals("pass1", data.getParams().get("password"));
+    assertEquals("myorg-myaccount", data.getParams().get("account"));
+    Set<String> expectedKeys =
+        new HashSet<>(
+            Arrays.asList(
+                "account", "user", "password", "warehouse", "port", "protocol", "tracing"));
+    Set<String> actualKeys = data.getParams().stringPropertyNames();
+    for (String key : expectedKeys) {
+      long count = actualKeys.stream().filter(k -> k.equals(key)).count();
+      assertEquals(1, count, "Key '" + key + "' should appear exactly once");
+    }
   }
 
   @Test
@@ -261,6 +278,7 @@ public class SFConnectionConfigParserTest {
         "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
     assertEquals("user1", data.getParams().get("user"));
     assertEquals("pass1", data.getParams().get("password"));
+    assertEquals("MY_WH", data.getParams().get("warehouse"));
   }
 
   @Test
@@ -353,6 +371,7 @@ public class SFConnectionConfigParserTest {
     configurationParams.put("account", "myorg-myaccount");
     configurationParams.put("user", "user1");
     configurationParams.put("password", "pass1");
+    configurationParams.put("warehouse", "MY_WH");
     if (port != null) {
       configurationParams.put("port", port);
     }
