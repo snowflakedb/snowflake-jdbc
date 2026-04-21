@@ -151,11 +151,9 @@ public class SFConnectionConfigParser {
       String tomlValue = fileConfig.get(key);
       if (tomlValue != null && !tomlValue.equals(urlValue)) {
         logger.debug(
-            "For config item '{}' the value from connections.toml ('{}') and the connection"
-                + " string ('{}') differ; the connection string value will be applied.",
-            key,
-            tomlValue,
-            urlValue);
+            "For config item '{}' the values from connections.toml and the connection string"
+                + " differ; the connection string value will be applied.",
+            key);
       }
       fileConfig.put(key, urlValue);
     }
