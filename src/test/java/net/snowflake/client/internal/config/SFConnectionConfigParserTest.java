@@ -245,10 +245,7 @@ public class SFConnectionConfigParserTest {
             Arrays.asList(
                 "account", "user", "password", "warehouse", "port", "protocol", "tracing"));
     Set<String> actualKeys = data.getParams().stringPropertyNames();
-    for (String key : expectedKeys) {
-      long count = actualKeys.stream().filter(k -> k.equals(key)).count();
-      assertEquals(1, count, "Key '" + key + "' should appear exactly once");
-    }
+    assertEquals(expectedKeys, actualKeys);
   }
 
   @Test
