@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Map;
 import net.snowflake.client.api.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 
@@ -131,5 +132,35 @@ public class SFSessionPropertyTest {
     session.addSFSessionProperty(
         SFSessionProperty.ENABLE_COPY_RESULT_SET.getPropertyKey(), Boolean.TRUE);
     assertTrue(session.isEnableCopyResultSet());
+  }
+
+  @Test
+  public void shouldThrowWhenAwsExternalIdSetAndFeatureDisabled() {
+    // SF_ENABLE_WIF_AWS_EXTERNAL_ID env var is not set in unit tests, so defaults to false
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID, "my-external-id");
+
+    SFException e =
+        assertThrows(
+            SFException.class, () -> SFSession.checkAwsExternalIdEnabled(props));
+    assertThat(e.getVendorCode(), is(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR.getMessageCode()));
+  }
+
+  @Test
+  public void shouldNotThrowWhenAwsExternalIdIsNullAndFeatureDisabled() throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID, null);
+
+    // Should not throw — null means the property was not provided
+    SFSession.checkAwsExternalIdEnabled(props);
+  }
+
+  @Test
+  public void shouldNotThrowWhenAwsExternalIdIsEmptyAndFeatureDisabled() throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID, "");
+
+    // Should not throw — empty string is treated the same as not provided
+    SFSession.checkAwsExternalIdEnabled(props);
   }
 }
