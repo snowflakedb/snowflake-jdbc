@@ -606,6 +606,19 @@ public class SFSession extends SFBaseSession {
    * @throws SFException this is a runtime exception
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
+  @VisibleForTesting
+  static void checkAwsExternalIdEnabled(Map<SFSessionProperty, Object> props)
+      throws SFException {
+    String awsExternalId =
+        (String) props.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID);
+    if (!SnowflakeUtil.convertSystemGetEnvToBooleanValue(SF_ENABLE_WIF_AWS_EXTERNAL_ID, false)
+        && awsExternalId != null && !awsExternalId.isEmpty()) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Connection property workloadIdentityAwsExternalId is not enabled");
+    }
+  }
+
   public synchronized void open() throws SFException, SnowflakeSQLException {
     open(null);
   }
@@ -679,13 +692,7 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getNonProxyHosts(),
         httpClientSettingsKey.getProxyHttpProtocol());
 
-    if (!SnowflakeUtil.convertSystemGetEnvToBooleanValue(SF_ENABLE_WIF_AWS_EXTERNAL_ID, false)
-        && connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID)
-            != null) {
-      throw new SFException(
-          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
-          "Connection property workloadIdentityAwsExternalId is not enabled");
-    }
+    checkAwsExternalIdEnabled(connectionPropertiesMap);
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
