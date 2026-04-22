@@ -28,6 +28,7 @@ import net.snowflake.client.internal.core.SFBaseResultSet;
 import net.snowflake.client.internal.core.SFBaseStatement;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFStatement;
+import net.snowflake.client.internal.core.SFStatementType;
 import net.snowflake.client.internal.core.StmtUtil;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.QueryIdValidator;
@@ -388,7 +389,12 @@ public class SnowflakeStatementImpl implements Statement, SnowflakeStatement {
       // statement execute, so we only treat update counts as update counts
       // if CLIENT_SFSQL is not set, or if a statement
       // is multi-statement
-      if (!sfResultSet.getStatementType().isGenerateResultSet()
+      boolean copyResultSetEnabled =
+          sfResultSet.getStatementType() == SFStatementType.COPY
+              && connection.getSFBaseSession(internalCallMarker()).isEnableCopyResultSet();
+
+      if (!copyResultSetEnabled
+          && !sfResultSet.getStatementType().isGenerateResultSet()
           && (!connection.getSFBaseSession(internalCallMarker()).isSfSQLMode()
               || sfBaseStatement.hasChildren())) {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);

@@ -138,6 +138,7 @@ public abstract class SFBaseSession {
 
   // Connection string setting
   private boolean enablePutGet = true;
+  private boolean enableCopyResultSet = false;
 
   // Enables the use of pattern searches for certain DatabaseMetaData methods
   // which do not by definition allow the use of patterns, but
@@ -1131,6 +1132,14 @@ public abstract class SFBaseSession {
 
   public boolean setEnablePutGet(boolean enablePutGet) {
     return this.enablePutGet = enablePutGet;
+  }
+
+  public boolean isEnableCopyResultSet() {
+    return enableCopyResultSet;
+  }
+
+  public boolean setEnableCopyResultSet(boolean enableCopyResultSet) {
+    return this.enableCopyResultSet = enableCopyResultSet;
   }
 
   public boolean getEnablePatternSearch() {
