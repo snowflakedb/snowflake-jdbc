@@ -260,7 +260,8 @@ public class AwsIdentityAttestationCreatorTest {
     AwsSessionCredentials initialCredentials =
         AwsSessionCredentials.create("initial-key", "initial-secret", "initial-token");
     AwsSessionCredentials intermediateCredentials =
-        AwsSessionCredentials.create("intermediate-key", "intermediate-secret", "intermediate-token");
+        AwsSessionCredentials.create(
+            "intermediate-key", "intermediate-secret", "intermediate-token");
     AwsSessionCredentials finalCredentials =
         AwsSessionCredentials.create("final-key", "final-secret", "final-token");
 

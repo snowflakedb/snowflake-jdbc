@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.core;
 
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemSetEnv;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemUnsetEnv;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,9 +17,29 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.api.exception.ErrorCode;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class SFSessionPropertyTest {
+  private static final String SF_ENABLE_WIF_AWS_EXTERNAL_ID = "SF_ENABLE_WIF_AWS_EXTERNAL_ID";
+  private String originalEnvValue;
+
+  @BeforeEach
+  public void setUp() {
+    originalEnvValue = System.getenv(SF_ENABLE_WIF_AWS_EXTERNAL_ID);
+    systemUnsetEnv(SF_ENABLE_WIF_AWS_EXTERNAL_ID);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    if (originalEnvValue != null) {
+      systemSetEnv(SF_ENABLE_WIF_AWS_EXTERNAL_ID, originalEnvValue);
+    } else {
+      systemUnsetEnv(SF_ENABLE_WIF_AWS_EXTERNAL_ID);
+    }
+  }
+
   @Test
   public void testCheckApplicationName() throws SFException {
     String[] validApplicationName = {"test1234", "test_1234", "test-1234", "test.1234"};
@@ -139,11 +161,22 @@ public class SFSessionPropertyTest {
     // SF_ENABLE_WIF_AWS_EXTERNAL_ID env var is not set in unit tests, so defaults to false
     Map<SFSessionProperty, Object> props = new HashMap<>();
     props.put(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID, "my-external-id");
+    props.put(SFSessionProperty.AUTHENTICATOR, "workload_identity");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER, "aws");
 
     SFException e =
-        assertThrows(
-            SFException.class, () -> SFSession.checkAwsExternalIdEnabled(props));
+        assertThrows(SFException.class, () -> SFSession.checkAwsExternalIdEnabled(props));
     assertThat(e.getVendorCode(), is(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR.getMessageCode()));
+  }
+
+  @Test
+  public void shouldNotThrowWhenAuthenticatorIsNotWorkloadIdentity() throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.AUTHENTICATOR, "snowflake");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID, "my-external-id");
+
+    // Should not throw — external ID check only applies to WORKLOAD_IDENTITY + AWS
+    SFSession.checkAwsExternalIdEnabled(props);
   }
 
   @Test
