@@ -8,6 +8,7 @@
     - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
       - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
       - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
+    - Added `workloadIdentityAwsExternalId` connection property to support AWS STS external ID in Workload Identity Federation role-chaining flows 
 
 - v4.1.0
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
