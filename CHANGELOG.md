@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.1.1-SNAPSHOT
+    - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux
     - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#SNOW-3388627)
     - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8
     - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
