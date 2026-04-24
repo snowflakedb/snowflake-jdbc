@@ -328,7 +328,8 @@ public class PlatformDetector {
           logger.debug("Successfully obtained IMDSv2 token from {}", baseUrl);
         }
       } catch (Exception e) {
-        logger.debug("Failed to get IMDSv2 token from {}, will try IMDSv1: {}", baseUrl, e.getMessage());
+        logger.debug(
+            "Failed to get IMDSv2 token from {}, will try IMDSv1: {}", baseUrl, e.getMessage());
       }
 
       // Try to get instance identity document
