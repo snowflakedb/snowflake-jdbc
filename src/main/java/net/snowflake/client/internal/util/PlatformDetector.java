@@ -304,12 +304,23 @@ public class PlatformDetector {
 
   private DetectionState isEc2Instance(int timeoutMs) {
     // Try IPv4 first. On IPv6-only EC2 instances the IPv4 link-local address is
-    // unreachable; fall through to the IPv6 IMDS endpoint so detection still works.
+    // unreachable (no route, connection refused, or timeout), so fall through to
+    // the IPv6 IMDS endpoint. The outer detectPlatforms() executor enforces the
+    // overall detection budget via future.get(timeout), so a second probe here
+    // cannot exceed that budget.
     DetectionState ipv4Result = probeEc2Instance(awsMetadataBaseUrl, timeoutMs);
-    if (ipv4Result == DetectionState.DETECTED || ipv4Result == DetectionState.TIMEOUT) {
+    if (ipv4Result == DetectionState.DETECTED) {
       return ipv4Result;
     }
-    return probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs);
+    DetectionState ipv6Result = probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs);
+    if (ipv6Result == DetectionState.DETECTED) {
+      return ipv6Result;
+    }
+    // Neither detected — surface a timeout if either attempt timed out, otherwise NOT_DETECTED.
+    if (ipv4Result == DetectionState.TIMEOUT || ipv6Result == DetectionState.TIMEOUT) {
+      return DetectionState.TIMEOUT;
+    }
+    return DetectionState.NOT_DETECTED;
   }
 
   private DetectionState probeEc2Instance(String baseUrl, int timeoutMs) {
