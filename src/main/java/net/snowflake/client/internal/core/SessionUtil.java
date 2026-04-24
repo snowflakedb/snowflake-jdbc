@@ -59,6 +59,8 @@ import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.LibcDetails;
+import net.snowflake.client.internal.util.LibcInfo;
 import net.snowflake.client.internal.util.OsReleaseDetails;
 import net.snowflake.client.internal.util.PlatformDetector;
 import net.snowflake.client.internal.util.SecretDetector;
@@ -1096,6 +1098,21 @@ public class SessionUtil {
     Map<String, String> osDetails = OsReleaseDetails.load();
     if (!osDetails.isEmpty()) {
       clientEnv.put("OS_DETAILS", osDetails);
+    }
+
+    // Add libc family and version when detectable on Linux. Fields are omitted on non-Linux
+    // systems and on Linux when detection is unavailable or inconclusive. See LibcDetails for
+    // detection strategies.
+    try {
+      LibcInfo libcInfo = LibcDetails.load();
+      if (libcInfo.getFamily() != null) {
+        clientEnv.put("LIBC_FAMILY", libcInfo.getFamily());
+      }
+      if (libcInfo.getVersion() != null) {
+        clientEnv.put("LIBC_VERSION", libcInfo.getVersion());
+      }
+    } catch (Exception | LinkageError e) {
+      logger.debug("Failed to detect libc details: {}", e.getMessage());
     }
 
     clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
