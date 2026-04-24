@@ -1177,7 +1177,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param ocspRespB64 Base64 encoded OCSP Response object
    * @throws SFOCSPException raises if any other error occurs
    */
-  private void validateRevocationStatusMain(
+  // Package-private for testing (see SFTrustManagerOcspCachePoisoningTest).
+  void validateRevocationStatusMain(
       SFPair<Certificate, Certificate> pairIssuerSubject, String ocspRespB64)
       throws SFOCSPException {
     try {
@@ -1187,7 +1188,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             OCSPErrorCode.INVALID_OCSP_RESPONSE, "OCSP response is null. The content is invalid.");
       }
       Date currentTime = new Date();
+      // getResponseObject() returns null for non-SUCCESSFUL OCSP responses (e.g. unauthorized(6)).
+      // Surface as SFOCSPException so cache eviction and fail-open run instead of NPEing.
       BasicOCSPResp basicOcspResp = (BasicOCSPResp) (ocspResp.getResponseObject());
+      if (basicOcspResp == null) {
+        throw new SFOCSPException(
+            OCSPErrorCode.INVALID_OCSP_RESPONSE,
+            "OCSP response body is null (non-SUCCESSFUL or malformed response). The content is invalid.");
+      }
       X509CertificateHolder[] attachedCerts = basicOcspResp.getCerts();
       X509CertificateHolder signVerifyCert;
       checkInvalidSigningCertTestParameter();
@@ -1248,6 +1256,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     } catch (IOException | OCSPException ex) {
       throw new SFOCSPException(
           OCSPErrorCode.REVOCATION_CHECK_FAILURE, "Failed to check revocation status.", ex);
+    } catch (RuntimeException ex) {
+      // Convert unexpected unchecked failures so the caller can evict the bad cache entry and
+      // fail open instead of letting an unchecked exception escape into the SSL handshake.
+      throw new SFOCSPException(
+          OCSPErrorCode.REVOCATION_CHECK_FAILURE,
+          "Failed to check revocation status due to an unexpected error.",
+          ex);
     }
   }
 
