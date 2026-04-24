@@ -45,7 +45,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("LAMBDA_TASK_ROOT")).thenReturn("/var/task");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -67,7 +67,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         .thenReturn("DefaultEndpointsProtocol=https;AccountName=test;AccountKey=test;");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -88,7 +88,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("K_CONFIGURATION")).thenReturn("my-config");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -108,7 +108,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("CLOUD_RUN_EXECUTION")).thenReturn("my-execution");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -127,7 +127,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("GITHUB_ACTIONS")).thenReturn("true");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -147,7 +147,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -165,7 +165,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -176,6 +176,32 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   }
 
   @Test
+  @DisplayName("Should fall back to IPv6 IMDS endpoint when IPv4 is unreachable")
+  public void testDetectEc2InstanceIpv6Fallback() throws IOException {
+    // Arrange: IMDSv2 mapping served by wiremock, used as the IPv6 base URL. The IPv4 base URL
+    // points at an unroutable TEST-NET-1 address (RFC 5737) that fails fast, so detection must
+    // fall back to the IPv6 endpoint.
+    String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
+    importMapping(mappingContent);
+
+    PlatformDetector detector =
+        new PlatformDetector(
+            "http://192.0.2.1",
+            getBaseUrl(),
+            getBaseUrl(),
+            getBaseUrl(),
+            mockEnvironmentProvider);
+
+    // Act
+    List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
+
+    // Assert
+    assertTrue(
+        platforms.contains("is_ec2_instance"),
+        "Should detect EC2 instance via IPv6 IMDS fallback");
+  }
+
+  @Test
   @DisplayName("Should detect Azure VM using wiremock")
   public void testDetectAzureVm() throws IOException {
     // Arrange
@@ -183,7 +209,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -201,7 +227,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -221,7 +247,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -239,7 +265,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -260,7 +286,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("IDENTITY_HEADER")).thenReturn("test-header-value");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use timeout > 0 to trigger async execution
     List<String> platforms = detector.detectPlatforms(1000, mockAwsAttestationService);
@@ -288,7 +314,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         .thenReturn("arn:aws:iam::123456789012:user/testuser");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(200, mockAwsAttestationService);
@@ -325,7 +351,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         .thenReturn("arn:aws:sts::123456789012:assumed-role/test-role/session");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use small timeout to enable HTTP calls but ensure static mocks work in async context
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
@@ -345,7 +371,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   public void testTimeoutScenariosNoNetwork() {
     // Arrange - No mappings to simulate timeout
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Short timeout to force timeouts
     List<String> platforms = detector.detectPlatforms(0, mockAwsAttestationService);
@@ -362,7 +388,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use 200ms timeout, but server takes 5 seconds
     long startTime = System.currentTimeMillis();
@@ -398,7 +424,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(mappingContent);
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Act - Use 2000ms timeout, server takes 1 second
     List<String> platforms = detector.detectPlatforms(2000, mockAwsAttestationService);
@@ -412,7 +438,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   @DisplayName("Should demonstrate env-only vs env + unreachable http endpoints time difference")
   public void testEnvVsEnvAndUnreachableEndpointsPerformance() {
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     // Test 1: Fast timeout with no network (should be very fast)
     long startTime1 = System.currentTimeMillis();
@@ -454,7 +480,7 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     when(mockEnvironmentProvider.getEnv("LAMBDA_TASK_ROOT")).thenReturn("/var/task");
 
     PlatformDetector detector =
-        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+        new PlatformDetector(getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
     long startTime1 = System.currentTimeMillis();
     List<String> platforms1 =

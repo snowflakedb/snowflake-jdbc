@@ -49,6 +49,8 @@ public class PlatformDetector {
 
   // Default cloud metadata service URLs
   private static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
+  // IPv6 fallback for EC2 IMDS on IPv6-only instances (IPv4 unreachable)
+  private static final String DEFAULT_AWS_METADATA_IPV6_BASE_URL = "http://[fd00:ec2::254]";
   private static final String DEFAULT_GCP_METADATA_BASE_URL = "http://metadata.google.internal";
 
   // Metadata service headers and values
@@ -80,6 +82,7 @@ public class PlatformDetector {
 
   // Instance fields for configurable URLs and environment provider (for testing)
   private final String awsMetadataBaseUrl;
+  private final String awsMetadataIpv6BaseUrl;
   private final String azureMetadataBaseUrl;
   private final String gcpMetadataBaseUrl;
   private final EnvironmentProvider environmentProvider;
@@ -87,6 +90,7 @@ public class PlatformDetector {
   // Default constructor for production use
   public PlatformDetector() {
     this.awsMetadataBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
+    this.awsMetadataIpv6BaseUrl = DEFAULT_AWS_METADATA_IPV6_BASE_URL;
     this.azureMetadataBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
     this.gcpMetadataBaseUrl = DEFAULT_GCP_METADATA_BASE_URL;
     this.environmentProvider = new SnowflakeEnvironmentProvider();
@@ -95,10 +99,12 @@ public class PlatformDetector {
   /** Constructor for testing purposes - allows overriding both URLs and environment provider */
   PlatformDetector(
       String awsMetadataBaseUrl,
+      String awsMetadataIpv6BaseUrl,
       String azureMetadataBaseUrl,
       String gcpMetadataBaseUrl,
       EnvironmentProvider environmentProvider) {
     this.awsMetadataBaseUrl = awsMetadataBaseUrl;
+    this.awsMetadataIpv6BaseUrl = awsMetadataIpv6BaseUrl;
     this.azureMetadataBaseUrl = azureMetadataBaseUrl;
     this.gcpMetadataBaseUrl = gcpMetadataBaseUrl;
     this.environmentProvider = environmentProvider;
@@ -297,22 +303,32 @@ public class PlatformDetector {
   }
 
   private DetectionState isEc2Instance(int timeoutMs) {
+    // Try IPv4 first. On IPv6-only EC2 instances the IPv4 link-local address is
+    // unreachable; fall through to the IPv6 IMDS endpoint so detection still works.
+    DetectionState ipv4Result = probeEc2Instance(awsMetadataBaseUrl, timeoutMs);
+    if (ipv4Result == DetectionState.DETECTED || ipv4Result == DetectionState.TIMEOUT) {
+      return ipv4Result;
+    }
+    return probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs);
+  }
+
+  private DetectionState probeEc2Instance(String baseUrl, int timeoutMs) {
     try {
       // First try to get IMDSv2 token
       String token = null;
       try {
         String tokenResponse =
             executeHttpPut(
-                getAwsMetadataTokenEndpoint(),
+                baseUrl + AWS_TOKEN_ENDPOINT_PATH,
                 Collections.singletonMap(
                     AWS_METADATA_TOKEN_TTL_HEADER, AWS_METADATA_TOKEN_TTL_VALUE),
                 timeoutMs);
         if (tokenResponse != null && !tokenResponse.trim().isEmpty()) {
           token = tokenResponse.trim();
-          logger.debug("Successfully obtained IMDSv2 token");
+          logger.debug("Successfully obtained IMDSv2 token from {}", baseUrl);
         }
       } catch (Exception e) {
-        logger.debug("Failed to get IMDSv2 token, will try IMDSv1: {}", e.getMessage());
+        logger.debug("Failed to get IMDSv2 token from {}, will try IMDSv1: {}", baseUrl, e.getMessage());
       }
 
       // Try to get instance identity document
@@ -321,13 +337,14 @@ public class PlatformDetector {
         headers.put(AWS_METADATA_TOKEN_HEADER, token);
       }
 
-      String response = executeHttpGet(getAwsMetadataIdentityEndpoint(), headers, timeoutMs);
+      String response =
+          executeHttpGet(baseUrl + AWS_INSTANCE_IDENTITY_ENDPOINT_PATH, headers, timeoutMs);
       if (response != null && !response.trim().isEmpty()) {
-        logger.debug("Successfully detected EC2 instance via metadata service");
+        logger.debug("Successfully detected EC2 instance via metadata service at {}", baseUrl);
         return DetectionState.DETECTED;
       }
     } catch (Exception e) {
-      logger.debug("EC2 instance detection failed: {}", e.getMessage());
+      logger.debug("EC2 instance detection failed at {}: {}", baseUrl, e.getMessage());
       if (isTimeoutException(e)) {
         return DetectionState.TIMEOUT;
       }
@@ -474,14 +491,6 @@ public class PlatformDetector {
     logger.debug(
         "All environment variables are present: {}", java.util.Arrays.toString(variableNames));
     return true;
-  }
-
-  private String getAwsMetadataTokenEndpoint() {
-    return awsMetadataBaseUrl + AWS_TOKEN_ENDPOINT_PATH;
-  }
-
-  private String getAwsMetadataIdentityEndpoint() {
-    return awsMetadataBaseUrl + AWS_INSTANCE_IDENTITY_ENDPOINT_PATH;
   }
 
   private String getAzureMetadataInstanceEndpoint() {
