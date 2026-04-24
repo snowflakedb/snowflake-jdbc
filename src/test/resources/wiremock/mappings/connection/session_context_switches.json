@@ -1,0 +1,282 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "remMeToken": null,
+            "remMeValidityInSeconds": 0,
+            "healthCheckInterval": 45,
+            "newClientForUpgrade": "3.12.3",
+            "sessionId": 1172562260498,
+            "parameters": [
+              {
+                "name": "AUTOCOMMIT",
+                "value": true
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "ANALYST"
+            },
+            "idToken": null,
+            "idTokenValidityInSeconds": 0,
+            "responseData": null,
+            "mfaToken": null,
+            "mfaTokenValidityInSeconds": 0
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "Logged in",
+      "newScenarioState": "DB switched to SECOND_DB",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0001",
+            "databaseProvider": null,
+            "finalDatabaseName": "SECOND_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17153,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "DB switched to SECOND_DB",
+      "newScenarioState": "Schema switched to SECOND_SCHEMA",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0002",
+            "databaseProvider": null,
+            "finalDatabaseName": "SECOND_DB",
+            "finalSchemaName": "SECOND_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17154,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "Schema switched to SECOND_SCHEMA",
+      "newScenarioState": "Role switched to PUBLIC",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0003",
+            "databaseProvider": null,
+            "finalDatabaseName": "SECOND_DB",
+            "finalSchemaName": "SECOND_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "PUBLIC",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17152,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "Role switched to PUBLIC",
+      "newScenarioState": "Role switched back to ANALYST",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0004",
+            "databaseProvider": null,
+            "finalDatabaseName": "SECOND_DB",
+            "finalSchemaName": "SECOND_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17152,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "Role switched back to ANALYST",
+      "newScenarioState": "DB switched back to TEST_DB",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0005",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "SECOND_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17153,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Session context switches",
+      "requiredScenarioState": "DB switched back to TEST_DB",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "ctx-test-0006",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 17154,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "request": {
+        "urlPathPattern": "/session.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": null,
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}

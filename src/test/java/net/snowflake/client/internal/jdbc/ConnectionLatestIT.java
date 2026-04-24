@@ -1566,4 +1566,29 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .contains(
                 "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
   }
+
+  @Test
+  public void testGetRoleWarehouseAndDatabase() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      SnowflakeConnection sfCon = con.unwrap(SnowflakeConnection.class);
+
+      try (ResultSet rs = statement.executeQuery("select current_role()")) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), sfCon.getRole());
+      }
+
+      try (ResultSet rs = statement.executeQuery("select current_warehouse()")) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), sfCon.getWarehouse());
+      }
+
+      try (ResultSet rs = statement.executeQuery("select current_database()")) {
+        assertTrue(rs.next());
+        String currentDatabase = rs.getString(1);
+        assertEquals(currentDatabase, sfCon.getDatabase());
+        assertEquals(con.getCatalog(), sfCon.getDatabase());
+      }
+    }
+  }
 }

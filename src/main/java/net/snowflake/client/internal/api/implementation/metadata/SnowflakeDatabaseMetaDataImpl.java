@@ -2948,9 +2948,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
       } else {
         String schemaUnescaped = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
-        if (streamName == null || Wildcard.isWildcardPatternStr(streamName)) {
-          showStreamsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
-        }
+        showStreamsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
       }
     }
 
@@ -2970,25 +2968,23 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         // iterate throw the show streams result until we find an entry
         // that matches the stream name
         while (showObjectResultSet.next()) {
-          String name = showObjectResultSet.getString(2);
-          String databaseName = showObjectResultSet.getString(3);
-          String schemaName = showObjectResultSet.getString(4);
-          String owner = showObjectResultSet.getString(5);
-          String comment = showObjectResultSet.getString(6);
-          String tableName = showObjectResultSet.getString(7);
-          String sourceType = showObjectResultSet.getString(8);
-          String baseTables = showObjectResultSet.getString(9);
-          String type = showObjectResultSet.getString(10);
-          String stale = showObjectResultSet.getString(11);
-          String mode = showObjectResultSet.getString(12);
+          String name = showObjectResultSet.getString("name");
+          String databaseName = showObjectResultSet.getString("database_name");
+          String schemaName = showObjectResultSet.getString("schema_name");
+          String owner = showObjectResultSet.getString("owner");
+          String comment = showObjectResultSet.getString("comment");
+          String tableName = showObjectResultSet.getString("table_name");
+          String sourceType = showObjectResultSet.getString("source_type");
+          String baseTables = showObjectResultSet.getString("base_tables");
+          String type = showObjectResultSet.getString("type");
+          String stale = showObjectResultSet.getString("stale");
+          String mode = showObjectResultSet.getString("mode");
 
           if ((compiledStreamNamePattern == null
-                  || compiledStreamNamePattern.matcher(streamName).matches())
+                  || compiledStreamNamePattern.matcher(name).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())
-              && (compiledStreamNamePattern == null
-                  || compiledStreamNamePattern.matcher(streamName).matches())) {
-            logger.debug("Found a matched column:" + tableName + "." + streamName);
+                  || compiledSchemaPattern.matcher(schemaName).matches())) {
+            logger.debug("Found a matched stream:" + schemaName + "." + name);
             nextRow[0] = name;
             nextRow[1] = databaseName;
             nextRow[2] = schemaName;

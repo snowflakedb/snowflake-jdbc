@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Tag(TestTags.OTHERS)
+@Tag(TestTags.DATABASE_META_DATA)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;

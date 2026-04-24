@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import net.snowflake.client.annotations.RunOnGCP;
 import net.snowflake.client.category.TestTags;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -21,7 +22,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -34,21 +34,12 @@ import org.junit.jupiter.api.Test;
  * proxy code path.
  */
 @Tag(TestTags.OTHERS)
+@RunOnGCP
 public class AuthenticatedProxyLatestIT extends BaseWiremockTest {
 
   private static final String PROXY_USER = "testUser";
   private static final String PROXY_PASSWORD = "testPassword";
   private static final String TEST_DATA_FILE = "orders_100.csv";
-
-  /**
-   * Override the WireMock startup to use {@code --proxy-pass-through true}. The base class uses
-   * {@code false} which blocks unmatched requests. For PUT tests, both Snowflake API calls and
-   * cloud storage (GCS/S3/Azure) uploads must be forwarded, so pass-through mode is required.
-   */
-  @BeforeAll
-  public static void setUpClass() {
-    startWiremockStandAlone(true);
-  }
 
   @AfterEach
   public void tearDown() {

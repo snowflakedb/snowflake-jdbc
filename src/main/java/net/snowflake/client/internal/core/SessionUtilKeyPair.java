@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -85,7 +86,7 @@ class SessionUtilKeyPair {
     this.userName = userName.toUpperCase();
     this.accountName = excludeRegionInformation(accountName).toUpperCase();
     String useBundledBouncyCastleJvm =
-        System.getProperty(SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
+        systemGetProperty(SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
     if (useBundledBouncyCastleJvm != null) {
       useBundledBouncyCastleForPrivateKeyDecryption =
           useBundledBouncyCastleJvm.equalsIgnoreCase("true");

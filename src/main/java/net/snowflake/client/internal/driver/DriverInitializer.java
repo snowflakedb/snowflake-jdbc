@@ -15,7 +15,7 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * <p>This includes:
  *
  * <ul>
- *   <li>Arrow result format support and Netty configuration
+ *   <li>Arrow result format support
  *   <li>BouncyCastle security provider registration
  *   <li>Out-of-band telemetry configuration
  *   <li>Suppression of illegal reflective access warnings
@@ -61,15 +61,16 @@ public final class DriverInitializer {
   /**
    * Initialize Apache Arrow support for high-performance result sets.
    *
-   * <p>This method configures Netty for Arrow buffer memory management and attempts to suppress
-   * illegal reflective access warnings. If initialization fails, Arrow is disabled and the driver
-   * will fall back to JSON result format.
+   * <p>This method attempts to suppress illegal reflective access warnings from Netty/Arrow. If
+   * initialization fails, Arrow is disabled and the driver will fall back to JSON result format.
+   *
+   * <p>Note: Prior to version 4.x, this method set the system property
+   * io.netty.tryReflectionSetAccessible=true. Testing has shown this is no longer necessary with
+   * Arrow 17.0.0+ and Netty 4.1.130+, as modern versions handle Java module system restrictions
+   * without requiring this property.
    */
   private static void initializeArrowSupport() {
     try {
-      // Configure Netty for Arrow buffer memory management
-      configureNettyForArrow();
-
       // Suppress reflective access warnings from Netty/Arrow
       suppressIllegalReflectiveAccessWarnings();
 
@@ -80,17 +81,6 @@ public final class DriverInitializer {
       arrowDisableReason = t.getLocalizedMessage();
       logger.warn("Failed to enable Arrow result format: {}", arrowDisableReason);
     }
-  }
-
-  /**
-   * Configure Netty for Arrow buffer memory management.
-   *
-   * <p>This sets a system property required to enable direct memory usage for Arrow buffers in
-   * Java.
-   */
-  private static void configureNettyForArrow() {
-    // Required to enable direct memory usage for Arrow buffers in Java
-    System.setProperty("io.netty.tryReflectionSetAccessible", "true");
   }
 
   /**

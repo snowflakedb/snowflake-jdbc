@@ -236,6 +236,44 @@ public class CRLValidatorWiremockIT extends BaseWiremockTest {
   }
 
   @Test
+  void shouldFailWhenCrlExceedsMaxSizeLimit() throws Exception {
+    // Override max size to a small value for testing
+    String previousValue = System.getProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES);
+    try {
+      System.setProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES, "1024");
+      // Generate a valid CRL with many revoked entries so its encoded size exceeds 1 KB
+      for (int i = 0; i < 50; i++) {
+        certGen.generateCRLWithRevokedCertificate(java.math.BigInteger.valueOf(1000 + i));
+      }
+      byte[] largeCrl = certGen.generateValidCRL();
+      assertTrue(
+          largeCrl.length > 1024,
+          "Test precondition: CRL should be larger than 1024 bytes, but was " + largeCrl.length);
+      setupCRLMapping("/oversized-ca.crl", largeCrl, 200);
+
+      X509Certificate cert =
+          certGen.createCertificateWithCRLDistributionPoints(
+              "CN=Oversized CRL Server",
+              Arrays.asList("http://localhost:" + wiremockHttpPort + "/oversized-ca.crl"));
+      X509Certificate[] chain = {cert, certGen.getCACertificate()};
+
+      CRLValidator validator =
+          new CRLValidator(
+              CertRevocationCheckMode.ENABLED, false, httpClient, cacheManager, telemetry);
+
+      assertFalse(
+          validator.validateCertificateChains(Arrays.asList(new X509Certificate[][] {chain})),
+          "Should fail validation when CRL exceeds max download size");
+    } finally {
+      if (previousValue != null) {
+        System.setProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES, previousValue);
+      } else {
+        System.clearProperty(CRLCacheConfig.CRL_DOWNLOAD_MAX_SIZE_BYTES);
+      }
+    }
+  }
+
+  @Test
   void shouldEmitCrlTelemetry() throws Exception {
     byte[] crlContent = certGen.generateValidCRL();
     String crlUrl = "http://localhost:" + wiremockHttpPort + "/test-ca.crl";

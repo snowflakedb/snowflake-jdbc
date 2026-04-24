@@ -241,9 +241,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
         // Enable session parameter JDBC_USE_SESSION_TIMEZONE
         statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
         if (!useDefaultParamSettings) {
-          // these are 3 other session params that also alter the session display behavior
+          // these are 2 other session params that also alter the session display behavior
           statement.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-          statement.execute("alter session set CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ=false");
           statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
         }
 
@@ -373,9 +372,10 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
         }
       } finally {
         // clean up
-        statement.execute("alter session unset JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC");
-        statement.execute("alter session unset CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ");
-        statement.execute("alter session unset JDBC_FORMAT_DATE_WITH_TIMEZONE");
+        if (!useDefaultParamSettings) {
+          statement.execute("alter session unset JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC");
+          statement.execute("alter session unset JDBC_FORMAT_DATE_WITH_TIMEZONE");
+        }
         statement.execute("alter session unset JDBC_USE_SESSION_TIMEZONE");
       }
     }

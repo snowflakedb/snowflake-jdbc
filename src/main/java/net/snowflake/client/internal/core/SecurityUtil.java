@@ -27,8 +27,15 @@ public class SecurityUtil {
     // Check to see if the BouncyCastleFipsProvider has already been added.
     // If so, then we don't want to add the provider BouncyCastleProvider.
     // The addProvider() method won't add the provider if it already exists.
-    if (Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null) {
-      Security.addProvider(instantiateSecurityProvider());
+    try {
+      if (Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null) {
+        Security.addProvider(instantiateSecurityProvider());
+      }
+    } catch (SecurityException ex) {
+      LOGGER.warn(
+          "SecurityManager denied access to security providers. "
+              + "BouncyCastle provider was not added: {}",
+          ex.getMessage());
     }
   }
 

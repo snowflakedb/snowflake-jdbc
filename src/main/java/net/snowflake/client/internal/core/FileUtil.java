@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.io.File;
 import java.io.IOException;
@@ -161,7 +162,12 @@ public class FileUtil {
 
     try {
       String fileOwnerName = getFileOwnerName(filePath);
-      String currentUser = System.getProperty("user.name");
+      String currentUser = systemGetProperty("user.name");
+      if (currentUser == null) {
+        logger.debug(
+            "Cannot determine user (possibly due to security manager restrictions), skipping file owner validation");
+        return;
+      }
       if (!currentUser.equalsIgnoreCase(fileOwnerName)) {
         logger.debug(
             "The file owner: {} is different than current user: {}", fileOwnerName, currentUser);

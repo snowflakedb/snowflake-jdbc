@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -205,7 +206,14 @@ public class SnowflakeUtil {
       boolean isStructuredType,
       boolean isVectorType)
       throws SnowflakeSQLLoggedException {
-    SnowflakeType baseType = SnowflakeTypeUtil.fromString(internalColTypeName);
+    SnowflakeType baseType = SnowflakeTypeUtil.fromStringOrNull(internalColTypeName);
+    if (baseType == null) {
+      // Unknown Snowflake type (e.g. UUID) — report as OTHER with the actual type name
+      return new ColumnTypeInfo(
+          Types.OTHER,
+          defaultIfNull(extColTypeName, internalColTypeName.toUpperCase(Locale.ROOT)),
+          SnowflakeType.ANY);
+    }
     ColumnTypeInfo columnTypeInfo;
 
     switch (baseType) {
@@ -347,14 +355,16 @@ public class SnowflakeUtil {
         extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
 
         if (!udtOutputType.isMissingNode()) {
-          SnowflakeType outputType = SnowflakeTypeUtil.fromString(udtOutputType.asText());
-          switch (outputType) {
-            case OBJECT:
-            case TEXT:
-              colType = Types.VARCHAR;
-              break;
-            case BINARY:
-              colType = Types.BINARY;
+          SnowflakeType outputType = SnowflakeTypeUtil.fromStringOrNull(udtOutputType.asText());
+          if (outputType != null) {
+            switch (outputType) {
+              case OBJECT:
+              case TEXT:
+                colType = Types.VARCHAR;
+                break;
+              case BINARY:
+                colType = Types.BINARY;
+            }
           }
         }
         columnTypeInfo = new ColumnTypeInfo(colType, extColTypeName, baseType);
@@ -666,8 +676,8 @@ public class SnowflakeUtil {
   }
 
   /**
-   * System.getProperty wrapper. If System.getProperty raises an SecurityException, it is ignored
-   * and returns null.
+   * System.getProperty wrapper. If System.getProperty raises a SecurityException, it is ignored and
+   * returns null.
    *
    * @param property the property name
    * @return the property value if set, otherwise null.
@@ -676,13 +686,33 @@ public class SnowflakeUtil {
     try {
       return System.getProperty(property);
     } catch (SecurityException ex) {
-      logger.debug("Security exception raised: {}", ex.getMessage());
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug("Security exception raised: {}", ex.getMessage());
+      }
       return null;
     }
   }
 
   /**
-   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * System.setProperty wrapper. If System.setProperty raises a SecurityException, it is ignored.
+   *
+   * @param property the property name
+   * @param value the property value
+   */
+  public static void systemSetProperty(String property, String value) {
+    try {
+      System.setProperty(property, value);
+    } catch (SecurityException ex) {
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug("Security exception raised: {}", ex.getMessage());
+      }
+    }
+  }
+
+  /**
+   * System.getenv wrapper. If System.getenv raises a SecurityException, it is ignored and returns
    * null.
    *
    * @param env the environment variable name.
@@ -692,10 +722,13 @@ public class SnowflakeUtil {
     try {
       return System.getenv(env);
     } catch (SecurityException ex) {
-      logger.debug(
-          "Failed to get environment variable {}. Security exception raised: {}",
-          env,
-          ex.getMessage());
+      // logger may be null during SnowflakeUtil.<clinit> (circular init via SFLoggerFactory)
+      if (logger != null) {
+        logger.debug(
+            "Failed to get environment variable {}. Security exception raised: {}",
+            env,
+            ex.getMessage());
+      }
     }
     return null;
   }
@@ -989,6 +1022,11 @@ public class SnowflakeUtil {
 
   public static boolean isNullOrEmpty(String str) {
     return str == null || str.isEmpty();
+  }
+
+  /** Returns {@code true} when the node exists and carries a non-null value. */
+  public static boolean isJsonNodePresent(JsonNode node) {
+    return !node.isMissingNode() && !node.isNull();
   }
 
   /**

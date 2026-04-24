@@ -1,7 +1,27 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- Upcoming release (TBD)
+- v4.1.1-SNAPSHOT
+    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#SNOW-3388627)
+    - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8
+    - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
+    - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
+      - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
+      - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
+
+- v4.1.0
+    - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
+    - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
+    - Fix Netty native library conflict in thin JAR (snowflakedb/snowflake-jdbc#2559)
+    - Bumped netty to 4.1.132.Final to address CVE-2026-33870 (High) and CVE-2026-33871 (High) (snowflakedb/snowflake-jdbc#2561)
+    - Added getRole, getWarehouse and getDatabase API extension methods
+    - Fix driver failure when security manager prohibits access to system properties, environment variables and modifying security providers (snowflakedb/snowflake-jdbc#2563)
+    - Removed the io.netty.tryReflectionSetAccessible system property setting as it's no longer needed with modern Arrow/Netty versions (snowflakedb/snowflake-jdbc#2563)
+    - Fixed crash in getColumns operation when table contained unrecognised column type (snowflakedb/snowflake-jdbc#2568).
+    - Fixed session expiration when multiple sessions have different heartbeat intervals (snowflakedb/snowflake-jdbc#2566).
+    - Merge QueryContext from failed query responses
+
+- v4.0.2
     - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
     - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0
     - Adjust level of logging during Driver initialization
@@ -17,6 +37,8 @@
     - Bumped `commons-compress` dependency to latest (1.28.0) to address CVE-2024-25710 and CVE-2024-26308 (snowflakedb/snowflake-jdbc#2538)
     - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
     - Fixed proxy authentication when connecting to GCP (snowflakedb/snowflake-jdbc#2540)
+    - Fixed bug where called-provided schema was ignored in getStreams()
+    - Fixed S3 error handling manifested with `NullPointerException`
 
 - v4.0.1
     - Add /etc/os-release data to Minicore telemetry

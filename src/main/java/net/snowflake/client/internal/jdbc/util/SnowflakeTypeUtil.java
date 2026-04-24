@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.time.Duration;
 import java.time.Period;
 import java.util.Date;
+import java.util.Locale;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.common.core.SFBinary;
@@ -26,9 +27,24 @@ public class SnowflakeTypeUtil {
    *
    * @param name the type name
    * @return the corresponding SnowflakeType
+   * @throws IllegalArgumentException if the type name is not a known SnowflakeType
    */
   public static SnowflakeType fromString(String name) {
-    return SnowflakeType.valueOf(name.toUpperCase());
+    return SnowflakeType.valueOf(name.toUpperCase(Locale.ROOT));
+  }
+
+  /**
+   * Converts a string to a SnowflakeType enum value, returning null for unknown types.
+   *
+   * @param name the type name
+   * @return the corresponding SnowflakeType, or null if the type name is not recognized
+   */
+  public static SnowflakeType fromStringOrNull(String name) {
+    try {
+      return fromString(name);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   /**

@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
+    <version>4.1.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>4.0.2-SNAPSHOT</version>
+  <version>4.1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -670,7 +670,8 @@
                       <include>net.snowflake:snowflake-common</include>
                       <include>org.apache.arrow:*</include>
                       <include>org.apache.tika:tika-core</include>
-                      <include>io.netty:*</include>
+                      <include>io.netty:netty-common</include>
+                      <include>io.netty:netty-buffer</include>
                     </includes>
                   </artifactSet>
                   <relocations>

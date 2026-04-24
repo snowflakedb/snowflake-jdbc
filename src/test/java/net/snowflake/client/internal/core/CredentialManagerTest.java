@@ -21,6 +21,7 @@ class CredentialManagerTest {
   public static final String SOME_ID_TOKEN_FROM_CACHE = "some-id-token";
   public static final String SOME_MFA_TOKEN_FROM_CACHE = "some-mfa-token";
   public static final String SOME_DPOP_PUBLIC_KEY =
+      // pragma: allowlist nextline secret
       "{\"kty\":\"EC\",\"d\":\"j5-J-nLE4J1I8ZWtArP8eQbxUbYMPmRvaEjEkHFlHds\",\"crv\":\"P-256\",\"x\":\"RL5cE-TC4Jr6CxtT4lEI2Yu6wT6LbwojPQsgHUg01F0\",\"y\":\"UAdLUSWTJ6czXaS3SfEFUZzKPcVVq4OZAD8e7Rp75y4\"}";
   public static final String SOME_USER = "some-user";
 

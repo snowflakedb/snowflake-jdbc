@@ -129,7 +129,7 @@ public class SFSession extends SFBaseSession {
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
   // The cache of query context sent from Cloud Service.
-  private QueryContextCache qcc;
+  QueryContextCache qcc;
 
   // Max retries for outgoing http requests.
   private int maxHttpRetries = 7;
@@ -450,6 +450,12 @@ public class SFSession extends SFBaseSession {
         case ENABLE_PUT_GET:
           if (propertyValue != null) {
             setEnablePutGet(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case ENABLE_COPY_RESULT_SET:
+          if (propertyValue != null) {
+            setEnableCopyResultSet(getBooleanValue(propertyValue));
           }
           break;
 
@@ -1097,7 +1103,7 @@ public class SFSession extends SFBaseSession {
           getSessionId(),
           masterTokenValidityInSeconds);
 
-      HeartbeatBackground.getInstance()
+      HeartbeatRegistry.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
       logger.debug("Heartbeat not enabled for the session {}", getSessionId());
@@ -1109,7 +1115,7 @@ public class SFSession extends SFBaseSession {
     if (getEnableHeartbeat() && !isNullOrEmpty(masterToken)) {
       logger.debug("Session {} stop heartbeat", getSessionId());
 
-      HeartbeatBackground.getInstance().removeSession(this);
+      HeartbeatRegistry.getInstance().removeSession(this);
     } else {
       logger.debug("Heartbeat not enabled for the session {}", getSessionId());
     }

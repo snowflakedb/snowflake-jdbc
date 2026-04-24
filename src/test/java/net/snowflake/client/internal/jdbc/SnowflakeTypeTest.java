@@ -87,6 +87,7 @@ public class SnowflakeTypeTest {
     assertEquals(convertStringToType("object"), Types.JAVA_OBJECT);
     assertEquals(convertStringToType("vector"), SnowflakeType.EXTRA_TYPES_VECTOR);
     assertEquals(convertStringToType("array"), Types.ARRAY);
+    assertEquals(convertStringToType("uuid"), Types.OTHER);
     assertEquals(convertStringToType("default"), Types.OTHER);
   }
 
