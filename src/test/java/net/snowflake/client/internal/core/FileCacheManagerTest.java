@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import net.snowflake.client.annotations.RunOnLinuxOrMac;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.jdbc.BaseJDBCTest;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -181,6 +182,19 @@ class FileCacheManagerTest extends BaseJDBCTest {
       SecurityException ex =
           assertThrows(SecurityException.class, () -> fileCacheManager.readCacheFile());
       assertTrue(ex.getMessage().contains("The file owner is different than current user"));
+    }
+  }
+
+  @Test
+  @RunOnLinuxOrMac
+  public void notThrowWhenUserNameIsQuestionMarkInContainerEnvironment() {
+    try (MockedStatic<FileUtil> fileUtilMock =
+            Mockito.mockStatic(FileUtil.class, Mockito.CALLS_REAL_METHODS);
+        MockedStatic<SnowflakeUtil> snowflakeUtilMock =
+            Mockito.mockStatic(SnowflakeUtil.class, Mockito.CALLS_REAL_METHODS)) {
+      fileUtilMock.when(() -> FileUtil.getFileOwnerName(isA(Path.class))).thenReturn("root");
+      snowflakeUtilMock.when(() -> SnowflakeUtil.systemGetProperty("user.name")).thenReturn("?");
+      assertDoesNotThrow(() -> fileCacheManager.readCacheFile());
     }
   }
 

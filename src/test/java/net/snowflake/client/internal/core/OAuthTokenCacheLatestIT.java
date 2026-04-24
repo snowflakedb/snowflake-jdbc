@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
@@ -259,6 +260,30 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
     }
   }
 
+  @Test
+  public void shouldNotDeleteCachedTokensWhenCachingIsDisabled()
+      throws SFException, SnowflakeSQLException {
+    importMappingFromResources(REFRESHING_EXPIRED_ACCESS_TOKEN_SCENARIO_MAPPINGS);
+    try (MockedStatic<CredentialManager> credentialManagerMockedStatic =
+        mockStatic(CredentialManager.class)) {
+      SFLoginInput loginInput = createLoginInputStubWithCachingDisabled();
+      loginInput.setOauthAccessToken("expired-access-token-123");
+      loginInput.setOauthRefreshToken("some-refresh-token-123");
+      SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, new HashMap<>(), "INFO");
+
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.writeOAuthAccessToken(any(SFLoginInput.class)), never());
+      credentialManagerMockedStatic.verify(
+          () -> CredentialManager.writeOAuthRefreshToken(any(SFLoginInput.class)), never());
+
+      assertEquals("new-refreshed-access-token-123", loginOutput.getOauthAccessToken());
+    }
+  }
+
   private SFLoginInput createLoginInputStub() {
     SFLoginInput input = new SFLoginInput();
     input.setAuthenticator(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name());
@@ -289,6 +314,35 @@ public class OAuthTokenCacheLatestIT extends BaseWiremockTest {
   private SFLoginInput createLoginInputStubWithDPoPEnabled() {
     SFLoginInput input = createLoginInputStub();
     input.setDPoPEnabled(true);
+    return input;
+  }
+
+  private SFLoginInput createLoginInputStubWithCachingDisabled() {
+    SFLoginInput input = new SFLoginInput();
+    input.setAuthenticator(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name());
+    input.setOriginalAuthenticator(AuthenticatorType.OAUTH_AUTHORIZATION_CODE.name());
+    input.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
+    input.setUserName("MOCK_USERNAME");
+    input.setAccountName("MOCK_ACCOUNT_NAME");
+    input.setAppId("MOCK_APP_ID");
+    input.setAppVersion("MOCK_APP_VERSION");
+    input.setOCSPMode(OCSPMode.FAIL_OPEN);
+    input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+    input.setBrowserResponseTimeout(Duration.ofSeconds(5));
+    input.setBrowserHandler(
+        new OAuthAuthorizationCodeFlowLatestIT.WiremockProxyRequestBrowserHandler());
+    input.setLoginTimeout(1000);
+    Map<String, Object> sessionParams = new HashMap<>();
+    sessionParams.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", false);
+    input.setSessionParameters(sessionParams);
+    input.setOauthLoginInput(
+        new SFOauthLoginInput(
+            "123",
+            "123",
+            null,
+            String.format("http://%s:%d/oauth/authorize", WIREMOCK_HOST, wiremockHttpPort),
+            String.format("http://%s:%d/oauth/token-request", WIREMOCK_HOST, wiremockHttpPort),
+            "session:role:ANALYST"));
     return input;
   }
 
