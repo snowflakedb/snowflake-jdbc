@@ -186,14 +186,19 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   @DisplayName("Should fall back to IPv6 IMDS endpoint when IPv4 is unreachable")
   public void testDetectEc2InstanceIpv6Fallback() throws IOException {
     // Arrange: IMDSv2 mapping served by wiremock, used as the IPv6 base URL. The IPv4 base URL
-    // points at an unroutable TEST-NET-1 address (RFC 5737) that fails fast, so detection must
-    // fall back to the IPv6 endpoint.
+    // points at a loopback port with no listener so the connect fails fast with
+    // "connection refused" (mimicking "no route" behaviour on an IPv6-only EC2 instance),
+    // forcing detection to fall back to the IPv6 endpoint.
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
 
     PlatformDetector detector =
         new PlatformDetector(
-            "http://192.0.2.1", getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
+            "http://127.0.0.1:1",
+            getBaseUrl(),
+            getBaseUrl(),
+            getBaseUrl(),
+            mockEnvironmentProvider);
 
     // Act
     List<String> platforms = detector.detectPlatforms(500, mockAwsAttestationService);
