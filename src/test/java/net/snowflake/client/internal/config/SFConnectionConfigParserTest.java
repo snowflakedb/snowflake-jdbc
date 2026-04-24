@@ -43,7 +43,7 @@ public class SFConnectionConfigParserTest {
               SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION));
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
-  private Map<String, String> envVariables = new HashMap();
+  private Map<String, String> envVariables = new HashMap<>();
 
   @BeforeEach
   public void setUp() throws IOException {
@@ -141,7 +141,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
+    Map<String, String> extraparams = new HashMap<>();
     extraparams.put("host", "snowflake.reg.local");
     extraparams.put("account", null);
     extraparams.put("port", "8082");
@@ -272,10 +272,10 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
-  public void testProtocolFromTomlIsPreservedInUrl() throws SnowflakeSQLException, IOException {
+  public void testHttpProtocolFromTomlIsEmbeddedInUrl() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
+    Map<String, String> extraparams = new HashMap<>();
     extraparams.put("host", "snowflake.reg.local");
     extraparams.put("account", null);
     extraparams.put("port", "8082");
@@ -288,11 +288,11 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
-  public void testHttpsProtocolFromTomlIsPreservedInUrl()
+  public void testHttpsProtocolFromTomlProducesStandardUrl()
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
+    Map<String, String> extraparams = new HashMap<>();
     extraparams.put("host", "snowflake.reg.local");
     extraparams.put("account", null);
     extraparams.put("port", "8082");
@@ -309,7 +309,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
+    Map<String, String> extraparams = new HashMap<>();
     extraparams.put("host", "snowflake.reg.local");
     extraparams.put("account", null);
     extraparams.put("port", null);
@@ -325,7 +325,7 @@ public class SFConnectionConfigParserTest {
   public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
+    Map<String, String> extraparams = new HashMap<>();
     extraparams.put("host", null);
     extraparams.put("account", null);
     prepareConnectionConfigurationTomlFile(extraparams);
@@ -350,19 +350,22 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(null, true, true);
   }
 
-  private void prepareConnectionConfigurationTomlFile(Map moreParameters) throws IOException {
+  private void prepareConnectionConfigurationTomlFile(Map<String, String> moreParameters)
+      throws IOException {
     prepareConnectionConfigurationTomlFile(moreParameters, true, true);
   }
 
   private void prepareConnectionConfigurationTomlFile(
-      Map moreParameters, boolean onlyUserPermissionConnection, boolean onlyUserPermissionToken)
+      Map<String, String> moreParameters,
+      boolean onlyUserPermissionConnection,
+      boolean onlyUserPermissionToken)
       throws IOException {
     prepareConnectionConfigurationTomlFile(
         moreParameters, onlyUserPermissionConnection, onlyUserPermissionToken, "token_from_file");
   }
 
   private void prepareConnectionConfigurationTomlFile(
-      Map moreParameters,
+      Map<String, String> moreParameters,
       boolean onlyUserPermissionConnection,
       boolean onlyUserPermissionToken,
       String token)
@@ -371,8 +374,8 @@ public class SFConnectionConfigParserTest {
     Path filePath = createFilePathWithPermission(path, onlyUserPermissionConnection);
     File file = filePath.toFile();
 
-    Map configuration = new HashMap();
-    Map configurationParams = new HashMap();
+    Map<String, Object> configuration = new HashMap<>();
+    Map<String, Object> configurationParams = new HashMap<>();
     configurationParams.put("account", "snowaccount.us-west-2.aws");
     configurationParams.put("user", "user1");
     configurationParams.put("port", "443");

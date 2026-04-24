@@ -10,7 +10,7 @@
     - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
       - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
       - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
-    - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS
+    - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
 - v4.1.0
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
     - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
