@@ -182,7 +182,8 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol(null, "http");
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:80", data.getUrl());
+    assertEquals(
+        "jdbc:snowflake://http://myorg-myaccount.snowflakecomputing.com:80", data.getUrl());
   }
 
   @Test
@@ -193,7 +194,8 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol("8082", "http");
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
     assertNotNull(data);
-    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
+    assertEquals(
+        "jdbc:snowflake://http://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
   }
 
   @Test
@@ -262,10 +264,61 @@ public class SFConnectionConfigParserTest {
         SFConnectionConfigParser.buildConnectionParameters(
             "jdbc:snowflake:auto?connectionName=default");
     assertNotNull(data);
-    assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
+    assertEquals(
+        "jdbc:snowflake://http://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
     assertEquals("user1", data.getParams().get("user"));
     assertEquals("pass1", data.getParams().get("password"));
     assertEquals("MY_WH", data.getParams().get("warehouse"));
+  }
+
+  @Test
+  public void testProtocolFromTomlIsPreservedInUrl() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", "8082");
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "http");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://http://snowflake.reg.local:8082", data.getUrl());
+  }
+
+  @Test
+  public void testHttpsProtocolFromTomlIsPreservedInUrl()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", "8082");
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "https");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+  }
+
+  @Test
+  public void testDefaultPortIs443WhenProtocolIsEmptyString()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", null);
+    extraparams.put("token", "testToken");
+    extraparams.put("protocol", "");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:443", data.getUrl());
   }
 
   @Test
