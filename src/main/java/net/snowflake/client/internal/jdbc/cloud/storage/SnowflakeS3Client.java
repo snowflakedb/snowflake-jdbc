@@ -378,11 +378,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         executorService =
             createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism);
         // download files from s3
-        tx =
-            S3TransferManager.builder()
-                .s3Client(amazonClient)
-                .executor(executorService)
-                .build();
+        tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
 
         FileDownload fileDownload =
             tx.downloadFile(
@@ -641,8 +637,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     .bucket(remoteStorageLocation)
                     .key(destFileName);
 
-        logger.debug(
-            "Creating executor service for transfer manager with {} threads", parallelism);
+        logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
         executorService =
             createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
