@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
@@ -81,6 +82,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final String AMZ_IV = "x-amz-iv";
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
   private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
+
+  private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
   // expired AWS token error code
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
@@ -457,9 +460,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (tx != null) {
           tx.close();
         }
-        if (executorService != null) {
-          executorService.shutdown();
-        }
+        shutdownExecutorService("download", executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -726,9 +727,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (tx != null) {
           tx.close();
         }
-        if (executorService != null) {
-          executorService.shutdown();
-        }
+        shutdownExecutorService("upload", executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -985,6 +984,25 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     public int getSocketTimeout() {
       return socketTimeout;
+    }
+  }
+
+  private static void shutdownExecutorService(String name, ThreadPoolExecutor executor) {
+    if (executor == null) {
+      return;
+    }
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        logger.debug(
+            "S3 {} executor did not terminate within {} seconds, forcing shutdown",
+            name,
+            EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS);
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
     }
   }
 }
