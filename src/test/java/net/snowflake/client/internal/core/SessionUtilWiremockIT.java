@@ -18,6 +18,8 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.BaseWiremockTest;
+import net.snowflake.client.internal.util.LibcDetails;
+import net.snowflake.client.internal.util.LibcInfo;
 import net.snowflake.client.internal.util.OsReleaseDetails;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
   private static final String OS_DETAILS_LOGIN_MAPPING_PATH =
       "/wiremock/mappings/session/session-util-wiremock-it-os-details-in-login-request.json";
+
+  private static final String LIBC_DETAILS_LOGIN_MAPPING_PATH =
+      "/wiremock/mappings/session/session-util-wiremock-it-libc-details-in-login-request.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
@@ -336,6 +341,27 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       mockedOsReleaseDetails.when(OsReleaseDetails::load).thenReturn(mockOsDetails);
 
       importMappingFromResources(OS_DETAILS_LOGIN_MAPPING_PATH);
+      setCustomTrustStorePropertyPath();
+
+      SFLoginInput loginInput = createBasicLoginInput();
+      Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+
+      verifyRequestCount(1, "/session/v1/login-request.*");
+    }
+  }
+
+  @Test
+  public void testLibcDetailsIncludedInLoginRequest() throws Throwable {
+    // GIVEN - Mock LibcDetails.load() to return deterministic test data so the assertion
+    // works on any host (including macOS / Windows where libc detection returns nulls).
+    LibcInfo mockLibcInfo = new LibcInfo(LibcDetails.GLIBC, "2.34");
+
+    try (MockedStatic<LibcDetails> mockedLibcDetails = mockStatic(LibcDetails.class)) {
+      mockedLibcDetails.when(LibcDetails::load).thenReturn(mockLibcInfo);
+
+      importMappingFromResources(LIBC_DETAILS_LOGIN_MAPPING_PATH);
       setCustomTrustStorePropertyPath();
 
       SFLoginInput loginInput = createBasicLoginInput();
