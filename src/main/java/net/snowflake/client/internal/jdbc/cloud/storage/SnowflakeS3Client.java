@@ -369,17 +369,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     S3TransferManager tx = null;
     int retryCount = 0;
     do {
+      ThreadPoolExecutor executorService = null;
       try {
         File localFile = new File(localFilePath);
 
         logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
+        executorService =
+            createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism);
         // download files from s3
         tx =
             S3TransferManager.builder()
                 .s3Client(amazonClient)
-                .executor(
-                    createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
+                .executor(executorService)
                 .build();
 
         FileDownload fileDownload =
@@ -458,6 +460,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } finally {
         if (tx != null) {
           tx.close();
+        }
+        if (executorService != null) {
+          executorService.shutdown();
         }
       }
     } while (retryCount <= getMaxRetries());
@@ -628,6 +633,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     do {
+      ThreadPoolExecutor executorService = null;
       try {
         PutObjectRequest.Builder putRequestBuilder =
             ((S3ObjectMetadata) meta)
@@ -636,9 +642,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     .key(destFileName);
 
         logger.debug(
-            "Creating executor service for transfer" + "manager with {} threads", parallelism);
+            "Creating executor service for transfer manager with {} threads", parallelism);
 
-        ThreadPoolExecutor executorService =
+        executorService =
             createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
         // upload files to s3
         tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
@@ -724,6 +730,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } finally {
         if (tx != null) {
           tx.close();
+        }
+        if (executorService != null) {
+          executorService.shutdown();
         }
       }
     } while (retryCount <= getMaxRetries());
