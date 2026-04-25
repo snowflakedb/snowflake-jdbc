@@ -369,10 +369,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
         "Starting download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
-    S3TransferManager tx = null;
     int retryCount = 0;
     do {
       ThreadPoolExecutor executorService = null;
+      S3TransferManager tx = null;
       try {
         File localFile = new File(localFilePath);
 
@@ -457,10 +457,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
-        if (tx != null) {
-          tx.close();
+        try {
+          if (tx != null) {
+            tx.close();
+          }
+        } finally {
+          shutdownExecutorService("download", executorService);
         }
-        shutdownExecutorService("download", executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -630,6 +633,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     do {
+      tx = null;
       ThreadPoolExecutor executorService = null;
       try {
         PutObjectRequest.Builder putRequestBuilder =
@@ -724,10 +728,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 toClose,
                 queryId);
       } finally {
-        if (tx != null) {
-          tx.close();
+        try {
+          if (tx != null) {
+            tx.close();
+          }
+        } finally {
+          shutdownExecutorService("upload", executorService);
         }
-        shutdownExecutorService("upload", executorService);
       }
     } while (retryCount <= getMaxRetries());
 
