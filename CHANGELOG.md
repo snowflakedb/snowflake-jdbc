@@ -4,13 +4,14 @@
 - v4.1.1-SNAPSHOT
     - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux
     - Fixed NPE in `SFTrustManager.validateRevocationStatusMain` when the OCSP cache contains a non-SUCCESSFUL response (e.g. `unauthorized(6)`); the response is now surfaced as an `SFOCSPException` so cache eviction and fail-open run normally (snowflakedb/snowflake-jdbc#2597)
-    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#SNOW-3388627)
+    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#2592)
     - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8
     - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
     - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
       - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
       - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
     - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
+    - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602)
 - v4.1.0
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
     - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
