@@ -303,24 +303,43 @@ public class PlatformDetector {
   }
 
   private DetectionState isEc2Instance(int timeoutMs) {
-    // Try IPv4 first. On IPv6-only EC2 instances the IPv4 link-local address is
-    // unreachable (no route, connection refused, or timeout), so fall through to
-    // the IPv6 IMDS endpoint. The outer detectPlatforms() executor enforces the
-    // overall detection budget via future.get(timeout), so a second probe here
-    // cannot exceed that budget.
-    DetectionState ipv4Result = probeEc2Instance(awsMetadataBaseUrl, timeoutMs);
-    if (ipv4Result == DetectionState.DETECTED) {
-      return ipv4Result;
+    // Probe IPv4 and IPv6 IMDS endpoints in parallel so detection stays within the
+    // per-task budget on IPv6-only EC2 instances (where the IPv4 link-local address
+    // is unreachable) and without doubling the time on dual-stack hosts.
+    ExecutorService ec2Executor = Executors.newFixedThreadPool(2);
+    try {
+      CompletableFuture<DetectionState> ipv4Future =
+          CompletableFuture.supplyAsync(
+              () -> probeEc2Instance(awsMetadataBaseUrl, timeoutMs), ec2Executor);
+      CompletableFuture<DetectionState> ipv6Future =
+          CompletableFuture.supplyAsync(
+              () -> probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs), ec2Executor);
+
+      DetectionState ipv4Result = joinProbe(ipv4Future, timeoutMs);
+      DetectionState ipv6Result = joinProbe(ipv6Future, timeoutMs);
+
+      if (ipv4Result == DetectionState.DETECTED || ipv6Result == DetectionState.DETECTED) {
+        return DetectionState.DETECTED;
+      }
+      if (ipv4Result == DetectionState.TIMEOUT || ipv6Result == DetectionState.TIMEOUT) {
+        return DetectionState.TIMEOUT;
+      }
+      return DetectionState.NOT_DETECTED;
+    } finally {
+      ec2Executor.shutdownNow();
     }
-    DetectionState ipv6Result = probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs);
-    if (ipv6Result == DetectionState.DETECTED) {
-      return ipv6Result;
-    }
-    // Neither detected — surface a timeout if either attempt timed out, otherwise NOT_DETECTED.
-    if (ipv4Result == DetectionState.TIMEOUT || ipv6Result == DetectionState.TIMEOUT) {
+  }
+
+  private static DetectionState joinProbe(CompletableFuture<DetectionState> future, int timeoutMs) {
+    try {
+      return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+      future.cancel(true);
       return DetectionState.TIMEOUT;
+    } catch (Exception e) {
+      future.cancel(true);
+      return DetectionState.NOT_DETECTED;
     }
-    return DetectionState.NOT_DETECTED;
   }
 
   private DetectionState probeEc2Instance(String baseUrl, int timeoutMs) {
