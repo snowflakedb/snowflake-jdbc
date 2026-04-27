@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.1.1-SNAPSHOT
+    - Added support for attaching the SPCS service-identifier token (`SPCS_TOKEN`) to login requests when the driver is running inside an SPCS container (gated on the `SNOWFLAKE_RUNNING_INSIDE_SPCS` environment variable; token read from `/snowflake/session/spcs_token`) (snowflakedb/snowflake-jdbc#2603)
     - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux
     - Fixed NPE in `SFTrustManager.validateRevocationStatusMain` when the OCSP cache contains a non-SUCCESSFUL response (e.g. `unauthorized(6)`); the response is now surfaced as an `SFOCSPException` so cache eviction and fail-open run normally (snowflakedb/snowflake-jdbc#2597)
     - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#SNOW-3388627)
