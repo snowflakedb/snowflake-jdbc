@@ -6,7 +6,9 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import net.snowflake.client.internal.util.LibcInfo;
 import net.snowflake.client.internal.util.OsReleaseDetails;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 @Tag(TestTags.CORE)
@@ -47,6 +50,9 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
 
   private static final String LIBC_DETAILS_LOGIN_MAPPING_PATH =
       "/wiremock/mappings/session/session-util-wiremock-it-libc-details-in-login-request.json";
+
+  private static final String SPCS_TOKEN_LOGIN_MAPPING_PATH =
+      "/wiremock/mappings/session/session-util-wiremock-it-spcs-token-in-login-request.json";
 
   /**
    * Minimum spacing we expect between consecutive requests, in milliseconds - associated with
@@ -362,6 +368,25 @@ public class SessionUtilWiremockIT extends BaseWiremockTest {
       mockedLibcDetails.when(LibcDetails::load).thenReturn(mockLibcInfo);
 
       importMappingFromResources(LIBC_DETAILS_LOGIN_MAPPING_PATH);
+      setCustomTrustStorePropertyPath();
+
+      SFLoginInput loginInput = createBasicLoginInput();
+      Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+
+      verifyRequestCount(1, "/session/v1/login-request.*");
+    }
+  }
+
+  @Test
+  public void testSpcsTokenIncludedInLoginRequest() throws Throwable {
+    try (MockedConstruction<SpcsTokenReader> mockedReader =
+        mockConstruction(
+            SpcsTokenReader.class,
+            (mock, ctx) -> when(mock.readSpcsToken()).thenReturn("test-spcs-token"))) {
+
+      importMappingFromResources(SPCS_TOKEN_LOGIN_MAPPING_PATH);
       setCustomTrustStorePropertyPath();
 
       SFLoginInput loginInput = createBasicLoginInput();

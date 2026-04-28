@@ -17,5 +17,6 @@ public enum ClientAuthnParameter {
   TOKEN,
   OAUTH_TYPE,
   PROVIDER,
-  APPLICATION_PATH
+  APPLICATION_PATH,
+  SPCS_TOKEN
 }
