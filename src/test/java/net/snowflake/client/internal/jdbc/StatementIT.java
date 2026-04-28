@@ -701,7 +701,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
           "GET @"
               + stageName
               + " 'file://"
-              + destFolder.getCanonicalPath()
+              + destFolder.getCanonicalPath().replace("\\", "/")
               + "' PARALLEL="
               + getParallelism;
 
