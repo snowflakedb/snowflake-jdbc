@@ -18,6 +18,15 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 
 public class FileUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(FileUtil.class);
+
+  /**
+   * Placeholder value returned by the JVM for {@code user.name} when the current OS user has no
+   * matching entry in the system user database (e.g. a container started with {@code runAsUser} and
+   * no {@code /etc/passwd} entry). Treated as "unknown user" — file owner validation is skipped in
+   * this case.
+   */
+  static final String UNKNOWN_USER_NAME_MARKER = "?";
+
   private static final Collection<PosixFilePermission> WRITE_BY_OTHERS =
       Arrays.asList(PosixFilePermission.GROUP_WRITE, PosixFilePermission.OTHERS_WRITE);
   private static final Collection<PosixFilePermission> READ_BY_OTHERS =
@@ -163,9 +172,9 @@ public class FileUtil {
     try {
       String fileOwnerName = getFileOwnerName(filePath);
       String currentUser = systemGetProperty("user.name");
-      if (currentUser == null) {
-        logger.debug(
-            "Cannot determine user (possibly due to security manager restrictions), skipping file owner validation");
+      if (currentUser == null || UNKNOWN_USER_NAME_MARKER.equals(currentUser)) {
+        logger.warn(
+            "Cannot determine user (possibly due to security manager restrictions or missing passwd entry in container), skipping file owner validation");
         return;
       }
       if (!currentUser.equalsIgnoreCase(fileOwnerName)) {
