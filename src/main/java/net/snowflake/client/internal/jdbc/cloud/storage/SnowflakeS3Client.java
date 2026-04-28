@@ -989,7 +989,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         tx.close();
       }
     } catch (Exception e) {
-      logger.warn("Failed to close S3 {} transfer manager: {}", name, e.getMessage());
+      logger.warn("Failed to close S3 {} transfer manager", name, e);
     } finally {
       if (executor != null) {
         try {
@@ -1007,8 +1007,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           executor.shutdownNow();
           Thread.currentThread().interrupt();
         } catch (Exception e) {
-          logger.warn(
-              "Failed to shut down S3 {} executor, forcing shutdown: {}", name, e.getMessage());
+          logger.warn("Failed to shut down S3 {} executor, forcing shutdown", name, e);
           executor.shutdownNow();
         }
       }

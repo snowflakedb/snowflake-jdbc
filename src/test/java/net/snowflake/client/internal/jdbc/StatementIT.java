@@ -672,6 +672,75 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
+  @Test
+  public void testRepeatedGetDoesNotLeakThreads() throws Exception {
+    int iterations = Integer.getInteger("snowflake.test.getThreadLeak.iterations", 10);
+    int getParallelism = 4;
+    assertTrue(iterations > 0, "Iterations must be positive");
+
+    File testFile = new File(tmpFolder, "thread_leak_test_1mb.csv");
+    createCsvFile(testFile, 1024 * 1024);
+    String stageName = "TEMP_THREAD_LEAK_GET_STAGE_" + System.nanoTime();
+    File destFolder = new File(tmpFolder, "downloads");
+    destFolder.mkdirs();
+
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("CREATE OR REPLACE TEMPORARY STAGE " + stageName);
+
+      String putCommand =
+          "PUT file://"
+              + testFile.getCanonicalPath()
+              + " @"
+              + stageName
+              + " AUTO_COMPRESS=FALSE OVERWRITE=TRUE";
+      try (ResultSet rs = statement.executeQuery(putCommand)) {
+        while (rs.next()) {}
+      }
+
+      String getCommand =
+          "GET @"
+              + stageName
+              + " 'file://"
+              + destFolder.getCanonicalPath()
+              + "' PARALLEL="
+              + getParallelism;
+
+      // Warm up: first GET initializes Netty event loops and other one-time resources
+      try (ResultSet rs = statement.executeQuery(getCommand)) {
+        while (rs.next()) {}
+      }
+      waitForTransferThreadCount(getParallelism);
+
+      long baselineTransferThreads = countTransferManagerThreads();
+
+      for (int i = 0; i < iterations; i++) {
+        for (File f : destFolder.listFiles()) {
+          f.delete();
+        }
+        try (ResultSet rs = statement.executeQuery(getCommand)) {
+          while (rs.next()) {}
+        }
+      }
+
+      waitForTransferThreadCount(baselineTransferThreads + getParallelism);
+      long finalTransferThreads = countTransferManagerThreads();
+
+      long threadGrowth = finalTransferThreads - baselineTransferThreads;
+      assertTrue(
+          threadGrowth <= 0,
+          String.format(
+              "Transfer manager threads grew by %d after %d GETs with PARALLEL=%d "
+                  + "(baseline=%d, final=%d, would be %d without fix)."
+                  + " This indicates a thread pool leak in S3 download.",
+              threadGrowth,
+              iterations,
+              getParallelism,
+              baselineTransferThreads,
+              finalTransferThreads,
+              (long) iterations * getParallelism));
+    }
+  }
+
   private static void waitForTransferThreadCount(long atMost) {
     Awaitility.await()
         .atMost(Duration.ofSeconds(7))
@@ -680,15 +749,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   private static long countTransferManagerThreads() {
-    Thread[] threads = new Thread[Thread.activeCount() * 2];
-    int count = Thread.enumerate(threads);
-    long transferThreads = 0;
-    for (int i = 0; i < count; i++) {
-      if (threads[i] != null && threads[i].getName().startsWith("s3-transfer-manager-")) {
-        transferThreads++;
-      }
-    }
-    return transferThreads;
+    return Thread.getAllStackTraces().keySet().stream()
+        .filter(t -> t.getName().startsWith("s3-transfer-manager-"))
+        .count();
   }
 
   private static void createCsvFile(File targetFile, long targetBytes) throws Exception {
