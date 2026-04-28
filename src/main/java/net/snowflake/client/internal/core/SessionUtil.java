@@ -59,6 +59,8 @@ import net.snowflake.client.internal.jdbc.util.DriverUtil;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.LibcDetails;
+import net.snowflake.client.internal.util.LibcInfo;
 import net.snowflake.client.internal.util.OsReleaseDetails;
 import net.snowflake.client.internal.util.PlatformDetector;
 import net.snowflake.client.internal.util.SecretDetector;
@@ -474,7 +476,9 @@ public class SessionUtil {
       logger.debug(
           "Refreshing OAuth access token failed. Removing OAuth refresh token from cache and restarting OAuth flow...",
           e);
-      CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput);
+      if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+        CredentialManager.deleteOAuthRefreshTokenCacheEntry(loginInput);
+      }
       loginInput.restoreOriginalAuthenticator();
       fetchOAuthAccessTokenAndUpdateInput(loginInput);
     }
@@ -729,6 +733,16 @@ public class SessionUtil {
       }
 
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
+
+      // SPCS service-identifier token - when the driver is
+      // running inside an SPCS container, the runtime-issued token is attached to every login
+      // request so the backend can identify the originating service. The token is rotated by SPCS,
+      // so it is re-read from disk on every login and never cached.
+      String spcsToken = new SpcsTokenReader().readSpcsToken();
+      if (spcsToken != null) {
+        data.put(ClientAuthnParameter.SPCS_TOKEN.name(), spcsToken);
+      }
+
       ClientAuthnDTO authnData = new ClientAuthnDTO(data, loginInput.getInFlightCtx());
       String json = mapper.writeValueAsString(authnData);
 
@@ -884,7 +898,9 @@ public class SessionUtil {
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
           // clean id_token first
           loginInput.setIdToken(null);
-          deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+          if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+            deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+          }
 
           logger.debug(
               "ID Token Expired / Not Applicable. Reauthenticating with ID Token cleared...: {}",
@@ -908,7 +924,8 @@ public class SessionUtil {
           }
         }
 
-        if (authenticatorType == AuthenticatorType.USERNAME_PASSWORD_MFA) {
+        if (authenticatorType == AuthenticatorType.USERNAME_PASSWORD_MFA
+            && asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
           deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
@@ -1098,6 +1115,21 @@ public class SessionUtil {
       clientEnv.put("OS_DETAILS", osDetails);
     }
 
+    // Add libc family and version when detectable on Linux. Fields are omitted on non-Linux
+    // systems and on Linux when detection is unavailable or inconclusive. See LibcDetails for
+    // detection strategies.
+    try {
+      LibcInfo libcInfo = LibcDetails.load();
+      if (libcInfo.getFamily() != null) {
+        clientEnv.put("LIBC_FAMILY", libcInfo.getFamily());
+      }
+      if (libcInfo.getVersion() != null) {
+        clientEnv.put("LIBC_VERSION", libcInfo.getVersion());
+      }
+    } catch (Exception | LinkageError e) {
+      logger.debug("Failed to detect libc details: {}", e.getMessage());
+    }
+
     clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
     clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
     clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
@@ -1235,8 +1267,10 @@ public class SessionUtil {
   private static void clearAccessTokenCache(SFLoginInput loginInput) throws SFException {
     loginInput.setOauthAccessToken(null);
     loginInput.setDPoPPublicKey(null);
-    CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput);
-    CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput);
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+      CredentialManager.deleteOAuthAccessTokenCacheEntry(loginInput);
+      CredentialManager.deleteDPoPBundledAccessTokenCacheEntry(loginInput);
+    }
   }
 
   private static void setServiceNameHeader(SFLoginInput loginInput, HttpPost postRequest) {

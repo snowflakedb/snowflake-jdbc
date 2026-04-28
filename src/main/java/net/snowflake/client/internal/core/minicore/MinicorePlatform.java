@@ -5,6 +5,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.Constants.Architecture;
 import net.snowflake.client.internal.core.Constants.OS;
+import net.snowflake.client.internal.util.LibcDetails;
 
 public class MinicorePlatform {
   private final OS os;
@@ -55,13 +56,13 @@ public class MinicorePlatform {
 
     String archId = architecture.getIdentifier();
 
-    // For Linux, add libc variant: linux-x86_64-glibc or linux-aarch64-musl
-    LibcDetector.LibcVariant libcVariant = LibcDetector.detectLibcVariant();
-    if (libcVariant != LibcDetector.LibcVariant.UNSUPPORTED) {
-      return osId + "-" + archId + "-" + libcVariant.getIdentifier();
+    // For Linux, add libc family: linux-x86_64-glibc or linux-aarch64-musl
+    String libcFamily = LibcDetails.load().getFamily();
+    if (libcFamily != null) {
+      return osId + "-" + archId + "-" + libcFamily;
     }
 
-    // For other OSes (UNSUPPORTED), just os-arch
+    // For non-Linux platforms (libcFamily is null), just os-arch
     return osId + "-" + archId;
   }
 
@@ -131,10 +132,10 @@ public class MinicorePlatform {
     fileName.append("_").append(osId);
     fileName.append("_").append(archId);
 
-    // For Linux, add libc variant
-    LibcDetector.LibcVariant libcVariant = LibcDetector.detectLibcVariant();
-    if (libcVariant != LibcDetector.LibcVariant.UNSUPPORTED) {
-      fileName.append("_").append(libcVariant.getIdentifier());
+    // For Linux, add libc family
+    String libcFamily = LibcDetails.load().getFamily();
+    if (libcFamily != null) {
+      fileName.append("_").append(libcFamily);
     }
 
     fileName.append(getLibraryExtension());

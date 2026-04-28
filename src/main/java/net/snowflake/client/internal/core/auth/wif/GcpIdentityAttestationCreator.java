@@ -1,6 +1,6 @@
 package net.snowflake.client.internal.core.auth.wif;
 
-import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.DEFAULT_METADATA_SERVICE_BASE_URL;
+import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.DEFAULT_GCP_METADATA_SERVICE_BASE_URL;
 import static net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil.performIdentityRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,7 +39,7 @@ public class GcpIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   public GcpIdentityAttestationCreator(SFLoginInput loginInput) {
     this.loginInput = loginInput;
-    this.gcpMetadataServiceBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
+    this.gcpMetadataServiceBaseUrl = DEFAULT_GCP_METADATA_SERVICE_BASE_URL;
     this.gcpIamCredentialsBaseUrl = DEFAULT_GCP_IAM_CREDENTIALS_URL;
   }
 

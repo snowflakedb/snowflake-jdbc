@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.Constants.Architecture;
 import net.snowflake.client.internal.core.Constants.OS;
+import net.snowflake.client.internal.util.LibcDetails;
+import net.snowflake.client.internal.util.LibcInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.mockito.MockedStatic;
@@ -32,28 +34,19 @@ public class MinicorePlatformTest {
   private static final List<TestPlatformConfig> SUPPORTED_PLATFORMS =
       Arrays.asList(
           // Linux glibc
-          new TestPlatformConfig(
-              OS.LINUX, Architecture.X86_64, LibcDetector.LibcVariant.GLIBC, false),
-          new TestPlatformConfig(
-              OS.LINUX, Architecture.AARCH64, LibcDetector.LibcVariant.GLIBC, false),
+          new TestPlatformConfig(OS.LINUX, Architecture.X86_64, LibcDetails.GLIBC, false),
+          new TestPlatformConfig(OS.LINUX, Architecture.AARCH64, LibcDetails.GLIBC, false),
           // Linux musl
-          new TestPlatformConfig(
-              OS.LINUX, Architecture.X86_64, LibcDetector.LibcVariant.MUSL, false),
-          new TestPlatformConfig(
-              OS.LINUX, Architecture.AARCH64, LibcDetector.LibcVariant.MUSL, false),
+          new TestPlatformConfig(OS.LINUX, Architecture.X86_64, LibcDetails.MUSL, false),
+          new TestPlatformConfig(OS.LINUX, Architecture.AARCH64, LibcDetails.MUSL, false),
           // macOS
-          new TestPlatformConfig(
-              OS.MAC, Architecture.X86_64, LibcDetector.LibcVariant.UNSUPPORTED, false),
-          new TestPlatformConfig(
-              OS.MAC, Architecture.AARCH64, LibcDetector.LibcVariant.UNSUPPORTED, false),
+          new TestPlatformConfig(OS.MAC, Architecture.X86_64, null, false),
+          new TestPlatformConfig(OS.MAC, Architecture.AARCH64, null, false),
           // Windows
-          new TestPlatformConfig(
-              OS.WINDOWS, Architecture.X86_64, LibcDetector.LibcVariant.UNSUPPORTED, false),
-          new TestPlatformConfig(
-              OS.WINDOWS, Architecture.AARCH64, LibcDetector.LibcVariant.UNSUPPORTED, false),
+          new TestPlatformConfig(OS.WINDOWS, Architecture.X86_64, null, false),
+          new TestPlatformConfig(OS.WINDOWS, Architecture.AARCH64, null, false),
           // AIX (detected as LINUX but isAix=true)
-          new TestPlatformConfig(
-              OS.LINUX, Architecture.PPC64, LibcDetector.LibcVariant.UNSUPPORTED, true));
+          new TestPlatformConfig(OS.LINUX, Architecture.PPC64, null, true));
 
   @Test
   public void testPlatformDetection() {
@@ -162,12 +155,12 @@ public class MinicorePlatformTest {
 
   private String getLibraryPathForConfig(TestPlatformConfig config) {
     try (MockedStatic<Constants> constantsMock = mockStatic(Constants.class);
-        MockedStatic<LibcDetector> libcMock = mockStatic(LibcDetector.class)) {
+        MockedStatic<LibcDetails> libcMock = mockStatic(LibcDetails.class)) {
 
       constantsMock.when(Constants::getOS).thenReturn(config.os);
       constantsMock.when(Constants::getArchitecture).thenReturn(config.arch);
       constantsMock.when(Constants::isAix).thenReturn(config.isAix);
-      libcMock.when(LibcDetector::detectLibcVariant).thenReturn(config.libcVariant);
+      libcMock.when(LibcDetails::load).thenReturn(new LibcInfo(config.libcFamily, null));
 
       MinicorePlatform platform = new MinicorePlatform();
       assertTrue(platform.isSupported(), "Platform should be supported: " + config);
@@ -178,14 +171,13 @@ public class MinicorePlatformTest {
   private static class TestPlatformConfig {
     final OS os;
     final Architecture arch;
-    final LibcDetector.LibcVariant libcVariant;
+    final String libcFamily;
     final boolean isAix;
 
-    TestPlatformConfig(
-        OS os, Architecture arch, LibcDetector.LibcVariant libcVariant, boolean isAix) {
+    TestPlatformConfig(OS os, Architecture arch, String libcFamily, boolean isAix) {
       this.os = os;
       this.arch = arch;
-      this.libcVariant = libcVariant;
+      this.libcFamily = libcFamily;
       this.isAix = isAix;
     }
   }
