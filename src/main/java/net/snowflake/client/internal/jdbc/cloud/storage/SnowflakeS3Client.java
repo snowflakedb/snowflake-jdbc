@@ -992,8 +992,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       logger.warn("Failed to close S3 {} transfer manager: {}", name, e.getMessage());
     } finally {
       if (executor != null) {
-        executor.shutdown();
         try {
+          executor.shutdown();
           if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             logger.warn(
                 "S3 {} executor did not terminate within {} seconds, forcing shutdown",
@@ -1002,8 +1002,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             executor.shutdownNow();
           }
         } catch (InterruptedException e) {
+          // The only checked exception from awaitTermination so need to reset the interrupt flag
+          logger.warn("S3 {} executor shutdown interrupted, forcing shutdown", name);
           executor.shutdownNow();
           Thread.currentThread().interrupt();
+        } catch (Exception e) {
+          logger.warn("Failed to shut down S3 {} executor, forcing shutdown: {}", name, e.getMessage());
+          executor.shutdownNow();
         }
       }
     }
