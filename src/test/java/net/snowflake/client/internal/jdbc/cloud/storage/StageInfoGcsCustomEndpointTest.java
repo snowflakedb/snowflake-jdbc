@@ -49,7 +49,8 @@ public class StageInfoGcsCustomEndpointTest {
   public void shouldReturnEmptyGCSRegionalUrlWhenNotMeCentral1AndNotUseRegionalUrl(
       String region, boolean useRegionalUrl, String endPoint, Optional<String> expectedHost) {
     StageInfo stageInfo =
-        StageInfo.createStageInfo("GCS", "bla", new HashMap<>(), region, endPoint, "account", true);
+        StageInfo.createStageInfo(
+            "GCS", "bla", new HashMap<>(), region, endPoint, "account", true, Ciphers.AES_CBC);
     stageInfo.setUseRegionalUrl(useRegionalUrl);
     assertEquals(expectedHost, stageInfo.gcsCustomEndpoint());
   }

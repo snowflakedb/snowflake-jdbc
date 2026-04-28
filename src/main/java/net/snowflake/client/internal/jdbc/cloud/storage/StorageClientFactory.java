@@ -27,7 +27,7 @@ public class StorageClientFactory {
    *
    * @return the storage client instance
    */
-  public static StorageClientFactory getFactory() {
+  public static synchronized StorageClientFactory getFactory() {
     if (factory == null) {
       factory = new StorageClientFactory();
     }
@@ -64,6 +64,7 @@ public class StorageClientFactory {
             stage.getRegion(),
             stage.getEndPoint(),
             stage.getIsClientSideEncrypted(),
+            stage.getCiphers(),
             session,
             useS3RegionalUrl);
 
@@ -91,6 +92,7 @@ public class StorageClientFactory {
    * @param stageRegion the region where the stage is located
    * @param stageEndPoint the FIPS endpoint for the stage, if needed
    * @param isClientSideEncrypted whether client-side encryption should be used
+   * @param ciphers
    * @param session the active session
    * @param useS3RegionalUrl
    * @return the SnowflakeS3Client instance created
@@ -104,6 +106,7 @@ public class StorageClientFactory {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
+      Ciphers ciphers,
       SFBaseSession session,
       boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
@@ -138,6 +141,7 @@ public class StorageClientFactory {
               stageRegion,
               stageEndPoint,
               isClientSideEncrypted,
+              ciphers,
               session,
               useS3RegionalUrl);
     } catch (Exception ex) {
