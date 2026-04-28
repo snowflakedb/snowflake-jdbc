@@ -85,7 +85,7 @@ public class WIFLatestIT {
   private String getGCPAccessToken() {
     try {
       String command =
-          "curl -H \"Metadata-Flavor: Google\" \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity?audience=snowflakecomputing.com\"";
+          "curl -H \"Metadata-Flavor: Google\" \"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=snowflakecomputing.com\"";
       ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
       Process process = processBuilder.start();
 

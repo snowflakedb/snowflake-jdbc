@@ -49,6 +49,8 @@ public class PlatformDetector {
 
   // Default cloud metadata service URLs
   private static final String DEFAULT_METADATA_SERVICE_BASE_URL = "http://169.254.169.254";
+  // IPv6 fallback for EC2 IMDS on IPv6-only instances (IPv4 unreachable)
+  private static final String DEFAULT_AWS_METADATA_IPV6_BASE_URL = "http://[fd00:ec2::254]";
   private static final String DEFAULT_GCP_METADATA_BASE_URL = "http://metadata.google.internal";
 
   // Metadata service headers and values
@@ -80,6 +82,7 @@ public class PlatformDetector {
 
   // Instance fields for configurable URLs and environment provider (for testing)
   private final String awsMetadataBaseUrl;
+  private final String awsMetadataIpv6BaseUrl;
   private final String azureMetadataBaseUrl;
   private final String gcpMetadataBaseUrl;
   private final EnvironmentProvider environmentProvider;
@@ -87,6 +90,7 @@ public class PlatformDetector {
   // Default constructor for production use
   public PlatformDetector() {
     this.awsMetadataBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
+    this.awsMetadataIpv6BaseUrl = DEFAULT_AWS_METADATA_IPV6_BASE_URL;
     this.azureMetadataBaseUrl = DEFAULT_METADATA_SERVICE_BASE_URL;
     this.gcpMetadataBaseUrl = DEFAULT_GCP_METADATA_BASE_URL;
     this.environmentProvider = new SnowflakeEnvironmentProvider();
@@ -95,10 +99,12 @@ public class PlatformDetector {
   /** Constructor for testing purposes - allows overriding both URLs and environment provider */
   PlatformDetector(
       String awsMetadataBaseUrl,
+      String awsMetadataIpv6BaseUrl,
       String azureMetadataBaseUrl,
       String gcpMetadataBaseUrl,
       EnvironmentProvider environmentProvider) {
     this.awsMetadataBaseUrl = awsMetadataBaseUrl;
+    this.awsMetadataIpv6BaseUrl = awsMetadataIpv6BaseUrl;
     this.azureMetadataBaseUrl = azureMetadataBaseUrl;
     this.gcpMetadataBaseUrl = gcpMetadataBaseUrl;
     this.environmentProvider = environmentProvider;
@@ -296,23 +302,116 @@ public class PlatformDetector {
     return PlatformDetectionUtil.performPlatformDetectionRequest(request, timeoutMs);
   }
 
+  // Shared daemon executor for EC2 IMDS probes. Cached pool: threads live briefly
+  // during platform detection, daemon so they never block JVM shutdown, named for
+  // log/thread-dump visibility.
+  private static final ExecutorService EC2_PROBE_EXECUTOR =
+      Executors.newCachedThreadPool(
+          r -> {
+            Thread t = new Thread(r, "snowflake-jdbc-ec2-imds-probe");
+            t.setDaemon(true);
+            return t;
+          });
+
   private DetectionState isEc2Instance(int timeoutMs) {
+    // Probe IPv4 and IPv6 IMDS endpoints concurrently and return as soon as either
+    // succeeds. On dual-stack hosts the IPv4 probe wins quickly; on IPv6-only EC2
+    // instances (where the IPv4 link-local address is unreachable) the IPv6 probe
+    // succeeds. We never wait longer than timeoutMs total.
+    long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+
+    CompletableFuture<DetectionState> ipv4Future =
+        CompletableFuture.supplyAsync(
+            () -> probeEc2Instance(awsMetadataBaseUrl, timeoutMs), EC2_PROBE_EXECUTOR);
+    CompletableFuture<DetectionState> ipv6Future =
+        CompletableFuture.supplyAsync(
+            () -> probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs), EC2_PROBE_EXECUTOR);
+
+    try {
+      DetectionState firstResult =
+          awaitFirstDetectionOrDeadline(ipv4Future, ipv6Future, deadlineNanos);
+      if (firstResult == DetectionState.DETECTED) {
+        return DetectionState.DETECTED;
+      }
+      // First probe did not detect; wait for the other within the remaining budget.
+      DetectionState secondResult = awaitRemaining(ipv4Future, ipv6Future, deadlineNanos);
+      if (secondResult == DetectionState.DETECTED) {
+        return DetectionState.DETECTED;
+      }
+      if (firstResult == DetectionState.TIMEOUT || secondResult == DetectionState.TIMEOUT) {
+        return DetectionState.TIMEOUT;
+      }
+      return DetectionState.NOT_DETECTED;
+    } finally {
+      ipv4Future.cancel(true);
+      ipv6Future.cancel(true);
+    }
+  }
+
+  private static DetectionState awaitFirstDetectionOrDeadline(
+      CompletableFuture<DetectionState> a,
+      CompletableFuture<DetectionState> b,
+      long deadlineNanos) {
+    while (true) {
+      long remainingNanos = deadlineNanos - System.nanoTime();
+      if (remainingNanos <= 0) {
+        return DetectionState.TIMEOUT;
+      }
+      try {
+        DetectionState result =
+            (DetectionState)
+                CompletableFuture.anyOf(a, b).get(remainingNanos, TimeUnit.NANOSECONDS);
+        if (result == DetectionState.DETECTED) {
+          return result;
+        }
+        // One probe finished without detecting; return its state so the caller can
+        // wait on the other.
+        return result;
+      } catch (TimeoutException e) {
+        return DetectionState.TIMEOUT;
+      } catch (Exception e) {
+        // A probe threw; treat as NOT_DETECTED and let the caller consider the other.
+        return DetectionState.NOT_DETECTED;
+      }
+    }
+  }
+
+  private static DetectionState awaitRemaining(
+      CompletableFuture<DetectionState> a,
+      CompletableFuture<DetectionState> b,
+      long deadlineNanos) {
+    CompletableFuture<DetectionState> pending = a.isDone() ? b : a;
+    long remainingNanos = deadlineNanos - System.nanoTime();
+    if (remainingNanos <= 0) {
+      return DetectionState.TIMEOUT;
+    }
+    try {
+      return pending.get(remainingNanos, TimeUnit.NANOSECONDS);
+    } catch (TimeoutException e) {
+      return DetectionState.TIMEOUT;
+    } catch (Exception e) {
+      return DetectionState.NOT_DETECTED;
+    }
+  }
+
+  private DetectionState probeEc2Instance(String baseUrl, int timeoutMs) {
     try {
       // First try to get IMDSv2 token
       String token = null;
       try {
         String tokenResponse =
             executeHttpPut(
-                getAwsMetadataTokenEndpoint(),
+                baseUrl + AWS_TOKEN_ENDPOINT_PATH,
                 Collections.singletonMap(
                     AWS_METADATA_TOKEN_TTL_HEADER, AWS_METADATA_TOKEN_TTL_VALUE),
                 timeoutMs);
         if (tokenResponse != null && !tokenResponse.trim().isEmpty()) {
           token = tokenResponse.trim();
-          logger.debug("Successfully obtained IMDSv2 token");
+          logger.debug("Successfully obtained IMDSv2 token from {}", baseUrl);
         }
       } catch (Exception e) {
-        logger.debug("Failed to get IMDSv2 token, will try IMDSv1: {}", e.getMessage());
+        logger.debug(
+            "Failed to get IMDSv2 token from {}, will try IMDSv1: {}", baseUrl, e.getMessage());
       }
 
       // Try to get instance identity document
@@ -321,13 +420,14 @@ public class PlatformDetector {
         headers.put(AWS_METADATA_TOKEN_HEADER, token);
       }
 
-      String response = executeHttpGet(getAwsMetadataIdentityEndpoint(), headers, timeoutMs);
+      String response =
+          executeHttpGet(baseUrl + AWS_INSTANCE_IDENTITY_ENDPOINT_PATH, headers, timeoutMs);
       if (response != null && !response.trim().isEmpty()) {
-        logger.debug("Successfully detected EC2 instance via metadata service");
+        logger.debug("Successfully detected EC2 instance via metadata service at {}", baseUrl);
         return DetectionState.DETECTED;
       }
     } catch (Exception e) {
-      logger.debug("EC2 instance detection failed: {}", e.getMessage());
+      logger.debug("EC2 instance detection failed at {}: {}", baseUrl, e.getMessage());
       if (isTimeoutException(e)) {
         return DetectionState.TIMEOUT;
       }
@@ -474,14 +574,6 @@ public class PlatformDetector {
     logger.debug(
         "All environment variables are present: {}", java.util.Arrays.toString(variableNames));
     return true;
-  }
-
-  private String getAwsMetadataTokenEndpoint() {
-    return awsMetadataBaseUrl + AWS_TOKEN_ENDPOINT_PATH;
-  }
-
-  private String getAwsMetadataIdentityEndpoint() {
-    return awsMetadataBaseUrl + AWS_INSTANCE_IDENTITY_ENDPOINT_PATH;
   }
 
   private String getAzureMetadataInstanceEndpoint() {
