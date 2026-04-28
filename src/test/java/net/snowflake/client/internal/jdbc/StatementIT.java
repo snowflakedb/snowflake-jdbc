@@ -649,7 +649,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
 
-      waitForTransferThreadCount(baselineTransferThreads + putParallelism);
+      waitForTransferThreadCount(baselineTransferThreads);
       long finalTransferThreads = countTransferManagerThreads();
 
       // Without the fix, each PUT leaks `putParallelism` threads, so after
@@ -722,7 +722,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
 
-      waitForTransferThreadCount(baselineTransferThreads + getParallelism);
+      waitForTransferThreadCount(baselineTransferThreads);
       long finalTransferThreads = countTransferManagerThreads();
 
       long threadGrowth = finalTransferThreads - baselineTransferThreads;
