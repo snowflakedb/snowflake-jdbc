@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -625,25 +627,34 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       statement.execute("CREATE OR REPLACE TEMPORARY STAGE " + stageName);
 
-      // Setting PARALLEL explicitly so the expected thread count is deterministic.
-      String putCommand =
+      // Warm up: first PUT initializes Netty event loops and other one-time resources
+      String warmupPut =
           "PUT file://"
               + testFile.getCanonicalPath()
               + " @"
               + stageName
               + " PARALLEL="
               + putParallelism
-              + " AUTO_COMPRESS=FALSE OVERWRITE=TRUE";
-
-      // Warm up: first PUT initializes Netty event loops and other one-time resources
-      try (ResultSet rs = statement.executeQuery(putCommand)) {
+              + " AUTO_COMPRESS=FALSE";
+      try (ResultSet rs = statement.executeQuery(warmupPut)) {
         while (rs.next()) {}
       }
       waitForTransferThreadCount(putParallelism);
 
       long baselineTransferThreads = countTransferManagerThreads();
 
+      // Use a unique file name per iteration to avoid GCS per-object rate limits
       for (int i = 0; i < iterations; i++) {
+        Path iterFile = tmpFolder.toPath().resolve("thread_leak_put_" + i + ".csv");
+        Files.createLink(iterFile, testFile.toPath());
+        String putCommand =
+            "PUT file://"
+                + iterFile.toFile().getCanonicalPath()
+                + " @"
+                + stageName
+                + " PARALLEL="
+                + putParallelism
+                + " AUTO_COMPRESS=FALSE";
         try (ResultSet rs = statement.executeQuery(putCommand)) {
           while (rs.next()) {}
         }
