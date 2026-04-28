@@ -639,7 +639,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       try (ResultSet rs = statement.executeQuery(putCommand)) {
         while (rs.next()) {}
       }
-      Thread.sleep(200);
+      waitForTransferThreadCount(putParallelism);
 
       long baselineTransferThreads = countTransferManagerThreads();
 
@@ -649,7 +649,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
 
-      Thread.sleep(500);
+      waitForTransferThreadCount(baselineTransferThreads + putParallelism);
       long finalTransferThreads = countTransferManagerThreads();
 
       // Without the fix, each PUT leaks `putParallelism` threads, so after
@@ -670,6 +670,13 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               finalTransferThreads,
               leakyThreshold));
     }
+  }
+
+  private static void waitForTransferThreadCount(long atMost) {
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(7))
+        .pollInterval(Duration.ofSeconds(1))
+        .until(() -> countTransferManagerThreads() <= atMost);
   }
 
   private static long countTransferManagerThreads() {

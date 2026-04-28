@@ -457,13 +457,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
-        try {
-          if (tx != null) {
-            tx.close();
-          }
-        } finally {
-          shutdownExecutorService("download", executorService);
-        }
+        closeTransferManagerShutdownExecutor("download", tx, executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -728,13 +722,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 toClose,
                 queryId);
       } finally {
-        try {
-          if (tx != null) {
-            tx.close();
-          }
-        } finally {
-          shutdownExecutorService("upload", executorService);
-        }
+        closeTransferManagerShutdownExecutor("upload", tx, executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -994,22 +982,30 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
   }
 
-  private static void shutdownExecutorService(String name, ThreadPoolExecutor executor) {
-    if (executor == null) {
-      return;
-    }
-    executor.shutdown();
+  private static void closeTransferManagerShutdownExecutor(
+      String name, S3TransferManager tx, ThreadPoolExecutor executor) {
     try {
-      if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-        logger.debug(
-            "S3 {} executor did not terminate within {} seconds, forcing shutdown",
-            name,
-            EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS);
-        executor.shutdownNow();
+      if (tx != null) {
+        tx.close();
       }
-    } catch (InterruptedException e) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
+    } catch (Exception e) {
+      logger.warn("Failed to close S3 {} transfer manager: {}", name, e.getMessage());
+    } finally {
+      if (executor != null) {
+        executor.shutdown();
+        try {
+          if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            logger.warn(
+                "S3 {} executor did not terminate within {} seconds, forcing shutdown",
+                name,
+                EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS);
+            executor.shutdownNow();
+          }
+        } catch (InterruptedException e) {
+          executor.shutdownNow();
+          Thread.currentThread().interrupt();
+        }
+      }
     }
   }
 }
