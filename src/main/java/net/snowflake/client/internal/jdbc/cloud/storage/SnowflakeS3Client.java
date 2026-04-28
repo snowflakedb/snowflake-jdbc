@@ -1007,7 +1007,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           executor.shutdownNow();
           Thread.currentThread().interrupt();
         } catch (Exception e) {
-          logger.warn("Failed to shut down S3 {} executor, forcing shutdown: {}", name, e.getMessage());
+          logger.warn(
+              "Failed to shut down S3 {} executor, forcing shutdown: {}", name, e.getMessage());
           executor.shutdownNow();
         }
       }
