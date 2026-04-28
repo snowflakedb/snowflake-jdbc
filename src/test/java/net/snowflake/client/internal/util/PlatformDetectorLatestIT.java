@@ -183,12 +183,12 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   }
 
   @Test
-  @DisplayName("Should fall back to IPv6 IMDS endpoint when IPv4 is unreachable")
-  public void testDetectEc2InstanceIpv6Fallback() throws IOException {
+  @DisplayName("Should detect EC2 via the IPv6 probe when the IPv4 endpoint is unreachable")
+  public void testDetectEc2InstanceIpv6Probe() throws IOException {
     // Arrange: IMDSv2 mapping served by wiremock, used as the IPv6 base URL. The IPv4 base URL
-    // points at a loopback port with no listener so the connect fails fast with
-    // "connection refused" (mimicking "no route" behaviour on an IPv6-only EC2 instance),
-    // forcing detection to fall back to the IPv6 endpoint.
+    // points at a loopback port with no listener so its probe errors out while the IPv6 probe
+    // (racing in parallel) resolves wiremock and succeeds — mirroring what happens on an
+    // IPv6-only EC2 instance where the IPv4 link-local address is unreachable.
     String mappingContent = loadMappingFile("platform-detection/ec2_successful_imdsv2");
     importMapping(mappingContent);
 
@@ -205,7 +205,8 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
 
     // Assert
     assertTrue(
-        platforms.contains("is_ec2_instance"), "Should detect EC2 instance via IPv6 IMDS fallback");
+        platforms.contains("is_ec2_instance"),
+        "Should detect EC2 instance via the parallel IPv6 IMDS probe");
   }
 
   @Test

@@ -302,42 +302,94 @@ public class PlatformDetector {
     return PlatformDetectionUtil.performPlatformDetectionRequest(request, timeoutMs);
   }
 
+  // Shared daemon executor for EC2 IMDS probes. Cached pool: threads live briefly
+  // during platform detection, daemon so they never block JVM shutdown, named for
+  // log/thread-dump visibility.
+  private static final ExecutorService EC2_PROBE_EXECUTOR =
+      Executors.newCachedThreadPool(
+          r -> {
+            Thread t = new Thread(r, "snowflake-jdbc-ec2-imds-probe");
+            t.setDaemon(true);
+            return t;
+          });
+
   private DetectionState isEc2Instance(int timeoutMs) {
-    // Probe IPv4 and IPv6 IMDS endpoints in parallel so detection stays within the
-    // per-task budget on IPv6-only EC2 instances (where the IPv4 link-local address
-    // is unreachable) and without doubling the time on dual-stack hosts.
-    ExecutorService ec2Executor = Executors.newFixedThreadPool(2);
+    // Probe IPv4 and IPv6 IMDS endpoints concurrently and return as soon as either
+    // succeeds. On dual-stack hosts the IPv4 probe wins quickly; on IPv6-only EC2
+    // instances (where the IPv4 link-local address is unreachable) the IPv6 probe
+    // succeeds. We never wait longer than timeoutMs total.
+    long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+
+    CompletableFuture<DetectionState> ipv4Future =
+        CompletableFuture.supplyAsync(
+            () -> probeEc2Instance(awsMetadataBaseUrl, timeoutMs), EC2_PROBE_EXECUTOR);
+    CompletableFuture<DetectionState> ipv6Future =
+        CompletableFuture.supplyAsync(
+            () -> probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs), EC2_PROBE_EXECUTOR);
+
     try {
-      CompletableFuture<DetectionState> ipv4Future =
-          CompletableFuture.supplyAsync(
-              () -> probeEc2Instance(awsMetadataBaseUrl, timeoutMs), ec2Executor);
-      CompletableFuture<DetectionState> ipv6Future =
-          CompletableFuture.supplyAsync(
-              () -> probeEc2Instance(awsMetadataIpv6BaseUrl, timeoutMs), ec2Executor);
-
-      DetectionState ipv4Result = joinProbe(ipv4Future, timeoutMs);
-      DetectionState ipv6Result = joinProbe(ipv6Future, timeoutMs);
-
-      if (ipv4Result == DetectionState.DETECTED || ipv6Result == DetectionState.DETECTED) {
+      DetectionState firstResult =
+          awaitFirstDetectionOrDeadline(ipv4Future, ipv6Future, deadlineNanos);
+      if (firstResult == DetectionState.DETECTED) {
         return DetectionState.DETECTED;
       }
-      if (ipv4Result == DetectionState.TIMEOUT || ipv6Result == DetectionState.TIMEOUT) {
+      // First probe did not detect; wait for the other within the remaining budget.
+      DetectionState secondResult = awaitRemaining(ipv4Future, ipv6Future, deadlineNanos);
+      if (secondResult == DetectionState.DETECTED) {
+        return DetectionState.DETECTED;
+      }
+      if (firstResult == DetectionState.TIMEOUT || secondResult == DetectionState.TIMEOUT) {
         return DetectionState.TIMEOUT;
       }
       return DetectionState.NOT_DETECTED;
     } finally {
-      ec2Executor.shutdownNow();
+      ipv4Future.cancel(true);
+      ipv6Future.cancel(true);
     }
   }
 
-  private static DetectionState joinProbe(CompletableFuture<DetectionState> future, int timeoutMs) {
+  private static DetectionState awaitFirstDetectionOrDeadline(
+      CompletableFuture<DetectionState> a,
+      CompletableFuture<DetectionState> b,
+      long deadlineNanos) {
+    while (true) {
+      long remainingNanos = deadlineNanos - System.nanoTime();
+      if (remainingNanos <= 0) {
+        return DetectionState.TIMEOUT;
+      }
+      try {
+        DetectionState result =
+            (DetectionState)
+                CompletableFuture.anyOf(a, b).get(remainingNanos, TimeUnit.NANOSECONDS);
+        if (result == DetectionState.DETECTED) {
+          return result;
+        }
+        // One probe finished without detecting; return its state so the caller can
+        // wait on the other.
+        return result;
+      } catch (TimeoutException e) {
+        return DetectionState.TIMEOUT;
+      } catch (Exception e) {
+        // A probe threw; treat as NOT_DETECTED and let the caller consider the other.
+        return DetectionState.NOT_DETECTED;
+      }
+    }
+  }
+
+  private static DetectionState awaitRemaining(
+      CompletableFuture<DetectionState> a,
+      CompletableFuture<DetectionState> b,
+      long deadlineNanos) {
+    CompletableFuture<DetectionState> pending = a.isDone() ? b : a;
+    long remainingNanos = deadlineNanos - System.nanoTime();
+    if (remainingNanos <= 0) {
+      return DetectionState.TIMEOUT;
+    }
     try {
-      return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+      return pending.get(remainingNanos, TimeUnit.NANOSECONDS);
     } catch (TimeoutException e) {
-      future.cancel(true);
       return DetectionState.TIMEOUT;
     } catch (Exception e) {
-      future.cancel(true);
       return DetectionState.NOT_DETECTED;
     }
   }
