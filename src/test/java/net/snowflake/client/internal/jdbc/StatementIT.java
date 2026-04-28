@@ -654,11 +654,11 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
       // Without the fix, each PUT leaks `putParallelism` threads, so after
       // N iterations we'd see N * putParallelism extra threads (e.g. 10 * 4 = 40).
-      // With the fix, thread count should stay roughly stable.
+      // With the fix, all executor threads are shut down after each PUT,
+      // so the count must not grow at all.
       long threadGrowth = finalTransferThreads - baselineTransferThreads;
-      long leakyThreshold = (long) iterations * putParallelism;
       assertTrue(
-          threadGrowth < putParallelism,
+          threadGrowth <= 0,
           String.format(
               "Transfer manager threads grew by %d after %d PUTs with PARALLEL=%d "
                   + "(baseline=%d, final=%d, would be %d without fix)."
@@ -668,7 +668,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               putParallelism,
               baselineTransferThreads,
               finalTransferThreads,
-              leakyThreshold));
+              (long) iterations * putParallelism));
     }
   }
 
