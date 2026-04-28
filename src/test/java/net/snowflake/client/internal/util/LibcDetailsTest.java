@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.snowflake.client.annotations.RunOnLinux;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 public class LibcDetailsTest {
@@ -173,7 +174,7 @@ public class LibcDetailsTest {
   }
 
   @Test
-  @RunOnLinux
+  @EnabledOnOs(OS.LINUX)
   public void testLoadOnLinuxReturnsKnownFamily() {
     LibcInfo result = LibcDetails.load();
     assertNotNull(result);
