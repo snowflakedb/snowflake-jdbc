@@ -731,6 +731,16 @@ public class SessionUtil {
       }
 
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(), loginInput.getAppVersion());
+
+      // SPCS service-identifier token - when the driver is
+      // running inside an SPCS container, the runtime-issued token is attached to every login
+      // request so the backend can identify the originating service. The token is rotated by SPCS,
+      // so it is re-read from disk on every login and never cached.
+      String spcsToken = new SpcsTokenReader().readSpcsToken();
+      if (spcsToken != null) {
+        data.put(ClientAuthnParameter.SPCS_TOKEN.name(), spcsToken);
+      }
+
       ClientAuthnDTO authnData = new ClientAuthnDTO(data, loginInput.getInFlightCtx());
       String json = mapper.writeValueAsString(authnData);
 
