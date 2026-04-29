@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
@@ -81,6 +82,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final String AMZ_IV = "x-amz-iv";
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
   private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
+
+  private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
   // expired AWS token error code
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
@@ -366,21 +369,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
         "Starting download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
-    S3TransferManager tx = null;
     int retryCount = 0;
     do {
+      ThreadPoolExecutor executorService = null;
+      S3TransferManager tx = null;
       try {
         File localFile = new File(localFilePath);
 
         logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
+        executorService =
+            createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism);
         // download files from s3
-        tx =
-            S3TransferManager.builder()
-                .s3Client(amazonClient)
-                .executor(
-                    createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
-                .build();
+        tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
 
         FileDownload fileDownload =
             tx.downloadFile(
@@ -456,9 +457,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             ex, ++retryCount, StorageHelper.DOWNLOAD, session, command, this, queryId);
 
       } finally {
-        if (tx != null) {
-          tx.close();
-        }
+        closeTransferManagerShutdownExecutor("download", tx, executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -628,6 +627,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     do {
+      tx = null;
+      ThreadPoolExecutor executorService = null;
       try {
         PutObjectRequest.Builder putRequestBuilder =
             ((S3ObjectMetadata) meta)
@@ -635,10 +636,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     .bucket(remoteStorageLocation)
                     .key(destFileName);
 
-        logger.debug(
-            "Creating executor service for transfer" + "manager with {} threads", parallelism);
+        logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
-        ThreadPoolExecutor executorService =
+        executorService =
             createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
         // upload files to s3
         tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
@@ -722,9 +722,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 toClose,
                 queryId);
       } finally {
-        if (tx != null) {
-          tx.close();
-        }
+        closeTransferManagerShutdownExecutor("upload", tx, executorService);
       }
     } while (retryCount <= getMaxRetries());
 
@@ -981,6 +979,38 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     public int getSocketTimeout() {
       return socketTimeout;
+    }
+  }
+
+  private static void closeTransferManagerShutdownExecutor(
+      String name, S3TransferManager tx, ThreadPoolExecutor executor) {
+    try {
+      if (tx != null) {
+        tx.close();
+      }
+    } catch (Exception e) {
+      logger.warn("Failed to close S3 {} transfer manager", name, e);
+    } finally {
+      if (executor != null) {
+        try {
+          executor.shutdown();
+          if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            logger.warn(
+                "S3 {} executor did not terminate within {} seconds, forcing shutdown",
+                name,
+                EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS);
+            executor.shutdownNow();
+          }
+        } catch (InterruptedException e) {
+          // The only checked exception from awaitTermination so need to reset the interrupt flag
+          logger.warn("S3 {} executor shutdown interrupted, forcing shutdown", name);
+          executor.shutdownNow();
+          Thread.currentThread().interrupt();
+        } catch (Exception e) {
+          logger.warn("Failed to shut down S3 {} executor, forcing shutdown", name, e);
+          executor.shutdownNow();
+        }
+      }
     }
   }
 }
