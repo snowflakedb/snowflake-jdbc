@@ -1137,6 +1137,8 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
+                    <!-- this below list must mirror META-INF/versions/* in bcprov-jdk18on-<version>.jar - re-check on every BC bump!
+                         also verify the mkdir  (above) and delete (below) directives; and add there too if there's a new version -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
