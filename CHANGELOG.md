@@ -8,7 +8,7 @@
     - Added IPv6 support for cloud metadata services so Workload Identity Federation and platform detection work on IPv6-only instances (snowflakedb/snowflake-jdbc#2586):
       - GCP WIF attestation now uses hostname `metadata.google.internal` instead of the IPv4 link-local address.
       - EC2 instance detection probes the IPv4 and IPv6 IMDS endpoints (`[fd00:ec2::254]`) in parallel so detection succeeds on IPv6-only instances without doubling the detection budget on dual-stack hosts.
-    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#SNOW-3388627)
+    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#2592)
     - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8
     - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
     - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
@@ -17,6 +17,7 @@
     - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
     - Fixed SecurityException on credential cache file ownership check in containers where JVM returns '?' for user.name (snowflakedb/snowflake-jdbc#2600).
     - Fixed credential cache delete operations ignoring clientStoreTemporaryCredential=false setting (snowflakedb/snowflake-jdbc#2600).
+    - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602).
     - Bumped BouncyCastle to 1.84 to address CVE-2026-0636, CVE-2026-5588, and CVE-2026-5598 (snowflakedb/snowflake-jdbc#2593).
 
 - v4.1.0
