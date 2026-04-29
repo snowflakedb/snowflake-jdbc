@@ -10,8 +10,7 @@ class JdbcJobDefinition {
 }
 
 pipeline {
-  // TODO Please migrate this to C7 as sfc-dev2 servers do not support c6 nodes
-  agent { label 'regular-memory-node' }
+  agent { label 'regular-memory-node-snowos' }
   options { timestamps() }
   environment {
     COMMIT_SHA_LONG = sh(returnStdout: true, script: "echo \$(git rev-parse " + "HEAD)").trim()
@@ -32,7 +31,7 @@ pipeline {
 }
 
 timestamps {
-  node('regular-memory-node') {
+  node('regular-memory-node-snowos') {
     stage('checkout') {
       scmInfo = checkout scm
       println("${scmInfo}")
@@ -66,7 +65,8 @@ timestamps {
         string(name: 'parent_build_number', value: env.BUILD_NUMBER),
         string(name: 'timeout_value', value: '420'),
         string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3)),
-        string(name: 'svn_revision', value: 'temptest-deployed')
+        string(name: 'svn_revision', value: 'sut-stable'),
+        string(name: 'node_label', value: 'regular-memory-node-snowos-snowos')
       ]]
     }
 
