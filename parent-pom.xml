@@ -30,7 +30,7 @@
     <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
     <azure.storage.common.version>12.31.0</azure.storage.common.version>
     <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
-    <bouncycastle.version>1.82</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.6</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
@@ -106,7 +106,7 @@
     <version.plugin.jar>3.3.0</version.plugin.jar>
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
     <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
-    <version.plugin.shade>3.6.0</version.plugin.shade>
+    <version.plugin.shade>3.6.2</version.plugin.shade>
     <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.5.1</version.plugin.surefire>

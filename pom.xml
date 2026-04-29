@@ -1135,11 +1135,15 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
+                    <!-- this below list must mirror META-INF/versions/* in bcprov-jdk18on-<version>.jar - re-check on every BC bump!
+                         also verify the mkdir  (above) and delete (below) directives; and add there too if there's a new version -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/21/org" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/17/org" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/25/org" todir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
@@ -1167,6 +1171,7 @@
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>

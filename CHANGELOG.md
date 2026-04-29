@@ -17,7 +17,8 @@
     - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
     - Fixed SecurityException on credential cache file ownership check in containers where JVM returns '?' for user.name (snowflakedb/snowflake-jdbc#2600).
     - Fixed credential cache delete operations ignoring clientStoreTemporaryCredential=false setting (snowflakedb/snowflake-jdbc#2600).
-    - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602)
+    - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602).
+    - Bumped BouncyCastle to 1.84 to address CVE-2026-0636, CVE-2026-5588, and CVE-2026-5598 (snowflakedb/snowflake-jdbc#2593).
 
 - v4.1.0
     - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
