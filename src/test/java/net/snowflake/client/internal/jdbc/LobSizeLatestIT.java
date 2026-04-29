@@ -202,9 +202,6 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         Statement stmt = con.createStatement()) {
       createTable(lobSize, stmt);
       setResultFormat(stmt, resultFormat);
-      if (lobSize > originLobSize) { // for increased LOB size (16MB < lobSize < 128MB)
-        stmt.execute("alter session set ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN = true");
-      }
       // Test PUT
       String sqlPut = "PUT 'file://" + filePathEscaped + "' @%" + tableName;
 
