@@ -51,7 +51,7 @@ Use `NO-SNOW:` for changes without a ticket.
 # 1. Create a tracked branch
 gt branch create {user}/{branch-name}
 
-# 2. Format and validate (REQUIRED — see Pre-Commit Checks above)
+# 2. Format and validate (REQUIRED before staging/committing — see Pre-Commit Checks above)
 mvn com.spotify.fmt:fmt-maven-plugin:format
 mvn clean validate --batch-mode --show-version -P check-style
 
