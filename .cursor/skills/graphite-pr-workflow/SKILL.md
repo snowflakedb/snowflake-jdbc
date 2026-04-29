@@ -87,7 +87,7 @@ verified, and the results. Be specific to this PR.
 |---------|---------|
 | `mvn com.spotify.fmt:fmt-maven-plugin:format` | Auto-format Java sources (REQUIRED before commit) |
 | `mvn clean validate --batch-mode --show-version -P check-style` | Run checkstyle validation (REQUIRED before commit) |
-| `gt branch create {name}` | Create branch tracked by Graphite |
+| `gt branch create {user}/{branch-name}` | Create branch tracked by Graphite |
 | `gt commit create -m "..."` | Commit with message |
 | `gt commit amend` | Amend current commit |
 | `gt submit --no-edit` | Push and create/update PR |
