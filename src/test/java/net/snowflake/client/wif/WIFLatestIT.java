@@ -40,6 +40,11 @@ public class WIFLatestIT {
       System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH");
   private static final String IMPERSONATION_USER =
       System.getenv("SNOWFLAKE_TEST_WIF_USERNAME_IMPERSONATION");
+  private static final String AWS_EXTERNAL_ID = System.getenv("SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID");
+  private static final String IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID");
+  private static final String IMPERSONATION_USER_WITH_EXTERNAL_ID =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID");
 
   @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
@@ -80,6 +85,10 @@ public class WIFLatestIT {
 
   private static boolean isProviderAzure() {
     return Objects.equals(PROVIDER, "AZURE");
+  }
+
+  private static boolean isProviderAWS() {
+    return Objects.equals(PROVIDER, "AWS");
   }
 
   private String getGCPAccessToken() {
@@ -134,5 +143,24 @@ public class WIFLatestIT {
     } catch (SQLException e) {
       throw new RuntimeException("Failed to execute query", e);
     }
+  }
+
+  @Test
+  @EnabledIf("isProviderAWS")
+  @EnabledIfEnvironmentVariable(
+      named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID",
+      matches = ".+")
+  @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID", matches = ".+")
+  @EnabledIfEnvironmentVariable(
+      named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID",
+      matches = ".+")
+  void shouldAuthenticateUsingWIFWithImpersonationAndExternalId() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", PROVIDER);
+    properties.put("workloadIdentityImpersonationPath", IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID);
+    properties.put("workloadIdentityAwsExternalId", AWS_EXTERNAL_ID);
+    connectAndExecuteSimpleQuery(properties, IMPERSONATION_USER_WITH_EXTERNAL_ID);
   }
 }
