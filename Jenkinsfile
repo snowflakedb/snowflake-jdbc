@@ -65,8 +65,7 @@ timestamps {
         string(name: 'parent_job', value: env.JOB_NAME),
         string(name: 'parent_build_number', value: env.BUILD_NUMBER),
         string(name: 'timeout_value', value: '420'),
-        string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3)),
-        string(name: 'svn_revision', value: 'temptest-deployed')
+        string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
       ]]
     }
 
