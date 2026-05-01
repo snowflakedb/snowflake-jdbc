@@ -56,6 +56,7 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
@@ -87,6 +88,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   // expired AWS token error code
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
+
+  // Externally-managed Netty EventLoopGroup for the S3 async HTTP client.
+  // The AWS SDK's default NettyNioAsyncHttpClient uses shutdownGracefully(2, 15, SECONDS) on its
+  // EventLoopGroup, where the 2-second "quiet period" causes a mandatory ~2-second blocking wait
+  // on every close() — even when all I/O is complete and no tasks are pending. Since the JDBC
+  // driver creates and destroys an S3 client per PUT/GET operation, this adds ~2 seconds of pure
+  // overhead per transfer (confirmed via log analysis: zero log events in the 2s gap, upload
+  // already confirmed with HTTP 200 before shutdown is called).
+  // By providing an externally-managed EventLoopGroup via SdkEventLoopGroup, the SDK will NOT
+  // shut it down when the S3 client is closed. We then shut it down ourselves with
+  // shutdownGracefully(0, 2, SECONDS) — zero quiet period (immediate if idle) with a 2-second
+  // safety timeout for any edge case.
+  private SdkEventLoopGroup sdkEventLoopGroup = null;
 
   private int encryptionKeySize = 0; // used for PUTs
   private S3AsyncClient amazonClient = null;
@@ -201,8 +215,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     // Explicitly force to use virtual address style
     clientBuilder.forcePathStyle(false);
 
+    sdkEventLoopGroup = SdkEventLoopGroup.builder().build();
     clientBuilder.httpClientBuilder(
         NettyNioAsyncHttpClient.builder()
+            .eventLoopGroup(sdkEventLoopGroup)
             .maxConcurrency(clientConfig.getMaxConnections())
             .connectionAcquisitionTimeout(Duration.ofSeconds(60))
             .proxyConfiguration(proxyConfiguration)
@@ -310,6 +326,15 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   public void shutdown() {
     logger.debug("Shutting down the Snowflake S3 client");
     amazonClient.close();
+    if (sdkEventLoopGroup != null) {
+      try {
+        sdkEventLoopGroup.eventLoopGroup()
+            .shutdownGracefully(0, 2, TimeUnit.SECONDS)
+            .get(3, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        logger.warn("Failed to shut down S3 Netty EventLoopGroup cleanly", e);
+      }
+    }
   }
 
   @Override
