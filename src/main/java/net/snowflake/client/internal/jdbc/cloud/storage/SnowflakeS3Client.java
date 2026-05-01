@@ -341,7 +341,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 .getClass()
                 .getMethod("shutdownGracefully", long.class, long.class, TimeUnit.class)
                 .invoke(eventLoopGroup, 0L, 2L, TimeUnit.SECONDS);
-        future.getClass().getMethod("get", long.class, TimeUnit.class).invoke(future, 3L, TimeUnit.SECONDS);
+        future
+            .getClass()
+            .getMethod("get", long.class, TimeUnit.class)
+            .invoke(future, 3L, TimeUnit.SECONDS);
       } catch (Exception e) {
         logger.warn("Failed to shut down S3 Netty EventLoopGroup cleanly", e);
       }
