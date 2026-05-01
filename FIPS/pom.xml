@@ -37,6 +37,11 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-fips</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>
