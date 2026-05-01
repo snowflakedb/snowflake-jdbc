@@ -328,7 +328,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     amazonClient.close();
     if (sdkEventLoopGroup != null) {
       try {
-        sdkEventLoopGroup.eventLoopGroup()
+        sdkEventLoopGroup
+            .eventLoopGroup()
             .shutdownGracefully(0, 2, TimeUnit.SECONDS)
             .get(3, TimeUnit.SECONDS);
       } catch (Exception e) {
