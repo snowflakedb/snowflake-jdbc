@@ -327,11 +327,21 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     logger.debug("Shutting down the Snowflake S3 client");
     amazonClient.close();
     if (sdkEventLoopGroup != null) {
+      // Reflection is used here intentionally to avoid a compile-time dependency on
+      // io.netty.channel.EventLoopGroup. The thin-jar build shades io.netty.* (relocating it to
+      // net.snowflake.client.jdbc.internal.io.netty.*) but does NOT shade software.amazon.awssdk.*.
+      // A direct call to sdkEventLoopGroup.eventLoopGroup() would embed the shaded return type in
+      // our bytecode, causing NoSuchMethodError at runtime when the un-shaded SdkEventLoopGroup
+      // returns the original io.netty type.
       try {
-        sdkEventLoopGroup
-            .eventLoopGroup()
-            .shutdownGracefully(0, 2, TimeUnit.SECONDS)
-            .get(3, TimeUnit.SECONDS);
+        Object eventLoopGroup =
+            sdkEventLoopGroup.getClass().getMethod("eventLoopGroup").invoke(sdkEventLoopGroup);
+        Object future =
+            eventLoopGroup
+                .getClass()
+                .getMethod("shutdownGracefully", long.class, long.class, TimeUnit.class)
+                .invoke(eventLoopGroup, 0L, 2L, TimeUnit.SECONDS);
+        future.getClass().getMethod("get", long.class, TimeUnit.class).invoke(future, 3L, TimeUnit.SECONDS);
       } catch (Exception e) {
         logger.warn("Failed to shut down S3 Netty EventLoopGroup cleanly", e);
       }
