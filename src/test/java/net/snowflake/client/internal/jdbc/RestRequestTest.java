@@ -3,6 +3,7 @@ package net.snowflake.client.internal.jdbc;
 import static net.snowflake.client.AssumptionUtils.assumeRunningOnLinuxMac;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,6 +49,7 @@ import net.snowflake.client.internal.core.SFTrustManager;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetry.ExecTimeTelemetryData;
 import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
+import net.snowflake.client.internal.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryData;
@@ -964,6 +966,55 @@ public class RestRequestTest {
     assertFalse(
         RestRequest.isExceptionInGroup(new RuntimeException("test"), RestRequest.sslExceptions),
         "RuntimeException should not be in SSL exceptions group");
+  }
+
+  /**
+   * Regression test: when getTelemetryClient() returns a NoOpTelemetryClient (e.g. because the
+   * session URL is not yet set), sendIBHttpErrorEvent must complete without throwing an NPE.
+   * Previously, getTelemetryClient() returned null in this case, causing a NullPointerException
+   * when addLogToBatch() was called on the null reference.
+   */
+  @Test
+  public void testSendIBHttpErrorEventWithNoOpTelemetryClientDoesNotThrow() throws Exception {
+    HttpRequestBase request =
+        new HttpGet(
+            "https://testaccount.snowflakecomputing.com"
+                + "/v1/streamlit/testapp/_stcore/upload_file/12345");
+    StatusLine statusLine =
+        new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 500, "Internal Server Error");
+    CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
+    when(mockResponse.getStatusLine()).thenReturn(statusLine);
+
+    SFBaseSession mockSession = mock(SFBaseSession.class);
+    when(mockSession.getTelemetryClient(any(InternalCallMarker.class)))
+        .thenReturn(new NoOpTelemetryClient());
+
+    HttpExecutingContext mockContext = mock(HttpExecutingContext.class);
+    when(mockContext.getSfSession()).thenReturn(mockSession);
+
+    try (MockedStatic<TelemetryUtil> mockedTelemetryUtil =
+        Mockito.mockStatic(TelemetryUtil.class)) {
+      ObjectNode mockIbValue = mock(ObjectNode.class);
+      TelemetryData mockTelemetryData = mock(TelemetryData.class);
+
+      mockedTelemetryUtil
+          .when(
+              () -> TelemetryUtil.createIBValue(any(), any(), anyInt(), any(), anyString(), any()))
+          .thenReturn(mockIbValue);
+      mockedTelemetryUtil
+          .when(() -> TelemetryUtil.buildJobData(any(ObjectNode.class)))
+          .thenReturn(mockTelemetryData);
+
+      java.lang.reflect.Method method =
+          RestRequest.class.getDeclaredMethod(
+              "sendIBHttpErrorEvent",
+              HttpRequestBase.class,
+              CloseableHttpResponse.class,
+              HttpExecutingContext.class);
+      method.setAccessible(true);
+
+      assertDoesNotThrow(() -> method.invoke(null, request, mockResponse, mockContext));
+    }
   }
 
   @Test
