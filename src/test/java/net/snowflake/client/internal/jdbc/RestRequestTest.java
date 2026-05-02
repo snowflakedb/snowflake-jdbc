@@ -969,10 +969,10 @@ public class RestRequestTest {
   }
 
   /**
-   * SNOW-3463039 - Regression test: when getTelemetryClient() returns a NoOpTelemetryClient (e.g. because the
-   * session URL is not yet set), sendIBHttpErrorEvent must complete without throwing an NPE.
-   * Previously, getTelemetryClient() returned null in this case, causing a NullPointerException
-   * when addLogToBatch() was called on the null reference.
+   * SNOW-3463039 - Regression test: when getTelemetryClient() returns a NoOpTelemetryClient (e.g.
+   * because the session URL is not yet set), sendIBHttpErrorEvent must complete without throwing an
+   * NPE. Previously, getTelemetryClient() returned null in this case, causing a
+   * NullPointerException when addLogToBatch() was called on the null reference.
    */
   @Test
   public void testSendIBHttpErrorEventWithNoOpTelemetryClientDoesNotThrow() throws Exception {
