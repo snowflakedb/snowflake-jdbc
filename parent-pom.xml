@@ -14,7 +14,7 @@
   </modules>
 
   <properties>
-    <animal.sniffer.annotations.version>1.26</animal.sniffer.annotations.version>
+    <animal.sniffer.annotations.version>1.27</animal.sniffer.annotations.version>
     <apache.commons.compress.version>1.28.0</apache.commons.compress.version>
     <apache.commons.lang3.version>3.18.0</apache.commons.lang3.version>
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
@@ -56,7 +56,7 @@
     <google.j2objc-annotations.version>3.0.0</google.j2objc-annotations.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
-    <grpc.version>1.80.0</grpc.version>
+    <grpc.version>1.81.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
     <jackson.version>2.18.4.1</jackson.version>
