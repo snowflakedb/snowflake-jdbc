@@ -19,6 +19,7 @@
     - Fixed SecurityException on credential cache file ownership check in containers where JVM returns '?' for user.name (snowflakedb/snowflake-jdbc#2600).
     - Fixed credential cache delete operations ignoring clientStoreTemporaryCredential=false setting (snowflakedb/snowflake-jdbc#2600).
     - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602).
+    - Fixed ~2-second per-operation overhead in S3 PUT/GET caused by Netty EventLoopGroup hardcoded graceful shutdown quiet period (snowflakedb/snowflake-jdbc#2609).
     - Bumped BouncyCastle to 1.84 to address CVE-2026-0636, CVE-2026-5588, and CVE-2026-5598 (snowflakedb/snowflake-jdbc#2593).
     - Added `workloadIdentityAwsExternalId` connection property to support AWS STS external ID in Workload Identity Federation role-chaining flows 
 

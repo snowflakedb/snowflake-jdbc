@@ -1161,9 +1161,7 @@
                          but SLF4JLogger must reference the user's real org.slf4j for SLF4J opt-in.
                          SLF4JJCLWrapper is left shaded since it also implements the shaded
                          org.apache.commons.logging.Log interface. -->
-                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class"
-                          todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"
-                          overwrite="true"/>
+                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class" overwrite="true" todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
