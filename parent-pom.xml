@@ -14,7 +14,7 @@
   </modules>
 
   <properties>
-    <animal.sniffer.annotations.version>1.26</animal.sniffer.annotations.version>
+    <animal.sniffer.annotations.version>1.27</animal.sniffer.annotations.version>
     <apache.commons.compress.version>1.28.0</apache.commons.compress.version>
     <apache.commons.lang3.version>3.18.0</apache.commons.lang3.version>
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
