@@ -28,11 +28,17 @@ jobs:
       - name: Set up Snyk CLI
         uses: snyk/actions/setup@master
 
-      - name: Run Snyk aggregate project test
+      - name: Run Snyk aggregate project test (parent-pom + JDBC + FIPS modules)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-        run: snyk test --maven-aggregate-project --all-projects --file=parent-pom.xml
+        run: snyk test --maven-aggregate-project --file=parent-pom.xml
+
+      - name: Run Snyk all-projects test (standalone wif / TestOnly / fat-jar-test-app)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        run: snyk test --all-projects --exclude=pom.xml,FIPS
 
   snyk-parent-pom-test:
     name: Snyk Parent POM Test
@@ -138,11 +144,17 @@ jobs:
       - name: Set up Snyk CLI
         uses: snyk/actions/setup@master
 
-      - name: Snyk monitor aggregate
+      - name: Snyk monitor aggregate (parent-pom + JDBC + FIPS modules)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-        run: snyk monitor --maven-aggregate-project --all-projects --file=parent-pom.xml --project-name=snowflakedb/jdbc
+        run: snyk monitor --maven-aggregate-project --file=parent-pom.xml --project-name=snowflakedb/jdbc
+
+      - name: Snyk monitor standalone projects (wif / TestOnly / fat-jar-test-app)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+        run: snyk monitor --all-projects --exclude=pom.xml,FIPS --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor parent-pom
         env:
