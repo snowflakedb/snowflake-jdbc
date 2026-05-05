@@ -32,13 +32,37 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
-        run: snyk test --maven-aggregate-project --file=parent-pom.xml
+        run: snyk test --maven-aggregate-project --file=parent-pom.xml --package-manager=maven
 
-      - name: Run Snyk all-projects test (standalone wif / TestOnly / fat-jar-test-app)
+      - name: Run Snyk test for TestOnly
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
-        run: snyk test --all-projects --exclude=pom.xml,FIPS
+        run: snyk test --file=TestOnly/pom.xml --package-manager=maven
+
+      - name: Run Snyk test for fat-jar-test-app
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk test --file=fat-jar-test-app/pom.xml --package-manager=maven
+
+      - name: Run Snyk test for ci/wif/aws-lambda
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk test --file=ci/wif/aws-lambda/pom.xml --package-manager=maven
+
+      - name: Run Snyk test for ci/wif/azure-function
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk test --file=ci/wif/azure-function/pom.xml --package-manager=maven
+
+      - name: Run Snyk test for ci/wif/gcp-function
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk test --file=ci/wif/gcp-function/pom.xml --package-manager=maven
 
   snyk-parent-pom-test:
     name: Snyk Parent POM Test
@@ -148,13 +172,37 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
-        run: snyk monitor --maven-aggregate-project --file=parent-pom.xml --project-name=snowflakedb/jdbc
+        run: snyk monitor --maven-aggregate-project --file=parent-pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
 
-      - name: Snyk monitor standalone projects (wif / TestOnly / fat-jar-test-app)
+      - name: Snyk monitor TestOnly
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
-        run: snyk monitor --all-projects --exclude=pom.xml,FIPS --project-name=snowflakedb/jdbc
+        run: snyk monitor --file=TestOnly/pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+
+      - name: Snyk monitor fat-jar-test-app
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk monitor --file=fat-jar-test-app/pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+
+      - name: Snyk monitor ci/wif/aws-lambda
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk monitor --file=ci/wif/aws-lambda/pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+
+      - name: Snyk monitor ci/wif/azure-function
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk monitor --file=ci/wif/azure-function/pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+
+      - name: Snyk monitor ci/wif/gcp-function
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        run: snyk monitor --file=ci/wif/gcp-function/pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor parent-pom
         env:
