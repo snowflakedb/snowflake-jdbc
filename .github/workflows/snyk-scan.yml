@@ -41,7 +41,7 @@ jobs:
   snyk-aggregate-test:
     name: Snyk Aggregate Project Test
     needs: detect-changes
-    if: needs.detect-changes.outputs.any-pom == 'true'
+    #if: needs.detect-changes.outputs.any-pom == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
   snyk-parent-pom-test:
     name: Snyk Parent POM Test
     needs: detect-changes
-    if: needs.detect-changes.outputs.parent-pom == 'true'
+#    if: needs.detect-changes.outputs.parent-pom == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
   snyk-public-pom-test:
     name: Snyk Public POM Test
     needs: detect-changes
-    if: needs.detect-changes.outputs.public-pom == 'true'
+#    if: needs.detect-changes.outputs.public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
   snyk-thin-public-pom-test:
     name: Snyk Thin Public POM Test
     needs: detect-changes
-    if: needs.detect-changes.outputs.thin-public-pom == 'true'
+#    if: needs.detect-changes.outputs.thin-public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
   snyk-fips-public-pom-test:
     name: Snyk FIPS Public POM Test
     needs: detect-changes
-    if: needs.detect-changes.outputs.fips-public-pom == 'true'
+#    if: needs.detect-changes.outputs.fips-public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
