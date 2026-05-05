@@ -1,6 +1,8 @@
 package net.snowflake.client.internal.core;
 
+import static net.snowflake.client.internal.config.SFConnectionConfigParser.SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION;
 import static net.snowflake.client.internal.core.StmtUtil.mapper;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.convertSystemGetEnvToBooleanValue;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,11 +29,19 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private final FileCacheManager fileCacheManager;
 
   private SecureStorageLinuxManager() {
+    boolean shouldSkipTokenFilePermissionsVerification =
+        convertSystemGetEnvToBooleanValue(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, false);
+    if (shouldSkipTokenFilePermissionsVerification) {
+      logger.debug(
+          "Skip credential cache file permissions verification because {} is enabled",
+          SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION);
+    }
     fileCacheManager =
         new FileCacheManagerBuilder()
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
             .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
             .setBaseCacheFileName(CACHE_FILE_NAME)
+            .setOnlyOwnerPermissions(!shouldSkipTokenFilePermissionsVerification)
             .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS)
             .build();
   }

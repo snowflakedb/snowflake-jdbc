@@ -137,6 +137,22 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
+  public void testNoThrowErrorWhenWrongPermissionsForConnectionConfigButSkippingFlagIsEnabled()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    SnowflakeUtil.systemSetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, "true");
+    File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
+    prepareConnectionConfigurationTomlFile(
+        Collections.singletonMap("token_file_path", tokenFile.toString()), false, false);
+    assumeRunningOnLinuxMac();
+
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("");
+    assertNotNull(data);
+    assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
+  }
+
+  @Test
   public void testLoadSFConnectionConfigWithHostConfigured()
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());

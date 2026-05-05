@@ -197,7 +197,14 @@ public class SFConnectionConfigParser {
       throws SnowflakeSQLException {
     try {
       File file = new File(configFilePath.toUri());
-      verifyFilePermissionSecure(configFilePath);
+      boolean shouldSkipTokenFilePermissionsVerification =
+          convertSystemGetEnvToBooleanValue(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, false);
+      if (!shouldSkipTokenFilePermissionsVerification) {
+        verifyFilePermissionSecure(configFilePath);
+      } else {
+        logger.debug(
+            "Skip connection configuration file permissions verification for {}", configFilePath);
+      }
       return mapper.readValue(file, Map.class);
     } catch (IOException ex) {
       throw new SnowflakeSQLException(ex, "Problem during reading a configuration file.");
