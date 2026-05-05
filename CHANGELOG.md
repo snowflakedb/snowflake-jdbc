@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.1.1-SNAPSHOT
+    - Fixed NPE in `RestRequest.sendIBHttpErrorEvent` when `SFSession.getTelemetryClient()` returns null because the session URL is not yet set; a `NoOpTelemetryClient` is now returned instead, allowing the original HTTP error to be surfaced to the caller (snowflakedb/snowflake-jdbc#2610)
     - Added support for attaching the SPCS service-identifier token (`SPCS_TOKEN`) to login requests when the driver is running inside an SPCS container (gated on the `SNOWFLAKE_RUNNING_INSIDE_SPCS` environment variable; token read from `/snowflake/session/spcs_token`) (snowflakedb/snowflake-jdbc#2603)
     - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux
     - Fixed NPE in `SFTrustManager.validateRevocationStatusMain` when the OCSP cache contains a non-SUCCESSFUL response (e.g. `unauthorized(6)`); the response is now surfaced as an `SFOCSPException` so cache eviction and fail-open run normally (snowflakedb/snowflake-jdbc#2597)

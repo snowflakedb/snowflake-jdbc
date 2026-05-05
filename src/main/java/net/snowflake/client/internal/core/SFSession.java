@@ -43,6 +43,7 @@ import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker;
 import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
+import net.snowflake.client.internal.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
 import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
@@ -1320,8 +1321,9 @@ public class SFSession extends SFBaseSession {
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
       if (getUrl() == null) {
-        logger.error("Telemetry client created before session properties set.", false);
-        return null;
+        logger.debug(
+            "Telemetry client requested before session properties set; returning no-op client");
+        return new NoOpTelemetryClient();
       }
       telemetryClient = TelemetryClient.createTelemetry(this);
 
