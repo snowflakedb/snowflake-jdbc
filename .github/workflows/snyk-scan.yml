@@ -30,14 +30,14 @@ jobs:
 
       - name: Run Snyk aggregate project test (parent-pom + JDBC + FIPS modules)
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --maven-aggregate-project --file=parent-pom.xml
 
       - name: Run Snyk all-projects test (standalone wif / TestOnly / fat-jar-test-app)
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --all-projects --exclude=pom.xml,FIPS
 
   snyk-parent-pom-test:
@@ -58,8 +58,8 @@ jobs:
 
       - name: Run Snyk parent-pom test
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --file=parent-pom.xml --package-manager=maven
 
   snyk-public-pom-test:
@@ -80,8 +80,8 @@ jobs:
 
       - name: Run Snyk public-pom test
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --file=public_pom.xml --package-manager=maven
 
   snyk-thin-public-pom-test:
@@ -102,8 +102,8 @@ jobs:
 
       - name: Run Snyk thin-public-pom test
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --file=thin_public_pom.xml --package-manager=maven
 
   snyk-fips-public-pom-test:
@@ -124,8 +124,8 @@ jobs:
 
       - name: Run Snyk FIPS public-pom test
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk test --file=FIPS/public_pom.xml --package-manager=maven
 
   snyk-monitor:
@@ -146,36 +146,36 @@ jobs:
 
       - name: Snyk monitor aggregate (parent-pom + JDBC + FIPS modules)
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --maven-aggregate-project --file=parent-pom.xml --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor standalone projects (wif / TestOnly / fat-jar-test-app)
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --all-projects --exclude=pom.xml,FIPS --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor parent-pom
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --file=parent-pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor public-pom
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --file=public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor thin-public-pom
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --file=thin_public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
 
       - name: Snyk monitor FIPS public-pom
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TEST }}
+          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
         run: snyk monitor --file=FIPS/public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
