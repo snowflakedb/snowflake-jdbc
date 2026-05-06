@@ -6,6 +6,7 @@ on:
       - master
   schedule:
     - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -130,7 +131,7 @@ jobs:
 
   snyk-monitor:
     name: Snyk Monitor
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
