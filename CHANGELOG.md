@@ -1,7 +1,7 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v4.1.1-SNAPSHOT
+- v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
     - Fixed NPE in `RestRequest.sendIBHttpErrorEvent` when `SFSession.getTelemetryClient()` returns null because the session URL is not yet set; a `NoOpTelemetryClient` is now returned instead, allowing the original HTTP error to be surfaced to the caller (snowflakedb/snowflake-jdbc#2610)
     - Added support for attaching the SPCS service-identifier token (`SPCS_TOKEN`) to login requests when the driver is running inside an SPCS container (gated on the `SNOWFLAKE_RUNNING_INSIDE_SPCS` environment variable; token read from `/snowflake/session/spcs_token`) (snowflakedb/snowflake-jdbc#2603)
