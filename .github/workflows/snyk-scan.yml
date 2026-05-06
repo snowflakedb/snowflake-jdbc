@@ -51,6 +51,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --maven-aggregate-project --all-projects
           command: test
@@ -68,6 +69,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=parent-pom.xml --package-manager=maven
           command: test
@@ -85,6 +87,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=public_pom.xml --package-manager=maven
           command: test
@@ -102,6 +105,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=thin_public_pom.xml --package-manager=maven
           command: test
@@ -119,6 +123,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=FIPS/public_pom.xml --package-manager=maven
           command: test
@@ -135,6 +140,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --maven-aggregate-project --all-projects --project-name=snowflakedb/jdbc
           command: monitor
@@ -144,6 +150,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=parent-pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
           command: monitor
@@ -153,6 +160,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
           command: monitor
@@ -162,6 +170,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=thin_public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
           command: monitor
@@ -171,6 +180,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
+          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
           args: --file=FIPS/public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
           command: monitor
