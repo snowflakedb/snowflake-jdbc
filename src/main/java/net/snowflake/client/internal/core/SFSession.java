@@ -1054,22 +1054,26 @@ public class SFSession extends SFBaseSession {
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 
-    SessionUtil.closeSession(loginInput, this);
-    InternalApiTelemetryTracker.flush(getTelemetryClient(internalCallMarker()));
-    closeTelemetryClient();
-    getClientInfo().clear();
+    try {
+      SessionUtil.closeSession(loginInput, this);
+      InternalApiTelemetryTracker.flush(getTelemetryClient(internalCallMarker()));
+      closeTelemetryClient();
+      getClientInfo().clear();
 
-    // qcc can be null, if disabled.
-    if (qcc != null) {
-      qcc.clearCache();
+      // qcc can be null, if disabled.
+      if (qcc != null) {
+        qcc.clearCache();
+      }
+
+      stopwatch.stop();
+      logger.debug(
+          "Session {} has been successfully closed in {} ms",
+          getSessionId(),
+          stopwatch.elapsedMillis());
+      isClosed = true;
+    } finally {
+      closeS3EventLoopGroup();
     }
-
-    stopwatch.stop();
-    logger.debug(
-        "Session {} has been successfully closed in {} ms",
-        getSessionId(),
-        stopwatch.elapsedMillis());
-    isClosed = true;
   }
 
   /**

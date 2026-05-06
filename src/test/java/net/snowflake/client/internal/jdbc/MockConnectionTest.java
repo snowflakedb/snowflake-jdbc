@@ -735,7 +735,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public void close(InternalCallMarker internalCallMarker) {}
+    public void close(InternalCallMarker internalCallMarker) {
+      closeS3EventLoopGroup();
+    }
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
