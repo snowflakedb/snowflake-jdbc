@@ -25,7 +25,7 @@
     <asm.version>9.7.1</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <awssdk.version>2.37.5</awssdk.version>
+    <awssdk.version>2.42.41</awssdk.version>
     <azure.core.version>1.57.0</azure.core.version>
     <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
     <azure.storage.common.version>12.31.0</azure.storage.common.version>
@@ -59,7 +59,7 @@
     <grpc.version>1.81.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.18.4.1</jackson.version>
+    <jackson.version>2.18.7</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>

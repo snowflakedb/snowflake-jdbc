@@ -1,0 +1,20 @@
+# Snyk (https://snyk.io) policy file
+# Pinned policy schema version
+version: v1.25.0
+
+# Ignored issues
+#
+# License findings: javax.servlet-api and javax.annotation-api are licensed
+# under CDDL-1.1 OR GPL-2.0-with-classpath-exception. The dual-license is
+# acceptable for this project (we use them under CDDL-1.1).
+ignore:
+  'snyk:lic:maven:javax.servlet:javax.servlet-api:(CDDL-1.1_OR_GPL-2.0-with-classpath-exception)':
+    - '*':
+        reason: >-
+          Dual-licensed under CDDL-1.1 / GPL-2.0-with-classpath-exception;
+          using under CDDL-1.1.
+  'snyk:lic:maven:javax.annotation:javax.annotation-api:(CDDL-1.1_OR_GPL-2.0-with-classpath-exception)':
+    - '*':
+        reason: >-
+          Dual-licensed under CDDL-1.1 / GPL-2.0-with-classpath-exception;
+          using under CDDL-1.1. Pulled in transitively by google-cloud-storage.
