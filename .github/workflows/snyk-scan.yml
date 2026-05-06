@@ -53,7 +53,7 @@ jobs:
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
           MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
-          args: --maven-aggregate-project --all-projects
+          args: --maven-aggregate-project --all-projects --policy-path=.snyk
           command: test
 
   snyk-parent-pom-test:
@@ -142,7 +142,7 @@ jobs:
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
           MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
-          args: --maven-aggregate-project --all-projects --project-name=snowflakedb/jdbc
+          args: --maven-aggregate-project --all-projects --policy-path=.snyk --project-name=snowflakedb/jdbc
           command: monitor
 
       - name: Snyk monitor parent-pom
