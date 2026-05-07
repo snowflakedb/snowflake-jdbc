@@ -37,10 +37,10 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
   private static final long serialVersionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
-
   private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
-
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
+  private static final String AUTHENTICATOR_WORKLOAD_IDENTITY = "WORKLOAD_IDENTITY";
+  private static final String AUTHENTICATOR_PROGRAMMATIC_ACCESS_TOKEN = "PROGRAMMATIC_ACCESS_TOKEN";
 
   private String url;
 
@@ -116,8 +116,12 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
-    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
-        && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
+    // WIF and PAT do not require password (SNOW-2924623)
+    boolean passwordRequired = !AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_WORKLOAD_IDENTITY.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_PROGRAMMATIC_ACCESS_TOKEN.equalsIgnoreCase(authenticator);
+    if (passwordRequired) {
       if (password == null) {
         throw new SnowflakeSQLException(
             "Cannot create connection because password is missing in DataSource properties.");
