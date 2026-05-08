@@ -130,58 +130,32 @@ jobs:
           command: test
 
   snyk-monitor:
-    name: Snyk Monitor
+    name: Snyk Monitor (${{ matrix.pom }})
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pom:
+          - pom.xml
+          - parent-pom.xml
+          - public_pom.xml
+          - thin_public_pom.xml
+          - FIPS/pom.xml
+          - FIPS/public_pom.xml
+          - fat-jar-test-app/pom.xml
+          - ci/wif/aws-lambda/pom.xml
+          - ci/wif/azure-function/pom.xml
+          - ci/wif/gcp-function/pom.xml
     steps:
       - uses: actions/checkout@v4
 
-      - name: Snyk monitor aggregate
+      - name: Snyk monitor ${{ matrix.pom }}
         uses: snyk/actions/maven@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
           MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
         with:
-          args: --maven-aggregate-project --all-projects --policy-path=.snyk --project-name=snowflakedb/jdbc
-          command: monitor
-
-      - name: Snyk monitor parent-pom
-        uses: snyk/actions/maven@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
-        with:
-          args: --file=parent-pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
-          command: monitor
-
-      - name: Snyk monitor public-pom
-        uses: snyk/actions/maven@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
-        with:
-          args: --file=public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
-          command: monitor
-
-      - name: Snyk monitor thin-public-pom
-        uses: snyk/actions/maven@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
-        with:
-          args: --file=thin_public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
-          command: monitor
-
-      - name: Snyk monitor FIPS public-pom
-        uses: snyk/actions/maven@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          SNYK_CFG_ORG: ${{ secrets.SNYK_ORG_ID }}
-          MAVEN_OPTS: -DskipTests -Dmaven.test.skip=true -Dmaven.main.skip=true
-        with:
-          args: --file=FIPS/public_pom.xml --package-manager=maven --project-name=snowflakedb/jdbc
+          args: --file=${{ matrix.pom }} --package-manager=maven --policy-path=.snyk --project-name=${{ matrix.pom }} --remote-repo-url=https://github.com/snowflakedb/snowflake-jdbc
           command: monitor
