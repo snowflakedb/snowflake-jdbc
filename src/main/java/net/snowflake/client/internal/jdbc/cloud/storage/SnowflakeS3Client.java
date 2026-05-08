@@ -369,12 +369,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     String localFilePath = localLocation + localFileSep + destFileName;
     logger.debug(
         "Starting download of file from S3 stage path: {} to {}", stageFilePath, localFilePath);
+    File localFile = new File(localFilePath);
+    DownloadPathValidator.assertWithinDirectory(localLocation, localFile, queryId);
     int retryCount = 0;
     do {
       ThreadPoolExecutor executorService = null;
       S3TransferManager tx = null;
       try {
-        File localFile = new File(localFilePath);
 
         logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
 
