@@ -6,9 +6,11 @@ import static net.snowflake.client.internal.config.SFConnectionConfigParser.SNOW
 import static net.snowflake.client.internal.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isWindows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
@@ -26,8 +28,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -227,9 +231,9 @@ public class SFConnectionConfigParserTest {
     assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
     assertEquals("ALL", data.getParams().get("tracing"));
     assertEquals("true", data.getParams().get("disablePlatformDetection"));
-    assertEquals("user1", data.getParams().get("user"));
-    assertEquals("pass1", data.getParams().get("password"));
-    assertEquals("MY_WH", data.getParams().get("warehouse"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+    assertEquals("TOML_PASS", data.getParams().get("password"));
+    assertEquals("TOML_WH", data.getParams().get("warehouse"));
   }
 
   @Test
@@ -240,15 +244,15 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol("8082", "http");
     ConnectionParameters data =
         SFConnectionConfigParser.buildConnectionParameters(
-            "jdbc:snowflake:auto?connectionName=default&port=443&protocol=https&warehouse=OTHER_WH&tracing=ALL");
+            "jdbc:snowflake:auto?connectionName=default&port=443&protocol=https&warehouse=URL_WH&tracing=ALL");
     assertNotNull(data);
     assertEquals("jdbc:snowflake://myorg-myaccount.snowflakecomputing.com:443", data.getUrl());
     assertEquals("443", data.getParams().get("port"));
     assertEquals("https", data.getParams().get("protocol"));
-    assertEquals("OTHER_WH", data.getParams().get("warehouse"));
+    assertEquals("URL_WH", data.getParams().get("warehouse"));
     assertEquals("ALL", data.getParams().get("tracing"));
-    assertEquals("user1", data.getParams().get("user"));
-    assertEquals("pass1", data.getParams().get("password"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+    assertEquals("TOML_PASS", data.getParams().get("password"));
     assertEquals("myorg-myaccount", data.getParams().get("account"));
     Set<String> expectedKeys =
         new HashSet<>(
@@ -265,9 +269,9 @@ public class SFConnectionConfigParserTest {
     prepareTomlWithPortAndProtocol(null, null);
     ConnectionParameters data =
         SFConnectionConfigParser.buildConnectionParameters(
-            "jdbc:snowflake:auto?connectionName=default&user=overridden_user");
+            "jdbc:snowflake:auto?connectionName=default&user=URL_USER");
     assertNotNull(data);
-    assertEquals("overridden_user", data.getParams().get("user"));
+    assertEquals("URL_USER", data.getParams().get("user"));
   }
 
   @Test
@@ -282,9 +286,9 @@ public class SFConnectionConfigParserTest {
     assertNotNull(data);
     assertEquals(
         "jdbc:snowflake://http://myorg-myaccount.snowflakecomputing.com:8082", data.getUrl());
-    assertEquals("user1", data.getParams().get("user"));
-    assertEquals("pass1", data.getParams().get("password"));
-    assertEquals("MY_WH", data.getParams().get("warehouse"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+    assertEquals("TOML_PASS", data.getParams().get("password"));
+    assertEquals("TOML_WH", data.getParams().get("warehouse"));
   }
 
   @Test
@@ -362,6 +366,214 @@ public class SFConnectionConfigParserTest {
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
+  @Test
+  public void testUrlDbAliasDoesNotConflictWithTomlDatabase()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB");
+
+    ConnectionParameters data =
+        SFConnectionConfigParser.buildConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&db=URL_DB&tracing=WARNING");
+    assertNotNull(data);
+    assertEquals("URL_DB", data.getParams().get("db"));
+    assertNull(data.getParams().get("database"));
+    assertEquals("WARNING", data.getParams().get("tracing"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+  }
+
+  @Test
+  public void testUrlDbAliasOverridesTomlDatabaseWithOtherConflicts()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+
+    ConnectionParameters data =
+        SFConnectionConfigParser.buildConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&db=URL_DB&warehouse=URL_WH&tracing=ALL");
+    assertNotNull(data);
+    assertEquals("URL_DB", data.getParams().get("db"));
+    assertNull(data.getParams().get("database"));
+    assertEquals("URL_WH", data.getParams().get("warehouse"));
+    assertEquals("ALL", data.getParams().get("tracing"));
+    assertEquals("TOML_ROLE", data.getParams().get("role"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+  }
+
+  @Test
+  public void testNonSFSessionPropertyFromTomlIsPreservedAfterMerge()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithCustomSessionParam("TOML_DB", "10");
+
+    ConnectionParameters data =
+        SFConnectionConfigParser.buildConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&db=URL_DB");
+    assertNotNull(data);
+    assertEquals("URL_DB", data.getParams().get("db"));
+    assertNull(data.getParams().get("database"));
+    assertEquals("10", data.getParams().get("CLIENT_RESULT_CHUNK_SIZE"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+  }
+
+  @Test
+  public void testPropertiesAndUrlNoConflict() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, null);
+
+    Properties info = new Properties();
+    info.setProperty("schema", "PROP_SCHEMA");
+    info.setProperty("role", "PROP_ROLE");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&db=URL_DB&tracing=WARNING", info);
+    assertNotNull(data);
+    assertEquals("URL_DB", data.getParams().get("db"));
+    assertEquals("WARNING", data.getParams().get("tracing"));
+    assertEquals("PROP_SCHEMA", data.getParams().get("schema"));
+    assertEquals("PROP_ROLE", data.getParams().get("role"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+    assertEquals("TOML_PASS", data.getParams().get("password"));
+    assertEquals("TOML_WH", data.getParams().get("warehouse"));
+  }
+
+  @Test
+  public void testPropertiesUrlAndTomlNoConflict() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB");
+
+    Properties info = new Properties();
+    info.setProperty("schema", "PROP_SCHEMA");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&tracing=WARNING", info);
+    assertNotNull(data);
+    assertEquals("TOML_DB", data.getParams().get("database"));
+    assertEquals("WARNING", data.getParams().get("tracing"));
+    assertEquals("PROP_SCHEMA", data.getParams().get("schema"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+  }
+
+  @Test
+  public void testPropertiesOverridesUrlAndTomlOnConflict()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+
+    Properties info = new Properties();
+    info.setProperty("warehouse", "PROP_WH");
+    info.setProperty("schema", "PROP_SCHEMA");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&warehouse=URL_WH&tracing=ALL", info);
+    assertNotNull(data);
+    assertEquals("PROP_WH", data.getParams().get("warehouse"));
+    assertEquals("PROP_SCHEMA", data.getParams().get("schema"));
+    assertEquals("ALL", data.getParams().get("tracing"));
+    assertEquals("TOML_ROLE", data.getParams().get("role"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+  }
+
+  @Test
+  public void testPropertiesDbOverridesUrlDbAndTomlDatabase()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+
+    Properties info = new Properties();
+    info.setProperty("db", "PROP_DB");
+    info.setProperty("schema", "PROP_SCHEMA");
+    info.setProperty("queryTimeout", "30");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default"
+                + "&db=URL_DB&tracing=WARNING&loginTimeout=120",
+            info);
+    assertNotNull(data);
+    // Properties win for db (alias conflict resolved: TOML's "database" removed by URL's "db",
+    // then Properties' "db" overwrites URL's "db")
+    assertEquals("PROP_DB", data.getParams().get("db"));
+    assertNull(data.getParams().get("database"));
+    // Properties' own values
+    assertEquals("PROP_SCHEMA", data.getParams().get("schema"));
+    assertEquals("30", data.getParams().get("queryTimeout"));
+    // URL values not overridden by Properties
+    assertEquals("WARNING", data.getParams().get("tracing"));
+    assertEquals("120", data.getParams().get("loginTimeout"));
+    // TOML values not overridden
+    assertEquals("TOML_WH", data.getParams().get("warehouse"));
+    assertEquals("TOML_ROLE", data.getParams().get("role"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
+    // Verify no duplicate keys that could cause "property specified more than once"
+    Set<String> keys = data.getParams().stringPropertyNames();
+    assertFalse(keys.contains("database"));
+    assertTrue(keys.contains("db"));
+  }
+
+  private void prepareTomlWithDatabase(String databaseValue) throws IOException {
+    Path path = Paths.get(tempPath.toString(), "connections.toml");
+    Path filePath = createFilePathWithPermission(path, true);
+    File file = filePath.toFile();
+
+    Map<String, Object> configurationParams = new HashMap<>();
+    configurationParams.put("account", "myorg-myaccount");
+    configurationParams.put("user", "TOML_USER");
+    configurationParams.put("password", "TOML_PASS");
+    configurationParams.put("database", databaseValue);
+
+    Map<String, Object> configuration = new HashMap<>();
+    configuration.put("default", configurationParams);
+    tomlMapper.writeValue(file, configuration);
+  }
+
+  private void prepareTomlWithDatabaseAndExtras(
+      String databaseValue, String warehouseValue, String roleValue) throws IOException {
+    Path path = Paths.get(tempPath.toString(), "connections.toml");
+    Path filePath = createFilePathWithPermission(path, true);
+    File file = filePath.toFile();
+
+    Map<String, Object> configurationParams = new HashMap<>();
+    configurationParams.put("account", "myorg-myaccount");
+    configurationParams.put("user", "TOML_USER");
+    configurationParams.put("password", "TOML_PASS");
+    configurationParams.put("database", databaseValue);
+    configurationParams.put("warehouse", warehouseValue);
+    configurationParams.put("role", roleValue);
+
+    Map<String, Object> configuration = new HashMap<>();
+    configuration.put("default", configurationParams);
+    tomlMapper.writeValue(file, configuration);
+  }
+
+  private void prepareTomlWithCustomSessionParam(String databaseValue, String clientResultChunkSize)
+      throws IOException {
+    Path path = Paths.get(tempPath.toString(), "connections.toml");
+    Path filePath = createFilePathWithPermission(path, true);
+    File file = filePath.toFile();
+
+    Map<String, Object> configurationParams = new HashMap<>();
+    configurationParams.put("account", "myorg-myaccount");
+    configurationParams.put("user", "TOML_USER");
+    configurationParams.put("password", "TOML_PASS");
+    configurationParams.put("database", databaseValue);
+    configurationParams.put("CLIENT_RESULT_CHUNK_SIZE", clientResultChunkSize);
+
+    Map<String, Object> configuration = new HashMap<>();
+    configuration.put("default", configurationParams);
+    tomlMapper.writeValue(file, configuration);
+  }
+
   private void prepareConnectionConfigurationTomlFile() throws IOException {
     prepareConnectionConfigurationTomlFile(null, true, true);
   }
@@ -428,9 +640,9 @@ public class SFConnectionConfigParserTest {
 
     Map<String, Object> configurationParams = new HashMap<>();
     configurationParams.put("account", "myorg-myaccount");
-    configurationParams.put("user", "user1");
-    configurationParams.put("password", "pass1");
-    configurationParams.put("warehouse", "MY_WH");
+    configurationParams.put("user", "TOML_USER");
+    configurationParams.put("password", "TOML_PASS");
+    configurationParams.put("warehouse", "TOML_WH");
     if (port != null) {
       configurationParams.put("port", port);
     }

@@ -196,6 +196,19 @@ public enum SFSessionProperty {
     this.aliases = aliases;
   }
 
+  /**
+   * Returns true if two property key strings resolve to the same SFSessionProperty (accounting for
+   * aliases). Returns false if either key is unrecognized or they resolve to different properties.
+   */
+  public static boolean resolvesToSameProperty(String key1, String key2) {
+    if (key1 == null || key2 == null) {
+      return false;
+    }
+    SFSessionProperty prop1 = lookupByKey(key1);
+    SFSessionProperty prop2 = lookupByKey(key2);
+    return prop1 != null && prop1 == prop2;
+  }
+
   static SFSessionProperty lookupByKey(String propertyKey) {
     for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.propertyKey.equalsIgnoreCase(propertyKey)) {

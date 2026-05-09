@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.driver;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.config.ConnectionParameters;
@@ -72,9 +74,35 @@ public final class AutoConfigurationHelper {
             "Unavailable connection configuration parameters expected for "
                 + "auto configuration using file");
       }
+
+      if (info != null && !info.isEmpty()) {
+        mergeInfoPropertiesIntoParams(params.getParams(), info);
+      }
+
       return params;
     } else {
       return new ConnectionParameters(url, info);
     }
+  }
+
+  /**
+   * Merge user-provided Properties into the resolved connection parameters. Properties override
+   * both TOML and URL values (consistent with standard JDBC semantics where Properties overwrite
+   * URL query params). Uses alias-aware put to prevent duplicate property errors downstream.
+   */
+  private static void mergeInfoPropertiesIntoParams(Properties resolved, Properties info) {
+    Map<String, String> resolvedMap = new HashMap<>();
+    for (String key : resolved.stringPropertyNames()) {
+      resolvedMap.put(key, resolved.getProperty(key));
+    }
+
+    for (Map.Entry<Object, Object> entry : info.entrySet()) {
+      String key = entry.getKey().toString();
+      String value = entry.getValue().toString();
+      SFConnectionConfigParser.putResolvingAliases(resolvedMap, key, value);
+    }
+
+    resolved.clear();
+    resolved.putAll(resolvedMap);
   }
 }

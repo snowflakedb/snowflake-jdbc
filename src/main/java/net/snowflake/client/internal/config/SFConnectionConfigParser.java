@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -147,16 +148,38 @@ public class SFConnectionConfigParser {
       if ("connectionName".equalsIgnoreCase(key)) {
         continue;
       }
-      String urlValue = entry.getValue();
-      String tomlValue = fileConfig.get(key);
-      if (tomlValue != null && !tomlValue.equalsIgnoreCase(urlValue)) {
-        logger.debug(
-            "For config item '{}' the values from connections.toml and the connection string"
-                + " differ; the connection string value will be applied.",
-            key);
-      }
-      fileConfig.put(key, urlValue);
+      putResolvingAliases(fileConfig, key, entry.getValue());
     }
+  }
+
+  /**
+   * Put a key/value into the map, removing any existing entry that resolves to the same
+   * SFSessionProperty under a different key name. This prevents "duplicate connection property"
+   * errors when e.g. the TOML uses "database" and the URL uses alias "db".
+   */
+  public static void putResolvingAliases(Map<String, String> map, String key, String value) {
+    String conflictingKey = null;
+    for (String existing : map.keySet()) {
+      if (existing.equalsIgnoreCase(key)) {
+        continue;
+      }
+      if (SFSessionProperty.resolvesToSameProperty(existing, key)) {
+        conflictingKey = existing;
+        break;
+      }
+    }
+    if (conflictingKey != null) {
+      String oldValue = map.get(conflictingKey);
+      if (oldValue != null && !oldValue.equalsIgnoreCase(value)) {
+        logger.debug(
+            "For config item '{}' (alias of '{}') the values differ;"
+                + " the overriding value will be applied.",
+            key,
+            conflictingKey);
+      }
+      map.remove(conflictingKey);
+    }
+    map.put(key, value);
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
