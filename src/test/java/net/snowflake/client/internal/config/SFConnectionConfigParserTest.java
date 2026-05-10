@@ -366,6 +366,7 @@ public class SFConnectionConfigParserTest {
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters(""));
   }
 
+  // URL "db" and TOML "database" resolve to same property; URL wins, no duplicate error
   @Test
   public void testUrlDbAliasDoesNotConflictWithTomlDatabase()
       throws SnowflakeSQLException, IOException {
@@ -383,6 +384,8 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // URL "db" + other overrides vs TOML "database" + extras; URL wins on conflicts, TOML retained
+  // otherwise
   @Test
   public void testUrlDbAliasOverridesTomlDatabaseWithOtherConflicts()
       throws SnowflakeSQLException, IOException {
@@ -402,6 +405,8 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // TOML has a non-SFSessionProperty key (CLIENT_RESULT_CHUNK_SIZE); it survives the alias-aware
+  // merge
   @Test
   public void testNonSFSessionPropertyFromTomlIsPreservedAfterMerge()
       throws SnowflakeSQLException, IOException {
@@ -419,6 +424,7 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // Properties + URL + TOML with no overlapping keys; all values correctly merged
   @Test
   public void testPropertiesAndUrlNoConflict() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
@@ -442,6 +448,7 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_WH", data.getParams().get("warehouse"));
   }
 
+  // Properties + URL + TOML all use distinct keys; TOML "database" preserved when no alias conflict
   @Test
   public void testPropertiesUrlAndTomlNoConflict() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
@@ -461,6 +468,7 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // Properties "warehouse" overrides both URL and TOML; non-conflicting TOML/URL values preserved
   @Test
   public void testPropertiesOverridesUrlAndTomlOnConflict()
       throws SnowflakeSQLException, IOException {
@@ -483,6 +491,8 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // Three-way alias conflict: TOML "database", URL "db", Properties "db"; Properties wins, no
+  // duplicate
   @Test
   public void testPropertiesDbOverridesUrlDbAndTomlDatabase()
       throws SnowflakeSQLException, IOException {

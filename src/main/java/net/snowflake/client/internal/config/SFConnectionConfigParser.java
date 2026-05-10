@@ -50,6 +50,15 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
+    return buildConnectionParameters(connectionUrl, null);
+  }
+
+  /**
+   * Build connection parameters from URL and TOML file, optionally tracking provenance. When
+   * provenance is non-null, each key's source ("TOML" or "URL") is recorded as it is resolved.
+   */
+  public static ConnectionParameters buildConnectionParameters(
+      String connectionUrl, Map<String, String> provenance) throws SnowflakeSQLException {
     Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
     String defaultConnectionName = urlParameters.get("connectionName");
     if (isBlank(defaultConnectionName)) {
@@ -61,7 +70,13 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
-      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters);
+      if (provenance != null) {
+        for (String key : fileConnectionConfiguration.keySet()) {
+          provenance.put(key, "TOML");
+        }
+      }
+
+      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters, provenance);
 
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
@@ -142,13 +157,15 @@ public class SFConnectionConfigParser {
   }
 
   private static void mergeUrlParametersIntoConfiguration(
-      Map<String, String> fileConfig, Map<String, String> urlParameters) {
+      Map<String, String> fileConfig,
+      Map<String, String> urlParameters,
+      Map<String, String> provenance) {
     for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
       String key = entry.getKey();
       if ("connectionName".equalsIgnoreCase(key)) {
         continue;
       }
-      putResolvingAliases(fileConfig, key, entry.getValue());
+      putResolvingAliases(fileConfig, key, entry.getValue(), provenance, "URL");
     }
   }
 
@@ -158,6 +175,19 @@ public class SFConnectionConfigParser {
    * errors when e.g. the TOML uses "database" and the URL uses alias "db".
    */
   public static void putResolvingAliases(Map<String, String> map, String key, String value) {
+    putResolvingAliases(map, key, value, null, null);
+  }
+
+  /**
+   * Put a key/value into the map with provenance tracking. When provenance is non-null, records the
+   * source of the key and notes any alias conflict that was resolved.
+   */
+  public static void putResolvingAliases(
+      Map<String, String> map,
+      String key,
+      String value,
+      Map<String, String> provenance,
+      String source) {
     String conflictingKey = null;
     for (String existing : map.keySet()) {
       if (existing.equalsIgnoreCase(key)) {
@@ -168,6 +198,8 @@ public class SFConnectionConfigParser {
         break;
       }
     }
+
+    String overriddenSource = null;
     if (conflictingKey != null) {
       String oldValue = map.get(conflictingKey);
       if (oldValue != null && !oldValue.equalsIgnoreCase(value)) {
@@ -177,9 +209,23 @@ public class SFConnectionConfigParser {
             key,
             conflictingKey);
       }
+      if (provenance != null) {
+        overriddenSource = provenance.remove(conflictingKey);
+      }
       map.remove(conflictingKey);
+    } else if (provenance != null && map.containsKey(key)) {
+      overriddenSource = provenance.remove(key);
     }
+
     map.put(key, value);
+
+    if (provenance != null && source != null) {
+      if (overriddenSource != null) {
+        provenance.put(key, source + "(overrode " + overriddenSource + ")");
+      } else {
+        provenance.put(key, source);
+      }
+    }
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
