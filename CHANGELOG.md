@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.2.1-SNAPSHOT
+    - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).
     - Fixed path traversal via server-controlled filenames in `SnowflakeFileTransferAgent` GET destination filename derivation; backslash separators are now stripped and traversal/absolute basenames are rejected (snowflakedb/snowflake-jdbc#2622).
 
 - v4.2.0
