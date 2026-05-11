@@ -89,7 +89,7 @@ public final class AutoConfigurationHelper {
         }
       }
 
-      logProvenance(provenance);
+      logAutoConfigProvenance(provenance);
 
       return params;
     } else {
@@ -130,7 +130,9 @@ public final class AutoConfigurationHelper {
     resolved.putAll(nonStringEntries);
   }
 
-  private static void logProvenance(Map<String, String> provenance) {
+  // Only covers the jdbc:snowflake:auto path. The standard jdbc:snowflake:// path merges
+  // URL+Properties in SnowflakeConnectString.parse without provenance tracking.
+  private static void logAutoConfigProvenance(Map<String, String> provenance) {
     if (!logger.isDebugEnabled()) {
       return;
     }

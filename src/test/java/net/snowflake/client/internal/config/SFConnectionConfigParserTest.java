@@ -394,7 +394,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+    prepareTomlWithDatabase("TOML_DB", "TOML_WH", "TOML_ROLE");
 
     ConnectionParameters data =
         SFConnectionConfigParser.buildConnectionParameters(
@@ -477,7 +477,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+    prepareTomlWithDatabase("TOML_DB", "TOML_WH", "TOML_ROLE");
 
     Properties info = new Properties();
     info.setProperty("warehouse", "PROP_WH");
@@ -501,7 +501,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    prepareTomlWithDatabaseAndExtras("TOML_DB", "TOML_WH", "TOML_ROLE");
+    prepareTomlWithDatabase("TOML_DB", "TOML_WH", "TOML_ROLE");
 
     Properties info = new Properties();
     info.setProperty("db", "PROP_DB");
@@ -576,6 +576,20 @@ public class SFConnectionConfigParserTest {
                 "jdbc:snowflake:auto?connectionName=default&database=URL_DB_A&DATABASE=URL_DB_B"));
   }
 
+  // URL with alias "DB" (uppercase) and "database" (lowercase) in same source must throw
+  @Test
+  public void testUrlUppercaseAliasAndLowercasePropertyDuplicateThrows() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, null);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            SFConnectionConfigParser.buildConnectionParameters(
+                "jdbc:snowflake:auto?connectionName=default&DB=URL_DB_A&database=URL_DB_B"));
+  }
+
   // Cross-source case-insensitive override: TOML "database" overridden by URL "DATABASE"
   @Test
   public void testCrossSourceCaseInsensitiveOverride() throws SnowflakeSQLException, IOException {
@@ -588,6 +602,7 @@ public class SFConnectionConfigParserTest {
             "jdbc:snowflake:auto?connectionName=default&DATABASE=URL_DB_A");
     assertNotNull(data);
     assertEquals("URL_DB_A", data.getParams().get("DATABASE"));
+    // TOML's "database" key must be removed when URL's "DATABASE" overrides it
     assertNull(data.getParams().get("database"));
   }
 
@@ -618,41 +633,19 @@ public class SFConnectionConfigParserTest {
   }
 
   private void prepareTomlWithDatabase(String databaseValue) throws IOException {
-    Path path = Paths.get(tempPath.toString(), "connections.toml");
-    Path filePath = createFilePathWithPermission(path, true);
-    File file = filePath.toFile();
-
-    Map<String, Object> configurationParams = new HashMap<>();
-    configurationParams.put("account", "myorg-myaccount");
-    configurationParams.put("user", "TOML_USER");
-    configurationParams.put("password", "TOML_PASS");
-    configurationParams.put("database", databaseValue);
-
-    Map<String, Object> configuration = new HashMap<>();
-    configuration.put("default", configurationParams);
-    tomlMapper.writeValue(file, configuration);
+    prepareTomlWithDatabase(databaseValue, null, null, null);
   }
 
-  private void prepareTomlWithDatabaseAndExtras(
+  private void prepareTomlWithDatabase(
       String databaseValue, String warehouseValue, String roleValue) throws IOException {
-    Path path = Paths.get(tempPath.toString(), "connections.toml");
-    Path filePath = createFilePathWithPermission(path, true);
-    File file = filePath.toFile();
-
-    Map<String, Object> configurationParams = new HashMap<>();
-    configurationParams.put("account", "myorg-myaccount");
-    configurationParams.put("user", "TOML_USER");
-    configurationParams.put("password", "TOML_PASS");
-    configurationParams.put("database", databaseValue);
-    configurationParams.put("warehouse", warehouseValue);
-    configurationParams.put("role", roleValue);
-
-    Map<String, Object> configuration = new HashMap<>();
-    configuration.put("default", configurationParams);
-    tomlMapper.writeValue(file, configuration);
+    prepareTomlWithDatabase(databaseValue, warehouseValue, roleValue, null);
   }
 
-  private void prepareTomlWithCustomSessionParam(String databaseValue, String clientResultChunkSize)
+  private void prepareTomlWithDatabase(
+      String databaseValue,
+      String warehouseValue,
+      String roleValue,
+      Map<String, String> extraParams)
       throws IOException {
     Path path = Paths.get(tempPath.toString(), "connections.toml");
     Path filePath = createFilePathWithPermission(path, true);
@@ -663,11 +656,25 @@ public class SFConnectionConfigParserTest {
     configurationParams.put("user", "TOML_USER");
     configurationParams.put("password", "TOML_PASS");
     configurationParams.put("database", databaseValue);
-    configurationParams.put("CLIENT_RESULT_CHUNK_SIZE", clientResultChunkSize);
+    if (warehouseValue != null) {
+      configurationParams.put("warehouse", warehouseValue);
+    }
+    if (roleValue != null) {
+      configurationParams.put("role", roleValue);
+    }
+    if (extraParams != null) {
+      configurationParams.putAll(extraParams);
+    }
 
     Map<String, Object> configuration = new HashMap<>();
     configuration.put("default", configurationParams);
     tomlMapper.writeValue(file, configuration);
+  }
+
+  private void prepareTomlWithCustomSessionParam(String databaseValue, String clientResultChunkSize)
+      throws IOException {
+    prepareTomlWithDatabase(
+        databaseValue, null, null, Collections.singletonMap("CLIENT_RESULT_CHUNK_SIZE", clientResultChunkSize));
   }
 
   private void prepareConnectionConfigurationTomlFile() throws IOException {
