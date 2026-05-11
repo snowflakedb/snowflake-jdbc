@@ -3099,11 +3099,33 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         FileMetadata fileMetadata = new FileMetadata();
         fileMetadataMap.put(sourceFile, fileMetadata);
         fileMetadata.srcFileName = sourceFile;
-
-        fileMetadata.destFileName =
-            sourceFile.substring(sourceFile.lastIndexOf("/") + 1); // s3 uses / as separator
+        fileMetadata.destFileName = extractSafeDestFileName(sourceFile, queryID);
       }
     }
+  }
+
+  static String extractSafeDestFileName(String sourceFile, String queryId)
+      throws SnowflakeSQLException {
+    if (sourceFile == null) {
+      throw new SnowflakeSQLException(
+          queryId, ErrorCode.INTERNAL_ERROR, "Source file path from server is null");
+    }
+    int lastSeparator = Math.max(sourceFile.lastIndexOf('/'), sourceFile.lastIndexOf('\\'));
+    String name = sourceFile.substring(lastSeparator + 1);
+
+    if (name.isEmpty()
+        || ".".equals(name)
+        || "..".equals(name)
+        || name.indexOf('\0') >= 0
+        || name.indexOf('/') >= 0
+        || name.indexOf('\\') >= 0
+        || name.indexOf(':') >= 0) {
+      throw new SnowflakeSQLException(
+          queryId,
+          ErrorCode.INTERNAL_ERROR,
+          "Invalid destination file name received from server: " + sourceFile);
+    }
+    return name;
   }
 
   /**
