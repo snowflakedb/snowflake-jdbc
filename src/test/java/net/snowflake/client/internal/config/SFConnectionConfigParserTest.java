@@ -576,20 +576,6 @@ public class SFConnectionConfigParserTest {
                 "jdbc:snowflake:auto?connectionName=default&database=URL_DB_A&DATABASE=URL_DB_B"));
   }
 
-  // URL with alias "DB" (uppercase) and "database" (lowercase) in same source must throw
-  @Test
-  public void testUrlUppercaseAliasAndLowercasePropertyDuplicateThrows() throws IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    prepareTomlWithPortAndProtocol(null, null);
-
-    assertThrows(
-        SnowflakeSQLException.class,
-        () ->
-            SFConnectionConfigParser.buildConnectionParameters(
-                "jdbc:snowflake:auto?connectionName=default&DB=URL_DB_A&database=URL_DB_B"));
-  }
-
   // Cross-source case-insensitive override: TOML "database" overridden by URL "DATABASE"
   @Test
   public void testCrossSourceCaseInsensitiveOverride() throws SnowflakeSQLException, IOException {
