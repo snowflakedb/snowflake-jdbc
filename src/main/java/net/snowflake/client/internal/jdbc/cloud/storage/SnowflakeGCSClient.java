@@ -218,6 +218,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     File localFile = new File(localFilePath);
+    DownloadPathValidator.assertWithinDirectory(localLocation, localFile, queryId);
     do {
       try {
         String key = null;
