@@ -317,14 +317,19 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       throws SnowflakeSQLException {
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
-    String localFilePath = localLocation + localFileSep + destFileName;
+    // Trim the leading '/' on Windows up front so the validator and the actual write path agree
+    // on the canonical form. GS may hand back paths like "/C:/Users/.../dl"; without trimming
+    // localLocation, getCanonicalFile() on the un-trimmed value can fail or normalize differently
+    // than the trimmed localFilePath, producing spurious "outside the target directory" errors.
+    String effectiveLocalLocation = trimLeadingSlashIfOnWindows(localLocation);
+    String localFilePath = effectiveLocalLocation + localFileSep + destFileName;
     logger.debug(
         "Starting download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
-    localFilePath = trimLeadingSlashIfOnWindows(localFilePath);
+    File localFile = new File(localFilePath);
+    DownloadPathValidator.assertWithinDirectory(effectiveLocalLocation, localFile, queryId);
     int retryCount = 0;
     do {
       try {
-        File localFile = new File(localFilePath);
         BlobContainerClient blobContainerClient =
             azStorageClient.getBlobContainerClient(remoteStorageLocation);
         BlobClient blobClient = blobContainerClient.getBlobClient(stageFilePath);
