@@ -1,10 +1,15 @@
 package net.snowflake.client.internal.core;
 
 import java.security.PrivateKey;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 
 /** session properties accepted for opening a new session. */
 public enum SFSessionProperty {
@@ -162,6 +167,21 @@ public enum SFSessionProperty {
 
   DISABLE_PLATFORM_DETECTION("disablePlatformDetection", false, Boolean.class);
 
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSessionProperty.class);
+
+  private static final Map<String, SFSessionProperty> KEY_LOOKUP_MAP;
+
+  static {
+    Map<String, SFSessionProperty> map = new HashMap<>();
+    for (SFSessionProperty prop : values()) {
+      map.put(prop.propertyKey.toLowerCase(), prop);
+      for (String alias : prop.aliases) {
+        map.put(alias.toLowerCase(), prop);
+      }
+    }
+    KEY_LOOKUP_MAP = Collections.unmodifiableMap(map);
+  }
+
   // property key in string
   private String propertyKey;
 
@@ -197,18 +217,106 @@ public enum SFSessionProperty {
   }
 
   static SFSessionProperty lookupByKey(String propertyKey) {
-    for (SFSessionProperty property : SFSessionProperty.values()) {
-      if (property.propertyKey.equalsIgnoreCase(propertyKey)) {
-        return property;
+    return KEY_LOOKUP_MAP.get(propertyKey.toLowerCase());
+  }
+
+  /**
+   * Put a key/value into the map, removing any existing entry that resolves to the same
+   * SFSessionProperty under a different key name (or same key with different casing). This prevents
+   * "duplicate connection property" errors when e.g. the TOML uses "database" and the URL uses
+   * alias "db". Delegates to the provenance-tracking overload with null provenance.
+   */
+  public static void putResolvingAliases(Map<String, String> map, String key, String value) {
+    try {
+      putResolvingAliases(map, key, value, null, null);
+    } catch (SFException e) {
+      // Unreachable: same-source duplicate detection requires non-null provenance and source
+      throw new AssertionError("Unexpected SFException without provenance tracking", e);
+    }
+  }
+
+  /**
+   * Put a key/value into the map with provenance tracking. When provenance is non-null, records the
+   * source of the key and notes any alias conflict that was resolved. Throws
+   * DUPLICATE_CONNECTION_PROPERTY_SPECIFIED if the conflict is within the same source (e.g., URL
+   * provides both "db" and "database").
+   */
+  public static void putResolvingAliases(
+      Map<String, String> map,
+      String key,
+      String value,
+      Map<String, String> provenance,
+      String source)
+      throws SFException {
+    String conflictingKey = null;
+    for (String existing : map.keySet()) {
+      if (existing.equals(key)) {
+        continue;
+      }
+      SFSessionProperty prop1 = lookupByKey(existing);
+      SFSessionProperty prop2 = lookupByKey(key);
+      if (prop1 != null && prop1 == prop2) {
+        conflictingKey = existing;
+        break;
+      }
+    }
+
+    if (conflictingKey != null) {
+      if (provenance != null && source != null) {
+        String existingSource = provenance.get(conflictingKey);
+        if (existingSource != null && isSameBaseSource(existingSource, source)) {
+          throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED, key);
+        }
+      }
+
+      String oldValue = map.get(conflictingKey);
+      if (oldValue != null && !oldValue.equalsIgnoreCase(value)) {
+        logger.debug(
+            "For config item '{}' (alias of '{}') the values differ;"
+                + " the overriding value will be applied.",
+            key,
+            conflictingKey);
+      }
+      if (provenance != null) {
+        String overriddenSource = provenance.remove(conflictingKey);
+        map.remove(conflictingKey);
+        map.put(key, value);
+        if (source != null) {
+          provenance.put(
+              key,
+              overriddenSource != null ? source + "(overrode " + overriddenSource + ")" : source);
+        }
       } else {
-        for (String alias : property.aliases) {
-          if (alias.equalsIgnoreCase(propertyKey)) {
-            return property;
-          }
+        map.remove(conflictingKey);
+        map.put(key, value);
+      }
+    } else {
+      String overriddenSource = null;
+      if (provenance != null && map.containsKey(key)) {
+        overriddenSource = provenance.remove(key);
+      }
+      map.put(key, value);
+      if (provenance != null && source != null) {
+        if (overriddenSource != null) {
+          provenance.put(key, source + "(overrode " + overriddenSource + ")");
+        } else {
+          provenance.put(key, source);
         }
       }
     }
-    return null;
+  }
+
+  /**
+   * Checks if the existing provenance source has the same base as the incoming source. Strips
+   * "(overrode ...)" suffixes for comparison. E.g., "URL(overrode TOML)" has base source "URL".
+   */
+  private static boolean isSameBaseSource(String existingSource, String incomingSource) {
+    String existingBase = existingSource;
+    int parenIdx = existingSource.indexOf('(');
+    if (parenIdx > 0) {
+      existingBase = existingSource.substring(0, parenIdx);
+    }
+    return existingBase.equals(incomingSource);
   }
 
   /**

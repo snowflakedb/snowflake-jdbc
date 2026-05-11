@@ -1,9 +1,14 @@
 package net.snowflake.client.internal.driver;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.StringJoiner;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -66,15 +71,76 @@ public final class AutoConfigurationHelper {
           "JDBC connection initializing with URL '{}'. Autoconfiguration is enabled.",
           AUTO_CONNECTION_PREFIX);
 
-      ConnectionParameters params = SFConnectionConfigParser.buildConnectionParameters(url);
+      Map<String, String> provenance = new HashMap<>();
+      ConnectionParameters params =
+          SFConnectionConfigParser.buildConnectionParameters(url, provenance);
       if (params == null) {
         throw new SnowflakeSQLException(
             "Unavailable connection configuration parameters expected for "
                 + "auto configuration using file");
       }
+
+      if (info != null && !info.isEmpty()) {
+        try {
+          mergeInfoPropertiesIntoParams(params.getParams(), info, provenance);
+        } catch (SFException e) {
+          throw new SnowflakeSQLException(
+              e.getQueryId(), e, e.getSqlState(), e.getVendorCode(), e.getParams());
+        }
+      }
+
+      logAutoConfigProvenance(provenance);
+
       return params;
     } else {
       return new ConnectionParameters(url, info);
     }
+  }
+
+  /**
+   * Merge user-provided Properties into the resolved connection parameters. Properties override
+   * both TOML and URL values (consistent with standard JDBC semantics where Properties overwrite
+   * URL query params). Uses alias-aware put to prevent duplicate property errors downstream.
+   * Non-String values (e.g. PrivateKey, HttpHeadersCustomizer) are preserved directly in the final
+   * Properties without alias resolution since they can only come from the Properties object.
+   */
+  private static void mergeInfoPropertiesIntoParams(
+      Properties resolved, Properties info, Map<String, String> provenance) throws SFException {
+    Map<String, String> resolvedMap = new HashMap<>();
+    for (String key : resolved.stringPropertyNames()) {
+      resolvedMap.put(key, resolved.getProperty(key));
+    }
+
+    Map<String, Object> nonStringEntries = new HashMap<>();
+    for (Map.Entry<Object, Object> entry : info.entrySet()) {
+      String key = entry.getKey().toString();
+      Object value = entry.getValue();
+      if (value instanceof String) {
+        SFSessionProperty.putResolvingAliases(resolvedMap, key, (String) value, provenance, "PROP");
+      } else {
+        nonStringEntries.put(key, value);
+        if (provenance != null) {
+          provenance.put(key, "PROP");
+        }
+      }
+    }
+
+    resolved.clear();
+    resolved.putAll(resolvedMap);
+    resolved.putAll(nonStringEntries);
+  }
+
+  // Only covers the jdbc:snowflake:auto path. The standard jdbc:snowflake:// path merges
+  // URL+Properties in SnowflakeConnectString.parse without provenance tracking.
+  private static void logAutoConfigProvenance(Map<String, String> provenance) {
+    if (!logger.isDebugEnabled()) {
+      return;
+    }
+    StringJoiner sj = new StringJoiner(", ");
+    for (Map.Entry<String, String> entry : provenance.entrySet()) {
+      sj.add(entry.getKey() + "(" + entry.getValue() + ")");
+    }
+    logger.debug("Auto-configuration resolved properties: [{}]", sj.toString());
+    provenance.clear();
   }
 }

@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -49,6 +51,15 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
+    return buildConnectionParameters(connectionUrl, new HashMap<>());
+  }
+
+  /**
+   * Build connection parameters from URL and TOML file, optionally tracking provenance. When
+   * provenance is non-null, each key's source ("TOML" or "URL") is recorded as it is resolved.
+   */
+  public static ConnectionParameters buildConnectionParameters(
+      String connectionUrl, Map<String, String> provenance) throws SnowflakeSQLException {
     Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
     String defaultConnectionName = urlParameters.get("connectionName");
     if (isBlank(defaultConnectionName)) {
@@ -60,7 +71,18 @@ public class SFConnectionConfigParser {
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
-      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters);
+      if (provenance != null) {
+        for (String key : fileConnectionConfiguration.keySet()) {
+          provenance.put(key, "TOML");
+        }
+      }
+
+      try {
+        mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters, provenance);
+      } catch (SFException e) {
+        throw new SnowflakeSQLException(
+            e.getQueryId(), e, e.getSqlState(), e.getVendorCode(), e.getParams());
+      }
 
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
@@ -141,21 +163,16 @@ public class SFConnectionConfigParser {
   }
 
   private static void mergeUrlParametersIntoConfiguration(
-      Map<String, String> fileConfig, Map<String, String> urlParameters) {
+      Map<String, String> fileConfig,
+      Map<String, String> urlParameters,
+      Map<String, String> provenance)
+      throws SFException {
     for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
       String key = entry.getKey();
       if ("connectionName".equalsIgnoreCase(key)) {
         continue;
       }
-      String urlValue = entry.getValue();
-      String tomlValue = fileConfig.get(key);
-      if (tomlValue != null && !tomlValue.equalsIgnoreCase(urlValue)) {
-        logger.debug(
-            "For config item '{}' the values from connections.toml and the connection string"
-                + " differ; the connection string value will be applied.",
-            key);
-      }
-      fileConfig.put(key, urlValue);
+      SFSessionProperty.putResolvingAliases(fileConfig, key, entry.getValue(), provenance, "URL");
     }
   }
 
