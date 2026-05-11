@@ -674,7 +674,10 @@ public class SFConnectionConfigParserTest {
   private void prepareTomlWithCustomSessionParam(String databaseValue, String clientResultChunkSize)
       throws IOException {
     prepareTomlWithDatabase(
-        databaseValue, null, null, Collections.singletonMap("CLIENT_RESULT_CHUNK_SIZE", clientResultChunkSize));
+        databaseValue,
+        null,
+        null,
+        Collections.singletonMap("CLIENT_RESULT_CHUNK_SIZE", clientResultChunkSize));
   }
 
   private void prepareConnectionConfigurationTomlFile() throws IOException {
