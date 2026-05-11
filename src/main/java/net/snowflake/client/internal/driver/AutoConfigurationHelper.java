@@ -7,6 +7,8 @@ import java.util.StringJoiner;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -79,7 +81,12 @@ public final class AutoConfigurationHelper {
       }
 
       if (info != null && !info.isEmpty()) {
-        mergeInfoPropertiesIntoParams(params.getParams(), info, provenance);
+        try {
+          mergeInfoPropertiesIntoParams(params.getParams(), info, provenance);
+        } catch (SFException e) {
+          throw new SnowflakeSQLException(
+              e.getQueryId(), e, e.getSqlState(), e.getVendorCode(), e.getParams());
+        }
       }
 
       logProvenance(provenance);
@@ -94,22 +101,33 @@ public final class AutoConfigurationHelper {
    * Merge user-provided Properties into the resolved connection parameters. Properties override
    * both TOML and URL values (consistent with standard JDBC semantics where Properties overwrite
    * URL query params). Uses alias-aware put to prevent duplicate property errors downstream.
+   * Non-String values (e.g. PrivateKey, HttpHeadersCustomizer) are preserved directly in the final
+   * Properties without alias resolution since they can only come from the Properties object.
    */
   private static void mergeInfoPropertiesIntoParams(
-      Properties resolved, Properties info, Map<String, String> provenance) {
+      Properties resolved, Properties info, Map<String, String> provenance) throws SFException {
     Map<String, String> resolvedMap = new HashMap<>();
     for (String key : resolved.stringPropertyNames()) {
       resolvedMap.put(key, resolved.getProperty(key));
     }
 
+    Map<String, Object> nonStringEntries = new HashMap<>();
     for (Map.Entry<Object, Object> entry : info.entrySet()) {
       String key = entry.getKey().toString();
-      String value = entry.getValue().toString();
-      SFConnectionConfigParser.putResolvingAliases(resolvedMap, key, value, provenance, "PROP");
+      Object value = entry.getValue();
+      if (value instanceof String) {
+        SFSessionProperty.putResolvingAliases(resolvedMap, key, (String) value, provenance, "PROP");
+      } else {
+        nonStringEntries.put(key, value);
+        if (provenance != null) {
+          provenance.put(key, "PROP");
+        }
+      }
     }
 
     resolved.clear();
     resolved.putAll(resolvedMap);
+    resolved.putAll(nonStringEntries);
   }
 
   private static void logProvenance(Map<String, String> provenance) {

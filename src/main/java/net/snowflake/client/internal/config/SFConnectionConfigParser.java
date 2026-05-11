@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -50,7 +51,7 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
-    return buildConnectionParameters(connectionUrl, null);
+    return buildConnectionParameters(connectionUrl, new HashMap<>());
   }
 
   /**
@@ -76,7 +77,12 @@ public class SFConnectionConfigParser {
         }
       }
 
-      mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters, provenance);
+      try {
+        mergeUrlParametersIntoConfiguration(fileConnectionConfiguration, urlParameters, provenance);
+      } catch (SFException e) {
+        throw new SnowflakeSQLException(
+            e.getQueryId(), e, e.getSqlState(), e.getVendorCode(), e.getParams());
+      }
 
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
@@ -159,72 +165,14 @@ public class SFConnectionConfigParser {
   private static void mergeUrlParametersIntoConfiguration(
       Map<String, String> fileConfig,
       Map<String, String> urlParameters,
-      Map<String, String> provenance) {
+      Map<String, String> provenance)
+      throws SFException {
     for (Map.Entry<String, String> entry : urlParameters.entrySet()) {
       String key = entry.getKey();
       if ("connectionName".equalsIgnoreCase(key)) {
         continue;
       }
-      putResolvingAliases(fileConfig, key, entry.getValue(), provenance, "URL");
-    }
-  }
-
-  /**
-   * Put a key/value into the map, removing any existing entry that resolves to the same
-   * SFSessionProperty under a different key name. This prevents "duplicate connection property"
-   * errors when e.g. the TOML uses "database" and the URL uses alias "db".
-   */
-  public static void putResolvingAliases(Map<String, String> map, String key, String value) {
-    putResolvingAliases(map, key, value, null, null);
-  }
-
-  /**
-   * Put a key/value into the map with provenance tracking. When provenance is non-null, records the
-   * source of the key and notes any alias conflict that was resolved.
-   */
-  public static void putResolvingAliases(
-      Map<String, String> map,
-      String key,
-      String value,
-      Map<String, String> provenance,
-      String source) {
-    String conflictingKey = null;
-    for (String existing : map.keySet()) {
-      if (existing.equalsIgnoreCase(key)) {
-        continue;
-      }
-      if (SFSessionProperty.resolvesToSameProperty(existing, key)) {
-        conflictingKey = existing;
-        break;
-      }
-    }
-
-    String overriddenSource = null;
-    if (conflictingKey != null) {
-      String oldValue = map.get(conflictingKey);
-      if (oldValue != null && !oldValue.equalsIgnoreCase(value)) {
-        logger.debug(
-            "For config item '{}' (alias of '{}') the values differ;"
-                + " the overriding value will be applied.",
-            key,
-            conflictingKey);
-      }
-      if (provenance != null) {
-        overriddenSource = provenance.remove(conflictingKey);
-      }
-      map.remove(conflictingKey);
-    } else if (provenance != null && map.containsKey(key)) {
-      overriddenSource = provenance.remove(key);
-    }
-
-    map.put(key, value);
-
-    if (provenance != null && source != null) {
-      if (overriddenSource != null) {
-        provenance.put(key, source + "(overrode " + overriddenSource + ")");
-      } else {
-        provenance.put(key, source);
-      }
+      SFSessionProperty.putResolvingAliases(fileConfig, key, entry.getValue(), provenance, "URL");
     }
   }
 

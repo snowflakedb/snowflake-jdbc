@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,8 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -529,6 +532,89 @@ public class SFConnectionConfigParserTest {
     Set<String> keys = data.getParams().stringPropertyNames();
     assertFalse(keys.contains("database"));
     assertTrue(keys.contains("db"));
+  }
+
+  // URL with both "db" and "database" (same-source alias duplicates) must throw
+  @Test
+  public void testUrlSameSourceAliasDuplicateThrows() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, null);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            SFConnectionConfigParser.buildConnectionParameters(
+                "jdbc:snowflake:auto?connectionName=default&db=URL_DB_A&database=URL_DB_B"));
+  }
+
+  // URL alias duplicates still throw even when TOML also has the same property
+  @Test
+  public void testUrlSameSourceAliasDuplicateThrowsEvenWithTomlPresent() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB_X");
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            SFConnectionConfigParser.buildConnectionParameters(
+                "jdbc:snowflake:auto?connectionName=default&db=URL_DB_A&database=URL_DB_B"));
+  }
+
+  // URL with case-variant duplicates ("database" and "DATABASE") must throw
+  @Test
+  public void testUrlCaseVariantDuplicateThrows() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithPortAndProtocol(null, null);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            SFConnectionConfigParser.buildConnectionParameters(
+                "jdbc:snowflake:auto?connectionName=default&database=URL_DB_A&DATABASE=URL_DB_B"));
+  }
+
+  // Cross-source case-insensitive override: TOML "database" overridden by URL "DATABASE"
+  @Test
+  public void testCrossSourceCaseInsensitiveOverride() throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB_X");
+
+    ConnectionParameters data =
+        SFConnectionConfigParser.buildConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&DATABASE=URL_DB_A");
+    assertNotNull(data);
+    assertEquals("URL_DB_A", data.getParams().get("DATABASE"));
+    assertNull(data.getParams().get("database"));
+  }
+
+  // Non-String PrivateKey in Properties is preserved through the three-way merge
+  @Test
+  public void testNonStringPrivateKeyPreservedInThreeWayMerge() throws Exception {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB_X");
+
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+    keyGen.initialize(2048);
+    PrivateKey mockKey = keyGen.generateKeyPair().getPrivate();
+
+    Properties info = new Properties();
+    info.put("privateKey", mockKey);
+    info.setProperty("db", "PROP_DB_A");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&tracing=WARNING", info);
+    assertNotNull(data);
+    assertSame(mockKey, data.getParams().get("privateKey"));
+    assertEquals("PROP_DB_A", data.getParams().get("db"));
+    assertNull(data.getParams().get("database"));
+    assertEquals("WARNING", data.getParams().get("tracing"));
+    assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
   private void prepareTomlWithDatabase(String databaseValue) throws IOException {
