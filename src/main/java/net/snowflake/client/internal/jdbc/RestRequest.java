@@ -59,6 +59,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
@@ -1444,6 +1445,16 @@ public class RestRequest {
         if (response == null || response.getStatusLine().getStatusCode() != 200) {
           logger.error(
               "Error executing request: {}", httpExecutingContext.getRequestInfoScrubbed());
+
+          // Buffer the response entity in memory so it can be consumed more than once.
+          // Both checkForDPoPNonceError(..) and SnowflakeUtil.logResponseDetails(..) read
+          // the body; without buffering, the first reader closes the underlying stream
+          // and the second silently fails (see SNOW-3388174 / GitHub issue #2584).
+          if (response != null
+              && response.getEntity() != null
+              && !response.getEntity().isRepeatable()) {
+            response.setEntity(new BufferedHttpEntity(response.getEntity()));
+          }
 
           if (response != null
               && response.getStatusLine().getStatusCode() == 400
