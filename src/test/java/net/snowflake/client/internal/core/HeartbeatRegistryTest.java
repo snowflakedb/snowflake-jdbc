@@ -247,6 +247,19 @@ public class HeartbeatRegistryTest {
   }
 
   @Test
+  public void testAddSession_AfterShutdown_SkipsHeartbeatInsteadOfThrowing() {
+    registry.addSession(mockSession1, 60, 10);
+    assertEquals(1, registry.getActiveThreadCount());
+
+    registry.shutdown();
+    assertEquals(0, registry.getActiveThreadCount());
+
+    assertDoesNotThrow(() -> registry.addSession(mockSession2, 60, 10));
+    assertEquals(0, registry.getActiveThreadCount());
+    assertEquals(0, registry.getSessionCountForInterval(10));
+  }
+
+  @Test
   public void testShutdown_CleansUpAllThreads() {
     registry.addSession(mockSession1, 60, 10);
     registry.addSession(mockSession2, 14400, 3600);
