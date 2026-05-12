@@ -135,7 +135,10 @@ public class HeartbeatRegistry {
           "Heartbeat frequency must be positive: " + heartbeatFrequencyInSecs);
     }
     if (isShutdown) {
-      throw new IllegalStateException("Cannot add session to shutdown HeartbeatRegistry");
+      logger.info(
+          "HeartbeatRegistry is shut down (JVM exiting); skipping heartbeat registration for session."
+              + " Session will function normally but won't be refreshed.");
+      return;
     }
 
     // Calculate required interval: min of requested frequency and 1/4 of token validity
@@ -154,7 +157,10 @@ public class HeartbeatRegistry {
     // Synchronize thread creation to prevent race conditions with limit check
     synchronized (this) {
       if (isShutdown) {
-        throw new IllegalStateException("Cannot add session to shutdown HeartbeatRegistry");
+        logger.info(
+            "HeartbeatRegistry is shut down (JVM exiting); skipping heartbeat registration for session."
+                + " Session will function normally but won't be refreshed.");
+        return;
       }
       // Check thread count limit
       if (threads.size() >= MAX_HEARTBEAT_THREADS && !threads.containsKey(requiredInterval)) {
