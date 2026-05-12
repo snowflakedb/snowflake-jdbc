@@ -891,7 +891,12 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
       throw new IllegalArgumentException("UploadStreamConfig cannot be null");
     }
     uploadStreamInternal(
-        stageName, config.getDestPrefix(), inputStream, destFileName, config.isCompressData());
+        stageName,
+        config.getDestPrefix(),
+        inputStream,
+        destFileName,
+        config.isCompressData(),
+        config.getFileBackedBufferThreshold());
   }
 
   /**
@@ -912,7 +917,7 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   public void compressAndUploadStream(
       String stageName, String destPrefix, InputStream inputStream, String destFileName)
       throws SQLException {
-    uploadStreamInternal(stageName, destPrefix, inputStream, destFileName, true);
+    uploadStreamInternal(stageName, destPrefix, inputStream, destFileName, true, null);
   }
 
   /**
@@ -930,6 +935,9 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
    * @param inputStream input stream from which the data will be uploaded
    * @param destFileName destination file name to use
    * @param compressData whether compression is requested fore uploading data
+   * @param fileBackedBufferThreshold threshold (in bytes) at which the internal buffer used for
+   *     compression and digest computation switches from heap memory to a temp file on disk; pass
+   *     {@code null} to use the driver default
    * @throws SQLException raises if any error occurs
    */
   private void uploadStreamInternal(
@@ -937,7 +945,8 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
       String destPrefix,
       InputStream inputStream,
       String destFileName,
-      boolean compressData)
+      boolean compressData,
+      Integer fileBackedBufferThreshold)
       throws SQLException {
     logger.debug(
         "Upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
@@ -991,6 +1000,9 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
+    if (fileBackedBufferThreshold != null) {
+      transferAgent.setFileBackedBufferThreshold(fileBackedBufferThreshold);
+    }
     transferAgent.execute();
 
     stmt.close();
