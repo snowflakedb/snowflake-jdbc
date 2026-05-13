@@ -68,7 +68,7 @@ public final class AutoConfigurationHelper {
    */
   /**
    * Internal key used to carry deferred log messages on the Properties object. The value is a
-   * List&lt;String&gt; (not a String), so it won't interfere with session property parsing.
+   * {@code List<String>} (not a String), so it won't interfere with session property parsing.
    * ConnectionParameters is discarded by ConnectionFactory before reaching
    * DefaultSFConnectionHandler, so we stash the messages on Properties which does flow through.
    */
