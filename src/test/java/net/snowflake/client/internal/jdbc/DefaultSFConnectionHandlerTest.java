@@ -3,6 +3,7 @@ package net.snowflake.client.internal.jdbc;
 import static net.snowflake.client.api.http.HttpHeadersCustomizer.HTTP_HEADER_CUSTOMIZERS_PROPERTY_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.core.SFSession;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -113,5 +115,23 @@ class DefaultSFConnectionHandlerTest {
 
     verify(mockSession).setHttpHeadersCustomizers(listCaptor.capture());
     assertTrue(listCaptor.getValue().isEmpty());
+  }
+
+  // Verifies deferred log messages are removed from Properties after replay
+  @Test
+  void testReplayDeferredLogMessagesRemovesKeyFromProperties() throws SQLException {
+    List<String> msgs = Arrays.asList("msg1", "msg2");
+    properties.put(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY, msgs);
+
+    connectionHandler.initialize(connectString, "", "", properties);
+
+    assertNull(properties.get(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY));
+  }
+
+  // Verifies no error when Properties has no deferred messages
+  @Test
+  void testReplayDeferredLogMessagesNoop() throws SQLException {
+    connectionHandler.initialize(connectString, "", "", properties);
+    assertNull(properties.get(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY));
   }
 }

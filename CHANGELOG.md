@@ -10,6 +10,7 @@
       - Enhancement: now parameters passed as `Properties()` are also considered when building connection. For conflicting items defined in multiple places, priority is: Properties > JDBC URL > `connections.toml`
       - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
     - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
+    - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
     - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close. (snowflakedb/snowflake-jdbc#2620)
 
 - v4.2.0
