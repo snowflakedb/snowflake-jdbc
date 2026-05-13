@@ -713,6 +713,14 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     } else {
       try {
         sfSession.callHeartBeat(timeout);
+      } catch (InterruptedException ex) {
+        // The heartbeat call was interrupted (either directly, or because the
+        // executor running it observed the interrupt). Restore the interrupt
+        // flag so callers - notably connection pools and Thread shutdown
+        // mechanisms - can still react to the interruption rather than
+        // silently losing it.
+        Thread.currentThread().interrupt();
+        return false;
       } catch (SFException | Exception ex) {
         return false;
       }

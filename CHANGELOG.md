@@ -1,18 +1,15 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-
 - v4.2.1-SNAPSHOT
+    - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
     - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).
     - Fixed path traversal via server-controlled filenames in `SnowflakeFileTransferAgent` GET destination filename derivation; backslash separators are now stripped and traversal/absolute basenames are rejected (snowflakedb/snowflake-jdbc#2622).
-<<<<<<< SNOW-3478870-dont-throw-when-adding-session-to-shutdown-heartbeatregistry
-    - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
-=======
     - Further changes regarding auto-configuration (`jdbc:snowflake:auto` style connection config) (snowflakedb/snowflake-jdbc#2625):
       - Fixed bug leading to `'Connection property specified more than once: DB'` error, when both `connections.toml` (`database`) and JDBC URL (`db`) defined database 
       - Enhancement: now parameters passed as `Properties()` are also considered when building connection. For conflicting items defined in multiple places, priority is: Properties > JDBC URL > `connections.toml`
       - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
->>>>>>> master
+    - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
 
 - v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
