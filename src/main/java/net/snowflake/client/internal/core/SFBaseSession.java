@@ -1320,11 +1320,21 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Marker-aware overload for internal call paths. Subclasses must invoke {@link
-   * #closeS3EventLoopGroup()} from their implementation so the per-session shared S3 Netty
-   * event-loop group is released.
+   * Marker-aware overload for internal call paths. Releases the per-session shared S3 Netty
+   * event-loop group after the subclass-specific close logic runs, regardless of whether that logic
+   * throws.
    */
-  public abstract void close(InternalCallMarker internalCallMarker)
+  public final void close(InternalCallMarker internalCallMarker)
+      throws SFException, SnowflakeSQLException {
+    try {
+      doClose(internalCallMarker);
+    } finally {
+      closeS3EventLoopGroup();
+    }
+  }
+
+  /** Subclass-specific close logic invoked by {@link #close(InternalCallMarker)}. */
+  protected abstract void doClose(InternalCallMarker internalCallMarker)
       throws SFException, SnowflakeSQLException;
 
   /**
