@@ -618,6 +618,69 @@ public class SFConnectionConfigParserTest {
     assertEquals("TOML_USER", data.getParams().get("user"));
   }
 
+  // Verifies deferred log messages are populated and provenance is sorted alphabetically
+  @Test
+  public void testDeferredLogMessagesAndSortedProvenance()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    prepareTomlWithDatabase("TOML_DB", "TOML_WH", "TOML_ROLE");
+
+    Properties info = new Properties();
+    info.setProperty("warehouse", "PROP_WH");
+    info.setProperty("schema", "PROP_SCHEMA");
+
+    ConnectionParameters data =
+        AutoConfigurationHelper.resolveConnectionParameters(
+            "jdbc:snowflake:auto?connectionName=default&db=URL_DB&tracing=WARNING", info);
+    assertNotNull(data);
+
+    List<String> deferred = data.getDeferredLogMessages();
+    assertNotNull(deferred);
+    assertFalse(deferred.isEmpty());
+
+    assertTrue(deferred.stream().anyMatch(m -> m.contains("Attempting to load the configuration")));
+    assertTrue(
+        deferred.stream().anyMatch(m -> m.contains("Reading connection parameters from file")));
+    assertTrue(deferred.stream().anyMatch(m -> m.contains("found in connections.toml")));
+    assertTrue(
+        deferred.stream()
+            .anyMatch(m -> m.contains("Url created using parameters from connection")));
+    assertTrue(deferred.stream().anyMatch(m -> m.contains("Autoconfiguration is enabled")));
+
+    String provenanceLine =
+        deferred.stream()
+            .filter(m -> m.contains("Auto-configuration resolved properties"))
+            .findFirst()
+            .orElse(null);
+    assertNotNull(provenanceLine);
+
+    // Provenance must be sorted alphabetically by key
+    int accountIdx = provenanceLine.indexOf("account(");
+    int dbIdx = provenanceLine.indexOf("db(");
+    int passwordIdx = provenanceLine.indexOf("password(");
+    int roleIdx = provenanceLine.indexOf("role(");
+    int schemaIdx = provenanceLine.indexOf("schema(");
+    int tracingIdx = provenanceLine.indexOf("tracing(");
+    int userIdx = provenanceLine.indexOf("user(");
+    int warehouseIdx = provenanceLine.indexOf("warehouse(");
+    assertTrue(accountIdx < dbIdx);
+    assertTrue(dbIdx < passwordIdx);
+    assertTrue(passwordIdx < roleIdx);
+    assertTrue(roleIdx < schemaIdx);
+    assertTrue(schemaIdx < tracingIdx);
+    assertTrue(tracingIdx < userIdx);
+    assertTrue(userIdx < warehouseIdx);
+
+    // Verify provenance content
+    assertTrue(provenanceLine.contains("db(URL(overrode TOML))"));
+    assertTrue(provenanceLine.contains("warehouse(PROP(overrode TOML))"));
+    assertTrue(provenanceLine.contains("schema(PROP)"));
+    assertTrue(provenanceLine.contains("tracing(URL)"));
+    assertTrue(provenanceLine.contains("role(TOML)"));
+    assertTrue(provenanceLine.contains("account(TOML)"));
+  }
+
   private void prepareTomlWithDatabase(String databaseValue) throws IOException {
     prepareTomlWithDatabase(databaseValue, null, null, null);
   }
