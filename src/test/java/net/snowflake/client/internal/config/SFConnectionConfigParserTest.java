@@ -635,9 +635,7 @@ public class SFConnectionConfigParserTest {
             "jdbc:snowflake:auto?connectionName=default&db=URL_DB&tracing=WARNING", info);
     assertNotNull(data);
 
-    @SuppressWarnings("unchecked")
-    List<String> deferred =
-        (List<String>) data.getParams().get(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY);
+    List<String> deferred = data.getDeferredLogMessages();
     assertNotNull(deferred);
     assertFalse(deferred.isEmpty());
 

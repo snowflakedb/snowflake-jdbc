@@ -67,10 +67,10 @@ public final class AutoConfigurationHelper {
    * @throws SnowflakeSQLException if auto-configuration is requested but fails
    */
   /**
-   * Internal key used to carry deferred log messages on the Properties object. The value is a
-   * {@code List<String>} (not a String), so it won't interfere with session property parsing.
-   * ConnectionParameters is discarded by ConnectionFactory before reaching
-   * DefaultSFConnectionHandler, so we stash the messages on Properties which does flow through.
+   * Internal key used by ConnectionFactory to carry deferred log messages on the Properties object.
+   * The value is a {@code List<String>} (not a String), so it won't interfere with session property
+   * parsing. ConnectionParameters is discarded before reaching DefaultSFConnectionHandler, so
+   * ConnectionFactory transfers the messages onto Properties which does flow through.
    */
   public static final String DEFERRED_LOG_MESSAGES_KEY = "_snowflake.internal.deferredLogMessages";
 
@@ -107,7 +107,9 @@ public final class AutoConfigurationHelper {
 
       logAutoConfigProvenance(provenance, deferredMessages);
 
-      params.getParams().put(DEFERRED_LOG_MESSAGES_KEY, deferredMessages);
+      for (String msg : deferredMessages) {
+        params.addDeferredLogMessage(msg);
+      }
 
       return params;
     } else {

@@ -54,11 +54,6 @@ public class SFConnectionConfigParser {
     return buildConnectionParameters(connectionUrl, new HashMap<>(), null);
   }
 
-  public static ConnectionParameters buildConnectionParameters(
-      String connectionUrl, Map<String, String> provenance) throws SnowflakeSQLException {
-    return buildConnectionParameters(connectionUrl, provenance, null);
-  }
-
   /**
    * Build connection parameters from URL and TOML file, optionally tracking provenance. When
    * provenance is non-null, each key's source ("TOML" or "URL") is recorded as it is resolved. When
