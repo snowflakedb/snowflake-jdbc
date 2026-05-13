@@ -1,9 +1,12 @@
 package net.snowflake.client.internal.driver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
@@ -63,17 +66,30 @@ public final class AutoConfigurationHelper {
    * @return ConnectionParameters with resolved configuration
    * @throws SnowflakeSQLException if auto-configuration is requested but fails
    */
+  /**
+   * Internal key used to carry deferred log messages on the Properties object. The value is a
+   * List&lt;String&gt; (not a String), so it won't interfere with session property parsing.
+   * ConnectionParameters is discarded by ConnectionFactory before reaching
+   * DefaultSFConnectionHandler, so we stash the messages on Properties which does flow through.
+   */
+  public static final String DEFERRED_LOG_MESSAGES_KEY = "_snowflake.internal.deferredLogMessages";
+
   public static ConnectionParameters resolveConnectionParameters(String url, Properties info)
       throws SnowflakeSQLException {
 
     if (isAutoConfigurationUrl(url)) {
-      logger.debug(
-          "JDBC connection initializing with URL '{}'. Autoconfiguration is enabled.",
-          AUTO_CONNECTION_PREFIX);
+      List<String> deferredMessages = new ArrayList<>();
+
+      String initMsg =
+          String.format(
+              "JDBC connection initializing with URL '%s'. Autoconfiguration is enabled.",
+              AUTO_CONNECTION_PREFIX);
+      logger.debug(initMsg);
+      deferredMessages.add(initMsg);
 
       Map<String, String> provenance = new HashMap<>();
       ConnectionParameters params =
-          SFConnectionConfigParser.buildConnectionParameters(url, provenance);
+          SFConnectionConfigParser.buildConnectionParameters(url, provenance, deferredMessages);
       if (params == null) {
         throw new SnowflakeSQLException(
             "Unavailable connection configuration parameters expected for "
@@ -89,7 +105,9 @@ public final class AutoConfigurationHelper {
         }
       }
 
-      logAutoConfigProvenance(provenance);
+      logAutoConfigProvenance(provenance, deferredMessages);
+
+      params.getParams().put(DEFERRED_LOG_MESSAGES_KEY, deferredMessages);
 
       return params;
     } else {
@@ -132,15 +150,18 @@ public final class AutoConfigurationHelper {
 
   // Only covers the jdbc:snowflake:auto path. The standard jdbc:snowflake:// path merges
   // URL+Properties in SnowflakeConnectString.parse without provenance tracking.
-  private static void logAutoConfigProvenance(Map<String, String> provenance) {
-    if (!logger.isDebugEnabled()) {
-      return;
-    }
+  private static void logAutoConfigProvenance(
+      Map<String, String> provenance, List<String> deferredMessages) {
     StringJoiner sj = new StringJoiner(", ");
-    for (Map.Entry<String, String> entry : provenance.entrySet()) {
+    for (Map.Entry<String, String> entry : new TreeMap<>(provenance).entrySet()) {
       sj.add(entry.getKey() + "(" + entry.getValue() + ")");
     }
-    logger.debug("Auto-configuration resolved properties: [{}]", sj.toString());
+    String provenanceMsg =
+        String.format("Auto-configuration resolved properties: [%s]", sj.toString());
+    logger.debug(provenanceMsg);
+    if (deferredMessages != null) {
+      deferredMessages.add(provenanceMsg);
+    }
     provenance.clear();
   }
 }

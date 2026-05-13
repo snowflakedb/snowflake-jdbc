@@ -51,24 +51,37 @@ public class SFConnectionConfigParser {
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
-    return buildConnectionParameters(connectionUrl, new HashMap<>());
+    return buildConnectionParameters(connectionUrl, new HashMap<>(), null);
+  }
+
+  public static ConnectionParameters buildConnectionParameters(
+      String connectionUrl, Map<String, String> provenance) throws SnowflakeSQLException {
+    return buildConnectionParameters(connectionUrl, provenance, null);
   }
 
   /**
    * Build connection parameters from URL and TOML file, optionally tracking provenance. When
-   * provenance is non-null, each key's source ("TOML" or "URL") is recorded as it is resolved.
+   * provenance is non-null, each key's source ("TOML" or "URL") is recorded as it is resolved. When
+   * deferredMessages is non-null, debug log messages are also buffered for later replay.
    */
   public static ConnectionParameters buildConnectionParameters(
-      String connectionUrl, Map<String, String> provenance) throws SnowflakeSQLException {
+      String connectionUrl, Map<String, String> provenance, List<String> deferredMessages)
+      throws SnowflakeSQLException {
     Map<String, String> urlParameters = parseAutoConfigJdbcUrlParameters(connectionUrl);
     String defaultConnectionName = urlParameters.get("connectionName");
     if (isBlank(defaultConnectionName)) {
       defaultConnectionName =
           Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
     }
-    logger.debug("Attempting to load the configuration {} from toml file.", defaultConnectionName);
+    String attemptMsg =
+        String.format(
+            "Attempting to load the configuration %s from toml file.", defaultConnectionName);
+    logger.debug(attemptMsg);
+    if (deferredMessages != null) {
+      deferredMessages.add(attemptMsg);
+    }
     Map<String, String> fileConnectionConfiguration =
-        loadDefaultConnectionConfiguration(defaultConnectionName);
+        loadDefaultConnectionConfiguration(defaultConnectionName, deferredMessages);
 
     if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
       if (provenance != null) {
@@ -88,7 +101,12 @@ public class SFConnectionConfigParser {
       connectionProperties.putAll(fileConnectionConfiguration);
 
       String url = createUrl(fileConnectionConfiguration);
-      logger.debug("Url created using parameters from connection configuration file: {}", url);
+      String urlMsg =
+          String.format("Url created using parameters from connection configuration file: %s", url);
+      logger.debug(urlMsg);
+      if (deferredMessages != null) {
+        deferredMessages.add(urlMsg);
+      }
 
       if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
           && fileConnectionConfiguration.get("token") == null) {
@@ -177,7 +195,7 @@ public class SFConnectionConfigParser {
   }
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
-      String defaultConnectionName) throws SnowflakeSQLException {
+      String defaultConnectionName, List<String> deferredMessages) throws SnowflakeSQLException {
     String configDirectory = systemGetEnv(SNOWFLAKE_HOME_KEY);
     if (configDirectory == null) {
       String homeDir = systemGetProperty("user.home");
@@ -190,18 +208,33 @@ public class SFConnectionConfigParser {
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
 
     if (Files.exists(configFilePath)) {
-      logger.debug(
-          "Reading connection parameters from file {} using key: {}",
-          configFilePath,
-          defaultConnectionName);
+      String readMsg =
+          String.format(
+              "Reading connection parameters from file %s using key: %s",
+              configFilePath, defaultConnectionName);
+      logger.debug(readMsg);
+      if (deferredMessages != null) {
+        deferredMessages.add(readMsg);
+      }
       Map<String, Map> parametersMap = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
       if (defaultConnectionParametersMap == null) {
-        logger.debug("The Connection {} not found in connections.toml.", defaultConnectionName);
+        String notFoundMsg =
+            String.format(
+                "The Connection %s not found in connections.toml.", defaultConnectionName);
+        logger.debug(notFoundMsg);
+        if (deferredMessages != null) {
+          deferredMessages.add(notFoundMsg);
+        }
         throw new SnowflakeSQLException(
             "The Connection " + defaultConnectionName + " not found in connections.toml file.");
       } else {
-        logger.debug("The Connection {} found in connections.toml.", defaultConnectionName);
+        String foundMsg =
+            String.format("The Connection %s found in connections.toml.", defaultConnectionName);
+        logger.debug(foundMsg);
+        if (deferredMessages != null) {
+          deferredMessages.add(foundMsg);
+        }
       }
       return defaultConnectionParametersMap;
     } else {
