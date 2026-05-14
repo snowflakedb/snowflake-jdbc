@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.2.1-SNAPSHOT
+    - Fix StreamLoader vector metadata detection to handle empty metadata result sets safely and avoid aborting load jobs on non-critical metadata lookup failures.
     - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
     - Fixed non-retryable HTTP 400 response bodies always being logged as `"Failed to read content due to exception: Attempted read from closed stream"`. The response entity is now buffered before `RestRequest#checkForDPoPNonceError` and `SnowflakeUtil#logResponseDetails` consume it so both readers see the body (snowflakedb/snowflake-jdbc#2631).
     - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).

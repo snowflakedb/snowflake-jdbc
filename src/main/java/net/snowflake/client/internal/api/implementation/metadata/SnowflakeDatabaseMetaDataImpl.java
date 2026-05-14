@@ -3722,9 +3722,27 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     try {
       resultSet = statement.executeQuery(sql);
     } catch (SnowflakeSQLException e) {
+      if (metadataType == GET_COLUMNS) {
+        logger.warn(
+            "DatabaseMetaData.getColumns received SQL exception and may return empty result: "
+                + "sqlState={}, errorCode={}, queryId={}, message={}, sql={}",
+            e.getSQLState(),
+            e.getErrorCode(),
+            e.getQueryId(),
+            e.getMessage(),
+            sql);
+      }
       if (e.getSQLState().equals(SqlState.NO_DATA)
           || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)
           || e.getMessage().contains("Operation is not supported in reader account")) {
+        if (metadataType == GET_COLUMNS) {
+          logger.warn(
+              "DatabaseMetaData.getColumns normalized SQL exception to empty result set: "
+                  + "sqlState={}, queryId={}, sql={}",
+              e.getSQLState(),
+              e.getQueryId(),
+              sql);
+        }
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResult(
             metadataType, statement, e.getQueryId());
       }

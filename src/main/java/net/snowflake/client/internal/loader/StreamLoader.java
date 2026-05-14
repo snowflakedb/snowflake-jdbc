@@ -57,6 +57,9 @@ public class StreamLoader implements Loader, Runnable {
   /** Default batch row size */
   private static final long DEFAULT_BATCH_ROW_SIZE = -1L;
 
+  private static final String FAIL_ON_MISSING_COLUMN_METADATA_KEY =
+      SYSTEM_PARAMETER_PREFIX + "failOnMissingColumnMetadata";
+
   public static DatabaseMetaData metadata;
 
   private BufferStage _stage = null;
@@ -632,24 +635,47 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   public void setVectorColumns() {
+    _vectorColumnsNameAndSize.clear();
+    if (_columns == null || _columns.isEmpty()) {
+      return;
+    }
+
     try {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
         try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
-          rs.next();
+          if (!rs.next()) {
+            String message =
+                String.format(
+                    "No metadata row returned for column %s.%s.%s.%s",
+                    _database, _schema, _table, col);
+            logger.warn(message);
+            if (shouldFailOnMissingColumnMetadata()) {
+              throw new Loader.ConnectionError(message);
+            }
+            continue;
+          }
           if (isColumnTypeVector(rs.getString(6))) {
             _vectorColumnsNameAndSize.put(col, rs.getInt(7));
           }
         }
       }
     } catch (SQLException e) {
-      logger.error(e.getMessage(), e);
-      abort(new Loader.ConnectionError(Utils.getCause(e)));
+      logger.warn(
+          "Failed to detect vector columns via metadata query. "
+              + "Vector column type casting will be skipped. Error: {}",
+          e.getMessage());
+      logger.debug("setVectorColumns metadata query failure details", e);
+      _vectorColumnsNameAndSize.clear();
     }
   }
 
   private boolean isColumnTypeVector(String col) {
     return col != null && col.equalsIgnoreCase("vector");
+  }
+
+  private boolean shouldFailOnMissingColumnMetadata() {
+    return Boolean.parseBoolean(systemGetProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY));
   }
 
   @Override

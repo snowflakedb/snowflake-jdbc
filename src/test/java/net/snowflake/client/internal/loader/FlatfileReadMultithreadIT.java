@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 @Tag(TestTags.LOADER)
 public class FlatfileReadMultithreadIT {
   private final int NUM_RECORDS = 100000;
+  private static final String FAIL_ON_MISSING_COLUMN_METADATA_KEY =
+      "net.snowflake.client.loader.failOnMissingColumnMetadata";
 
   private static final String TARGET_STAGE = "STAGE_MULTITHREAD_LOADER";
   private static String TARGET_SCHEMA;
@@ -63,6 +65,9 @@ public class FlatfileReadMultithreadIT {
   @Test
   public void testIssueSimpleDateFormat() throws Throwable {
     final String targetTable = "TABLE_ISSUE_SIMPLEDATEFORMAT";
+    String originalFailOnMissingMetadataValue =
+        System.getProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY);
+    System.setProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY, "true");
     try (Connection testConnection = AbstractDriverIT.getConnection();
         Statement statement = testConnection.createStatement()) {
       try {
@@ -100,6 +105,12 @@ public class FlatfileReadMultithreadIT {
       } finally {
         statement.execute(
             String.format("DROP TABLE IF EXISTS %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable));
+        if (originalFailOnMissingMetadataValue == null) {
+          System.clearProperty(FAIL_ON_MISSING_COLUMN_METADATA_KEY);
+        } else {
+          System.setProperty(
+              FAIL_ON_MISSING_COLUMN_METADATA_KEY, originalFailOnMissingMetadataValue);
+        }
       }
     }
   }
