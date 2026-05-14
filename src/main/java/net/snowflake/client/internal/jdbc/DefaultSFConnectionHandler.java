@@ -38,6 +38,7 @@ import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.core.SFStatement;
+import net.snowflake.client.internal.driver.AutoConfigurationHelper;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.jdbc.util.DriverUtil;
@@ -143,6 +144,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initSessionProperties(conStr, appID, appVersion);
       setClientConfig();
       initLogger();
+      replayDeferredLogMessages(properties);
       initHttpHeaderCustomizers(properties);
       logger.debug("Trying to establish session, JDBC driver: {}", DriverUtil.getJdbcJarname());
       if (!skipOpen) {
@@ -227,6 +229,26 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         logger.debug(
             "Instantiating JDK14Logger with level: {}, output path: {}", logLevel, logPattern);
       }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void replayDeferredLogMessages(Properties properties) {
+    if (properties == null) {
+      return;
+    }
+    Object deferredObj = properties.remove(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY);
+    if (!(deferredObj instanceof List)) {
+      return;
+    }
+    // Only replay under JDK14Logger: under SLF4J/external JUL, the immediate log calls already
+    // reached the correct destination, so replaying would produce duplicates.
+    if (!(logger instanceof JDK14Logger)) {
+      return;
+    }
+    List<String> deferredMessages = (List<String>) deferredObj;
+    for (String msg : deferredMessages) {
+      logger.debug(msg);
     }
   }
 

@@ -735,7 +735,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public void close(InternalCallMarker internalCallMarker) {}
+    protected void doClose(InternalCallMarker internalCallMarker) {}
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
