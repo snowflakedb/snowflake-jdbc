@@ -7,7 +7,7 @@
       <id>snowflake-internal-artifactory</id>
       <name>Snowflake internal Artifactory (Maven Central proxy)</name>
       <url>https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual</url>
-      <mirrorOf>*</mirrorOf>
+      <mirrorOf>central</mirrorOf>
     </mirror>
   </mirrors>
 </settings>
