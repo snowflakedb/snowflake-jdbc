@@ -53,6 +53,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e RUNNER_TRACKING_ID \
         -e JOB_NAME \
         -e BUILD_NUMBER \
+        -e JENKINS_HOME \
         -e JDBC_TEST_SUITES \
         -e ADDITIONAL_MAVEN_PROFILE \
         -e CLOUD_PROVIDER \

@@ -9,10 +9,12 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$( dirname "${THIS_DIR}")"
 WORKSPACE=${WORKSPACE:-${JDBC_ROOT}}
 
+source "$JDBC_ROOT/ci/maven_jenkins_settings.sh"
+
 echo "[Info] Starting revocation validation tests"
 
 # Detect JDBC version using Maven Wrapper (reliable, handles property interpolation)
-JDBC_VERSION=$(cd "$JDBC_ROOT" && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
+JDBC_VERSION=$(cd "$JDBC_ROOT" && ./mvnw $MVN_SETTINGS_ARG help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
 if [ -z "$JDBC_VERSION" ]; then
     echo "[Error] Failed to determine JDBC version from pom.xml"
     exit 1
@@ -22,7 +24,7 @@ echo "[Info] JDBC driver version: $JDBC_VERSION"
 # Ensure parent POM is also in ~/.m2 (needed for Maven dependency resolution)
 if [ ! -f "$HOME/.m2/repository/net/snowflake/snowflake-jdbc-parent/$JDBC_VERSION/"*.pom ]; then
     echo "[Info] Installing parent POM to local Maven repo..."
-    if ! (cd "$JDBC_ROOT" && ./mvnw install -N -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
+    if ! (cd "$JDBC_ROOT" && ./mvnw $MVN_SETTINGS_ARG install -N -f parent-pom.xml -Dmaven.test.skip=true -q --batch-mode); then
         echo "[Error] Failed to install parent POM"
         exit 1
     fi
