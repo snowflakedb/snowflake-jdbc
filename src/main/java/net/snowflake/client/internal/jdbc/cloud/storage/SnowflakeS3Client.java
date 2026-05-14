@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.security.InvalidKeyException;
@@ -56,6 +57,7 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
@@ -89,7 +91,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   protected static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
 
   private int encryptionKeySize = 0; // used for PUTs
-  private S3AsyncClient amazonClient = null;
+  private volatile S3AsyncClient amazonClient = null;
   private RemoteStoreFileEncryptionMaterial encMat = null;
   private ClientConfiguration clientConfig = null;
   private Properties proxyProperties = null;
@@ -201,14 +203,27 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     // Explicitly force to use virtual address style
     clientBuilder.forcePathStyle(false);
 
-    clientBuilder.httpClientBuilder(
+    NettyNioAsyncHttpClient.Builder httpClientBuilder =
         NettyNioAsyncHttpClient.builder()
             .maxConcurrency(clientConfig.getMaxConnections())
             .connectionAcquisitionTimeout(Duration.ofSeconds(60))
             .proxyConfiguration(proxyConfiguration)
             .connectionTimeout(Duration.ofMillis(clientConfig.connectionTimeout))
             .readTimeout(Duration.ofMillis(clientConfig.socketTimeout))
-            .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout)));
+            .writeTimeout(Duration.ofMillis(clientConfig.socketTimeout));
+
+    // Pass an externally-managed event-loop group so per-PUT close() skips Netty's 2 s
+    // shutdownGracefully quiet period. Only session-scoped callers benefit: the group is
+    // tied to session close so Netty threads don't outlive the session's classloader
+    // (matters in servlet / OSGi containers with hot redeploy). Sessionless callers
+    // (uploadWithoutConnection) keep the SDK-managed default group.
+    if (session != null) {
+      S3EventLoopGroupHolder holder =
+          session.getOrCreateS3EventLoopGroup(S3EventLoopGroupHolder::create);
+      httpClientBuilder.eventLoopGroup(holder.group);
+    }
+
+    clientBuilder.httpClientBuilder(httpClientBuilder);
     clientBuilder.multipartEnabled(true);
     clientBuilder.multipartConfiguration(
         MultipartConfiguration.builder().thresholdInBytes(16L * 1024 * 1024).build());
@@ -287,6 +302,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   /**
    * Renew the S3 client with fresh AWS credentials/access token
    *
+   * <p>The previous {@link S3AsyncClient} is closed once the new one is installed; any requests
+   * still in flight against it will be aborted. This is acceptable because renew is invoked when
+   * credentials have expired and outstanding requests against the old client would fail anyway.
+   *
    * @param stageCredentials a Map of new AWS credential properties, to refresh the client with (as
    *     returned by GS)
    * @throws SnowflakeSQLException if any error occurs
@@ -295,21 +314,42 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
     logger.debug("Renewing the Snowflake S3 client");
     // We renew the client with fresh credentials and with its original parameters
-    setupSnowflakeS3Client(
-        stageCredentials,
-        this.clientConfig,
-        this.encMat,
-        this.proxyProperties,
-        this.stageRegion,
-        this.stageEndPoint,
-        this.isClientSideEncrypted,
-        this.session);
+    S3AsyncClient previous = this.amazonClient;
+    try {
+      setupSnowflakeS3Client(
+          stageCredentials,
+          this.clientConfig,
+          this.encMat,
+          this.proxyProperties,
+          this.stageRegion,
+          this.stageEndPoint,
+          this.isClientSideEncrypted,
+          this.session);
+    } finally {
+      // Drain the previous client's channel pool if setup installed a new client. Skipping
+      // on the setup-throws path avoids closing a client this.amazonClient still points to.
+      if (previous != null && this.amazonClient != previous) {
+        try {
+          previous.close();
+        } catch (Exception ex) {
+          logger.debug("Failed to close previous S3AsyncClient on renew: {}", ex.toString());
+        }
+      }
+    }
   }
 
   @Override
   public void shutdown() {
     logger.debug("Shutting down the Snowflake S3 client");
-    amazonClient.close();
+    S3AsyncClient client = amazonClient;
+    amazonClient = null;
+    if (client != null) {
+      try {
+        client.close();
+      } catch (Exception ex) {
+        logger.debug("Failed to close S3AsyncClient on shutdown: {}", ex.toString());
+      }
+    }
   }
 
   @Override
@@ -1011,6 +1051,49 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           logger.warn("Failed to shut down S3 {} executor, forcing shutdown", name, e);
           executor.shutdownNow();
         }
+      }
+    }
+  }
+
+  /**
+   * Session-scoped wrapper around an {@link SdkEventLoopGroup} shared across every S3 PUT/GET in
+   * the session and torn down once at session close.
+   *
+   * <p>{@link #close()} uses reflection because of a shade asymmetry in the thin jar: Snowflake
+   * bytecode has {@code io.netty.*} relocated while the AWS SDK on the user's classpath does not,
+   * so {@code SdkEventLoopGroup.eventLoopGroup()} returns an instance whose runtime class name is
+   * the unshaded {@code io.netty.channel.EventLoopGroup}. A direct call would resolve against the
+   * shaded type at compile time and {@code NoSuchMethodError} at runtime. Reflection dispatches on
+   * the runtime class and bypasses the mismatch. Quiet period 0 (the user has stopped issuing
+   * PUT/GETs by session close) and a 1 s timeout — Netty drains and exits its own daemon threads
+   * asynchronously after this call returns. Containers that hot-redeploy a classloader within ~1 s
+   * of session close may still see Netty threads briefly outlive the classloader; this is a narrow
+   * window that the previous SDK-managed group made strictly worse.
+   */
+  static final class S3EventLoopGroupHolder implements AutoCloseable {
+    final SdkEventLoopGroup group;
+
+    private S3EventLoopGroupHolder(SdkEventLoopGroup group) {
+      this.group = group;
+    }
+
+    static S3EventLoopGroupHolder create() {
+      return new S3EventLoopGroupHolder(SdkEventLoopGroup.builder().build());
+    }
+
+    @Override
+    public void close() {
+      try {
+        Object eventLoopGroup = group.getClass().getMethod("eventLoopGroup").invoke(group);
+        eventLoopGroup
+            .getClass()
+            .getMethod("shutdownGracefully", long.class, long.class, TimeUnit.class)
+            .invoke(eventLoopGroup, 0L, 1L, TimeUnit.SECONDS);
+      } catch (InvocationTargetException ex) {
+        logger.debug(
+            "Failed to shut down shared S3 SdkEventLoopGroup cleanly", ex.getTargetException());
+      } catch (ReflectiveOperationException ex) {
+        logger.warn("Reflective shutdown of SdkEventLoopGroup failed (SDK shape changed?)", ex);
       }
     }
   }

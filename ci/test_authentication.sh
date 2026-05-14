@@ -19,6 +19,7 @@ gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $
 docker run \
   -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
   -v $WORKSPACE:/mnt/workspace \
+  -e JENKINS_HOME \
   --rm \
   artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/internal-production-docker-snowflake-virtual/docker/snowdrivers-test-external-browser-jdbc:4 \
   "/mnt/host/ci/container/test_authentication.sh"

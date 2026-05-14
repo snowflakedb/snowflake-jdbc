@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -62,6 +63,10 @@ public abstract class SFBaseSession {
   // Custom key-value map for other options values *not* defined in SFSessionProperties,
   // i.e., session-implementation specific
   private final Map<String, Object> customSessionProperties = new HashMap<>(1);
+
+  // Shared S3 Netty event-loop group; AutoCloseable to keep this base class AWS-free.
+  private AutoCloseable s3EventLoopGroup;
+  private boolean s3EventLoopGroupClosed;
   private SFConnectionHandler sfConnectionHandler;
   protected List<SFException> sqlWarnings = new ArrayList<>();
   // Unique Session ID
@@ -1314,9 +1319,65 @@ public abstract class SFBaseSession {
     close(null);
   }
 
-  /** Marker-aware overload for internal call paths. */
-  public abstract void close(InternalCallMarker internalCallMarker)
+  /**
+   * Marker-aware overload for internal call paths. Releases the per-session shared S3 Netty
+   * event-loop group after the subclass-specific close logic runs, regardless of whether that logic
+   * throws.
+   */
+  public final void close(InternalCallMarker internalCallMarker)
+      throws SFException, SnowflakeSQLException {
+    try {
+      doClose(internalCallMarker);
+    } finally {
+      closeS3EventLoopGroup();
+    }
+  }
+
+  /** Subclass-specific close logic invoked by {@link #close(InternalCallMarker)}. */
+  protected abstract void doClose(InternalCallMarker internalCallMarker)
       throws SFException, SnowflakeSQLException;
+
+  /**
+   * Lazily create (or return) the per-session shared S3 event-loop group. Throws if called after
+   * {@link #closeS3EventLoopGroup()} so we don't resurrect a group nothing will close.
+   *
+   * <p>Internal use: only the S3 storage client may call this. The generic parameter is an artefact
+   * of keeping this base class AWS-free; passing factories that produce different runtime types
+   * from the same session would silently return the first-installed type to later callers. The
+   * {@code factory} is invoked while holding this session's monitor and must not block or re-enter
+   * session APIs.
+   */
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends AutoCloseable> T getOrCreateS3EventLoopGroup(
+      Supplier<? extends T> factory) {
+    if (s3EventLoopGroupClosed) {
+      throw new IllegalStateException(
+          "Cannot create S3 event-loop group: session is already closed");
+    }
+    if (s3EventLoopGroup == null) {
+      s3EventLoopGroup = factory.get();
+    }
+    return (T) s3EventLoopGroup;
+  }
+
+  /**
+   * Permanently marks the session as closed for event-loop-group purposes and best-effort shuts
+   * down the held group. Subsequent {@link #getOrCreateS3EventLoopGroup} calls throw. The closed
+   * flag is set first so a close() that throws still poisons the session and prevents resurrection.
+   * Idempotent. Subclasses must call this from their own {@code close()}.
+   */
+  protected synchronized void closeS3EventLoopGroup() {
+    s3EventLoopGroupClosed = true;
+    if (s3EventLoopGroup == null) {
+      return;
+    }
+    try {
+      s3EventLoopGroup.close();
+    } catch (Exception ex) {
+      logger.debug("Failed to close shared S3 event-loop group: {}", ex.toString());
+    }
+    s3EventLoopGroup = null;
+  }
 
   /**
    * @return Returns the telemetry client, if supported, by this session. If not, should return a

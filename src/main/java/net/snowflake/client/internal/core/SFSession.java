@@ -1030,7 +1030,8 @@ public class SFSession extends SFBaseSession {
     return sessionToken;
   }
 
-  public void close(InternalCallMarker internalCallMarker)
+  @Override
+  protected void doClose(InternalCallMarker internalCallMarker)
       throws SFException, SnowflakeSQLException {
     recordIfExternal("SFSession", "close", internalCallMarker);
     logger.debug("Closing session {}", getSessionId());
