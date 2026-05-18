@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.core.SessionUtil;
+import org.hamcrest.Matcher;
 
 public class AuthTestHelper {
 
@@ -44,6 +45,10 @@ public class AuthTestHelper {
 
   public void verifyExceptionIsThrown(String message) {
     assertThat("Expected exception not thrown", this.exception.getMessage(), is(message));
+  }
+
+  public void verifyExceptionIsThrown(Matcher<String> messageMatcher) {
+    assertThat("Expected exception not thrown", this.exception.getMessage(), messageMatcher);
   }
 
   public void verifyExceptionIsNotThrown() {

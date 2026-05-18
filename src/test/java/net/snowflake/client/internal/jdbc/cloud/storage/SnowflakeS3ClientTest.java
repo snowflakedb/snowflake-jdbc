@@ -3,16 +3,23 @@ package net.snowflake.client.internal.jdbc.cloud.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.SFSession;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 /**
@@ -162,19 +169,69 @@ public class SnowflakeS3ClientTest {
     }
   }
 
+  @Test
+  public void shouldCloseInheritedClientOnRenew() throws Exception {
+    TestSession session = new TestSession();
+    SnowflakeS3Client client = newClientWithSession(session);
+    try {
+      Field amazonClientField = SnowflakeS3Client.class.getDeclaredField("amazonClient");
+      amazonClientField.setAccessible(true);
+      S3AsyncClient original = (S3AsyncClient) amazonClientField.get(client);
+      S3AsyncClient spied = spy(original);
+      amazonClientField.set(client, spied);
+
+      client.renew(awsCreds());
+
+      verify(spied).close();
+      assertNotSame(spied, amazonClientField.get(client), "renew should install a new S3 client");
+    } finally {
+      client.shutdown();
+      session.releaseEventLoopGroup();
+    }
+  }
+
+  /**
+   * Pins the AWS SDK shape that {@link SnowflakeS3Client.S3EventLoopGroupHolder#close()} relies on
+   * via reflection (the relocation asymmetry blocks a direct call). If a future SDK upgrade renames
+   * {@code SdkEventLoopGroup#eventLoopGroup()} or changes the {@code shutdownGracefully(long, long,
+   * TimeUnit)} signature, the production catch-all logs a warning and silently leaks Netty threads;
+   * this test fails CI loudly instead.
+   */
+  @Test
+  public void shouldResolveSdkEventLoopGroupShutdownReflectively() throws Exception {
+    SdkEventLoopGroup group = SdkEventLoopGroup.builder().build();
+    try {
+      Method accessor = group.getClass().getMethod("eventLoopGroup");
+      Object eventLoopGroup = accessor.invoke(group);
+      assertNotNull(eventLoopGroup);
+      Method shutdown =
+          eventLoopGroup
+              .getClass()
+              .getMethod("shutdownGracefully", long.class, long.class, TimeUnit.class);
+      assertNotNull(shutdown.invoke(eventLoopGroup, 0L, 1L, TimeUnit.SECONDS));
+    } finally {
+      try {
+        Object eventLoopGroup = group.getClass().getMethod("eventLoopGroup").invoke(group);
+        eventLoopGroup
+            .getClass()
+            .getMethod("shutdownGracefully", long.class, long.class, TimeUnit.class)
+            .invoke(eventLoopGroup, 0L, 1L, TimeUnit.SECONDS);
+      } catch (ReflectiveOperationException ignored) {
+        // best-effort cleanup; the assertions above are the real signal
+      }
+    }
+  }
+
   private static SnowflakeS3Client newClient(
       String stageRegion,
       String stageEndPoint,
       boolean useS3RegionalUrl,
       boolean isClientSideEncrypted)
       throws SnowflakeSQLException {
-    Map<String, String> creds = new HashMap<>();
-    creds.put("AWS_KEY_ID", "AKIA_TEST");
-    creds.put("AWS_SECRET_KEY", "testSecretAccessKey");
     SnowflakeS3Client.ClientConfiguration config =
         new SnowflakeS3Client.ClientConfiguration(2, 3, 5_000, 5_000);
     return new SnowflakeS3Client(
-        creds,
+        awsCreds(),
         config,
         /* encMat */ null,
         /* proxyProperties */ null,
@@ -183,6 +240,39 @@ public class SnowflakeS3ClientTest {
         isClientSideEncrypted,
         /* session */ null,
         useS3RegionalUrl);
+  }
+
+  /**
+   * Exposes the protected close hook so the test can signal shutdown of the shared Netty group
+   * (asynchronous — shutdownGracefully is fire-and-forget with a 1 s timeout).
+   */
+  private static class TestSession extends SFSession {
+    void releaseEventLoopGroup() {
+      closeS3EventLoopGroup();
+    }
+  }
+
+  private static SnowflakeS3Client newClientWithSession(SFSession session)
+      throws SnowflakeSQLException {
+    SnowflakeS3Client.ClientConfiguration config =
+        new SnowflakeS3Client.ClientConfiguration(2, 3, 5_000, 5_000);
+    return new SnowflakeS3Client(
+        awsCreds(),
+        config,
+        /* encMat */ null,
+        /* proxyProperties */ null,
+        "us-west-2",
+        /* stageEndPoint */ null,
+        /* isClientSideEncrypted */ false,
+        session,
+        /* useS3RegionalUrl */ false);
+  }
+
+  private static Map<String, String> awsCreds() {
+    Map<String, String> creds = new HashMap<>();
+    creds.put("AWS_KEY_ID", "AKIA_TEST");
+    creds.put("AWS_SECRET_KEY", "testSecretAccessKey");
+    return creds;
   }
 
   private static Optional<URI> endpointOverride(SnowflakeS3Client client) throws Exception {

@@ -1,4 +1,5 @@
 FROM rockylinux:9 AS jdbc-rockylinux-openjdk-base
+ARG MAVEN_MIRROR_SETTINGS=
 
 # update OS
 RUN dnf -y update && \
@@ -43,11 +44,13 @@ WORKDIR /home/user
 
 COPY pom.xml /root
 COPY dependencies /root/dependencies
+COPY maven-settings.xml /root/maven-settings.xml
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 ###### OpenJDK 8 from dnf
 FROM jdbc-rockylinux-openjdk-base AS jdbc-rockylinux-openjdk8
+ARG MAVEN_MIRROR_SETTINGS=
 
 # Java
 RUN dnf -y install java-1.8.0-openjdk-devel
@@ -55,7 +58,8 @@ RUN dnf -y install java-1.8.0-openjdk-devel
 RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
 
 RUN cd /root && \
-    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar \
         --batch-mode --fail-never compile && \
     mv $HOME/.m2 /home/user && \
@@ -63,6 +67,7 @@ RUN cd /root && \
 
 ###### OpenJDK 11 from dnf
 FROM jdbc-rockylinux-openjdk-base AS jdbc-rockylinux-openjdk11
+ARG MAVEN_MIRROR_SETTINGS=
 
 # Java
 RUN dnf -y install java-11-openjdk-devel
@@ -70,7 +75,8 @@ RUN dnf -y install java-11-openjdk-devel
 RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
 
 RUN cd /root && \
-    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar \
         --batch-mode --fail-never compile && \
     mv $HOME/.m2 /home/user && \
@@ -78,6 +84,7 @@ RUN cd /root && \
 
 ###### OpenJDK 17 from dnf
 FROM jdbc-rockylinux-openjdk-base AS jdbc-rockylinux-openjdk17
+ARG MAVEN_MIRROR_SETTINGS=
 
 # Java
 RUN dnf -y install java-17-openjdk-devel
@@ -85,7 +92,8 @@ RUN dnf -y install java-17-openjdk-devel
 RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
 
 RUN cd /root && \
-    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar \
         --batch-mode --fail-never compile && \
     mv $HOME/.m2 /home/user && \
@@ -93,6 +101,7 @@ RUN cd /root && \
 
 ###### OpenJDK 21 from archive (not available in Rocky 9 repos yet)
 FROM jdbc-rockylinux-openjdk-base AS jdbc-rockylinux-openjdk21
+ARG MAVEN_MIRROR_SETTINGS=
 
 # Java
 RUN curl -o - https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz | tar xfz - -C /opt && \
@@ -104,7 +113,8 @@ RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export PATH=$JAVA_HOME/bin:
 RUN export JAVA_HOME=/opt/jdk-21 && \
     export PATH=$JAVA_HOME/bin:$PATH && \
     cd /root && \
-    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
         -Dnot-self-contained-jar \
         --batch-mode --fail-never compile && \
     mv $HOME/.m2 /home/user && \

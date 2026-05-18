@@ -2,6 +2,7 @@ package net.snowflake.client.internal.driver;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
@@ -57,6 +58,13 @@ public final class ConnectionFactory {
 
     if (!connectString.isValid()) {
       throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
+    }
+
+    // Transfer deferred log messages from ConnectionParameters to Properties so they survive
+    // into DefaultSFConnectionHandler.initialize() for replay after initLogger().
+    List<String> deferred = params.getDeferredLogMessages();
+    if (deferred != null && !deferred.isEmpty()) {
+      params.getParams().put(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY, deferred);
     }
 
     // Create and return the connection implementation

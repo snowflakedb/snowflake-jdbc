@@ -8,6 +8,8 @@ export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
 MVNW_EXE=$SOURCE_ROOT/mvnw
 
+source "$SOURCE_ROOT/ci/maven_jenkins_settings.sh"
+
 echo "[INFO] Download JDBC Integration test cases and libraries"
 source $THIS_DIR/download_artifact.sh
 
@@ -77,7 +79,7 @@ cd $SOURCE_ROOT
 # Retry dependency:go-offline up to 3 times if it fails
 for attempt in 1 2 3; do
     echo "[INFO] maven dependency:go-offline attempt $attempt/3"
-    if "$MVNW_EXE" --batch-mode --show-version dependency:go-offline; then
+    if "$MVNW_EXE" $MVN_SETTINGS_ARG --batch-mode --show-version dependency:go-offline; then
         break
     fi
     if [ $attempt -eq 3 ]; then
@@ -89,9 +91,9 @@ done
 
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
-        JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        JDBC_VERSION=$($MVNW_EXE $MVN_SETTINGS_ARG org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
         echo "[INFO] Run JDBC $JDBC_VERSION tests"
-        $MVNW_EXE -DjenkinsIT \
+        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
             -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
@@ -103,7 +105,7 @@ if [[ "$is_old_driver" == "true" ]]; then
 elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
-        $MVNW_EXE -DjenkinsIT \
+        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
             -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
@@ -115,7 +117,7 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     popd >& /dev/null
 else
     echo "[INFO] Run $JDBC_TEST_SUITES tests"
-    $MVNW_EXE -DjenkinsIT \
+    $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
         -Dskip.unitTests=true \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \

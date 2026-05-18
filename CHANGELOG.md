@@ -3,6 +3,7 @@
 # Changelog
 - v4.2.1-SNAPSHOT
     - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
+    - Fixed non-retryable HTTP 400 response bodies always being logged as `"Failed to read content due to exception: Attempted read from closed stream"`. The response entity is now buffered before `RestRequest#checkForDPoPNonceError` and `SnowflakeUtil#logResponseDetails` consume it so both readers see the body (snowflakedb/snowflake-jdbc#2631).
     - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).
     - Fixed path traversal via server-controlled filenames in `SnowflakeFileTransferAgent` GET destination filename derivation; backslash separators are now stripped and traversal/absolute basenames are rejected (snowflakedb/snowflake-jdbc#2622).
     - Further changes regarding auto-configuration (`jdbc:snowflake:auto` style connection config) (snowflakedb/snowflake-jdbc#2625):
@@ -10,6 +11,8 @@
       - Enhancement: now parameters passed as `Properties()` are also considered when building connection. For conflicting items defined in multiple places, priority is: Properties > JDBC URL > `connections.toml`
       - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
     - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
+    - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
+    - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close. (snowflakedb/snowflake-jdbc#2620)
 
 - v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
