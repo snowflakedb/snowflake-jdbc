@@ -6,6 +6,10 @@ public enum TelemetryField {
   // Fields
   TYPE("type"),
   VALUE("value"),
+  // TODO(SNOW-3548350): SOURCE is used by client_connection_identifier_shape (mirrors the
+  //  cross-driver "source" key in the Go/Python/Node.js drivers). May become more broadly
+  //  applicable; for now it lives here because the shape telemetry is the only consumer.
+  SOURCE("source"),
   DRIVER_TYPE("DriverType"),
   DRIVER_VERSION("DriverVersion"),
   QUERY_ID("QueryID"),
@@ -34,6 +38,11 @@ public enum TelemetryField {
   FAILED_BIND_OTHER("client_failed_bind_other"),
 
   SQL_EXCEPTION("client_sql_exception"),
+
+  // TODO(SNOW-3548350): emitted at most once per successful login; describes which
+  //  connection-identifier fields the user supplied (no hostname or account value is ever
+  //  included). See ConnectionIdentifierShape + ConnectionIdentifierShapeTelemetry.
+  CONNECTION_IDENTIFIER_SHAPE("client_connection_identifier_shape"),
 
   METADATA_METRICS("client_metadata_api_metrics"),
 

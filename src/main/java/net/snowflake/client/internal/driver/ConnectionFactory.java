@@ -60,15 +60,35 @@ public final class ConnectionFactory {
       throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
     }
 
+    // Build a defensive copy of the resolved Properties so the user's original
+    // `info` is never mutated. Without the copy, two concurrent createConnection
+    // calls sharing the same `info` race on the internal carrier keys below
+    // (ConnectionFactory puts them in here; DefaultSFConnectionHandler.initialize
+    // removes them after consumption). The copy is cheap — Properties is a
+    // HashMap-backed bag — and the safety guarantee composes naturally with
+    // user code that pools or templates Properties instances.
+    Properties effective = new Properties();
+    effective.putAll(params.getParams());
+
     // Transfer deferred log messages from ConnectionParameters to Properties so they survive
     // into DefaultSFConnectionHandler.initialize() for replay after initLogger().
     List<String> deferred = params.getDeferredLogMessages();
     if (deferred != null && !deferred.isEmpty()) {
-      params.getParams().put(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY, deferred);
+      effective.put(AutoConfigurationHelper.DEFERRED_LOG_MESSAGES_KEY, deferred);
+    }
+
+    // TODO(SNOW-3548350): Forward the captured ConnectionIdentifierShape onto the effective
+    // Properties so DefaultSFConnectionHandler.initialize() can attach it to the SFSession
+    // before open() emits the client_connection_identifier_shape telemetry. Remove together
+    // with the rest of the connection-identifier-shape plumbing.
+    if (params.getConnectionIdentifierShape() != null) {
+      effective.put(
+          AutoConfigurationHelper.CONNECTION_IDENTIFIER_SHAPE_KEY,
+          params.getConnectionIdentifierShape());
     }
 
     // Create and return the connection implementation
-    return new SnowflakeConnectionImpl(params.getUrl(), params.getParams());
+    return new SnowflakeConnectionImpl(params.getUrl(), effective);
   }
 
   /**

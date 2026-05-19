@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.config.ConnectionParameters;
 import net.snowflake.client.internal.config.SFConnectionConfigParser;
+import net.snowflake.client.internal.core.ConnectionIdentifierShape;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
@@ -74,6 +75,16 @@ public final class AutoConfigurationHelper {
    */
   public static final String DEFERRED_LOG_MESSAGES_KEY = "_snowflake.internal.deferredLogMessages";
 
+  /**
+   * Internal key used by ConnectionFactory to carry the captured {@link ConnectionIdentifierShape}
+   * on the Properties object. The value is a {@code ConnectionIdentifierShape} (not a String) and
+   * is removed by {@code DefaultSFConnectionHandler} before session-property parsing.
+   *
+   * <p>TODO(SNOW-3548350): remove together with the connection-identifier-shape telemetry plumbing.
+   */
+  public static final String CONNECTION_IDENTIFIER_SHAPE_KEY =
+      "_snowflake.internal.connectionIdentifierShape";
+
   public static ConnectionParameters resolveConnectionParameters(String url, Properties info)
       throws SnowflakeSQLException {
 
@@ -113,7 +124,14 @@ public final class AutoConfigurationHelper {
 
       return params;
     } else {
-      return new ConnectionParameters(url, info);
+      ConnectionParameters params = new ConnectionParameters(url, info);
+      // TODO(SNOW-3548350): Capture connection-identifier shape from the raw URL+Properties pair
+      // for the standard jdbc:snowflake:// path. SnowflakeConnectString.parse rejects an empty
+      // host, so hostProvided is structurally always true here — see ConnectionIdentifierShape
+      // javadoc. Region is never provided because JDBC has no region knob.
+      params.setConnectionIdentifierShape(
+          ConnectionIdentifierShape.captureFromUrlAndProperties(url, info));
+      return params;
     }
   }
 
