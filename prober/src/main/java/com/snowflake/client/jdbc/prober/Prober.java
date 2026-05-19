@@ -212,7 +212,8 @@ public class Prober {
   private static void cleanupResources(Statement statement, String metricName) {
     try {
       try (ResultSet rs1 = statement.executeQuery("REMOVE @" + stageName);
-           ResultSet rs2 = statement.executeQuery("DROP TABLE IF EXISTS " + tableName)) {
+           ResultSet rs2 = statement.executeQuery("DROP TABLE IF EXISTS " + tableName);
+           ResultSet rs3 = statement.executeQuery("DROP STAGE IF EXISTS " + stageName)) {
       }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
