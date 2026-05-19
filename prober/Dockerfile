@@ -37,7 +37,7 @@ RUN \
     done && \
     \
     for jdbc_version in $(echo "${MATRIX_VERSION}" | jq -r '.[][]' | sort -u); do \
-      DRIVER_URL="https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar" && \
+      DRIVER_URL="https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar" && \
       curl -fSL -o "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVER_URL}" && \
       mv "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar"; \
     done
