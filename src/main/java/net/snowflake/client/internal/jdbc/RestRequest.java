@@ -1055,6 +1055,16 @@ public class RestRequest {
               responseDto.getHttpResponse(),
               responseDto.getSavedEx());
         }
+        // On the failure-side break (no response or non-200 status), release the underlying
+        // HTTP connection so the pool slot doesn't stay checked out forever. The retry path
+        // already does this via prepareRetry(); the exhaustion path was missing it, leading
+        // to permanent pool leaks under sustained network failures (e.g. 503s on S3 chunk
+        // downloads). We deliberately skip the release for 200 responses because the caller
+        // is going to read the response body afterward (e.g. ResultSet metadata flows).
+        if (responseDto.getHttpResponse() == null
+            || responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200) {
+          httpRequest.releaseConnection();
+        }
         break;
       } else {
         prepareRetry(httpRequest, httpExecutingContext, retryManager, responseDto);
