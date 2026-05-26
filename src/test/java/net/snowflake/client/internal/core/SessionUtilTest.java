@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.io.IOException;
@@ -428,5 +429,21 @@ public class SessionUtilTest {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Regression: Okta returns HTTP 400 if authn JSON is not well-formed (e.g. unescaped {@code "}).
+   */
+  @Test
+  public void testBuildOktaAuthnRequestBodyEscapesSpecialCharactersInUsernameAndPassword()
+      throws Exception {
+    String username = "user\"name";
+    String password = "p\"a\\ss\nword";
+    String json = SessionUtil.buildOktaAuthnRequestBody(username, password);
+
+    ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
+    JsonNode root = objectMapper.readTree(json);
+    assertEquals(username, root.get("username").asText());
+    assertEquals(password, root.get("password").asText());
   }
 }

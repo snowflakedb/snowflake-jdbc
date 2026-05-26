@@ -9,6 +9,7 @@ import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryT
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -2221,6 +2222,15 @@ public class SessionUtil {
     return input;
   }
 
+  /** JSON body for Okta {@code /api/v1/authn}; package-private for unit tests. */
+  static String buildOktaAuthnRequestBody(String username, String password)
+      throws JsonProcessingException {
+    ObjectNode body = mapper.createObjectNode();
+    body.put("username", username);
+    body.put("password", password);
+    return mapper.writeValueAsString(body);
+  }
+
   /**
    * Sets the authentication data for the third step of the federated authentication flow.
    *
@@ -2235,13 +2245,8 @@ public class SessionUtil {
             ? loginInput.getUserName()
             : loginInput.getOKTAUserName();
     try {
-      StringEntity params =
-          new StringEntity(
-              "{\"username\":\""
-                  + userName
-                  + "\",\"password\":\""
-                  + loginInput.getPassword()
-                  + "\"}");
+      String json = buildOktaAuthnRequestBody(userName, loginInput.getPassword());
+      StringEntity params = new StringEntity(json, StandardCharsets.UTF_8);
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();

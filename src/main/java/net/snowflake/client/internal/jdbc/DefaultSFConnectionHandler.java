@@ -30,6 +30,7 @@ import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
 import net.snowflake.client.internal.config.SFClientConfig;
 import net.snowflake.client.internal.config.SFClientConfigParser;
+import net.snowflake.client.internal.core.ConnectionIdentifierShape;
 import net.snowflake.client.internal.core.Constants;
 import net.snowflake.client.internal.core.SFBaseResultSet;
 import net.snowflake.client.internal.core.SFBaseSession;
@@ -146,6 +147,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initLogger();
       replayDeferredLogMessages(properties);
       initHttpHeaderCustomizers(properties);
+      // TODO(SNOW-3548350): forward the captured ConnectionIdentifierShape onto the session before
+      // open() so the post-login telemetry hook can emit it. Must happen before open() because
+      // open() emits the telemetry as a sibling of sendMinicoreTelemetry().
+      forwardConnectionIdentifierShape(properties);
       logger.debug("Trying to establish session, JDBC driver: {}", DriverUtil.getJdbcJarname());
       if (!skipOpen) {
         sfSession.open(internalCallMarker());
@@ -229,6 +234,20 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         logger.debug(
             "Instantiating JDK14Logger with level: {}, output path: {}", logLevel, logPattern);
       }
+    }
+  }
+
+  // TODO(SNOW-3548350): extract the shape that ConnectionFactory stashed on the Properties bag and
+  // attach it to the session. The Properties bag is the only carrier that survives intact from
+  // ConnectionFactory.createConnection (where the shape is captured) through to here (where the
+  // session is finally available). Remove together with the rest of the shape telemetry plumbing.
+  private void forwardConnectionIdentifierShape(Properties properties) {
+    if (properties == null) {
+      return;
+    }
+    Object shapeObj = properties.remove(AutoConfigurationHelper.CONNECTION_IDENTIFIER_SHAPE_KEY);
+    if (shapeObj instanceof ConnectionIdentifierShape) {
+      ((SFSession) sfSession).setConnectionIdentifierShape((ConnectionIdentifierShape) shapeObj);
     }
   }
 

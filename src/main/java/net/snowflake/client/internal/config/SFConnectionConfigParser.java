@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.ConnectionIdentifierShape;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
@@ -92,6 +93,14 @@ public class SFConnectionConfigParser {
             e.getQueryId(), e, e.getSqlState(), e.getVendorCode(), e.getParams());
       }
 
+      // TODO(SNOW-3548350): Capture the connection-identifier shape BEFORE createUrl() synthesizes
+      // a host from `account = ...`. After synthesis a synthesized host would be indistinguishable
+      // from a user-supplied one, so the post-synthesis URL is no longer trustworthy for
+      // host_provided. The merge-URL-into-TOML step above has already run, so URL-side account /
+      // host overrides are reflected in fileConnectionConfiguration.
+      ConnectionIdentifierShape shape =
+          ConnectionIdentifierShape.captureFromTomlConfig(fileConnectionConfiguration);
+
       Properties connectionProperties = new Properties();
       connectionProperties.putAll(fileConnectionConfiguration);
 
@@ -129,7 +138,9 @@ public class SFConnectionConfigParser {
           throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
         }
       }
-      return new ConnectionParameters(url, connectionProperties);
+      ConnectionParameters result = new ConnectionParameters(url, connectionProperties);
+      result.setConnectionIdentifierShape(shape);
+      return result;
     } else {
       return null;
     }
