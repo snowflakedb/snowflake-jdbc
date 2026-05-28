@@ -69,8 +69,8 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope =
-        new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
+    String scopeString = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
+    Scope scope = scopeString != null ? new Scope(scopeString) : null;
     TokenRequest tokenRequest =
         new TokenRequest(
             tokenRequestUrl, clientAuthentication, new ClientCredentialsGrant(), scope);
