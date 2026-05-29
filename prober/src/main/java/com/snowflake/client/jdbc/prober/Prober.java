@@ -1,6 +1,6 @@
 package com.snowflake.client.jdbc.prober;
 
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -34,11 +34,34 @@ import java.util.stream.Collectors;
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
-  private static final String stageName = "test_stage_" + generateRandomString(10);
-  private static final String stageFilePath = "test_file_" + generateRandomString(10) + ".txt";
-  private static final String tableName = "test_table" + generateRandomString(10);
+  // Snowflake resource names. Assigned in main() once we know the scope and
+  // versions, so each (java_version, driver_version, probe variant) combo
+  // owns a stable, deterministic pool of objects -- CREATE OR REPLACE then
+  // makes every run idempotent and leak-free.
+  private static String stageName;
+  private static String stageFilePath;
+  private static String tableName;
   private static String javaVersion;
   private static String driverVersion;
+
+  // Legacy random-suffix naming used by the previous version of this prober.
+  // generateRandomString(10) emits 10 characters: first uppercased, the rest
+  // lowercase from [a-z]. Snowflake stores unquoted identifiers uppercase, so
+  // legacy names look like:
+  //   TEST_STAGE_[A-Z]{10}       (e.g. TEST_STAGE_ABCDEFGHIJ)
+  //   TEST_TABLE[A-Z]{10}        (NOTE: missing underscore -- historical typo;
+  //                              see git history for prober/src/.../Prober.java
+  //                              between 2025-06-17 and now)
+  // The very-first version (commits 3f047afd9, 1098005a1 on 2025-06-09) used
+  // unsuffixed literals TEST_STAGE and TEST_TABLE, also covered by the regexes.
+  // The new deterministic suffix always contains version separators (e.g.
+  // _JAVA_17_0_10_TEM_JDBC_3_24_2), so it never matches these regexes.
+  private static final int LEGACY_CLEANUP_MAX_ITERATIONS = 10;
+  private static final int LEGACY_CLEANUP_BATCH_SIZE = 1000;
+  private static final String LEGACY_STAGE_PREFIX = "TEST_STAGE";
+  private static final String LEGACY_TABLE_PREFIX = "TEST_TABLE";
+  private static final String LEGACY_STAGE_REGEX = "^TEST_STAGE(_[A-Z]{10})?$";
+  private static final String LEGACY_TABLE_REGEX = "^TEST_TABLE([A-Z]{10})?$";
 
   enum Status {
     SUCCESS(0),
@@ -75,15 +98,54 @@ public class Prober {
     javaVersion = props.getProperty("java_version");
     driverVersion = props.getProperty("driver_version");
 
-    if (Scope.LOGIN.name().toLowerCase().equals(props.getProperty("scope"))) {
+    String scope = props.getProperty("scope", "");
+    // Deterministic resource names per (java_version, driver_version, variant)
+    // -- bounded pool, no leak per run. The PUT_FETCH_GET_FAIL_CLOSED variant
+    // gets a "_fail_closed" suffix so it never collides with the regular
+    // variant when both run against the same schema.
+    String variant = Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(scope)
+            ? "fail_closed"
+            : "";
+    initResourceNames(variant);
+
+    if (Scope.LOGIN.name().toLowerCase().equals(scope)) {
       testLogin(url, props);
     }
-    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(props.getProperty("scope"))) {
+    if (Scope.PUT_FETCH_GET.name().toLowerCase().equals(scope)) {
       testPutFetchGet(url, props);
     }
-    if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(props.getProperty("scope"))) {
+    if (Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(scope)) {
       testPutFetchGetFailClosed(url, props);
     }
+  }
+
+  private static void initResourceNames(String variant) {
+    String suffix = getResourceSuffix(variant);
+    stageName = "test_stage_" + suffix;
+    tableName = "test_table_" + suffix;
+    stageFilePath = "test_file_" + suffix + ".txt";
+  }
+
+  private static String getResourceSuffix(String variant) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("java_").append(sanitizeForIdentifier(javaVersion));
+    sb.append("_jdbc_").append(sanitizeForIdentifier(driverVersion));
+    if (variant != null && !variant.isEmpty()) {
+      sb.append('_').append(sanitizeForIdentifier(variant));
+    }
+    return sb.toString();
+  }
+
+  private static String sanitizeForIdentifier(String value) {
+    if (value == null) {
+      return "unknown";
+    }
+    StringBuilder sb = new StringBuilder(value.length());
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      sb.append(Character.isLetterOrDigit(c) ? Character.toLowerCase(c) : '_');
+    }
+    return sb.toString();
   }
 
   private static void testLogin(String url, Properties properties) {
@@ -122,7 +184,7 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
-      
+
       csv.clear();
       csvFile = null;
     } catch (SQLException e) {
@@ -155,7 +217,7 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
-      
+
       csv.clear();
       csvFile = null;
     } catch (SQLException e) {
@@ -221,6 +283,85 @@ public class Prober {
       logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
+    // Best-effort sweep of legacy random-suffix resources left behind by
+    // earlier deployments. Never throws -- a sweep failure must not affect
+    // the probe outcome.
+    cleanupLegacyRandomResources(statement);
+  }
+
+  /**
+   * Drops a bounded number of stages and tables left behind by previous
+   * prober deployments that used a random suffix.
+   *
+   * Mirrors the design used in the Python and ODBC probers:
+   *   - One Snowflake Scripting block per (kind, prefix) target -- SHOW +
+   *     RESULT_SCAN + REGEXP_LIKE + EXECUTE IMMEDIATE DROP loop, all running
+   *     server-side so a single JDBC round-trip drops up to BATCH_SIZE
+   *     objects per kind regardless of backlog size.
+   *   - SHOW has a predictable 10 000-row cap and never raises the
+   *     "INFORMATION_SCHEMA returned too much data" error that bites at
+   *     multi-million backlogs.
+   *   - Outer loop runs up to MAX_ITERATIONS sweeps per probe execution to
+   *     accelerate draining; breaks early when a sweep drops 0 objects.
+   *   - The REGEXP_LIKE tail precisely matches the historical random suffix
+   *     ([A-Z]{10}, optionally absent for the very-first 2025-06 literals)
+   *     so the new deterministic names -- which always contain version
+   *     separator underscores -- are never matched.
+   */
+  private static void cleanupLegacyRandomResources(Statement statement) {
+    int totalDropped = 0;
+    int iterationsRun = 0;
+    try {
+      for (int iter = 0; iter < LEGACY_CLEANUP_MAX_ITERATIONS; iter++) {
+        int iterDropped = 0;
+        iterDropped += dropLegacyBatch(statement, "STAGES", "STAGE",
+                LEGACY_STAGE_PREFIX, LEGACY_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+        iterDropped += dropLegacyBatch(statement, "TABLES", "TABLE",
+                LEGACY_TABLE_PREFIX, LEGACY_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+        totalDropped += iterDropped;
+        iterationsRun++;
+        if (iterDropped == 0) {
+          break;
+        }
+      }
+    } catch (Exception e) {
+      System.err.println("Error during legacy resource cleanup: " + e.getMessage());
+    }
+    System.err.println("Legacy cleanup: dropped " + totalDropped
+            + " objects across " + iterationsRun + " iteration(s).");
+  }
+
+  private static int dropLegacyBatch(Statement statement, String showKind, String dropKind,
+                                     String prefix, String regex, int batchSize) {
+    String script =
+            "EXECUTE IMMEDIATE $$\n"
+                    + "DECLARE\n"
+                    + "    dropped INT DEFAULT 0;\n"
+                    + "BEGIN\n"
+                    + "    SHOW " + showKind + " STARTS WITH '" + prefix + "' LIMIT " + batchSize + ";\n"
+                    + "    LET rs RESULTSET := (\n"
+                    + "        SELECT \"name\" AS object_name\n"
+                    + "        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))\n"
+                    + "        WHERE REGEXP_LIKE(\"name\", '" + regex + "', 'i')\n"
+                    + "        LIMIT " + batchSize + "\n"
+                    + "    );\n"
+                    + "    LET c1 CURSOR FOR rs;\n"
+                    + "    FOR row_var IN c1 DO\n"
+                    + "        EXECUTE IMMEDIATE 'DROP " + dropKind + " IF EXISTS \"' || row_var.object_name || '\"';\n"
+                    + "        dropped := dropped + 1;\n"
+                    + "    END FOR;\n"
+                    + "    RETURN dropped;\n"
+                    + "END;\n"
+                    + "$$";
+    try (ResultSet rs = statement.executeQuery(script)) {
+      if (rs.next()) {
+        return rs.getInt(1);
+      }
+    } catch (SQLException e) {
+      System.err.println("Legacy " + dropKind + " cleanup batch failed (prefix="
+              + prefix + "): " + e.getMessage());
+    }
+    return 0;
   }
 
   private static void compareFetchedDataAndFile(Statement statement, List<String> csv, String metricName) throws SQLException {
@@ -342,7 +483,7 @@ public class Prober {
     String loggingPropertiesString = "handlers=java.util.logging.ConsoleHandler\n.level=" + properties.getProperty("log_level");
     properties.put("JAVA_LOGGING_CONSOLE_STD_OUT", "false");
     try (InputStream propertiesStream = new ByteArrayInputStream(
-        loggingPropertiesString.getBytes(StandardCharsets.UTF_8)
+            loggingPropertiesString.getBytes(StandardCharsets.UTF_8)
     )) {
       LogManager.getLogManager().readConfiguration(propertiesStream);
     }
