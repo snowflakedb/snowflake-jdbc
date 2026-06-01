@@ -210,7 +210,7 @@ public class CredentialManager {
 
   private void updateInputWithTokenAndPublicKey(String cred, SFLoginInput loginInput)
       throws SFException {
-    if (isNullOrEmpty(cred)) {
+    if (!isNullOrEmpty(cred)) {
       String[] values = cred.split("\\.");
       if (values.length != 2) {
         throw new SFException(
