@@ -1,6 +1,6 @@
 package com.snowflake.client.jdbc.prober;
 
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -104,8 +104,8 @@ public class Prober {
     // gets a "_fail_closed" suffix so it never collides with the regular
     // variant when both run against the same schema.
     String variant = Scope.PUT_FETCH_GET_FAIL_CLOSED.name().toLowerCase().equals(scope)
-            ? "fail_closed"
-            : "";
+        ? "fail_closed"
+        : "";
     initResourceNames(variant);
 
     if (Scope.LOGIN.name().toLowerCase().equals(scope)) {
@@ -184,7 +184,7 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
-
+      
       csv.clear();
       csvFile = null;
     } catch (SQLException e) {
@@ -217,7 +217,7 @@ public class Prober {
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
-
+      
       csv.clear();
       csvFile = null;
     } catch (SQLException e) {
@@ -285,8 +285,9 @@ public class Prober {
     }
     // Best-effort sweep of legacy random-suffix resources left behind by
     // earlier deployments. Never throws -- a sweep failure must not affect
-    // the probe outcome.
-    cleanupLegacyRandomResources(statement);
+    // the probe outcome. Emits its own cloudprober metric (status + counts)
+    // so the sweep is observable in dashboards rather than just stderr.
+    cleanupLegacyRandomResources(statement, metricName + "_legacy");
   }
 
   /**
@@ -299,25 +300,32 @@ public class Prober {
    *     server-side so a single JDBC round-trip drops up to BATCH_SIZE
    *     objects per kind regardless of backlog size.
    *   - SHOW has a predictable 10 000-row cap and never raises the
-   *     "INFORMATION_SCHEMA returned too much data" error that bites at
-   *     multi-million backlogs.
+   *     "INFORMATION_SCHEMA returned too much data" error.
    *   - Outer loop runs up to MAX_ITERATIONS sweeps per probe execution to
    *     accelerate draining; breaks early when a sweep drops 0 objects.
    *   - The REGEXP_LIKE tail precisely matches the historical random suffix
    *     ([A-Z]{10}, optionally absent for the very-first 2025-06 literals)
    *     so the new deterministic names -- which always contain version
    *     separator underscores -- are never matched.
+   *
+   * Emits three cloudprober metrics under `metricPrefix` so the sweep is
+   * observable in dashboards (the previous version only wrote to stderr,
+   * which is why the activity looked invisible despite running):
+   *   - <metricPrefix>            = 0 on success / 1 on uncaught failure
+   *   - <metricPrefix>_dropped    = total objects dropped this execution
+   *   - <metricPrefix>_iterations = number of sweep iterations actually run
    */
-  private static void cleanupLegacyRandomResources(Statement statement) {
+  private static void cleanupLegacyRandomResources(Statement statement, String metricPrefix) {
     int totalDropped = 0;
     int iterationsRun = 0;
+    Status status = Status.SUCCESS;
     try {
       for (int iter = 0; iter < LEGACY_CLEANUP_MAX_ITERATIONS; iter++) {
         int iterDropped = 0;
         iterDropped += dropLegacyBatch(statement, "STAGES", "STAGE",
-                LEGACY_STAGE_PREFIX, LEGACY_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+            LEGACY_STAGE_PREFIX, LEGACY_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
         iterDropped += dropLegacyBatch(statement, "TABLES", "TABLE",
-                LEGACY_TABLE_PREFIX, LEGACY_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+            LEGACY_TABLE_PREFIX, LEGACY_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
         totalDropped += iterDropped;
         iterationsRun++;
         if (iterDropped == 0) {
@@ -326,40 +334,59 @@ public class Prober {
       }
     } catch (Exception e) {
       System.err.println("Error during legacy resource cleanup: " + e.getMessage());
+      status = Status.FAILURE;
     }
     System.err.println("Legacy cleanup: dropped " + totalDropped
-            + " objects across " + iterationsRun + " iteration(s).");
+        + " objects across " + iterationsRun + " iteration(s).");
+    logMetric(metricPrefix, status);
+    logMetricValue(metricPrefix + "_dropped", totalDropped);
+    logMetricValue(metricPrefix + "_iterations", iterationsRun);
   }
 
   private static int dropLegacyBatch(Statement statement, String showKind, String dropKind,
                                      String prefix, String regex, int batchSize) {
+    // Notes on the SQL:
+    //   - SHOW <kind> returns names ordered by created_on DESC by default.
+    //     With CREATE OR REPLACE on every probe run, the active deterministic
+    //     stages occupy the top of that list and crowd legacy names off if
+    //     we only LIMIT in SHOW. To make sure we actually find legacy names,
+    //     we pull up to 10 000 rows (the SHOW maximum), filter to legacy
+    //     ones via REGEXP_LIKE, ORDER BY name ASC for deterministic batch
+    //     selection across runs, and only then take BATCH_SIZE for dropping.
+    //   - LAST_QUERY_ID() is captured into a local variable immediately
+    //     after the SHOW so it can't be confused with any other query that
+    //     runs later in the block.
+    int showLimit = 10000;
     String script =
-            "EXECUTE IMMEDIATE $$\n"
-                    + "DECLARE\n"
-                    + "    dropped INT DEFAULT 0;\n"
-                    + "BEGIN\n"
-                    + "    SHOW " + showKind + " STARTS WITH '" + prefix + "' LIMIT " + batchSize + ";\n"
-                    + "    LET rs RESULTSET := (\n"
-                    + "        SELECT \"name\" AS object_name\n"
-                    + "        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))\n"
-                    + "        WHERE REGEXP_LIKE(\"name\", '" + regex + "', 'i')\n"
-                    + "        LIMIT " + batchSize + "\n"
-                    + "    );\n"
-                    + "    LET c1 CURSOR FOR rs;\n"
-                    + "    FOR row_var IN c1 DO\n"
-                    + "        EXECUTE IMMEDIATE 'DROP " + dropKind + " IF EXISTS \"' || row_var.object_name || '\"';\n"
-                    + "        dropped := dropped + 1;\n"
-                    + "    END FOR;\n"
-                    + "    RETURN dropped;\n"
-                    + "END;\n"
-                    + "$$";
+        "EXECUTE IMMEDIATE $$\n"
+        + "DECLARE\n"
+        + "    dropped INT DEFAULT 0;\n"
+        + "    show_qid VARCHAR;\n"
+        + "BEGIN\n"
+        + "    SHOW " + showKind + " STARTS WITH '" + prefix + "' LIMIT " + showLimit + ";\n"
+        + "    show_qid := LAST_QUERY_ID();\n"
+        + "    LET rs RESULTSET := (\n"
+        + "        SELECT \"name\" AS object_name\n"
+        + "        FROM TABLE(RESULT_SCAN(:show_qid))\n"
+        + "        WHERE REGEXP_LIKE(\"name\", '" + regex + "', 'i')\n"
+        + "        ORDER BY \"name\"\n"
+        + "        LIMIT " + batchSize + "\n"
+        + "    );\n"
+        + "    LET c1 CURSOR FOR rs;\n"
+        + "    FOR row_var IN c1 DO\n"
+        + "        EXECUTE IMMEDIATE 'DROP " + dropKind + " IF EXISTS \"' || row_var.object_name || '\"';\n"
+        + "        dropped := dropped + 1;\n"
+        + "    END FOR;\n"
+        + "    RETURN dropped;\n"
+        + "END;\n"
+        + "$$";
     try (ResultSet rs = statement.executeQuery(script)) {
       if (rs.next()) {
         return rs.getInt(1);
       }
     } catch (SQLException e) {
       System.err.println("Legacy " + dropKind + " cleanup batch failed (prefix="
-              + prefix + "): " + e.getMessage());
+          + prefix + "): " + e.getMessage());
     }
     return 0;
   }
@@ -483,14 +510,18 @@ public class Prober {
     String loggingPropertiesString = "handlers=java.util.logging.ConsoleHandler\n.level=" + properties.getProperty("log_level");
     properties.put("JAVA_LOGGING_CONSOLE_STD_OUT", "false");
     try (InputStream propertiesStream = new ByteArrayInputStream(
-            loggingPropertiesString.getBytes(StandardCharsets.UTF_8)
+        loggingPropertiesString.getBytes(StandardCharsets.UTF_8)
     )) {
       LogManager.getLogManager().readConfiguration(propertiesStream);
     }
   }
 
   private static void logMetric(String metricName, Status status) {
-    System.out.println(metricName + "{java_version=\"" + javaVersion + "\", driver_version=\"" + driverVersion + "\"} " + status.getCode());
+    logMetricValue(metricName, status.getCode());
+  }
+
+  private static void logMetricValue(String metricName, long value) {
+    System.out.println(metricName + "{java_version=\"" + javaVersion + "\", driver_version=\"" + driverVersion + "\"} " + value);
   }
 
   private static Map<String, String> parseArguments(String[] args) {
