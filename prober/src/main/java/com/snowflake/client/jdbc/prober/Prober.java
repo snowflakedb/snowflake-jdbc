@@ -1,14 +1,11 @@
 package com.snowflake.client.jdbc.prober;
 
-import net.snowflake.client.jdbc.SnowflakeConnection;
-
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -22,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,7 @@ import java.util.Random;
 import java.util.StringJoiner;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Prober {
   private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
@@ -168,7 +167,6 @@ public class Prober {
   private static void testPutFetchGet(String url, Properties properties) {
     try (Connection connection = DriverManager.getConnection(url, properties);
          Statement statement = connection.createStatement()) {
-      SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(100);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
       createWarehouse(statement, properties, "cloudprober_driver_java_create_warehouse");
@@ -177,10 +175,10 @@ public class Prober {
       createDataTable(statement, "cloudprober_driver_java_create_table");
       createDataStage(statement, "cloudprober_driver_java_create_stage");
 
-      uploadFile(sfConnection, csvFile, "cloudprober_driver_java_perform_put");
+      uploadFile(statement, csvFile, "cloudprober_driver_java_perform_put");
       loadFileIntoTable(statement, "cloudprober_driver_java_copy_data_from_stage_into_table");
       fetchAndVerifyRows(statement, "cloudprober_driver_java_data_transferred_completely");
-      downloadFile(sfConnection, "cloudprober_driver_java_perform_get");
+      downloadFile(statement, "cloudprober_driver_java_perform_get");
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources");
@@ -201,7 +199,6 @@ public class Prober {
     failClosedProperties.put("ocspFailOpen", "false");
     try (Connection connection = DriverManager.getConnection(url, failClosedProperties);
          Statement statement = connection.createStatement()) {
-      SnowflakeConnection sfConnection = connection.unwrap(SnowflakeConnection.class);
       List<String> csv = generateCsv(100);
       String csvFile = csv.stream().collect(Collectors.joining(System.lineSeparator()));
       createWarehouse(statement, failClosedProperties, "cloudprober_driver_java_create_warehouse_fail_closed");
@@ -210,10 +207,10 @@ public class Prober {
       createDataTable(statement, "cloudprober_driver_java_create_table_fail_closed");
       createDataStage(statement, "cloudprober_driver_java_create_stage_fail_closed");
 
-      uploadFile(sfConnection, csvFile, "cloudprober_driver_java_perform_put_fail_closed");
+      uploadFile(statement, csvFile, "cloudprober_driver_java_perform_put_fail_closed");
       loadFileIntoTable(statement, "cloudprober_driver_java_copy_data_from_stage_into_table_fail_closed");
       fetchAndVerifyRows(statement, "cloudprober_driver_java_data_transferred_completely_fail_closed");
-      downloadFile(sfConnection, "cloudprober_driver_java_perform_get_fail_closed");
+      downloadFile(statement, "cloudprober_driver_java_perform_get_fail_closed");
       compareFetchedDataAndFile(statement, csv, "cloudprober_driver_java_data_integrity_fail_closed");
 
       cleanupResources(statement, "cloudprober_driver_java_cleanup_resources_fail_closed");
@@ -420,19 +417,58 @@ public class Prober {
     }
   }
 
-  private static String downloadFile(SnowflakeConnection sfConnection, String metricName) throws SQLException {
-    try (InputStream downloadStream = sfConnection.downloadStream("@" + stageName, stageFilePath, false);
-         BufferedReader reader = new BufferedReader(new InputStreamReader(downloadStream, StandardCharsets.UTF_8))) {
-      List<String> lines = reader.lines().collect(Collectors.toList());
+  // Downloads the previously-uploaded file using a plain SQL GET command and
+  // returns its joined contents. This avoids the SnowflakeConnection.downloadStream
+  // API, which was moved between JDBC 3.x (net.snowflake.client.jdbc.SnowflakeConnection)
+  // and JDBC 4.x (net.snowflake.client.api.connection.SnowflakeConnection) and so
+  // can't be referenced by a single .class file targeting both eras. PUT/GET via
+  // Statement works on every JDBC version, present and future.
+  private static String downloadFile(Statement statement, String metricName) throws SQLException {
+    Path downloadDir;
+    try {
+      downloadDir = Files.createTempDirectory("jdbc_prober_get_");
+    } catch (IOException e) {
+      logMetric(metricName, Status.FAILURE);
+      throw new SQLException("Error creating download directory", e);
+    }
+    try {
+      String getQuery = "GET @" + stageName + "/" + stageFilePath
+          + " 'file://" + downloadDir.toAbsolutePath() + "/'";
+      try (ResultSet rs = statement.executeQuery(getQuery)) {
+        while (rs.next()) {
+          // Consume the per-file GET result rows (source, target, size, status, ...)
+        }
+      }
+      Path downloaded = downloadDir.resolve(stageFilePath);
+      List<String> lines = Files.readAllLines(downloaded, StandardCharsets.UTF_8);
       if (lines.size() == 101) {
         logMetric(metricName, Status.SUCCESS);
       } else {
         logMetric(metricName, Status.FAILURE);
       }
-      return lines.stream().collect(Collectors.joining(System.lineSeparator()));
+      return String.join(System.lineSeparator(), lines);
     } catch (IOException e) {
       logMetric(metricName, Status.FAILURE);
-      throw new SQLException("Error downloading file", e);
+      throw new SQLException("Error reading downloaded file", e);
+    } finally {
+      deleteRecursivelyQuietly(downloadDir);
+    }
+  }
+
+  private static void deleteRecursivelyQuietly(Path root) {
+    if (root == null || !Files.exists(root)) {
+      return;
+    }
+    try (Stream<Path> paths = Files.walk(root).sorted(Comparator.reverseOrder())) {
+      paths.forEach(p -> {
+        try {
+          Files.deleteIfExists(p);
+        } catch (IOException ignored) {
+          // Best-effort cleanup of probe-local scratch files.
+        }
+      });
+    } catch (IOException ignored) {
+      // Best-effort cleanup; do not affect probe outcome.
     }
   }
 
@@ -461,14 +497,46 @@ public class Prober {
     }
   }
 
-  private static void uploadFile(SnowflakeConnection sfConnection, String fileContent, String metricName) throws SQLException {
+  // Uploads the CSV content to the prober's stage using a plain SQL PUT command.
+  // See the comment on downloadFile() for why this avoids SnowflakeConnection.uploadStream.
+  //
+  // The temp file basename must equal stageFilePath because PUT preserves the source
+  // filename when staging it -- and the subsequent COPY INTO (loadFileIntoTable) and
+  // GET (downloadFile) both reference @stage/stageFilePath. We put it inside a unique
+  // temp directory so concurrent probe processes don't collide on the same /tmp path.
+  //
+  // AUTO_COMPRESS=FALSE keeps the staged file name unsuffixed (no .gz appended) so the
+  // downstream COPY/GET still find it by stageFilePath.
+  // OVERWRITE=TRUE lets the deterministic stage be re-PUT on every probe run without
+  // manually clearing it first.
+  private static void uploadFile(Statement statement, String fileContent, String metricName) throws SQLException {
+    Path tempDir;
+    Path tempFile;
     try {
-      sfConnection.uploadStream("@" + stageName, "", new ByteArrayInputStream(fileContent.getBytes()), stageFilePath, false);
+      tempDir = Files.createTempDirectory("jdbc_prober_put_");
+      tempFile = tempDir.resolve(stageFilePath);
+      Files.write(tempFile, fileContent.getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      System.err.println("Error preparing file for upload: " + e.getMessage());
+      logMetric(metricName, Status.FAILURE);
+      System.exit(1);
+      return;
+    }
+    try {
+      String putQuery = "PUT 'file://" + tempFile.toAbsolutePath() + "' @" + stageName
+          + " AUTO_COMPRESS=FALSE OVERWRITE=TRUE";
+      try (ResultSet rs = statement.executeQuery(putQuery)) {
+        while (rs.next()) {
+          // Consume the per-file PUT result rows (source, target, size, status, ...)
+        }
+      }
       logMetric(metricName, Status.SUCCESS);
     } catch (SQLException e) {
       System.err.println("Error during file upload: " + e.getMessage());
       logMetric(metricName, Status.FAILURE);
       System.exit(1);
+    } finally {
+      deleteRecursivelyQuietly(tempDir);
     }
   }
 

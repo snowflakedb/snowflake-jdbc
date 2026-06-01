@@ -25,7 +25,7 @@ ENV SDKMAN_DIR="/app/.sdkman"
 
 RUN curl -s "https://get.sdkman.io?rcupdate=false&ci=false" | bash
 
-ARG MATRIX_VERSION='{"11.0.27-tem": ["4.2.0", "4.1.0", "4.0.2", "3.28.0", "3.27.1", "3.26.1", "3.25.1"], "21.0.7-tem": ["4.2.0", "4.1.0", "4.0.2", "3.28.0", "3.27.1", "3.26.1", "3.25.1"]}'
+ARG MATRIX_VERSION='{"11.0.27-tem": ["4.2.0", "4.1.0", "4.0.2"], "21.0.7-tem": ["4.2.0", "4.1.0", "4.0.2"]}'
 ENV DRIVERS_DIR="/opt/jdbc_drivers"
 
 RUN \
