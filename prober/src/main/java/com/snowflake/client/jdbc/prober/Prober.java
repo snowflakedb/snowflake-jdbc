@@ -43,24 +43,40 @@ public class Prober {
   private static String javaVersion;
   private static String driverVersion;
 
-  // Legacy random-suffix naming used by the previous version of this prober.
-  // generateRandomString(10) emits 10 characters: first uppercased, the rest
-  // lowercase from [a-z]. Snowflake stores unquoted identifiers uppercase, so
-  // legacy names look like:
-  //   TEST_STAGE_[A-Z]{10}       (e.g. TEST_STAGE_ABCDEFGHIJ)
-  //   TEST_TABLE[A-Z]{10}        (NOTE: missing underscore -- historical typo;
-  //                              see git history for prober/src/.../Prober.java
-  //                              between 2025-06-17 and now)
-  // The very-first version (commits 3f047afd9, 1098005a1 on 2025-06-09) used
-  // unsuffixed literals TEST_STAGE and TEST_TABLE, also covered by the regexes.
-  // The new deterministic suffix always contains version separators (e.g.
-  // _JAVA_17_0_10_TEM_JDBC_3_24_2), so it never matches these regexes.
+  // Legacy random-suffix naming used by previous versions of this prober.
+  // Audit of every revision of Prober.java across all branches turned up
+  // multiple historical naming shapes (so a single positive-match regex
+  // can't cover everything):
+  //   - "test_stage" / "test_table" literals (2025-06-09)
+  //   - "test_stage_" + generateRandomString(10)                       (long-lived)
+  //   - "test_table"  + generateRandomString(10) (NO underscore typo) (long-lived)
+  //   - "test_table_" + generateRandomString(10)                       (briefly)
+  //   - "test_stage_" + <pid>_<millis>_<6 chars>                       (briefly)
+  //   - "test_stage_" + <10 chars>_<millis>                            (briefly)
+  //   - "test_stage_" + <pid|test_id>_<millis>_<random>                (preprod WIP)
+  //   ...and analogous table forms.
+  //
+  // Snowflake stores unquoted identifiers as UPPERCASE, so the regex tier
+  // below works in uppercase but is case-insensitive ('i' flag) to be safe.
+  //
+  // Strategy: instead of trying to enumerate every historical positive shape,
+  // we INVERT the predicate. SHOW returns everything under the prober's prefix,
+  // and we keep only the names that DO NOT match the CURRENT deterministic
+  // shape ("test_stage_java_<...>" / "test_table_java_<...>"). Whatever's
+  // left is legacy by elimination, regardless of which historical format
+  // produced it.
+  //
+  // The CURRENT_RESOURCE_REGEX captures both probe variants -- regular
+  // (suffix "java_<j>_jdbc_<d>") and fail-closed (suffix "java_<j>_jdbc_<d>_fail_closed").
+  // Both share the "JAVA_" prefix right after the resource-kind prefix, which
+  // makes the exclusion trivial.
   private static final int LEGACY_CLEANUP_MAX_ITERATIONS = 10;
   private static final int LEGACY_CLEANUP_BATCH_SIZE = 1000;
   private static final String LEGACY_STAGE_PREFIX = "TEST_STAGE";
   private static final String LEGACY_TABLE_PREFIX = "TEST_TABLE";
-  private static final String LEGACY_STAGE_REGEX = "^TEST_STAGE(_[A-Z]{10})?$";
-  private static final String LEGACY_TABLE_REGEX = "^TEST_TABLE([A-Z]{10})?$";
+  // Anything under the prefix that does NOT match this regex is treated as legacy.
+  private static final String CURRENT_STAGE_REGEX = "^TEST_STAGE_JAVA_.*$";
+  private static final String CURRENT_TABLE_REGEX = "^TEST_TABLE_JAVA_.*$";
 
   enum Status {
     SUCCESS(0),
@@ -320,9 +336,9 @@ public class Prober {
       for (int iter = 0; iter < LEGACY_CLEANUP_MAX_ITERATIONS; iter++) {
         int iterDropped = 0;
         iterDropped += dropLegacyBatch(statement, "STAGES", "STAGE",
-            LEGACY_STAGE_PREFIX, LEGACY_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+            LEGACY_STAGE_PREFIX, CURRENT_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
         iterDropped += dropLegacyBatch(statement, "TABLES", "TABLE",
-            LEGACY_TABLE_PREFIX, LEGACY_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
+            LEGACY_TABLE_PREFIX, CURRENT_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
         totalDropped += iterDropped;
         iterationsRun++;
         if (iterDropped == 0) {
@@ -340,19 +356,25 @@ public class Prober {
     logMetricValue(metricPrefix + "_iterations", iterationsRun);
   }
 
+  // dropLegacyBatch enumerates objects under the given prefix and drops any
+  // whose name does NOT match `currentRegex`. That regex describes the shape
+  // of names CREATED by the current prober (deterministic per java/jdbc/variant);
+  // everything else under the prefix is legacy by elimination, regardless of
+  // which historical naming format produced it.
   private static int dropLegacyBatch(Statement statement, String showKind, String dropKind,
-                                     String prefix, String regex, int batchSize) {
+                                     String prefix, String currentRegex, int batchSize) {
     // Notes on the SQL:
     //   - SHOW <kind> returns names ordered by created_on DESC by default.
-    //     With CREATE OR REPLACE on every probe run, the active deterministic
-    //     stages occupy the top of that list and crowd legacy names off if
-    //     we only LIMIT in SHOW. To make sure we actually find legacy names,
-    //     we pull up to 10 000 rows (the SHOW maximum), filter to legacy
-    //     ones via REGEXP_LIKE, ORDER BY name ASC for deterministic batch
-    //     selection across runs, and only then take BATCH_SIZE for dropping.
+    //     We pull up to 10 000 rows (the SHOW maximum), exclude current
+    //     deterministic names via NOT REGEXP_LIKE, ORDER BY name ASC for
+    //     deterministic batch selection across runs, and only then take
+    //     BATCH_SIZE for dropping.
+    //   - The NOT REGEXP_LIKE predicate catches every historical naming
+    //     variant: 10-char random suffix, pid_timestamp_random combos,
+    //     name + timestamp combos, and the very-first literal `TEST_STAGE`
+    //     and `TEST_TABLE` (which also don't match `^TEST_STAGE_JAVA_...`).
     //   - LAST_QUERY_ID() is captured into a local variable immediately
-    //     after the SHOW so it can't be confused with any other query that
-    //     runs later in the block.
+    //     after the SHOW so it can't be confused with any other query.
     int showLimit = 10000;
     String script =
         "EXECUTE IMMEDIATE $$\n"
@@ -365,7 +387,7 @@ public class Prober {
         + "    LET rs RESULTSET := (\n"
         + "        SELECT \"name\" AS object_name\n"
         + "        FROM TABLE(RESULT_SCAN(:show_qid))\n"
-        + "        WHERE REGEXP_LIKE(\"name\", '" + regex + "', 'i')\n"
+        + "        WHERE NOT REGEXP_LIKE(\"name\", '" + currentRegex + "', 'i')\n"
         + "        ORDER BY \"name\"\n"
         + "        LIMIT " + batchSize + "\n"
         + "    );\n"
