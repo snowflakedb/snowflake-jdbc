@@ -276,6 +276,9 @@
               <ignoreNonCompile>true</ignoreNonCompile>
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:http-auth-aws</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:http-auth-spi</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:identity-spi</ignoredUnusedDeclaredDependency>
               </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
