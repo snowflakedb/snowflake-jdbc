@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.2.1-SNAPSHOT
+    - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).
     - Fixed OAuth token requests sending `scope=session:role:null` when no scope is configured (or scope is empty/blank); the `scope` parameter is now omitted entirely in those cases (snowflakedb/snowflake-jdbc#2646).
     - Fixed Okta native SSO federated login sending malformed JSON to `/api/v1/authn` (HTTP 400 from Okta) when the username or password contained JSON-special characters such as double quotes or backslashes; the request body is now serialized with Jackson instead of string concatenation.
     - Added one in-band telemetry record per successful login describing which connection-identifier fields the user supplied (`account_provided`, `account_with_region`, `account_org_provided`, `region_provided`, `host_provided`). No hostname or account value is included. This is gated by the existing server-side `CLIENT_TELEMETRY_ENABLED` parameter and can additionally be disabled locally by setting `SF_TELEMETRY_DISABLE_CONNECTION_SHAPE=true`. The telemetry collection is time-boxed and will be removed in a future release.
