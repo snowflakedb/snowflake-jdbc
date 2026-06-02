@@ -108,6 +108,13 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-annotations</artifactId>
         <version>${animal.sniffer.annotations.version}</version>
