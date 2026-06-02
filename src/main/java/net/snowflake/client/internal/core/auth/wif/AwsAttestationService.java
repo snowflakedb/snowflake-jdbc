@@ -14,11 +14,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.http.SdkHttpRequest;
-import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
-import software.amazon.awssdk.http.auth.spi.signer.SignRequest;
-import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
-import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -26,17 +21,14 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
 import software.amazon.awssdk.services.sts.model.Credentials;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
+import software.amazon.awssdk.services.sts.model.GetWebIdentityTokenRequest;
+import software.amazon.awssdk.services.sts.model.GetWebIdentityTokenResponse;
 
 public class AwsAttestationService {
   public static final SFLogger logger = SFLoggerFactory.getLogger(AwsAttestationService.class);
   public static final int TIMEOUT_MS = 10_000;
+  private static final String SIGNING_ALGORITHM_ES384 = "ES384";
   private static Region region;
-
-  private final AwsV4HttpSigner aws4Signer;
-
-  public AwsAttestationService() {
-    aws4Signer = AwsV4HttpSigner.create();
-  }
 
   void initializeSignerRegion() {
     logger.debug("Getting AWS region from environment variable");
@@ -61,35 +53,6 @@ public class AwsAttestationService {
 
   Region getAWSRegion() {
     return region;
-  }
-
-  SdkHttpRequest signRequestWithSigV4(
-      SdkHttpRequest signableRequest, AwsCredentials awsCredentials) {
-    AwsCredentialsIdentity credentialsIdentity;
-    if (awsCredentials instanceof AwsSessionCredentials) {
-      AwsSessionCredentials sessionCredentials = (AwsSessionCredentials) awsCredentials;
-
-      // Create AwsSessionCredentialsIdentity that properly includes the session token
-      credentialsIdentity =
-          AwsSessionCredentialsIdentity.create(
-              sessionCredentials.accessKeyId(),
-              sessionCredentials.secretAccessKey(),
-              sessionCredentials.sessionToken());
-    } else {
-      // For basic credentials, use AwsCredentialsIdentity
-      credentialsIdentity =
-          AwsCredentialsIdentity.create(
-              awsCredentials.accessKeyId(), awsCredentials.secretAccessKey());
-    }
-
-    SignRequest<AwsCredentialsIdentity> signRequest =
-        SignRequest.builder(credentialsIdentity)
-            .request(signableRequest)
-            .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "sts")
-            .putProperty(AwsV4HttpSigner.REGION_NAME, getAWSRegion().toString())
-            .build();
-
-    return aws4Signer.sign(signRequest).request();
   }
 
   AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn, String externalId)
@@ -174,7 +137,31 @@ public class AwsAttestationService {
     }
   }
 
-  private StsClient createStsClient(AwsCredentials credentials, int timeoutMs) {
+  String getWebIdentityToken(AwsCredentials credentials) throws SFException {
+    try (StsClient stsClient = createStsClient(credentials, TIMEOUT_MS)) {
+      GetWebIdentityTokenRequest request =
+          GetWebIdentityTokenRequest.builder()
+              .audience(WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE)
+              .signingAlgorithm(SIGNING_ALGORITHM_ES384)
+              .build();
+      GetWebIdentityTokenResponse response = stsClient.getWebIdentityToken(request);
+      String jwt = response.webIdentityToken();
+      if (jwt == null || jwt.isEmpty()) {
+        throw new SFException(
+            ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+            "AWS STS GetWebIdentityToken returned an empty token");
+      }
+      return jwt;
+    } catch (Exception e) {
+      logger.debug("AWS STS GetWebIdentityToken call failed", e);
+      throw new SFException(
+          e,
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Failed to call AWS STS GetWebIdentityToken: " + e.getMessage());
+    }
+  }
+
+  StsClient createStsClient(AwsCredentials credentials, int timeoutMs) {
     return StsClient.builder()
         .credentialsProvider(StaticCredentialsProvider.create(credentials))
         .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofMillis(timeoutMs)))
