@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.2.1-SNAPSHOT
+    - Fixed OAuth token requests sending `scope=session:role:null` when no scope is configured (or scope is empty/blank); the `scope` parameter is now omitted entirely in those cases (snowflakedb/snowflake-jdbc#2646).
     - Fixed Okta native SSO federated login sending malformed JSON to `/api/v1/authn` (HTTP 400 from Okta) when the username or password contained JSON-special characters such as double quotes or backslashes; the request body is now serialized with Jackson instead of string concatenation.
     - Added one in-band telemetry record per successful login describing which connection-identifier fields the user supplied (`account_provided`, `account_with_region`, `account_org_provided`, `region_provided`, `host_provided`). No hostname or account value is included. This is gated by the existing server-side `CLIENT_TELEMETRY_ENABLED` parameter and can additionally be disabled locally by setting `SF_TELEMETRY_DISABLE_CONNECTION_SHAPE=true`. The telemetry collection is time-boxed and will be removed in a future release.
     - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
