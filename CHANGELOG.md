@@ -18,7 +18,7 @@
     - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
     - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
     - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close (snowflakedb/snowflake-jdbc#2620).
-    - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#XXXX). 
+    - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#2655). 
 
 - v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
