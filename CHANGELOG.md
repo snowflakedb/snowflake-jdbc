@@ -21,6 +21,7 @@
     - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#2655). 
     - Fixed inverted null check in `CredentialManager.updateInputWithTokenAndPublicKey` that prevented DPoP bundled access tokens loaded from the credential cache from being applied to the login input (snowflakedb/snowflake-jdbc#2650).
     - Fixed `Connection.setCatalog` and `Connection.setSchema` producing malformed SQL (or switching to an unintended database/schema) when the supplied name contained an embedded `"` character; the name is now escaped per the SQL-standard quoted-identifier rule before being interpolated into the `USE` statement (snowflakedb/snowflake-jdbc#2651).
+    - Switched AWS Workload Identity Federation attestation from a SigV4-presigned `GetCallerIdentity` request to STS `GetWebIdentityToken`, returning a signed JWT directly. (snowflakedb/snowflake-jdbc#2653)
 
 - v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)

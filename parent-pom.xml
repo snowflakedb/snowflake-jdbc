@@ -666,29 +666,11 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>identity-spi</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-core</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>http-auth-aws</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>software.amazon.awssdk.crt</groupId>
-          <artifactId>aws-crt</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>http-auth-spi</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
