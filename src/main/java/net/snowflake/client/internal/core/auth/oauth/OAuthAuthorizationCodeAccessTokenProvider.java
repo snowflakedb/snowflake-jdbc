@@ -181,10 +181,11 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
       throws SFException {
     SFOauthLoginInput oauthLoginInput = loginInput.getOauthLoginInput();
     ClientID clientID = new ClientID(oauthLoginInput.getClientId());
-    String scope = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
+    String scopeString = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
+    Scope scope = scopeString != null ? new Scope(scopeString) : null;
     AuthorizationRequest.Builder builder =
         new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
-            .scope(new Scope(scope))
+            .scope(scope)
             .state(state)
             .redirectionURI(redirectUri)
             .codeChallenge(pkceVerifier, CodeChallengeMethod.S256)
@@ -211,8 +212,8 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope =
-        new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
+    String scopeString = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
+    Scope scope = scopeString != null ? new Scope(scopeString) : null;
     TokenRequest.Builder tokenRequestBuilder =
         new TokenRequest.Builder(
                 OAuthUtil.getTokenRequestUrl(
