@@ -11,6 +11,7 @@ import net.snowflake.client.internal.core.SFLoginInput;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.regions.Region;
 
 public class AwsIdentityAttestationCreatorTest {
 
@@ -26,11 +27,24 @@ public class AwsIdentityAttestationCreatorTest {
   }
 
   @Test
+  public void shouldThrowExceptionWhenNoRegion() {
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
+    Mockito.when(attestationServiceMock.getAWSCredentials())
+        .thenReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"));
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(null);
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceMock, new SFLoginInput());
+    assertThrows(SFException.class, attestationCreator::createAttestation);
+  }
+
+  @Test
   public void shouldPropagateExceptionFromGetWebIdentityToken() throws SFException {
     AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
     AwsSessionCredentials credentials =
         AwsSessionCredentials.create("abc", "abc", "aws-session-token");
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(credentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(credentials)))
         .thenThrow(
             new SFException(
@@ -47,6 +61,7 @@ public class AwsIdentityAttestationCreatorTest {
     AwsSessionCredentials credentials =
         AwsSessionCredentials.create("abc", "abc", "aws-session-token");
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(credentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(credentials)))
         .thenReturn(FAKE_JWT);
 
@@ -68,6 +83,7 @@ public class AwsIdentityAttestationCreatorTest {
     AwsSessionCredentials credentials =
         AwsSessionCredentials.create("abc", "abc", "aws-session-token");
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(credentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(credentials)))
         .thenReturn(FAKE_JWT);
 
@@ -108,6 +124,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
 
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
     Mockito.when(
             attestationServiceMock.assumeRole(
@@ -142,6 +159,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
 
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
     Mockito.when(
             attestationServiceMock.assumeRole(
@@ -176,6 +194,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
 
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
     Mockito.when(
             attestationServiceMock.assumeRole(
@@ -212,6 +231,7 @@ public class AwsIdentityAttestationCreatorTest {
         AwsSessionCredentials.create("final-key", "final-secret", "final-token");
 
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
     // First hop: no external ID
     Mockito.when(

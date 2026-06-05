@@ -39,6 +39,9 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       throw new SFException(
           ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS credentials were found");
     }
+    if (attestationService.getAWSRegion() == null) {
+      throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS region was found");
+    }
 
     String jwt = attestationService.getWebIdentityToken(awsCredentials);
     return new WorkloadIdentityAttestation(
