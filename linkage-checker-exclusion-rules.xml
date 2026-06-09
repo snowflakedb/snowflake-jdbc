@@ -159,6 +159,16 @@
         <Source><Package name="reactor.util"/></Source>
         <Reason>Optional</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.micrometer"/></Target>
+        <Source><Package name="reactor.netty"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.netty.incubator"/></Target>
+        <Source><Package name="reactor.netty"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
     <!--
     <LinkageError>
         <Target><Package name=""/></Target>

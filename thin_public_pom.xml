@@ -37,9 +37,12 @@
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>2.45.1</awssdk.version>
-    <azure.core.version>1.57.0</azure.core.version>
-    <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
-    <azure.storage.common.version>12.31.0</azure.storage.common.version>
+    <azure.core.version>1.58.1</azure.core.version>
+    <azure.core.http.netty.version>1.16.5</azure.core.http.netty.version>
+    <azure.storage.blob.version>12.34.0</azure.storage.blob.version>
+    <azure.storage.common.version>12.33.0</azure.storage.common.version>
+    <reactor.core.version>3.7.19</reactor.core.version>
+    <reactor.netty.core.version>1.2.18</reactor.netty.core.version>
     <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
     <bouncycastle.version>1.84</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
@@ -244,6 +247,22 @@
       <groupId>com.azure</groupId>
       <artifactId>azure-core</artifactId>
       <version>${azure.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core-http-netty</artifactId>
+      <version>${azure.core.http.netty.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.netty</groupId>
+      <artifactId>reactor-netty-core</artifactId>
+      <version>${reactor.netty.core.version}</version>
     </dependency>
     <dependency>
       <groupId>com.azure</groupId>

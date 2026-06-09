@@ -67,6 +67,9 @@ public abstract class SFBaseSession {
   // Shared S3 Netty event-loop group; AutoCloseable to keep this base class AWS-free.
   private AutoCloseable s3EventLoopGroup;
   private boolean s3EventLoopGroupClosed;
+
+  private AutoCloseable azureHttpClient;
+  private boolean azureHttpClientClosed;
   private SFConnectionHandler sfConnectionHandler;
   protected List<SFException> sqlWarnings = new ArrayList<>();
   // Unique Session ID
@@ -1330,6 +1333,7 @@ public abstract class SFBaseSession {
       doClose(internalCallMarker);
     } finally {
       closeS3EventLoopGroup();
+      closeAzureHttpClient();
     }
   }
 
@@ -1377,6 +1381,33 @@ public abstract class SFBaseSession {
       logger.debug("Failed to close shared S3 event-loop group: {}", ex.toString());
     }
     s3EventLoopGroup = null;
+  }
+
+  /** Lazily create (or return) the per-session shared Azure SDK HTTP client. */
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends AutoCloseable> T getOrCreateAzureHttpClient(
+      Supplier<? extends T> factory) {
+    if (azureHttpClientClosed) {
+      throw new IllegalStateException("Cannot create Azure HTTP client: session is already closed");
+    }
+    if (azureHttpClient == null) {
+      azureHttpClient = factory.get();
+    }
+    return (T) azureHttpClient;
+  }
+
+  /** Best-effort releases the held Azure HTTP client. Idempotent. */
+  protected synchronized void closeAzureHttpClient() {
+    azureHttpClientClosed = true;
+    if (azureHttpClient == null) {
+      return;
+    }
+    try {
+      azureHttpClient.close();
+    } catch (Exception ex) {
+      logger.debug("Failed to close shared Azure HttpClient: {}", ex.toString());
+    }
+    azureHttpClient = null;
   }
 
   /**
