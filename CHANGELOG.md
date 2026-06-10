@@ -2,7 +2,9 @@
 
 # Changelog
 - v4.3.1-SNAPSHOT
-    - Fixed `SFResultJsonParser2Failed: invalid escaped unicode character` when a chunked JSON result contained UTF-16 surrogate-pair `\u` escapes (e.g. emoji) and the read buffer happened to split exactly 9 bytes after `\u`; the off-by-one boundary guard in `ResultJsonParserV2` now reserves the full 10 bytes a surrogate pair requires (snowflakedb/snowflake-jdbc#2660).
+  - Fixed Azure PUT memory leak where each PUT instantiated a fresh `BlobServiceClient` whose underlying reactor-netty stack the SDK exposes no API to release; the Azure SDK `HttpClient` and its `ConnectionProvider` are now shared across all PUTs in a session and disposed at session close, mirroring the existing S3 pattern (snowflakedb/snowflake-jdbc#2658).
+  - Fixed `SFResultJsonParser2Failed: invalid escaped unicode character` when a chunked JSON result contained UTF-16 surrogate-pair `\u` escapes (e.g. emoji) and the read buffer happened to split exactly 9 bytes after `\u`; the off-by-one boundary guard in `ResultJsonParserV2` now reserves the full 10 bytes a surrogate pair requires (snowflakedb/snowflake-jdbc#2660).
+
 - v4.3.0
     - Bumped AWS SDK from 2.37.5 to 2.45.1, which transitively brings netty up to 4.1.133.Final and resolves a cluster of High/Medium netty CVEs (HTTP request smuggling, CRLF injection, data amplification, resource allocation) flagged by Snyk against `netty-nio-client` in `thin_public_pom.xml` (snowflakedb/snowflake-jdbc#2654).
     - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).

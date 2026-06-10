@@ -155,9 +155,16 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       } else {
         proxyOptions = createSessionlessProxyOptionsForAzure(stage.getProxyProperties());
       }
-      HttpClientOptions clientOptions = new HttpClientOptions();
-      clientOptions.setProxyOptions(proxyOptions);
-      builder.clientOptions(clientOptions);
+      if (session != null) {
+        final ProxyOptions effectiveProxy = proxyOptions;
+        AzureHttpClientHolder holder =
+            session.getOrCreateAzureHttpClient(() -> AzureHttpClientHolder.create(effectiveProxy));
+        builder.httpClient(holder.httpClient());
+      } else {
+        HttpClientOptions clientOptions = new HttpClientOptions();
+        clientOptions.setProxyOptions(proxyOptions);
+        builder.clientOptions(clientOptions);
+      }
       this.azStorageClient = builder.buildClient();
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
@@ -218,11 +225,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     setupAzureClient(stageInfo, encMat, session);
   }
 
-  /** shuts down the client */
+  /** No-op; the HttpClient lifecycle is owned by SFBaseSession. */
   @Override
-  public void shutdown() {
-    /* Not available */
-  }
+  public void shutdown() {}
 
   /**
    * For a set of remote storage objects under a remote location and a given prefix/path returns
