@@ -209,6 +209,42 @@ public class ResultJsonParserV2Test {
     assertEquals("03 C3 A4 00 ", stringToHex(chunk.getCell(0, 0).toString()));
   }
 
+  // SNOW-3630146: a surrogate pair (e.g. the loudspeaker emoji, encoded as
+  // backslash-uD83D backslash-uDCE2) needs 10 bytes after the parser consumes
+  // backslash-u: XXXX + backslash-u + XXXX. The buffer-boundary guard at
+  // ResultJsonParserV2.java:324 only checks `>= 9`, so when a chunk boundary
+  // leaves exactly 9 bytes after backslash-u, the parser enters parseCodepoint
+  // with too few bytes and throws "SFResultJsonParser2Failed: invalid escaped
+  // unicode character".
+  @Test
+  public void testSurrogatePairSplitOnBufferBoundary() throws SnowflakeSQLException {
+    SFSession session = null;
+    String json = "[\"\\uD83D\\uDCE2\"]";
+    byte[] data = json.getBytes(StandardCharsets.UTF_8);
+    assertEquals(16, data.length);
+
+    JsonResultChunk chunk = new JsonResultChunk("", 1, 1, data.length, session);
+    ResultJsonParserV2 jp = new ResultJsonParserV2();
+    jp.startParsing(chunk, session);
+
+    // 13-byte slice: after the parser consumes "[", quote, backslash, "u",
+    // exactly 9 bytes remain ("D83D" + backslash + "uDCE"), which is the
+    // off-by-one boundary.
+    ByteBuffer first = ByteBuffer.wrap(data, 0, 13);
+    jp.continueParsing(first, session);
+
+    // With the fix, the parser rolls back to before `u` and defers. Resume from
+    // the unconsumed position with the remainder.
+    int resumeFrom = first.position();
+    ByteBuffer rest = ByteBuffer.wrap(data, resumeFrom, data.length - resumeFrom);
+    jp.continueParsing(rest, session);
+    byte[] tail = new byte[rest.remaining()];
+    rest.get(tail);
+    jp.endParsing(ByteBuffer.wrap(tail), session);
+
+    assertEquals("📢", chunk.getCell(0, 0).toString());
+  }
+
   public static String stringToHex(String input) {
     byte[] byteArray = input.getBytes(StandardCharsets.UTF_8);
     StringBuilder sb = new StringBuilder();

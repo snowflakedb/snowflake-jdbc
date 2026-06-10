@@ -321,7 +321,7 @@ public class ResultJsonParserV2 {
 
               // have to have at least 4+2+4=10 chars left to read
               // already saw "\\u", now missing "AAAA\\uAAAA"
-              if (in.remaining() >= 9 || (lastData && in.remaining() >= 3)) {
+              if (in.remaining() >= 10 || (lastData && in.remaining() >= 4)) {
                 if (!parseCodepoint(in)) {
                   throw new SnowflakeSQLLoggedException(
                       session,
@@ -331,8 +331,8 @@ public class ResultJsonParserV2 {
                 }
                 state = State.IN_STRING;
               } else {
-                // if the number of bytes left un-parsed in the buffer is less than 9 (unless it is
-                // the last remaining data in the buffer),
+                // if the number of bytes left un-parsed in the buffer is less than 10 (or less
+                // than 4 if it is the last remaining data in the buffer),
                 // there is not enough bytes to parse the codepoint. Move the position back 1,
                 // so we can re-enter parsing at this position with the ESCAPE state.
                 ((Buffer) in).position(((Buffer) in).position() - 1);
