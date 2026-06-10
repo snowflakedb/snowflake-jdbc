@@ -1,6 +1,7 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.3.1-SNAPSHOT
 - v4.3.0
     - Bumped AWS SDK from 2.37.5 to 2.45.1, which transitively brings netty up to 4.1.133.Final and resolves a cluster of High/Medium netty CVEs (HTTP request smuggling, CRLF injection, data amplification, resource allocation) flagged by Snyk against `netty-nio-client` in `thin_public_pom.xml` (snowflakedb/snowflake-jdbc#2654).
     - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).
