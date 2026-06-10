@@ -482,7 +482,7 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
     logger.trace("void setCatalog(String catalog)", false);
 
     // switch db by running "use db"
-    this.executeImmediate("use database \"" + catalog + "\"");
+    this.executeImmediate("use database \"" + escapeIdentifier(catalog) + "\"");
   }
 
   @Override
@@ -811,9 +811,14 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
 
     // switch schema by running "use db.schema"
     if (databaseName == null) {
-      this.executeImmediate("use schema \"" + schema + "\"");
+      this.executeImmediate("use schema \"" + escapeIdentifier(schema) + "\"");
     } else {
-      this.executeImmediate("use schema \"" + databaseName + "\".\"" + schema + "\"");
+      this.executeImmediate(
+          "use schema \""
+              + escapeIdentifier(databaseName)
+              + "\".\""
+              + escapeIdentifier(schema)
+              + "\"");
     }
   }
 
@@ -1164,5 +1169,9 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
 
   public void removeClosedStatement(Statement stmt) {
     openStatements.remove(stmt);
+  }
+
+  private static String escapeIdentifier(String name) {
+    return name == null ? null : name.replace("\"", "\"\"");
   }
 }

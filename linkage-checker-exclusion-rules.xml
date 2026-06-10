@@ -102,6 +102,11 @@
         <Source><Package name="software.amazon.awssdk.transfer"/></Source>
         <Reason>CRT dependency excluded, not used in runtime</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.checksums.internal"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
     <!-- AWS SDK SignerProperty fields - false positives from linkage checker 1.5.13 -->
     <!-- These fields exist in the actual JARs and are resolvable in IDEs, but linkage checker incorrectly reports them as missing -->
     <LinkageError>

@@ -36,7 +36,7 @@
     <animal.sniffer.annotations.version>1.27</animal.sniffer.annotations.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <awssdk.version>2.37.5</awssdk.version>
+    <awssdk.version>2.45.1</awssdk.version>
     <azure.core.version>1.57.0</azure.core.version>
     <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
     <azure.storage.common.version>12.31.0</azure.storage.common.version>
@@ -55,13 +55,13 @@
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
     <grpc.version>1.81.0</grpc.version>
-    <jackson.version>2.18.4.1</jackson.version>
+    <jackson.version>2.18.7</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
     <jsoup.version>1.15.3</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
-    <netty.version>4.1.133.Final</netty.version>
+    <netty.version>4.1.135.Final</netty.version>
     <nimbusds.version>10.6</nimbusds.version>
     <nimbusds.oauth2.version>11.30.1</nimbusds.oauth2.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -104,6 +104,13 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -169,29 +176,11 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>identity-spi</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-core</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>http-auth-aws</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>software.amazon.awssdk.crt</groupId>
-          <artifactId>aws-crt</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>http-auth-spi</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

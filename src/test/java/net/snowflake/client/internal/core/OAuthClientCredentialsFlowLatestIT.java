@@ -23,6 +23,8 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
       SCENARIOS_BASE_DIR + "/dpop_nonce_error_flow.json";
   private static final String TOKEN_REQUEST_ERROR_SCENARIO_MAPPING =
       SCENARIOS_BASE_DIR + "/token_request_error.json";
+  private static final String SUCCESSFUL_FLOW_NO_SCOPE_SCENARIO_MAPPINGS =
+      SCENARIOS_BASE_DIR + "/successful_flow_no_scope.json";
 
   @Test
   public void successfulFlowScenario() throws SFException {
@@ -72,6 +74,18 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
             .contains("JDBC driver encountered communication error. Message: HTTP status=400"));
   }
 
+  @Test
+  public void successfulFlowScenarioWithoutScope() throws SFException {
+    importMappingFromResources(SUCCESSFUL_FLOW_NO_SCOPE_SCENARIO_MAPPINGS);
+    SFLoginInput loginInput = createLoginInputStubWithEmptyScope();
+    AccessTokenProvider provider = new OAuthClientCredentialsAccessTokenProvider();
+    TokenResponseDTO tokenResponse = provider.getAccessToken(loginInput);
+    String accessToken = tokenResponse.getAccessToken();
+
+    Assertions.assertFalse(SnowflakeUtil.isNullOrEmpty(accessToken));
+    Assertions.assertEquals("access-token-no-scope", accessToken);
+  }
+
   private SFLoginInput createLoginInputStub() {
     SFLoginInput loginInputStub = new SFLoginInput();
     loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
@@ -92,6 +106,23 @@ public class OAuthClientCredentialsFlowLatestIT extends BaseWiremockTest {
   private SFLoginInput createLoginInputStubWithDPoPEnabled() {
     SFLoginInput loginInputStub = createLoginInputStub();
     loginInputStub.setDPoPEnabled(true);
+    return loginInputStub;
+  }
+
+  private SFLoginInput createLoginInputStubWithEmptyScope() {
+    SFLoginInput loginInputStub = new SFLoginInput();
+    loginInputStub.setServerUrl(String.format("http://%s:%d/", WIREMOCK_HOST, wiremockHttpPort));
+    loginInputStub.setOauthLoginInput(
+        new SFOauthLoginInput(
+            "123",
+            "123",
+            null,
+            null,
+            String.format("http://%s:%d/oauth/token-request", WIREMOCK_HOST, wiremockHttpPort),
+            ""));
+    loginInputStub.setSocketTimeout(Duration.ofMinutes(5));
+    loginInputStub.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+
     return loginInputStub;
   }
 }
