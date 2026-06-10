@@ -35,48 +35,14 @@ public class Prober {
   private static final Random random = new Random();
   // Snowflake resource names. Assigned in main() once we know the scope and
   // versions, so each (java_version, driver_version, probe variant) combo
-  // owns a stable, deterministic pool of objects -- CREATE OR REPLACE then
-  // makes every run idempotent and leak-free.
+  // owns a stable, deterministic object name. Combined with CREATE OR REPLACE
+  // this makes every run idempotent: a crashed previous run is reclaimed on
+  // the next invocation instead of accumulating new random-suffixed objects.
   private static String stageName;
   private static String stageFilePath;
   private static String tableName;
   private static String javaVersion;
   private static String driverVersion;
-
-  // Legacy random-suffix naming used by previous versions of this prober.
-  // Audit of every revision of Prober.java across all branches turned up
-  // multiple historical naming shapes (so a single positive-match regex
-  // can't cover everything):
-  //   - "test_stage" / "test_table" literals (2025-06-09)
-  //   - "test_stage_" + generateRandomString(10)                       (long-lived)
-  //   - "test_table"  + generateRandomString(10) (NO underscore typo) (long-lived)
-  //   - "test_table_" + generateRandomString(10)                       (briefly)
-  //   - "test_stage_" + <pid>_<millis>_<6 chars>                       (briefly)
-  //   - "test_stage_" + <10 chars>_<millis>                            (briefly)
-  //   - "test_stage_" + <pid|test_id>_<millis>_<random>                (preprod WIP)
-  //   ...and analogous table forms.
-  //
-  // Snowflake stores unquoted identifiers as UPPERCASE, so the regex tier
-  // below works in uppercase but is case-insensitive ('i' flag) to be safe.
-  //
-  // Strategy: instead of trying to enumerate every historical positive shape,
-  // we INVERT the predicate. SHOW returns everything under the prober's prefix,
-  // and we keep only the names that DO NOT match the CURRENT deterministic
-  // shape ("test_stage_java_<...>" / "test_table_java_<...>"). Whatever's
-  // left is legacy by elimination, regardless of which historical format
-  // produced it.
-  //
-  // The CURRENT_RESOURCE_REGEX captures both probe variants -- regular
-  // (suffix "java_<j>_jdbc_<d>") and fail-closed (suffix "java_<j>_jdbc_<d>_fail_closed").
-  // Both share the "JAVA_" prefix right after the resource-kind prefix, which
-  // makes the exclusion trivial.
-  private static final int LEGACY_CLEANUP_MAX_ITERATIONS = 10;
-  private static final int LEGACY_CLEANUP_BATCH_SIZE = 1000;
-  private static final String LEGACY_STAGE_PREFIX = "TEST_STAGE";
-  private static final String LEGACY_TABLE_PREFIX = "TEST_TABLE";
-  // Anything under the prefix that does NOT match this regex is treated as legacy.
-  private static final String CURRENT_STAGE_REGEX = "^TEST_STAGE_JAVA_.*$";
-  private static final String CURRENT_TABLE_REGEX = "^TEST_TABLE_JAVA_.*$";
 
   enum Status {
     SUCCESS(0),
@@ -296,118 +262,6 @@ public class Prober {
       logMetric(metricName, Status.FAILURE);
       System.exit(1);
     }
-    // Best-effort sweep of legacy random-suffix resources left behind by
-    // earlier deployments. Never throws -- a sweep failure must not affect
-    // the probe outcome. Emits its own cloudprober metric (status + counts)
-    // so the sweep is observable in dashboards rather than just stderr.
-    cleanupLegacyRandomResources(statement, metricName + "_legacy");
-  }
-
-  /**
-   * Drops a bounded number of stages and tables left behind by previous
-   * prober deployments that used a random suffix.
-   *
-   * Mirrors the design used in the Python and ODBC probers:
-   *   - One Snowflake Scripting block per (kind, prefix) target -- SHOW +
-   *     RESULT_SCAN + REGEXP_LIKE + EXECUTE IMMEDIATE DROP loop, all running
-   *     server-side so a single JDBC round-trip drops up to BATCH_SIZE
-   *     objects per kind regardless of backlog size.
-   *   - SHOW has a predictable 10 000-row cap and never raises the
-   *     "INFORMATION_SCHEMA returned too much data" error.
-   *   - Outer loop runs up to MAX_ITERATIONS sweeps per probe execution to
-   *     accelerate draining; breaks early when a sweep drops 0 objects.
-   *   - The REGEXP_LIKE tail precisely matches the historical random suffix
-   *     ([A-Z]{10}, optionally absent for the very-first 2025-06 literals)
-   *     so the new deterministic names -- which always contain version
-   *     separator underscores -- are never matched.
-   *
-   * Emits three cloudprober metrics under `metricPrefix` so the sweep is
-   * observable in dashboards (the previous version only wrote to stderr,
-   * which is why the activity looked invisible despite running):
-   *   - <metricPrefix>            = 0 on success / 1 on uncaught failure
-   *   - <metricPrefix>_dropped    = total objects dropped this execution
-   *   - <metricPrefix>_iterations = number of sweep iterations actually run
-   */
-  private static void cleanupLegacyRandomResources(Statement statement, String metricPrefix) {
-    int totalDropped = 0;
-    int iterationsRun = 0;
-    Status status = Status.SUCCESS;
-    try {
-      for (int iter = 0; iter < LEGACY_CLEANUP_MAX_ITERATIONS; iter++) {
-        int iterDropped = 0;
-        iterDropped += dropLegacyBatch(statement, "STAGES", "STAGE",
-            LEGACY_STAGE_PREFIX, CURRENT_STAGE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
-        iterDropped += dropLegacyBatch(statement, "TABLES", "TABLE",
-            LEGACY_TABLE_PREFIX, CURRENT_TABLE_REGEX, LEGACY_CLEANUP_BATCH_SIZE);
-        totalDropped += iterDropped;
-        iterationsRun++;
-        if (iterDropped == 0) {
-          break;
-        }
-      }
-    } catch (Exception e) {
-      System.err.println("Error during legacy resource cleanup: " + e.getMessage());
-      status = Status.FAILURE;
-    }
-    System.err.println("Legacy cleanup: dropped " + totalDropped
-        + " objects across " + iterationsRun + " iteration(s).");
-    logMetric(metricPrefix, status);
-    logMetricValue(metricPrefix + "_dropped", totalDropped);
-    logMetricValue(metricPrefix + "_iterations", iterationsRun);
-  }
-
-  // dropLegacyBatch enumerates objects under the given prefix and drops any
-  // whose name does NOT match `currentRegex`. That regex describes the shape
-  // of names CREATED by the current prober (deterministic per java/jdbc/variant);
-  // everything else under the prefix is legacy by elimination, regardless of
-  // which historical naming format produced it.
-  private static int dropLegacyBatch(Statement statement, String showKind, String dropKind,
-                                     String prefix, String currentRegex, int batchSize) {
-    // Notes on the SQL:
-    //   - SHOW <kind> returns names ordered by created_on DESC by default.
-    //     We pull up to 10 000 rows (the SHOW maximum), exclude current
-    //     deterministic names via NOT REGEXP_LIKE, ORDER BY name ASC for
-    //     deterministic batch selection across runs, and only then take
-    //     BATCH_SIZE for dropping.
-    //   - The NOT REGEXP_LIKE predicate catches every historical naming
-    //     variant: 10-char random suffix, pid_timestamp_random combos,
-    //     name + timestamp combos, and the very-first literal `TEST_STAGE`
-    //     and `TEST_TABLE` (which also don't match `^TEST_STAGE_JAVA_...`).
-    //   - LAST_QUERY_ID() is captured into a local variable immediately
-    //     after the SHOW so it can't be confused with any other query.
-    int showLimit = 10000;
-    String script =
-        "EXECUTE IMMEDIATE $$\n"
-        + "DECLARE\n"
-        + "    dropped INT DEFAULT 0;\n"
-        + "    show_qid VARCHAR;\n"
-        + "BEGIN\n"
-        + "    SHOW " + showKind + " STARTS WITH '" + prefix + "' LIMIT " + showLimit + ";\n"
-        + "    show_qid := LAST_QUERY_ID();\n"
-        + "    LET rs RESULTSET := (\n"
-        + "        SELECT \"name\" AS object_name\n"
-        + "        FROM TABLE(RESULT_SCAN(:show_qid))\n"
-        + "        WHERE NOT REGEXP_LIKE(\"name\", '" + currentRegex + "', 'i')\n"
-        + "        ORDER BY \"name\"\n"
-        + "        LIMIT " + batchSize + "\n"
-        + "    );\n"
-        + "    LET c1 CURSOR FOR rs;\n"
-        + "    FOR row_var IN c1 DO\n"
-        + "        EXECUTE IMMEDIATE 'DROP " + dropKind + " IF EXISTS \"' || row_var.object_name || '\"';\n"
-        + "        dropped := dropped + 1;\n"
-        + "    END FOR;\n"
-        + "    RETURN dropped;\n"
-        + "END;\n"
-        + "$$";
-    try (ResultSet rs = statement.executeQuery(script)) {
-      if (rs.next()) {
-        return rs.getInt(1);
-      }
-    } catch (SQLException e) {
-      System.err.println("Legacy " + dropKind + " cleanup batch failed (prefix="
-          + prefix + "): " + e.getMessage());
-    }
-    return 0;
   }
 
   private static void compareFetchedDataAndFile(Statement statement, List<String> csv, String metricName) throws SQLException {
