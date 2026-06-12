@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.1-SNAPSHOT
+  - Fixed GCS-backed internal stage PUT failing with opaque `invalid_gcs_credentials` in SPCS pods on GCP: the GCS SDK's Application Default Credentials (ADC) probe was reaching out to `metadata.google.internal` which is unreachable inside SPCS; explicit credentials are now always set when a `GCS_ACCESS_TOKEN` is present, suppressing the ADC probe entirely. Also fixed `GCSAccessStrategyAwsSdk` rejecting custom GCS endpoints that lack an `https://` scheme prefix (e.g. bare `storage.me-central2.rep.googleapis.com`), mirroring the existing handling in `GCSDefaultAccessStrategy`. The catch-all in `setupGCSClient` now chains and logs the original exception instead of swallowing it (snowflakedb/snowflake-jdbc#2664).
   - Fixed Azure PUT memory leak where each PUT instantiated a fresh `BlobServiceClient` whose underlying reactor-netty stack the SDK exposes no API to release; the Azure SDK `HttpClient` and its `ConnectionProvider` are now shared across all PUTs in a session and disposed at session close, mirroring the existing S3 pattern (snowflakedb/snowflake-jdbc#2658).
   - Fixed `SFResultJsonParser2Failed: invalid escaped unicode character` when a chunked JSON result contained UTF-16 surrogate-pair `\u` escapes (e.g. emoji) and the read buffer happened to split exactly 9 bytes after `\u`; the off-by-one boundary guard in `ResultJsonParserV2` now reserves the full 10 bytes a surrogate pair requires (snowflakedb/snowflake-jdbc#2660).
 
