@@ -100,6 +100,8 @@ public enum SFSessionProperty {
 
   PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class),
 
+  PUT_GET_MAX_BUFFER_SIZE("putGetMaxBufferSize", false, Integer.class),
+
   RETRY_TIMEOUT("retryTimeout", false, Integer.class),
   ENABLE_DIAGNOSTICS("ENABLE_DIAGNOSTICS", false, Boolean.class),
   DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
