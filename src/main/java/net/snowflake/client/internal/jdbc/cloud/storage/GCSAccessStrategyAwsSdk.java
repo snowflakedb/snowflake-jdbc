@@ -60,7 +60,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
     String endpoint = "https://storage.googleapis.com";
     if (oEndpoint.isPresent()) {
-      endpoint = oEndpoint.get();
+      String custom = oEndpoint.get();
+      endpoint = custom.startsWith("https://") ? custom : "https://" + custom;
     }
     if (stage.getStorageAccount() != null && endpoint.startsWith(stage.getStorageAccount())) {
       endpoint = endpoint.replaceFirst(stage.getStorageAccount() + ".", "");
