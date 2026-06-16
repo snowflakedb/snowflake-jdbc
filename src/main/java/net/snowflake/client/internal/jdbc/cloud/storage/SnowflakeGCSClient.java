@@ -1262,8 +1262,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               encryptionKeySize);
         }
       }
+    } catch (SnowflakeSQLException ex) {
+      logger.debug("Failed to initialize GCS client", ex);
+      throw ex;
     } catch (Exception ex) {
-      throw new IllegalArgumentException("invalid_gcs_credentials");
+      logger.debug("Failed to initialize GCS client", ex);
+      throw new IllegalArgumentException("invalid_gcs_credentials", ex);
     }
   }
 
