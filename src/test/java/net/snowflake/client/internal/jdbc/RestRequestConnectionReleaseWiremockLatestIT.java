@@ -96,9 +96,4 @@ public class RestRequestConnectionReleaseWiremockLatestIT extends BaseWiremockTe
       connMgr.close();
     }
   }
-
-  @Test
-  public void doesNotReleaseConnectionImmediatelyOnSuccessfulResponse() throws Exception {
-    // implemented in Task 4
-  }
 }
