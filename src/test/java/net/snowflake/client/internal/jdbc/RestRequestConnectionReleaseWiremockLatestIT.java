@@ -98,11 +98,6 @@ public class RestRequestConnectionReleaseWiremockLatestIT extends BaseWiremockTe
   }
 
   @Test
-  public void releasesConnectionWhenExhaustionEndsInNullResponse() throws Exception {
-    // implemented in Task 3
-  }
-
-  @Test
   public void doesNotReleaseConnectionImmediatelyOnSuccessfulResponse() throws Exception {
     // implemented in Task 4
   }
