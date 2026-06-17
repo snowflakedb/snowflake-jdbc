@@ -15,6 +15,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +59,7 @@ import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 import net.snowflake.common.core.SqlState;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
@@ -1252,5 +1254,100 @@ public class RestRequestTest {
     } finally {
       SFTrustManager.cleanTestSystemParameters();
     }
+  }
+
+  /**
+   * Verifies that the patch's release gate fires on non-200 retry exhaustion. With maxRetries=1
+   * the request is attempted twice: prepareRetry() releases once between attempts, and the patch
+   * releases once on the final failure-side break. Total expected: times(2).
+   */
+  @Test
+  public void testReleasesConnectionOnNon200ExhaustionViaPatch() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // Always return 503 — retry exhaustion guaranteed with maxRetries=1
+    // Build the stub response BEFORE the when().thenReturn() call to avoid nested-stubbing issues.
+    CloseableHttpResponse stubRetryResponse = retryResponse();
+    when(mockHttpClient.execute(any(HttpRequestBase.class))).thenReturn(stubRetryResponse);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            RestRequest.executeWithRetries(
+                mockHttpClient,
+                mockRequest,
+                0, 0, 0, 1, 0,
+                new AtomicBoolean(false),
+                false, false, false, false, false,
+                new ExecTimeTelemetryData(),
+                null, null, null,
+                false));
+
+    // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
+    verify(mockRequest, times(2)).releaseConnection();
+  }
+
+  /**
+   * Verifies that the patch's release gate fires when the response is null (IOException path).
+   * NoHttpResponseException causes responseDto.getHttpResponse() == null. With maxRetries=1 the
+   * request is attempted twice: prepareRetry() releases once, the patch releases once. Total: times(2).
+   */
+  @Test
+  public void testReleasesConnectionOnNullResponseExhaustionViaPatch() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // IOException drives responseDto.getHttpResponse() == null
+    when(mockHttpClient.execute(any(HttpRequestBase.class)))
+        .thenThrow(new NoHttpResponseException("The target server failed to respond"));
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            RestRequest.executeWithRetries(
+                mockHttpClient,
+                mockRequest,
+                0, 0, 0, 1, 0,
+                new AtomicBoolean(false),
+                false, false, false, false, false,
+                new ExecTimeTelemetryData(),
+                null, null, null,
+                false));
+
+    // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
+    verify(mockRequest, times(2)).releaseConnection();
+  }
+
+  /**
+   * Verifies that the patch's release gate does NOT fire on a 200 success response. The connection
+   * must remain open for the caller to read the response body. Expected: never().
+   */
+  @Test
+  public void testDoesNotReleaseConnectionOn200Success() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // Build the stub response BEFORE the when().thenReturn() call to avoid nested-stubbing issues.
+    CloseableHttpResponse stubSuccessResponse = successResponse();
+    when(mockHttpClient.execute(any(HttpRequestBase.class))).thenReturn(stubSuccessResponse);
+
+    HttpResponseContextDto result =
+        RestRequest.executeWithRetries(
+            mockHttpClient,
+            mockRequest,
+            0, 0, 0, 1, 0,
+            new AtomicBoolean(false),
+            false, false, false, false, false,
+            new ExecTimeTelemetryData(),
+            null, null, null,
+            false);
+
+    assertNotNull(result);
+    // Gate must keep the connection open for the caller to consume the 200 body
+    verify(mockRequest, never()).releaseConnection();
   }
 }
