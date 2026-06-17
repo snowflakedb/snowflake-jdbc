@@ -2,6 +2,8 @@
 
 # Changelog
 - v4.3.2-SNAPSHOT
+  - Bumped jackson-databind to 2.18.8 from 2.18.7 (snowflakedb/snowflake-jdbc#2669).
+  
 - v4.3.1
   - Fixed GCS-backed internal stage PUT failing with opaque `invalid_gcs_credentials` in SPCS pods on GCP: the GCS SDK's Application Default Credentials (ADC) probe was reaching out to `metadata.google.internal` which is unreachable inside SPCS; explicit credentials are now always set when a `GCS_ACCESS_TOKEN` is present, suppressing the ADC probe entirely. Also fixed `GCSAccessStrategyAwsSdk` rejecting custom GCS endpoints that lack an `https://` scheme prefix (e.g. bare `storage.me-central2.rep.googleapis.com`), mirroring the existing handling in `GCSDefaultAccessStrategy`. The catch-all in `setupGCSClient` now chains and logs the original exception instead of swallowing it (snowflakedb/snowflake-jdbc#2664).
   - Fixed Azure PUT memory leak where each PUT instantiated a fresh `BlobServiceClient` whose underlying reactor-netty stack the SDK exposes no API to release; the Azure SDK `HttpClient` and its `ConnectionProvider` are now shared across all PUTs in a session and disposed at session close, mirroring the existing S3 pattern (snowflakedb/snowflake-jdbc#2658).
