@@ -15,11 +15,13 @@ import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
+import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;
 
 /** Data source unit test */
 public class SnowflakeBasicDataSourceTest {
+
   /** snow-37186 */
   @Test
   public void testSetLoginTimeout() throws SQLException {
@@ -125,15 +127,11 @@ public class SnowflakeBasicDataSourceTest {
     ds.setAccount("testaccount");
     ds.setAuthenticator("snowflake");
     Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertEquals(
-        "Cannot create connection because username is missing in DataSource properties.",
-        e.getMessage());
+    assertEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
 
     ds.setUser("testuser");
     e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertEquals(
-        "Cannot create connection because password is missing in DataSource properties.",
-        e.getMessage());
+    assertEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
   }
 
   @Test
@@ -141,11 +139,9 @@ public class SnowflakeBasicDataSourceTest {
     SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
     ds.setUrl("jdbc:snowflake://testaccount.snowflakecomputing.com");
     ds.setAuthenticator("WORKLOAD_IDENTITY");
-    ds.setUser("testuser");
     Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertNotEquals(
-        "Cannot create connection because username is missing in DataSource properties.",
-        e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
   }
 
   @Test
@@ -155,9 +151,8 @@ public class SnowflakeBasicDataSourceTest {
     ds.setAuthenticator("PROGRAMMATIC_ACCESS_TOKEN");
     ds.setUser("testuser");
     Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertNotEquals(
-        "Cannot create connection because username is missing in DataSource properties.",
-        e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
   }
 
   @Test

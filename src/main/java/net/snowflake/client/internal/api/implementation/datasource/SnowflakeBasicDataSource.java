@@ -34,6 +34,9 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
  * net.snowflake.client.api.datasource.SnowflakeDataSourceFactory#createDataSource()} instead.
  */
 public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializable {
+  public static final String MISSING_USERNAME_MSG = "Cannot create connection because username is missing in DataSource properties.";
+  public static final String MISSING_PASSWORD_MSG = "Cannot create connection because password is missing in DataSource properties.";
+
   private static final long serialVersionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
@@ -106,11 +109,11 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
 
   @Override
   public Connection getConnection(String username, String password) throws SQLException {
-    if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(
-        authenticator)) { // For OAuth, no username is required
+    if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(authenticator)
+            && !AUTHENTICATOR_WORKLOAD_IDENTITY.equalsIgnoreCase(authenticator)) {
+      // For OAuth or WIF, no username is required
       if (username == null) {
-        throw new SnowflakeSQLException(
-            "Cannot create connection because username is missing in DataSource properties.");
+        throw new SnowflakeSQLException(MISSING_USERNAME_MSG);
       }
       properties.put(SFSessionProperty.USER.getPropertyKey(), username);
     }
@@ -123,8 +126,7 @@ public class SnowflakeBasicDataSource implements SnowflakeDataSource, Serializab
         && !AUTHENTICATOR_PROGRAMMATIC_ACCESS_TOKEN.equalsIgnoreCase(authenticator);
     if (passwordRequired) {
       if (password == null) {
-        throw new SnowflakeSQLException(
-            "Cannot create connection because password is missing in DataSource properties.");
+        throw new SnowflakeSQLException(MISSING_PASSWORD_MSG);
       }
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
