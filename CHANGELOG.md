@@ -1,7 +1,21 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v4.2.1-SNAPSHOT
+- v4.3.2-SNAPSHOT
+  - Bumped jackson-databind to 2.18.8 from 2.18.7 (snowflakedb/snowflake-jdbc#2669).
+  
+- v4.3.1
+  - Fixed GCS-backed internal stage PUT failing with opaque `invalid_gcs_credentials` in SPCS pods on GCP: the GCS SDK's Application Default Credentials (ADC) probe was reaching out to `metadata.google.internal` which is unreachable inside SPCS; explicit credentials are now always set when a `GCS_ACCESS_TOKEN` is present, suppressing the ADC probe entirely. Also fixed `GCSAccessStrategyAwsSdk` rejecting custom GCS endpoints that lack an `https://` scheme prefix (e.g. bare `storage.me-central2.rep.googleapis.com`), mirroring the existing handling in `GCSDefaultAccessStrategy`. The catch-all in `setupGCSClient` now chains and logs the original exception instead of swallowing it (snowflakedb/snowflake-jdbc#2664).
+  - Fixed Azure PUT memory leak where each PUT instantiated a fresh `BlobServiceClient` whose underlying reactor-netty stack the SDK exposes no API to release; the Azure SDK `HttpClient` and its `ConnectionProvider` are now shared across all PUTs in a session and disposed at session close, mirroring the existing S3 pattern (snowflakedb/snowflake-jdbc#2658).
+  - Fixed `SFResultJsonParser2Failed: invalid escaped unicode character` when a chunked JSON result contained UTF-16 surrogate-pair `\u` escapes (e.g. emoji) and the read buffer happened to split exactly 9 bytes after `\u`; the off-by-one boundary guard in `ResultJsonParserV2` now reserves the full 10 bytes a surrogate pair requires (snowflakedb/snowflake-jdbc#2660).
+  - Fixed (by removing) stale `com.amazonaws.util.Base16/Base64` bytecode references from the shaded JAR by excluding dead `SFBinary` and `SFBinaryFormat` classes from the bundled `snowflake-common` artifact. Security scanners shold no longer flag `snowflake-jdbc-thin` as containing AWS SDK v1 references. (snowflakedb/snowflake-jdbc#2665).
+  - Bumped grpc-java to 1.82.0 from 1.81.0 (snowflakedb/snowflake-jdbc#2663).
+
+
+- v4.3.0
+    - Bumped AWS SDK from 2.37.5 to 2.45.1, which transitively brings netty up to 4.1.133.Final and resolves a cluster of High/Medium netty CVEs (HTTP request smuggling, CRLF injection, data amplification, resource allocation) flagged by Snyk against `netty-nio-client` in `thin_public_pom.xml` (snowflakedb/snowflake-jdbc#2654).
+    - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).
+    - Fixed OAuth token requests sending `scope=session:role:null` when no scope is configured (or scope is empty/blank); the `scope` parameter is now omitted entirely in those cases (snowflakedb/snowflake-jdbc#2646).
     - Fixed Okta native SSO federated login sending malformed JSON to `/api/v1/authn` (HTTP 400 from Okta) when the username or password contained JSON-special characters such as double quotes or backslashes; the request body is now serialized with Jackson instead of string concatenation.
     - Added one in-band telemetry record per successful login describing which connection-identifier fields the user supplied (`account_provided`, `account_with_region`, `account_org_provided`, `region_provided`, `host_provided`). No hostname or account value is included. This is gated by the existing server-side `CLIENT_TELEMETRY_ENABLED` parameter and can additionally be disabled locally by setting `SF_TELEMETRY_DISABLE_CONNECTION_SHAPE=true`. The telemetry collection is time-boxed and will be removed in a future release.
     - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
@@ -14,7 +28,11 @@
       - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
     - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
     - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
-    - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close. (snowflakedb/snowflake-jdbc#2620)
+    - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close (snowflakedb/snowflake-jdbc#2620).
+    - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#2655). 
+    - Fixed inverted null check in `CredentialManager.updateInputWithTokenAndPublicKey` that prevented DPoP bundled access tokens loaded from the credential cache from being applied to the login input (snowflakedb/snowflake-jdbc#2650).
+    - Fixed `Connection.setCatalog` and `Connection.setSchema` producing malformed SQL (or switching to an unintended database/schema) when the supplied name contained an embedded `"` character; the name is now escaped per the SQL-standard quoted-identifier rule before being interpolated into the `USE` statement (snowflakedb/snowflake-jdbc#2651).
+    - Switched AWS Workload Identity Federation attestation from a SigV4-presigned `GetCallerIdentity` request to STS `GetWebIdentityToken`, returning a signed JWT directly. (snowflakedb/snowflake-jdbc#2653)
 
 - v4.2.0
     - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)

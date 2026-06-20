@@ -68,8 +68,8 @@ public class OAuthAccessTokenForRefreshTokenProvider implements AccessTokenProvi
         new ClientSecretBasic(
             new ClientID(loginInput.getOauthLoginInput().getClientId()),
             new Secret(loginInput.getOauthLoginInput().getClientSecret()));
-    Scope scope =
-        new Scope(OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole()));
+    String scopeString = OAuthUtil.getScope(loginInput.getOauthLoginInput(), loginInput.getRole());
+    Scope scope = scopeString != null ? new Scope(scopeString) : null;
     RefreshToken refreshToken = new RefreshToken(loginInput.getOauthRefreshToken());
     TokenRequest tokenRequest =
         new TokenRequest(
