@@ -14,6 +14,11 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
+import software.amazon.awssdk.http.auth.spi.signer.SignRequest;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -29,6 +34,19 @@ public class AwsAttestationService {
   public static final int TIMEOUT_MS = 10_000;
   private static final String SIGNING_ALGORITHM_ES384 = "ES384";
   private static Region region;
+
+  private volatile AwsV4HttpSigner aws4Signer;
+
+  private AwsV4HttpSigner getSigner() {
+    if (aws4Signer == null) {
+      synchronized (this) {
+        if (aws4Signer == null) {
+          aws4Signer = AwsV4HttpSigner.create();
+        }
+      }
+    }
+    return aws4Signer;
+  }
 
   void initializeSignerRegion() {
     logger.debug("Getting AWS region from environment variable");
@@ -53,6 +71,32 @@ public class AwsAttestationService {
 
   Region getAWSRegion() {
     return region;
+  }
+
+  SdkHttpRequest signRequestWithSigV4(
+      SdkHttpRequest signableRequest, AwsCredentials awsCredentials) {
+    AwsCredentialsIdentity credentialsIdentity;
+    if (awsCredentials instanceof AwsSessionCredentials) {
+      AwsSessionCredentials sessionCredentials = (AwsSessionCredentials) awsCredentials;
+      credentialsIdentity =
+          AwsSessionCredentialsIdentity.create(
+              sessionCredentials.accessKeyId(),
+              sessionCredentials.secretAccessKey(),
+              sessionCredentials.sessionToken());
+    } else {
+      credentialsIdentity =
+          AwsCredentialsIdentity.create(
+              awsCredentials.accessKeyId(), awsCredentials.secretAccessKey());
+    }
+
+    SignRequest<AwsCredentialsIdentity> signRequest =
+        SignRequest.builder(credentialsIdentity)
+            .request(signableRequest)
+            .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "sts")
+            .putProperty(AwsV4HttpSigner.REGION_NAME, getAWSRegion().toString())
+            .build();
+
+    return getSigner().sign(signRequest).request();
   }
 
   AwsCredentials assumeRole(AwsCredentials currentCredentials, String roleArn, String externalId)

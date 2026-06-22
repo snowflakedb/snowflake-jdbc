@@ -770,6 +770,13 @@ public class SFSession extends SFBaseSession {
         .setWorkloadIdentityAwsExternalId(
             (String)
                 connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID))
+        .setWorkloadIdentityAwsUseOutboundToken(
+            connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN)
+                    != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(
+                        SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN))
+                : false)
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
