@@ -7,6 +7,7 @@ import java.util.Properties;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.config.ConnectionParameters;
+import net.snowflake.client.internal.core.minicore.Minicore;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
@@ -50,6 +51,17 @@ public final class ConnectionFactory {
     if (!SnowflakeConnectString.hasSupportedPrefix(params.getUrl())) {
       // Per JDBC spec: Driver.connect() should return null if URL is not recognized
       return null;
+    }
+
+    // Begin loading minicore asynchronously as soon as we confirm this is a
+    // Snowflake connection attempt. This gives the native library a head start
+    // to be warm by first login, without loading at driver class-load time when
+    // the driver is merely on the classpath as a transitive dependency
+    // (SNOW-3561155 / gosnowflake#1807).
+    try {
+      Minicore.initializeAsync();
+    } catch (Throwable t) {
+      logger.trace("Failed to start minicore initialization: {}", t.getMessage());
     }
 
     // Parse and validate the connection string
