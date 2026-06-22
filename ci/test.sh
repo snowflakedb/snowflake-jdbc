@@ -58,6 +58,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e ADDITIONAL_MAVEN_PROFILE \
         -e CLOUD_PROVIDER \
         -e is_old_driver \
+        -e JAVA_TOOL_OPTIONS \
         ${TEST_IMAGE_NAMES[$name]} \
         /mnt/host/ci/container/test_component.sh
 done

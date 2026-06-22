@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>4.3.1-SNAPSHOT</version>
+  <version>4.3.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -62,7 +62,7 @@
     <grpc.version>1.82.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.18.7</jackson.version>
+    <jackson.version>2.18.8</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
@@ -690,11 +690,29 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>identity-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-core</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-aws</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-spi</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

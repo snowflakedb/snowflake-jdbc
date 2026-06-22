@@ -51,20 +51,18 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       StorageOptions.Builder builder = StorageOptions.newBuilder();
       overrideHost(stage, builder);
 
-      if (SnowflakeGCSClient.areDisabledGcsDefaultCredentials(session)) {
-        logger.debug(
-            "Adding explicit credentials to avoid default credential lookup by the GCS client");
-        builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
-      }
+      // Always set explicit credentials to prevent Application Default Credentials (ADC) lookup.
+      // Without this, StorageOptions.build().getService() probes metadata.google.internal which
+      // is unreachable in environments like SPCS, causing an opaque "invalid_gcs_credentials"
+      // error.
+      // Actual API authentication is handled by the Authorization header below, not this credential
+      // object — it exists solely to suppress the ADC probe.
+      builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
 
       if (transportFactory != null) {
         builder.setTransportOptions(
             HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build());
       }
-
-      // Using GoogleCredential with access token will cause IllegalStateException when the token
-      // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
-      // header so we can caught the error code.
       this.gcsClient =
           builder
               .setHeaderProvider(

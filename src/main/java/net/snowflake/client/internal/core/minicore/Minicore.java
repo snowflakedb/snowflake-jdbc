@@ -24,9 +24,16 @@ public class Minicore {
     this.library = library;
   }
 
-  public static synchronized void initializeAsync() {
+  public static void initializeAsync() {
     if (INITIALIZATION_FUTURE != null) {
-      return; // Already started
+      return; // Already started — volatile read only, no lock
+    }
+    initializeAsyncSlow();
+  }
+
+  private static synchronized void initializeAsyncSlow() {
+    if (INITIALIZATION_FUTURE != null) {
+      return; // Re-check under lock
     }
 
     // Check if minicore is disabled via environment variable
@@ -92,7 +99,7 @@ public class Minicore {
     return loadResult;
   }
 
-  public static synchronized boolean hasInitializationStarted() {
+  public static boolean hasInitializationStarted() {
     return INITIALIZATION_FUTURE != null;
   }
 

@@ -58,7 +58,7 @@
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
     <grpc.version>1.82.0</grpc.version>
-    <jackson.version>2.18.7</jackson.version>
+    <jackson.version>2.18.8</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
@@ -179,11 +179,29 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>identity-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-core</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-aws</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-spi</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
