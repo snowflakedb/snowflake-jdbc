@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.core;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
@@ -38,7 +39,11 @@ import net.snowflake.client.internal.jdbc.SnowflakeUtil;
  * <p>TODO(SNOW-3548350): remove this class and its callers after the connection-identifier-shape
  * data collection wraps up (target: 2026-11-30).
  */
-public final class ConnectionIdentifierShape {
+public final class ConnectionIdentifierShape implements Serializable {
+
+  // Serializable because SnowflakeConnectString.parse copies the carrier Properties entry into its
+  // own parameters map, which is then reachable from SnowflakeResultSetSerializableV1.
+  private static final long serialVersionUID = 1L;
 
   // TODO(SNOW-3548350): wire-format keys for the client_connection_identifier_shape telemetry
   // event. The five keys are byte-identical across all four Snowflake drivers.
