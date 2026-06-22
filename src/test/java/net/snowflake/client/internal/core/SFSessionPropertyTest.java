@@ -157,6 +157,27 @@ public class SFSessionPropertyTest {
   }
 
   @Test
+  public void testWorkloadIdentityAwsUseOutboundTokenPropertyRegistered() {
+    SFSessionProperty prop = SFSessionProperty.lookupByKey("workloadIdentityAwsUseOutboundToken");
+    assertNotNull(prop);
+    assertEquals(SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN, prop);
+    assertEquals(Boolean.class, prop.getValueType());
+  }
+
+  @Test
+  public void testWorkloadIdentityAwsUseOutboundTokenBooleanCoercion() throws SFException {
+    Object value =
+        SFSessionProperty.checkPropertyValue(
+            SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN, "true");
+    assertEquals(Boolean.TRUE, value);
+
+    Object valueFalse =
+        SFSessionProperty.checkPropertyValue(
+            SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN, "false");
+    assertEquals(Boolean.FALSE, valueFalse);
+  }
+
+  @Test
   public void shouldThrowWhenAwsExternalIdSetAndFeatureDisabled() {
     // SF_ENABLE_WIF_AWS_EXTERNAL_ID env var is not set in unit tests, so defaults to false
     Map<SFSessionProperty, Object> props = new HashMap<>();
