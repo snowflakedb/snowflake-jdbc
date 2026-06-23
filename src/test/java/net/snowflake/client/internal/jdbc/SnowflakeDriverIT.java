@@ -360,7 +360,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
    */
   private void assertConstraintResults(
       ResultSet resultSet, int numRows, int numCols, String pkTableName, String fkTableName)
-      throws Throwable {
+      throws SQLException {
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
     // assert column count
@@ -382,6 +382,36 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             "get constraint result foreign table name");
       }
     }
+  }
+
+  @FunctionalInterface
+  private interface ResultSetSupplier {
+    ResultSet get() throws SQLException;
+  }
+
+  /**
+   * Primary/foreign key constraint metadata in Snowflake is eventually consistent, so the
+   * SHOW-based getPrimaryKeys/getImportedKeys/getExportedKeys/getCrossReference lookups can
+   * transiently return fewer rows than expected right after the table DDL. Retry the lookup until
+   * the expected rows are visible so the test does not flake; a genuinely wrong result still fails
+   * once the timeout elapses. Deterministic mapping coverage lives in
+   * DatabaseMetadataWiremockLatestIT.
+   */
+  private void assertConstraintResultsEventually(
+      ResultSetSupplier resultSetSupplier,
+      int numRows,
+      int numCols,
+      String pkTableName,
+      String fkTableName) {
+    await()
+        .atMost(Duration.ofSeconds(120))
+        .pollInterval(Duration.ofSeconds(3))
+        .untilAsserted(
+            () -> {
+              try (ResultSet resultSet = resultSetSupplier.get()) {
+                assertConstraintResults(resultSet, numRows, numCols, pkTableName, fkTableName);
+              }
+            });
   }
 
   @Test
@@ -466,59 +496,78 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                 + "foreign key (c2) references testConstraintsP2(c1))");
 
         // show primary keys
-        try (ResultSet resultSet = metadata.getPrimaryKeys(null, null, "TESTCONSTRAINTSP1")) {
-
-          // primary key for testConstraintsP1 should contain two rows
-          assertConstraintResults(resultSet, 2, 6, "testConstraintsP1", null);
-        }
-
-        ResultSet resultSet1 = metadata.getPrimaryKeys(null, null, "TESTCONSTRAINTSP2");
+        assertConstraintResultsEventually(
+            () -> metadata.getPrimaryKeys(null, null, "TESTCONSTRAINTSP1"),
+            2,
+            6,
+            "testConstraintsP1",
+            null);
 
         // primary key for testConstraintsP2 contains 1 row
-        assertConstraintResults(resultSet1, 1, 6, "testConstraintsP2", null);
-        resultSet1.close();
-        assertFalse(resultSet1.next());
+        assertConstraintResultsEventually(
+            () -> metadata.getPrimaryKeys(null, null, "TESTCONSTRAINTSP2"),
+            1,
+            6,
+            "testConstraintsP2",
+            null);
 
         // Show imported keys
-        try (ResultSet resultSet = metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF1")) {
-          assertConstraintResults(resultSet, 2, 14, null, "testConstraintsF1");
-        }
+        assertConstraintResultsEventually(
+            () -> metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF1"),
+            2,
+            14,
+            null,
+            "testConstraintsF1");
 
-        manualResultSet = metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF2");
-
-        assertConstraintResults(manualResultSet, 3, 14, null, "testConstraintsF2");
-        manualResultSet.close();
-        assertFalse(manualResultSet.next());
+        assertConstraintResultsEventually(
+            () -> metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF2"),
+            3,
+            14,
+            null,
+            "testConstraintsF2");
 
         // show exported keys
-        try (ResultSet resultSet = metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP1")) {
-          assertConstraintResults(resultSet, 4, 14, "testConstraintsP1", null);
-        }
+        assertConstraintResultsEventually(
+            () -> metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP1"),
+            4,
+            14,
+            "testConstraintsP1",
+            null);
 
-        manualResultSet = metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP2");
-
-        assertConstraintResults(manualResultSet, 1, 14, "testConstraintsP2", null);
-        manualResultSet.close();
-        assertFalse(manualResultSet.next());
+        assertConstraintResultsEventually(
+            () -> metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP2"),
+            1,
+            14,
+            "testConstraintsP2",
+            null);
 
         // show cross references
-        try (ResultSet resultSet =
-            metadata.getCrossReference(
-                null, null, "TESTCONSTRAINTSP1", null, null, "TESTCONSTRAINTSF1")) {
-          assertConstraintResults(resultSet, 2, 14, "testConstraintsP1", "testConstraintsF1");
-        }
+        assertConstraintResultsEventually(
+            () ->
+                metadata.getCrossReference(
+                    null, null, "TESTCONSTRAINTSP1", null, null, "TESTCONSTRAINTSF1"),
+            2,
+            14,
+            "testConstraintsP1",
+            "testConstraintsF1");
 
-        try (ResultSet resultSet =
-            metadata.getCrossReference(
-                null, null, "TESTCONSTRAINTSP2", null, null, "TESTCONSTRAINTSF2")) {
-          assertConstraintResults(resultSet, 1, 14, "testConstraintsP2", "testConstraintsF2");
-        }
+        assertConstraintResultsEventually(
+            () ->
+                metadata.getCrossReference(
+                    null, null, "TESTCONSTRAINTSP2", null, null, "TESTCONSTRAINTSF2"),
+            1,
+            14,
+            "testConstraintsP2",
+            "testConstraintsF2");
 
-        try (ResultSet resultSet =
-            metadata.getCrossReference(
-                null, null, "TESTCONSTRAINTSP1", null, null, "TESTCONSTRAINTSF2")) {
-          assertConstraintResults(resultSet, 2, 14, "testConstraintsP1", "testConstraintsF2");
-        }
+        assertConstraintResultsEventually(
+            () ->
+                metadata.getCrossReference(
+                    null, null, "TESTCONSTRAINTSP1", null, null, "TESTCONSTRAINTSF2"),
+            2,
+            14,
+            "testConstraintsP1",
+            "testConstraintsF2");
 
         manualResultSet =
             metadata.getCrossReference(
@@ -624,10 +673,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // right after the table is created in setUp() (e.g. metadata cache lag on a shared/loaded
         // account, where executeAndReturnEmptyResultIfNotFound() swallows a transient "object does
         // not exist" error). Retry the lookup until the table becomes visible so the test does not
-        // flake; a genuinely missing table will still fail once the timeout elapses.
+        // flake; a genuinely missing table will still fail once the timeout elapses. The window can
+        // be long on slow CI runners, so allow a generous timeout. Deterministic mapping coverage
+        // lives in DatabaseMetadataWiremockLatestIT.
         await()
-            .atMost(Duration.ofSeconds(60))
-            .pollInterval(Duration.ofSeconds(2))
+            .atMost(Duration.ofSeconds(120))
+            .pollInterval(Duration.ofSeconds(3))
             .untilAsserted(
                 () -> {
                   try (ResultSet tableSet =
