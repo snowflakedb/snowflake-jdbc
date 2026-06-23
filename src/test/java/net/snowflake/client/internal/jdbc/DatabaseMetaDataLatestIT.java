@@ -1241,14 +1241,24 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private void assertResultSetSizeEventually(
       int expectedSize, ResultSetSupplier resultSetSupplier) {
     await()
-        .atMost(Duration.ofSeconds(60))
-        .pollInterval(Duration.ofSeconds(2))
+        .atMost(Duration.ofSeconds(120))
+        .pollInterval(Duration.ofSeconds(3))
         .untilAsserted(
             () -> {
               try (ResultSet rs = resultSetSupplier.get()) {
                 assertEquals(expectedSize, getSizeOfResultSet(rs));
               }
             });
+  }
+
+  /**
+   * Variant of {@link #assertResultSetSizeEventually} for use inside async result-size suppliers:
+   * retries the lookup until the expected number of rows is visible and returns it, so the
+   * eventual-consistency window of PK/FK constraint metadata does not flake.
+   */
+  private int awaitResultSetSize(int expectedSize, ResultSetSupplier resultSetSupplier) {
+    assertResultSetSizeEventually(expectedSize, resultSetSupplier);
+    return expectedSize;
   }
 
   @Test
@@ -1960,7 +1970,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getPrimaryKeys(database, schema, table1)),
                     result -> assertEquals(1, result)));
             // getPrimaryKeys: pattern on schema should return empty
             futures.add(
@@ -1973,7 +1984,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getImportedKeys(database, schema, table2)),
                     result -> assertEquals(1, result)));
             // getImportedKeys: pattern on table should return empty
             futures.add(
@@ -1986,7 +1998,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getExportedKeys(database, schema, table1)),
                     result -> assertEquals(1, result)));
             // getExportedKeys: pattern on schema should return empty
             futures.add(
@@ -2000,9 +2013,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                 asyncAssert(
                     executor,
                     () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, table2)),
+                        awaitResultSetSize(
+                            1,
+                            () ->
+                                dbmd.getCrossReference(
+                                    database, schema, table1, database, schema, table2)),
                     result -> assertEquals(1, result)));
             // getCrossReference: pattern on PK schema should return empty
             futures.add(
@@ -2075,39 +2090,48 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getPrimaryKeys(database, schema, table1)),
                     result -> assertEquals(1, result)));
             // getPrimaryKeys: schema pattern should also return result
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)),
+                    () ->
+                        awaitResultSetSize(
+                            1, () -> dbmd.getPrimaryKeys(database, schemaPattern, table1)),
                     result -> assertEquals(1, result)));
 
             // getImportedKeys: exact match should return result
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getImportedKeys(database, schema, table2)),
                     result -> assertEquals(1, result)));
             // getImportedKeys: table pattern should also return result
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern)),
+                    () ->
+                        awaitResultSetSize(
+                            1, () -> dbmd.getImportedKeys(database, schema, tablePattern)),
                     result -> assertEquals(1, result)));
 
             // getExportedKeys: exact match should return result
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)),
+                    () ->
+                        awaitResultSetSize(1, () -> dbmd.getExportedKeys(database, schema, table1)),
                     result -> assertEquals(1, result)));
             // getExportedKeys: schema pattern should also return result
             futures.add(
                 asyncAssert(
                     executor,
-                    () -> getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)),
+                    () ->
+                        awaitResultSetSize(
+                            1, () -> dbmd.getExportedKeys(database, schemaPattern, table1)),
                     result -> assertEquals(1, result)));
 
             // getCrossReference: exact match should return result
@@ -2115,27 +2139,33 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                 asyncAssert(
                     executor,
                     () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schema, table2)),
+                        awaitResultSetSize(
+                            1,
+                            () ->
+                                dbmd.getCrossReference(
+                                    database, schema, table1, database, schema, table2)),
                     result -> assertEquals(1, result)));
             // getCrossReference: PK schema pattern should also return result
             futures.add(
                 asyncAssert(
                     executor,
                     () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schemaPattern, table1, database, schema, table2)),
+                        awaitResultSetSize(
+                            1,
+                            () ->
+                                dbmd.getCrossReference(
+                                    database, schemaPattern, table1, database, schema, table2)),
                     result -> assertEquals(1, result)));
             // getCrossReference: FK schema pattern should also return result
             futures.add(
                 asyncAssert(
                     executor,
                     () ->
-                        getSizeOfResultSet(
-                            dbmd.getCrossReference(
-                                database, schema, table1, database, schemaPattern, table2)),
+                        awaitResultSetSize(
+                            1,
+                            () ->
+                                dbmd.getCrossReference(
+                                    database, schema, table1, database, schemaPattern, table2)),
                     result -> assertEquals(1, result)));
 
             // Wait for all async assertions to complete
