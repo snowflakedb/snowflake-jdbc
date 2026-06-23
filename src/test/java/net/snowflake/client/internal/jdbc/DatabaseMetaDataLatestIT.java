@@ -9,6 +9,7 @@ import static net.snowflake.client.internal.api.implementation.metadata.Snowflak
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.internal.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,6 +27,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1177,12 +1179,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
             statement.execute(
                 "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
             DatabaseMetaData metaData = connection.getMetaData();
-            try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
-              assertEquals(1, getSizeOfResultSet(rs));
-            }
-            try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
-              assertEquals(1, getSizeOfResultSet(rs));
-            }
+            assertResultSetSizeEventually(
+                1, () -> metaData.getPrimaryKeys(database, escapedSchema, null));
+            assertResultSetSizeEventually(
+                1, () -> metaData.getImportedKeys(database, escapedSchema, null));
           });
     }
   }
@@ -1218,14 +1218,37 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
               assertEquals(0, getSizeOfResultSet(rs));
             }
             // We expect the results to be returned if we use the actual schema name
-            try (ResultSet rs = metaData.getPrimaryKeys(database, customSchema, null)) {
-              assertEquals(1, getSizeOfResultSet(rs));
-            }
-            try (ResultSet rs = metaData.getImportedKeys(database, customSchema, null)) {
-              assertEquals(1, getSizeOfResultSet(rs));
-            }
+            assertResultSetSizeEventually(
+                1, () -> metaData.getPrimaryKeys(database, customSchema, null));
+            assertResultSetSizeEventually(
+                1, () -> metaData.getImportedKeys(database, customSchema, null));
           });
     }
+  }
+
+  @FunctionalInterface
+  private interface ResultSetSupplier {
+    ResultSet get() throws SQLException;
+  }
+
+  /**
+   * Primary/foreign key constraint metadata in Snowflake is eventually consistent, so the
+   * SHOW-based getPrimaryKeys/getImportedKeys lookups can transiently return fewer rows than
+   * expected right after the table DDL. Retry the lookup until the expected number of rows becomes
+   * visible so the test does not flake; a genuinely wrong count still fails once the timeout
+   * elapses.
+   */
+  private void assertResultSetSizeEventually(
+      int expectedSize, ResultSetSupplier resultSetSupplier) {
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .pollInterval(Duration.ofSeconds(2))
+        .untilAsserted(
+            () -> {
+              try (ResultSet rs = resultSetSupplier.get()) {
+                assertEquals(expectedSize, getSizeOfResultSet(rs));
+              }
+            });
   }
 
   @Test

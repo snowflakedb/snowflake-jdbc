@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +32,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -618,25 +620,38 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         assertTrue(
             connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
             "schema should be " + connection.getSchema());
-        // snow tables in a schema
-        try (ResultSet tableSet =
-            metaData.getTables(
-                connection.getCatalog(), connection.getSchema(), ORDERS_JDBC, null)) { // types
-          assertTrue(
-              tableSet.next(),
-              String.format(
-                  "table %s should exists in db: %s, schema: %s",
-                  ORDERS_JDBC, connection.getCatalog(), connection.getSchema()));
-          assertTrue(
-              connection.getCatalog().equalsIgnoreCase(schemaSet.getString(2)),
-              "database should be " + connection.getCatalog());
-          assertTrue(
-              connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
-              "schema should be " + connection.getSchema());
-          assertTrue(
-              ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)),
-              "table should be " + ORDERS_JDBC);
-        }
+        // show tables in a schema. The SHOW-based metadata path can transiently return no rows
+        // right after the table is created in setUp() (e.g. metadata cache lag on a shared/loaded
+        // account, where executeAndReturnEmptyResultIfNotFound() swallows a transient "object does
+        // not exist" error). Retry the lookup until the table becomes visible so the test does not
+        // flake; a genuinely missing table will still fail once the timeout elapses.
+        await()
+            .atMost(Duration.ofSeconds(60))
+            .pollInterval(Duration.ofSeconds(2))
+            .untilAsserted(
+                () -> {
+                  try (ResultSet tableSet =
+                      metaData.getTables(
+                          connection.getCatalog(),
+                          connection.getSchema(),
+                          ORDERS_JDBC,
+                          null)) { // types
+                    assertTrue(
+                        tableSet.next(),
+                        String.format(
+                            "table %s should exists in db: %s, schema: %s",
+                            ORDERS_JDBC, connection.getCatalog(), connection.getSchema()));
+                    assertTrue(
+                        ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)),
+                        "table should be " + ORDERS_JDBC);
+                  }
+                });
+        assertTrue(
+            connection.getCatalog().equalsIgnoreCase(schemaSet.getString(2)),
+            "database should be " + connection.getCatalog());
+        assertTrue(
+            connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
+            "schema should be " + connection.getSchema());
       }
 
       try (ResultSet tableMetaDataResultSet =
