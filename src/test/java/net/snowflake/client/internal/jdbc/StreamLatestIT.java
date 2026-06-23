@@ -359,4 +359,52 @@ public class StreamLatestIT extends BaseJDBCTest {
             "PUT file://%s %s AUTO_COMPRESS=%s",
             localFileName, stageDest, String.valueOf(autoCompress).toUpperCase()));
   }
+
+  /** SNOW-3632537: uploadStream/downloadStream with unicode schema in stage name */
+  @Test
+  public void testUploadDownloadStreamWithUnicodeSchemaStage() throws Throwable {
+    String unicodeSchema = "\"日本語テスト_" + UUID.randomUUID().toString().substring(0, 5) + "\"";
+    String stageName = "test_stream_stage_" + UUID.randomUUID().toString().replaceAll("-", "");
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String qualifiedStage = database + "." + unicodeSchema + "." + stageName;
+
+      try {
+        statement.execute("CREATE SCHEMA IF NOT EXISTS " + database + "." + unicodeSchema);
+        statement.execute("CREATE TEMPORARY STAGE " + qualifiedStage);
+
+        String content = "hello from unicode schema";
+        String fileName = "unicode_test.txt";
+
+        // Upload via stream API
+        connection
+            .unwrap(SnowflakeConnection.class)
+            .uploadStream(
+                "@" + qualifiedStage,
+                fileName,
+                new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),
+                UploadStreamConfig.builder().setCompressData(false).build());
+
+        // Download via stream API and verify content
+        try (InputStream in =
+            connection
+                .unwrap(SnowflakeConnection.class)
+                .downloadStream(
+                    "@" + qualifiedStage,
+                    "/" + fileName,
+                    DownloadStreamConfig.builder().setDecompress(false).build())) {
+          String downloaded =
+              new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
+                  .lines()
+                  .collect(Collectors.joining("\n"));
+          assertEquals(content, downloaded);
+        }
+      } finally {
+        statement.execute("DROP STAGE IF EXISTS " + qualifiedStage);
+        statement.execute("DROP SCHEMA IF EXISTS " + database + "." + unicodeSchema);
+      }
+    }
+  }
 }
