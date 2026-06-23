@@ -10,9 +10,11 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Deterministic coverage for the {@link DatabaseMetaData} SHOW-command result mapping. These tests
@@ -85,9 +87,76 @@ public class DatabaseMetadataWiremockLatestIT extends BaseWiremockTest {
     }
   }
 
+  /**
+   * With {@code enablePatternSearch=true} (the default), a wildcard schema is treated as a LIKE
+   * pattern, so the client-side filter matches the stubbed {@code TEST_SCHEMA} row. This
+   * deterministically covers the pattern-search behavior previously exercised by the flaky live
+   * {@code testPatternSearchAllowedForPrimaryAndForeignKeys}.
+   */
+  @Test
+  @Timeout(value = 2, unit = TimeUnit.MINUTES)
+  public void testPatternSearchEnabledTreatsSchemaAsWildcard() throws Exception {
+    importMappingFromResources(METADATA_MAPPING);
+
+    Properties props = getWiremockProps();
+    props.put("enablePatternSearch", "true");
+    try (Connection con = getWiremockConnection(props)) {
+      DatabaseMetaData metaData = con.getMetaData();
+      try (ResultSet rs = metaData.getPrimaryKeys("TEST_DB", "TEST%", "PK_TEST")) {
+        assertEquals(1, countRows(rs), "wildcard schema should match with pattern search enabled");
+      }
+      try (ResultSet rs = metaData.getImportedKeys("TEST_DB", "TEST%", "FK_TEST")) {
+        assertEquals(1, countRows(rs), "wildcard schema should match with pattern search enabled");
+      }
+    }
+  }
+
+  /**
+   * With {@code enablePatternSearch=false}, the schema/table arguments are treated as exact
+   * literals: an exact name still matches, but a wildcard does not. This deterministically covers
+   * the behavior previously exercised by the flaky live {@code
+   * testNoPatternSearchAllowedForPrimaryAndForeignKeys}.
+   */
+  @Test
+  @Timeout(value = 2, unit = TimeUnit.MINUTES)
+  public void testPatternSearchDisabledTreatsSchemaAsLiteral() throws Exception {
+    importMappingFromResources(METADATA_MAPPING);
+
+    Properties props = getWiremockProps();
+    props.put("enablePatternSearch", "false");
+    try (Connection con = getWiremockConnection(props)) {
+      DatabaseMetaData metaData = con.getMetaData();
+      // exact schema still matches
+      try (ResultSet rs = metaData.getPrimaryKeys("TEST_DB", "TEST_SCHEMA", "PK_TEST")) {
+        assertEquals(1, countRows(rs), "exact schema should match with pattern search disabled");
+      }
+      // wildcard schema is treated literally and therefore does not match
+      try (ResultSet rs = metaData.getPrimaryKeys("TEST_DB", "TEST%", "PK_TEST")) {
+        assertEquals(
+            0, countRows(rs), "wildcard schema should not match with pattern search disabled");
+      }
+      try (ResultSet rs = metaData.getImportedKeys("TEST_DB", "TEST%", "FK_TEST")) {
+        assertEquals(
+            0, countRows(rs), "wildcard schema should not match with pattern search disabled");
+      }
+    }
+  }
+
+  private static int countRows(ResultSet rs) throws Exception {
+    int count = 0;
+    while (rs.next()) {
+      count++;
+    }
+    return count;
+  }
+
   private Connection getWiremockConnection() throws Exception {
+    return getWiremockConnection(getWiremockProps());
+  }
+
+  private Connection getWiremockConnection(Properties props) throws Exception {
     String connectStr = String.format("jdbc:snowflake://%s:%s", WIREMOCK_HOST, wiremockHttpPort);
-    return DriverManager.getConnection(connectStr, getWiremockProps());
+    return DriverManager.getConnection(connectStr, props);
   }
 
   private static Properties getWiremockProps() {
