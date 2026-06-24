@@ -71,7 +71,7 @@ public class SFSession extends SFBaseSession {
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
   private static final int MAX_SESSION_PARAMETERS = 1000;
-  @VisibleForTesting static final int MAX_MONITORING_RETRIES = 3;
+  private static final int MAX_MONITORING_RETRIES = 3;
   private static final long MONITORING_BACKOFF_BASE_MS = 3000;
 
   private static final DecorrelatedJitterBackoff monitoringBackoff =
