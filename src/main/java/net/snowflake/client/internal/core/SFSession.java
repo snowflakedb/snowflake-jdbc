@@ -51,6 +51,7 @@ import net.snowflake.client.internal.log.JDK14Logger;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
+import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.internal.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
@@ -70,6 +71,11 @@ public class SFSession extends SFBaseSession {
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
   private static final int MAX_SESSION_PARAMETERS = 1000;
+  @VisibleForTesting static final int MAX_MONITORING_RETRIES = 3;
+  private static final long MONITORING_BACKOFF_BASE_MS = 3000;
+
+  private static final DecorrelatedJitterBackoff monitoringBackoff =
+      new DecorrelatedJitterBackoff(MONITORING_BACKOFF_BASE_MS, 10000);
   // this constant was public - let's not change it
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
       HttpUtil.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS;
@@ -231,28 +237,60 @@ public class SFSession extends SFBaseSession {
     JsonNode jsonNode = null;
     boolean sessionRenewed;
     // Do this while the session hasn't been renewed
+    long lastBackoff = MONITORING_BACKOFF_BASE_MS;
     do {
       sessionRenewed = false;
-      try {
-        get.setHeader("Content-type", "application/json");
-        get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
-        response =
-            HttpUtil.executeGeneralRequest(
-                get,
-                loginTimeout,
-                0,
-                (int) httpClientSocketTimeout.toMillis(),
-                maxHttpRetries,
-                getHttpClientKey(),
-                this);
-        jsonNode = OBJECT_MAPPER.readTree(response);
-      } catch (Exception e) {
-        throw new SnowflakeSQLLoggedException(
-            queryID,
-            this,
-            e.getMessage(),
-            "No response or invalid response from GET request. Error: " + e.getMessage(),
-            e);
+      for (int attempt = 0; attempt <= MAX_MONITORING_RETRIES; attempt++) {
+        try {
+          get.setHeader("Content-type", "application/json");
+          get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
+          response =
+              HttpUtil.executeGeneralRequest(
+                  get,
+                  loginTimeout,
+                  0,
+                  (int) httpClientSocketTimeout.toMillis(),
+                  maxHttpRetries,
+                  getHttpClientKey(),
+                  this);
+          jsonNode = OBJECT_MAPPER.readTree(response);
+          break;
+        } catch (Exception e) {
+          if (attempt >= MAX_MONITORING_RETRIES) {
+            logger.debug(
+                "getQueryMetadata: all {} retries exhausted for /monitoring/queries/{}",
+                MAX_MONITORING_RETRIES + 1,
+                queryID,
+                e);
+            throw new SnowflakeSQLLoggedException(
+                queryID,
+                this,
+                e.getMessage(),
+                "getQueryMetadata: No response or invalid response from /monitoring/queries/"
+                    + queryID
+                    + ". Error: "
+                    + e.getMessage(),
+                e);
+          }
+          logger.debug(
+              "getQueryMetadata: transient failure polling /monitoring/queries/{} (attempt {}/{})",
+              queryID,
+              attempt + 1,
+              MAX_MONITORING_RETRIES + 1,
+              e);
+          try {
+            lastBackoff = monitoringBackoff.nextSleepTime(lastBackoff);
+            Thread.sleep(lastBackoff);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new SnowflakeSQLLoggedException(
+                queryID,
+                this,
+                ie.getMessage(),
+                "Monitoring poll interrupted during backoff.",
+                ie);
+          }
+        }
       }
 
       // Get response as JSON and parse it to get the query status
