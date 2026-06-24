@@ -24,7 +24,7 @@ run_aws_function() {
   local aws_version
   aws_version=$(aws --version 2>&1 | head -n1)
 
-  local payload_json="{\"queryStringParameters\":{\"SNOWFLAKE_TEST_WIF_HOST\":\"${SNOWFLAKE_TEST_WIF_HOST_AWS}\",\"SNOWFLAKE_TEST_WIF_ACCOUNT\":\"${SNOWFLAKE_TEST_WIF_ACCOUNT}\",\"SNOWFLAKE_TEST_WIF_PROVIDER\":\"AWS\",\"BRANCH\":\"${BRANCH}\"}}"
+  local payload_json="{\"queryStringParameters\":{\"SNOWFLAKE_TEST_WIF_HOST\":\"${SNOWFLAKE_TEST_WIF_HOST_AWS}\",\"SNOWFLAKE_TEST_WIF_ACCOUNT\":\"${SNOWFLAKE_TEST_WIF_ACCOUNT}\",\"SNOWFLAKE_TEST_WIF_PROVIDER\":\"AWS\",\"BRANCH\":\"${BRANCH}\",\"SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_IMPERSONATION_PATH\":\"${SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_IMPERSONATION_PATH:-}\",\"SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_USER\":\"${SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_USER:-}\"}}"
   local function_name="drivers-wif-automated-tests"
   
   local cli_response_file="/tmp/aws_cli_response_$$.json"
