@@ -284,11 +284,7 @@ public class SFSession extends SFBaseSession {
           } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new SnowflakeSQLLoggedException(
-                queryID,
-                this,
-                ie.getMessage(),
-                "Monitoring poll interrupted during backoff.",
-                ie);
+                queryID, this, ie.getMessage(), "Monitoring poll interrupted during backoff.", ie);
           }
         }
       }
