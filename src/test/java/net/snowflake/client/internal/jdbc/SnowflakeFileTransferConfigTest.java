@@ -3,6 +3,7 @@ package net.snowflake.client.internal.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -38,6 +39,36 @@ public class SnowflakeFileTransferConfigTest {
 
     assertObligatoryParameters(config);
     assertTrue(config.isSilentException());
+  }
+
+  @Test
+  public void defaultConfigHas128MiBBufferThreshold() {
+    SnowflakeFileTransferConfig config = createObligatoryConfigPartInBuilder().build();
+    assertEquals(
+        SnowflakeFileTransferAgent.DEFAULT_FILE_BACKED_BUFFER_THRESHOLD,
+        config.getFileBackedBufferThreshold());
+  }
+
+  @Test
+  public void customBufferThresholdIsPreserved() {
+    int threshold = 1024 * 1024; // 1 MiB
+    SnowflakeFileTransferConfig config =
+        createObligatoryConfigPartInBuilder().setFileBackedBufferThreshold(threshold).build();
+    assertEquals(threshold, config.getFileBackedBufferThreshold());
+  }
+
+  @Test
+  public void zeroBufferThresholdThrowsIllegalArgumentException() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createObligatoryConfigPartInBuilder().setFileBackedBufferThreshold(0));
+  }
+
+  @Test
+  public void negativeBufferThresholdThrowsIllegalArgumentException() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createObligatoryConfigPartInBuilder().setFileBackedBufferThreshold(-1));
   }
 
   private static SnowflakeFileTransferConfig.Builder createObligatoryConfigPartInBuilder() {
