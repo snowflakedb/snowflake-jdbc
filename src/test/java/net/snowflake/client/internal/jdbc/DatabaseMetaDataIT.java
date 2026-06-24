@@ -2,6 +2,7 @@ package net.snowflake.client.internal.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -20,6 +21,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -255,16 +257,29 @@ public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
 
         DatabaseMetaData metaData = conn.getMetaData();
 
-        try (ResultSet resultSet = metaData.getPrimaryKeys(database, schema, targetTable)) {
-          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
-          assertTrue(resultSet.next());
-          assertEquals(database, resultSet.getString("TABLE_CAT"));
-          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-          assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
-          assertEquals("C1", resultSet.getString("COLUMN_NAME"));
-          assertEquals(1, resultSet.getInt("KEY_SEQ"));
-          assertNotEquals("", resultSet.getString("PK_NAME"));
-        }
+        // Primary key constraint metadata in Snowflake is eventually consistent, so the SHOW-based
+        // getPrimaryKeys lookup can transiently return no rows right after the table DDL. Retry
+        // until the key becomes visible so the test does not flake; a genuinely missing key still
+        // fails once the timeout elapses. Deterministic mapping coverage lives in
+        // DatabaseMetadataWiremockLatestIT.
+        await()
+            .atMost(Duration.ofSeconds(120))
+            .pollInterval(Duration.ofSeconds(3))
+            .untilAsserted(
+                () -> {
+                  try (ResultSet resultSet =
+                      metaData.getPrimaryKeys(database, schema, targetTable)) {
+                    verifyResultSetMetaDataColumns(
+                        resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
+                    assertTrue(resultSet.next());
+                    assertEquals(database, resultSet.getString("TABLE_CAT"));
+                    assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+                    assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
+                    assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+                    assertEquals(1, resultSet.getInt("KEY_SEQ"));
+                    assertNotEquals("", resultSet.getString("PK_NAME"));
+                  }
+                });
       } finally {
         statement.execute("drop table if exists " + targetTable);
       }
