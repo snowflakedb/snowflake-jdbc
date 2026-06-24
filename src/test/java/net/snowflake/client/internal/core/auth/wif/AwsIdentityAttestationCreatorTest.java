@@ -25,6 +25,10 @@ import software.amazon.awssdk.regions.Region;
 
 public class AwsIdentityAttestationCreatorTest {
 
+  private static final String FAKE_JWT = "fake.jwt.token-for-testing-only";
+
+  // --- GetCallerIdentity (default) path tests ---
+
   @Test
   public void shouldThrowExceptionWhenNoCredentialsFound() {
     AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
@@ -61,6 +65,7 @@ public class AwsIdentityAttestationCreatorTest {
         Region.CN_NORTHWEST_1, "sts.cn-northwest-1.amazonaws.com.cn");
   }
 
+  @SuppressWarnings("unchecked")
   private void shouldReturnProperAttestationWithSignedRequestCredential(
       Region region, String expectedStsUrl) throws JsonProcessingException, SFException {
     AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
@@ -107,7 +112,7 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
 
     SFLoginInput loginInput = new SFLoginInput();
-    loginInput.setWorkloadIdentityImpersonationPath(""); // Empty path
+    loginInput.setWorkloadIdentityImpersonationPath("");
 
     AwsIdentityAttestationCreator attestationCreator =
         new AwsIdentityAttestationCreator(attestationServiceSpy, loginInput);
@@ -244,8 +249,6 @@ public class AwsIdentityAttestationCreatorTest {
     WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
 
     assertNotNull(attestation);
-    // Empty string is passed through as-is; assumeRole handles it by not setting externalId
-    // in the STS AssumeRole request (same effective behaviour as null)
     Mockito.verify(attestationServiceMock)
         .assumeRole(initialCredentials, "arn:aws:iam::123456789012:role/TestRole", "");
   }
@@ -268,12 +271,10 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
     Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
     Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
-    // First hop: no external ID
     Mockito.when(
             attestationServiceMock.assumeRole(
                 initialCredentials, "arn:aws:iam::111111111111:role/RoleA", null))
         .thenReturn(intermediateCredentials);
-    // Last hop: external ID applied
     Mockito.when(
             attestationServiceMock.assumeRole(
                 intermediateCredentials, "arn:aws:iam::222222222222:role/RoleB", "my-external-id"))
@@ -297,5 +298,131 @@ public class AwsIdentityAttestationCreatorTest {
     Mockito.verify(attestationServiceMock)
         .assumeRole(
             intermediateCredentials, "arn:aws:iam::222222222222:role/RoleB", "my-external-id");
+  }
+
+  // --- GetWebIdentityToken (opt-in) path tests ---
+
+  @Test
+  public void shouldReturnAttestationWithJwtWhenOutboundTokenEnabled() throws SFException {
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
+    AwsSessionCredentials credentials =
+        AwsSessionCredentials.create("abc", "abc", "aws-session-token");
+    Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(credentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
+    Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(credentials)))
+        .thenReturn(FAKE_JWT);
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityAwsUseOutboundToken(true);
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceMock, loginInput);
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+
+    assertNotNull(attestation);
+    assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
+    assertEquals(FAKE_JWT, attestation.getCredential());
+    assertNotNull(attestation.getUserIdentifierComponents());
+    assertEquals(0, attestation.getUserIdentifierComponents().size());
+  }
+
+  @Test
+  public void shouldPropagateExceptionFromGetWebIdentityToken() throws SFException {
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
+    AwsSessionCredentials credentials =
+        AwsSessionCredentials.create("abc", "abc", "aws-session-token");
+    Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(credentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
+    Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(credentials)))
+        .thenThrow(
+            new SFException(
+                net.snowflake.client.api.exception.ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "boom"));
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityAwsUseOutboundToken(true);
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceMock, loginInput);
+    assertThrows(SFException.class, attestationCreator::createAttestation);
+  }
+
+  @Test
+  public void shouldCreateAttestationWithImpersonationPathAndOutboundToken() throws SFException {
+    AwsAttestationService attestationServiceMock = mock(AwsAttestationService.class);
+
+    AwsSessionCredentials initialCredentials =
+        AwsSessionCredentials.create("initial-key", "initial-secret", "initial-token");
+    AwsSessionCredentials assumedCredentials =
+        AwsSessionCredentials.create("assumed-key", "assumed-secret", "assumed-token");
+
+    Mockito.when(attestationServiceMock.getAWSCredentials()).thenReturn(initialCredentials);
+    Mockito.when(attestationServiceMock.getAWSRegion()).thenReturn(Region.US_EAST_1);
+    Mockito.when(attestationServiceMock.getCredentialsViaRoleChaining(any())).thenCallRealMethod();
+    Mockito.when(
+            attestationServiceMock.assumeRole(
+                initialCredentials, "arn:aws:iam::123456789012:role/TestRole", null))
+        .thenReturn(assumedCredentials);
+    Mockito.when(attestationServiceMock.getWebIdentityToken(Mockito.eq(assumedCredentials)))
+        .thenReturn(FAKE_JWT);
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityImpersonationPath("arn:aws:iam::123456789012:role/TestRole");
+    loginInput.setWorkloadIdentityAwsUseOutboundToken(true);
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceMock, loginInput);
+
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+
+    assertNotNull(attestation);
+    assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
+    assertEquals(FAKE_JWT, attestation.getCredential());
+
+    Mockito.verify(attestationServiceMock)
+        .assumeRole(initialCredentials, "arn:aws:iam::123456789012:role/TestRole", null);
+  }
+
+  @Test
+  public void shouldUseGetCallerIdentityWhenOutboundTokenExplicitlyFalse() throws SFException {
+    AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
+        .when(attestationServiceSpy)
+        .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
+    Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityAwsUseOutboundToken(false);
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceSpy, loginInput);
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+
+    assertNotNull(attestation);
+    String decoded = new String(Base64.getDecoder().decode(attestation.getCredential()));
+    assertTrue(decoded.contains("GetCallerIdentity"));
+  }
+
+  @Test
+  public void shouldUseGetCallerIdentityByDefault() throws SFException {
+    AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
+        .when(attestationServiceSpy)
+        .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
+    Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
+
+    SFLoginInput loginInput = new SFLoginInput();
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceSpy, loginInput);
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+
+    assertNotNull(attestation);
+    assertEquals(WorkloadIdentityProviderType.AWS, attestation.getProvider());
+    assertNotNull(attestation.getCredential());
+    // Credential should be base64-encoded (GetCallerIdentity path), not a plain JWT
+    String decoded = new String(Base64.getDecoder().decode(attestation.getCredential()));
+    assertTrue(decoded.contains("GetCallerIdentity"));
   }
 }

@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>4.2.1-SNAPSHOT</version>
+    <version>4.3.2-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>4.2.1-SNAPSHOT</version>
+  <version>4.3.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -725,6 +725,17 @@
                       </excludes>
                     </filter>
                     <filter>
+                      <!-- Exclude snowflake-common's SFBinary/SFBinaryFormat: they still reference
+                           com.amazonaws.util.Base16/Base64 (AWS SDK v1). The JDBC driver uses its own
+                           internal copies at net.snowflake.client.internal.common.core which use
+                           Apache Commons Codec instead. See SNOW-3643336 / GitHub #2662. -->
+                      <artifact>net.snowflake:snowflake-common</artifact>
+                      <excludes>
+                        <exclude>net/snowflake/common/core/SFBinary.class</exclude>
+                        <exclude>net/snowflake/common/core/SFBinaryFormat*.class</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
                       <artifact>org.apache.arrow:arrow-vector</artifact>
                       <excludes>
                         <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
@@ -1077,6 +1088,17 @@
                         <exclude>azure-*.properties</exclude>
                         <exclude>VersionInfo.java</exclude>
                         <exclude>project.properties</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- Exclude snowflake-common's SFBinary/SFBinaryFormat: they still reference
+                           com.amazonaws.util.Base16/Base64 (AWS SDK v1). The JDBC driver uses its own
+                           internal copies at net.snowflake.client.internal.common.core which use
+                           Apache Commons Codec instead. See SNOW-3643336 / GitHub #2662. -->
+                      <artifact>net.snowflake:snowflake-common</artifact>
+                      <excludes>
+                        <exclude>net/snowflake/common/core/SFBinary.class</exclude>
+                        <exclude>net/snowflake/common/core/SFBinaryFormat*.class</exclude>
                       </excludes>
                     </filter>
                     <filter>
