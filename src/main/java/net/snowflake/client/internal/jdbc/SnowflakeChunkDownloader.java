@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -953,18 +954,26 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
        * @throws SnowflakeSQLException
        */
       private void downloadAndParseChunk(InputStream inputStream) throws SnowflakeSQLException {
-        // remember the download time
-        resultChunk.setDownloadTime(System.currentTimeMillis() - startTime);
-        downloader.addDownloadTime(resultChunk.getDownloadTime());
+        // getResultStreamProvider().getInputStream() returns once headers come back, but the
+        // response body is streamed lazily during the parser's read*() calls below — so most of
+        // the true download time is spent inside read(), not before it. When the metrics log is
+        // active (debug/trace), wrap the stream in a TimingInputStream so we can split the
+        // download/parse times accurately. Otherwise, skip the per-read instrumentation and
+        // fall back to the cheaper, less-accurate split (treating everything before the parse
+        // call as download and everything inside it as parse) so we don't pay the wrapping cost
+        // when nothing reads the result.
+        boolean splitDownloadAndParseTimes = logger.isDebugEnabled() || logger.isTraceEnabled();
+        long connectionSetupMs = System.currentTimeMillis() - startTime;
+        TimingInputStream timedStream =
+            splitDownloadAndParseTimes ? new TimingInputStream(inputStream) : null;
+        InputStream parseStream = timedStream != null ? timedStream : inputStream;
 
-        startTime = System.currentTimeMillis();
-
-        // parse the result json
+        long parseStart = System.currentTimeMillis();
         try {
           if (downloader.queryResultFormat == QueryResultFormat.ARROW) {
-            ((ArrowResultChunk) resultChunk).readArrowStream(inputStream);
+            ((ArrowResultChunk) resultChunk).readArrowStream(parseStream);
           } else {
-            parseJsonToChunkV2(inputStream, resultChunk);
+            parseJsonToChunkV2(parseStream, resultChunk);
           }
         } catch (Exception ex) {
           logger.debug(
@@ -997,9 +1006,22 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           }
         }
 
-        // add parsing time
-        resultChunk.setParseTime(System.currentTimeMillis() - startTime);
-        downloader.addParsingTime(resultChunk.getParseTime());
+        long readPlusParseMs = System.currentTimeMillis() - parseStart;
+        long downloadMs;
+        long parseMs;
+        if (timedStream != null) {
+          long networkReadMs = TimeUnit.NANOSECONDS.toMillis(timedStream.getNanosBlocked());
+          downloadMs = connectionSetupMs + networkReadMs;
+          parseMs = Math.max(0L, readPlusParseMs - networkReadMs);
+        } else {
+          downloadMs = connectionSetupMs;
+          parseMs = readPlusParseMs;
+        }
+
+        resultChunk.setDownloadTime(downloadMs);
+        downloader.addDownloadTime(downloadMs);
+        resultChunk.setParseTime(parseMs);
+        downloader.addParsingTime(parseMs);
       }
 
       private long startTime;
@@ -1187,6 +1209,38 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     @Override
     public DownloaderMetrics terminate() {
       return null;
+    }
+  }
+
+  /**
+   * InputStream wrapper that accumulates the time spent blocked inside read() calls. Used to
+   * separate true network read time from CPU-bound parsing time when reading a chunk.
+   */
+  private static final class TimingInputStream extends FilterInputStream {
+    private long nanosBlocked = 0L;
+
+    TimingInputStream(InputStream in) {
+      super(in);
+    }
+
+    long getNanosBlocked() {
+      return nanosBlocked;
+    }
+
+    @Override
+    public int read() throws IOException {
+      long t0 = System.nanoTime();
+      int b = in.read();
+      nanosBlocked += System.nanoTime() - t0;
+      return b;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+      long t0 = System.nanoTime();
+      int n = in.read(b, off, len);
+      nanosBlocked += System.nanoTime() - t0;
+      return n;
     }
   }
 }
