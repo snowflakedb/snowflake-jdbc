@@ -144,6 +144,15 @@ public class WifTestHelper {
                 pb.environment().put("SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID", externalId);
             }
 
+            String outboundTokenImpersonationPath = queryParams.get("SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_IMPERSONATION_PATH");
+            if (outboundTokenImpersonationPath != null) {
+                pb.environment().put("SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_IMPERSONATION_PATH", outboundTokenImpersonationPath);
+            }
+            String outboundTokenUser = queryParams.get("SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_USER");
+            if (outboundTokenUser != null) {
+                pb.environment().put("SNOWFLAKE_TEST_WIF_OUTBOUND_TOKEN_USER", outboundTokenUser);
+            }
+
             process = pb.start();
             
             final InputStream processInputStream = process.getInputStream();
