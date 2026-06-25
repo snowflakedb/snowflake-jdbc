@@ -73,6 +73,7 @@ public class SFLoginInput {
   private String workloadIdentityEntraResource;
   private List<String> workloadIdentityImpersonationPath = Collections.emptyList();
   private String workloadIdentityAwsExternalId;
+  private boolean workloadIdentityAwsUseOutboundToken = false;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -643,6 +644,16 @@ public class SFLoginInput {
 
   public SFLoginInput setWorkloadIdentityAwsExternalId(String workloadIdentityAwsExternalId) {
     this.workloadIdentityAwsExternalId = workloadIdentityAwsExternalId;
+    return this;
+  }
+
+  public boolean isWorkloadIdentityAwsUseOutboundToken() {
+    return workloadIdentityAwsUseOutboundToken;
+  }
+
+  public SFLoginInput setWorkloadIdentityAwsUseOutboundToken(
+      boolean workloadIdentityAwsUseOutboundToken) {
+    this.workloadIdentityAwsUseOutboundToken = workloadIdentityAwsUseOutboundToken;
     return this;
   }
 
