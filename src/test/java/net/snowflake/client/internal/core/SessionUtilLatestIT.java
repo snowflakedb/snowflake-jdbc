@@ -715,7 +715,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               new HttpResponseWithHeaders(
-                  "{\"code\":390100,\"message\":\"Incorrect username or password was specified.\",\"success\":false}",
+                  "{\"data\":null,\"code\":390100,\"message\":\"Incorrect username or password was specified.\",\"success\":false}",
                   new HashMap<>()));
       mockedHttpUtil
           .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
@@ -749,7 +749,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               new HttpResponseWithHeaders(
-                  "{\"code\":390144,\"message\":\"JWT token is invalid.\",\"success\":false}",
+                  "{\"data\":null,\"code\":390144,\"message\":\"JWT token is invalid.\",\"success\":false}",
                   new HashMap<>()));
       mockedHttpUtil
           .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
@@ -783,7 +783,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.nullable(SFBaseSession.class)))
           .thenReturn(
               new HttpResponseWithHeaders(
-                  "{\"code\":390201,\"message\":\"some non-auth failure\",\"success\":false}",
+                  // 390201 = SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED:
+                  // object-not-authorized, not credential rejection; must stay 08001
+                  "{\"data\":null,\"code\":390201,\"message\":\"some non-auth failure\",\"success\":false}",
                   new HashMap<>()));
       mockedHttpUtil
           .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
@@ -793,6 +795,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           assertThrows(
               SnowflakeSQLException.class,
               () -> SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL"));
+      assertEquals(390201, e.getErrorCode());
       assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
   }
