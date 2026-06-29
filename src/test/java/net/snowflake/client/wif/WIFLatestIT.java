@@ -45,6 +45,9 @@ public class WIFLatestIT {
       System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID");
   private static final String IMPERSONATION_USER_WITH_EXTERNAL_ID =
       System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID");
+  private static final String OUTBOUND_TOKEN_IMPERSONATION_PATH =
+      "arn:aws:iam::376129840140:role/drivers-wif-automated-tests-with-issuer";
+  private static final String OUTBOUND_TOKEN_USER = "TEST_WIF_E2E_AWS_WITH_ISSUER";
 
   @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
@@ -143,6 +146,18 @@ public class WIFLatestIT {
     } catch (SQLException e) {
       throw new RuntimeException("Failed to execute query", e);
     }
+  }
+
+  @Test
+  @EnabledIf("isProviderAWS")
+  void shouldAuthenticateUsingWIFWithGetWebIdentityToken() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", "AWS");
+    properties.put("workloadIdentityAwsUseOutboundToken", "true");
+    properties.put("workloadIdentityImpersonationPath", OUTBOUND_TOKEN_IMPERSONATION_PATH);
+    connectAndExecuteSimpleQuery(properties, OUTBOUND_TOKEN_USER);
   }
 
   @Test
