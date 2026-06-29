@@ -28,6 +28,7 @@ import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
+import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.hamcrest.MatcherAssert;
@@ -232,6 +233,37 @@ public class SessionUtilExternalBrowserTest {
                 sub.authenticate();
               });
       MatcherAssert.assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
+    }
+  }
+
+  @Test
+  public void testWrongPasswordMapsTo28000() throws Throwable {
+    final SFLoginInput loginInput = initMockLoginInput();
+
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequestWithContext(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class),
+                      Mockito.nullable(SFBaseSession.class)))
+          .thenReturn(
+              new HttpResponseWithHeaders(
+                  "{\"success\":\"false\",\"code\":\"390100\",\"message\":\"Incorrect username or password was specified.\"}",
+                  new HashMap<>()));
+
+      SessionUtilExternalBrowser sub =
+          FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
+      SnowflakeSQLException ex =
+          assertThrows(SnowflakeSQLException.class, () -> sub.authenticate());
+      assertEquals(390100, ex.getErrorCode());
+      assertEquals(SqlState.INVALID_AUTHORIZATION_SPECIFICATION, ex.getSQLState());
     }
   }
 

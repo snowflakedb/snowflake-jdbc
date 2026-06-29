@@ -211,11 +211,12 @@ public class SessionUtilExternalBrowser {
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
         logger.debug("Response: {}", theString);
-        String errorCode = jsonNode.path("code").asText();
-        throw new SnowflakeSQLException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            Integer.valueOf(errorCode),
-            jsonNode.path("message").asText());
+        int errorCode = Integer.parseInt(jsonNode.path("code").asText());
+        String sqlState =
+            Constants.AUTH_REJECTION_GS_CODES.contains(errorCode)
+                ? SqlState.INVALID_AUTHORIZATION_SPECIFICATION
+                : SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION;
+        throw new SnowflakeSQLException(sqlState, errorCode, jsonNode.path("message").asText());
       }
 
       JsonNode dataNode = jsonNode.path("data");
