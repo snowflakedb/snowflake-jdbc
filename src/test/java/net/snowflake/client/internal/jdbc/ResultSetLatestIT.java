@@ -45,6 +45,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
 import net.snowflake.client.internal.api.implementation.resultset.SnowflakeBaseResultSet;
@@ -672,6 +673,19 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
+  @ParameterizedTest
+  @ArgumentsSource(SimpleResultFormatProvider.class)
+  public void testGetDataTypeWithVector(String queryResultFormat) throws SQLException {
+    try (Statement statement = createStatement(queryResultFormat)) {
+      statement.execute("create or replace table vector_test(v vector(int, 3))");
+      try (ResultSet resultSet = statement.executeQuery("select * from vector_test")) {
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        assertEquals(SnowflakeType.EXTRA_TYPES_VECTOR, resultSetMetaData.getColumnType(1));
+        assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(1));
+      }
+    }
+  }
+
   /**
    * Test getClob(int), and getClob(String) handle SQL nulls and don't throw a NullPointerException
    * (SNOW-749517)
@@ -908,7 +922,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
               + "  array_col1 ARRAY,"
               + "  text_col1 TEXT,"
               + "  varchar_col VARCHAR(16777216),"
-              + "  char_col CHAR(16777216)"
+              + "  char_col CHAR(16777216),"
+              + "  vector_col VECTOR(INT, 3)"
               + ");";
 
       statement.execute(sampleCreateTableWithAllColTypes);
@@ -933,6 +948,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         assertTrue(metaData.isCaseSensitive(15)); // TEXT
         assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
         assertTrue(metaData.isCaseSensitive(17)); // CHAR
+        assertTrue(metaData.isCaseSensitive(18)); // VECTOR
       }
     }
   }
