@@ -976,13 +976,7 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
 
     SnowflakeStatementImpl stmt = this.createStatement().unwrap(SnowflakeStatementImpl.class);
 
-    StringBuilder destStage = new StringBuilder();
-
-    // add stage name
-    if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
-      destStage.append("@");
-    }
-    destStage.append(stageName);
+    StringBuilder destStage = new StringBuilder(normalizeStageNameForRef(stageName));
 
     // add dest prefix
     if (destPrefix != null) {
@@ -992,15 +986,18 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
       destStage.append(destPrefix);
     }
 
+    String destStageStr = destStage.toString();
+    String quotedDestStage = quoteStageRefIfNeeded(destStageStr);
+
     StringBuilder putCommand = new StringBuilder();
     // use a placeholder for source file
     putCommand.append("put file:///tmp/placeholder ");
-    putCommand.append(destStage.toString());
+    putCommand.append(quotedDestStage);
     putCommand.append(" overwrite=true");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(putCommand.toString(), stmt.getSFBaseStatement());
-    transferAgent.setDestStagePath(destStage.toString());
+    transferAgent.setDestStagePath(destStageStr);
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
@@ -1049,30 +1046,12 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
             ResultSet.CONCUR_READ_ONLY,
             ResultSet.CLOSE_CURSORS_AT_COMMIT);
 
+    String stageRef = buildStageFileRef(stageName, sourceFileName);
+    String quotedStageRef = quoteStageRefIfNeeded(stageRef);
+
     StringBuilder getCommand = new StringBuilder();
-
     getCommand.append("get ");
-
-    if (!stageName.startsWith("@")) {
-      getCommand.append("@");
-    }
-
-    getCommand.append(stageName);
-
-    getCommand.append("/");
-
-    if (sourceFileName.startsWith("/")) {
-      sourceFileName = sourceFileName.substring(1);
-    }
-
-    getCommand.append(sourceFileName);
-
-    // special characters and spaces require single quotes around stage name.
-    boolean isSpecialChar = !sourceFileName.matches("^[a-zA-Z0-9_/.]*$");
-    if (isSpecialChar) {
-      getCommand.insert(getCommand.indexOf("@"), "'");
-      getCommand.append("'");
-    }
+    getCommand.append(quotedStageRef);
 
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
@@ -1173,5 +1152,108 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
 
   private static String escapeIdentifier(String name) {
     return name == null ? null : name.replace("\"", "\"\"");
+  }
+
+  /**
+   * Strips outer single-quote or dollar-quote delimiters from a stage name, unescapes doubled
+   * single quotes, and ensures the result starts with {@code @}.
+   */
+  static String normalizeStageNameForRef(String stageName) {
+    if (stageName == null) {
+      return null;
+    }
+    String normalized = stageName;
+    if (isDollarQuotedStageRef(normalized)) {
+      normalized = normalized.substring(2, normalized.length() - 2);
+    } else if (isSingleQuotedStageRef(normalized)) {
+      normalized = unescapeSingleQuotedContent(normalized.substring(1, normalized.length() - 1));
+    }
+    if (!normalized.startsWith("@")) {
+      normalized = "@" + normalized;
+    }
+    return normalized;
+  }
+
+  /** Builds an unquoted {@code @stage/file} reference for GET commands. */
+  static String buildStageFileRef(String stageName, String fileName) {
+    StringBuilder ref = new StringBuilder(normalizeStageNameForRef(stageName));
+    ref.append("/");
+    if (fileName != null && fileName.startsWith("/")) {
+      fileName = fileName.substring(1);
+    }
+    ref.append(fileName);
+    return ref.toString();
+  }
+
+  private static String unescapeSingleQuotedContent(String content) {
+    return content.replace("''", "'");
+  }
+
+  private static boolean containsUnescapedSingleQuote(String content) {
+    for (int i = 0; i < content.length(); i++) {
+      if (content.charAt(i) == '\'') {
+        if (i + 1 < content.length() && content.charAt(i + 1) == '\'') {
+          i++;
+        } else {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean isSingleQuotedStageRef(String stageRef) {
+    if (stageRef == null || stageRef.length() < 2) {
+      return false;
+    }
+    if (!stageRef.startsWith("'") || !stageRef.endsWith("'")) {
+      return false;
+    }
+    return !containsUnescapedSingleQuote(stageRef.substring(1, stageRef.length() - 1));
+  }
+
+  private static boolean isDollarQuotedStageRef(String stageRef) {
+    return stageRef != null
+        && stageRef.length() >= 4
+        && stageRef.startsWith("$$")
+        && stageRef.endsWith("$$");
+  }
+
+  /**
+   * Returns true if a stage reference contains characters that require single-quote wrapping in
+   * PUT/GET SQL. Safe characters are ASCII alphanumerics and {@code _$./@~%"-:} which are valid
+   * unquoted in Snowflake file-operation SQL. Anything else (spaces, non-ASCII/unicode, backslash,
+   * wildcard chars) triggers quoting.
+   */
+  static boolean needsStageQuoting(String stageRef) {
+    if (stageRef == null) {
+      return false;
+    }
+    if (isSingleQuotedStageRef(stageRef) || isDollarQuotedStageRef(stageRef)) {
+      return false;
+    }
+    for (int i = 0; i < stageRef.length(); i++) {
+      char c = stageRef.charAt(i);
+      if ((c >= 'A' && c <= 'Z')
+          || (c >= 'a' && c <= 'z')
+          || (c >= '0' && c <= '9')
+          || "_$./@~%\"-:".indexOf(c) >= 0) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Wraps a stage reference in single quotes if it contains characters that require quoting (e.g.
+   * non-ASCII/unicode characters in schema or stage names). Any embedded single quotes are doubled.
+   * Already-quoted references (single-quote or dollar-quote) are returned unchanged.
+   */
+  static String quoteStageRefIfNeeded(String stageRef) {
+    if (stageRef == null || !needsStageQuoting(stageRef)) {
+      return stageRef;
+    }
+    return "'" + stageRef.replace("'", "''") + "'";
   }
 }
