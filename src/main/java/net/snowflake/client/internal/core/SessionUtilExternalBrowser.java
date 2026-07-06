@@ -301,6 +301,15 @@ public class SessionUtilExternalBrowser {
               new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
           char[] buf = new char[16384];
           int strLen = in.read(buf);
+          if (strLen < 0) {
+            // The browser frequently opens speculative/preconnect sockets to the localhost
+            // callback server and closes them without sending any data. The read then returns -1
+            // (EOF). Previously this produced `new String(buf, 0, -1)` and crashed with
+            // StringIndexOutOfBoundsException before the real request could be handled. Ignore such
+            // empty connections and keep listening. See SNOW-3704231.
+            logger.debug("Received empty request on localhost callback socket. Ignoring.");
+            continue;
+          }
           String[] rets = new String(buf, 0, strLen).split("\r\n");
           if (!processOptions(rets, socket)) {
             processSamlToken(rets, socket);
