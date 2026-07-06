@@ -203,14 +203,47 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException {
+    // Find a StorageException either directly or anywhere in the cause chain.
+    // The exception may arrive wrapped (e.g. in SnowflakeSQLException) when it originates from the
+    // inner uploadWithDownScopedToken method, which catches the original StorageException and
+    // re-wraps it before re-throwing. Walking the chain ensures that a transient 503 or similar
+    // GCS error is always treated as retryable regardless of how many layers of wrapping were added.
+    StorageException se = null;
     if (ex instanceof StorageException) {
-      // NOTE: this code path only handle Access token based operation,
-      // presigned URL is not covered. Presigned Url do not raise
-      // StorageException
+      se = (StorageException) ex;
+    } else {
+      Throwable cause = ex.getCause();
+      while (cause != null) {
+        if (cause instanceof StorageException) {
+          se = (StorageException) cause;
+          break;
+        }
+        cause = cause.getCause();
+      }
+      if (se != null) {
+        logger.debug(
+            "GCSDefaultAccessStrategy: found StorageException (HTTP {}) wrapped inside {} during {};"
+                + " treating as retryable",
+            se.getCode(),
+            ex.getClass().getSimpleName(),
+            operation);
+      }
+    }
 
-      StorageException se = (StorageException) ex;
-      // If we have exceeded the max number of retries, propagate the error
+    if (se != null) {
+      // NOTE: this code path only handles Access token based operations.
+      // Presigned URL operations do not raise StorageException.
+
+      // If we have exceeded the max number of retries, propagate the error.
       if (retryCount > gcsClient.getMaxRetries()) {
+        logger.error(
+            "GCSDefaultAccessStrategy: max retries ({}) exceeded for StorageException"
+                + " (HTTP {}, message: {}) during {}, giving up",
+            gcsClient.getMaxRetries(),
+            se.getCode(),
+            se.getMessage(),
+            operation);
+        logger.error("Stack trace: ", ex);
         throw new SnowflakeSQLLoggedException(
             queryId,
             session,
@@ -224,7 +257,7 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       } else {
         logger.debug(
             "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
+            se.getMessage(),
             operation,
             retryCount);
         logger.debug("Stack trace: ", ex);
@@ -260,6 +293,12 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
       }
       return true;
     } else {
+      logger.error(
+          "GCSDefaultAccessStrategy: unhandled exception type {} during {}, not retrying: {}",
+          ex.getClass().getName(),
+          operation,
+          ex.getMessage());
+      logger.error("Stack trace: ", ex);
       return false;
     }
   }
