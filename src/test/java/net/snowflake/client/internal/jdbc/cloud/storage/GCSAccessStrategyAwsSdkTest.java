@@ -12,6 +12,7 @@ import java.util.concurrent.CompletionException;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 class GCSAccessStrategyAwsSdkTest {
@@ -46,7 +47,7 @@ class GCSAccessStrategyAwsSdkTest {
   // immediately.  After the fix the full chain is walked, S3Exception is found, and a retry occurs.
   @Test
   void testHandleStorageExceptionWrappedCompletionException503BelowMaxRetries() {
-    S3Exception s3Exception =
+    AwsServiceException s3Exception =
         S3Exception.builder().message("Service Unavailable").statusCode(503).build();
     CompletionException completionException = new CompletionException(s3Exception);
     RuntimeException wrappedException =
@@ -70,7 +71,7 @@ class GCSAccessStrategyAwsSdkTest {
   // been exceeded, the handler must surface it as a SnowflakeSQLException so the caller stops.
   @Test
   void testHandleStorageExceptionWrappedCompletionException503OverMaxRetries() {
-    S3Exception s3Exception =
+    AwsServiceException s3Exception =
         S3Exception.builder().message("Service Unavailable").statusCode(503).build();
     CompletionException completionException = new CompletionException(s3Exception);
     RuntimeException wrappedException =
@@ -95,7 +96,7 @@ class GCSAccessStrategyAwsSdkTest {
   // This is the simpler case that already worked before the fix; verifying it still works.
   @Test
   void testHandleStorageExceptionDirectS3Exception503BelowMaxRetries() {
-    S3Exception s3Exception =
+    AwsServiceException s3Exception =
         S3Exception.builder().message("Service Unavailable").statusCode(503).build();
     RuntimeException wrappedException =
         new RuntimeException(
