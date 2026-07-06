@@ -295,28 +295,22 @@ public class SessionUtilExternalBrowser {
       }
 
       while (true) {
-        Socket socket = ssocket.accept(); // start accepting the request
-        try {
+        try (Socket socket = ssocket.accept()) {
+          // Bound reads so a client that connects then stalls mid-request cannot hang the server.
+          socket.setSoTimeout(getBrowserResponseTimeout());
           BufferedReader in =
               new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
-          char[] buf = new char[16384];
-          int strLen = in.read(buf);
-          if (strLen < 0) {
-            // The browser frequently opens speculative/preconnect sockets to the localhost
-            // callback server and closes them without sending any data. The read then returns -1
-            // (EOF). Previously this produced `new String(buf, 0, -1)` and crashed with
-            // StringIndexOutOfBoundsException before the real request could be handled. Ignore such
-            // empty connections and keep listening. See SNOW-3704231.
+          String request = readRequest(in);
+          if (request.isEmpty()) {
+            // Browser preconnect/speculative socket closed without sending data. See SNOW-3704231.
             logger.debug("Received empty request on localhost callback socket. Ignoring.");
             continue;
           }
-          String[] rets = new String(buf, 0, strLen).split("\r\n");
+          String[] rets = request.split("\r\n");
           if (!processOptions(rets, socket)) {
             processSamlToken(rets, socket);
             break;
           }
-        } finally {
-          socket.close();
         }
       }
     } catch (SocketTimeoutException e) {
@@ -335,6 +329,63 @@ public class SessionUtilExternalBrowser {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
       }
     }
+  }
+
+  /**
+   * Reads a full HTTP request from the localhost callback socket, reassembling fragments until the
+   * end-of-headers marker ({@code \r\n\r\n}) plus the full {@code Content-Length} body, or EOF.
+   * Returns an empty string when the peer closed without sending data (e.g. a browser preconnect
+   * socket).
+   */
+  private String readRequest(BufferedReader in) throws IOException {
+    char[] buf = new char[16384];
+    StringBuilder request = new StringBuilder();
+    int strLen;
+    int bodyStart = -1;
+    int contentLength = 0;
+    while ((strLen = in.read(buf)) >= 0) {
+      request.append(buf, 0, strLen);
+      if (bodyStart < 0) {
+        // Resolve the header terminator and Content-Length once, not on every read.
+        int headerEnd = request.indexOf("\r\n\r\n");
+        if (headerEnd >= 0) {
+          bodyStart = headerEnd + 4;
+          contentLength = getContentLength(request.substring(0, headerEnd));
+        }
+      }
+      // Content-Length is a byte count, so compare bytes, not chars. contentLength == 0 (GET /
+      // preflight / no body) breaks at the terminator so we don't block awaiting an absent body.
+      if (bodyStart >= 0 && bodyByteLength(request, bodyStart) >= contentLength) {
+        break;
+      }
+    }
+    return request.toString();
+  }
+
+  /** UTF-8 byte length of the request body accumulated so far. */
+  private int bodyByteLength(StringBuilder request, int bodyStart) {
+    if (request.length() <= bodyStart) {
+      return 0;
+    }
+    return request.substring(bodyStart).getBytes(UTF8_CHARSET).length;
+  }
+
+  /**
+   * Parses the {@code Content-Length} header (case-insensitive), returning 0 when it is absent or
+   * unparseable.
+   */
+  private int getContentLength(String headers) {
+    for (String line : headers.split("\r\n")) {
+      int colon = line.indexOf(':');
+      if (colon > 0 && line.substring(0, colon).trim().equalsIgnoreCase("Content-Length")) {
+        try {
+          return Math.max(0, Integer.parseInt(line.substring(colon + 1).trim()));
+        } catch (NumberFormatException e) {
+          return 0;
+        }
+      }
+    }
+    return 0;
   }
 
   private boolean processOptions(String[] rets, Socket socket) throws IOException {
