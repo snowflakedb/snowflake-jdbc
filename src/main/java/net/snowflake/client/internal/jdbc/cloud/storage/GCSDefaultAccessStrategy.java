@@ -207,7 +207,8 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
     // The exception may arrive wrapped (e.g. in SnowflakeSQLException) when it originates from the
     // inner uploadWithDownScopedToken method, which catches the original StorageException and
     // re-wraps it before re-throwing. Walking the chain ensures that a transient 503 or similar
-    // GCS error is always treated as retryable regardless of how many layers of wrapping were added.
+    // GCS error is always treated as retryable regardless of how many layers of wrapping were
+    // added.
     StorageException se = null;
     if (ex instanceof StorageException) {
       se = (StorageException) ex;

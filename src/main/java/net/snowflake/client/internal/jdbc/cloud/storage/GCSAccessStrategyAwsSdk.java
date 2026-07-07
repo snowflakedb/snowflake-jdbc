@@ -261,46 +261,20 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException {
-    // Find an SdkException either directly in the cause or anywhere in the cause chain.
-    // When the exception originates from the inner uploadWithDownScopedToken it arrives wrapped
-    // in SnowflakeSQLLoggedException(CompletionException(SdkException)); walking the chain
-    // ensures transient errors are always treated as retryable regardless of wrapping depth.
-    SdkException sdkEx = null;
     Throwable cause = ex.getCause();
-    while (cause != null) {
-      if (cause instanceof SdkException) {
-        sdkEx = (SdkException) cause;
-        break;
-      }
-      cause = cause.getCause();
-    }
-
-    if (sdkEx != null) {
-      if (sdkEx != ex.getCause()) {
-        logger.debug(
-            "GCSAccessStrategyAwsSdk: found SdkException wrapped inside {} during {};"
-                + " treating as retryable",
-            ex.getClass().getSimpleName(),
-            operation);
-      }
-      logger.debug("GCSAccessStrategyAwsSdk: " + sdkEx.getMessage());
+    if (cause instanceof SdkException) {
+      logger.debug("GCSAccessStrategyAwsSdk: " + cause.getMessage());
 
       if (retryCount > gcsClient.getMaxRetries()
-          || S3ErrorHandler.isClientException400Or404(sdkEx)) {
+          || S3ErrorHandler.isClientException400Or404(cause)) {
         throwIfClientExceptionOrMaxRetryReached(
-            operation, session, command, queryId, gcsClient, sdkEx);
+            operation, session, command, queryId, gcsClient, cause);
       } else {
         retryRequestWithExponentialBackoff(
-            ex, retryCount, operation, session, command, gcsClient, queryId, sdkEx);
+            ex, retryCount, operation, session, command, gcsClient, queryId, cause);
       }
       return true;
     } else {
-      logger.error(
-          "GCSAccessStrategyAwsSdk: unhandled exception type {} during {}, not retrying: {}",
-          ex.getClass().getName(),
-          operation,
-          ex.getMessage());
-      logger.error("Stack trace: ", ex);
       return false;
     }
   }

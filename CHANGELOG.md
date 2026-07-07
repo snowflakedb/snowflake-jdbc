@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.2-SNAPSHOT
+  - Fixed GCS PUT operations not retrying on transient errors (e.g. HTTP 503) despite `putgetmaxretries` being configured (snowflakedb/snowflake-jdbc#2688).
   - Bumped jackson-databind to 2.18.8 from 2.18.7 (snowflakedb/snowflake-jdbc#2669).
   - Fixed snowflake-jdbc writing a `snowflake-minicore-*` temp directory and loading the native library at driver class-load time even when the driver was never used (e.g. when present on the classpath only as a transitive dependency). Minicore now loads lazily when the first Snowflake connection is created (`ConnectionFactory.createConnection`) instead of during `DriverInitializer.initialize()` (snowflakedb/snowflake-jdbc#2670).
   - Restored `GetCallerIdentity` as the default AWS Workload Identity Federation attestation method to avoid breaking existing users who have not configured the `ISSUER` in their Snowflake WIF setup. The `GetWebIdentityToken` (outbound JWT) flow introduced in v4.3.0 is now opt-in via the new `workloadIdentityAwsUseOutboundToken` connection property.
