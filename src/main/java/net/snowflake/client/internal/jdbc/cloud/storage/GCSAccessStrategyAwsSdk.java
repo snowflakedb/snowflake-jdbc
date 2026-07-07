@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,8 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.core.retry.backoff.FullJitterBackoffStrategy;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -54,7 +57,13 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSAccessStrategyAwsSdk.class);
   private final S3AsyncClient amazonClient;
 
-  GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
+  GCSAccessStrategyAwsSdk(
+      StageInfo stage,
+      SFBaseSession session,
+      int maxRetries,
+      int retryBackoffMin,
+      int retryBackoffMaxExponent)
+      throws SnowflakeSQLException {
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
 
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
@@ -84,6 +93,21 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     // Add signer interceptor for bearer token auth and header mapping
     overrideConfiguration.putAdvancedOption(
         SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
+
+    // Mirror the JDBC driver's retry settings so putGetMaxRetries and backoff parameters
+    // apply consistently to this strategy. maxBackoffMs = retryBackoffMin <<
+    // retryBackoffMaxExponent
+    // (e.g. 1000ms << 4 = 16 000ms), matching S3ErrorHandler.retryRequestWithExponentialBackoff.
+    long maxBackoffMs = (long) retryBackoffMin << retryBackoffMaxExponent;
+    overrideConfiguration.retryPolicy(
+        RetryPolicy.builder()
+            .numRetries(maxRetries)
+            .backoffStrategy(
+                FullJitterBackoffStrategy.builder()
+                    .baseDelay(Duration.ofMillis(retryBackoffMin))
+                    .maxBackoffTime(Duration.ofMillis(maxBackoffMs))
+                    .build())
+            .build());
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
