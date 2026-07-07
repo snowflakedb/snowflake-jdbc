@@ -109,6 +109,11 @@ public class SessionUtilExternalBrowser {
   private static final String PREFIX_POST = "POST ";
   private static final String PREFIX_OPTIONS = "OPTIONS ";
   private static final String PREFIX_USER_AGENT = "USER-AGENT: ";
+
+  // Upper bound on a single localhost callback request we will buffer. The largest legitimate
+  // request (SSO token plus headers) is a few KB; this only guards against a misbehaving local
+  // client that advertises a huge Content-Length or never sends the end-of-headers marker.
+  private static final int MAX_REQUEST_LENGTH = 1 << 20; // 1 MiB
   private static Charset UTF8_CHARSET;
 
   static {
@@ -345,6 +350,10 @@ public class SessionUtilExternalBrowser {
     int contentLength = 0;
     while ((strLen = in.read(buf)) >= 0) {
       request.append(buf, 0, strLen);
+      if (request.length() > MAX_REQUEST_LENGTH) {
+        throw new IOException(
+            "Localhost callback request exceeded " + MAX_REQUEST_LENGTH + " chars; aborting read.");
+      }
       if (bodyStart < 0) {
         // Resolve the header terminator and Content-Length once, not on every read.
         int headerEnd = request.indexOf("\r\n\r\n");
@@ -353,9 +362,14 @@ public class SessionUtilExternalBrowser {
           contentLength = getContentLength(request.substring(0, headerEnd));
         }
       }
-      // Content-Length is a byte count, so compare bytes, not chars. contentLength == 0 (GET /
-      // preflight / no body) breaks at the terminator so we don't block awaiting an absent body.
-      if (bodyStart >= 0 && bodyByteLength(request, bodyStart) >= contentLength) {
+      // No body expected (GET / preflight / no Content-Length) breaks at the terminator so we
+      // don't block awaiting an absent body. Otherwise gate on the cheap char count first (UTF-8
+      // byte length is always >= char count) and only then confirm the exact byte count, since
+      // Content-Length is a byte count.
+      if (bodyStart >= 0
+          && (contentLength == 0
+              || (request.length() - bodyStart >= contentLength
+                  && bodyByteLength(request, bodyStart) >= contentLength))) {
         break;
       }
     }
@@ -364,9 +378,6 @@ public class SessionUtilExternalBrowser {
 
   /** UTF-8 byte length of the request body accumulated so far. */
   private int bodyByteLength(StringBuilder request, int bodyStart) {
-    if (request.length() <= bodyStart) {
-      return 0;
-    }
     return request.substring(bodyStart).getBytes(UTF8_CHARSET).length;
   }
 
@@ -379,7 +390,7 @@ public class SessionUtilExternalBrowser {
       int colon = line.indexOf(':');
       if (colon > 0 && line.substring(0, colon).trim().equalsIgnoreCase("Content-Length")) {
         try {
-          return Math.max(0, Integer.parseInt(line.substring(colon + 1).trim()));
+          return Integer.parseInt(line.substring(colon + 1).trim());
         } catch (NumberFormatException e) {
           return 0;
         }

@@ -142,6 +142,9 @@ public class SessionUtilExternalBrowserTest {
   private static final String MOCK_PROOF_KEY = "specialkey";
   private static final String MOCK_SSO_URL = "https://sso.someidp.net/";
 
+  /** A token large enough (with headers) to force the SSO request across multiple TCP reads. */
+  private static final String LARGE_TOKEN = new String(new char[3800]).replace('\0', 'A');
+
   /**
    * Unit test for SessionUtilExternalBrowser
    *
@@ -276,7 +279,6 @@ public class SessionUtilExternalBrowserTest {
    */
   @Test
   public void testAuthenticateOverRealSocket() throws Throwable {
-    String largeToken = new String(new char[3800]).replace('\0', 'A');
     byte[] requestBytes =
         String.format(
                 "GET /?token=%s&confirm=1 HTTP/1.1\r\n"
@@ -284,7 +286,7 @@ public class SessionUtilExternalBrowserTest {
                     + "Sec-Fetch-Site: none\r\n"
                     + "Sec-GPC: 1\r\n"
                     + "\r\n",
-                largeToken)
+                LARGE_TOKEN)
             .getBytes(StandardCharsets.UTF_8);
     // Split the request into two TCP fragments to force a partial first read.
     int half = requestBytes.length / 2;
@@ -292,7 +294,7 @@ public class SessionUtilExternalBrowserTest {
     byte[] fragment2 = Arrays.copyOfRange(requestBytes, half, requestBytes.length);
 
     String token = driveRealSocketCallback(true, fragment1, fragment2);
-    assertEquals(largeToken, token);
+    assertEquals(LARGE_TOKEN, token);
   }
 
   /**
@@ -301,8 +303,7 @@ public class SessionUtilExternalBrowserTest {
    */
   @Test
   public void testAuthenticatePostBodyOverRealSocket() throws Throwable {
-    String largeToken = new String(new char[3800]).replace('\0', 'A');
-    byte[] body = String.format("token=%s&confirm=1", largeToken).getBytes(StandardCharsets.UTF_8);
+    byte[] body = String.format("token=%s&confirm=1", LARGE_TOKEN).getBytes(StandardCharsets.UTF_8);
     byte[] headerBytes =
         String.format(
                 "POST / HTTP/1.1\r\n"
@@ -314,7 +315,7 @@ public class SessionUtilExternalBrowserTest {
 
     // Fragment 1: headers ending exactly at the \r\n\r\n terminator; fragment 2: the body.
     String token = driveRealSocketCallback(false, headerBytes, body);
-    assertEquals(largeToken, token);
+    assertEquals(LARGE_TOKEN, token);
   }
 
   /**
