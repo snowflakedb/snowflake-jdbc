@@ -1244,13 +1244,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       boolean overrideAwsAccessStrategy =
           Boolean.valueOf(systemGetEnv("SNOWFLAKE_GCS_FORCE_VIRTUAL_STYLE_DOMAINS"));
       if (stage.getUseVirtualUrl() || overrideAwsAccessStrategy) {
-        this.gcsAccessStrategy =
-            new GCSAccessStrategyAwsSdk(
-                stage,
-                session,
-                this.getMaxRetries(),
-                this.getRetryBackoffMin(),
-                this.getRetryBackoffMaxExponent());
+        this.gcsAccessStrategy = new GCSAccessStrategyAwsSdk(stage, session);
       } else {
         this.gcsAccessStrategy = new GCSDefaultAccessStrategy(stage, session);
       }

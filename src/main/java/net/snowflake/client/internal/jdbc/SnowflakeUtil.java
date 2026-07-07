@@ -649,6 +649,22 @@ public class SnowflakeUtil {
     return cause;
   }
 
+  /**
+   * Walks the exception cause chain and returns the first {@link Throwable} that is an instance of
+   * {@code type}, or {@code null} if none is found. Unlike {@link #getRootCause(Exception)}, which
+   * always returns the deepest cause, this method stops at the first match of the requested type.
+   */
+  public static <T extends Throwable> T findFirstCauseOfType(Throwable ex, Class<T> type) {
+    Throwable cause = ex;
+    while (cause != null) {
+      if (type.isInstance(cause)) {
+        return type.cast(cause);
+      }
+      cause = cause.getCause();
+    }
+    return null;
+  }
+
   public static boolean isBlank(String input) {
     if ("".equals(input) || input == null) {
       return true;

@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +33,6 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.core.retry.backoff.FullJitterBackoffStrategy;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -57,13 +55,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSAccessStrategyAwsSdk.class);
   private final S3AsyncClient amazonClient;
 
-  GCSAccessStrategyAwsSdk(
-      StageInfo stage,
-      SFBaseSession session,
-      int maxRetries,
-      int retryBackoffMin,
-      int retryBackoffMaxExponent)
-      throws SnowflakeSQLException {
+  GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
 
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
@@ -94,20 +86,12 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     overrideConfiguration.putAdvancedOption(
         SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
 
-    // Mirror the JDBC driver's retry settings so putGetMaxRetries and backoff parameters
-    // apply consistently to this strategy. maxBackoffMs = retryBackoffMin <<
-    // retryBackoffMaxExponent
-    // (e.g. 1000ms << 4 = 16 000ms), matching S3ErrorHandler.retryRequestWithExponentialBackoff.
-    long maxBackoffMs = (long) retryBackoffMin << retryBackoffMaxExponent;
+    // Disable the SDK's own internal retries so the outer JDBC retry loop in
+    // SnowflakeGCSClient.upload() is the sole controller of retry count and backoff.
+    // Starting from the default policy (rather than an empty builder) preserves the AWS
+    // token-bucket circuit breaker and throttling-aware retry conditions.
     overrideConfiguration.retryPolicy(
-        RetryPolicy.builder()
-            .numRetries(maxRetries)
-            .backoffStrategy(
-                FullJitterBackoffStrategy.builder()
-                    .baseDelay(Duration.ofMillis(retryBackoffMin))
-                    .maxBackoffTime(Duration.ofMillis(maxBackoffMs))
-                    .build())
-            .build());
+        RetryPolicy.defaultRetryPolicy().toBuilder().numRetries(0).build());
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
@@ -285,17 +269,31 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException {
-    Throwable cause = ex.getCause();
-    if (cause instanceof SdkException) {
-      logger.debug("GCSAccessStrategyAwsSdk: " + cause.getMessage());
+    // Walk the full cause chain to find an SdkException. The exception may arrive wrapped
+    // (e.g. inside SnowflakeSQLLoggedException → CompletionException) when it originates from the
+    // inner uploadWithDownScopedToken wrapper. Walking the chain ensures that transient errors
+    // (503, connection refused, etc.) are always treated as retryable regardless of wrapping depth,
+    // consistent with how GCSDefaultAccessStrategy handles StorageException.
+    SdkException sdkEx = SnowflakeUtil.findFirstCauseOfType(ex, SdkException.class);
+    if (sdkEx != null) {
+      if (sdkEx != ex) {
+        logger.debug(
+            "GCSAccessStrategyAwsSdk: found SdkException ({}) wrapped inside {} during {};"
+                + " treating as retryable",
+            sdkEx.getMessage(),
+            ex.getClass().getSimpleName(),
+            operation);
+      } else {
+        logger.debug("GCSAccessStrategyAwsSdk: {}", sdkEx.getMessage());
+      }
 
       if (retryCount > gcsClient.getMaxRetries()
-          || S3ErrorHandler.isClientException400Or404(cause)) {
+          || S3ErrorHandler.isClientException400Or404(sdkEx)) {
         throwIfClientExceptionOrMaxRetryReached(
-            operation, session, command, queryId, gcsClient, cause);
+            operation, session, command, queryId, gcsClient, sdkEx);
       } else {
         retryRequestWithExponentialBackoff(
-            ex, retryCount, operation, session, command, gcsClient, queryId, cause);
+            ex, retryCount, operation, session, command, gcsClient, queryId, sdkEx);
       }
       return true;
     } else {
