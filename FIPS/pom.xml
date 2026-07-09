@@ -710,9 +710,8 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
-                    <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <!-- reactor.* packages are relocated to ${relocationBase}.reactor.* -->
+                    <!-- META-INF/versions/9/io move removed: opentelemetry-context >=1.42 no longer ships MRJ entries; if a future dependency re-introduces them, add a move line back here. -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
