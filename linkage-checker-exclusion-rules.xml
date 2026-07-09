@@ -181,6 +181,16 @@
         <Source><Package name="com.google.common"/></Source>
         <Reason>VarHandle @PolymorphicSignature methods are valid at runtime; false positive in linkage checker 1.5.13 with guava 33.5.0-jre</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.util.zip"/></Target>
+        <Source><Package name="com.google.common.hash"/></Source>
+        <Reason>guava 33.5.0-jre uses CRC32C (Java 9+) with a runtime version check; safe on Java 8</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.util"/></Target>
+        <Source><Package name="com.google.common.primitives"/></Source>
+        <Reason>guava 33.5.0-jre uses Arrays.compareUnsigned (Java 9+) with a runtime version check; safe on Java 8</Reason>
+    </LinkageError>
     <!--
     <LinkageError>
         <Target><Package name=""/></Target>
