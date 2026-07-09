@@ -38,7 +38,7 @@
     <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
-    <checkerframework.version>3.48.2</checkerframework.version>
+    <checkerframework.version>3.49.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
     <commons.codec.version>1.19.0</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
@@ -56,8 +56,8 @@
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
     <google.gax.version>2.81.0</google.gax.version>
     <google.guava.failureaccess.version>1.0.3</google.guava.failureaccess.version>
-    <google.guava.version>33.3.1-jre</google.guava.version>
-    <google.j2objc-annotations.version>3.0.0</google.j2objc-annotations.version>
+    <google.guava.version>33.5.0-jre</google.guava.version>
+    <google.j2objc-annotations.version>3.1</google.j2objc-annotations.version>
     <google.proto.iam.version>1.67.0</google.proto.iam.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.33.2</google.protobuf.java.version>
@@ -87,7 +87,7 @@
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <shadeNativeBase>net_snowflake_client_jdbc_internal</shadeNativeBase>
     <skip.unitTests>false</skip.unitTests>
-    <slf4j.version>2.0.13</slf4j.version>
+    <slf4j.version>2.0.16</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <integrationTestSuites>UnitTestSuite</integrationTestSuites>
     <tika.version>2.4.1</tika.version>
