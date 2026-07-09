@@ -896,6 +896,11 @@
                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
                     </relocation>
                     <relocation>
+                      <!-- WoodStox XML processor, pulled in transitively by jackson-dataformat-xml via google-cloud-storage -->
+                      <pattern>com.ctc.wstx</pattern>
+                      <shadedPattern>${shadeBase}.ctc.wstx</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>com.google</pattern>
                       <shadedPattern>${shadeBase}.google</shadedPattern>
                     </relocation>
@@ -1099,6 +1104,15 @@
                       <excludes>
                         <exclude>net/snowflake/common/core/SFBinary.class</exclude>
                         <exclude>net/snowflake/common/core/SFBinaryFormat*.class</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- JSpecify annotation classes (org.jspecify:jspecify) are compile-time nullability
+                           annotations pulled in transitively by google-cloud-storage >=2.69.0 via guava.
+                           They carry no runtime behaviour and do not need to be shaded. -->
+                      <artifact>org.jspecify:jspecify</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
                       </excludes>
                     </filter>
                     <filter>
