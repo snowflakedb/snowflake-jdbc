@@ -50,7 +50,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
     <google.cloud.core.version>2.47.0</google.cloud.core.version>
-    <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
+    <google.cloud.storage.version>2.69.0</google.cloud.storage.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
     <google.gax.version>2.57.0</google.gax.version>
     <google.guava.version>33.3.1-jre</google.guava.version>
