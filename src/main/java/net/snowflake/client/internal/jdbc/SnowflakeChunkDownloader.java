@@ -717,11 +717,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         retry++;
         // timeout or failed
         logger.debug(
-            "Since downloadState is {} Thread {} decides to retry {} time(s) for chunk#{}",
+            "Since downloadState is {} Thread {} decides to retry {} time(s) for chunk#{} (maxRetries: {})",
             currentChunk.getDownloadState(),
             Thread.currentThread().getId(),
             retry,
-            nextChunkToConsume);
+            nextChunkToConsume,
+            maxHttpRetries);
         Future downloaderFuture = downloaderFutures.get(nextChunkToConsume);
         if (downloaderFuture != null) {
           downloaderFuture.cancel(true);
