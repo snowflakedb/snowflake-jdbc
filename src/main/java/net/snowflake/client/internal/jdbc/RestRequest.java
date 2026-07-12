@@ -1042,13 +1042,13 @@ public class RestRequest {
                       responseDto.getHttpResponse(), httpExecutingContext.isRetryHTTP403());
           if (callerHandlesRetry) {
             logger.warn(
-                "{}Transient error response (retry delegated to caller): HTTP Response code: {}, request: {}",
+                "{} - Transient error response (retry delegated to caller): HTTP Response code: {}, request: {}",
                 httpExecutingContext.getRequestId(),
                 statusCode,
                 httpExecutingContext.getRequestInfoScrubbed());
           } else {
             logger.error(
-                "{}Error response: HTTP Response code: {}, request: {}",
+                "{} - Error response: HTTP Response code: {}, request: {}",
                 httpExecutingContext.getRequestId(),
                 statusCode,
                 httpExecutingContext.getRequestInfoScrubbed());
