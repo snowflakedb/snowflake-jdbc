@@ -553,8 +553,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     try (Connection conn = getConnection(properties);
         Statement statement = conn.createStatement()) {
       // mimic createStatement(queryResultFormat) to honour the parameterized format
-      statement.execute(
-          "alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
       // The generated resultSet must be big enough for triggering result chunk downloader
       String query =
