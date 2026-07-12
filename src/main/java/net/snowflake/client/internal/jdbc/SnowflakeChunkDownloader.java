@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -46,6 +45,7 @@ import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 
@@ -146,7 +146,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final long downloadedConditionTimeoutInSeconds =
       HttpUtil.getDownloadedConditionTimeoutInSeconds();
 
-  private static final int MAX_RETRY_JITTER = 1000; // milliseconds
+  private static final long MIN_BACKOFF_MILLI = 1000;
+  private static final long MAX_BACKOFF_MILLI = 16000;
 
   // Only controls the max retry number when prefetch runs out of memory
   // Will wait a while then retry to see if we can allocate the required memory
@@ -674,6 +675,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private void waitForChunkReady(SnowflakeResultChunk currentChunk) throws InterruptedException {
     int retry = 0;
     long startTime = System.currentTimeMillis();
+    DecorrelatedJitterBackoff jitterBackoff =
+        +new DecorrelatedJitterBackoff(MIN_BACKOFF_MILLI, MAX_BACKOFF_MILLI);
+    long backoffInMilli = MIN_BACKOFF_MILLI;
     while (true) {
       logger.debug(
           "Thread {} is waiting for chunk#{} to be ready, current chunk state is: {}, retry: {}",
@@ -731,8 +735,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           chunks.get(nextChunkToConsume).getLock().unlock();
         }
 
-        // random jitter before start next retry
-        Thread.sleep(new Random().nextInt(MAX_RETRY_JITTER));
+        // backoff strategy before start next retry
+        backoffInMilli = Math.max(backoffInMilli, jitterBackoff.nextSleepTime(backoffInMilli));
+        Thread.sleep(backoffInMilli);
 
         downloaderFuture =
             executor.submit(

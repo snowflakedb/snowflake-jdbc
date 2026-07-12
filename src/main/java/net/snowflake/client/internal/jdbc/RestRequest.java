@@ -1034,19 +1034,31 @@ public class RestRequest {
                 httpExecutingContext.getRequestInfoScrubbed());
           }
         } else if (responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200) {
-          logger.error(
-              "{}Error response: HTTP Response code: {}, request: {}",
-              httpExecutingContext.getRequestId(),
-              responseDto.getHttpResponse().getStatusLine().getStatusCode(),
-              httpExecutingContext.getRequestInfoScrubbed());
+          int statusCode = responseDto.getHttpResponse().getStatusLine().getStatusCode();
+          // Don't log ERROR unconditionally on situations which might be retried thus transparent
+          boolean callerHandlesRetry =
+              httpExecutingContext.isNoRetry()
+                  && !isNonRetryableHTTPCode(
+                      responseDto.getHttpResponse(), httpExecutingContext.isRetryHTTP403());
+          if (callerHandlesRetry) {
+            logger.warn(
+                "{}Transient error response (retry delegated to caller): HTTP Response code: {}, request: {}",
+                httpExecutingContext.getRequestId(),
+                statusCode,
+                httpExecutingContext.getRequestInfoScrubbed());
+          } else {
+            logger.error(
+                "{}Error response: HTTP Response code: {}, request: {}",
+                httpExecutingContext.getRequestId(),
+                statusCode,
+                httpExecutingContext.getRequestInfoScrubbed());
+          }
           responseDto.setSavedEx(
               new SnowflakeSQLException(
                   SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode(),
                   "HTTP status="
-                      + ((responseDto.getHttpResponse() != null)
-                          ? responseDto.getHttpResponse().getStatusLine().getStatusCode()
-                          : "null response")));
+                      + ((responseDto.getHttpResponse() != null) ? statusCode : "null response")));
         } else if ((responseDto.getHttpResponse() == null
             || responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200)) {
           sendTelemetryEvent(
