@@ -676,7 +676,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     int retry = 0;
     long startTime = System.currentTimeMillis();
     DecorrelatedJitterBackoff jitterBackoff =
-        +new DecorrelatedJitterBackoff(MIN_BACKOFF_MILLI, MAX_BACKOFF_MILLI);
+        new DecorrelatedJitterBackoff(MIN_BACKOFF_MILLI, MAX_BACKOFF_MILLI);
     long backoffInMilli = MIN_BACKOFF_MILLI;
     while (true) {
       logger.debug(
