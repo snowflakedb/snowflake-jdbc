@@ -552,6 +552,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     properties.put("maxHttpRetries", 2);
     try (Connection conn = getConnection(properties);
         Statement statement = conn.createStatement()) {
+      // mimic createStatement(queryResultFormat) to honour the parameterized format
       statement.execute(
           "alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
