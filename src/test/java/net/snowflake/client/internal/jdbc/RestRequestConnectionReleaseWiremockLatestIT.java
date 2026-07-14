@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifies that {@link RestRequest#executeWithRetries} releases the underlying HTTP connection
- * back to the pool on the failure-side exhaustion break, while NOT releasing it on a successful
- * 200 response (where the caller still owns the response stream).
+ * Verifies that {@link RestRequest#executeWithRetries} releases the underlying HTTP connection back
+ * to the pool on the failure-side exhaustion break, while NOT releasing it on a successful 200
+ * response (where the caller still owns the response stream).
  *
  * <p>See PR https://github.com/snowflakedb/snowflake-jdbc/pull/2643.
  */
@@ -91,7 +91,8 @@ public class RestRequestConnectionReleaseWiremockLatestIT extends BaseWiremockTe
           0,
           stats.getLeased(),
           "Connection must be released back to the pool after non-200 exhaustion. "
-              + "PoolStats=" + stats);
+              + "PoolStats="
+              + stats);
     } finally {
       connMgr.close();
     }

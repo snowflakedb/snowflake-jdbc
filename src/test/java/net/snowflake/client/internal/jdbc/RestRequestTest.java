@@ -1257,8 +1257,8 @@ public class RestRequestTest {
   }
 
   /**
-   * Verifies that the patch's release gate fires on non-200 retry exhaustion. With maxRetries=1
-   * the request is attempted twice: prepareRetry() releases once between attempts, and the patch
+   * Verifies that the patch's release gate fires on non-200 retry exhaustion. With maxRetries=1 the
+   * request is attempted twice: prepareRetry() releases once between attempts, and the patch
    * releases once on the final failure-side break. Total expected: times(2).
    */
   @Test
@@ -1278,11 +1278,21 @@ public class RestRequestTest {
             RestRequest.executeWithRetries(
                 mockHttpClient,
                 mockRequest,
-                0, 0, 0, 1, 0,
+                0,
+                0,
+                0,
+                1,
+                0,
                 new AtomicBoolean(false),
-                false, false, false, false, false,
+                false,
+                false,
+                false,
+                false,
+                false,
                 new ExecTimeTelemetryData(),
-                null, null, null,
+                null,
+                null,
+                null,
                 false));
 
     // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
@@ -1292,7 +1302,8 @@ public class RestRequestTest {
   /**
    * Verifies that the patch's release gate fires when the response is null (IOException path).
    * NoHttpResponseException causes responseDto.getHttpResponse() == null. With maxRetries=1 the
-   * request is attempted twice: prepareRetry() releases once, the patch releases once. Total: times(2).
+   * request is attempted twice: prepareRetry() releases once, the patch releases once. Total:
+   * times(2).
    */
   @Test
   public void testReleasesConnectionOnNullResponseExhaustionViaPatch() throws Exception {
@@ -1310,11 +1321,21 @@ public class RestRequestTest {
             RestRequest.executeWithRetries(
                 mockHttpClient,
                 mockRequest,
-                0, 0, 0, 1, 0,
+                0,
+                0,
+                0,
+                1,
+                0,
                 new AtomicBoolean(false),
-                false, false, false, false, false,
+                false,
+                false,
+                false,
+                false,
+                false,
                 new ExecTimeTelemetryData(),
-                null, null, null,
+                null,
+                null,
+                null,
                 false));
 
     // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
@@ -1339,11 +1360,21 @@ public class RestRequestTest {
         RestRequest.executeWithRetries(
             mockHttpClient,
             mockRequest,
-            0, 0, 0, 1, 0,
+            0,
+            0,
+            0,
+            1,
+            0,
             new AtomicBoolean(false),
-            false, false, false, false, false,
+            false,
+            false,
+            false,
+            false,
+            false,
             new ExecTimeTelemetryData(),
-            null, null, null,
+            null,
+            null,
+            null,
             false);
 
     assertNotNull(result);
