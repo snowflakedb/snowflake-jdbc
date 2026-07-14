@@ -21,8 +21,8 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AwsIdentityAttestationCreator.class);
-  public static final String API_VERSION = "2011-06-15";
-  public static final String GET_CALLER_IDENTITY_ACTION = "GetCallerIdentity";
+  static final String API_VERSION = "2011-06-15";
+  static final String GET_CALLER_IDENTITY_ACTION = "GetCallerIdentity";
 
   private final AwsAttestationService attestationService;
   private final SFLoginInput loginInput;
@@ -55,6 +55,14 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
       throw new SFException(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR, "No AWS region was found");
     }
 
+    if (loginInput.isWorkloadIdentityAwsUseOutboundToken()) {
+      logger.debug("Using AWS STS GetWebIdentityToken for WIF attestation");
+      String jwt = attestationService.getWebIdentityToken(awsCredentials);
+      return new WorkloadIdentityAttestation(
+          WorkloadIdentityProviderType.AWS, jwt, Collections.emptyMap());
+    }
+
+    logger.debug("Using AWS STS GetCallerIdentity for WIF attestation");
     String stsHostname = getStsHostname(region.id());
     SdkHttpRequest request = createStsRequest(stsHostname);
     SdkHttpRequest signedRequest = attestationService.signRequestWithSigV4(request, awsCredentials);
@@ -82,8 +90,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
             .putHeader(
                 WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
                 WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE)
-            .contentStreamProvider(
-                () -> new ByteArrayInputStream(new byte[0])); // needed to properly sign the request
+            .contentStreamProvider(() -> new ByteArrayInputStream(new byte[0]));
 
     return requestBuilder.build();
   }
@@ -92,7 +99,6 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     JSONObject assertionJson = new JSONObject();
     JSONObject headers = new JSONObject();
 
-    // AWS SDK 2 headers are Map<String, List<String>>, but backend expects Map<String, String>
     request.headers().entrySet().stream()
         .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
         .forEach(entry -> headers.put(entry.getKey(), entry.getValue().get(0)));

@@ -75,11 +75,13 @@
         <Source><Package name="com.nimbusds.oauth2.sdk.assertions.saml2"/></Source>
         <Reason>Optional</Reason>
     </LinkageError>
-    <!-- AWS SDK v1 exclusions - com.amazonaws.util is not used in runtime -->
+    <!-- snowflake-common's SFBinary still references com.amazonaws.util (AWS SDK v1).
+         The class is excluded from the shaded JAR via shade plugin filter (see pom.xml),
+         but the linkage checker runs before shading so the exclusion is still needed here. -->
     <LinkageError>
         <Target><Package name="com.amazonaws.util"/></Target>
         <Source><Package name="net.snowflake.common.core.SFBinary"/></Source>
-        <Reason>com.amazonaws.util is not used in runtime</Reason>
+        <Reason>SFBinary excluded from shaded JAR via shade filter (SNOW-3643336)</Reason>
     </LinkageError>
     <!-- AWS CRT exclusions - CRT is excluded from dependencies and not used in runtime -->
     <LinkageError>
@@ -100,6 +102,11 @@
     <LinkageError>
         <Target><Package name="software.amazon.awssdk.crt"/></Target>
         <Source><Package name="software.amazon.awssdk.transfer"/></Source>
+        <Reason>CRT dependency excluded, not used in runtime</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="software.amazon.awssdk.crt"/></Target>
+        <Source><Package name="software.amazon.awssdk.checksums.internal"/></Source>
         <Reason>CRT dependency excluded, not used in runtime</Reason>
     </LinkageError>
     <!-- AWS SDK SignerProperty fields - false positives from linkage checker 1.5.13 -->
@@ -152,6 +159,16 @@
     <LinkageError>
         <Target><Package name="io.micrometer"/></Target>
         <Source><Package name="reactor.util"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.micrometer"/></Target>
+        <Source><Package name="reactor.netty"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="io.netty.incubator"/></Target>
+        <Source><Package name="reactor.netty"/></Source>
         <Reason>Optional</Reason>
     </LinkageError>
     <!--

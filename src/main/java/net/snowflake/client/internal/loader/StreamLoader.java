@@ -636,8 +636,12 @@ public class StreamLoader implements Loader, Runnable {
       DatabaseMetaData dbmd = _processConn.getMetaData();
       for (String col : _columns) {
         try (ResultSet rs = dbmd.getColumns(_database, _schema, _table, col)) {
-          rs.next();
-          if (isColumnTypeVector(rs.getString(6))) {
+          // The metadata result set returned by getColumns closes itself once next() runs out
+          // of matching rows. Reading from it without checking next() would throw
+          // "Result set has been closed" when no column metadata is returned (which can happen
+          // intermittently when the SHOW COLUMNS metadata query races with concurrent DML on the
+          // same table).
+          if (rs.next() && isColumnTypeVector(rs.getString(6))) {
             _vectorColumnsNameAndSize.put(col, rs.getInt(7));
           }
         }

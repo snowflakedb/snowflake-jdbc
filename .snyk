@@ -1,0 +1,41 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.0
+ignore:
+  'snyk:lic:maven:javax.servlet:javax.servlet-api:(CDDL-1.1_OR_GPL-2.0-with-classpath-exception)':
+    - '*':
+        reason: >-
+          Dual-licensed CDDL-1.1 OR GPL-2.0-with-classpath-exception. Electing
+          the CDDL-1.1 branch, which Snowflake's OSS policy permits when the
+          package is unmodified or not distributed. This dependency is consumed
+          as an unmodified binary Maven artifact (servlet API interfaces only)
+          and is not patched, shaded, or repackaged by snowflake-jdbc.
+        expires: 2027-06-02T00:00:00.000Z
+  'snyk:lic:maven:javax.annotation:javax.annotation-api:(CDDL-1.1_OR_GPL-2.0-with-classpath-exception)':
+    - '*':
+        reason: >-
+          Dual-licensed CDDL-1.1 OR GPL-2.0-with-classpath-exception. Electing
+          the CDDL-1.1 branch, which Snowflake's OSS policy permits when the
+          package is unmodified or not distributed. Pulled transitively via
+          com.google.cloud:google-cloud-storage as an unmodified binary Maven
+          artifact (annotation API only); not patched, shaded, or repackaged
+          by snowflake-jdbc.
+        expires: 2027-06-02T00:00:00.000Z
+  'SNYK-JAVA-ORGAPACHETIKA-14188255':
+    - '*':
+        reason: >-
+          XXE in tika-core. Fix is only available in tika 3.2.2+, which is
+          compiled for Java 11. snowflake-jdbc compiles and ships Java 8
+          bytecode (maven-compiler source/target=8 in pom.xml) and shades
+          tika-core into the published fat jar, so bumping tika to 3.x would
+          break every customer still on JDK 8. The entire tika 2.x line is
+          unpatched per the Snyk advisory, so no Java-8-compatible upgrade
+          path exists. Risk in this codebase is also low: the only caller is
+          net.snowflake.client.internal.core.FileTypeDetector, which invokes
+          Tika.detect(File) for MIME sniffing on local files the user has
+          themselves staged for PUT/GET. Detection sniffs magic bytes and
+          extensions; it does not parse attacker-controlled XML for any
+          security decision, so the XXE attack vector is not reachable
+          through this caller. Revisit when the Java baseline is raised to
+          11 and replace with tika 3.2.2+ at that point.
+        expires: 2027-06-02T00:00:00.000Z
+patch: {}

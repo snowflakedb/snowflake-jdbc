@@ -32,6 +32,7 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -60,7 +61,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
     String endpoint = "https://storage.googleapis.com";
     if (oEndpoint.isPresent()) {
-      endpoint = oEndpoint.get();
+      String custom = oEndpoint.get();
+      endpoint = custom.startsWith("https://") ? custom : "https://" + custom;
     }
     if (stage.getStorageAccount() != null && endpoint.startsWith(stage.getStorageAccount())) {
       endpoint = endpoint.replaceFirst(stage.getStorageAccount() + ".", "");
@@ -83,6 +85,13 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     // Add signer interceptor for bearer token auth and header mapping
     overrideConfiguration.putAdvancedOption(
         SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
+
+    // Disable the SDK's own internal retries so the outer JDBC retry loop in
+    // SnowflakeGCSClient.upload() is the sole controller of retry count and backoff.
+    // Starting from the default policy (rather than an empty builder) preserves the AWS
+    // token-bucket circuit breaker and throttling-aware retry conditions.
+    overrideConfiguration.retryPolicy(
+        RetryPolicy.defaultRetryPolicy().toBuilder().numRetries(0).build());
 
     ProxyConfiguration proxyConfiguration;
     if (session != null) {
@@ -260,17 +269,31 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       String queryId,
       SnowflakeGCSClient gcsClient)
       throws SnowflakeSQLException {
-    Throwable cause = ex.getCause();
-    if (cause instanceof SdkException) {
-      logger.debug("GCSAccessStrategyAwsSdk: " + cause.getMessage());
+    // Walk the full cause chain to find an SdkException. The exception may arrive wrapped
+    // (e.g. inside SnowflakeSQLLoggedException → CompletionException) when it originates from the
+    // inner uploadWithDownScopedToken wrapper. Walking the chain ensures that transient errors
+    // (503, connection refused, etc.) are always treated as retryable regardless of wrapping depth,
+    // consistent with how GCSDefaultAccessStrategy handles StorageException.
+    SdkException sdkEx = SnowflakeUtil.findFirstCauseOfType(ex, SdkException.class);
+    if (sdkEx != null) {
+      if (sdkEx != ex) {
+        logger.debug(
+            "GCSAccessStrategyAwsSdk: found SdkException ({}) wrapped inside {} during {};"
+                + " treating as retryable",
+            sdkEx.getMessage(),
+            ex.getClass().getSimpleName(),
+            operation);
+      } else {
+        logger.debug("GCSAccessStrategyAwsSdk: {}", sdkEx.getMessage());
+      }
 
       if (retryCount > gcsClient.getMaxRetries()
-          || S3ErrorHandler.isClientException400Or404(cause)) {
+          || S3ErrorHandler.isClientException400Or404(sdkEx)) {
         throwIfClientExceptionOrMaxRetryReached(
-            operation, session, command, queryId, gcsClient, cause);
+            operation, session, command, queryId, gcsClient, sdkEx);
       } else {
         retryRequestWithExponentialBackoff(
-            ex, retryCount, operation, session, command, gcsClient, queryId, cause);
+            ex, retryCount, operation, session, command, gcsClient, queryId, sdkEx);
       }
       return true;
     } else {

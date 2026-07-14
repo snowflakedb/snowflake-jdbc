@@ -62,9 +62,14 @@ class OAuthUtil {
   }
 
   static String getScope(SFOauthLoginInput oauthLoginInput, String role) {
-    return (!isNullOrEmpty(oauthLoginInput.getScope()))
-        ? oauthLoginInput.getScope()
-        : DEFAULT_SESSION_ROLE_SCOPE_PREFIX + role;
+    String scope = oauthLoginInput.getScope();
+    if (scope != null) {
+      return scope.trim().isEmpty() ? null : scope;
+    }
+    if (isNullOrEmpty(role) || role.trim().isEmpty()) {
+      return null;
+    }
+    return DEFAULT_SESSION_ROLE_SCOPE_PREFIX + role;
   }
 
   static URI buildRedirectUri(SFOauthLoginInput oauthLoginInput) throws IOException {

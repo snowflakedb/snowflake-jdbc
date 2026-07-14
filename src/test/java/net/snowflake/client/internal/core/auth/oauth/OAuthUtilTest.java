@@ -78,6 +78,41 @@ public class OAuthUtilTest {
   }
 
   @Test
+  public void shouldReturnNullScopeWhenScopeIsEmpty() {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, "", null);
+    String scope = OAuthUtil.getScope(loginInput, ROLE_FROM_LOGIN_INPUT);
+    Assertions.assertNull(scope);
+  }
+
+  @Test
+  public void shouldReturnNullScopeWhenScopeIsBlank() {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, " ", null);
+    String scope = OAuthUtil.getScope(loginInput, ROLE_FROM_LOGIN_INPUT);
+    Assertions.assertNull(scope);
+  }
+
+  @Test
+  public void shouldReturnNullScopeWhenNoScopeAndRoleIsNull() {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
+    String scope = OAuthUtil.getScope(loginInput, null);
+    Assertions.assertNull(scope);
+  }
+
+  @Test
+  public void shouldReturnNullScopeWhenNoScopeAndRoleIsEmpty() {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
+    String scope = OAuthUtil.getScope(loginInput, "");
+    Assertions.assertNull(scope);
+  }
+
+  @Test
+  public void shouldReturnNullScopeWhenNoScopeAndRoleIsBlank() {
+    SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
+    String scope = OAuthUtil.getScope(loginInput, "  ");
+    Assertions.assertNull(scope);
+  }
+
+  @Test
   public void shouldCreateDefaultRedirectUri() throws IOException {
     SFOauthLoginInput loginInput = createLoginInputStub(null, null, null, null);
     URI redirectUri = OAuthUtil.buildRedirectUri(loginInput);

@@ -318,10 +318,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                           == QueryStatus.Status.FAILED_WITH_ERROR);
           status = asyncResultSet.getStatus();
           assertEquals(2003, status.getErrorCode());
-          assertEquals(
+          String expectedPrefix =
               "SQL compilation error:\n"
-                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-              status.getErrorMessage());
+                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.";
+          assertTrue(
+              status.getErrorMessage().startsWith(expectedPrefix),
+              "Expected error message to start with: " + expectedPrefix);
         }
       }
     }

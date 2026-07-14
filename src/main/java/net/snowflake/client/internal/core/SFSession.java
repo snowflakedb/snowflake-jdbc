@@ -130,6 +130,11 @@ public class SFSession extends SFBaseSession {
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
+  // TODO(SNOW-3548350): captured by ConnectionFactory before host synthesis (TOML path) or from
+  //  the raw URL+Properties pair (standard path), then forwarded onto this session by
+  //  DefaultSFConnectionHandler before open(). Consumed once in open() and emitted as the
+  //  client_connection_identifier_shape in-band telemetry record.
+  private ConnectionIdentifierShape connectionIdentifierShape;
   // The cache of query context sent from Cloud Service.
   QueryContextCache qcc;
 
@@ -765,6 +770,13 @@ public class SFSession extends SFBaseSession {
         .setWorkloadIdentityAwsExternalId(
             (String)
                 connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_EXTERNAL_ID))
+        .setWorkloadIdentityAwsUseOutboundToken(
+            connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN)
+                    != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(
+                        SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN))
+                : false)
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
@@ -901,8 +913,30 @@ public class SFSession extends SFBaseSession {
     // Send minicore telemetry after session is established
     sendMinicoreTelemetry();
 
+    // TODO(SNOW-3548350): emit client_connection_identifier_shape in-band telemetry. Must run
+    // after the post-login parameters have been populated so CLIENT_TELEMETRY_ENABLED is in
+    // effect (TelemetryClient.isTelemetryEnabled() honors it automatically inside addLogToBatch).
+    sendConnectionIdentifierShapeTelemetry();
+
     stopwatch.stop();
     logger.debug("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+  }
+
+  // TODO(SNOW-3548350): remove together with the rest of the connection-identifier-shape plumbing.
+  private void sendConnectionIdentifierShapeTelemetry() {
+    try {
+      Telemetry telemetry = getTelemetryClient(internalCallMarker());
+      if (!(telemetry instanceof TelemetryClient)) {
+        logger.trace(
+            "Telemetry client not available, skipping connection-identifier-shape telemetry");
+        return;
+      }
+      ConnectionIdentifierShapeTelemetry.emit(
+          (TelemetryClient) telemetry, connectionIdentifierShape);
+    } catch (Exception e) {
+      // Never fail the session due to telemetry.
+      logger.trace("Failed to send connection-identifier-shape telemetry: {}", e.getMessage());
+    }
   }
 
   private void sendMinicoreTelemetry() {
@@ -1378,6 +1412,16 @@ public class SFSession extends SFBaseSession {
 
   public void setSnowflakeConnectionString(SnowflakeConnectString connStr) {
     sfConnStr = connStr;
+  }
+
+  // TODO(SNOW-3548350): remove together with the rest of the connection-identifier-shape plumbing.
+  public void setConnectionIdentifierShape(ConnectionIdentifierShape shape) {
+    this.connectionIdentifierShape = shape;
+  }
+
+  // TODO(SNOW-3548350): remove together with the rest of the connection-identifier-shape plumbing.
+  public ConnectionIdentifierShape getConnectionIdentifierShape() {
+    return connectionIdentifierShape;
   }
 
   /**
