@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.2-SNAPSHOT
+  - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key (SNOW-3784426) applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend.
   - Fixed GCS PUT operations not retrying on transient errors (e.g. HTTP 503) despite `putGetMaxRetries` being configured (snowflakedb/snowflake-jdbc#2688).
   - Bumped jackson-databind to 2.18.9 from 2.18.7 (snowflakedb/snowflake-jdbc#2669 and snowflakedb/snowflake-jdbc#2690).
   - Bumped netty to 4.1.136.Final which addresses several vulnerabilities (snowflakedb/snowflake-jdbc#2690). 

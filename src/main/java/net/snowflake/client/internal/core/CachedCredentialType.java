@@ -2,7 +2,7 @@ package net.snowflake.client.internal.core;
 
 enum CachedCredentialType {
   ID_TOKEN("ID_TOKEN"),
-  MFA_TOKEN("MFATOKEN"),
+  MFA_TOKEN("MFA_TOKEN"),
   OAUTH_ACCESS_TOKEN("OAUTH_ACCESS_TOKEN"),
   OAUTH_REFRESH_TOKEN("OAUTH_REFRESH_TOKEN"),
   DPOP_BUNDLED_ACCESS_TOKEN(
