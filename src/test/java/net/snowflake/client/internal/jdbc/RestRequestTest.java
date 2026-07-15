@@ -1193,7 +1193,8 @@ public class RestRequestTest {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
     TelemetryService.disable();
     CloseableHttpClient client = mock(CloseableHttpClient.class);
-    when(client.execute(any(HttpUriRequest.class))).thenReturn(anyStatusCodeResponse(503));
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
 
     Logger julLogger = Logger.getLogger(RestRequest.class.getName());
     List<LogRecord> captured = new ArrayList<>();
@@ -1240,7 +1241,8 @@ public class RestRequestTest {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
     TelemetryService.disable();
     CloseableHttpClient client = mock(CloseableHttpClient.class);
-    when(client.execute(any(HttpUriRequest.class))).thenReturn(anyStatusCodeResponse(404));
+    CloseableHttpResponse response404 = anyStatusCodeResponse(404);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response404);
 
     Logger julLogger = Logger.getLogger(RestRequest.class.getName());
     List<LogRecord> captured = new ArrayList<>();
@@ -1287,7 +1289,8 @@ public class RestRequestTest {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
     TelemetryService.disable();
     CloseableHttpClient client = mock(CloseableHttpClient.class);
-    when(client.execute(any(HttpUriRequest.class))).thenReturn(anyStatusCodeResponse(503));
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
 
     Logger julLogger = Logger.getLogger(RestRequest.class.getName());
     List<LogRecord> captured = new ArrayList<>();
