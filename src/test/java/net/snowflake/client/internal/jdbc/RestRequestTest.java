@@ -1217,13 +1217,7 @@ public class RestRequestTest {
           SnowflakeSQLException.class,
           () ->
               execute(
-                  client,
-                  "fakeurl.com/?requestId=abcd-1234",
-                  0,
-                  0,
-                  0,
-                  false,
-                  /* noRetry= */ true));
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
       assertTrue(
           captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
           "Retryable 5xx with noRetry=true must be logged at WARN");
@@ -1270,13 +1264,7 @@ public class RestRequestTest {
           SnowflakeSQLException.class,
           () ->
               execute(
-                  client,
-                  "fakeurl.com/?requestId=abcd-1234",
-                  0,
-                  0,
-                  0,
-                  false,
-                  /* noRetry= */ true));
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
       assertTrue(
           captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
           "Non-retryable 4xx with noRetry=true must be logged at ERROR");
