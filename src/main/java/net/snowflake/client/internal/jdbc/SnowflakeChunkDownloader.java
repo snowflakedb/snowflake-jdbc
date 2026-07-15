@@ -37,6 +37,7 @@ import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.QueryResultFormat;
 import net.snowflake.client.internal.core.SFArrowResultSet;
+import net.snowflake.client.internal.core.HttpExecutingContext;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SessionUtil;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
@@ -146,8 +147,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final long downloadedConditionTimeoutInSeconds =
       HttpUtil.getDownloadedConditionTimeoutInSeconds();
 
-  private static final long MIN_BACKOFF_MILLI = 1000;
-  private static final long MAX_BACKOFF_MILLI = 16000;
+  private static final long MIN_BACKOFF_MILLI = HttpExecutingContext.DEFAULT_MIN_BACKOFF_MILLIS;
+  private static final long MAX_BACKOFF_MILLI = HttpExecutingContext.DEFAULT_MAX_BACKOFF_MILLIS;
 
   // Only controls the max retry number when prefetch runs out of memory
   // Will wait a while then retry to see if we can allocate the required memory
