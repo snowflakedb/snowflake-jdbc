@@ -1227,8 +1227,11 @@ public class RestRequestTest {
           "Retryable 5xx with noRetry=true must NOT be logged at ERROR");
     } finally {
       julLogger.removeHandler(capturingHandler);
-      if (telemetryEnabled) TelemetryService.enable();
-      else TelemetryService.disable();
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
     }
   }
 
@@ -1275,8 +1278,11 @@ public class RestRequestTest {
           "Non-retryable 4xx with noRetry=true must NOT be logged at WARN");
     } finally {
       julLogger.removeHandler(capturingHandler);
-      if (telemetryEnabled) TelemetryService.enable();
-      else TelemetryService.disable();
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
     }
   }
 
@@ -1330,8 +1336,11 @@ public class RestRequestTest {
           "Exhausted 5xx retries with noRetry=false must NOT be logged at WARN");
     } finally {
       julLogger.removeHandler(capturingHandler);
-      if (telemetryEnabled) TelemetryService.enable();
-      else TelemetryService.disable();
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
     }
   }
 
