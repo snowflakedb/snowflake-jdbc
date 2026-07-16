@@ -223,14 +223,13 @@ public class SecureStorageManagerTest {
   private static final String mfaToken = "fakeMfaToken";
 
   // -------------------------------------------------------------------------
-  // Golden hash — must match the cross-driver spec exactly (do not change)
+  // Golden hash — do not change this expected value
   // -------------------------------------------------------------------------
 
   @Test
   void shouldReproduceGoldenHashFromSpec() {
-    // Raw inputs: quoted identifiers already carry their final display case (uppercase inside
-    // quotes), matching the pre-normalized golden vector in the cross-driver spec (00-INDEX.md §3).
-    // normalizeIdentifier preserves quoted segments verbatim, so "FIRST LAST" stays "FIRST LAST".
+    // Username contains a quoted Snowflake identifier; normalizeIdentifier preserves quoted
+    // segments verbatim, so "FIRST LAST" stays "FIRST LAST" in the canonical JSON.
     CacheKeyInput input =
         new CacheKeyInput(
             "DPOP_BUNDLED_ACCESS_TOKEN",

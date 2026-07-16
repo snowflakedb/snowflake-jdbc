@@ -24,8 +24,7 @@ interface SecureStorageManager {
   /**
    * Builds a versioned, SHA-256-hashed canonical-JSON cache key from {@code input}.
    *
-   * <p>The returned string has the form {@code SnowflakeTokenCache.v2.<lowercase-hex-sha256>} and
-   * is identical across all Snowflake drivers that implement the same spec.
+   * <p>The returned string has the form {@code SnowflakeTokenCache.v2.<lowercase-hex-sha256>}.
    *
    * @throws IllegalArgumentException if {@code input.snowflake} or {@code input.username} is empty
    */
