@@ -1,7 +1,7 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-- v4.3.2-SNAPSHOT
+- v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
   - Fixed GCS PUT operations not retrying on transient errors (e.g. HTTP 503) despite `putGetMaxRetries` being configured (snowflakedb/snowflake-jdbc#2688).
   - Bumped jackson-databind to 2.18.9 from 2.18.7 (snowflakedb/snowflake-jdbc#2669 and snowflakedb/snowflake-jdbc#2690).
