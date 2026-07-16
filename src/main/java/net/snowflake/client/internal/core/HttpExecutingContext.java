@@ -5,12 +5,17 @@ import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 
 public class HttpExecutingContext {
 
+  // Shared backoff bounds used by both RestRequest and SnowflakeChunkDownloader so the two retry
+  // strategies stay in sync when these values change.
+  public static final long DEFAULT_MIN_BACKOFF_MILLIS = 1000;
+  public static final long DEFAULT_MAX_BACKOFF_MILLIS = 16000;
+
   // min backoff in milli before we retry due to transient issues
-  private static final long minBackoffMillis = 1000;
+  private static final long minBackoffMillis = DEFAULT_MIN_BACKOFF_MILLIS;
 
   // max backoff in milli before we retry due to transient issues
   // we double the backoff after each retry till we reach the max backoff
-  private static final long maxBackoffMillis = 16000;
+  private static final long maxBackoffMillis = DEFAULT_MAX_BACKOFF_MILLIS;
 
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;

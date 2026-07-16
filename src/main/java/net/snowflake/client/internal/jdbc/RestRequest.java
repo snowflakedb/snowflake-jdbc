@@ -621,6 +621,26 @@ public class RestRequest {
     return backoffInMilli;
   }
 
+  /**
+   * Returns true when the caller (e.g. SnowflakeChunkDownloader) owns the retry loop and the
+   * current outcome is a transient failure that will be retried transparently. In that case the log
+   * level should be WARN rather than ERROR so that only genuinely terminal failures appear as
+   * errors.
+   *
+   * <p>A null {@code response} indicates a network/IO failure, which is always transient when the
+   * caller owns the retry.
+   */
+  private static boolean isCallerHandlingRetry(
+      HttpExecutingContext ctx, CloseableHttpResponse response) {
+    if (!ctx.isNoRetry()) {
+      return false;
+    }
+    if (response == null) {
+      return true;
+    }
+    return !isNonRetryableHTTPCode(response, ctx.isRetryHTTP403());
+  }
+
   static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
     return (response != null)
         && (response.getStatusLine().getStatusCode() < 500
@@ -1021,32 +1041,58 @@ public class RestRequest {
 
       if (!httpExecutingContext.isShouldRetry()) {
         if (responseDto.getHttpResponse() == null) {
+          // null response means a network/IO failure — always transient when the caller owns retry
+          boolean callerHandlesRetry = isCallerHandlingRetry(httpExecutingContext, null);
           if (responseDto.getSavedEx() != null) {
-            logger.error(
-                "{}Returning null response. Cause: {}, request: {}",
+            if (callerHandlesRetry) {
+              logger.warn(
+                  "{} - Transient null response (retry delegated to caller). Cause: {}, request: {}",
+                  httpExecutingContext.getRequestId(),
+                  getRootCause(responseDto.getSavedEx()),
+                  httpExecutingContext.getRequestInfoScrubbed());
+            } else {
+              logger.error(
+                  "{} - Returning null response. Cause: {}, request: {}",
+                  httpExecutingContext.getRequestId(),
+                  getRootCause(responseDto.getSavedEx()),
+                  httpExecutingContext.getRequestInfoScrubbed());
+            }
+          } else {
+            if (callerHandlesRetry) {
+              logger.warn(
+                  "{} - Transient null response (retry delegated to caller) for request: {}",
+                  httpExecutingContext.getRequestId(),
+                  httpExecutingContext.getRequestInfoScrubbed());
+            } else {
+              logger.error(
+                  "{} - Returning null response for request: {}",
+                  httpExecutingContext.getRequestId(),
+                  httpExecutingContext.getRequestInfoScrubbed());
+            }
+          }
+        } else if (responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200) {
+          int statusCode = responseDto.getHttpResponse().getStatusLine().getStatusCode();
+          boolean callerHandlesRetry =
+              isCallerHandlingRetry(httpExecutingContext, responseDto.getHttpResponse());
+          if (callerHandlesRetry) {
+            logger.warn(
+                "{} - Transient error response (retry delegated to caller): HTTP Response code: {}, request: {}",
                 httpExecutingContext.getRequestId(),
-                getRootCause(responseDto.getSavedEx()),
+                statusCode,
                 httpExecutingContext.getRequestInfoScrubbed());
           } else {
             logger.error(
-                "{}Returning null response for request: {}",
+                "{} - Error response: HTTP Response code: {}, request: {}",
                 httpExecutingContext.getRequestId(),
+                statusCode,
                 httpExecutingContext.getRequestInfoScrubbed());
           }
-        } else if (responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200) {
-          logger.error(
-              "{}Error response: HTTP Response code: {}, request: {}",
-              httpExecutingContext.getRequestId(),
-              responseDto.getHttpResponse().getStatusLine().getStatusCode(),
-              httpExecutingContext.getRequestInfoScrubbed());
           responseDto.setSavedEx(
               new SnowflakeSQLException(
                   SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode(),
                   "HTTP status="
-                      + ((responseDto.getHttpResponse() != null)
-                          ? responseDto.getHttpResponse().getStatusLine().getStatusCode()
-                          : "null response")));
+                      + ((responseDto.getHttpResponse() != null) ? statusCode : "null response")));
         } else if ((responseDto.getHttpResponse() == null
             || responseDto.getHttpResponse().getStatusLine().getStatusCode() != 200)) {
           sendTelemetryEvent(
@@ -1062,7 +1108,7 @@ public class RestRequest {
     }
 
     logger.debug(
-        "{}Execution of request {} took {} ms with total of {} retries",
+        "{} - Execution of request {} took {} ms with total of {} retries",
         httpExecutingContext.getRequestId(),
         httpExecutingContext.getRequestInfoScrubbed(),
         networkComunnicationStapwatch == null

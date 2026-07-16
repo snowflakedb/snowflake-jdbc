@@ -542,11 +542,18 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   // SNOW-204185
   // 30s for timeout. This test usually finishes in around 10s.
+  // maxHttpRetries=2 caps the backoff loop so the injected-failure path stays well under the
+  // timeout regardless of the retry backoff strategy.
   @ParameterizedTest
   @ArgumentsSource(SimpleResultFormatProvider.class)
   @Timeout(30)
   public void testResultChunkDownloaderException(String queryResultFormat) throws SQLException {
-    try (Statement statement = createStatement(queryResultFormat)) {
+    Properties properties = new Properties();
+    properties.put("maxHttpRetries", 2);
+    try (Connection conn = getConnection(properties);
+        Statement statement = conn.createStatement()) {
+      // mimic createStatement(queryResultFormat) to honour the parameterized format
+      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
       // The generated resultSet must be big enough for triggering result chunk downloader
       String query =
