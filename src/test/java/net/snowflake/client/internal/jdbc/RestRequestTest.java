@@ -32,6 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
@@ -1180,6 +1184,166 @@ public class RestRequestTest {
     assertTrue(
         capturedData.getTimeStamp() <= System.currentTimeMillis(),
         "Timestamp should not be in the future");
+  }
+
+  /**
+   * noRetry=true + retryable 5xx → the outcome is transient (caller owns retry) so the log must be
+   * WARN, not ERROR.
+   */
+  @Test
+  public void testLogLevelWarnForRetryable5xxWhenNoRetry() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Retryable 5xx with noRetry=true must be logged at WARN");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Retryable 5xx with noRetry=true must NOT be logged at ERROR");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  /**
+   * noRetry=true + non-retryable 4xx (404) → the request failed definitively so the log must be
+   * ERROR, not WARN.
+   */
+  @Test
+  public void testLogLevelErrorForNonRetryable4xxWhenNoRetry() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response404 = anyStatusCodeResponse(404);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response404);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Non-retryable 4xx with noRetry=true must be logged at ERROR");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Non-retryable 4xx with noRetry=true must NOT be logged at WARN");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  /**
+   * noRetry=false + retries exhausted on 5xx → RestRequest owns the retry loop and all capacity is
+   * consumed, so the log must be ERROR (regression guard).
+   */
+  @Test
+  public void testLogLevelErrorForRetryable5xxWhenRetriesExhausted() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client,
+                  "fakeurl.com/?requestId=abcd-1234",
+                  0,
+                  0,
+                  0,
+                  false,
+                  /* noRetry= */ false,
+                  /* maxRetries= */ 1));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Exhausted 5xx retries with noRetry=false must be logged at ERROR");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Exhausted 5xx retries with noRetry=false must NOT be logged at WARN");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
   }
 
   @Test
