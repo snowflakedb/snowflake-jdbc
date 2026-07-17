@@ -1,13 +1,10 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.SFSession;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -16,11 +13,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.api.exception.SnowflakeSQLException;
-import net.snowflake.client.internal.core.SFSession;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link SnowflakeS3Client} endpoint selection ({@code stageInfo.endPoint} and
@@ -238,6 +239,7 @@ public class SnowflakeS3ClientTest {
         stageRegion,
         stageEndPoint,
         isClientSideEncrypted,
+        Ciphers.AES_CBC,
         /* session */ null,
         useS3RegionalUrl);
   }
@@ -264,6 +266,7 @@ public class SnowflakeS3ClientTest {
         "us-west-2",
         /* stageEndPoint */ null,
         /* isClientSideEncrypted */ false,
+        Ciphers.AES_CBC,
         session,
         /* useS3RegionalUrl */ false);
   }
