@@ -23,15 +23,14 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     return new SecureStorageAppleManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
+  public SecureStorageStatus setCredential(String cacheKey, String cred) {
     if (isNullOrEmpty(cred)) {
       logger.debug("No credential provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
-    byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
-    byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
+    byte[] targetBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
+    byte[] userBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
     byte[] credBytes = cred.getBytes(StandardCharsets.UTF_8);
 
     Pointer[] itemRef = new Pointer[1];
@@ -88,10 +87,9 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user, String type) {
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
-    byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
-    byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
+  public String getCredential(String cacheKey) {
+    byte[] targetBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
+    byte[] userBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
 
     int[] dataLength = new int[1];
     Pointer[] data = new Pointer[1];
@@ -137,10 +135,9 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
-    byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
-    byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
+  public SecureStorageStatus deleteCredential(String cacheKey) {
+    byte[] targetBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
+    byte[] userBytes = cacheKey.getBytes(StandardCharsets.UTF_8);
 
     Pointer[] itemRef = new Pointer[1];
 

@@ -1062,6 +1062,15 @@ public class SnowflakeUtil {
     return new String(hexChars);
   }
 
+  /** Returns the lowercase hexadecimal representation of {@code bytes}. */
+  public static String byteToHexStringLower(byte[] bytes) {
+    StringBuilder sb = new StringBuilder(bytes.length * 2);
+    for (byte b : bytes) {
+      sb.append(String.format("%02x", b));
+    }
+    return sb.toString();
+  }
+
   /**
    * Converts a simple wildcard pattern (where only '*' is special) into a safe regex string by
    * quoting all literal parts via Pattern.quote(), preventing any regex metacharacters from being

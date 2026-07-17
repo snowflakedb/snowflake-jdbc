@@ -1,6 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.3.3-SNAPSHOT
+  - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key (SNOW-3784426) applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend.
+
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
   - Fixed GCS PUT operations not retrying on transient errors (e.g. HTTP 503) despite `putGetMaxRetries` being configured (snowflakedb/snowflake-jdbc#2688).
