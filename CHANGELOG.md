@@ -1,7 +1,6 @@
-#### For all official JDBC Release Notes please refer to [https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc](https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc)
+#### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
-
 - v4.3.3-SNAPSHOT
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
@@ -18,149 +17,156 @@
   - Fixed `authenticator=externalbrowser` login crashing with `StringIndexOutOfBoundsException` when the browser opened an empty preconnect socket or delivered a large SSO request across multiple reads; the localhost callback server now ignores empty connections and reassembles fragmented requests, including POST bodies that arrive in a TCP segment separate from the headers (snowflakedb/snowflake-jdbc#2687).
   - Fixed a permanent HTTP connection pool slot leak in `RestRequest.executeWithRetries`: on the retry-exhaustion break with no response or a non-200 status, the underlying connection is now released back to the pool (mirroring the retry path), preventing the driver from wedging on the exhausted pool under sustained network failures such as repeated 503s on chunk downloads (snowflakedb/snowflake-jdbc#2643).
   - Bumped grpc-java to 1.82.2 (snowflakedb/snowflake-jdbc#2696).
+
 - v4.3.1
   - Fixed GCS-backed internal stage PUT failing with opaque `invalid_gcs_credentials` in SPCS pods on GCP: the GCS SDK's Application Default Credentials (ADC) probe was reaching out to `metadata.google.internal` which is unreachable inside SPCS; explicit credentials are now always set when a `GCS_ACCESS_TOKEN` is present, suppressing the ADC probe entirely. Also fixed `GCSAccessStrategyAwsSdk` rejecting custom GCS endpoints that lack an `https://` scheme prefix (e.g. bare `storage.me-central2.rep.googleapis.com`), mirroring the existing handling in `GCSDefaultAccessStrategy`. The catch-all in `setupGCSClient` now chains and logs the original exception instead of swallowing it (snowflakedb/snowflake-jdbc#2664).
   - Fixed Azure PUT memory leak where each PUT instantiated a fresh `BlobServiceClient` whose underlying reactor-netty stack the SDK exposes no API to release; the Azure SDK `HttpClient` and its `ConnectionProvider` are now shared across all PUTs in a session and disposed at session close, mirroring the existing S3 pattern (snowflakedb/snowflake-jdbc#2658).
   - Fixed `SFResultJsonParser2Failed: invalid escaped unicode character` when a chunked JSON result contained UTF-16 surrogate-pair `\u` escapes (e.g. emoji) and the read buffer happened to split exactly 9 bytes after `\u`; the off-by-one boundary guard in `ResultJsonParserV2` now reserves the full 10 bytes a surrogate pair requires (snowflakedb/snowflake-jdbc#2660).
   - Fixed (by removing) stale `com.amazonaws.util.Base16/Base64` bytecode references from the shaded JAR by excluding dead `SFBinary` and `SFBinaryFormat` classes from the bundled `snowflake-common` artifact. Security scanners shold no longer flag `snowflake-jdbc-thin` as containing AWS SDK v1 references. (snowflakedb/snowflake-jdbc#2665).
   - Bumped grpc-java to 1.82.0 from 1.81.0 (snowflakedb/snowflake-jdbc#2663).
+
+
 - v4.3.0
-  - Bumped AWS SDK from 2.37.5 to 2.45.1, which transitively brings netty up to 4.1.133.Final and resolves a cluster of High/Medium netty CVEs (HTTP request smuggling, CRLF injection, data amplification, resource allocation) flagged by Snyk against `netty-nio-client` in `thin_public_pom.xml` (snowflakedb/snowflake-jdbc#2654).
-  - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).
-  - Fixed OAuth token requests sending `scope=session:role:null` when no scope is configured (or scope is empty/blank); the `scope` parameter is now omitted entirely in those cases (snowflakedb/snowflake-jdbc#2646).
-  - Fixed Okta native SSO federated login sending malformed JSON to `/api/v1/authn` (HTTP 400 from Okta) when the username or password contained JSON-special characters such as double quotes or backslashes; the request body is now serialized with Jackson instead of string concatenation.
-  - Added one in-band telemetry record per successful login describing which connection-identifier fields the user supplied (`account_provided`, `account_with_region`, `account_org_provided`, `region_provided`, `host_provided`). No hostname or account value is included. This is gated by the existing server-side `CLIENT_TELEMETRY_ENABLED` parameter and can additionally be disabled locally by setting `SF_TELEMETRY_DISABLE_CONNECTION_SHAPE=true`. The telemetry collection is time-boxed and will be removed in a future release.
-  - Fixed `SnowflakeChunkDownloader` per-chunk metrics log misattributing the response body transfer to `parseTime`: `getResultStreamProvider().getInputStream()` returns once headers come back and streams the body lazily during the parser's `read()` calls, so the old code billed only HTTP/TLS setup to `downloadTime` and the entire body read+parse to `parseTime`. When the metrics logger is at `FINE`/debug level, the InputStream is now wrapped in a `TimingInputStream` that accumulates time blocked inside `read()`, so `downloadTime` reflects true network read time and `parseTime` reflects only CPU parse cost; at higher log levels the original stream is used unchanged to avoid the per-`read()` overhead (snowflakedb/snowflake-jdbc#2640).
-  - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
-  - Fixed non-retryable HTTP 400 response bodies always being logged as `"Failed to read content due to exception: Attempted read from closed stream"`. The response entity is now buffered before `RestRequest#checkForDPoPNonceError` and `SnowflakeUtil#logResponseDetails` consume it so both readers see the body (snowflakedb/snowflake-jdbc#2631).
-  - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).
-  - Fixed path traversal via server-controlled filenames in `SnowflakeFileTransferAgent` GET destination filename derivation; backslash separators are now stripped and traversal/absolute basenames are rejected (snowflakedb/snowflake-jdbc#2622).
-  - Further changes regarding auto-configuration (`jdbc:snowflake:auto` style connection config) (snowflakedb/snowflake-jdbc#2625):
-    - Fixed bug leading to `'Connection property specified more than once: DB'` error, when both `connections.toml` (`database`) and JDBC URL (`db`) defined database 
-    - Enhancement: now parameters passed as `Properties()` are also considered when building connection. For conflicting items defined in multiple places, priority is: Properties > JDBC URL > `connections.toml`
-    - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
-  - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
-  - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
-  - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close (snowflakedb/snowflake-jdbc#2620).
-  - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#2655). 
-  - Fixed inverted null check in `CredentialManager.updateInputWithTokenAndPublicKey` that prevented DPoP bundled access tokens loaded from the credential cache from being applied to the login input (snowflakedb/snowflake-jdbc#2650).
-  - Fixed `Connection.setCatalog` and `Connection.setSchema` producing malformed SQL (or switching to an unintended database/schema) when the supplied name contained an embedded `"` character; the name is now escaped per the SQL-standard quoted-identifier rule before being interpolated into the `USE` statement (snowflakedb/snowflake-jdbc#2651).
-  - Switched AWS Workload Identity Federation attestation from a SigV4-presigned `GetCallerIdentity` request to STS `GetWebIdentityToken`, returning a signed JWT directly. (snowflakedb/snowflake-jdbc#2653)
+    - Bumped AWS SDK from 2.37.5 to 2.45.1, which transitively brings netty up to 4.1.133.Final and resolves a cluster of High/Medium netty CVEs (HTTP request smuggling, CRLF injection, data amplification, resource allocation) flagged by Snyk against `netty-nio-client` in `thin_public_pom.xml` (snowflakedb/snowflake-jdbc#2654).
+    - Bumped jackson to 2.18.7 to address two High-severity resource-exhaustion CVEs in jackson-core 2.18.4.1, and added a `.snyk` policy file with justified ignores for the dual-licensed `javax.servlet-api` / `javax.annotation-api` findings and the tika-core XXE (`SNYK-JAVA-ORGAPACHETIKA-14188255`), which has no Java-8-compatible fix and is not reachable through the driver's only Tika caller (snowflakedb/snowflake-jdbc#2654).
+    - Fixed OAuth token requests sending `scope=session:role:null` when no scope is configured (or scope is empty/blank); the `scope` parameter is now omitted entirely in those cases (snowflakedb/snowflake-jdbc#2646).
+    - Fixed Okta native SSO federated login sending malformed JSON to `/api/v1/authn` (HTTP 400 from Okta) when the username or password contained JSON-special characters such as double quotes or backslashes; the request body is now serialized with Jackson instead of string concatenation.
+    - Added one in-band telemetry record per successful login describing which connection-identifier fields the user supplied (`account_provided`, `account_with_region`, `account_org_provided`, `region_provided`, `host_provided`). No hostname or account value is included. This is gated by the existing server-side `CLIENT_TELEMETRY_ENABLED` parameter and can additionally be disabled locally by setting `SF_TELEMETRY_DISABLE_CONNECTION_SHAPE=true`. The telemetry collection is time-boxed and will be removed in a future release.
+    - Fixed `SnowflakeChunkDownloader` per-chunk metrics log misattributing the response body transfer to `parseTime`: `getResultStreamProvider().getInputStream()` returns once headers come back and streams the body lazily during the parser's `read()` calls, so the old code billed only HTTP/TLS setup to `downloadTime` and the entire body read+parse to `parseTime`. When the metrics logger is at `FINE`/debug level, the InputStream is now wrapped in a `TimingInputStream` that accumulates time blocked inside `read()`, so `downloadTime` reflects true network read time and `parseTime` reflects only CPU parse cost; at higher log levels the original stream is used unchanged to avoid the per-`read()` overhead (snowflakedb/snowflake-jdbc#2640).
+    - Fixed `Connection.isValid()` silently swallowing thread interruption: when the underlying heartbeat is interrupted, the connection's interrupt flag is now restored via `Thread.currentThread().interrupt()` so connection pools and Thread shutdown mechanisms can react to the interruption (snowflakedb/snowflake-jdbc#2314).
+    - Fixed non-retryable HTTP 400 response bodies always being logged as `"Failed to read content due to exception: Attempted read from closed stream"`. The response entity is now buffered before `RestRequest#checkForDPoPNonceError` and `SnowflakeUtil#logResponseDetails` consume it so both readers see the body (snowflakedb/snowflake-jdbc#2631).
+    - Added defense-in-depth canonical-path validation in the S3, Azure, and GCS download clients to ensure resolved local download paths cannot escape the user's GET target directory via traversal segments, absolute paths, or symlink redirection (snowflakedb/snowflake-jdbc#2623).
+    - Fixed path traversal via server-controlled filenames in `SnowflakeFileTransferAgent` GET destination filename derivation; backslash separators are now stripped and traversal/absolute basenames are rejected (snowflakedb/snowflake-jdbc#2622).
+    - Further changes regarding auto-configuration (`jdbc:snowflake:auto` style connection config) (snowflakedb/snowflake-jdbc#2625):
+      - Fixed bug leading to `'Connection property specified more than once: DB'` error, when both `connections.toml` (`database`) and JDBC URL (`db`) defined database 
+      - Enhancement: now parameters passed as `Properties()` are also considered when building connection. For conflicting items defined in multiple places, priority is: Properties > JDBC URL > `connections.toml`
+      - Enhancement (supportability): added provenance tracking for config keys and log them once per connection on debug level
+    - Fixed IllegalStateException when creating new Snowflake connections during JVM shutdown (SIGTERM); HeartbeatRegistry now skips heartbeat registration gracefully instead of throwing (snowflakedb/snowflake-jdbc#2617).
+    - Fixed auto-config debug log messages (provenance, TOML parsing) not appearing in `client_config_file`-governed log file; messages are now replayed after logger initialization so they reach the FileHandler (snowflakedb/snowflake-jdbc#2632).
+    - The AWS S3 client now reuses a per-session shared Netty `SdkEventLoopGroup`, torn down once at session close, eliminating Netty's 2 s `shutdownGracefully` quiet period previously paid on every per-PUT/GET client close (snowflakedb/snowflake-jdbc#2620).
+    - Bumped netty to 4.1.135.Final which addresses several vulnerabilities  (snowflakedb/snowflake-jdbc#2655). 
+    - Fixed inverted null check in `CredentialManager.updateInputWithTokenAndPublicKey` that prevented DPoP bundled access tokens loaded from the credential cache from being applied to the login input (snowflakedb/snowflake-jdbc#2650).
+    - Fixed `Connection.setCatalog` and `Connection.setSchema` producing malformed SQL (or switching to an unintended database/schema) when the supplied name contained an embedded `"` character; the name is now escaped per the SQL-standard quoted-identifier rule before being interpolated into the `USE` statement (snowflakedb/snowflake-jdbc#2651).
+    - Switched AWS Workload Identity Federation attestation from a SigV4-presigned `GetCallerIdentity` request to STS `GetWebIdentityToken`, returning a signed JWT directly. (snowflakedb/snowflake-jdbc#2653)
+
 - v4.2.0
-  - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
-  - Fixed NPE in `RestRequest.sendIBHttpErrorEvent` when `SFSession.getTelemetryClient()` returns null because the session URL is not yet set; a `NoOpTelemetryClient` is now returned instead, allowing the original HTTP error to be surfaced to the caller (snowflakedb/snowflake-jdbc#2610)
-  - Added support for attaching the SPCS service-identifier token (`SPCS_TOKEN`) to login requests when the driver is running inside an SPCS container (gated on the `SNOWFLAKE_RUNNING_INSIDE_SPCS` environment variable; token read from `/snowflake/session/spcs_token`) (snowflakedb/snowflake-jdbc#2603)
-  - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux (snowflakedb/snowflake-jdbc#2596)
-  - Fixed NPE in `SFTrustManager.validateRevocationStatusMain` when the OCSP cache contains a non-SUCCESSFUL response (e.g. `unauthorized(6)`); the response is now surfaced as an `SFOCSPException` so cache eviction and fail-open run normally (snowflakedb/snowflake-jdbc#2597)
-  - Added IPv6 support for cloud metadata services so Workload Identity Federation and platform detection work on IPv6-only instances (snowflakedb/snowflake-jdbc#2586):
-    - GCP WIF attestation now uses hostname `metadata.google.internal` instead of the IPv4 link-local address.
-    - EC2 instance detection probes the IPv4 and IPv6 IMDS endpoints (`[fd00:ec2::254]`) in parallel so detection succeeds on IPv6-only instances without doubling the detection budget on dual-stack hosts.
-  - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#2592)
-  - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8 (snowflakedb/snowflake-jdbc#2578)
-  - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
-  - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
-    - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
-    - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
-  - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
-  - Fixed SecurityException on credential cache file ownership check in containers where JVM returns '?' for user.name (snowflakedb/snowflake-jdbc#2600).
-  - Fixed credential cache delete operations ignoring clientStoreTemporaryCredential=false setting (snowflakedb/snowflake-jdbc#2600).
-  - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602).
-  - Bumped BouncyCastle to 1.84 to address CVE-2026-0636, CVE-2026-5588, and CVE-2026-5598 (snowflakedb/snowflake-jdbc#2593).
-  - Added `workloadIdentityAwsExternalId` connection property to support AWS STS external ID in Workload Identity Federation role-chaining flows (snowflakedb/snowflake-jdbc#2565).
-  - Bumped grpc-java to 1.81.1 now that they also upgraded to netty 4.1.132.Final as the second part of PR 2561, and also netty itself to 4.1.133.Final to address several CVE (snowflakedb/snowflake-jdbc#2611).
+    - Extended the `SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION` environment variable to also bypass permission verification on the `connections.toml` config file and on the credential cache file (`credential_cache_v1.json`), unblocking driver use in SPCS environments where strict 0600/0700 ownership cannot be guaranteed (snowflakedb/snowflake-jdbc#2614)
+    - Fixed NPE in `RestRequest.sendIBHttpErrorEvent` when `SFSession.getTelemetryClient()` returns null because the session URL is not yet set; a `NoOpTelemetryClient` is now returned instead, allowing the original HTTP error to be surfaced to the caller (snowflakedb/snowflake-jdbc#2610)
+    - Added support for attaching the SPCS service-identifier token (`SPCS_TOKEN`) to login requests when the driver is running inside an SPCS container (gated on the `SNOWFLAKE_RUNNING_INSIDE_SPCS` environment variable; token read from `/snowflake/session/spcs_token`) (snowflakedb/snowflake-jdbc#2603)
+    - Added libc family and version detection (`LIBC_FAMILY`, `LIBC_VERSION`) to the `CLIENT_ENVIRONMENT` section of the login request on Linux (snowflakedb/snowflake-jdbc#2596)
+    - Fixed NPE in `SFTrustManager.validateRevocationStatusMain` when the OCSP cache contains a non-SUCCESSFUL response (e.g. `unauthorized(6)`); the response is now surfaced as an `SFOCSPException` so cache eviction and fail-open run normally (snowflakedb/snowflake-jdbc#2597)
+    - Added IPv6 support for cloud metadata services so Workload Identity Federation and platform detection work on IPv6-only instances (snowflakedb/snowflake-jdbc#2586):
+      - GCP WIF attestation now uses hostname `metadata.google.internal` instead of the IPv4 link-local address.
+      - EC2 instance detection probes the IPv4 and IPv6 IMDS endpoints (`[fd00:ec2::254]`) in parallel so detection succeeds on IPv6-only instances without doubling the detection budget on dual-stack hosts.
+    - Added `enableCopyResultSet` connection property (default `false`): when `true`, `Statement.execute()` exposes the COPY INTO per-file metadata result set via `getResultSet()` instead of consuming it internally (snowflakedb/snowflake-jdbc#2592)
+    - Migrated CI test images from CentOS 7 (EOL) to Rocky Linux 8 (snowflakedb/snowflake-jdbc#2578)
+    - Fixed NPE "The URI scheme of endpointOverride must not be null" happening during file transfer (e.g. PUT) in some use-cases (snowflakedb/snowflake-jdbc#2572)
+    - Fixed connections.toml auto-configuration behaviour (snowflakedb/snowflake-jdbc#2591):
+      - now defaulting to port 443 instead of 80 when neither port nor protocol is specified
+      - config coming from the JDBC connection string are no longer ignored when auto-configuration sourced items also present (when both present, direct connection config takes precedence)
+    - Fixed protocol field in connections.toml being ignored, causing connections to always use HTTPS (snowflakedb/snowflake-jdbc#2585)
+    - Fixed SecurityException on credential cache file ownership check in containers where JVM returns '?' for user.name (snowflakedb/snowflake-jdbc#2600).
+    - Fixed credential cache delete operations ignoring clientStoreTemporaryCredential=false setting (snowflakedb/snowflake-jdbc#2600).
+    - Fixed S3 transfer thread pool leak during repeated PUT/GET operations causing possible OOM (snowflakedb/snowflake-jdbc#2602).
+    - Bumped BouncyCastle to 1.84 to address CVE-2026-0636, CVE-2026-5588, and CVE-2026-5598 (snowflakedb/snowflake-jdbc#2593).
+    - Added `workloadIdentityAwsExternalId` connection property to support AWS STS external ID in Workload Identity Federation role-chaining flows (snowflakedb/snowflake-jdbc#2565).
+    - Bumped grpc-java to 1.81.1 now that they also upgraded to netty 4.1.132.Final as the second part of PR 2561, and also netty itself to 4.1.133.Final to address several CVE (snowflakedb/snowflake-jdbc#2611).
+
 - v4.1.0
-  - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
-  - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
-  - Fix Netty native library conflict in thin JAR (snowflakedb/snowflake-jdbc#2559)
-  - Bumped netty to 4.1.132.Final to address CVE-2026-33870 (High) and CVE-2026-33871 (High) (snowflakedb/snowflake-jdbc#2561)
-  - Added getRole, getWarehouse and getDatabase API extension methods (snowflakedb/snowflake-jdbc#2564)
-  - Fix driver failure when security manager prohibits access to system properties, environment variables and modifying security providers (snowflakedb/snowflake-jdbc#2563)
-  - Removed the io.netty.tryReflectionSetAccessible system property setting as it's no longer needed with modern Arrow/Netty versions (snowflakedb/snowflake-jdbc#2563)
-  - Fixed crash in getColumns operation when table contained unrecognised column type (snowflakedb/snowflake-jdbc#2568).
-  - Fixed session expiration when multiple sessions have different heartbeat intervals (snowflakedb/snowflake-jdbc#2566).
-  - Merge QueryContext from failed query responses (snowflakedb/snowflake-jdbc#2570)
+    - Added warning about using plain HTTP OAuth endpoints (snowflakedb/snowflake-jdbc#2556).
+    - Fix initializing ObjectMapper when DATE_OUTPUT_FORMAT is specified (snowflakedb/snowflake-jdbc#2545).
+    - Fix Netty native library conflict in thin JAR (snowflakedb/snowflake-jdbc#2559)
+    - Bumped netty to 4.1.132.Final to address CVE-2026-33870 (High) and CVE-2026-33871 (High) (snowflakedb/snowflake-jdbc#2561)
+    - Added getRole, getWarehouse and getDatabase API extension methods (snowflakedb/snowflake-jdbc#2564)
+    - Fix driver failure when security manager prohibits access to system properties, environment variables and modifying security providers (snowflakedb/snowflake-jdbc#2563)
+    - Removed the io.netty.tryReflectionSetAccessible system property setting as it's no longer needed with modern Arrow/Netty versions (snowflakedb/snowflake-jdbc#2563)
+    - Fixed crash in getColumns operation when table contained unrecognised column type (snowflakedb/snowflake-jdbc#2568).
+    - Fixed session expiration when multiple sessions have different heartbeat intervals (snowflakedb/snowflake-jdbc#2566).
+    - Merge QueryContext from failed query responses (snowflakedb/snowflake-jdbc#2570)
+
 - v4.0.2
-  - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
-  - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0 (snowflakedb/snowflake-jdbc#2501)
-  - Adjust level of logging during Driver initialization (snowflakedb/snowflake-jdbc#2504)
-  - Add sanitization for nonProxyHosts RegEx patterns (snowflakedb/snowflake-jdbc#2506)
-  - Fix bug with malformed file during S3 upload (snowflakedb/snowflake-jdbc#2502)
-  - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
-  - Add internal API usage telemetry tracker (snowflakedb/snowflake-jdbc#2509)
-  - Change S3 Client's multipart threshold to 16MB (snowflakedb/snowflake-jdbc#2526)
-  - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
-  - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
-  - Add logging implementation to CLIENT_ENVIRONMENT telemetry (snowflakedb/snowflake-jdbc#2527)
-  - Fix NPE when HOME directory cache is not available (snowflakedb/snowflake-jdbc#2534)
-  - Bumped `commons-compress` dependency to latest (1.28.0) to address CVE-2024-25710 and CVE-2024-26308 (snowflakedb/snowflake-jdbc#2538)
-  - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
-  - Fixed proxy authentication when connecting to GCP (snowflakedb/snowflake-jdbc#2540)
-  - Fixed bug where called-provided schema was ignored in getStreams() (snowflakedb/snowflake-jdbc#2546)
-  - Fixed S3 error handling manifested with `NullPointerException` (snowflakedb/snowflake-jdbc#2550)
+    - Fix expired session token renewal when polling results (snowflakedb/snowflake-jdbc#2489)   
+    - Fix missing minicore async initialization that was dropped during public API restructuring in v4.0.0 (snowflakedb/snowflake-jdbc#2501)
+    - Adjust level of logging during Driver initialization (snowflakedb/snowflake-jdbc#2504)
+    - Add sanitization for nonProxyHosts RegEx patterns (snowflakedb/snowflake-jdbc#2506)
+    - Fix bug with malformed file during S3 upload (snowflakedb/snowflake-jdbc#2502)
+    - Added periodic closure of sockets closed by the remote end (snowflakedb/snowflake-jdbc#2481).
+    - Add internal API usage telemetry tracker (snowflakedb/snowflake-jdbc#2509)
+    - Change S3 Client's multipart threshold to 16MB (snowflakedb/snowflake-jdbc#2526)
+    - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2519).
+    - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2519).
+    - Add logging implementation to CLIENT_ENVIRONMENT telemetry (snowflakedb/snowflake-jdbc#2527)
+    - Fix NPE when HOME directory cache is not available (snowflakedb/snowflake-jdbc#2534)
+    - Bumped `commons-compress` dependency to latest (1.28.0) to address CVE-2024-25710 and CVE-2024-26308 (snowflakedb/snowflake-jdbc#2538)
+    - Add SLF4J bridge from shaded dependencies to `SFLogger` (snowflakedb/snowflake-jdbc#2543)
+    - Fixed proxy authentication when connecting to GCP (snowflakedb/snowflake-jdbc#2540)
+    - Fixed bug where called-provided schema was ignored in getStreams() (snowflakedb/snowflake-jdbc#2546)
+    - Fixed S3 error handling manifested with `NullPointerException` (snowflakedb/snowflake-jdbc#2550)
+
 - v4.0.1
-  - Add /etc/os-release data to Minicore telemetry (snowflakedb/snowflake-jdbc#2470)
-  - Fix incorrect encryption algorithm chosen when a file was put to S3 with client_encryption_key_size account parameter set to 256 (snowflakedb/snowflake-jdbc#2472) 
-  - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2474).
-  - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2474).
-  - Update BouncyCastle dependencies to fix CVE-2025-8916 CVE-2025-8885 (snowflakedb/snowflake-jdbc#2479)
-  - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
-  - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
+    - Add /etc/os-release data to Minicore telemetry (snowflakedb/snowflake-jdbc#2470)
+    - Fix incorrect encryption algorithm chosen when a file was put to S3 with client_encryption_key_size account parameter set to 256 (snowflakedb/snowflake-jdbc#2472) 
+    - Fixed fat jar with S3 iteration, the problem of not finding class `software.amazon.awssdk.transfer.s3.internal.ApplyUserAgentInterceptor` (snowflakedb/snowflake-jdbc#2474).
+    - Removed Conscrypt from shading to prevent `failed to find class org/conscrypt/CryptoUpcalls` native error (snowflakedb/snowflake-jdbc#2474).
+    - Update BouncyCastle dependencies to fix CVE-2025-8916 CVE-2025-8885 (snowflakedb/snowflake-jdbc#2479)
+    - Fix external browser authentication after changing enum name. Manifested with `Invalid connection URL: Invalid SSOUrl found` error (snowflakedb/snowflake-jdbc#2475).
+    - Rolled back external browser authenticator name to `externalbrowser` (snowflakedb/snowflake-jdbc#2475).
 
-
-
-**Due to some underlying issues, Snowflake recommends that AWS and Azure customers do not upgrade to this version if you use PUT or GET queries. Instead, Snowflake recommends that you upgrade directly to version 4.0.1. If you have already upgraded to this version, please upgrade to version 4.0.1 as soon as possible.**
-
+__Due to some underlying issues, Snowflake recommends that AWS and Azure customers do not upgrade to this version if you use PUT or GET queries. Instead, Snowflake recommends that you upgrade directly to version 4.0.1. If you have already upgraded to this version, please upgrade to version 4.0.1 as soon as possible.__
 - v4.0.0
-  - Bumped netty to 4.1.130.Final to address CVE-2025-67735 (snowflakedb/snowflake-jdbc#2447)
-  - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
-  - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
-  - Fix NPE when sending in-band telemetry without HTTP response (snowflakedb/snowflake-jdbc#2460)
-  - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
-  - Return column_size value in database metadata commands as in JDBC spec (snowflakedb/snowflake-jdbc#2418)
-  - Migrate Azure storage from v5 to v12 (snowflakedb/snowflake-jdbc#2417)
-  - Enable bundled BouncyCastle for private key decryption by default (snowflakedb/snowflake-jdbc#2452)
-  - Rename BouncyCastle JVM property from net.snowflake.jdbc.enableBouncyCastle to net.snowflake.jdbc.useBundledBouncyCastleForPrivateKeyDecryption (snowflakedb/snowflake-jdbc#2452).
-  - Major public API restructuring: move all public APIs to net.snowflake.client.api.* package hierarchy (snowflakedb/snowflake-jdbc#2403):
-    - Add new unified QueryStatus class in public API that replaces the deprecated QueryStatus enum and QueryStatusV2 class.
-    - Add new public API interfaces for stream upload/download configuration (DownloadStreamConfig, UploadStreamConfig).
-    - Add SnowflakeDatabaseMetaData interface to public API for database metadata operations.
-    - Add SnowflakeAsyncResultSet interface to public API for async query operations.
-    - Add SnowflakeResultSetSerializable interface to public API.
-    - Deprecate net.snowflake.client.jdbc.SnowflakeDriver in favor of new net.snowflake.client.api.driver.SnowflakeDriver.
-    - Move internal classes to net.snowflake.client.internal.* package hierarchy.
-    - Removed deprecated com.snowflake.client.jdbc.SnowflakeDriver class.
-    - Removed deprecated QueryStatus enum from net.snowflake.client.core package.
-    - Removed deprecated QueryStatusV2 class from net.snowflake.client.jdbc package.
-    - Removed deprecated SnowflakeType enum from net.snowflake.client.jdbc package.
+    - Bumped netty to 4.1.130.Final to address CVE-2025-67735 (snowflakedb/snowflake-jdbc#2447)
+    - Fix OCSP HTTP client cache to honor per-connection proxy settings (snowflakedb/snowflake-jdbc#2449)
+    - Mask secrets in exception logging (snowflakedb/snowflake-jdbc#2457)
+    - Fix NPE when sending in-band telemetry without HTTP response (snowflakedb/snowflake-jdbc#2460)
+    - Migrate from AWS SDK v1 to AWS SDK v2 (snowflakedb/snowflake-jdbc#2385 snowflakedb/snowflake-jdbc#2393)
+    - Return column_size value in database metadata commands as in JDBC spec (snowflakedb/snowflake-jdbc#2418)
+    - Migrate Azure storage from v5 to v12 (snowflakedb/snowflake-jdbc#2417)
+    - Enable bundled BouncyCastle for private key decryption by default (snowflakedb/snowflake-jdbc#2452)
+    - Rename BouncyCastle JVM property from net.snowflake.jdbc.enableBouncyCastle to net.snowflake.jdbc.useBundledBouncyCastleForPrivateKeyDecryption (snowflakedb/snowflake-jdbc#2452).
+    - Major public API restructuring: move all public APIs to net.snowflake.client.api.* package hierarchy (snowflakedb/snowflake-jdbc#2403):
+      - Add new unified QueryStatus class in public API that replaces the deprecated QueryStatus enum and QueryStatusV2 class.
+      - Add new public API interfaces for stream upload/download configuration (DownloadStreamConfig, UploadStreamConfig).
+      - Add SnowflakeDatabaseMetaData interface to public API for database metadata operations.
+      - Add SnowflakeAsyncResultSet interface to public API for async query operations.
+      - Add SnowflakeResultSetSerializable interface to public API.
+      - Deprecate net.snowflake.client.jdbc.SnowflakeDriver in favor of new net.snowflake.client.api.driver.SnowflakeDriver.
+      - Move internal classes to net.snowflake.client.internal.* package hierarchy.
+      - Removed deprecated com.snowflake.client.jdbc.SnowflakeDriver class.
+      - Removed deprecated QueryStatus enum from net.snowflake.client.core package.
+      - Removed deprecated QueryStatusV2 class from net.snowflake.client.jdbc package.
+      - Removed deprecated SnowflakeType enum from net.snowflake.client.jdbc package.
+
 - v3.28.0
-  - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
-  - Bumped grpc-java to 1.77.0 to address CVE-2025-58057 from transient dep (snowflakedb/snowflake-jdbc#2415)
-  - Fix Connection and socket timeout are now propagated to HTTP client (snowflakedb/snowflake-jdbc#2394).
-  - Fix Azure 503 retries and configure it with the putGetMaxRetries parameter (snowflakedb/snowflake-jdbc#2422).
-  - Improved retries for SSLHandshakeException errors caused by transient EOFException (snowflakedb/snowflake-jdbc#2423)
-  - Introduced shared library([source code](https://github.com/snowflakedb/universal-driver/tree/main/sf_mini_core)) for extended telemetry to identify and prepare testing platform for native rust extensions (snowflakedb/snowflake-jdbc#2430)
-  - Bumped netty to 4.1.128.Final to address CVE-2025-59419 (snowflakedb/snowflake-jdbc#2389)
+    - Ability to choose connection configuration in auto configuration file by a parameter in JDBC url. (snowflakedb/snowflake-jdbc#2369)
+    - Bumped grpc-java to 1.77.0 to address CVE-2025-58057 from transient dep (snowflakedb/snowflake-jdbc#2415)
+    - Fix Connection and socket timeout are now propagated to HTTP client (snowflakedb/snowflake-jdbc#2394).
+    - Fix Azure 503 retries and configure it with the putGetMaxRetries parameter (snowflakedb/snowflake-jdbc#2422).
+    - Improved retries for SSLHandshakeException errors caused by transient EOFException (snowflakedb/snowflake-jdbc#2423)
+    - Introduced shared library([source code](https://github.com/snowflakedb/universal-driver/tree/main/sf_mini_core)) for extended telemetry to identify and prepare testing platform for native rust extensions (snowflakedb/snowflake-jdbc#2430)
+    - Bumped netty to 4.1.128.Final to address CVE-2025-59419 (snowflakedb/snowflake-jdbc#2389)
+
 - v3.27.1
-  - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT (snowflakedb/snowflake-jdbc#2351)
-  - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test (snowflakedb/snowflake-jdbc#2367)
-  - Fix IT tests to construct OAuth scopes correctly (snowflakedb/snowflake-jdbc#2366)
-  - Fix exponential backoff retry time for non-auth requests (snowflakedb/snowflake-jdbc#2370)
-  - Upgrade aws-sdk to 1.12.792 and add STS dependency (snowflakedb/snowflake-jdbc#2361)
-  - Add rockylinux9 CI tests as part of RHEL 9 support (snowflakedb/snowflake-jdbc#2368)
-  - Bumped grpc-java to 1.76.0 to address CVE-2025-58056 from transient dep (snowflakedb/snowflake-jdbc#2371)
-  - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348)
-  - Added support for authentication as a different identity through transitive IAM role impersonation for AWS (snowflakedb/snowflake-jdbc#2364)
-  - Add AWS identity detection with ARN validation (snowflakedb/snowflake-jdbc#2379)
+    - Added platform detection on login to set PLATFORM metric in CLIENT_ENVIRONMENT (snowflakedb/snowflake-jdbc#2351)
+    - Disable DatabaseMetaDataLatestIT::testUseConnectionCtx test (snowflakedb/snowflake-jdbc#2367)
+    - Fix IT tests to construct OAuth scopes correctly (snowflakedb/snowflake-jdbc#2366)
+    - Fix exponential backoff retry time for non-auth requests (snowflakedb/snowflake-jdbc#2370)
+    - Upgrade aws-sdk to 1.12.792 and add STS dependency (snowflakedb/snowflake-jdbc#2361)
+    - Add rockylinux9 CI tests as part of RHEL 9 support (snowflakedb/snowflake-jdbc#2368)
+    - Bumped grpc-java to 1.76.0 to address CVE-2025-58056 from transient dep (snowflakedb/snowflake-jdbc#2371)
+    - Added `workloadIdentityImpersonationPath` config option for `authenticator=WORKLOAD_IDENTITY` allowing workloads to authenticate as a different identity through transitive service account impersonation (snowflakedb/snowflake-jdbc#2348)
+    - Added support for authentication as a different identity through transitive IAM role impersonation for AWS (snowflakedb/snowflake-jdbc#2364)
+    - Add AWS identity detection with ARN validation (snowflakedb/snowflake-jdbc#2379)
+  
 - v3.27.0
-  - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs (snowflakedb/snowflake-jdbc#2340).
-  - Added HTTP 307 & 308 retries in case of internal IP redirects (snowflakedb/snowflake-jdbc#2344)
-  - Make PAT creation return `ResultSet` when using `execute` method (snowflakedb/snowflake-jdbc#2343)
-  - Renamed CRL_REVOCATION_CHECK_MODE to CERT_REVOCATION_CHECK_MODE in CLIENT_ENVIRONMENT metrics (snowflakedb/snowflake-jdbc#2349)
-  - Test coverage for multistatement jdbc (snowflakedb/snowflake-jdbc#2318).
-  - Fixed permission check for .toml config file (snowflakedb/snowflake-jdbc#2270).
-  - Bumped netty to 4.1.127.Final to address CVE-2025-58056 and  CVE-2025-58057 (snowflakedb/snowflake-jdbc#2354)
-  - Add support for x-snowflake-session sticky HTTP session header returned by Snowflake (snowflakedb/snowflake-jdbc#2357)
-  - Added support for Interval Year-Month and Day-Time types in JDBC (snowflakedb/snowflake-jdbc#2345).
-  - Added support for Decfloat types in JDBC (snowflakedb/snowflake-jdbc#2329, snowflakedb/snowflake-jdbc#2332).
-  - Fixed pattern search for file when QUOTED_IDENTIFIERS_IGNORE_CASE enabled (snowflakedb/snowflake-jdbc#2333)
-  - Added support for CRL (certificate revocation list) (snowflakedb/snowflake-jdbc#2287).
+    - Added the `changelog.yml` GitHub workflow to ensure changelog is updated on release PRs (snowflakedb/snowflake-jdbc#2340).
+    - Added HTTP 307 & 308 retries in case of internal IP redirects (snowflakedb/snowflake-jdbc#2344)
+    - Make PAT creation return `ResultSet` when using `execute` method (snowflakedb/snowflake-jdbc#2343)
+    - Renamed CRL_REVOCATION_CHECK_MODE to CERT_REVOCATION_CHECK_MODE in CLIENT_ENVIRONMENT metrics (snowflakedb/snowflake-jdbc#2349)
+    - Test coverage for multistatement jdbc (snowflakedb/snowflake-jdbc#2318).
+    - Fixed permission check for .toml config file (snowflakedb/snowflake-jdbc#2270).
+    - Bumped netty to 4.1.127.Final to address CVE-2025-58056 and  CVE-2025-58057 (snowflakedb/snowflake-jdbc#2354)
+    - Add support for x-snowflake-session sticky HTTP session header returned by Snowflake (snowflakedb/snowflake-jdbc#2357)
+    - Added support for Interval Year-Month and Day-Time types in JDBC (snowflakedb/snowflake-jdbc#2345).
+    - Added support for Decfloat types in JDBC (snowflakedb/snowflake-jdbc#2329, snowflakedb/snowflake-jdbc#2332).
+    - Fixed pattern search for file when QUOTED_IDENTIFIERS_IGNORE_CASE enabled (snowflakedb/snowflake-jdbc#2333)
+    - Added support for CRL (certificate revocation list) (snowflakedb/snowflake-jdbc#2287).
