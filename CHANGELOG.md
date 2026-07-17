@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.3-SNAPSHOT
+  - Bumped `google-cloud-storage` from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
   - Fixed GCS PUT operations not retrying on transient errors (e.g. HTTP 503) despite `putGetMaxRetries` being configured (snowflakedb/snowflake-jdbc#2688).
