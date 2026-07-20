@@ -48,15 +48,15 @@
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
-    <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
-    <google.cloud.core.version>2.47.0</google.cloud.core.version>
-    <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
+    <google.auth.library.oauth2.http.version>1.48.0</google.auth.library.oauth2.http.version>
+    <google.cloud.core.version>2.71.0</google.cloud.core.version>
+    <google.cloud.storage.version>2.69.0</google.cloud.storage.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
-    <google.gax.version>2.57.0</google.gax.version>
-    <google.guava.version>33.3.1-jre</google.guava.version>
-    <google.http.client.version>1.45.0</google.http.client.version>
+    <google.gax.version>2.81.0</google.gax.version>
+    <google.guava.version>33.5.0-jre</google.guava.version>
+    <google.http.client.version>2.1.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
+    <google.protobuf.java.version>4.33.2</google.protobuf.java.version>
     <grpc.version>1.82.2</grpc.version>
     <jackson.version>2.18.9</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
@@ -67,9 +67,10 @@
     <netty.version>4.1.136.Final</netty.version>
     <nimbusds.version>10.6</nimbusds.version>
     <nimbusds.oauth2.version>11.30.1</nimbusds.oauth2.version>
+    <opentelemetry.version>1.62.0</opentelemetry.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <slf4j.version>2.0.13</slf4j.version>
+    <slf4j.version>2.0.16</slf4j.version>
     <zstd-jni.version>1.5.6-5</zstd-jni.version>
   </properties>
 
@@ -107,6 +108,13 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${opentelemetry.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

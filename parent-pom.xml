@@ -38,7 +38,7 @@
     <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
-    <checkerframework.version>3.48.2</checkerframework.version>
+    <checkerframework.version>3.49.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
     <commons.codec.version>1.19.0</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
@@ -46,19 +46,21 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
-    <google.api.grpc.version>2.48.0</google.api.grpc.version>
-    <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
-    <google.cloud.core.version>2.47.0</google.cloud.core.version>
-    <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
-    <google.http.client.version>1.45.0</google.http.client.version>
-    <google.code.gson.version>2.13.1</google.code.gson.version>
-    <google.errorprone.version>2.35.1</google.errorprone.version>
+    <google.api.grpc.version>2.72.0</google.api.grpc.version>
+    <google.auth.library.oauth2.http.version>1.48.0</google.auth.library.oauth2.http.version>
+    <google.cloud.core.version>2.71.0</google.cloud.core.version>
+    <google.cloud.storage.version>2.69.0</google.cloud.storage.version>
+    <google.http.client.version>2.1.0</google.http.client.version>
+    <google.code.gson.version>2.13.2</google.code.gson.version>
+    <google.errorprone.version>2.48.0</google.errorprone.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
-    <google.gax.version>2.57.0</google.gax.version>
-    <google.guava.version>33.3.1-jre</google.guava.version>
-    <google.j2objc-annotations.version>3.0.0</google.j2objc-annotations.version>
+    <google.gax.version>2.81.0</google.gax.version>
+    <google.guava.failureaccess.version>1.0.3</google.guava.failureaccess.version>
+    <google.guava.version>33.5.0-jre</google.guava.version>
+    <google.j2objc-annotations.version>3.1</google.j2objc-annotations.version>
+    <google.proto.iam.version>1.67.0</google.proto.iam.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
+    <google.protobuf.java.version>4.33.2</google.protobuf.java.version>
     <grpc.version>1.82.2</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
@@ -77,6 +79,7 @@
     <netty.version>4.1.136.Final</netty.version>
     <nimbusds.version>10.6</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
+    <opentelemetry.version>1.62.0</opentelemetry.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
     <plexus.utils.version>3.4.2</plexus.utils.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -85,7 +88,7 @@
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <shadeNativeBase>net_snowflake_client_jdbc_internal</shadeNativeBase>
     <skip.unitTests>false</skip.unitTests>
-    <slf4j.version>2.0.13</slf4j.version>
+    <slf4j.version>2.0.16</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <integrationTestSuites>UnitTestSuite</integrationTestSuites>
     <tika.version>2.4.1</tika.version>
@@ -145,6 +148,13 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${opentelemetry.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -210,6 +220,36 @@
         <groupId>com.google.http-client</groupId>
         <artifactId>google-http-client-apache-v2</artifactId>
         <version>${google.http.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-appengine</artifactId>
+        <version>${google.http.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-gson</artifactId>
+        <version>${google.http.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api</groupId>
+        <artifactId>gax-httpjson</artifactId>
+        <version>${google.gax.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.auth</groupId>
+        <artifactId>google-auth-library-credentials</artifactId>
+        <version>${google.auth.library.oauth2.http.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>failureaccess</artifactId>
+        <version>${google.guava.failureaccess.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api.grpc</groupId>
+        <artifactId>proto-google-iam-v1</artifactId>
+        <version>${google.proto.iam.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
