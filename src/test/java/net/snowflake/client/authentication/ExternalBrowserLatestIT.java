@@ -1,6 +1,7 @@
 package net.snowflake.client.authentication;
 
 import static net.snowflake.client.authentication.AuthConnectionParameters.getExternalBrowserConnectionParameters;
+import static org.hamcrest.CoreMatchers.containsString;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -49,7 +50,8 @@ class ExternalBrowserLatestIT {
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsThrown(
-        "The user you were trying to authenticate as differs from the user currently logged in at the IDP.");
+        containsString(
+            "The user you were trying to authenticate as differs from the user currently logged in at the IDP."));
   }
 
   @Test
