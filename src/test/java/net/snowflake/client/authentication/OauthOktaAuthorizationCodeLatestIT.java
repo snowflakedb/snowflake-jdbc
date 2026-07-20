@@ -1,6 +1,7 @@
 package net.snowflake.client.authentication;
 
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthExternalAuthorizationCodeConnectionParameters;
+import static org.hamcrest.CoreMatchers.containsString;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -58,7 +59,8 @@ public class OauthOktaAuthorizationCodeLatestIT {
 
     authTestHelper.connectAndProvideCredentials(provideCredentialsThread, connectThread);
     authTestHelper.verifyExceptionIsThrown(
-        "The user you were trying to authenticate as differs from the user tied to the access token.");
+        containsString(
+            "The user you were trying to authenticate as differs from the user tied to the access token."));
   }
 
   @Test
