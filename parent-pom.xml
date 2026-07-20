@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>4.3.2-SNAPSHOT</version>
+  <version>4.3.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -59,7 +59,7 @@
     <google.j2objc-annotations.version>3.0.0</google.j2objc-annotations.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
-    <grpc.version>1.82.0</grpc.version>
+    <grpc.version>1.82.2</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
     <jackson.version>2.18.9</jackson.version>

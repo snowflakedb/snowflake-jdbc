@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -21,8 +22,11 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
@@ -72,6 +76,12 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
     } catch (IOException ex) {
       throw new RuntimeException("Failed to initialize ServerSocket mock");
     }
+  }
+
+  /** Drives the real accept loop against a test-supplied (real) ServerSocket. */
+  FakeSessionUtilExternalBrowser(SFLoginInput loginInput, ServerSocket serverSocket) {
+    super(loginInput, new MockAuthExternalBrowserHandlers());
+    this.mockServerSocket = serverSocket;
   }
 
   /**
@@ -131,6 +141,9 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
 public class SessionUtilExternalBrowserTest {
   private static final String MOCK_PROOF_KEY = "specialkey";
   private static final String MOCK_SSO_URL = "https://sso.someidp.net/";
+
+  /** A token large enough (with headers) to force the SSO request across multiple TCP reads. */
+  private static final String LARGE_TOKEN = new String(new char[3800]).replace('\0', 'A');
 
   /**
    * Unit test for SessionUtilExternalBrowser
@@ -258,6 +271,130 @@ public class SessionUtilExternalBrowserTest {
               handler.openBrowser("file://invalidUrl");
             });
     assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
+  }
+
+  /**
+   * SNOW-3704231: a browser preconnect socket that closes without data, then a large GET request
+   * split across two TCP fragments, over real OS sockets.
+   */
+  @Test
+  public void testAuthenticateOverRealSocket() throws Throwable {
+    byte[] requestBytes =
+        String.format(
+                "GET /?token=%s&confirm=1 HTTP/1.1\r\n"
+                    + "USER-AGENT: snowflake client\r\n"
+                    + "Sec-Fetch-Site: none\r\n"
+                    + "Sec-GPC: 1\r\n"
+                    + "\r\n",
+                LARGE_TOKEN)
+            .getBytes(StandardCharsets.UTF_8);
+    // Split the request into two TCP fragments to force a partial first read.
+    int half = requestBytes.length / 2;
+    byte[] fragment1 = Arrays.copyOfRange(requestBytes, 0, half);
+    byte[] fragment2 = Arrays.copyOfRange(requestBytes, half, requestBytes.length);
+
+    String token = driveRealSocketCallback(true, fragment1, fragment2);
+    assertEquals(LARGE_TOKEN, token);
+  }
+
+  /**
+   * SNOW-3704231: a POST callback with the token in the body, delivered in a TCP fragment separate
+   * from the headers, so the read loop must not stop at the {@code \r\n\r\n} terminator.
+   */
+  @Test
+  public void testAuthenticatePostBodyOverRealSocket() throws Throwable {
+    byte[] body = String.format("token=%s&confirm=1", LARGE_TOKEN).getBytes(StandardCharsets.UTF_8);
+    byte[] headerBytes =
+        String.format(
+                "POST / HTTP/1.1\r\n"
+                    + "USER-AGENT: snowflake client\r\n"
+                    + "Content-Length: %d\r\n"
+                    + "\r\n",
+                body.length)
+            .getBytes(StandardCharsets.UTF_8);
+
+    // Fragment 1: headers ending exactly at the \r\n\r\n terminator; fragment 2: the body.
+    String token = driveRealSocketCallback(false, headerBytes, body);
+    assertEquals(LARGE_TOKEN, token);
+  }
+
+  /**
+   * Drives the real {@code authenticate()} loop against a real localhost {@link ServerSocket}, with
+   * a background thread that writes {@code fragments} over TCP ({@link Thread#sleep} between them
+   * forces a partial read), optionally preceded by a preconnect socket closed without data. Returns
+   * the extracted token.
+   */
+  private String driveRealSocketCallback(boolean sendPreconnect, byte[]... fragments)
+      throws Throwable {
+    final SFLoginInput loginInput = initMockLoginInput();
+    // A real (non-zero) timeout so the test fails fast instead of hanging if the fix regresses.
+    when(loginInput.getBrowserResponseTimeout()).thenReturn(Duration.ofSeconds(30));
+
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
+        ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getByName("localhost"))) {
+      mockSsoUrlResponse(mockedHttpUtil);
+      int port = serverSocket.getLocalPort();
+
+      AtomicReference<Throwable> clientError = new AtomicReference<>();
+      Thread browser =
+          new Thread(
+              () -> {
+                try {
+                  if (sendPreconnect) {
+                    // Speculative/preconnect socket that closes without sending data (the crash).
+                    new Socket("localhost", port).close();
+                  }
+                  try (Socket s = new Socket("localhost", port)) {
+                    OutputStream out = s.getOutputStream();
+                    for (int i = 0; i < fragments.length; i++) {
+                      if (i > 0) {
+                        Thread.sleep(100);
+                      }
+                      out.write(fragments[i]);
+                      out.flush();
+                    }
+                    // Drain the driver's HTTP response so it can finish cleanly.
+                    s.getInputStream().read(new byte[4096]);
+                  }
+                } catch (Throwable t) {
+                  clientError.set(t);
+                }
+              });
+      browser.setDaemon(true);
+      browser.start();
+
+      SessionUtilExternalBrowser sub = new FakeSessionUtilExternalBrowser(loginInput, serverSocket);
+      sub.authenticate();
+
+      browser.join(10_000);
+      if (clientError.get() != null) {
+        throw new AssertionError("Browser client thread failed", clientError.get());
+      }
+      return sub.getToken();
+    }
+  }
+
+  private static void mockSsoUrlResponse(MockedStatic<HttpUtil> mockedHttpUtil) throws Exception {
+    mockedHttpUtil
+        .when(
+            () ->
+                HttpUtil.executeGeneralRequestWithContext(
+                    Mockito.any(HttpRequestBase.class),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.nullable(HttpClientSettingsKey.class),
+                    Mockito.nullable(SFBaseSession.class)))
+        .thenReturn(
+            new HttpResponseWithHeaders(
+                "{\"success\":\"true\",\"data\":{\"proofKey\":\""
+                    + MOCK_PROOF_KEY
+                    + "\", \"ssoUrl\":\""
+                    + MOCK_SSO_URL
+                    + "\"}}",
+                new HashMap<>()));
   }
 
   /**

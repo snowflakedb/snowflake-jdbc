@@ -15,6 +15,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
@@ -58,6 +63,7 @@ import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.internal.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.internal.util.DecorrelatedJitterBackoff;
 import net.snowflake.common.core.SqlState;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
@@ -1180,6 +1186,166 @@ public class RestRequestTest {
         "Timestamp should not be in the future");
   }
 
+  /**
+   * noRetry=true + retryable 5xx → the outcome is transient (caller owns retry) so the log must be
+   * WARN, not ERROR.
+   */
+  @Test
+  public void testLogLevelWarnForRetryable5xxWhenNoRetry() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Retryable 5xx with noRetry=true must be logged at WARN");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Retryable 5xx with noRetry=true must NOT be logged at ERROR");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  /**
+   * noRetry=true + non-retryable 4xx (404) → the request failed definitively so the log must be
+   * ERROR, not WARN.
+   */
+  @Test
+  public void testLogLevelErrorForNonRetryable4xxWhenNoRetry() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response404 = anyStatusCodeResponse(404);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response404);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, /* noRetry= */ true));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Non-retryable 4xx with noRetry=true must be logged at ERROR");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Non-retryable 4xx with noRetry=true must NOT be logged at WARN");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  /**
+   * noRetry=false + retries exhausted on 5xx → RestRequest owns the retry loop and all capacity is
+   * consumed, so the log must be ERROR (regression guard).
+   */
+  @Test
+  public void testLogLevelErrorForRetryable5xxWhenRetriesExhausted() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    TelemetryService.disable();
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    CloseableHttpResponse response503 = anyStatusCodeResponse(503);
+    when(client.execute(any(HttpUriRequest.class))).thenReturn(response503);
+
+    Logger julLogger = Logger.getLogger(RestRequest.class.getName());
+    List<LogRecord> captured = new ArrayList<>();
+    Handler capturingHandler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord r) {
+            captured.add(r);
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    capturingHandler.setLevel(Level.ALL);
+    julLogger.addHandler(capturingHandler);
+    try {
+      assertThrows(
+          SnowflakeSQLException.class,
+          () ->
+              execute(
+                  client,
+                  "fakeurl.com/?requestId=abcd-1234",
+                  0,
+                  0,
+                  0,
+                  false,
+                  /* noRetry= */ false,
+                  /* maxRetries= */ 1));
+      assertTrue(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.SEVERE),
+          "Exhausted 5xx retries with noRetry=false must be logged at ERROR");
+      assertFalse(
+          captured.stream().anyMatch(r -> r.getLevel() == Level.WARNING),
+          "Exhausted 5xx retries with noRetry=false must NOT be logged at WARN");
+    } finally {
+      julLogger.removeHandler(capturingHandler);
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
   @Test
   public void testOCSPCheckFailsWithEventEmission() throws IOException {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
@@ -1252,5 +1418,131 @@ public class RestRequestTest {
     } finally {
       SFTrustManager.cleanTestSystemParameters();
     }
+  }
+
+  /**
+   * Verifies that the patch's release gate fires on non-200 retry exhaustion. With maxRetries=1 the
+   * request is attempted twice: prepareRetry() releases once between attempts, and the patch
+   * releases once on the final failure-side break. Total expected: times(2).
+   */
+  @Test
+  public void testReleasesConnectionOnNon200ExhaustionViaPatch() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // Always return 503 — retry exhaustion guaranteed with maxRetries=1
+    // Build the stub response BEFORE the when().thenReturn() call to avoid nested-stubbing issues.
+    CloseableHttpResponse stubRetryResponse = retryResponse();
+    when(mockHttpClient.execute(any(HttpRequestBase.class))).thenReturn(stubRetryResponse);
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            RestRequest.executeWithRetries(
+                mockHttpClient,
+                mockRequest,
+                0,
+                0,
+                0,
+                1,
+                0,
+                new AtomicBoolean(false),
+                false,
+                false,
+                false,
+                false,
+                false,
+                new ExecTimeTelemetryData(),
+                null,
+                null,
+                null,
+                false));
+
+    // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
+    verify(mockRequest, times(2)).releaseConnection();
+  }
+
+  /**
+   * Verifies that the patch's release gate fires when the response is null (IOException path).
+   * NoHttpResponseException causes responseDto.getHttpResponse() == null. With maxRetries=1 the
+   * request is attempted twice: prepareRetry() releases once, the patch releases once. Total:
+   * times(2).
+   */
+  @Test
+  public void testReleasesConnectionOnNullResponseExhaustionViaPatch() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // IOException drives responseDto.getHttpResponse() == null
+    when(mockHttpClient.execute(any(HttpRequestBase.class)))
+        .thenThrow(new NoHttpResponseException("The target server failed to respond"));
+
+    assertThrows(
+        SnowflakeSQLException.class,
+        () ->
+            RestRequest.executeWithRetries(
+                mockHttpClient,
+                mockRequest,
+                0,
+                0,
+                0,
+                1,
+                0,
+                new AtomicBoolean(false),
+                false,
+                false,
+                false,
+                false,
+                false,
+                new ExecTimeTelemetryData(),
+                null,
+                null,
+                null,
+                false));
+
+    // prepareRetry() between attempt 1 and 2, plus patch on exhaustion-side break
+    verify(mockRequest, times(2)).releaseConnection();
+  }
+
+  /**
+   * Verifies that the patch's release gate does NOT fire on a 200 success response. The connection
+   * must remain open for the caller to read the response body. Expected: never().
+   */
+  @Test
+  public void testDoesNotReleaseConnectionOn200Success() throws Exception {
+    CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+    HttpRequestBase mockRequest = mock(HttpRequestBase.class);
+    when(mockRequest.getURI()).thenReturn(new URI("https://example.com?requestId=test-1234"));
+
+    // Build the stub response BEFORE the when().thenReturn() call to avoid nested-stubbing issues.
+    CloseableHttpResponse stubSuccessResponse = successResponse();
+    when(mockHttpClient.execute(any(HttpRequestBase.class))).thenReturn(stubSuccessResponse);
+
+    HttpResponseContextDto result =
+        RestRequest.executeWithRetries(
+            mockHttpClient,
+            mockRequest,
+            0,
+            0,
+            0,
+            1,
+            0,
+            new AtomicBoolean(false),
+            false,
+            false,
+            false,
+            false,
+            false,
+            new ExecTimeTelemetryData(),
+            null,
+            null,
+            null,
+            false);
+
+    assertNotNull(result);
+    // Gate must keep the connection open for the caller to consume the 200 body
+    verify(mockRequest, never()).releaseConnection();
   }
 }
