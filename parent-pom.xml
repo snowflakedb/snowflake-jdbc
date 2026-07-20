@@ -79,6 +79,7 @@
     <netty.version>4.1.136.Final</netty.version>
     <nimbusds.version>10.6</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
+    <opentelemetry.version>1.62.0</opentelemetry.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
     <plexus.utils.version>3.4.2</plexus.utils.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -147,6 +148,13 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${opentelemetry.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
