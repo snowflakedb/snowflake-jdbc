@@ -31,7 +31,6 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
   public void testIncreasedMaxLobSize() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
-      stmt.execute("alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY='ENABLED'");
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=false");
       SnowflakeSQLException e =
           assertThrows(
@@ -46,7 +45,6 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
         assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
       } finally {
         stmt.execute("alter session unset ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT");
-        stmt.execute("alter session unset FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY");
       }
     }
   }
