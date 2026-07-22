@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,6 +43,12 @@ class CredentialManagerTest {
   @AfterAll
   public static void tearDown() {
     CredentialManager.resetSecureStorageManager();
+  }
+
+  @Test
+  public void shouldThrowSFExceptionNotNPEWhenOauthLoginInputIsNull() {
+    SFLoginInput loginInput = createGenericLoginInput();
+    assertThrows(SFException.class, () -> CredentialManager.getHostForOAuthCacheKey(loginInput));
   }
 
   @Test
