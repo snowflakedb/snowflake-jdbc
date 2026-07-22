@@ -1,7 +1,5 @@
 package net.snowflake.client.internal.core;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -76,8 +74,8 @@ class CredentialManagerTest {
     Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
 
-    // ID token — idp == snowflake (Snowflake is the IdP for browser flow)
-    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    // ID token — idp is empty (MFA/ID path: Snowflake is the authenticator, no separate IdP)
+    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, "", SNOWFLAKE_HOST, "");
     CredentialManager.writeIdToken(loginInputSnowflakeOAuth, SOME_ID_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
@@ -85,7 +83,7 @@ class CredentialManagerTest {
             encoder.encodeToString(SOME_ID_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
 
     // MFA token — role always empty
-    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, "", SNOWFLAKE_HOST, "");
     CredentialManager.writeMfaToken(loginInputSnowflakeOAuth, SOME_MFA_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
@@ -179,12 +177,12 @@ class CredentialManagerTest {
   void shouldProperlyDeleteTokensFromCache() throws SFException {
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
 
-    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, "", SNOWFLAKE_HOST, "");
     CredentialManager.deleteIdTokenCacheEntry(
         loginInputSnowflakeOAuth.getHostFromServerUrl(), loginInputSnowflakeOAuth.getUserName());
     verify(mockSecureStorageManager, times(1)).deleteCredential(idTokenKey);
 
-    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, "", SNOWFLAKE_HOST, "");
     CredentialManager.deleteMfaTokenCacheEntry(
         loginInputSnowflakeOAuth.getHostFromServerUrl(), loginInputSnowflakeOAuth.getUserName());
     verify(mockSecureStorageManager, times(1)).deleteCredential(mfaTokenKey);
@@ -257,13 +255,13 @@ class CredentialManagerTest {
     Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInputSnowflakeOAuth = createLoginInputWithSnowflakeServer();
 
-    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    String idTokenKey = cacheKey(CachedCredentialType.ID_TOKEN, "", SNOWFLAKE_HOST, "");
     when(mockSecureStorageManager.getCredential(idTokenKey))
         .thenReturn(
             encoder.encodeToString(SOME_ID_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
     CredentialManager.fillCachedIdToken(loginInputSnowflakeOAuth);
 
-    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "");
+    String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, "", SNOWFLAKE_HOST, "");
     when(mockSecureStorageManager.getCredential(mfaTokenKey))
         .thenReturn(
             encoder.encodeToString(SOME_MFA_TOKEN_FROM_CACHE.getBytes(StandardCharsets.UTF_8)));
@@ -332,8 +330,7 @@ class CredentialManagerTest {
     CredentialManager.fillCachedOAuthRefreshToken(loginInputExternalOAuth);
 
     assertEquals(EXTERNAL_ACCESS_TOKEN_FROM_CACHE, loginInputExternalOAuth.getOauthAccessToken());
-    assertEquals(
-        EXTERNAL_REFRESH_TOKEN_FROM_CACHE, loginInputExternalOAuth.getOauthRefreshToken());
+    assertEquals(EXTERNAL_REFRESH_TOKEN_FROM_CACHE, loginInputExternalOAuth.getOauthRefreshToken());
 
     SFLoginInput loginInputDPoP = createLoginInputWithDPoPPublicKey();
     String dpopKey =
@@ -359,7 +356,7 @@ class CredentialManagerTest {
   // Helpers
   // -------------------------------------------------------------------------
 
-  /** Builds the expected v2 cache key for a given token type, using host as both idp and snowflake. */
+  /** Builds the expected v2 cache key for a given token type. */
   private static String cacheKey(
       CachedCredentialType type, String idp, String snowflake, String role) {
     return SecureStorageManager.buildCacheKey(

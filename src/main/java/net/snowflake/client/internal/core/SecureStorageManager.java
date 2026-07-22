@@ -24,8 +24,19 @@ interface SecureStorageManager {
   /**
    * Builds a versioned, SHA-256-hashed canonical-JSON cache key from {@code input}.
    *
-   * <p>The returned string has the form {@code SnowflakeTokenCache.v2.<lowercase-hex-sha256>}.
+   * <p>Key form: {@code SnowflakeTokenCache.v2.<TOKEN_TYPE>.<hex>} where {@code hex} is the
+   * lowercase SHA-256 of the canonical JSON of {@code keyData}.
    *
+   * <p>{@code keyData} is flow-specific and never contains token_type:
+   *
+   * <ul>
+   *   <li>OAuth flows ({@code OAUTH_ACCESS_TOKEN}, {@code OAUTH_REFRESH_TOKEN}, {@code
+   *       DPOP_BUNDLED_ACCESS_TOKEN}): idp, role, snowflake, username.
+   *   <li>MFA and ID token flows ({@code MFA_TOKEN}, {@code ID_TOKEN}): snowflake, username.
+   * </ul>
+   *
+   * @param input the pre-normalization key dimensions
+   * @return the versioned cache key string
    * @throws IllegalArgumentException if {@code input.snowflake} or {@code input.username} is empty
    */
   static String buildCacheKey(CacheKeyInput input) {
@@ -36,12 +47,21 @@ interface SecureStorageManager {
       throw new IllegalArgumentException("username must not be empty");
     }
 
+    boolean isOAuth =
+        "OAUTH_ACCESS_TOKEN".equals(input.tokenType)
+            || "OAUTH_REFRESH_TOKEN".equals(input.tokenType)
+            || "DPOP_BUNDLED_ACCESS_TOKEN".equals(input.tokenType);
+
     TreeMap<String, String> keyData = new TreeMap<>();
-    keyData.put("idp", normalizeUrl(input.idp));
-    keyData.put("role", normalizeIdentifier(input.role));
-    keyData.put("snowflake", normalizeUrl(input.snowflake));
-    keyData.put("token_type", input.tokenType);
-    keyData.put("username", normalizeIdentifier(input.username));
+    if (isOAuth) {
+      keyData.put("idp", normalizeUrl(input.idp));
+      keyData.put("role", normalizeIdentifier(input.role));
+      keyData.put("snowflake", normalizeUrl(input.snowflake));
+      keyData.put("username", normalizeIdentifier(input.username));
+    } else {
+      keyData.put("snowflake", normalizeUrl(input.snowflake));
+      keyData.put("username", normalizeIdentifier(input.username));
+    }
 
     String json;
     try {
@@ -53,7 +73,10 @@ interface SecureStorageManager {
     try {
       byte[] hash =
           MessageDigest.getInstance("SHA-256").digest(json.getBytes(StandardCharsets.UTF_8));
-      return "SnowflakeTokenCache.v2." + SnowflakeUtil.byteToHexStringLower(hash);
+      return "SnowflakeTokenCache.v2."
+          + input.tokenType
+          + "."
+          + SnowflakeUtil.byteToHexStringLower(hash);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
