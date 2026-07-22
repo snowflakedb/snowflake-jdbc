@@ -71,11 +71,7 @@ public class CredentialManager {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.ID_TOKEN.getValue(),
-                host,
-                host,
-                loginInput.getUserName(),
-                emptyIfNull(loginInput.getRole())));
+                CachedCredentialType.ID_TOKEN.getValue(), "", host, loginInput.getUserName(), ""));
     logger.debug(
         "Looking for cached id token for user: {}, host: {}",
         loginInput.getUserName(),
@@ -97,11 +93,7 @@ public class CredentialManager {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.MFA_TOKEN.getValue(),
-                host,
-                host,
-                loginInput.getUserName(),
-                ""));
+                CachedCredentialType.MFA_TOKEN.getValue(), "", host, loginInput.getUserName(), ""));
     logger.debug(
         "Looking for cached mfa token for user: {}, host: {}",
         loginInput.getUserName(),
@@ -254,11 +246,7 @@ public class CredentialManager {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.ID_TOKEN.getValue(),
-                host,
-                host,
-                loginInput.getUserName(),
-                emptyIfNull(loginInput.getRole())));
+                CachedCredentialType.ID_TOKEN.getValue(), "", host, loginInput.getUserName(), ""));
     logger.debug(
         "Caching id token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
@@ -271,11 +259,7 @@ public class CredentialManager {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.MFA_TOKEN.getValue(),
-                host,
-                host,
-                loginInput.getUserName(),
-                ""));
+                CachedCredentialType.MFA_TOKEN.getValue(), "", host, loginInput.getUserName(), ""));
     logger.debug(
         "Caching mfa token in a secure storage for user: {}, host: {}",
         loginInput.getUserName(),
@@ -399,7 +383,7 @@ public class CredentialManager {
   static void deleteIdTokenCacheEntry(String host, String user) {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput(CachedCredentialType.ID_TOKEN.getValue(), host, host, user, ""));
+            new CacheKeyInput(CachedCredentialType.ID_TOKEN.getValue(), "", host, user, ""));
     logger.debug(
         "Removing cached id token from a secure storage for user: {}, host: {}", user, host);
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.ID_TOKEN);
@@ -427,7 +411,7 @@ public class CredentialManager {
   static void deleteMfaTokenCacheEntry(String host, String user) {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput(CachedCredentialType.MFA_TOKEN.getValue(), host, host, user, ""));
+            new CacheKeyInput(CachedCredentialType.MFA_TOKEN.getValue(), "", host, user, ""));
     logger.debug(
         "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.MFA_TOKEN);
