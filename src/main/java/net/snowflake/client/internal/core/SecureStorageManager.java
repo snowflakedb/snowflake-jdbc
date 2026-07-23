@@ -24,15 +24,16 @@ interface SecureStorageManager {
   /**
    * Builds a versioned, SHA-256-hashed canonical-JSON cache key from {@code input}.
    *
-   * <p>Key form: {@code SnowflakeTokenCache.v2.<TOKEN_TYPE>.<hex>} where {@code hex} is the
-   * lowercase SHA-256 of the canonical JSON of {@code keyData}.
+   * <p>Key form: {@code SnowflakeTokenCache.v2.<TokenType>.<hex>} where {@code TokenType} is the
+   * PascalCase token type and {@code hex} is the lowercase SHA-256 of the canonical JSON of {@code
+   * keyData}.
    *
    * <p>{@code keyData} is flow-specific and never contains token_type:
    *
    * <ul>
-   *   <li>OAuth flows ({@code OAUTH_ACCESS_TOKEN}, {@code OAUTH_REFRESH_TOKEN}, {@code
-   *       DPOP_BUNDLED_ACCESS_TOKEN}): idp, role, snowflake, username.
-   *   <li>MFA and ID token flows ({@code MFA_TOKEN}, {@code ID_TOKEN}): snowflake, username.
+   *   <li>OAuth flows ({@code OauthAccessToken}, {@code OauthRefreshToken}, {@code
+   *       DpopBundledAccessToken}): idp, role, snowflake, username.
+   *   <li>MFA and ID token flows ({@code MfaToken}, {@code IdToken}): snowflake, username.
    * </ul>
    *
    * @param input the pre-normalization key dimensions
@@ -48,9 +49,9 @@ interface SecureStorageManager {
     }
 
     boolean isOAuth =
-        "OAUTH_ACCESS_TOKEN".equals(input.tokenType)
-            || "OAUTH_REFRESH_TOKEN".equals(input.tokenType)
-            || "DPOP_BUNDLED_ACCESS_TOKEN".equals(input.tokenType);
+        "OauthAccessToken".equals(input.tokenType)
+            || "OauthRefreshToken".equals(input.tokenType)
+            || "DpopBundledAccessToken".equals(input.tokenType);
 
     TreeMap<String, String> keyData = new TreeMap<>();
     if (isOAuth) {
@@ -90,7 +91,7 @@ interface SecureStorageManager {
    *   <li>Strips optional userinfo ({@code user:pass@} prefix after scheme removal).
    *   <li>Drops query string and fragment.
    *   <li>Trims a root-only trailing slash (bare host or host:port only).
-   *   <li>Uppercases the remainder.
+   *   <li>Lowercases the remainder.
    * </ol>
    */
   static String normalizeUrl(String url) {
@@ -114,32 +115,25 @@ interface SecureStorageManager {
     while (s.endsWith("/")) {
       s = s.substring(0, s.length() - 1);
     }
-    return s.toUpperCase(Locale.ROOT);
+    return s.toLowerCase(Locale.ROOT);
   }
 
   /**
    * Normalizes a Snowflake identifier (username or role) for inclusion in a cache key.
    *
-   * <p>Characters outside double-quoted segments are uppercased; characters inside {@code "…"}
-   * segments are preserved verbatim (including the surrounding quotes).
+   * <p>If the value contains at least one double-quote character it is returned verbatim (quoted
+   * identifiers carry case-sensitive SQL semantics that must be preserved exactly). Otherwise the
+   * entire value is lowercased (unquoted Snowflake identifiers are case-insensitive, so lowercasing
+   * yields a stable canonical form).
    */
   static String normalizeIdentifier(String id) {
     if (id == null) {
       return "";
     }
-    StringBuilder sb = new StringBuilder(id.length());
-    boolean inQuotes = false;
-    for (char c : id.toCharArray()) {
-      if (c == '"') {
-        inQuotes = !inQuotes;
-        sb.append(c);
-      } else if (inQuotes) {
-        sb.append(c);
-      } else {
-        sb.append(Character.toUpperCase(c));
-      }
+    if (id.indexOf('"') >= 0) {
+      return id;
     }
-    return sb.toString();
+    return id.toLowerCase(Locale.ROOT);
   }
 
   enum SecureStorageStatus {

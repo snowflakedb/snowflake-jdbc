@@ -228,12 +228,12 @@ public class SecureStorageManagerTest {
 
   @Test
   void shouldReproduceOAuthGoldenHashFromSpec() {
-    // Username and role contain quoted Snowflake identifiers with mixed case; normalizeIdentifier
-    // preserves quoted segments verbatim, so "First Last" and "Analyst Role With Spaces" stay
-    // as-is in the canonical JSON (lowercase preserved inside double quotes).
+    // idp and snowflake are lowercased; username and role contain double quotes so they are
+    // returned verbatim (case-sensitive quoted identifiers preserved). Token type in the
+    // prefix is PascalCase.
     CacheKeyInput input =
         new CacheKeyInput(
-            "DPOP_BUNDLED_ACCESS_TOKEN",
+            "DpopBundledAccessToken",
             "https://login.microsoftonline.com:443/tenant-id/oauth2/v2.0",
             "https://myorg-myaccount.privatelink.snowflakecomputing.com",
             "\"First Last\"@long-corporate-domain.example.com",
@@ -242,7 +242,7 @@ public class SecureStorageManagerTest {
         SecureStorageManager.buildCacheKey(input),
         // pragma: allowlist nextline secret
         is(
-            "SnowflakeTokenCache.v2.DPOP_BUNDLED_ACCESS_TOKEN.be782aa7c9abf8698adc9e6de61b954ccec7d9202899b44c2eb4e1dfa4313d5f"));
+            "SnowflakeTokenCache.v2.DpopBundledAccessToken.741b6d66d252666d6821bfd19e0151511cf4efdaaeba2b3c87673aa4de6d2c0b"));
   }
 
   @Test
@@ -250,7 +250,7 @@ public class SecureStorageManagerTest {
     // MFA keyData contains only snowflake + username (no idp, role, or token_type).
     CacheKeyInput input =
         new CacheKeyInput(
-            "MFA_TOKEN",
+            "MfaToken",
             "",
             "https://myorg-myaccount.privatelink.snowflakecomputing.com",
             "\"First Last\"@long-corporate-domain.example.com",
@@ -259,7 +259,7 @@ public class SecureStorageManagerTest {
         SecureStorageManager.buildCacheKey(input),
         // pragma: allowlist nextline secret
         is(
-            "SnowflakeTokenCache.v2.MFA_TOKEN.a508fa2858a6e22e9fdbc90b4149a3ff666d1acbb286c85ff179499ac92d75c8"));
+            "SnowflakeTokenCache.v2.MfaToken.10c5dde84bb8f584c0df06ea826d418c4f580e08f9db10187c0cb5e2a732a0d6"));
   }
 
   // -------------------------------------------------------------------------
@@ -272,7 +272,7 @@ public class SecureStorageManagerTest {
         new CacheKeyInput(CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(), host, host, user, "");
     assertThat(
         SecureStorageManager.buildCacheKey(base)
-            .startsWith("SnowflakeTokenCache.v2.OAUTH_ACCESS_TOKEN."),
+            .startsWith("SnowflakeTokenCache.v2.OauthAccessToken."),
         is(true));
 
     CacheKeyInput refresh =
@@ -280,19 +280,19 @@ public class SecureStorageManagerTest {
             CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(), host, host, user, "");
     assertThat(
         SecureStorageManager.buildCacheKey(refresh)
-            .startsWith("SnowflakeTokenCache.v2.OAUTH_REFRESH_TOKEN."),
+            .startsWith("SnowflakeTokenCache.v2.OauthRefreshToken."),
         is(true));
 
     CacheKeyInput id =
         new CacheKeyInput(CachedCredentialType.ID_TOKEN.getValue(), "", host, user, "");
     assertThat(
-        SecureStorageManager.buildCacheKey(id).startsWith("SnowflakeTokenCache.v2.ID_TOKEN."),
+        SecureStorageManager.buildCacheKey(id).startsWith("SnowflakeTokenCache.v2.IdToken."),
         is(true));
 
     CacheKeyInput mfa =
         new CacheKeyInput(CachedCredentialType.MFA_TOKEN.getValue(), "", host, user, "");
     assertThat(
-        SecureStorageManager.buildCacheKey(mfa).startsWith("SnowflakeTokenCache.v2.MFA_TOKEN."),
+        SecureStorageManager.buildCacheKey(mfa).startsWith("SnowflakeTokenCache.v2.MfaToken."),
         is(true));
   }
 
@@ -305,21 +305,21 @@ public class SecureStorageManagerTest {
     assertThat(SecureStorageManager.normalizeUrl(null), is(""));
     assertThat(SecureStorageManager.normalizeUrl(""), is(""));
     assertThat(
-        SecureStorageManager.normalizeUrl("https://myhost.snowflakecomputing.com"),
-        is("MYHOST.SNOWFLAKECOMPUTING.COM"));
+        SecureStorageManager.normalizeUrl("https://MyHost.SnowflakeComputing.com"),
+        is("myhost.snowflakecomputing.com"));
     assertThat(
-        SecureStorageManager.normalizeUrl("http://myhost.snowflakecomputing.com/"),
-        is("MYHOST.SNOWFLAKECOMPUTING.COM"));
+        SecureStorageManager.normalizeUrl("http://MyHost.SnowflakeComputing.com/"),
+        is("myhost.snowflakecomputing.com"));
     assertThat(
         SecureStorageManager.normalizeUrl(
-            "https://login.microsoftonline.com:443/tenant-id/oauth2/v2.0"),
-        is("LOGIN.MICROSOFTONLINE.COM:443/TENANT-ID/OAUTH2/V2.0"));
+            "https://Login.MicrosoftOnline.com:443/Tenant-ID/OAuth2/v2.0"),
+        is("login.microsoftonline.com:443/tenant-id/oauth2/v2.0"));
     assertThat(
-        SecureStorageManager.normalizeUrl("https://user:pass@host.example.com/path"),
-        is("HOST.EXAMPLE.COM/PATH"));
+        SecureStorageManager.normalizeUrl("https://user:pass@Host.Example.com/Path"),
+        is("host.example.com/path"));
     assertThat(
-        SecureStorageManager.normalizeUrl("https://host.example.com/path?foo=bar#frag"),
-        is("HOST.EXAMPLE.COM/PATH"));
+        SecureStorageManager.normalizeUrl("https://Host.Example.com/Path?foo=bar#frag"),
+        is("host.example.com/path"));
   }
 
   // -------------------------------------------------------------------------
@@ -330,19 +330,22 @@ public class SecureStorageManagerTest {
   void shouldNormalizeIdentifier() {
     assertThat(SecureStorageManager.normalizeIdentifier(null), is(""));
     assertThat(SecureStorageManager.normalizeIdentifier(""), is(""));
-    assertThat(SecureStorageManager.normalizeIdentifier("simple_user"), is("SIMPLE_USER"));
-    // Quoted segments are preserved verbatim (Snowflake case-sensitive identifier semantics).
+    // No double quotes → lowercased.
+    assertThat(SecureStorageManager.normalizeIdentifier("SIMPLE_USER"), is("simple_user"));
+    assertThat(
+        SecureStorageManager.normalizeIdentifier("JOHN.DOE@EXAMPLE.COM"),
+        is("john.doe@example.com"));
+    // Any double quote → returned verbatim, unchanged (case-sensitive quoted identifier).
     assertThat(
         SecureStorageManager.normalizeIdentifier("\"First Last\"@long-domain.example.com"),
-        is("\"First Last\"@LONG-DOMAIN.EXAMPLE.COM"));
+        is("\"First Last\"@long-domain.example.com"));
     assertThat(
         SecureStorageManager.normalizeIdentifier(
             "\"Analyst Role With Spaces\":north_america:prod:readonly"),
-        is("\"Analyst Role With Spaces\":NORTH_AMERICA:PROD:READONLY"));
-    // Already-uppercase quoted segment — unchanged.
+        is("\"Analyst Role With Spaces\":north_america:prod:readonly"));
+    // A double quote that is not at position 0 still triggers the verbatim path.
     assertThat(
-        SecureStorageManager.normalizeIdentifier("\"FIRST LAST\"@long-domain.example.com"),
-        is("\"FIRST LAST\"@LONG-DOMAIN.EXAMPLE.COM"));
+        SecureStorageManager.normalizeIdentifier("prefix-\"Segment\""), is("prefix-\"Segment\""));
   }
 
   // -------------------------------------------------------------------------
@@ -353,10 +356,10 @@ public class SecureStorageManagerTest {
   void shouldProduceDifferentKeysForDifferentSnowflakeHosts() {
     String key1 =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("ID_TOKEN", "", "account1.snowflake.com", user, ""));
+            new CacheKeyInput("IdToken", "", "account1.snowflake.com", user, ""));
     String key2 =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("ID_TOKEN", "", "account2.snowflake.com", user, ""));
+            new CacheKeyInput("IdToken", "", "account2.snowflake.com", user, ""));
     assertThat(key1, is(not(key2)));
   }
 
@@ -364,36 +367,35 @@ public class SecureStorageManagerTest {
   void shouldProduceDifferentKeysForDifferentRoles() {
     String key1 =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("OAUTH_ACCESS_TOKEN", host, host, user, "ROLE_A"));
+            new CacheKeyInput("OauthAccessToken", host, host, user, "ROLE_A"));
     String key2 =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("OAUTH_ACCESS_TOKEN", host, host, user, "ROLE_B"));
+            new CacheKeyInput("OauthAccessToken", host, host, user, "ROLE_B"));
     assertThat(key1, is(not(key2)));
   }
 
   @Test
   void shouldProduceStableKeyForMfaRegardlessOfRole() {
     String key1 =
-        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", "", host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MfaToken", "", host, user, ""));
     String key2 =
-        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", "", host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MfaToken", "", host, user, ""));
     assertThat(key1, is(key2));
     // MFA keyData excludes role — role variation does not affect the key.
     assertThat(
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("MFA_TOKEN", "", host, user, "ROLE_X")),
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MfaToken", "", host, user, "ROLE_X")),
         is(key1));
   }
 
   @Test
   void shouldProduceDifferentKeysForDifferentTokenTypes() {
     String idKey =
-        SecureStorageManager.buildCacheKey(new CacheKeyInput("ID_TOKEN", "", host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("IdToken", "", host, user, ""));
     String mfaKey =
-        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", "", host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MfaToken", "", host, user, ""));
     String oauthKey =
         SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("OAUTH_ACCESS_TOKEN", host, host, user, ""));
+            new CacheKeyInput("OauthAccessToken", host, host, user, ""));
     assertThat(idKey, is(not(mfaKey)));
     assertThat(idKey, is(not(oauthKey)));
     assertThat(mfaKey, is(not(oauthKey)));
@@ -403,13 +405,13 @@ public class SecureStorageManagerTest {
   void shouldProduceKeyWithoutIdpOrRoleForMfa() throws Exception {
     // Serialized keyData for MFA must contain exactly the two fields snowflake and username.
     CacheKeyInput input =
-        new CacheKeyInput("MFA_TOKEN", "some-idp.example.com", host, user, "SOME_ROLE");
+        new CacheKeyInput("MfaToken", "some-idp.example.com", host, user, "SOME_ROLE");
     String mfaKey = SecureStorageManager.buildCacheKey(input);
-    // Key must start with the MFA_TOKEN prefix segment.
-    assertThat(mfaKey.startsWith("SnowflakeTokenCache.v2.MFA_TOKEN."), is(true));
+    // Key must start with the MfaToken prefix segment.
+    assertThat(mfaKey.startsWith("SnowflakeTokenCache.v2.MfaToken."), is(true));
     // MFA key must match one built with empty idp and role — they are not in the keyData.
     String mfaKeyNoIdpRole =
-        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", "", host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MfaToken", "", host, user, ""));
     assertThat(mfaKey, is(mfaKeyNoIdpRole));
   }
 
@@ -478,7 +480,7 @@ public class SecureStorageManagerTest {
   }
 
   private void testBody(SecureStorageManager manager) {
-    String cacheKey = buildTestKey("ID_TOKEN");
+    String cacheKey = buildTestKey("IdToken");
 
     // first delete possible old credential
     assertThat(
@@ -509,8 +511,8 @@ public class SecureStorageManagerTest {
 
   private void testDeleteLinux(SecureStorageManager manager) {
     // Verifies that partial deletion works — removing one key leaves other keys intact.
-    String idKey = buildTestKey("ID_TOKEN");
-    String mfaKey = buildTestKey("MFA_TOKEN");
+    String idKey = buildTestKey("IdToken");
+    String mfaKey = buildTestKey("MfaToken");
 
     assertThat(
         manager.setCredential(idKey, idToken),

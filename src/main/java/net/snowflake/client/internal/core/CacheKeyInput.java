@@ -7,7 +7,7 @@ package net.snowflake.client.internal.core;
  * before hashing.
  */
 final class CacheKeyInput {
-  /** Canonical wire token-type string, e.g. {@code "MFA_TOKEN"}, {@code "ID_TOKEN"}. */
+  /** PascalCase cache-key token-type string, e.g. {@code "MfaToken"}, {@code "IdToken"}. */
   final String tokenType;
 
   /** Raw IdP / token-endpoint URL. Empty string when IdP == Snowflake server. */
