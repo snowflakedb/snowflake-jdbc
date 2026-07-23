@@ -1,6 +1,7 @@
 package net.snowflake.client.internal.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -84,6 +85,7 @@ class CredentialManagerTest {
 
     // MFA token — role always empty
     String mfaTokenKey = cacheKey(CachedCredentialType.MFA_TOKEN, "", SNOWFLAKE_HOST, "");
+    CredentialManager.writeMfaToken(loginInputSnowflakeOAuth, SOME_MFA_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
         .setCredential(
             mfaTokenKey,
@@ -251,12 +253,14 @@ class CredentialManagerTest {
 
   @Test
   void shouldDeleteIdTokenWithRoleViaLoginInputOverload() throws SFException {
+    clearInvocations(mockSecureStorageManager);
     Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInput = createLoginInputWithSnowflakeServer();
     loginInput.setRole("ANALYST");
 
-    String expectedKey =
-        cacheKey(CachedCredentialType.ID_TOKEN, SNOWFLAKE_HOST, SNOWFLAKE_HOST, "ANALYST");
+    // ID token keyData uses only snowflake + username — role is absent per design.
+    // The key is therefore the same whether or not loginInput carries a role.
+    String expectedKey = cacheKey(CachedCredentialType.ID_TOKEN, "", SNOWFLAKE_HOST, "");
 
     CredentialManager.writeIdToken(loginInput, SOME_ID_TOKEN_FROM_CACHE);
     verify(mockSecureStorageManager, times(1))
@@ -274,6 +278,7 @@ class CredentialManagerTest {
 
   @Test
   void shouldDeleteOAuthAccessTokenWithExplicitDimensions() throws SFException {
+    clearInvocations(mockSecureStorageManager);
     Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInput = createLoginInputWithSnowflakeServer();
     loginInput.setRole("DBA");
@@ -300,6 +305,7 @@ class CredentialManagerTest {
 
   @Test
   void shouldDeleteOAuthRefreshTokenWithExplicitDimensionsExternalIdp() throws SFException {
+    clearInvocations(mockSecureStorageManager);
     Base64.Encoder encoder = Base64.getEncoder();
     SFLoginInput loginInput = createLoginInputWithExternalOAuth();
     loginInput.setRole("ENGINEER");

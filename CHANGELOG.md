@@ -3,6 +3,7 @@
 # Changelog
 - v4.3.3-SNAPSHOT
   - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key with the token type in the key prefix and flow-specific keyData (OAuth: idp/role/snowflake/username; MFA/ID: snowflake/username only), applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend (SNOW-3784426).
+  - Fixed token cache key normalization to use lowercase for consistency with case-insensitive Snowflake identifiers (quoted identifiers are preserved verbatim); the token type in the key prefix now uses PascalCase (`MfaToken`, `OauthAccessToken`) instead of `SCREAMING_SNAKE_CASE` (SNOW-3784426).
 
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
