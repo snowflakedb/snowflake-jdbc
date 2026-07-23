@@ -60,8 +60,8 @@
     <google.j2objc-annotations.version>3.1</google.j2objc-annotations.version>
     <google.proto.iam.version>1.67.0</google.proto.iam.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>4.33.2</google.protobuf.java.version>
-    <grpc.version>1.82.2</grpc.version>
+    <google.protobuf.java.version>4.33.5</google.protobuf.java.version>
+    <grpc.version>1.83.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
     <jackson.version>2.18.9</jackson.version>

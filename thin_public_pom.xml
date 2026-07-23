@@ -57,7 +57,7 @@
     <google.http.client.version>2.1.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.33.2</google.protobuf.java.version>
-    <grpc.version>1.82.2</grpc.version>
+    <grpc.version>1.83.0</grpc.version>
     <jackson.version>2.18.9</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
