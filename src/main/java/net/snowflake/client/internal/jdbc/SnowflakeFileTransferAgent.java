@@ -57,6 +57,7 @@ import net.snowflake.client.internal.core.ObjectMapperFactory;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFFixedViewResultSet;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.core.SFStatement;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
@@ -88,9 +89,29 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
-  // We will allow buffering of upto 128M data before spilling to disk during
-  // compression and digest computation
+  // Default cap on bytes buffered in memory before spilling to a temp file during
+  // PUT compression. May be overridden per-session via putGetMaxBufferSize.
   static final int MAX_BUFFER_SIZE = 1 << 27;
+
+  /**
+   * Resolve the FileBackedOutputStream buffering threshold for the given session, falling back to
+   * {@link #MAX_BUFFER_SIZE} when the session is missing or the property is unset/non-positive.
+   */
+  static int resolveMaxBufferSize(SFBaseSession session) {
+    if (session == null) {
+      return MAX_BUFFER_SIZE;
+    }
+    Object value =
+        session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_BUFFER_SIZE);
+    if (value instanceof Integer) {
+      int configured = (Integer) value;
+      if (configured > 0) {
+        return configured;
+      }
+    }
+    return MAX_BUFFER_SIZE;
+  }
+
   public static final String SRC_FILE_NAME_FOR_STREAM = "stream";
 
   private static final String FILE_PROTOCOL = "file://";
@@ -333,7 +354,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
       InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
-    FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+    FileBackedOutputStream tempStream = new FileBackedOutputStream(resolveMaxBufferSize(session), true);
 
     try {
 
@@ -393,7 +414,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
       InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
     try {
-      FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+      FileBackedOutputStream tempStream = new FileBackedOutputStream(resolveMaxBufferSize(session), true);
 
       CountingOutputStream countingStream = new CountingOutputStream(tempStream);
 
