@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.3-SNAPSHOT
+  - Fixed the self-contained JAR shipping the non-gRPC-shaded Netty native libraries (`libnetty_transport_native_epoll_*`, `libnetty_transport_native_kqueue_*`, `libnetty_resolver_dns_native_macos_*`) unshaded, which caused an `UnsatisfiedLinkError` when they conflicted with a user's own Netty on the classpath. These libraries are now relocated with the `libnet_snowflake_client_jdbc_internal_netty_*` prefix to match the relocated `io.netty` package (snowflakedb/snowflake-jdbc#2705).
   - Bumped `google-cloud-storage` from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
   - Changed minimum heartbeat interval to 15 minutes (snowflakedb/snowflake-jdbc#2708).
 
