@@ -1018,6 +1018,10 @@
                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>dev.cel</pattern>
+                      <shadedPattern>${shadeBase}.dev.cel</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>META-INF.native.io_grpc_netty_shaded_netty_tcnative</pattern>
                       <shadedPattern>META-INF.native.${shadeNativeBase}_grpc_netty_shaded_netty_tcnative</shadedPattern>
                     </relocation>
