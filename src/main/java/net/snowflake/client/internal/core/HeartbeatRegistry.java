@@ -144,8 +144,13 @@ public class HeartbeatRegistry {
     // Calculate required interval: min of requested frequency and 1/4 of token validity
     long requiredInterval = Math.min(heartbeatFrequencyInSecs, masterTokenValidityInSecs / 4);
 
-    // Enforce minimum interval of 1 second
-    requiredInterval = Math.max(requiredInterval, 1);
+    // Enforce a minimum interval of 15 minutes. This never reduces the effective heartbeat
+    // cadence below what a user could request: CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY is
+    // itself clamped to a minimum of 900s (see SFBaseSession.setHeartbeatFrequency), so the driver
+    // is never expected to heartbeat more often than every 15 minutes. The floor also guards
+    // against a degenerate masterTokenValidity (e.g. 0 when absent from the login response), which
+    // would otherwise drive the interval to 0 and cause a heartbeat busy loop.
+    requiredInterval = Math.max(requiredInterval, 15 * 60);
 
     logger.debug(
         "Adding session {} with interval {}s (requested: {}s, validity: {}s)",
