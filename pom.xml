@@ -1116,6 +1116,30 @@
                       </excludes>
                     </filter>
                     <filter>
+                      <!-- dev.cel (CEL runtime, common, protobuf) are pulled in transitively by
+                           grpc-xds 1.83.0. grpc-xds is itself a pre-shaded fat jar that already
+                           embeds these classes under io.grpc.xds.shaded.dev.cel.*, which our
+                           io.grpc relocation handles correctly. The separate dev.cel Maven artifacts
+                           are therefore redundant in the fat jar and must be excluded to avoid
+                           unshaded dev/cel/* classes failing the namespace content check. -->
+                      <artifact>dev.cel:common</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:runtime</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:protobuf</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
                       <artifact>org.apache.arrow:arrow-vector</artifact>
                       <excludes>
                         <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
