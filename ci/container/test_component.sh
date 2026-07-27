@@ -8,6 +8,8 @@ export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
 MVNW_EXE=$SOURCE_ROOT/mvnw
 
+source "$SOURCE_ROOT/ci/maven_jenkins_settings.sh"
+
 echo "[INFO] Download JDBC Integration test cases and libraries"
 source $THIS_DIR/download_artifact.sh
 
@@ -19,7 +21,6 @@ else
     PARAMETER_FILE=$SOURCE_ROOT/src/test/resources/parameters.json
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
-eval $(jq -r '.orgconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action
@@ -62,7 +63,7 @@ if [[ "${ENABLE_CLIENT_LOG_ANALYZE}" == "true" ]]; then
     fi
 fi
 
-env | grep SNOWFLAKE_ | grep -v PASS | sort
+env | grep SNOWFLAKE_ | grep -v -E "(PASS|KEY|SECRET|TOKEN)" | sort
 
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
@@ -70,17 +71,30 @@ python3 $THIS_DIR/hang_webserver.py 12345&
 
 # Avoid connection timeouts
 export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+echo $MAVEN_OPTS
 
 cd $SOURCE_ROOT
 
-# Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-$MVNW_EXE --batch-mode --show-version dependency:go-offline
+# Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched after 3 retries
+# Retry dependency:go-offline up to 3 times if it fails
+for attempt in 1 2 3; do
+    echo "[INFO] maven dependency:go-offline attempt $attempt/3"
+    if "$MVNW_EXE" $MVN_SETTINGS_ARG --batch-mode --show-version dependency:go-offline; then
+        break
+    fi
+    if [ $attempt -eq 3 ]; then
+        exit 1
+    fi
+    echo "[WARN] Retrying in 5 seconds..."
+    sleep 5
+done
 
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
-        JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        JDBC_VERSION=$($MVNW_EXE $MVN_SETTINGS_ARG org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
         echo "[INFO] Run JDBC $JDBC_VERSION tests"
-        $MVNW_EXE -DjenkinsIT \
+        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+            -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites="$JDBC_TEST_SUITES" \
@@ -91,7 +105,8 @@ if [[ "$is_old_driver" == "true" ]]; then
 elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
-        $MVNW_EXE -DjenkinsIT \
+        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+            -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DintegrationTestSuites=FipsTestSuite \
@@ -102,7 +117,8 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     popd >& /dev/null
 else
     echo "[INFO] Run $JDBC_TEST_SUITES tests"
-    $MVNW_EXE -DjenkinsIT \
+    $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+        -Dskip.unitTests=true \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \
         -DintegrationTestSuites="$JDBC_TEST_SUITES" \

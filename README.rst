@@ -109,16 +109,24 @@ Load Driver Class
 
 .. code-block:: java
 
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver")
+    Class.forName("net.snowflake.client.api.driver.SnowflakeDriver")
+
+Note: The legacy driver class ``net.snowflake.client.jdbc.SnowflakeDriver`` is still available for backward compatibility but is deprecated.
 
 Datasource
 ----------
 
-javax.sql.DataSource interface is implemented by class
+Use ``SnowflakeDataSourceFactory`` to create DataSource instances:
 
 .. code-block:: java
 
-    net.snowflake.client.jdbc.SnowflakeBasicDataSource
+    import net.snowflake.client.api.datasource.SnowflakeDataSource;
+    import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
+
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
+    ds.setAccount("myaccount");
+    ds.setUser("myuser");
+    ds.setPassword("mypassword");
 
 Connection String
 -----------------
@@ -228,7 +236,9 @@ Support
 Feel free to file an issue or submit a PR here for general cases. For official support, contact Snowflake support at:
 https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge
 
-Note
+Notes
 ----------
 
 This driver support GCP regional endpoints starting from version 3.21.0. Please ensure that any workloads using through this driver below the version 3.21.0 do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
+
+The driver uses Rust library called sf_mini_core, you can find its source code [here](https://github.com/snowflakedb/universal-driver/tree/main/sf_mini_core)

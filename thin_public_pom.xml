@@ -33,44 +33,52 @@
   </scm>
 
   <properties>
+    <animal.sniffer.annotations.version>1.27</animal.sniffer.annotations.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <awssdk.version>1.12.655</awssdk.version>
-    <azure.storage.version>5.0.0</azure.storage.version>
-    <bouncycastle.version>1.78.1</bouncycastle.version>
+    <awssdk.version>2.45.1</awssdk.version>
+    <azure.core.version>1.58.1</azure.core.version>
+    <azure.core.http.netty.version>1.16.5</azure.core.http.netty.version>
+    <azure.storage.blob.version>12.34.0</azure.storage.blob.version>
+    <azure.storage.common.version>12.33.0</azure.storage.common.version>
+    <reactor.core.version>3.7.19</reactor.core.version>
+    <reactor.netty.core.version>1.2.18</reactor.netty.core.version>
+    <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
-    <google.auth.library.oauth2.http.version>1.29.0</google.auth.library.oauth2.http.version>
-    <google.cloud.core.version>2.47.0</google.cloud.core.version>
-    <google.cloud.storage.version>2.44.1</google.cloud.storage.version>
+    <google.auth.library.oauth2.http.version>1.48.0</google.auth.library.oauth2.http.version>
+    <google.cloud.core.version>2.71.0</google.cloud.core.version>
+    <google.cloud.storage.version>2.69.0</google.cloud.storage.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
-    <google.gax.version>2.57.0</google.gax.version>
-    <google.guava.version>33.3.1-jre</google.guava.version>
-    <google.http.client.version>1.45.0</google.http.client.version>
+    <google.gax.version>2.81.0</google.gax.version>
+    <google.guava.version>33.5.0-jre</google.guava.version>
+    <google.http.client.version>2.1.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>4.28.2</google.protobuf.java.version>
-    <grpc.version>1.68.1</grpc.version>
-    <jackson.version>2.18.1</jackson.version>
+    <google.protobuf.java.version>4.33.5</google.protobuf.java.version>
+    <grpc.version>1.83.0</grpc.version>
+    <jackson.version>2.18.9</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
     <jsoup.version>1.15.3</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
-    <netty.version>4.1.118.Final</netty.version>
-    <nimbusds.version>10.3.1</nimbusds.version>
-    <nimbusds.oauth2.version>11.20.1</nimbusds.oauth2.version>
+    <netty.version>4.1.136.Final</netty.version>
+    <nimbusds.version>10.6</nimbusds.version>
+    <nimbusds.oauth2.version>11.30.1</nimbusds.oauth2.version>
+    <opentelemetry.version>1.62.0</opentelemetry.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <slf4j.version>2.0.13</slf4j.version>
+    <slf4j.version>2.0.16</slf4j.version>
     <zstd-jni.version>1.5.6-5</zstd-jni.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-bom</artifactId>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
         <version>${awssdk.version}</version>
         <type>pom</type>
         <scope>import</scope>
@@ -103,6 +111,25 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${opentelemetry.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-annotations</artifactId>
+        <version>${animal.sniffer.annotations.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -123,16 +150,74 @@
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-core</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <exclusions>
+        <!-- aws-crt cannot be shaded https://github.com/awslabs/aws-crt-java/issues/166 -->
+        <!-- We are not using it indirectly or directly so we can exclude this -->
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-kms</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3-transfer-manager</artifactId>
+      <exclusions>
+        <!-- aws-crt cannot be shaded https://github.com/awslabs/aws-crt-java/issues/166 -->
+        <!-- We are not using it indirectly or directly so we can exclude this -->
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sdk-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>netty-nio-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-client-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>identity-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>auth</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-aws</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk.crt</groupId>
+          <artifactId>aws-crt</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>http-auth-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>regions</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -185,9 +270,41 @@
       <artifactId>google-http-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-storage</artifactId>
-      <version>${azure.storage.version}</version>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core</artifactId>
+      <version>${azure.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core-http-netty</artifactId>
+      <version>${azure.core.http.netty.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.netty</groupId>
+      <artifactId>reactor-netty-core</artifactId>
+      <version>${reactor.netty.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-common</artifactId>
+      <version>${azure.storage.common.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-blob</artifactId>
+      <version>${azure.storage.blob.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
@@ -198,16 +315,6 @@
       <groupId>com.nimbusds</groupId>
       <artifactId>oauth2-oidc-sdk</artifactId>
       <version>${nimbusds.oauth2.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <version>${metrics.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-servlet</artifactId>
-      <version>${metrics.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -270,7 +377,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>

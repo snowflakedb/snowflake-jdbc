@@ -2,11 +2,12 @@ package net.snowflake.client.authentication;
 
 import static net.snowflake.client.authentication.AuthConnectionParameters.OKTA;
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOAuthOktaClientCredentialParameters;
+import static org.hamcrest.CoreMatchers.containsString;
 
 import java.io.IOException;
 import java.util.Properties;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -44,7 +45,8 @@ public class OauthOktaClientCredentialsLatestIT {
 
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
-        "The user you were trying to authenticate as differs from the user tied to the access token.");
+        containsString(
+            "The user you were trying to authenticate as differs from the user tied to the access token."));
   }
 
   @Test

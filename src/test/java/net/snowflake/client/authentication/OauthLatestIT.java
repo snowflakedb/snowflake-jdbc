@@ -1,6 +1,7 @@
 package net.snowflake.client.authentication;
 
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOauthConnectionParameters;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -41,7 +42,7 @@ public class OauthLatestIT {
   @Test
   void shouldThrowErrorForInvalidToken() {
     authTestHelper.connectAndExecuteSimpleQuery(getOauthConnectionParameters("invalidToken"), null);
-    authTestHelper.verifyExceptionIsThrown("Invalid OAuth access token. ");
+    authTestHelper.verifyExceptionIsThrown(containsString("Invalid OAuth access token"));
   }
 
   @Test
@@ -50,7 +51,8 @@ public class OauthLatestIT {
     properties.put("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
-        "The user you were trying to authenticate as differs from the user tied to the access token.");
+        containsString(
+            "The user you were trying to authenticate as differs from the user tied to the access token."));
   }
 
   private String getToken() throws IOException {

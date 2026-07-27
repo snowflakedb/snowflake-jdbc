@@ -13,9 +13,12 @@ import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
 import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 /**
  * Running tests locally:
@@ -32,6 +35,19 @@ public class WIFLatestIT {
   private static final String ACCOUNT = System.getenv("SNOWFLAKE_TEST_WIF_ACCOUNT");
   private static final String HOST = System.getenv("SNOWFLAKE_TEST_WIF_HOST");
   private static final String PROVIDER = System.getenv("SNOWFLAKE_TEST_WIF_PROVIDER");
+  private static final String IS_GCP_FUNCTION = System.getenv("IS_GCP_FUNCTION");
+  private static final String IMPERSONATION_PATH =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH");
+  private static final String IMPERSONATION_USER =
+      System.getenv("SNOWFLAKE_TEST_WIF_USERNAME_IMPERSONATION");
+  private static final String AWS_EXTERNAL_ID = System.getenv("SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID");
+  private static final String IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID");
+  private static final String IMPERSONATION_USER_WITH_EXTERNAL_ID =
+      System.getenv("SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID");
+  private static final String OUTBOUND_TOKEN_IMPERSONATION_PATH =
+      "arn:aws:iam::376129840140:role/drivers-wif-automated-tests-with-issuer";
+  private static final String OUTBOUND_TOKEN_USER = "TEST_WIF_E2E_AWS_WITH_ISSUER";
 
   @Test
   void shouldAuthenticateUsingWIFWithDefinedProvider() {
@@ -43,8 +59,21 @@ public class WIFLatestIT {
   }
 
   @Test
+  @DisabledIf("isProviderAzure")
+  @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_PATH", matches = ".+")
+  void shouldAuthenticateUsingWIFWithImpersonation() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", PROVIDER);
+    properties.put("workloadIdentityImpersonationPath", IMPERSONATION_PATH);
+    connectAndExecuteSimpleQuery(properties, IMPERSONATION_USER);
+  }
+
+  @Test
   @EnabledIf("isProviderGCP")
   void shouldAuthenticateUsingOIDC() {
+    Assumptions.assumeTrue(!Objects.equals(IS_GCP_FUNCTION, "true"));
     Properties properties = new Properties();
     properties.put("account", ACCOUNT);
     properties.put("authenticator", "WORKLOAD_IDENTITY");
@@ -57,10 +86,18 @@ public class WIFLatestIT {
     return Objects.equals(PROVIDER, "GCP");
   }
 
+  private static boolean isProviderAzure() {
+    return Objects.equals(PROVIDER, "AZURE");
+  }
+
+  private static boolean isProviderAWS() {
+    return Objects.equals(PROVIDER, "AWS");
+  }
+
   private String getGCPAccessToken() {
     try {
       String command =
-          "curl -H \"Metadata-Flavor: Google\" \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity?audience=snowflakecomputing.com\"";
+          "curl -H \"Metadata-Flavor: Google\" \"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=snowflakecomputing.com\"";
       ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
       Process process = processBuilder.start();
 
@@ -91,5 +128,54 @@ public class WIFLatestIT {
     } catch (SQLException e) {
       throw new RuntimeException("Failed to execute query", e);
     }
+  }
+
+  private void connectAndExecuteSimpleQuery(Properties props, String expectedUser) {
+    String url = String.format("jdbc:snowflake://%s", HOST);
+    try (Connection con = DriverManager.getConnection(url, props);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      assertTrue(rs.next());
+      int value = rs.getInt(1);
+      assertEquals(1, value);
+
+      ResultSet rs2 = stmt.executeQuery("select current_user()");
+      assertTrue(rs2.next());
+      String username = rs2.getString(1);
+      assertEquals(expectedUser, username);
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to execute query", e);
+    }
+  }
+
+  @Test
+  @EnabledIf("isProviderAWS")
+  void shouldAuthenticateUsingWIFWithGetWebIdentityToken() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", "AWS");
+    properties.put("workloadIdentityAwsUseOutboundToken", "true");
+    properties.put("workloadIdentityImpersonationPath", OUTBOUND_TOKEN_IMPERSONATION_PATH);
+    connectAndExecuteSimpleQuery(properties, OUTBOUND_TOKEN_USER);
+  }
+
+  @Test
+  @EnabledIf("isProviderAWS")
+  @EnabledIfEnvironmentVariable(
+      named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID",
+      matches = ".+")
+  @EnabledIfEnvironmentVariable(named = "SNOWFLAKE_TEST_WIF_AWS_EXTERNAL_ID", matches = ".+")
+  @EnabledIfEnvironmentVariable(
+      named = "SNOWFLAKE_TEST_WIF_IMPERSONATION_USER_WITH_EXTERNAL_ID",
+      matches = ".+")
+  void shouldAuthenticateUsingWIFWithImpersonationAndExternalId() {
+    Properties properties = new Properties();
+    properties.put("account", ACCOUNT);
+    properties.put("authenticator", "WORKLOAD_IDENTITY");
+    properties.put("workloadIdentityProvider", PROVIDER);
+    properties.put("workloadIdentityImpersonationPath", IMPERSONATION_ROLE_ARN_WITH_EXTERNAL_ID);
+    properties.put("workloadIdentityAwsExternalId", AWS_EXTERNAL_ID);
+    connectAndExecuteSimpleQuery(properties, IMPERSONATION_USER_WITH_EXTERNAL_ID);
   }
 }

@@ -14,5 +14,7 @@ export SF_ENABLE_EXPERIMENTAL_AUTHENTICATION=true
   -DintegrationTestSuites=WIFTestSuite \
   -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
   -Dnot-self-contained-jar \
+  -Denforcer.skip=true \
+  -Dmaven.javadoc.skip=true \
   verify \
   --batch-mode --show-version

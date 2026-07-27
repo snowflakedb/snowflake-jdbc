@@ -6,17 +6,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.core.SessionUtil;
+import org.hamcrest.Matcher;
 
 public class AuthTestHelper {
 
@@ -39,6 +45,10 @@ public class AuthTestHelper {
 
   public void verifyExceptionIsThrown(String message) {
     assertThat("Expected exception not thrown", this.exception.getMessage(), is(message));
+  }
+
+  public void verifyExceptionIsThrown(Matcher<String> messageMatcher) {
+    assertThat("Expected exception not thrown", this.exception.getMessage(), messageMatcher);
   }
 
   public void verifyExceptionIsNotThrown() {
@@ -83,6 +93,58 @@ public class AuthTestHelper {
     }
   }
 
+  public List<String> getTotp(String seed) {
+    if (runAuthTestsManually) {
+      System.err.println(
+          "ERROR: TOTP code needs to be setup manually when running auth tests manually");
+      return Collections.emptyList();
+    }
+
+    try {
+      String totpGeneratorPath = "/externalbrowser/totpGenerator.js";
+      ProcessBuilder processBuilder = new ProcessBuilder("node", totpGeneratorPath, seed);
+      Process process = processBuilder.start();
+
+      try (BufferedReader reader =
+          new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        String output = reader.readLine();
+        process.waitFor(40, TimeUnit.SECONDS);
+        return Arrays.asList(output.trim().split("\\s+"));
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public List<String> getTotp() {
+    return getTotp("");
+  }
+
+  public boolean connectAndExecuteSimpleQueryWithMfaToken(
+      Properties props, List<String> totpCodes) {
+    for (int i = 0; i < totpCodes.size(); i++) {
+      String totpCode = totpCodes.get(i);
+      props.put("passcode", totpCode);
+      this.exception = null;
+
+      connectAndExecuteSimpleQuery(props, null);
+
+      if (this.exception == null) {
+        return true;
+      } else {
+        String errorMsg = this.exception.getMessage();
+        System.out.println("TOTP code " + (i + 1) + " failed: " + errorMsg);
+        if (errorMsg.contains("TOTP Invalid")) {
+          System.out.println("TOTP/MFA error detected.");
+        } else {
+          System.out.println("Non-TOTP error detected: " + errorMsg);
+          break;
+        }
+      }
+    }
+    return false;
+  }
+
   public static void deleteIdToken() {
     SessionUtil.deleteIdTokenCache(
         AuthConnectionParameters.HOST, AuthConnectionParameters.SSO_USER);
@@ -124,12 +186,12 @@ public class AuthTestHelper {
   }
 
   private void saveToken(Connection con) throws SnowflakeSQLException {
-    SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+    SnowflakeConnectionImpl sfcon = (SnowflakeConnectionImpl) con;
     this.idToken = sfcon.getSfSession().getIdToken();
   }
 
   private void saveAccessToken(Connection con) throws SnowflakeSQLException {
-    SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+    SnowflakeConnectionImpl sfcon = (SnowflakeConnectionImpl) con;
     this.accessToken = sfcon.getSfSession().getAccessToken();
   }
 

@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.26.1-SNAPSHOT</version>
+    <version>4.3.3-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.26.1-SNAPSHOT</version>
+  <version>4.3.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -40,6 +40,12 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcutil-jdk18on</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <version>1.4.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -48,6 +54,22 @@
       <resource>
         <filtering>true</filtering>
         <directory>src/main/resources</directory>
+        <excludes>
+          <exclude>**/*.dylib</exclude>
+          <exclude>**/*.so</exclude>
+          <exclude>**/*.dll</exclude>
+          <exclude>**/*.a</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <filtering>false</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.dylib</include>
+          <include>**/*.so</include>
+          <include>**/*.dll</include>
+          <include>**/*.a</include>
+        </includes>
       </resource>
     </resources>
     <pluginManagement>
@@ -202,34 +224,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.github.siom79.japicmp</groupId>
-        <artifactId>japicmp-maven-plugin</artifactId>
-        <configuration>
-          <parameter>
-            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
-            <ignoreMissingClasses>false</ignoreMissingClasses>
-            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
-            <includes>
-              <include>com.snowflake</include>
-              <include>net.snowflake</include>
-            </includes>
-            <excludes>
-              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>
-              <exclude>${shadeBase}</exclude>
-            </excludes>
-          </parameter>
-        </configuration>
-        <executions>
-          <execution>
-            <id>japicmp</id>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
         <configuration>
@@ -282,6 +276,9 @@
               <ignoreNonCompile>true</ignoreNonCompile>
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:http-auth-aws</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:http-auth-spi</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>software.amazon.awssdk:identity-spi</ignoredUnusedDeclaredDependency>
               </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
@@ -501,7 +498,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
+              <mainClass>net.snowflake.client.api.driver.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
@@ -522,6 +519,7 @@
           <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
           <stylesheet>java</stylesheet>
           <helpfile>${project.basedir}/src/main/javadoc/licenses.html</helpfile>
+          <excludePackageNames>net.snowflake.client.internal.*:net.snowflake.client.jdbc.internal.*</excludePackageNames>
         </configuration>
         <executions>
           <execution>
@@ -675,7 +673,8 @@
                       <include>net.snowflake:snowflake-common</include>
                       <include>org.apache.arrow:*</include>
                       <include>org.apache.tika:tika-core</include>
-                      <include>io.netty:*</include>
+                      <include>io.netty:netty-common</include>
+                      <include>io.netty:netty-buffer</include>
                     </includes>
                   </artifactSet>
                   <relocations>
@@ -723,6 +722,17 @@
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>dependencies.properties</exclude>
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- Exclude snowflake-common's SFBinary/SFBinaryFormat: they still reference
+                           com.amazonaws.util.Base16/Base64 (AWS SDK v1). The JDBC driver uses its own
+                           internal copies at net.snowflake.client.internal.common.core which use
+                           Apache Commons Codec instead. See SNOW-3643336 / GitHub #2662. -->
+                      <artifact>net.snowflake:snowflake-common</artifact>
+                      <excludes>
+                        <exclude>net/snowflake/common/core/SFBinary.class</exclude>
+                        <exclude>net/snowflake/common/core/SFBinaryFormat*.class</exclude>
                       </excludes>
                     </filter>
                     <filter>
@@ -776,7 +786,30 @@
         </property>
       </activation>
       <build>
+        <resources>
+          <resource>
+            <directory>${basedir}/src/main/resources-fat-jar</directory>
+          </resource>
+        </resources>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>add-fat-jar-sources</id>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <phase>generate-sources</phase>
+                <configuration>
+                  <sources>
+                    <source>${basedir}/src/main/java-fat-jar</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
             <groupId>org.apache.maven.plugins</groupId>
@@ -819,20 +852,53 @@
                       </excludes>
                     </relocation>
                     <relocation>
-                      <pattern>com.amazonaws</pattern>
-                      <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
+                      <pattern>org.slf4j</pattern>
+                      <shadedPattern>${shadeBase}.org.slf4j</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.awssdk</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.awssdk</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.encryption.s3</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.encryption.s3</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.eventstream</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.eventstream</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>software.amazon.ion</pattern>
                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>com.microsoft.azure</pattern>
-                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.reactivestreams</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.jvnet.staxex</pattern>
+                      <shadedPattern>${shadeBase}.jvnet.staxex</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.xml.soap</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.xml.soap</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>jakarta.activation</pattern>
+                      <shadedPattern>${shadeBase}.jakarta.activation</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.azure</pattern>
+                      <shadedPattern>${shadeBase}.azure</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.fasterxml</pattern>
                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <!-- WoodStox XML processor, pulled in transitively by jackson-dataformat-xml via google-cloud-storage -->
+                      <pattern>com.ctc.wstx</pattern>
+                      <shadedPattern>${shadeBase}.ctc.wstx</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.google</pattern>
@@ -894,10 +960,6 @@
                     <relocation>
                       <pattern>org.joda</pattern>
                       <shadedPattern>${shadeBase}.joda</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>com.yammer</pattern>
-                      <shadedPattern>${shadeBase}.yammer</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>javax.servlet</pattern>
@@ -984,22 +1046,6 @@
                       <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.conscrypt</pattern>
-                      <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.conscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>META-INF.native.libconscrypt_openjdk_jni</pattern>
-                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_conscrypt_openjdk_jni</shadedPattern>
-                    </relocation>
-                    <relocation>
                       <pattern>opencensus</pattern>
                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
                     </relocation>
@@ -1010,6 +1056,14 @@
                     <relocation>
                       <pattern>android.annotation</pattern>
                       <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>reactor</pattern>
+                      <shadedPattern>${shadeBase}.reactor</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.org.reactivestreams</shadedPattern>
                     </relocation>
                   </relocations>
                   <filters>
@@ -1022,6 +1076,7 @@
                         <exclude>META-INF/maven/**</exclude>
                         <exclude>META-INF/services/com.fasterxml.*</exclude>
                         <exclude>META-INF/versions/9/module-info.*</exclude>
+                        <exclude>META-INF/versions/11/module-info.*</exclude>
                         <exclude>META-INF/*.xml</exclude>
                         <exclude>META-INF/*.SF</exclude>
                         <exclude>META-INF/*.DSA</exclude>
@@ -1035,6 +1090,53 @@
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                         <exclude>dependencies.properties</exclude>
                         <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                        <exclude>azure-*.properties</exclude>
+                        <exclude>VersionInfo.java</exclude>
+                        <exclude>project.properties</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- Exclude snowflake-common's SFBinary/SFBinaryFormat: they still reference
+                           com.amazonaws.util.Base16/Base64 (AWS SDK v1). The JDBC driver uses its own
+                           internal copies at net.snowflake.client.internal.common.core which use
+                           Apache Commons Codec instead. See SNOW-3643336 / GitHub #2662. -->
+                      <artifact>net.snowflake:snowflake-common</artifact>
+                      <excludes>
+                        <exclude>net/snowflake/common/core/SFBinary.class</exclude>
+                        <exclude>net/snowflake/common/core/SFBinaryFormat*.class</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- JSpecify annotation classes (org.jspecify:jspecify) are compile-time nullability
+                           annotations pulled in transitively by google-cloud-storage >=2.69.0 via guava.
+                           They carry no runtime behaviour and do not need to be shaded. -->
+                      <artifact>org.jspecify:jspecify</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- dev.cel (CEL runtime, common, protobuf) are pulled in transitively by
+                           grpc-xds 1.83.0. grpc-xds is itself a pre-shaded fat jar that already
+                           embeds these classes under io.grpc.xds.shaded.dev.cel.*, which our
+                           io.grpc relocation handles correctly. The separate dev.cel Maven artifacts
+                           are therefore redundant in the fat jar and must be excluded to avoid
+                           unshaded dev/cel/* classes failing the namespace content check. -->
+                      <artifact>dev.cel:common</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:runtime</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:protobuf</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
                       </excludes>
                     </filter>
                     <filter>
@@ -1079,6 +1181,7 @@
             <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
+            <version>${version.plugin.antrun}</version>
             <executions>
               <execution>
                 <id>repack</id>
@@ -1095,18 +1198,34 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
+                    <!-- this below list must mirror META-INF/versions/* in bcprov-jdk18on-<version>.jar - re-check on every BC bump!
+                         also verify the mkdir  (above) and delete (below) directives; and add there too if there's a new version -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/21/org" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/17/org" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/25/org" todir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/22/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
-                    <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <!-- META-INF/versions/9/io move removed: opentelemetry-context >=1.42 no longer ships MRJ entries; if a future dependency re-introduces them, add a move line back here. -->
+                    <!-- reactor.* packages are relocated to ${relocationBase}.reactor.* -->
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
+                    <!-- contains class name from before shading, loaded with Class.forName -->
+                    <replace file="${project.build.directory}/relocate/net/snowflake/client/jdbc/internal/software/amazon/awssdk/services/s3/execution.interceptors" token="software.amazon.awssdk" value="net.snowflake.client.jdbc.internal.software.amazon.awssdk"/>
+                    <!-- Overwrite shaded SLF4JLogger with unshaded version.
+                         The shade plugin rewrites org.slf4j references to the shaded namespace,
+                         but SLF4JLogger must reference the user's real org.slf4j for SLF4J opt-in.
+                         SLF4JJCLWrapper is left shaded since it also implements the shaded
+                         org.apache.commons.logging.Log interface. -->
+                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class"
+                          todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"
+                          overwrite="true"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1114,6 +1233,7 @@
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>
@@ -1246,7 +1366,7 @@
                 </goals>
                 <configuration>
                   <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
                     <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>

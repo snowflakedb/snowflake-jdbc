@@ -1,0 +1,282 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST"
+      },
+      "priority": 1,
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "healthCheckInterval": 45,
+            "newClientForUpgrade": "3.12.3",
+            "sessionId": 1172562260498,
+            "parameters": [
+              {
+                "name": "AUTOCOMMIT",
+                "value": true
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "ANALYST"
+            }
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "contains": "primary keys"
+          }
+        ]
+      },
+      "priority": 1,
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [
+              { "name": "created_on", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "database_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "schema_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "table_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "column_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "key_sequence", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "constraint_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" }
+            ],
+            "rowset": [
+              ["2024-01-01 10:00:00.000 -0800", "TEST_DB", "TEST_SCHEMA", "PK_TEST", "C1", "1", "SYS_CONSTRAINT_C1_PK"]
+            ],
+            "total": 1,
+            "returned": 1,
+            "queryId": "metadata-pk-0001",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 4096,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "contains": "imported keys"
+          }
+        ]
+      },
+      "priority": 1,
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [
+              { "name": "created_on", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "pk_database_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "pk_schema_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "pk_table_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "pk_column_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "fk_database_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "fk_schema_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "fk_table_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "fk_column_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "key_sequence", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "update_rule", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "delete_rule", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "fk_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "pk_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "deferrability", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" }
+            ],
+            "rowset": [
+              ["2024-01-01 10:00:00.000 -0800", "TEST_DB", "TEST_SCHEMA", "PK_TEST", "C1", "TEST_DB", "TEST_SCHEMA", "FK_TEST", "C1", "1", "NO ACTION", "NO ACTION", "SYS_CONSTRAINT_FK", "SYS_CONSTRAINT_C1_PK", "NOT DEFERRABLE"]
+            ],
+            "total": 1,
+            "returned": 1,
+            "queryId": "metadata-fk-0001",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 4096,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "contains": "objects"
+          }
+        ]
+      },
+      "priority": 1,
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [
+              { "name": "created_on", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "database_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "schema_name", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "kind", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" },
+              { "name": "comment", "type": "text", "nullable": true, "length": 16777216, "byteLength": 16777216, "scale": null, "precision": null, "collation": null, "database": "", "schema": "", "table": "" }
+            ],
+            "rowset": [
+              ["2024-01-01 10:00:00.000 -0800", "ORDERS", "TEST_DB", "TEST_SCHEMA", "TABLE", "a test orders table"]
+            ],
+            "total": 1,
+            "returned": 1,
+            "queryId": "metadata-objects-0001",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 4096,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "priority": 100,
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [],
+            "rowset": [],
+            "total": 0,
+            "returned": 0,
+            "queryId": "metadata-empty-0001",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 4096,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "json"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/session.*",
+        "method": "POST"
+      },
+      "priority": 100,
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": null,
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Metadata show results",
+      "request": {
+        "urlPathPattern": "/telemetry.*",
+        "method": "POST"
+      },
+      "priority": 100,
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": null,
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}

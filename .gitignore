@@ -7,6 +7,12 @@
 *.o
 *.so
 
+# Exception: Keep minicore native libraries
+!src/main/resources/minicore/**/*.dll
+!src/main/resources/minicore/**/*.so
+!src/main/resources/minicore/**/*.dylib
+!src/main/resources/minicore/**/*.a
+
 # Packages #
 ############
 # it's better to unpack these files and commit the raw source
@@ -81,3 +87,7 @@ placeholder
 # SSH private key for WIF tests
 ci/wif/parameters/rsa_wif_aws_azure
 ci/wif/parameters/rsa_wif_gcp
+ci/wif/parameters/rsa_gcp_function
+
+# WIF function builds
+ci/wif/*/target/

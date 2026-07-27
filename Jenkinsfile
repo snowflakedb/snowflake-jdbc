@@ -1,3 +1,5 @@
+@Library('pipeline-utils')
+import com.snowflake.DevEnvUtils
 import groovy.json.JsonOutput
 
 class JdbcJobDefinition {
@@ -8,8 +10,7 @@ class JdbcJobDefinition {
 }
 
 pipeline {
-  // TODO Please migrate this to C7 as sfc-dev2 servers do not support c6 nodes
-  agent { label 'regular-memory-node' }
+  agent { label 'regular-memory-node-snowos' }
   options { timestamps() }
   environment {
     COMMIT_SHA_LONG = sh(returnStdout: true, script: "echo \$(git rev-parse " + "HEAD)").trim()
@@ -30,11 +31,19 @@ pipeline {
 }
 
 timestamps {
-  node('regular-memory-node') {
+  node('regular-memory-node-snowos') {
     stage('checkout') {
       scmInfo = checkout scm
       println("${scmInfo}")
       env.GIT_BRANCH = scmInfo.GIT_BRANCH
+    }
+
+    stage('Authenticate Artifactory') {
+      script {
+        new DevEnvUtils().withSfCli {
+          sh "sf artifact oci auth"
+        }
+      }
     }
 
     stage('Build') {
@@ -46,7 +55,7 @@ timestamps {
       '''.stripMargin()
     }
 
-    jdkToParams = ['openjdk8': 'jdbc-centos7-openjdk8', 'openjdk11': 'jdbc-centos7-openjdk11', 'openjdk17': 'jdbc-centos7-openjdk17', 'openjdk21': 'jdbc-centos7-openjdk21'].collectEntries { jdk, image ->
+    jdkToParams = ['openjdk8': 'jdbc-rockylinux8-openjdk8', 'openjdk11': 'jdbc-rockylinux8-openjdk11', 'openjdk17': 'jdbc-rockylinux8-openjdk17', 'openjdk21': 'jdbc-rockylinux8-openjdk21'].collectEntries { jdk, image ->
       return [(jdk): [
         string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
         string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
@@ -56,7 +65,7 @@ timestamps {
         string(name: 'parent_build_number', value: env.BUILD_NUMBER),
         string(name: 'timeout_value', value: '420'),
         string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3)),
-        string(name: 'svn_revision', value: 'bptp-stable')
+        string(name: 'svn_revision', value: 'sut-stable')
       ]]
     }
 
@@ -82,7 +91,6 @@ timestamps {
     jobDefinitions.put('Test Authentication', {
       withCredentials([
         string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
-        string(credentialsId: 'a791118f-a1ea-46cd-b876-56da1b9bc71c', variable: 'NEXUS_PASSWORD')
       ]) {
         sh '''\
       |#!/bin/bash
@@ -101,6 +109,32 @@ timestamps {
       |set -e
       |ci/test_wif.sh
     '''.stripMargin()
+      }
+    })
+
+    jobDefinitions.put('Test Revocation Validation', {
+      withCredentials([
+        usernamePassword(credentialsId: 'jenkins-snowflakedb-github-app',
+          usernameVariable: 'GITHUB_USER',
+          passwordVariable: 'GITHUB_TOKEN')
+      ]) {
+        try {
+          sh '''\
+        |#!/bin/bash -e
+        |chmod +x $WORKSPACE/ci/test_revocation.sh
+        |$WORKSPACE/ci/test_revocation.sh
+      '''.stripMargin()
+        } finally {
+          archiveArtifacts artifacts: 'revocation-results.json,revocation-report.html', allowEmptyArchive: true
+          publishHTML(target: [
+            allowMissing: true,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'revocation-report.html',
+            reportName: 'Revocation Validation Report'
+          ])
+        }
       }
     })
 

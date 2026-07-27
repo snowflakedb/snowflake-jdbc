@@ -1,0 +1,93 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "QCC merge on failed query",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "remMeToken": null,
+            "remMeValidityInSeconds": 0,
+            "healthCheckInterval": 45,
+            "newClientForUpgrade": "3.12.3",
+            "sessionId": 1172562260498,
+            "parameters": [
+              {
+                "name": "AUTOCOMMIT",
+                "value": true
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "ANALYST"
+            },
+            "idToken": null,
+            "idTokenValidityInSeconds": 0,
+            "responseData": null,
+            "mfaToken": null,
+            "mfaTokenValidityInSeconds": 0
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "QCC merge on failed query",
+      "requiredScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "data": {
+            "errorCode": "200001",
+            "age": 0,
+            "sqlState": "22000",
+            "queryId": "01c37557-c810-44d1-0000-011109f5513e",
+            "queryContext": {
+              "entries": [
+                {
+                  "id": 0,
+                  "timestamp": 1775206502642407,
+                  "priority": 0,
+                  "context": "CMamhAI="
+                },
+                {
+                  "id": 69924,
+                  "timestamp": 1775206502558790,
+                  "priority": 1
+                }
+              ]
+            }
+          },
+          "code": "200001",
+          "message": "A primary key already exists.",
+          "success": false,
+          "headers": null
+        }
+      }
+    }
+  ]
+}

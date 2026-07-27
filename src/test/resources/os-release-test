@@ -1,0 +1,8 @@
+NAME="Test Linux"
+PRETTY_NAME="Test Linux 1.0 LTS"
+ID=testlinux
+IMAGE_ID=testlinux-cloud
+IMAGE_VERSION=1.0.0-cloud
+BUILD_ID=20260130
+VERSION="1.0 LTS (Test Release)"
+VERSION_ID=1.0.0

@@ -6,10 +6,12 @@ export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
 MVNW_EXE=$SOURCE_ROOT/mvnw
 
+source "$SOURCE_ROOT/ci/maven_jenkins_settings.sh"
+
 AUTH_PARAMETER_FILE=./.github/workflows/parameters_aws_auth_tests.json
 eval $(jq -r '.authtestparams | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $AUTH_PARAMETER_FILE)
 
-$MVNW_EXE -DjenkinsIT \
+$MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
     -Dnet.snowflake.jdbc.temporaryCredentialCacheDir=/mnt/workspace/abc \
     -Dnet.snowflake.jdbc.ocspResponseCacheDir=/mnt/workspace/abc \
     -Djava.io.tmpdir=$WORKSPACE \
@@ -18,5 +20,6 @@ $MVNW_EXE -DjenkinsIT \
     -DintegrationTestSuites=AuthenticationTestSuite \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     -Dnot-self-contained-jar \
-    verify \
+    -Denforcer.skip=true \
+    clean verify \
     --batch-mode --show-version

@@ -1,0 +1,60 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Login with minicore telemetry",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Authenticated",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.ISA",
+              "matches": "^(x86_64|aarch64|ppc64|x86|unknown)$"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.CORE_VERSION",
+              "matches": "^0\\.0\\.1.*"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.CORE_FILE_NAME",
+              "matches": "^libsf_mini_core_.+\\.(so|dylib|dll|a)$"
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "healthCheckInterval": 45,
+            "sessionId": 1234567890,
+            "parameters": [],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "TEST_ROLE"
+            }
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}
+

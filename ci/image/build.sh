@@ -8,7 +8,13 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/../_init.sh
 
 cp -p $THIS_DIR/../../pom.xml $THIS_DIR
+cp -p $THIS_DIR/../maven-settings.xml $THIS_DIR
 mkdir -p dependencies && cp -rp $THIS_DIR/../../dependencies/ $THIS_DIR/dependencies
+
+MIRROR_BUILD_ARG=()
+if [[ -n "$JENKINS_HOME" ]]; then
+    MIRROR_BUILD_ARG=(--build-arg MAVEN_MIRROR_SETTINGS=1)
+fi
 
 for name in "${!TEST_IMAGE_NAMES[@]}"; do
     echo "Building $name"
@@ -20,5 +26,6 @@ for name in "${!TEST_IMAGE_NAMES[@]}"; do
         --label snowflake \
         --label $DRIVER_NAME \
         $(echo ${TEST_IMAGE_BUILD_ARGS[$name]}) \
+        "${MIRROR_BUILD_ARG[@]}" \
         --tag ${TEST_IMAGE_NAMES[$name]} .
 done

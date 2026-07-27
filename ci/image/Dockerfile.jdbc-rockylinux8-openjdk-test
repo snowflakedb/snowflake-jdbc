@@ -1,0 +1,121 @@
+FROM rockylinux:8 AS jdbc-rockylinux8-openjdk-base
+ARG MAVEN_MIRROR_SETTINGS=
+
+# update OS
+RUN dnf -y update && \
+    dnf -y install epel-release
+
+# install Development tools
+RUN dnf -y groupinstall "Development Tools" && \
+    dnf -y install zlib-devel which
+
+# git
+RUN dnf -y install git
+
+# python
+RUN dnf -y install python39 python39-pip
+RUN ln -sf /usr/bin/python3.9 /usr/local/bin/python3
+RUN pip3.9 install -U pip
+RUN pip3.9 install -U snowflake-connector-python
+
+# aws
+RUN pip3.9 install -U awscli
+
+# zstd
+RUN dnf -y install zstd
+
+# jq
+RUN dnf -y install jq
+
+# gosu
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64"
+RUN chmod +x /usr/local/bin/gosu
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Maven
+RUN curl -o - https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | tar xfz - -C /opt && \
+    ln -s /opt/apache-maven-3.6.3/bin/mvn /usr/local/bin/mvn
+
+# workspace
+RUN mkdir -p /home/user && \
+    chmod 777 /home/user
+WORKDIR /home/user
+
+COPY pom.xml /root
+COPY dependencies /root/dependencies
+COPY maven-settings.xml /root/maven-settings.xml
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+###### OpenJDK 8 from dnf
+FROM jdbc-rockylinux8-openjdk-base AS jdbc-rockylinux8-openjdk8
+ARG MAVEN_MIRROR_SETTINGS=
+
+# Java
+RUN dnf -y install java-1.8.0-openjdk-devel
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+
+RUN cd /root && \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
+
+###### OpenJDK 11 from dnf
+FROM jdbc-rockylinux8-openjdk-base AS jdbc-rockylinux8-openjdk11
+ARG MAVEN_MIRROR_SETTINGS=
+
+# Java
+RUN dnf -y install java-11-openjdk-devel
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+
+RUN cd /root && \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
+
+###### OpenJDK 17 from dnf
+FROM jdbc-rockylinux8-openjdk-base AS jdbc-rockylinux8-openjdk17
+ARG MAVEN_MIRROR_SETTINGS=
+
+# Java
+RUN dnf -y install java-17-openjdk-devel
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+
+RUN cd /root && \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
+
+###### OpenJDK 21 from archive (not available in Rocky 8 repos)
+FROM jdbc-rockylinux8-openjdk-base AS jdbc-rockylinux8-openjdk21
+ARG MAVEN_MIRROR_SETTINGS=
+
+# Java
+RUN curl -o - https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz | tar xfz - -C /opt && \
+    ln -s /opt/jdk-21.0.2 /opt/jdk-21
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME=/opt/jdk-21'
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export PATH=$JAVA_HOME/bin:$PATH'
+
+RUN export JAVA_HOME=/opt/jdk-21 && \
+    export PATH=$JAVA_HOME/bin:$PATH && \
+    cd /root && \
+    if [ -n "$MAVEN_MIRROR_SETTINGS" ]; then SETTINGS="-s /root/maven-settings.xml"; else SETTINGS=""; fi && \
+    mvn $SETTINGS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2

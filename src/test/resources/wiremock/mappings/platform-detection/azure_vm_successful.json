@@ -1,0 +1,129 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/metadata/instance?api-version=2021-02-01",
+        "method": "GET",
+        "headers": {
+          "Metadata": {
+            "equalTo": "True"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "compute": {
+            "azEnvironment": "AzurePublicCloud",
+            "customData": "",
+            "isHostCompatibilityLayerVm": "false",
+            "licenseType": "",
+            "location": "westus2",
+            "name": "test-vm",
+            "offer": "0001-com-ubuntu-server-focal",
+            "osProfile": {
+              "adminUsername": "testuser",
+              "computerName": "test-vm",
+              "disablePasswordAuthentication": "true"
+            },
+            "osType": "Linux",
+            "placementGroupId": "",
+            "plan": {
+              "name": "",
+              "product": "",
+              "publisher": ""
+            },
+            "platformFaultDomain": "0",
+            "platformUpdateDomain": "0",
+            "publicKeys": [
+              {
+                "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC...",
+                "path": "/home/testuser/.ssh/authorized_keys"
+              }
+            ],
+            "publisher": "canonical",
+            "resourceGroupName": "test-rg",
+            "resourceId": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm",
+            "securityProfile": {
+              "secureBootEnabled": "false",
+              "virtualTpmEnabled": "false"
+            },
+            "sku": "20_04-lts-gen2",
+            "storageProfile": {
+              "dataDisks": [],
+              "imageReference": {
+                "id": "",
+                "offer": "0001-com-ubuntu-server-focal",
+                "publisher": "canonical",
+                "sku": "20_04-lts-gen2",
+                "version": "latest"
+              },
+              "osDisk": {
+                "caching": "ReadWrite",
+                "createOption": "FromImage",
+                "diskSizeGB": "30",
+                "encryptionSettings": {
+                  "enabled": "false"
+                },
+                "image": {
+                  "uri": ""
+                },
+                "managedDisk": {
+                  "id": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/test-rg/providers/Microsoft.Compute/disks/test-vm_OsDisk_1_abcd1234",
+                  "storageAccountType": "Premium_LRS"
+                },
+                "name": "test-vm_OsDisk_1_abcd1234",
+                "osType": "Linux",
+                "vhd": {
+                  "uri": ""
+                },
+                "writeAcceleratorEnabled": "false"
+              }
+            },
+            "subscriptionId": "12345678-1234-1234-1234-123456789012",
+            "tags": "Environment:Test;Application:TestApp",
+            "tagsList": [
+              {
+                "name": "Environment",
+                "value": "Test"
+              },
+              {
+                "name": "Application",
+                "value": "TestApp"
+              }
+            ],
+            "version": "20.04.202212120",
+            "vmId": "abcd1234-5678-90ab-cdef-1234567890ab",
+            "vmScaleSetName": "",
+            "vmSize": "Standard_D2s_v3",
+            "zone": "1"
+          },
+          "network": {
+            "interface": [
+              {
+                "ipv4": {
+                  "ipAddress": [
+                    {
+                      "privateIpAddress": "10.0.0.4",
+                      "publicIpAddress": "1.2.3.4"
+                    }
+                  ],
+                  "subnet": [
+                    {
+                      "address": "10.0.0.0",
+                      "prefix": "24"
+                    }
+                  ]
+                },
+                "ipv6": {
+                  "ipAddress": []
+                },
+                "macAddress": "000D3AF806EC"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+} 

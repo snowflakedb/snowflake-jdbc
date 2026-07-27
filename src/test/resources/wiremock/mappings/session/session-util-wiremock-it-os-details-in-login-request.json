@@ -1,0 +1,89 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Login with OS details",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Authenticated",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.NAME",
+              "equalTo": "Test Linux"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.PRETTY_NAME",
+              "equalTo": "Test Linux 1.0.0 LTS"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.ID",
+              "equalTo": "testlinux"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.IMAGE_ID",
+              "equalTo": "testlinux-cloud"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.IMAGE_VERSION",
+              "equalTo": "1.0.0-cloud"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.BUILD_ID",
+              "equalTo": "20260130"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.VERSION",
+              "equalTo": "1.0.0 LTS (Test Release)"
+            }
+          },
+          {
+            "matchesJsonPath": {
+              "expression": "$.data.CLIENT_ENVIRONMENT.OS_DETAILS.VERSION_ID",
+              "equalTo": "1.0.0"
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "healthCheckInterval": 45,
+            "sessionId": 1234567890,
+            "parameters": [],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "TEST_ROLE"
+            }
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}

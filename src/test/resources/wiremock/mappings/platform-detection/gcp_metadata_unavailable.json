@@ -1,0 +1,36 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "/"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "body": "GCP metadata service unavailable"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/computeMetadata/v1/instance/service-accounts/default/email",
+        "headers": {
+          "Metadata-Flavor": {
+            "equalTo": "Google"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "body": "GCP metadata service unavailable"
+      }
+    }
+  ]
+}
+

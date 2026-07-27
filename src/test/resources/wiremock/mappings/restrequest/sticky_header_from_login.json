@@ -1,0 +1,109 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Sticky header from login",
+      "requiredScenarioState": "Started",
+      "newScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-snowflake-session": "session-12345"
+        },
+        "jsonBody": {
+          "data": {
+            "masterToken": "master token",
+            "token": "session token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "displayUserName": "TEST_USER",
+            "serverVersion": "8.48.0",
+            "firstLogin": false,
+            "remMeToken": null,
+            "remMeValidityInSeconds": 0,
+            "healthCheckInterval": 45,
+            "newClientForUpgrade": "3.12.3",
+            "sessionId": 1172562260498,
+            "parameters": [
+              {
+                "name": "AUTOCOMMIT",
+                "value": true
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST_DB",
+              "schemaName": "TEST_SCHEMA",
+              "warehouseName": "TEST_WH",
+              "roleName": "ANALYST"
+            },
+            "idToken": null,
+            "idTokenValidityInSeconds": 0,
+            "responseData": null,
+            "mfaToken": null,
+            "mfaTokenValidityInSeconds": 0
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Sticky header from login",
+      "requiredScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/queries/v1/query-request.*",
+        "method": "POST",
+        "headers": {
+          "x-snowflake-session": {
+            "equalTo": "session-12345"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "parameters": [],
+            "rowtype": [
+              {
+                "name": "1",
+                "database": "",
+                "schema": "",
+                "table": "",
+                "nullable": false,
+                "byteLength": null,
+                "length": null,
+                "type": "fixed",
+                "scale": 0,
+                "precision": 1,
+                "collation": null
+              }
+            ],
+            "rowsetBase64": "/////0ABAAAQAAAAAAAKAA4ABgANAAgACgAAAAAABAAQAAAAAAEKAAwAAAAIAAQACgAAAAgAAAAIAAAAAAAAAAEAAAAYAAAAAAASABgAFAATABIADAAAAAgABAASAAAAFAAAAMAAAADIAAAAAAACAcwAAAAEAAAAhAAAAFgAAAAsAAAABAAAAJT///8IAAAADAAAAAEAAAAxAAAACQAAAHByZWNpc2lvbgAAALj///8IAAAAEAAAAAUAAABGSVhFRAAAAAsAAABsb2dpY2FsVHlwZQDg////CAAAAAwAAAABAAAAMAAAAAUAAABzY2FsZQAAAAgADAAIAAQACAAAAAgAAAAMAAAAAwAAAFNCMQAMAAAAcGh5c2ljYWxUeXBlAAAAAAAAAAAIAAwACAAHAAgAAAAAAAABCAAAAAEAAAAxAAAAAAAAAP////+IAAAAFAAAAAAAAAAMABYADgAVABAABAAMAAAAEAAAAAAAAAAAAAQAEAAAAAADCgAYAAwACAAEAAoAAAAUAAAAOAAAAAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAD/////AAAAAA==",
+            "total": 1,
+            "returned": 1,
+            "queryId": "01ba32c7-0107-cf9d-0000-01110304409a",
+            "databaseProvider": null,
+            "finalDatabaseName": "TEST_DB",
+            "finalSchemaName": "TEST_SCHEMA",
+            "finalWarehouseName": "TEST_WH",
+            "finalRoleName": "ANALYST",
+            "numberOfBinds": 0,
+            "arrayBindSupported": false,
+            "statementTypeId": 4096,
+            "version": 1,
+            "sendResultTime": 1738794687270,
+            "queryResultFormat": "arrow"
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+} 

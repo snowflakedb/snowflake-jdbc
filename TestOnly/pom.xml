@@ -21,9 +21,9 @@
     <junit.version>5.11.1</junit.version>
     <surefire.version>3.5.1</surefire.version>
     <mockito.version>3.5.6</mockito.version>
-    <netty.version>4.1.118.Final</netty.version>
+    <netty.version>4.1.136.Final</netty.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
-    <bouncycastle.version>1.78.1</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
   </properties>
 
@@ -145,7 +145,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>4.0.1</version>
+      <version>4.0.2-SNAPSHOT</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -186,7 +186,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.21</version>
+      <version>1.28.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -497,11 +497,11 @@
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
-                <configuration>
-                  <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
-                  </systemPropertyVariables>
+              <configuration>
+                <systemPropertyVariables>
+                  <net.snowflake.jdbc.loggerImpl>net.snowflake.client.internal.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                  <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+                </systemPropertyVariables>
                   <test>${integrationTestSuites}</test>
                 </configuration>
               </execution>

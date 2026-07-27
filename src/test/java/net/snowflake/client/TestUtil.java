@@ -13,12 +13,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.hamcrest.MatcherAssert;
 
 public class TestUtil {
@@ -62,7 +66,7 @@ public class TestUtil {
   }
 
   /**
-   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * System.getenv wrapper. If System.getenv raises a SecurityException, it is ignored and returns
    * null.
    *
    * @deprecated This method should be replaced by SnowflakeUtil.systemGetEnv.
@@ -158,5 +162,24 @@ public class TestUtil {
         .limit(length)
         .mapToObj(i -> Math.abs(i) % modulo)
         .collect(Collectors.toList());
+  }
+
+  public static CompletableFuture<Void> asyncAssert(
+      ExecutorService executor, Callable<Integer> supplier, Consumer<Integer> assertion) {
+    return CompletableFuture.supplyAsync(
+            () -> {
+              try {
+                return supplier.call();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            },
+            executor)
+        .thenAccept(assertion);
+  }
+
+  // this allows exact metadata searches instead of pattern matching
+  public static String escapeUnderscore(String input) {
+    return input.replace("_", "\\_");
   }
 }

@@ -19,7 +19,7 @@ import javax.net.ssl.HttpsURLConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.DontRunOnGCP;
 import net.snowflake.client.DontRunOnGithubActions;
-import net.snowflake.client.core.SecurityUtil;
+import net.snowflake.client.internal.core.SecurityUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
@@ -206,7 +206,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE,
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE_ORIGINAL_VALUE);
     }
-    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+    System.clearProperty(SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM);
     // clear the named group.
     System.clearProperty(JAVA_SYSTEM_PROPERTY_SSL_NAMEDGROUPS);
     // attempts an SSL connection to Google
@@ -245,11 +245,26 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     // PKCS8 private key file. No PKCS1 is supported.
     String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
+    
+    // Create Properties with simple null checks to avoid NullPointerException
     Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
     properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
+    if (parameters.get("account") != null) {
+      properties.put("account", parameters.get("account"));
+    }
+    if (parameters.get("ssl") != null) {
+      properties.put("ssl", parameters.get("ssl"));
+    }
+    if (parameters.get("port") != null) {
+      properties.put("port", parameters.get("port"));
+    }
+    if (parameters.get("database") != null) {
+      properties.put("db", parameters.get("database"));
+    }
+    if (parameters.get("schema") != null) {
+      properties.put("schema", parameters.get("schema"));
+    }
+    
     connection = DriverManager.getConnection(uri, properties);
     assertNotNull(connection);
     connection.close();
@@ -280,10 +295,22 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     String uri = parameters.get("uri");
 
     Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
     properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
+    if (parameters.get("account") != null) {
+      properties.put("account", parameters.get("account"));
+    }
+    if (parameters.get("ssl") != null) {
+      properties.put("ssl", parameters.get("ssl"));
+    }
+    if (parameters.get("port") != null) {
+      properties.put("port", parameters.get("port"));
+    }
+    if (parameters.get("database") != null) {
+      properties.put("db", parameters.get("database"));
+    }
+    if (parameters.get("schema") != null) {
+      properties.put("schema", parameters.get("schema"));
+    }
 
     // test correct private key one
     properties.put("privateKey", privateKey);
@@ -329,7 +356,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void connectWithFipsKeyPairWithBouncyCastle() throws Exception {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    System.setProperty(
+        SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "true");
     connectWithFipsKeyPair();
   }
 
@@ -337,7 +365,8 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   @Test
   @DontRunOnGithubActions
   public void testConnectUsingKeyPairWithBouncyCastle() throws Exception {
-    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    System.setProperty(
+        SecurityUtil.USE_BUNDLED_BOUNCY_CASTLE_FOR_PRIVATE_KEY_DECRYPTION_JVM, "true");
     testConnectUsingKeyPair();
   }
 

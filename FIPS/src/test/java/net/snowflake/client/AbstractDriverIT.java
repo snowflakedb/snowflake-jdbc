@@ -1,8 +1,7 @@
 package net.snowflake.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.google.common.base.Strings;
+
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
@@ -19,11 +18,13 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
   // This is required to use ConditionalIgnore annotation.
 
-  public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
+  public static final String DRIVER_CLASS = "net.snowflake.client.api.driver.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 
@@ -83,10 +84,29 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
-    assertThat(
-        "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
-    params.put("password", password);
+    String privateKeyFile = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE");
+    if (!Strings.isNullOrEmpty(privateKeyFile)) {
+      String workspace = System.getenv("WORKSPACE");
+      if (workspace != null) {
+        params.put("private_key_file", java.nio.file.Paths.get(workspace, privateKeyFile).toString());
+      } else {
+        params.put("private_key_file", privateKeyFile);
+      }
+      params.put("authenticator", "SNOWFLAKE_JWT");
+
+      String privateKeyPwd = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD");
+      if (!Strings.isNullOrEmpty(privateKeyPwd)) {
+        params.put("private_key_pwd", privateKeyPwd);
+      }
+
+    } else {
+      String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
+      if (!Strings.isNullOrEmpty(password)) {
+        params.put("password", password);
+      } else {
+        throw new IllegalStateException("Neither SNOWFLAKE_TEST_PRIVATE_KEY_FILE nor SNOWFLAKE_TEST_PASSWORD environment variable is set. Please configure one of them for authentication.");
+      }
+    }
 
     String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
     if (Strings.isNullOrEmpty(port)) {
@@ -268,10 +288,22 @@ public class AbstractDriverIT {
       properties.put("account", "snowflake");
     } else {
       properties.put("user", params.get("user"));
-      properties.put("password", params.get("password"));
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
+
+      if (!Strings.isNullOrEmpty(params.get("private_key_file"))) {
+        properties.put("private_key_file", params.get("private_key_file"));
+        if (params.get("authenticator") != null) {
+          properties.put("authenticator", params.get("authenticator"));
+        }
+        if (!Strings.isNullOrEmpty(params.get("private_key_pwd"))) {
+          properties.put("private_key_pwd", params.get("private_key_pwd"));
+        }
+      } else if (!Strings.isNullOrEmpty(params.get("password"))) {
+        properties.put("password", params.get("password"));
+      }
     }
+    
     properties.put("db", params.get("database"));
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));

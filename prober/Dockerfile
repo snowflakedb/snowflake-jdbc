@@ -25,7 +25,7 @@ ENV SDKMAN_DIR="/app/.sdkman"
 
 RUN curl -s "https://get.sdkman.io?rcupdate=false&ci=false" | bash
 
-ARG MATRIX_VERSION='{"11.0.27-tem": ["3.24.2", "3.20.0", "3.22.0", "3.13.6", "3.15.0", "3.18.0", "3.16.1", "3.23.2", "3.14.1", "3.14.4", "3.13.30"], "21.0.7-tem": ["3.24.2", "3.20.0", "3.22.0", "3.13.6", "3.15.0", "3.18.0", "3.16.1", "3.23.2", "3.14.1", "3.14.4", "3.13.30"]}'
+ARG MATRIX_VERSION='{"11.0.27-tem": ["4.2.0", "4.1.0", "4.0.2"], "21.0.7-tem": ["4.2.0", "4.1.0", "4.0.2"]}'
 ENV DRIVERS_DIR="/opt/jdbc_drivers"
 
 RUN \
@@ -37,7 +37,7 @@ RUN \
     done && \
     \
     for jdbc_version in $(echo "${MATRIX_VERSION}" | jq -r '.[][]' | sort -u); do \
-      DRIVER_URL="https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar" && \
+      DRIVER_URL="https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/net/snowflake/snowflake-jdbc/${jdbc_version}/snowflake-jdbc-${jdbc_version}.jar" && \
       curl -fSL -o "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVER_URL}" && \
       mv "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar.tmp" "${DRIVERS_DIR}/snowflake-jdbc-${jdbc_version}.jar"; \
     done

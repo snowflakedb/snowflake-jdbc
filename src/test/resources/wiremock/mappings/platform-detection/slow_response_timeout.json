@@ -1,0 +1,26 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/.*",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "This response is too slow",
+        "fixedDelayMilliseconds": 5000
+      }
+    },
+    {
+      "request": {
+        "urlPattern": "/.*",
+        "method": "PUT"
+      },
+      "response": {
+        "status": 200,
+        "body": "This PUT response is too slow",
+        "fixedDelayMilliseconds": 5000
+      }
+    }
+  ]
+} 

@@ -1,0 +1,41 @@
+package net.snowflake.client.internal.core.auth.wif;
+
+import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.internal.core.SFException;
+import net.snowflake.client.internal.core.SFLoginInput;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
+import net.snowflake.client.internal.log.SFLogger;
+import net.snowflake.client.internal.log.SFLoggerFactory;
+import org.apache.http.client.methods.HttpRequestBase;
+
+public class AzureAttestationService {
+
+  private static final SFLogger logger = SFLoggerFactory.getLogger(AzureAttestationService.class);
+
+  // Expected to be set in Azure Functions environment
+  String getIdentityEndpoint() {
+    return SnowflakeUtil.systemGetEnv("IDENTITY_ENDPOINT");
+  }
+
+  // Expected to be set in Azure Functions environment
+  String getIdentityHeader() {
+    return SnowflakeUtil.systemGetEnv("IDENTITY_HEADER");
+  }
+
+  // Expected to be set in Azure Functions environment
+  String getClientId() {
+    return SnowflakeUtil.systemGetEnv("MANAGED_IDENTITY_CLIENT_ID");
+  }
+
+  String fetchTokenFromMetadataService(HttpRequestBase tokenRequest, SFLoginInput loginInput)
+      throws SFException {
+    try {
+      return WorkloadIdentityUtil.performIdentityRequest(tokenRequest, loginInput);
+    } catch (Exception e) {
+      logger.error("Azure metadata server request failed", e);
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Azure metadata server request was not successful: " + e.getMessage());
+    }
+  }
+}

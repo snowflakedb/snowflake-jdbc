@@ -1,0 +1,20 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/",
+        "method": "GET",
+        "headers": {
+          "Metadata-Flavor": {
+            "equalTo": "Google"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": "0.1/\ncomputeMetadata/\n",
+        "fixedDelayMilliseconds": 1000
+      }
+    }
+  ]
+} 

@@ -11,30 +11,30 @@ cd %GITHUB_WORKSPACE%
 
 if "%CLOUD_PROVIDER%"=="AZURE" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_azure.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_azure.p8.gpg
 ) else if "%CLOUD_PROVIDER%"=="GCP" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_gcp.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_gcp.p8.gpg
 ) else if "%CLOUD_PROVIDER%"=="AWS" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_aws.json.gpg
+  set ENCODED_RSA_KEY_FILE=.github/workflows/rsa_keys/rsa_key_jdbc_aws.p8.gpg
 ) else (
   echo === unknown cloud provider
   exit /b 1
 )
 
 gpg --quiet --batch --yes --decrypt --passphrase=%PARAMETERS_SECRET% --output parameters.json %ENCODED_PARAMETERS_FILE%
+gpg --quiet --batch --yes --decrypt --passphrase=%JDBC_PRIVATE_KEY_SECRET% --output rsa_key_jdbc.p8 %ENCODED_RSA_KEY_FILE%
 
 REM DON'T FORGET TO include @echo off here or the password may be leaked!
 echo @echo off>parameters.bat
 jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.json >> parameters.bat
 call parameters.bat
+REM Set the private key file path directly to avoid encoding issues
+set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%GITHUB_WORKSPACE%\rsa_key_jdbc.p8"
+set "SNOWFLAKE_TEST_AUTHENTICATOR=SNOWFLAKE_JWT"
 if %ERRORLEVEL% NEQ 0 (
     echo === failed to set the test parameters
-    exit /b 1
-)
-echo @echo off>parametersorg.bat
-jq -r ".orgconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.json >> parametersorg.bat
-call parametersorg.bat
-if %ERRORLEVEL% NEQ 0 (
-    echo === failed to set the org parameters
     exit /b 1
 )
 set SNOWFLAKE_TEST_SCHEMA=%RUNNER_TRACKING_ID:-=_%_%GITHUB_SHA%
@@ -91,7 +91,7 @@ echo.>"%CLIENT_KNOWN_SSM_FILE_PATH%"
 echo "[INFO] Finish log setup"
 REM end setup log
 
-for /F "tokens=1,* delims==" %%i in ('set ^| findstr /I /R "^SNOWFLAKE_[^=]*$" ^| findstr /I /V /R "^SNOWFLAKE_PASS_[^=]*$" ^| sort') do (
+for /F "tokens=1,* delims==" %%i in ('set ^| findstr /I /R "^SNOWFLAKE_[^=]*$" ^| findstr /I /V /R "^SNOWFLAKE_(PASS|.*KEY|.*SECRET|.*TOKEN)_[^=]*$" ^| sort') do (
   echo %%i=%%j
 )
 
@@ -108,13 +108,23 @@ REM Avoid connection timeouts
 set MAVEN_OPTS="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
 echo "MAVEN OPTIONS %MAVEN_OPTS%"
 
-REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
+REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched after 3 retries
+REM Retry dependency:go-offline up to 3 times if it fails
+for /l %%i in (1,1,3) do (
+    echo [INFO] maven dependency:go-offline attempt %%i/3
+    cmd /c "%MVNW_EXE%" --batch-mode --show-version dependency:go-offline
+    if !errorlevel! equ 0 goto :success
+    if %%i equ 3 exit /b 1
+    echo [WARN] Retrying in 5 seconds...
+    timeout /t 5 /nobreak >nul
+)
+:success
 
 if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
     pushd FIPS
     echo "[INFO] Run Fips tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Dskip.unitTests=true ^
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites=FipsTestSuite ^
@@ -135,6 +145,7 @@ if "%JDBC_TEST_SUITES%"=="FipsTestSuite" (
 ) else (
     echo "[INFO] Run %JDBC_TEST_SUITES% tests"
     cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Dskip.unitTests=true ^
         -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
         -Djacoco.skip.instrument=false ^
         -DintegrationTestSuites="%JDBC_TEST_SUITES%" ^
