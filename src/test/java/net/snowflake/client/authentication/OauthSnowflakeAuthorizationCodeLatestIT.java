@@ -26,8 +26,10 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
   public void setUp() throws IOException {
     authTestHelper.cleanBrowserProcesses();
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, login);
-    AuthTestHelper.deleteOauthToken(AuthConnectionParameters.HOST, login);
-    AuthTestHelper.deleteOauthRefreshToken(AuthConnectionParameters.HOST, login);
+    AuthTestHelper.deleteOauthToken(
+        AuthConnectionParameters.HOST, AuthConnectionParameters.HOST, login, "");
+    AuthTestHelper.deleteOauthRefreshToken(
+        AuthConnectionParameters.HOST, AuthConnectionParameters.HOST, login, "");
     properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
   }
 
@@ -40,9 +42,16 @@ public class OauthSnowflakeAuthorizationCodeLatestIT {
   public static void tearDown() {
     Properties properties = getOAuthSnowflakeAuthorizationCodeConnectionParameters();
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, properties.getProperty("user"));
-    AuthTestHelper.deleteOauthToken(AuthConnectionParameters.HOST, properties.getProperty("user"));
+    AuthTestHelper.deleteOauthToken(
+        AuthConnectionParameters.HOST,
+        AuthConnectionParameters.HOST,
+        properties.getProperty("user"),
+        "");
     AuthTestHelper.deleteOauthRefreshToken(
-        AuthConnectionParameters.HOST, properties.getProperty("user"));
+        AuthConnectionParameters.HOST,
+        AuthConnectionParameters.HOST,
+        properties.getProperty("user"),
+        "");
   }
 
   @Test

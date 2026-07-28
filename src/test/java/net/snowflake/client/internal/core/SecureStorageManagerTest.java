@@ -252,20 +252,25 @@ public class SecureStorageManagerTest {
   void shouldBuildCredentialsKeyForAllTypes() {
     CacheKeyInput base =
         new CacheKeyInput(CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(), host, host, user, "");
-    assertThat(SecureStorageManager.buildCacheKey(base).startsWith("SnowflakeTokenCache.v2."), is(true));
+    assertThat(
+        SecureStorageManager.buildCacheKey(base).startsWith("SnowflakeTokenCache.v2."), is(true));
 
     CacheKeyInput refresh =
         new CacheKeyInput(
             CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(), host, host, user, "");
-    assertThat(SecureStorageManager.buildCacheKey(refresh).startsWith("SnowflakeTokenCache.v2."), is(true));
+    assertThat(
+        SecureStorageManager.buildCacheKey(refresh).startsWith("SnowflakeTokenCache.v2."),
+        is(true));
 
     CacheKeyInput id =
         new CacheKeyInput(CachedCredentialType.ID_TOKEN.getValue(), host, host, user, "");
-    assertThat(SecureStorageManager.buildCacheKey(id).startsWith("SnowflakeTokenCache.v2."), is(true));
+    assertThat(
+        SecureStorageManager.buildCacheKey(id).startsWith("SnowflakeTokenCache.v2."), is(true));
 
     CacheKeyInput mfa =
         new CacheKeyInput(CachedCredentialType.MFA_TOKEN.getValue(), host, host, user, "");
-    assertThat(SecureStorageManager.buildCacheKey(mfa).startsWith("SnowflakeTokenCache.v2."), is(true));
+    assertThat(
+        SecureStorageManager.buildCacheKey(mfa).startsWith("SnowflakeTokenCache.v2."), is(true));
   }
 
   // -------------------------------------------------------------------------
@@ -313,8 +318,7 @@ public class SecureStorageManagerTest {
         is("\"Analyst Role With Spaces\":NORTH_AMERICA:PROD:READONLY"));
     // Already-uppercase quoted segment — unchanged.
     assertThat(
-        SecureStorageManager.normalizeIdentifier(
-            "\"FIRST LAST\"@long-domain.example.com"),
+        SecureStorageManager.normalizeIdentifier("\"FIRST LAST\"@long-domain.example.com"),
         is("\"FIRST LAST\"@LONG-DOMAIN.EXAMPLE.COM"));
   }
 
@@ -347,11 +351,9 @@ public class SecureStorageManagerTest {
   @Test
   void shouldProduceStableKeyForMfaWithEmptyRole() {
     String key1 =
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
     String key2 =
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
     assertThat(key1, is(key2));
     assertThat(
         SecureStorageManager.buildCacheKey(
@@ -362,11 +364,9 @@ public class SecureStorageManagerTest {
   @Test
   void shouldProduceDifferentKeysForDifferentTokenTypes() {
     String idKey =
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("ID_TOKEN", host, host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("ID_TOKEN", host, host, user, ""));
     String mfaKey =
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
+        SecureStorageManager.buildCacheKey(new CacheKeyInput("MFA_TOKEN", host, host, user, ""));
     String oauthKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput("OAUTH_ACCESS_TOKEN", host, host, user, ""));
@@ -436,8 +436,7 @@ public class SecureStorageManagerTest {
   }
 
   private String buildTestKey(String tokenType) {
-    return SecureStorageManager.buildCacheKey(
-        new CacheKeyInput(tokenType, host, host, user, ""));
+    return SecureStorageManager.buildCacheKey(new CacheKeyInput(tokenType, host, host, user, ""));
   }
 
   private void testBody(SecureStorageManager manager) {
@@ -485,8 +484,7 @@ public class SecureStorageManagerTest {
     assertThat(manager.getCredential(mfaKey), equalTo(mfaToken));
 
     assertThat(
-        manager.deleteCredential(idKey),
-        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+        manager.deleteCredential(idKey), equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
     assertThat(manager.getCredential(idKey), equalTo(null));
 
     assertThat(manager.getCredential(mfaKey), equalTo(mfaToken));

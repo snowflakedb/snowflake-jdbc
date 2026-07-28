@@ -175,8 +175,7 @@ public class CredentialManager {
         loginInput.getUserName(),
         idpUrl);
     getInstance()
-        .fillCachedCredential(
-            loginInput, cacheKey, CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN);
+        .fillCachedCredential(loginInput, cacheKey, CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN);
   }
 
   /** Reuse the cached token stored locally */
@@ -393,13 +392,34 @@ public class CredentialManager {
     }
   }
 
-  /** Delete the id token cache */
+  /**
+   * Delete the id token cache (default role only — use the SFLoginInput overload when role is
+   * available)
+   */
   static void deleteIdTokenCacheEntry(String host, String user) {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(CachedCredentialType.ID_TOKEN.getValue(), host, host, user, ""));
     logger.debug(
         "Removing cached id token from a secure storage for user: {}, host: {}", user, host);
+    getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.ID_TOKEN);
+  }
+
+  /** Delete the id token cache with full dimensions (including role). */
+  static void deleteIdTokenCacheEntry(SFLoginInput loginInput) throws SFException {
+    String host = loginInput.getHostFromServerUrl();
+    String cacheKey =
+        SecureStorageManager.buildCacheKey(
+            new CacheKeyInput(
+                CachedCredentialType.ID_TOKEN.getValue(),
+                host,
+                host,
+                loginInput.getUserName(),
+                emptyIfNull(loginInput.getRole())));
+    logger.debug(
+        "Removing cached id token from a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        host);
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.ID_TOKEN);
   }
 
@@ -413,42 +433,40 @@ public class CredentialManager {
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.MFA_TOKEN);
   }
 
-  /** Delete the Oauth access token cache */
-  static void deleteOAuthAccessTokenCacheEntry(String host, String user) {
+  /** Delete the OAuth access token cache with explicit dimensions. */
+  static void deleteOAuthAccessTokenCacheEntry(
+      String idpUrl, String snowflakeHost, String user, String role) {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(), host, host, user, ""));
+                CachedCredentialType.OAUTH_ACCESS_TOKEN.getValue(),
+                idpUrl,
+                snowflakeHost,
+                user,
+                role));
     logger.debug(
-        "Removing cached oauth access token from a secure storage for user: {}, host: {}",
+        "Removing cached oauth access token from a secure storage for user: {}, idp: {}",
         user,
-        host);
+        idpUrl);
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.OAUTH_ACCESS_TOKEN);
   }
 
-  /** Delete the Oauth refresh token cache */
-  static void deleteOAuthRefreshTokenCacheEntry(String host, String user) {
+  /** Delete the OAuth refresh token cache with explicit dimensions. */
+  static void deleteOAuthRefreshTokenCacheEntry(
+      String idpUrl, String snowflakeHost, String user, String role) {
     String cacheKey =
         SecureStorageManager.buildCacheKey(
             new CacheKeyInput(
-                CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(), host, host, user, ""));
+                CachedCredentialType.OAUTH_REFRESH_TOKEN.getValue(),
+                idpUrl,
+                snowflakeHost,
+                user,
+                role));
     logger.debug(
-        "Removing cached OAuth refresh token from a secure storage for user: {}, host: {}",
+        "Removing cached OAuth refresh token from a secure storage for user: {}, idp: {}",
         user,
-        host);
+        idpUrl);
     getInstance().deleteTemporaryCredential(cacheKey, CachedCredentialType.OAUTH_REFRESH_TOKEN);
-  }
-
-  /** Delete the DPoP bundled access token cache */
-  static void deleteDPoPBundledAccessTokenCacheEntry(String host, String user) {
-    String cacheKey =
-        SecureStorageManager.buildCacheKey(
-            new CacheKeyInput(
-                CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN.getValue(), host, host, user, ""));
-    logger.debug(
-        "Removing cached DPoP public key from a secure storage for user: {}, host: {}", user, host);
-    getInstance()
-        .deleteTemporaryCredential(cacheKey, CachedCredentialType.DPOP_BUNDLED_ACCESS_TOKEN);
   }
 
   /** Delete the OAuth access token cache */
