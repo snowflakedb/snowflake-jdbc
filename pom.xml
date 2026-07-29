@@ -1033,6 +1033,21 @@
                       <pattern>META-INF.native.libio_grpc_netty_shaded_netty_transport_native_epoll</pattern>
                       <shadedPattern>META-INF.native.lib${shadeNativeBase}_grpc_netty_shaded_netty_transport_native_epoll</shadedPattern>
                     </relocation>
+                    <!-- Relocate the non-gRPC-shaded Netty native libraries so their names match the relocated io.netty
+                         package. Otherwise Netty's NativeLibraryLoader looks for lib${shadeNativeBase}_netty_* and fails
+                         with UnsatisfiedLinkError when the unshaded libnetty_* files are present. See issue #2705. -->
+                    <relocation>
+                      <pattern>META-INF.native.libnetty_transport_native_epoll</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_netty_transport_native_epoll</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libnetty_transport_native_kqueue</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_netty_transport_native_kqueue</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>META-INF.native.libnetty_resolver_dns_native_macos</pattern>
+                      <shadedPattern>META-INF.native.lib${shadeNativeBase}_netty_resolver_dns_native_macos</shadedPattern>
+                    </relocation>
                     <relocation>
                       <pattern>org.checkerframework</pattern>
                       <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
