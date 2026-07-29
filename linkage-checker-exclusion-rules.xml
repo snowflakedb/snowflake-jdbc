@@ -182,6 +182,11 @@
         <Reason>VarHandle @PolymorphicSignature methods are valid at runtime; false positive in linkage checker 1.5.13 with guava 33.5.0-jre</Reason>
     </LinkageError>
     <LinkageError>
+        <Target><Package name="java.lang.invoke"/></Target>
+        <Source><Package name="io.grpc.netty.shaded.io.netty"/></Source>
+        <Reason>VarHandle @PolymorphicSignature methods used by Netty 4.2.x (bundled in grpc-netty-shaded 1.83.0) in VarHandleByteBufferAccess and RefCnt; these code paths are only activated on Java 9+ via capability checks, never loaded on Java 8; false positive in linkage checker</Reason>
+    </LinkageError>
+    <LinkageError>
         <Target><Package name="java.util.zip"/></Target>
         <Source><Package name="com.google.common.hash"/></Source>
         <Reason>guava 33.5.0-jre uses CRC32C (Java 9+) with a runtime version check; safe on Java 8</Reason>

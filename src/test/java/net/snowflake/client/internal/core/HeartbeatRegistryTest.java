@@ -68,10 +68,11 @@ public class HeartbeatRegistryTest {
 
   @Test
   public void testAddSession_SingleSession() {
+    // interval = min(10, 60/4) = 10, floored to the 900s minimum
     registry.addSession(mockSession1, 60, 10);
 
     assertEquals(1, registry.getActiveThreadCount());
-    assertEquals(1, registry.getSessionCountForInterval(10));
+    assertEquals(1, registry.getSessionCountForInterval(900));
   }
 
   @Test
@@ -79,9 +80,9 @@ public class HeartbeatRegistryTest {
     registry.addSession(mockSession1, 60, 10);
     registry.addSession(mockSession2, 60, 10);
 
-    // Only ONE thread should exist
+    // Only ONE thread should exist (both sessions floored to the 900s minimum interval)
     assertEquals(1, registry.getActiveThreadCount());
-    assertEquals(2, registry.getSessionCountForInterval(10));
+    assertEquals(2, registry.getSessionCountForInterval(900));
 
     // Verify scheduler called only ONCE (no reschedule)
     verify(mockExecutor, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
@@ -89,7 +90,7 @@ public class HeartbeatRegistryTest {
 
   @Test
   public void testAddSession_MultipleSessionsDifferentIntervals_Independent() {
-    // Session 1: 60s validity, 10s heartbeat (interval = 10s)
+    // Session 1: 60s validity, 10s heartbeat (interval = 10s, floored to 900s)
     registry.addSession(mockSession1, 60, 10);
 
     // Session 2: 4h validity, 1h heartbeat (interval = 3600s)
@@ -97,18 +98,29 @@ public class HeartbeatRegistryTest {
 
     // TWO independent threads should exist
     assertEquals(2, registry.getActiveThreadCount());
-    assertEquals(1, registry.getSessionCountForInterval(10));
+    assertEquals(1, registry.getSessionCountForInterval(900));
     assertEquals(1, registry.getSessionCountForInterval(3600));
   }
 
   @Test
   public void testAddSession_CalculatesIntervalCorrectly() {
-    // Requested 100s, but validity/4 = 60/4 = 15s
-    registry.addSession(mockSession1, 60, 100);
+    // Requested 1000s, but validity/4 = 14400/4 = 3600s; both are above the 900s floor,
+    // so the interval reflects the min() of the two (1000s).
+    registry.addSession(mockSession1, 14400, 1000);
 
-    // Should use 15s (minimum of 100 and 60/4)
+    // Should use 1000s (minimum of 1000 and 14400/4)
     assertEquals(1, registry.getActiveThreadCount());
-    assertEquals(1, registry.getSessionCountForInterval(15));
+    assertEquals(1, registry.getSessionCountForInterval(1000));
+  }
+
+  @Test
+  public void testAddSession_IntervalFlooredToMinimum() {
+    // interval = min(10, 60/4) = 10, but is floored to the 900s minimum
+    registry.addSession(mockSession1, 60, 10);
+
+    assertEquals(1, registry.getActiveThreadCount());
+    assertEquals(1, registry.getSessionCountForInterval(900));
+    assertEquals(0, registry.getSessionCountForInterval(10));
   }
 
   @Test
@@ -135,11 +147,12 @@ public class HeartbeatRegistryTest {
     registry.addSession(mockSession1, 60, 10);
     registry.addSession(mockSession2, 60, 10);
 
-    assertEquals(2, registry.getSessionCountForInterval(10));
+    // both floored to the 900s minimum interval
+    assertEquals(2, registry.getSessionCountForInterval(900));
 
     registry.removeSession(mockSession1);
 
-    assertEquals(1, registry.getSessionCountForInterval(10));
+    assertEquals(1, registry.getSessionCountForInterval(900));
     assertEquals(1, registry.getActiveThreadCount());
   }
 
@@ -184,10 +197,11 @@ public class HeartbeatRegistryTest {
 
   @Test
   public void testCriticalBug_ShortSessionNotExpiredByLongSession() throws Exception {
-    // This tests the fix for the critical bug
+    // This tests the fix for the critical bug: a shorter-interval session must be heartbeated on
+    // its own schedule, independently of a longer-interval session.
 
-    // Session A: 60s validity, 10s heartbeat (interval = min(10, 60/4) = 10s)
-    registry.addSession(mockSession1, 60, 10);
+    // Session A: 1h validity, 15min heartbeat (interval = min(900, 3600/4) = 900s)
+    registry.addSession(mockSession1, 3600, 900);
 
     // Session B: 4h validity, 1h heartbeat (interval = min(3600, 14400/4) = 3600s)
     registry.addSession(mockSession2, 14400, 3600);
@@ -195,14 +209,14 @@ public class HeartbeatRegistryTest {
     // Verify TWO independent threads exist
     assertEquals(2, registry.getActiveThreadCount());
 
-    // Advance time by 65 seconds (past session1's validity)
-    manualClock.advance(Duration.ofSeconds(65));
+    // Advance time past session A's interval
+    manualClock.advance(Duration.ofSeconds(905));
 
     // Clear previous invocations
     clearInvocations(mockSession1, mockSession2);
 
-    // Trigger 10s heartbeat (for short-lived session)
-    registry.triggerHeartbeatForInterval(10);
+    // Trigger 900s heartbeat (for shorter-interval session)
+    registry.triggerHeartbeatForInterval(900);
 
     // Verify: Session1 got heartbeat (NOT expired)
     try {
@@ -216,11 +230,11 @@ public class HeartbeatRegistryTest {
 
   @Test
   public void testTriggerHeartbeatForInterval_OnlyAffectsSpecifiedInterval() throws Exception {
-    registry.addSession(mockSession1, 60, 10);
-    registry.addSession(mockSession2, 14400, 3600);
+    registry.addSession(mockSession1, 3600, 900); // interval = 900s
+    registry.addSession(mockSession2, 14400, 3600); // interval = 3600s
 
-    // Trigger only 10s interval
-    registry.triggerHeartbeatForInterval(10);
+    // Trigger only 900s interval
+    registry.triggerHeartbeatForInterval(900);
 
     try {
       verify(mockSession1, times(1)).heartbeat();
