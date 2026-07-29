@@ -143,7 +143,7 @@ public class SLF4JLogger implements SFLogger {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, masked);
+      slf4jLogger.info(msg, masked);
     }
   }
 
@@ -184,7 +184,7 @@ public class SLF4JLogger implements SFLogger {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
     } else {
-      slf4jLogger.error(msg);
+      slf4jLogger.warn(msg);
     }
   }
 
@@ -203,7 +203,7 @@ public class SLF4JLogger implements SFLogger {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, masked);
+      slf4jLogger.warn(msg, masked);
     }
   }
 
