@@ -46,7 +46,10 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void debug(String msg, boolean isMasked) {
-    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
+    if (!isDebugEnabled()) {
+      return;
+    }
+    msg = isMasked ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
@@ -75,6 +78,9 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void debug(String msg, Throwable t) {
+    if (!isDebugEnabled()) {
+      return;
+    }
     msg = SecretDetector.maskSecrets(msg);
     Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
@@ -86,7 +92,10 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void error(String msg, boolean isMasked) {
-    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
+    if (!isErrorEnabled()) {
+      return;
+    }
+    msg = isMasked ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
@@ -103,6 +112,9 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void error(String msg, Throwable t) {
+    if (!isErrorEnabled()) {
+      return;
+    }
     msg = SecretDetector.maskSecrets(msg);
     Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
@@ -114,7 +126,10 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void info(String msg, boolean isMasked) {
-    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
+    if (!isInfoEnabled()) {
+      return;
+    }
+    msg = isMasked ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
@@ -131,18 +146,24 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void info(String msg, Throwable t) {
+    if (!isInfoEnabled()) {
+      return;
+    }
     msg = SecretDetector.maskSecrets(msg);
     Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, masked);
+      slf4jLogger.info(msg, masked);
     }
   }
 
   public void trace(String msg, boolean isMasked) {
-    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
+    if (!isTraceEnabled()) {
+      return;
+    }
+    msg = isMasked ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
@@ -159,6 +180,9 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void trace(String msg, Throwable t) {
+    if (!isTraceEnabled()) {
+      return;
+    }
     msg = SecretDetector.maskSecrets(msg);
     Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
@@ -170,12 +194,15 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void warn(String msg, boolean isMasked) {
-    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
+    if (!isWarnEnabled()) {
+      return;
+    }
+    msg = isMasked ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
     } else {
-      slf4jLogger.error(msg);
+      slf4jLogger.warn(msg);
     }
   }
 
@@ -187,13 +214,16 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void warn(String msg, Throwable t) {
+    if (!isWarnEnabled()) {
+      return;
+    }
     msg = SecretDetector.maskSecrets(msg);
     Throwable masked = (t == null) ? null : new MaskedException(t);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, masked);
     } else {
-      slf4jLogger.error(msg, masked);
+      slf4jLogger.warn(msg, masked);
     }
   }
 
