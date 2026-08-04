@@ -81,8 +81,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
               // no explicit algorithm is set on the request. Clearing the explicit checksum
               // (setRequestIntegrityChecksum(false)) is the other half; BOTH are required, neither
               // alone fixes the corruption. Setting it at the client level also keeps any other
-              // request the SDK might issue on this client checksum-free (e.g. multipart parts, were
-              // multipart ever enabled), which never go through the PutObjectRequest built below.
+              // request the SDK might issue on this client checksum-free (e.g. multipart parts, if
+              // multipart were ever enabled) that never goes through the PutObjectRequest below.
               .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
               .endpointOverride(new URI(endpoint));
     } catch (URISyntaxException e) {
