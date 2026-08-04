@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.3.3-SNAPSHOT
-  - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP): `GCSAccessStrategyAwsSdk` forced an AWS SDK v2 CRC32 checksum that the streaming upload delivered as an `aws-chunked` trailer, which GCS stored verbatim, making `COPY INTO` fail with `bad parquet magic` (or `Failed to decrypt` on client-side-encrypted stages). The driver no longer requests the checksum on the GCS S3-interop path; real S3 uploads keep it (snowflakedb/snowflake-jdbc#XXXX).
+  - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
   - Fixed `SLF4JLogger` performing expensive `SecretDetector.maskSecrets()` regex work even when the log level is disabled, added level guards to all `(String, boolean)` and `(String, Throwable)` overloads to match `JDK14Logger` behavior (snowflakedb/snowflake-jdbc#2712).
   - Fixed the self-contained JAR shipping the non-gRPC-shaded Netty native libraries (`libnetty_transport_native_epoll_*`, `libnetty_transport_native_kqueue_*`, `libnetty_resolver_dns_native_macos_*`) unshaded, which caused an `UnsatisfiedLinkError` when they conflicted with a user's own Netty on the classpath. These libraries are now relocated with the `libnet_snowflake_client_jdbc_internal_netty_*` prefix to match the relocated `io.netty` package (snowflakedb/snowflake-jdbc#2705).
   - Bumped `google-cloud-storage` from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
