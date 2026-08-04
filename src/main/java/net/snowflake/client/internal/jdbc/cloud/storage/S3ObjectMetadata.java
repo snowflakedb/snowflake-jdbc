@@ -17,6 +17,13 @@ public class S3ObjectMetadata implements StorageObjectMetadata {
   private Long contentLength;
   private String contentEncoding;
 
+  // Whether to request an AWS SDK v2 flexible (CRC32) checksum on the PutObjectRequest.
+  // On the GCS S3-interop upload path (virtual-hosted-style, GCSAccessStrategyAwsSdk) the
+  // streaming request body forces the checksum to be delivered as an aws-chunked trailer,
+  // which GCS stores verbatim into the object and corrupts the file (SNOW-3888537). Real S3
+  // decodes that framing server-side, so the checksum stays enabled there.
+  private boolean requestIntegrityChecksum = true;
+
   S3ObjectMetadata() {}
 
   public S3ObjectMetadata(HeadObjectResponse meta) {
@@ -66,14 +73,28 @@ public class S3ObjectMetadata implements StorageObjectMetadata {
   }
 
   /**
+   * Controls whether {@link #getS3PutObjectRequest()} sets an explicit CRC32 checksum. Must be
+   * disabled for GCS S3-interop uploads, whose endpoint does not decode the aws-chunked checksum
+   * trailer that AWS SDK v2 emits for streaming bodies (SNOW-3888537).
+   *
+   * @param requestIntegrityChecksum whether to request the CRC32 checksum
+   */
+  void setRequestIntegrityChecksum(boolean requestIntegrityChecksum) {
+    this.requestIntegrityChecksum = requestIntegrityChecksum;
+  }
+
+  /**
    * @return Returns the encapsulated AWS S3 metadata request
    */
   PutObjectRequest getS3PutObjectRequest() {
-    return PutObjectRequest.builder()
-        .metadata(userMetadata)
-        .contentLength(contentLength)
-        .contentEncoding(contentEncoding)
-        .checksumAlgorithm(ChecksumAlgorithm.CRC32)
-        .build();
+    PutObjectRequest.Builder builder =
+        PutObjectRequest.builder()
+            .metadata(userMetadata)
+            .contentLength(contentLength)
+            .contentEncoding(contentEncoding);
+    if (requestIntegrityChecksum) {
+      builder.checksumAlgorithm(ChecksumAlgorithm.CRC32);
+    }
+    return builder.build();
   }
 }
