@@ -79,7 +79,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
               // corrupts the object. This is load-bearing, not optional: the SDK default is
               // WHEN_SUPPORTED (since 2.30.0), which re-adds a CRC32 to the streaming PUT even when
               // no explicit algorithm is set on the request. It also governs the multipart part
-              // requests the TransferManager may create, which never go through the PutObjectRequest
+              // requests the TransferManager may create, which never go through the
+              // PutObjectRequest
               // built below. Clearing the explicit checksum (setRequestIntegrityChecksum(false)) is
               // the other half; BOTH are required, neither alone fixes the corruption.
               .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
