@@ -151,11 +151,12 @@ class SnowflakeGCSClientTest {
   /**
    * SNOW-3888537: the GCS S3-interop client must be built with
    * RequestChecksumCalculation.WHEN_REQUIRED. This is load-bearing, not optional: the AWS SDK v2
-   * default is WHEN_SUPPORTED, which would auto-add a CRC32 to the streaming PUT (and to the
-   * multipart part requests the TransferManager may create) even though the PutObjectRequest itself
-   * no longer sets an explicit checksum. GCS stores the resulting aws-chunked trailer verbatim and
-   * corrupts the object, so removing this line silently reintroduces the corruption. This guards
-   * the half that S3ObjectMetadataTest cannot see (the request-level checksum is cleared there).
+   * default is WHEN_SUPPORTED, which would auto-add a CRC32 to the streaming PUT even though the
+   * PutObjectRequest itself no longer sets an explicit checksum (and would also apply to any other
+   * request the SDK might issue on this client, e.g. multipart parts if multipart were ever
+   * enabled). GCS stores the resulting aws-chunked trailer verbatim and corrupts the object, so
+   * removing this line silently reintroduces the corruption. This guards the half that
+   * S3ObjectMetadataTest cannot see (the request-level checksum is cleared there).
    */
   @Test
   void testAwsSdkStrategyBuildsClientWithChecksumWhenRequired() throws Exception {
