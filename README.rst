@@ -1,4 +1,4 @@
-Snowflake JDBC Driver
+Snowflake JDBC Driver 
 *********************
 
 .. image:: https://github.com/snowflakedb/snowflake-jdbc/workflows/Build%20and%20Test/badge.svg?branch=master
