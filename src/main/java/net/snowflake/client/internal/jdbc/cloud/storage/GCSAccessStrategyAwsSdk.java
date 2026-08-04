@@ -78,11 +78,11 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
               // AWS SDK v2 emits for a streaming body, so it stores the framing verbatim and
               // corrupts the object. This is load-bearing, not optional: the SDK default is
               // WHEN_SUPPORTED (since 2.30.0), which re-adds a CRC32 to the streaming PUT even when
-              // no explicit algorithm is set on the request. It also governs the multipart part
-              // requests the TransferManager may create, which never go through the
-              // PutObjectRequest
-              // built below. Clearing the explicit checksum (setRequestIntegrityChecksum(false)) is
-              // the other half; BOTH are required, neither alone fixes the corruption.
+              // no explicit algorithm is set on the request. Clearing the explicit checksum
+              // (setRequestIntegrityChecksum(false)) is the other half; BOTH are required, neither
+              // alone fixes the corruption. Setting it at the client level also keeps any other
+              // request the SDK might issue on this client checksum-free (e.g. multipart parts, were
+              // multipart ever enabled), which never go through the PutObjectRequest built below.
               .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
               .endpointOverride(new URI(endpoint));
     } catch (URISyntaxException e) {

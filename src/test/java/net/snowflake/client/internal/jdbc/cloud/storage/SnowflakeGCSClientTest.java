@@ -166,18 +166,27 @@ class SnowflakeGCSClientTest {
     SFSession session = createSession(true);
 
     GCSAccessStrategyAwsSdk strategy = new GCSAccessStrategyAwsSdk(stage, session);
+    // The constructor allocates real S3AsyncClient resources (Netty event loop, executor) even
+    // though this test makes no network call, so always release them.
+    try {
+      // Intentionally white-box: there is no public API to read a built client's checksum
+      // configuration, so we reflect into the S3AsyncClient's SdkClientConfiguration. This is
+      // coupled to AWS SDK internals (field is looked up by type to survive a rename) and may need
+      // updating on a major SDK upgrade or if the client is ever wrapped by a decorator.
+      Object s3Client = readField(strategy, "amazonClient");
+      SdkClientConfiguration clientConfiguration =
+          (SdkClientConfiguration) readFieldOfType(s3Client, SdkClientConfiguration.class);
+      RequestChecksumCalculation checksumCalculation =
+          clientConfiguration.option(SdkClientOption.REQUEST_CHECKSUM_CALCULATION);
 
-    Object s3Client = readField(strategy, "amazonClient");
-    SdkClientConfiguration clientConfiguration =
-        (SdkClientConfiguration) readFieldOfType(s3Client, SdkClientConfiguration.class);
-    RequestChecksumCalculation checksumCalculation =
-        clientConfiguration.option(SdkClientOption.REQUEST_CHECKSUM_CALCULATION);
-
-    assertEquals(
-        RequestChecksumCalculation.WHEN_REQUIRED,
-        checksumCalculation,
-        "GCS S3-interop client must be built with WHEN_REQUIRED so the SDK never auto-adds a "
-            + "checksum that GCS would store verbatim (SNOW-3888537)");
+      assertEquals(
+          RequestChecksumCalculation.WHEN_REQUIRED,
+          checksumCalculation,
+          "GCS S3-interop client must be built with WHEN_REQUIRED so the SDK never auto-adds a "
+              + "checksum that GCS would store verbatim (SNOW-3888537)");
+    } finally {
+      strategy.shutdown();
+    }
   }
 
   private static Object readField(Object target, String name) throws Exception {
