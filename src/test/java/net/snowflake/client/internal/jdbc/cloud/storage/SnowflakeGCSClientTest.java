@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.reflect.Field;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,9 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
+import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
+import software.amazon.awssdk.core.client.config.SdkClientOption;
 
 class SnowflakeGCSClientTest {
 
@@ -142,5 +146,56 @@ class SnowflakeGCSClientTest {
     assertDoesNotThrow(
         () -> SnowflakeGCSClient.createSnowflakeGCSClient(stage, null, session),
         "Endpoint with https:// prefix should be passed through as-is");
+  }
+
+  /**
+   * SNOW-3888537: the GCS S3-interop client must be built with
+   * RequestChecksumCalculation.WHEN_REQUIRED. This is load-bearing, not optional: the AWS SDK v2
+   * default is WHEN_SUPPORTED, which would auto-add a CRC32 to the streaming PUT (and to the
+   * multipart part requests the TransferManager may create) even though the PutObjectRequest itself
+   * no longer sets an explicit checksum. GCS stores the resulting aws-chunked trailer verbatim and
+   * corrupts the object, so removing this line silently reintroduces the corruption. This guards
+   * the half that S3ObjectMetadataTest cannot see (the request-level checksum is cleared there).
+   */
+  @Test
+  void testAwsSdkStrategyBuildsClientWithChecksumWhenRequired() throws Exception {
+    Map<String, String> credentials = new HashMap<>();
+    credentials.put("GCS_ACCESS_TOKEN", "test-token");
+    StageInfo stage = createGCSStageInfo(credentials);
+    stage.setUseVirtualUrl(true);
+    SFSession session = createSession(true);
+
+    GCSAccessStrategyAwsSdk strategy = new GCSAccessStrategyAwsSdk(stage, session);
+
+    Object s3Client = readField(strategy, "amazonClient");
+    SdkClientConfiguration clientConfiguration =
+        (SdkClientConfiguration) readFieldOfType(s3Client, SdkClientConfiguration.class);
+    RequestChecksumCalculation checksumCalculation =
+        clientConfiguration.option(SdkClientOption.REQUEST_CHECKSUM_CALCULATION);
+
+    assertEquals(
+        RequestChecksumCalculation.WHEN_REQUIRED,
+        checksumCalculation,
+        "GCS S3-interop client must be built with WHEN_REQUIRED so the SDK never auto-adds a "
+            + "checksum that GCS would store verbatim (SNOW-3888537)");
+  }
+
+  private static Object readField(Object target, String name) throws Exception {
+    Field field = target.getClass().getDeclaredField(name);
+    field.setAccessible(true);
+    return field.get(target);
+  }
+
+  private static Object readFieldOfType(Object target, Class<?> type) throws Exception {
+    for (Class<?> c = target.getClass(); c != null; c = c.getSuperclass()) {
+      for (Field field : c.getDeclaredFields()) {
+        if (type.isAssignableFrom(field.getType())) {
+          field.setAccessible(true);
+          return field.get(target);
+        }
+      }
+    }
+    throw new NoSuchFieldException(
+        "no field of type " + type.getName() + " on " + target.getClass().getName());
   }
 }

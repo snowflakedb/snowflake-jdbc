@@ -74,9 +74,14 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
           S3AsyncClient.builder()
               .region(Region.US_WEST_2) // dummy region, just to satisfy the builder
               .forcePathStyle(false)
-              // GCS S3-interop cannot decode aws-chunked checksum trailers, so never let the SDK
-              // add a request checksum on this client (defense-in-depth for SNOW-3888537; the
-              // upload path additionally clears the explicit CRC32 on the PutObjectRequest).
+              // SNOW-3888537: GCS S3-interop cannot decode the aws-chunked checksum trailer that
+              // AWS SDK v2 emits for a streaming body, so it stores the framing verbatim and
+              // corrupts the object. This is load-bearing, not optional: the SDK default is
+              // WHEN_SUPPORTED (since 2.30.0), which re-adds a CRC32 to the streaming PUT even when
+              // no explicit algorithm is set on the request. It also governs the multipart part
+              // requests the TransferManager may create, which never go through the PutObjectRequest
+              // built below. Clearing the explicit checksum (setRequestIntegrityChecksum(false)) is
+              // the other half; BOTH are required, neither alone fixes the corruption.
               .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
               .endpointOverride(new URI(endpoint));
     } catch (URISyntaxException e) {
@@ -232,9 +237,10 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setContentLength(contentLength);
     s3ObjectMetadata.setUserMetadata(metadata);
-    // GCS (S3-interop) does not decode the aws-chunked checksum trailer that AWS SDK v2 emits for
-    // a streaming request-level checksum; it would store the framing verbatim and corrupt the
-    // object (SNOW-3888537). Do not request the CRC32 checksum on this path.
+    // SNOW-3888537: clear the explicit CRC32 checksum on this GCS S3-interop request. Necessary
+    // but not sufficient on its own -- the client is also built with
+    // RequestChecksumCalculation.WHEN_REQUIRED (see constructor), because the SDK default would
+    // otherwise re-add a checksum. Both changes are required.
     s3ObjectMetadata.setRequestIntegrityChecksum(false);
 
     PutObjectRequest request =
