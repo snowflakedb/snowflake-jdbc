@@ -44,7 +44,7 @@
     <reactor.core.version>3.7.19</reactor.core.version>
     <reactor.netty.core.version>1.2.18</reactor.netty.core.version>
     <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
-    <bouncycastle.version>1.84</bouncycastle.version>
+    <bouncycastle.version>1.85</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
