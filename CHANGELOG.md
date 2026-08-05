@@ -7,6 +7,7 @@
   - Bumped `google-cloud-storage` from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
   - Changed minimum heartbeat interval to 15 minutes (snowflakedb/snowflake-jdbc#2708).
   - Bumped grpc-java to 1.83.1 (snowflakedb/snowflake-jdbc#2707, snowflakedb/snowflake-jdbc#2713).
+  - Bumped BouncyCastle dependencies' versions (snowflakedb/snowflake-jdbc#2718).
 
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).

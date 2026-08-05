@@ -33,9 +33,9 @@
     <reactor.core.version>3.7.19</reactor.core.version>
     <reactor.netty.core.version>1.2.18</reactor.netty.core.version>
     <awssdk.encryption.s3.version>3.4.0</awssdk.encryption.s3.version>
-    <bouncycastle.version>1.84</bouncycastle.version>
-    <bouncycastle.bcfips.version>1.0.2.6</bouncycastle.bcfips.version>
-    <bouncycastle.bcpkixfips.version>1.0.8</bouncycastle.bcpkixfips.version>
+    <bouncycastle.version>1.85</bouncycastle.version>
+    <bouncycastle.bcfips.version>1.0.2.7</bouncycastle.bcfips.version>
+    <bouncycastle.bcpkixfips.version>1.0.12</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.49.0</checkerframework.version>
