@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -21,19 +20,15 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
-import software.amazon.awssdk.http.SdkHttpFullResponse;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.async.AsyncExecuteRequest;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.async.SdkAsyncHttpResponseHandler;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -215,8 +210,8 @@ class SnowflakeGCSClientTest {
                     new ByteArrayInputStream(payload), (long) payload.length, executor))
             .join();
       } catch (RuntimeException ignore) {
-        // The stub http client returns an empty 200, so response unmarshalling may fail. We only
-        // need the request the SDK emitted, which the interceptor captured before transmission.
+        // The stub http client fails the transmission on purpose. We only need the request the SDK
+        // emitted, which the interceptor captured (before transmission) with its final headers.
       }
     } finally {
       executor.shutdownNow();
@@ -251,50 +246,22 @@ class SnowflakeGCSClientTest {
   }
 
   /**
-   * Minimal async HTTP client that makes no network call: it drains the request body and completes
-   * with an empty 200 so the SDK request pipeline (incl. checksum handling) runs to transmission
-   * without leaving the JVM.
+   * Minimal async HTTP client that makes no network call. By the time {@code execute} runs, the SDK
+   * has already fired {@code beforeTransmission} and finalized the request headers (signing +
+   * flexible-checksum stages), so the interceptor has captured everything we assert on. We simply
+   * fail the request fast -- without subscribing to the body or emitting a response -- so the stub
+   * needs no reactive-streams plumbing. A plain (non-IOException) failure is not retried, so this
+   * runs a single attempt.
    */
   private static final class NoNetworkAsyncHttpClient implements SdkAsyncHttpClient {
     @Override
     public CompletableFuture<Void> execute(AsyncExecuteRequest request) {
+      Throwable error = new UnsupportedOperationException("no network in unit test");
+      // Signal failure through the response handler so the operation future completes (otherwise
+      // the SDK waits for a response that never arrives), then fail the transmission future too.
+      request.responseHandler().onError(error);
       CompletableFuture<Void> future = new CompletableFuture<>();
-      request
-          .requestContentPublisher()
-          .subscribe(
-              new Subscriber<ByteBuffer>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                  subscription.request(Long.MAX_VALUE);
-                }
-
-                @Override
-                public void onNext(ByteBuffer byteBuffer) {}
-
-                @Override
-                public void onError(Throwable throwable) {
-                  future.completeExceptionally(throwable);
-                }
-
-                @Override
-                public void onComplete() {
-                  SdkAsyncHttpResponseHandler handler = request.responseHandler();
-                  handler.onHeaders(SdkHttpFullResponse.builder().statusCode(200).build());
-                  handler.onStream(
-                      subscriber ->
-                          subscriber.onSubscribe(
-                              new Subscription() {
-                                @Override
-                                public void request(long n) {
-                                  subscriber.onComplete();
-                                }
-
-                                @Override
-                                public void cancel() {}
-                              }));
-                  future.complete(null);
-                }
-              });
+      future.completeExceptionally(error);
       return future;
     }
 
