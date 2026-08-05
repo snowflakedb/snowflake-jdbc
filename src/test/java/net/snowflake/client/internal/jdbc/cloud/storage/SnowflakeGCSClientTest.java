@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -20,16 +19,13 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.async.AsyncExecuteRequest;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -165,36 +161,52 @@ class SnowflakeGCSClientTest {
   }
 
   /**
-   * SNOW-3888537: guard for the GCS S3-interop checksum fix. On this path the upload body is a
-   * streaming AsyncRequestBody, so AWS SDK v2 can only deliver a flexible checksum as an
-   * aws-chunked trailer, which GCS stores verbatim and corrupts the object. The fix has two halves,
-   * both load-bearing: {@code S3ObjectMetadata.setRequestIntegrityChecksum(false)} clears the
-   * explicit CRC32 on the request, and the client is built with {@code
-   * RequestChecksumCalculation.WHEN_REQUIRED} so the SDK default (WHEN_SUPPORTED since 2.30.0)
-   * doesn't re-add one. This test mirrors those two settings, builds the request through the real
-   * {@link S3ObjectMetadata} path, and asserts via a capturing {@link ExecutionInterceptor} (the
-   * same interceptor mechanism the strategy itself uses) that the emitted PUT carries no
-   * flexible-checksum header/trailer and is not aws-chunked framed -- asserting behavior, not a
-   * private config field. The authoritative regression guard is the live e2e {@code
-   * SnowflakeDriverIT.testPutCopyIntoWith256BitEncryptionOnAllAccounts} (gcpaccount_awssdk); this
-   * is the fast, offline complement.
+   * SNOW-3888537 request-half guard (the load-bearing fix). Drives the REAL production client
+   * ({@link GCSAccessStrategyAwsSdk}, GCP signer on) with only a no-network HTTP client and a
+   * capturing interceptor swapped in, and asserts the emitted GCS PUT carries no flexible-checksum
+   * header/trailer and is not aws-chunked framed. Positive control: re-enabling the explicit
+   * checksum turns it red even with the signer present.
    */
   @Test
   void testAwsSdkStrategyEmitsNoChecksumTrailerOnGcsPut() throws Exception {
+    SdkHttpRequest emitted = emitGcsPutAndCapture(/* installGcpSigner= */ true);
+    assertNoFlexibleChecksum(emitted, "GCS S3-interop PUT (production client)");
+  }
+
+  /**
+   * SNOW-3888537 client-half guard (future-proofing). WHEN_REQUIRED is inert on the prod path (the
+   * GCP signer masks the SDK's WHEN_SUPPORTED auto-checksum), so this test drops the signer ({@code
+   * installGcpSigner=false}) to make the client-level calc observable and asserts the PUT still has
+   * no checksum trailer. Honest scope: guards the config line under a non-prod signer. Positive
+   * control: flipping the client to WHEN_SUPPORTED turns it red.
+   */
+  @Test
+  void testClientLevelChecksumCalcIsWhenRequired() throws Exception {
+    SdkHttpRequest emitted = emitGcsPutAndCapture(/* installGcpSigner= */ false);
+    assertNoFlexibleChecksum(emitted, "GCS S3-interop client (WHEN_REQUIRED, signer suppressed)");
+  }
+
+  /**
+   * Builds the real production GCS client via the test seam (no-network HTTP client + capturing
+   * interceptor), issues a streaming PUT built through the real {@link S3ObjectMetadata} opt-out
+   * path, and returns the request the SDK actually emitted (captured pre-transmission).
+   */
+  private SdkHttpRequest emitGcsPutAndCapture(boolean installGcpSigner) throws Exception {
     CapturingHttpRequestInterceptor interceptor = new CapturingHttpRequestInterceptor();
     ExecutorService executor = Executors.newSingleThreadExecutor();
     byte[] payload = "PAR1-streamed-body".getBytes(StandardCharsets.UTF_8);
 
-    try (S3AsyncClient client =
-        S3AsyncClient.builder()
-            .region(Region.US_WEST_2)
-            .forcePathStyle(false)
-            .endpointOverride(URI.create("https://storage.googleapis.com"))
-            .credentialsProvider(AnonymousCredentialsProvider.create())
-            .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
-            .httpClient(new NoNetworkAsyncHttpClient())
-            .overrideConfiguration(o -> o.addExecutionInterceptor(interceptor))
-            .build()) {
+    Map<String, String> credentials = new HashMap<>();
+    credentials.put("GCS_ACCESS_TOKEN", "test-token");
+    StageInfo stage = createGCSStageInfo(credentials);
+    stage.setUseVirtualUrl(true);
+    SFSession session = createSession(true);
+
+    GCSAccessStrategyAwsSdk strategy =
+        new GCSAccessStrategyAwsSdk(
+            stage, session, new NoNetworkAsyncHttpClient(), interceptor, installGcpSigner);
+    try {
+      S3AsyncClient client = strategy.clientForTest();
 
       S3ObjectMetadata metadata = new S3ObjectMetadata();
       metadata.setContentLength((long) payload.length);
@@ -210,25 +222,28 @@ class SnowflakeGCSClientTest {
                     new ByteArrayInputStream(payload), (long) payload.length, executor))
             .join();
       } catch (RuntimeException ignore) {
-        // The stub http client fails the transmission on purpose. We only need the request the SDK
-        // emitted, which the interceptor captured (before transmission) with its final headers.
+        // Stub fails transmission on purpose; the interceptor already captured the request.
       }
     } finally {
       executor.shutdownNow();
+      strategy.shutdown();
     }
 
     SdkHttpRequest emitted = interceptor.capturedRequest();
     assertNotNull(emitted, "no request was emitted to the HTTP client");
+    return emitted;
+  }
+
+  private static void assertNoFlexibleChecksum(SdkHttpRequest emitted, String context) {
     for (String header : emitted.headers().keySet()) {
       String lower = header.toLowerCase(Locale.ROOT);
       assertFalse(
           lower.startsWith("x-amz-checksum-") || lower.equals("x-amz-trailer"),
-          "GCS S3-interop PUT must have no flexible-checksum header/trailer (SNOW-3888537): "
-              + header);
+          context + " must carry no flexible-checksum header/trailer (SNOW-3888537): " + header);
     }
     assertFalse(
         emitted.firstMatchingHeader("Content-Encoding").orElse("").contains("aws-chunked"),
-        "GCS S3-interop PUT must not be aws-chunked framed (SNOW-3888537)");
+        context + " must not be aws-chunked framed (SNOW-3888537)");
   }
 
   /** Captures the final HTTP request the SDK is about to transmit, for behavioral assertions. */
@@ -246,19 +261,16 @@ class SnowflakeGCSClientTest {
   }
 
   /**
-   * Minimal async HTTP client that makes no network call. By the time {@code execute} runs, the SDK
-   * has already fired {@code beforeTransmission} and finalized the request headers (signing +
-   * flexible-checksum stages), so the interceptor has captured everything we assert on. We simply
-   * fail the request fast -- without subscribing to the body or emitting a response -- so the stub
-   * needs no reactive-streams plumbing. A plain (non-IOException) failure is not retried, so this
-   * runs a single attempt.
+   * Async HTTP client that makes no network call. By the time {@code execute} runs the SDK has
+   * already fired {@code beforeTransmission} with final headers, so the interceptor has what we
+   * assert on. It fails fast without subscribing to the body (no reactive-streams plumbing needed);
+   * a non-IOException failure is not retried, so this is a single attempt.
    */
   private static final class NoNetworkAsyncHttpClient implements SdkAsyncHttpClient {
     @Override
     public CompletableFuture<Void> execute(AsyncExecuteRequest request) {
       Throwable error = new UnsupportedOperationException("no network in unit test");
-      // Signal failure through the response handler so the operation future completes (otherwise
-      // the SDK waits for a response that never arrives), then fail the transmission future too.
+      // Complete via the response handler (else the SDK waits forever), then fail the future.
       request.responseHandler().onError(error);
       CompletableFuture<Void> future = new CompletableFuture<>();
       future.completeExceptionally(error);

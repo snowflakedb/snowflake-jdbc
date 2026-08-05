@@ -33,7 +33,9 @@ import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -57,6 +59,22 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private final S3AsyncClient amazonClient;
 
   GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
+    this(stage, session, null, null, true);
+  }
+
+  /**
+   * Visible for testing. Lets a test run the client offline (no-network HTTP client), capture the
+   * emitted request (interceptor), and optionally skip the AwsSdkGCPSigner. installGcpSigner MUST
+   * be true in production; only the client-level checksum guard test sets it false, because the GCP
+   * signer masks the SDK's WHEN_SUPPORTED auto-checksum that test needs to observe (SNOW-3888537).
+   */
+  GCSAccessStrategyAwsSdk(
+      StageInfo stage,
+      SFBaseSession session,
+      SdkAsyncHttpClient httpClientOverride,
+      ExecutionInterceptor testInterceptor,
+      boolean installGcpSigner)
+      throws SnowflakeSQLException {
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
 
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
@@ -74,15 +92,12 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
           S3AsyncClient.builder()
               .region(Region.US_WEST_2) // dummy region, just to satisfy the builder
               .forcePathStyle(false)
-              // SNOW-3888537: GCS S3-interop cannot decode the aws-chunked checksum trailer that
-              // AWS SDK v2 emits for a streaming body, so it stores the framing verbatim and
-              // corrupts the object. This is load-bearing, not optional: the SDK default is
-              // WHEN_SUPPORTED (since 2.30.0), which re-adds a CRC32 to the streaming PUT even when
-              // no explicit algorithm is set on the request. Clearing the explicit checksum
-              // (setRequestIntegrityChecksum(false)) is the other half; BOTH are required, neither
-              // alone fixes the corruption. Setting it at the client level also keeps any other
-              // request the SDK might issue on this client checksum-free (e.g. multipart parts, if
-              // multipart were ever enabled) that never goes through the PutObjectRequest below.
+              // SNOW-3888537: defense-in-depth, not the load-bearing half. The fix is clearing the
+              // explicit CRC32 on the upload request (setRequestIntegrityChecksum(false), below).
+              // This WHEN_REQUIRED is inert on the current path -- the AwsSdkGCPSigner masks the
+              // SDK's default WHEN_SUPPORTED auto-checksum, so flipping it is a no-op on the wire
+              // (verified e2e). Kept as cheap insurance against a future signer/SDK-auth change and
+              // for non-PutObject requests (e.g. multipart parts) that skip the opt-out above.
               .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
               .endpointOverride(new URI(endpoint));
     } catch (URISyntaxException e) {
@@ -94,8 +109,10 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
         ClientOverrideConfiguration.builder();
 
     // Add signer interceptor for bearer token auth and header mapping
-    overrideConfiguration.putAdvancedOption(
-        SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
+    if (installGcpSigner) {
+      overrideConfiguration.putAdvancedOption(
+          SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
+    }
 
     // Disable the SDK's own internal retries so the outer JDBC retry loop in
     // SnowflakeGCSClient.upload() is the sole controller of retry count and backoff.
@@ -123,15 +140,28 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       }
     }
 
+    if (testInterceptor != null) {
+      overrideConfiguration.addExecutionInterceptor(testInterceptor);
+    }
+
     clientBuilder.overrideConfiguration(overrideConfiguration.build());
 
     // Use anonymous credentials to minimize AWS signing
     clientBuilder.credentialsProvider(AnonymousCredentialsProvider.create());
 
-    clientBuilder.httpClientBuilder(
-        NettyNioAsyncHttpClient.builder().proxyConfiguration(proxyConfiguration));
+    if (httpClientOverride != null) {
+      clientBuilder.httpClient(httpClientOverride);
+    } else {
+      clientBuilder.httpClientBuilder(
+          NettyNioAsyncHttpClient.builder().proxyConfiguration(proxyConfiguration));
+    }
 
     amazonClient = clientBuilder.build();
+  }
+
+  /** Visible for testing: the S3 client this strategy built. */
+  S3AsyncClient clientForTest() {
+    return amazonClient;
   }
 
   @Override
@@ -238,10 +268,9 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setContentLength(contentLength);
     s3ObjectMetadata.setUserMetadata(metadata);
-    // SNOW-3888537: clear the explicit CRC32 checksum on this GCS S3-interop request. Necessary
-    // but not sufficient on its own -- the client is also built with
-    // RequestChecksumCalculation.WHEN_REQUIRED (see constructor), because the SDK default would
-    // otherwise re-add a checksum. Both changes are required.
+    // SNOW-3888537: load-bearing fix. Clearing the explicit CRC32 stops the SDK from delivering it
+    // as an aws-chunked trailer that GCS stores verbatim (corrupting the object). The client-level
+    // WHEN_REQUIRED (see constructor) is only defense-in-depth here.
     s3ObjectMetadata.setRequestIntegrityChecksum(false);
 
     PutObjectRequest request =
