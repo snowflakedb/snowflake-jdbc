@@ -2,20 +2,41 @@ package net.snowflake.client.internal.jdbc.cloud.storage;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.lang.reflect.Field;
+import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
-import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
-import software.amazon.awssdk.core.client.config.SdkClientOption;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.http.SdkHttpFullResponse;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.async.AsyncExecuteRequest;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.async.SdkAsyncHttpResponseHandler;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 class SnowflakeGCSClientTest {
 
@@ -149,63 +170,140 @@ class SnowflakeGCSClientTest {
   }
 
   /**
-   * SNOW-3888537: the GCS S3-interop client must be built with
-   * RequestChecksumCalculation.WHEN_REQUIRED. This is load-bearing, not optional: the AWS SDK v2
-   * default is WHEN_SUPPORTED, which would auto-add a CRC32 to the streaming PUT even though the
-   * PutObjectRequest itself no longer sets an explicit checksum (and would also apply to any other
-   * request the SDK might issue on this client, e.g. multipart parts if multipart were ever
-   * enabled). GCS stores the resulting aws-chunked trailer verbatim and corrupts the object, so
-   * removing this line silently reintroduces the corruption. This guards the half that
-   * S3ObjectMetadataTest cannot see (the request-level checksum is cleared there).
+   * SNOW-3888537: guard for the GCS S3-interop checksum fix. On this path the upload body is a
+   * streaming AsyncRequestBody, so AWS SDK v2 can only deliver a flexible checksum as an
+   * aws-chunked trailer, which GCS stores verbatim and corrupts the object. The fix has two halves,
+   * both load-bearing: {@code S3ObjectMetadata.setRequestIntegrityChecksum(false)} clears the
+   * explicit CRC32 on the request, and the client is built with {@code
+   * RequestChecksumCalculation.WHEN_REQUIRED} so the SDK default (WHEN_SUPPORTED since 2.30.0)
+   * doesn't re-add one. This test mirrors those two settings, builds the request through the real
+   * {@link S3ObjectMetadata} path, and asserts via a capturing {@link ExecutionInterceptor} (the
+   * same interceptor mechanism the strategy itself uses) that the emitted PUT carries no
+   * flexible-checksum header/trailer and is not aws-chunked framed -- asserting behavior, not a
+   * private config field. The authoritative regression guard is the live e2e {@code
+   * SnowflakeDriverIT.testPutCopyIntoWith256BitEncryptionOnAllAccounts} (gcpaccount_awssdk); this
+   * is the fast, offline complement.
    */
   @Test
-  void testAwsSdkStrategyBuildsClientWithChecksumWhenRequired() throws Exception {
-    Map<String, String> credentials = new HashMap<>();
-    credentials.put("GCS_ACCESS_TOKEN", "test-token");
-    StageInfo stage = createGCSStageInfo(credentials);
-    stage.setUseVirtualUrl(true);
-    SFSession session = createSession(true);
+  void testAwsSdkStrategyEmitsNoChecksumTrailerOnGcsPut() throws Exception {
+    CapturingHttpRequestInterceptor interceptor = new CapturingHttpRequestInterceptor();
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    byte[] payload = "PAR1-streamed-body".getBytes(StandardCharsets.UTF_8);
 
-    GCSAccessStrategyAwsSdk strategy = new GCSAccessStrategyAwsSdk(stage, session);
-    // The constructor allocates real S3AsyncClient resources (Netty event loop, executor) even
-    // though this test makes no network call, so always release them.
-    try {
-      // Intentionally white-box: there is no public API to read a built client's checksum
-      // configuration, so we reflect into the S3AsyncClient's SdkClientConfiguration. This is
-      // coupled to AWS SDK internals (field is looked up by type to survive a rename) and may need
-      // updating on a major SDK upgrade or if the client is ever wrapped by a decorator.
-      Object s3Client = readField(strategy, "amazonClient");
-      SdkClientConfiguration clientConfiguration =
-          (SdkClientConfiguration) readFieldOfType(s3Client, SdkClientConfiguration.class);
-      RequestChecksumCalculation checksumCalculation =
-          clientConfiguration.option(SdkClientOption.REQUEST_CHECKSUM_CALCULATION);
+    try (S3AsyncClient client =
+        S3AsyncClient.builder()
+            .region(Region.US_WEST_2)
+            .forcePathStyle(false)
+            .endpointOverride(URI.create("https://storage.googleapis.com"))
+            .credentialsProvider(AnonymousCredentialsProvider.create())
+            .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
+            .httpClient(new NoNetworkAsyncHttpClient())
+            .overrideConfiguration(o -> o.addExecutionInterceptor(interceptor))
+            .build()) {
 
-      assertEquals(
-          RequestChecksumCalculation.WHEN_REQUIRED,
-          checksumCalculation,
-          "GCS S3-interop client must be built with WHEN_REQUIRED so the SDK never auto-adds a "
-              + "checksum that GCS would store verbatim (SNOW-3888537)");
-    } finally {
-      strategy.shutdown();
-    }
-  }
+      S3ObjectMetadata metadata = new S3ObjectMetadata();
+      metadata.setContentLength((long) payload.length);
+      metadata.setRequestIntegrityChecksum(false);
+      PutObjectRequest request =
+          metadata.getS3PutObjectRequest().toBuilder().bucket("bucket").key("key").build();
 
-  private static Object readField(Object target, String name) throws Exception {
-    Field field = target.getClass().getDeclaredField(name);
-    field.setAccessible(true);
-    return field.get(target);
-  }
-
-  private static Object readFieldOfType(Object target, Class<?> type) throws Exception {
-    for (Class<?> c = target.getClass(); c != null; c = c.getSuperclass()) {
-      for (Field field : c.getDeclaredFields()) {
-        if (type.isAssignableFrom(field.getType())) {
-          field.setAccessible(true);
-          return field.get(target);
-        }
+      try {
+        client
+            .putObject(
+                request,
+                AsyncRequestBody.fromInputStream(
+                    new ByteArrayInputStream(payload), (long) payload.length, executor))
+            .join();
+      } catch (RuntimeException ignore) {
+        // The stub http client returns an empty 200, so response unmarshalling may fail. We only
+        // need the request the SDK emitted, which the interceptor captured before transmission.
       }
+    } finally {
+      executor.shutdownNow();
     }
-    throw new NoSuchFieldException(
-        "no field of type " + type.getName() + " on " + target.getClass().getName());
+
+    SdkHttpRequest emitted = interceptor.capturedRequest();
+    assertNotNull(emitted, "no request was emitted to the HTTP client");
+    for (String header : emitted.headers().keySet()) {
+      String lower = header.toLowerCase(Locale.ROOT);
+      assertFalse(
+          lower.startsWith("x-amz-checksum-") || lower.equals("x-amz-trailer"),
+          "GCS S3-interop PUT must have no flexible-checksum header/trailer (SNOW-3888537): "
+              + header);
+    }
+    assertFalse(
+        emitted.firstMatchingHeader("Content-Encoding").orElse("").contains("aws-chunked"),
+        "GCS S3-interop PUT must not be aws-chunked framed (SNOW-3888537)");
+  }
+
+  /** Captures the final HTTP request the SDK is about to transmit, for behavioral assertions. */
+  private static final class CapturingHttpRequestInterceptor implements ExecutionInterceptor {
+    private volatile SdkHttpRequest httpRequest;
+
+    @Override
+    public void beforeTransmission(Context.BeforeTransmission context, ExecutionAttributes attrs) {
+      this.httpRequest = context.httpRequest();
+    }
+
+    SdkHttpRequest capturedRequest() {
+      return httpRequest;
+    }
+  }
+
+  /**
+   * Minimal async HTTP client that makes no network call: it drains the request body and completes
+   * with an empty 200 so the SDK request pipeline (incl. checksum handling) runs to transmission
+   * without leaving the JVM.
+   */
+  private static final class NoNetworkAsyncHttpClient implements SdkAsyncHttpClient {
+    @Override
+    public CompletableFuture<Void> execute(AsyncExecuteRequest request) {
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      request
+          .requestContentPublisher()
+          .subscribe(
+              new Subscriber<ByteBuffer>() {
+                @Override
+                public void onSubscribe(Subscription subscription) {
+                  subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(ByteBuffer byteBuffer) {}
+
+                @Override
+                public void onError(Throwable throwable) {
+                  future.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                  SdkAsyncHttpResponseHandler handler = request.responseHandler();
+                  handler.onHeaders(SdkHttpFullResponse.builder().statusCode(200).build());
+                  handler.onStream(
+                      subscriber ->
+                          subscriber.onSubscribe(
+                              new Subscription() {
+                                @Override
+                                public void request(long n) {
+                                  subscriber.onComplete();
+                                }
+
+                                @Override
+                                public void cancel() {}
+                              }));
+                  future.complete(null);
+                }
+              });
+      return future;
+    }
+
+    @Override
+    public String clientName() {
+      return "no-network";
+    }
+
+    @Override
+    public void close() {}
   }
 }

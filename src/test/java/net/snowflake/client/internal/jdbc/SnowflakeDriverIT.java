@@ -2887,8 +2887,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testPutCopyIntoWith256BitEncryptionOnAllAccounts() throws Throwable {
 
     List<String> accounts =
-        Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+        Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
