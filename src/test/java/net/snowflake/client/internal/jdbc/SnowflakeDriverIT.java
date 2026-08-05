@@ -1027,7 +1027,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts =
         Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+            null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -1091,7 +1091,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts =
         Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+            null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2755,7 +2755,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts =
         Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+            null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
@@ -2914,7 +2914,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts =
         Arrays.asList(
-            null, "s3testaccount", "azureaccount", "gcpaccount" /*, "gcpaccount_awssdk"*/);
+            null, "s3testaccount", "azureaccount", "gcpaccount", "gcpaccount_awssdk");
     for (int i = 0; i < accounts.size(); i++) {
       String accountName = accounts.get(i);
       if (accounts.get(i) != null && accounts.get(i).equals("gcpaccount_awssdk")) {
