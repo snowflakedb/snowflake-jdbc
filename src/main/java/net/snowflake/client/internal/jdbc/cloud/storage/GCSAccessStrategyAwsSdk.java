@@ -33,9 +33,7 @@ import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -59,22 +57,6 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private final S3AsyncClient amazonClient;
 
   GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
-    this(stage, session, null, null, true);
-  }
-
-  /**
-   * Visible for testing. Lets a test run the client offline (no-network HTTP client), capture the
-   * emitted request (interceptor), and optionally skip the AwsSdkGCPSigner. installGcpSigner MUST
-   * be true in production; only the client-level checksum guard test sets it false, because the GCP
-   * signer masks the SDK's WHEN_SUPPORTED auto-checksum that test needs to observe (SNOW-3888537).
-   */
-  GCSAccessStrategyAwsSdk(
-      StageInfo stage,
-      SFBaseSession session,
-      SdkAsyncHttpClient httpClientOverride,
-      ExecutionInterceptor testInterceptor,
-      boolean installGcpSigner)
-      throws SnowflakeSQLException {
     String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
 
     Optional<String> oEndpoint = stage.gcsCustomEndpoint();
@@ -109,10 +91,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
         ClientOverrideConfiguration.builder();
 
     // Add signer interceptor for bearer token auth and header mapping
-    if (installGcpSigner) {
-      overrideConfiguration.putAdvancedOption(
-          SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
-    }
+    overrideConfiguration.putAdvancedOption(
+        SdkAdvancedClientOption.SIGNER, new AwsSdkGCPSigner(accessToken));
 
     // Disable the SDK's own internal retries so the outer JDBC retry loop in
     // SnowflakeGCSClient.upload() is the sole controller of retry count and backoff.
@@ -140,28 +120,15 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       }
     }
 
-    if (testInterceptor != null) {
-      overrideConfiguration.addExecutionInterceptor(testInterceptor);
-    }
-
     clientBuilder.overrideConfiguration(overrideConfiguration.build());
 
     // Use anonymous credentials to minimize AWS signing
     clientBuilder.credentialsProvider(AnonymousCredentialsProvider.create());
 
-    if (httpClientOverride != null) {
-      clientBuilder.httpClient(httpClientOverride);
-    } else {
-      clientBuilder.httpClientBuilder(
-          NettyNioAsyncHttpClient.builder().proxyConfiguration(proxyConfiguration));
-    }
+    clientBuilder.httpClientBuilder(
+        NettyNioAsyncHttpClient.builder().proxyConfiguration(proxyConfiguration));
 
     amazonClient = clientBuilder.build();
-  }
-
-  /** Visible for testing: the S3 client this strategy built. */
-  S3AsyncClient clientForTest() {
-    return amazonClient;
   }
 
   @Override
@@ -270,7 +237,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     s3ObjectMetadata.setUserMetadata(metadata);
     // SNOW-3888537: load-bearing fix. Clearing the explicit CRC32 stops the SDK from delivering it
     // as an aws-chunked trailer that GCS stores verbatim (corrupting the object). The client-level
-    // WHEN_REQUIRED (see constructor) is only defense-in-depth here.
+    // WHEN_REQUIRED (see constructor) is only defense-in-depth here. Covered e2e by the
+    // gcpaccount_awssdk cases in SnowflakeDriverIT (Jenkins, against a real GCS account).
     s3ObjectMetadata.setRequestIntegrityChecksum(false);
 
     PutObjectRequest request =
