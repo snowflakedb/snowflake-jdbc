@@ -8,7 +8,7 @@
   - Changed minimum heartbeat interval to 15 minutes (snowflakedb/snowflake-jdbc#2708).
   - Bumped grpc-java to 1.83.1 (snowflakedb/snowflake-jdbc#2707, snowflakedb/snowflake-jdbc#2713).
   - Bumped BouncyCastle dependencies' versions (snowflakedb/snowflake-jdbc#2718).
-  - Bumped netty to 4.1.137.Final (snowflakedb/snowflake-jdbc#XXXX).
+  - Bumped netty to 4.1.137.Final (snowflakedb/snowflake-jdbc#2719).
 
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
