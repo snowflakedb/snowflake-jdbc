@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout action
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: snowflakedb/whitesource-actions
         token: ${{ secrets.WHITESOURCE_ACTION_TOKEN }}
