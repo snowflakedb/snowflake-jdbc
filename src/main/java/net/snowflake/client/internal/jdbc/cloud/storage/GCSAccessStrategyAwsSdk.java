@@ -29,6 +29,7 @@ import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -73,6 +74,13 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
           S3AsyncClient.builder()
               .region(Region.US_WEST_2) // dummy region, just to satisfy the builder
               .forcePathStyle(false)
+              // SNOW-3888537: defense-in-depth, not the load-bearing half. The fix is clearing the
+              // explicit CRC32 on the upload request (setRequestIntegrityChecksum(false), below).
+              // This WHEN_REQUIRED is inert on the current path -- the AwsSdkGCPSigner masks the
+              // SDK's default WHEN_SUPPORTED auto-checksum, so flipping it is a no-op on the wire
+              // (verified e2e). Kept as cheap insurance against a future signer/SDK-auth change and
+              // for non-PutObject requests (e.g. multipart parts) that skip the opt-out above.
+              .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
               .endpointOverride(new URI(endpoint));
     } catch (URISyntaxException e) {
       throw new SnowflakeSQLException(
@@ -227,6 +235,11 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setContentLength(contentLength);
     s3ObjectMetadata.setUserMetadata(metadata);
+    // SNOW-3888537: load-bearing fix. Clearing the explicit CRC32 stops the SDK from delivering it
+    // as an aws-chunked trailer that GCS stores verbatim (corrupting the object). The client-level
+    // WHEN_REQUIRED (see constructor) is only defense-in-depth here. Covered e2e by the
+    // gcpaccount_awssdk cases in SnowflakeDriverIT (Jenkins, against a real GCS account).
+    s3ObjectMetadata.setRequestIntegrityChecksum(false);
 
     PutObjectRequest request =
         (s3ObjectMetadata)
