@@ -62,7 +62,7 @@
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <json.smart.version>2.5.2</json.smart.version>
-    <jsoup.version>1.15.3</jsoup.version>
+    <jsoup.version>1.23.1</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
     <netty.version>4.1.137.Final</netty.version>
     <nimbusds.version>10.6</nimbusds.version>
