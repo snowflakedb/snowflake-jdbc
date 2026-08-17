@@ -7,11 +7,12 @@
   - Fixed the self-contained JAR shipping the non-gRPC-shaded Netty native libraries (`libnetty_transport_native_epoll_*`, `libnetty_transport_native_kqueue_*`, `libnetty_resolver_dns_native_macos_*`) unshaded, which caused an `UnsatisfiedLinkError` when they conflicted with a user's own Netty on the classpath. These libraries are now relocated with the `libnet_snowflake_client_jdbc_internal_netty_*` prefix to match the relocated `io.netty` package (snowflakedb/snowflake-jdbc#2705).
   - Changed minimum heartbeat interval to 15 minutes (snowflakedb/snowflake-jdbc#2708).
   - Bumped the following dependencies:
-    - `google-cloud-storage` from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
+    - google-cloud-storage from 2.44.1 to 2.69.0, with all required transitive dependency version updates (`google-cloud-core`, `google-api-grpc`, `google-auth-library`, `google-http-client`, `gax`, `protobuf`, `guava`, `slf4j`, and others) (snowflakedb/snowflake-jdbc#2691).
     - grpc-java to 1.83.1 (snowflakedb/snowflake-jdbc#2707, snowflakedb/snowflake-jdbc#2713).
     - BouncyCastle dependencies' versions (snowflakedb/snowflake-jdbc#2718).
     - netty to 4.1.137.Final (snowflakedb/snowflake-jdbc#2719).
-    - jsoup to 1.23.1 (snowflakedb/snowflake-jdbc#XXXX).
+    - jackson-databind to 2.18.10 (snowflakedb/snowflake-jdbc#2721).
+    - jsoup to 1.23.1 (snowflakedb/snowflake-jdbc#2722).
 
 - v4.3.2
   - Fixed `RestRequest` logging retryable, temporal non-200 responses as `ERROR` (now: `WARN`), and fixed `SnowflakeChunkDownloader` using flat, short jitter between retries (now uses `DecorrelatedJitterBackoff(1 s, 16 s)` like http requests) (snowflakedb/snowflake-jdbc#2693).
