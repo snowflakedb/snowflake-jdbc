@@ -149,6 +149,30 @@ Documentation
 
 For detailed documentation, please refer to https://docs.snowflake.net/manuals/user-guide/jdbc.html
 
+Keypair Caveat with HikariCP
+----------------------------
+
+When using key-pair authentication with HikariCP, do not pass the ``PrivateKey`` object through the
+``driverClassName`` + ``addDataSourceProperty("privateKey", key)`` path. HikariCP stringifies the value,
+so the driver receives a ``String`` and fails with
+``Invalid parameter value type: java.lang.String, expected type: java.security.PrivateKey``.
+
+Instead, set the key on ``SnowflakeBasicDataSource`` and hand that to HikariCP:
+
+.. code-block:: java
+
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setUrl(jdbcUrl);
+    ds.setUser(user);
+    ds.setPrivateKey(privateKey);
+
+    HikariConfig config = new HikariConfig();
+    config.setDataSource(ds);
+    HikariDataSource hikari = new HikariDataSource(config);
+
+Alternatively, keep the ``driverClassName`` path but supply the key as a string property
+(``private_key_file`` or ``private_key_base64``, plus ``private_key_pwd`` if encrypted).
+
 Development
 =============
 
