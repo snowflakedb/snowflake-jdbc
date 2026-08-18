@@ -1,6 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.3.4-SNAPSHOT
+  - 
+
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
   - Fixed `SLF4JLogger` performing expensive `SecretDetector.maskSecrets()` regex work even when the log level is disabled, added level guards to all `(String, boolean)` and `(String, Throwable)` overloads to match `JDK14Logger` behavior (snowflakedb/snowflake-jdbc#2712).
