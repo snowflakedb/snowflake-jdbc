@@ -13,6 +13,7 @@
   - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
   - Bumped the following dependencies:
     - jsoup to 1.23.2 (snowflakedb/snowflake-jdbc#2735).
+  - Fixed `CertificateDiagnosticCheck` completing its TLS probe without SNI for allowlist hosts containing underscores (Snowflake account names): such hosts are rejected by `SNIHostName` per the RFC 952 Letter-Digit-Hyphen rule, causing the JDK to silently send no `server_name` extension and the check to report on a default certificate rather than the one a real client would be served. The probe now uses the hyphenated host variant (which Snowflake also serves) and logs a warning when no valid SNI variant exists (snowflakedb/snowflake-jdbc#2729).
 
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
