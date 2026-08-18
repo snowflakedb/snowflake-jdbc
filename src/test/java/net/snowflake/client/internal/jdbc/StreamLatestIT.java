@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.api.connection.DownloadStreamConfig;
 import net.snowflake.client.api.connection.SnowflakeConnection;
@@ -363,7 +364,12 @@ public class StreamLatestIT extends BaseJDBCTest {
   /** SNOW-3713887: uploadStream/downloadStream with unicode schema in stage name */
   @Test
   public void testUploadDownloadStreamWithUnicodeSchemaStage() throws Throwable {
-    String unicodeSchema = "\"日本語テスト_" + UUID.randomUUID().toString().substring(0, 5) + "\"";
+    String unicodeSchema =
+        "\""
+            + TestUtil.GENERATED_SCHEMA_PREFIX
+            + "日本語テスト_"
+            + UUID.randomUUID().toString().substring(0, 5)
+            + "\"";
     String stageName = "test_stream_stage_" + UUID.randomUUID().toString().replaceAll("-", "");
 
     try (Connection connection = getConnection();
