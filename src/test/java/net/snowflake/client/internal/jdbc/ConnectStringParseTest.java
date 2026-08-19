@@ -35,9 +35,9 @@ public class ConnectStringParseTest {
         is("abc-test"));
     assertThat(cstring.getHost(), is("abc-test.us-east-1.snowflakecomputing.com"));
 
-    //  Host name should be updated if the parameter is set and it has underscores in it.
+    //  Host name is normalized to the hyphenated form Snowflake serves, while the account
+    //  identifier keeps its underscores.
     jdbcConnectString = "jdbc:snowflake://abc_test.us-east-1.snowflakecomputing.com";
-    info.setProperty(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey(), "false");
     cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
     assertThat(
         cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),

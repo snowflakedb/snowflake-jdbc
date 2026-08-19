@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -24,9 +25,7 @@ class HttpAndHttpsDiagnosticCheck extends DiagnosticCheck {
 
   @Override
   protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
-    // We have to replace underscores with hyphens because the JDK doesn't allow underscores in the
-    // hostname
-    String hostname = snowflakeEndpoint.getHost().replace('_', '-');
+    String hostname = SnowflakeUtil.normalizeSnowflakeHost(snowflakeEndpoint.getHost());
     try {
       Proxy proxy = this.proxyConf.getProxy(snowflakeEndpoint);
       StringBuilder sb = new StringBuilder();

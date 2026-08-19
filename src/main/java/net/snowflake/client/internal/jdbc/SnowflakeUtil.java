@@ -1040,6 +1040,22 @@ public class SnowflakeUtil {
     return str == null || str.isEmpty();
   }
 
+  /**
+   * Snowflake serves an equivalent host with each underscore in the account name replaced by a
+   * hyphen; the JDK cannot put an underscore in a URL host or TLS server name (RFC 952). Only
+   * Snowflake hosts have this variant, so third-party hosts (cloud storage, OCSP responders, Duo,
+   * ...) are returned unchanged.
+   *
+   * @param host host as listed in the connect string or allowlist file
+   * @return the hyphenated form for Snowflake hosts, otherwise the host unchanged
+   */
+  public static String normalizeSnowflakeHost(String host) {
+    if (host != null && host.toLowerCase(Locale.ROOT).contains(".snowflakecomputing.")) {
+      return host.replace('_', '-');
+    }
+    return host;
+  }
+
   /** Returns {@code true} when the node exists and carries a non-null value. */
   public static boolean isJsonNodePresent(JsonNode node) {
     return !node.isMissingNode() && !node.isNull();
