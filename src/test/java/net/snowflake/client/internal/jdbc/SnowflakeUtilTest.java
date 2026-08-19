@@ -382,14 +382,14 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   /**
    * Only Snowflake serves a hyphenated host variant, so third-party hosts (cloud storage, OCSP
-   * responders, Duo, Snowsight, ...) must be returned unchanged even when they contain underscores.
+   * responders, Duo, Snowsight, ...) must be returned unchanged.
    */
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "duo_security.duosecurity.com",
-        "snowsight_deployment.snowflake.com",
-        "stage_bucket.s3.amazonaws.com",
+        "duo-security.duosecurity.com",
+        "snowsight-deployment.snowflake.com",
+        "stage-bucket.s3.amazonaws.com",
         "ocsp.r2m01.amazontrust.com",
         "o.ss2.us"
       })

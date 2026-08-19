@@ -85,16 +85,16 @@ public class DiagnosticContextLatestIT {
         new SnowflakeEndpoint(
             "OUT_OF_BAND_TELEMETRY", "out_of_band_telemetry.snowflakecomputing.com", 443));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_CACHE", "ocsp_cache.snowflakecomputing.com", 80));
-    mockEndpoints.add(new SnowflakeEndpoint("DUO_SECURITY", "duo_security.duosecurity.com", 443));
+    mockEndpoints.add(new SnowflakeEndpoint("DUO_SECURITY", "duo-security.duosecurity.com", 443));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.rootg2.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "o.ss2.us", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.sca1b.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.r2m01.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.rootca1.amazontrust.com", 80));
     mockEndpoints.add(
-        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight_deployment.snowflake.com", 443));
+        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight-deployment.snowflake.com", 443));
     mockEndpoints.add(
-        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight_deployment_2.snowflake.com", 443));
+        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight-deployment-2.snowflake.com", 443));
 
     String testFailedMessage =
         "The lists of SnowflakeEndpoints in mockEndpoints and endpointsFromTestFile should be identical";
