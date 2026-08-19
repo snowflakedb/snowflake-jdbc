@@ -5,6 +5,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createOwnerOnlyPe
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.getSnowflakeType;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.hostnameMatchesGlob;
+import static net.snowflake.client.internal.jdbc.SnowflakeUtil.normalizeSnowflakeHost;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,6 +42,9 @@ import org.apache.http.message.BasicHeader;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
@@ -346,5 +350,56 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     fieldList.add(new FieldMetadataImpl());
     fieldMetadata.setFields(fieldList);
     assertEquals(fieldList, fieldMetadata.getFields());
+  }
+
+  /** Snowflake hosts without underscores must be returned exactly as given. */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "snowhouse.snowflakecomputing.com",
+        "abc.us-east-1.snowflakecomputing.com",
+        "account.privatelink.snowflakecomputing.com"
+      })
+  public void shouldLeaveSnowflakeHostsWithoutUnderscoresUnchanged(String host) {
+    assertEquals(host, normalizeSnowflakeHost(host));
+  }
+
+  /**
+   * Snowflake account names may contain underscores, and Snowflake serves an equivalent host with
+   * each underscore replaced by a hyphen. Snowflake hosts must be normalized to that form.
+   */
+  @ParameterizedTest
+  @CsvSource({
+    "account_name.snowflakecomputing.com,account-name.snowflakecomputing.com",
+    "org-account_name.snowflakecomputing.com,org-account-name.snowflakecomputing.com",
+    "snowsql_repo.snowflakecomputing.com,snowsql-repo.snowflakecomputing.com",
+    "sfcogsops-snowhouse_aws_us_west_2.snowflakecomputing.com,"
+        + "sfcogsops-snowhouse-aws-us-west-2.snowflakecomputing.com"
+  })
+  public void shouldHyphenateSnowflakeHostsWithUnderscores(String host, String expected) {
+    assertEquals(expected, normalizeSnowflakeHost(host));
+  }
+
+  /**
+   * Only Snowflake serves a hyphenated host variant, so third-party hosts (cloud storage, OCSP
+   * responders, Duo, Snowsight, ...) must be returned unchanged.
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "duo-security.duosecurity.com",
+        "snowsight-deployment.snowflake.com",
+        "stage-bucket.s3.amazonaws.com",
+        "ocsp.r2m01.amazontrust.com",
+        "o.ss2.us"
+      })
+  public void shouldLeaveThirdPartyHostsUnchanged(String host) {
+    assertEquals(host, normalizeSnowflakeHost(host));
+  }
+
+  @Test
+  public void shouldReturnNullAndEmptyHostUnchanged() {
+    assertEquals(null, normalizeSnowflakeHost(null));
+    assertEquals("", normalizeSnowflakeHost(""));
   }
 }

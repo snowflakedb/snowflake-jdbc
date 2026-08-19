@@ -10,6 +10,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -26,7 +27,7 @@ class CertificateDiagnosticCheck extends DiagnosticCheck {
 
   @Override
   protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
-    String hostname = snowflakeEndpoint.getHost();
+    String hostname = SnowflakeUtil.normalizeSnowflakeHost(snowflakeEndpoint.getHost());
     String port = Integer.toString(snowflakeEndpoint.getPort());
     if (snowflakeEndpoint.isSslEnabled()) {
       String urlString = "https://" + hostname + ":" + port;
