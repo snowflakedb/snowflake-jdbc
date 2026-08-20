@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>4.3.2</version>
+    <version>4.3.4-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>4.3.2</version>
+  <version>4.3.4-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -461,6 +461,11 @@
                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
                     </relocation>
                     <relocation>
+                      <!-- WoodStox XML processor, pulled in transitively by jackson-dataformat-xml via google-cloud-storage -->
+                      <pattern>com.ctc.wstx</pattern>
+                      <shadedPattern>${shadeBase}.ctc.wstx</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>com.google</pattern>
                       <shadedPattern>${shadeBase}.google</shadedPattern>
                     </relocation>
@@ -649,6 +654,39 @@
                       </excludes>
                     </filter>
                     <filter>
+                      <!-- JSpecify annotation classes (org.jspecify:jspecify) are compile-time nullability
+                           annotations pulled in transitively by google-cloud-storage >=2.69.0 via guava.
+                           They carry no runtime behaviour and do not need to be shaded. -->
+                      <artifact>org.jspecify:jspecify</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <!-- dev.cel (CEL runtime, common, protobuf) are pulled in transitively by
+                           grpc-xds 1.83.0. grpc-xds is itself a pre-shaded fat jar that already
+                           embeds these classes under io.grpc.xds.shaded.dev.cel.*, which our
+                           io.grpc relocation handles correctly. The separate dev.cel Maven artifacts
+                           are therefore redundant in the fat jar and must be excluded to avoid
+                           unshaded dev/cel/* classes failing the namespace content check. -->
+                      <artifact>dev.cel:common</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:runtime</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>dev.cel:protobuf</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
                       <artifact>org.apache.arrow:arrow-vector</artifact>
                       <excludes>
                         <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
@@ -710,9 +748,8 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
-                    <!-- io.opentelemetry.* packages are relocated to ${relocationBase}.io.opentelemetry.* -->
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/io" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <!-- reactor.* packages are relocated to ${relocationBase}.reactor.* -->
+                    <!-- META-INF/versions/9/io move removed: opentelemetry-context >=1.42 no longer ships MRJ entries; if a future dependency re-introduces them, add a move line back here. -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/reactor/netty" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/21/reactor/core" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
