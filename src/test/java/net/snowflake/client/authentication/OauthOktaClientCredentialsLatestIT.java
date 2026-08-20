@@ -22,7 +22,7 @@ public class OauthOktaClientCredentialsLatestIT {
   @BeforeEach
   public void setUp() throws IOException {
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, login);
-    AuthTestHelper.deleteOauthToken(OKTA, login);
+    AuthTestHelper.deleteOauthToken(OKTA, AuthConnectionParameters.HOST, login, "");
     properties = getOAuthOktaClientCredentialParameters();
   }
 
@@ -30,7 +30,8 @@ public class OauthOktaClientCredentialsLatestIT {
   public static void tearDown() {
     Properties properties = getOAuthOktaClientCredentialParameters();
     AuthTestHelper.deleteIdToken(AuthConnectionParameters.HOST, properties.getProperty("user"));
-    AuthTestHelper.deleteOauthToken(OKTA, properties.getProperty("user"));
+    AuthTestHelper.deleteOauthToken(
+        OKTA, AuthConnectionParameters.HOST, properties.getProperty("user"), "");
   }
 
   @Test

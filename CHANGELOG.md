@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
-  - 
+  - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key (SNOW-3784426) applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend.
 
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).

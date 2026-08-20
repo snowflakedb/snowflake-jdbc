@@ -55,8 +55,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   }
 
   @Override
-  public synchronized SecureStorageStatus setCredential(
-      String host, String user, String type, String token) {
+  public synchronized SecureStorageStatus setCredential(String cacheKey, String token) {
     if (isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
@@ -68,7 +67,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
           cachedCredentials.computeIfAbsent(
               CACHE_FILE_TOKENS_OBJECT_NAME, tokensMap -> new HashMap<>());
           Map<String, String> credentialsMap = cachedCredentials.get(CACHE_FILE_TOKENS_OBJECT_NAME);
-          credentialsMap.put(SecureStorageManager.buildCredentialsKey(host, user, type), token);
+          credentialsMap.put(cacheKey, token);
           fileCacheManager.writeCacheFile(
               SecureStorageLinuxManager.this.localCacheToJson(cachedCredentials));
           return null;
@@ -77,7 +76,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   }
 
   @Override
-  public synchronized String getCredential(String host, String user, String type) {
+  public synchronized String getCredential(String cacheKey) {
     return fileCacheManager.withLock(
         () -> {
           JsonNode res = fileCacheManager.readCacheFile();
@@ -86,19 +85,19 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
           if (credentialsMap == null) {
             return null;
           }
-          return credentialsMap.get(SecureStorageManager.buildCredentialsKey(host, user, type));
+          return credentialsMap.get(cacheKey);
         });
   }
 
   @Override
-  public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
+  public synchronized SecureStorageStatus deleteCredential(String cacheKey) {
     fileCacheManager.withLock(
         () -> {
           JsonNode res = fileCacheManager.readCacheFile();
           Map<String, Map<String, String>> cache = readJsonStoreCache(res);
           Map<String, String> credentialsMap = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
           if (credentialsMap != null) {
-            credentialsMap.remove(SecureStorageManager.buildCredentialsKey(host, user, type));
+            credentialsMap.remove(cacheKey);
             if (credentialsMap.isEmpty()) {
               cache.remove(CACHE_FILE_TOKENS_OBJECT_NAME);
             }
