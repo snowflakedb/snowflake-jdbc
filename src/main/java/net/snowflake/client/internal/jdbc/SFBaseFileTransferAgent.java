@@ -164,6 +164,8 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
   protected boolean showEncryptionParameter;
   protected List<Object> statusRows = new ArrayList<>();
   protected CommandType commandType = CommandType.UPLOAD;
+  protected int fileBackedBufferThreshold =
+      SnowflakeFileTransferAgent.DEFAULT_FILE_BACKED_BUFFER_THRESHOLD;
   private int currentRowIndex;
 
   /**
@@ -254,6 +256,20 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
    */
   public void setCompressSourceFromStream(boolean compressSourceFromStream) {
     this.compressSourceFromStream = compressSourceFromStream;
+  }
+
+  /**
+   * Sets the threshold in bytes at which the internal buffer switches from heap memory to a temp
+   * file on disk during compression and digest computation.
+   *
+   * @param fileBackedBufferThreshold the threshold in bytes; must be positive
+   * @throws IllegalArgumentException if the value is not positive
+   */
+  public void setFileBackedBufferThreshold(int fileBackedBufferThreshold) {
+    if (fileBackedBufferThreshold <= 0) {
+      throw new IllegalArgumentException("fileBackedBufferThreshold must be positive");
+    }
+    this.fileBackedBufferThreshold = fileBackedBufferThreshold;
   }
 
   /**
