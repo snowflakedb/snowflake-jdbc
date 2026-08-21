@@ -20,8 +20,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
- * Regression tests for SNOW-3982613: setObject(idx, byte[], Types.BINARY/VARBINARY) must hex-encode
- * the byte[] (as setBytes does), not bind String.valueOf(byte[]) ("[B@..").
+ * Regression tests for SNOW-3982613: setObject(idx, byte[], Types.BINARY/VARBINARY/LONGVARBINARY)
+ * must hex-encode the byte[] (as setBytes does), not bind String.valueOf(byte[]) ("[B@..").
  */
 class SnowflakePreparedStatementImplSetObjectBinaryTest {
 
@@ -65,7 +65,7 @@ class SnowflakePreparedStatementImplSetObjectBinaryTest {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {Types.BINARY, Types.VARBINARY})
+  @ValueSource(ints = {Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY})
   void setObjectByteArrayWithTypeBindsHex(int sqlType) throws SQLException {
     SnowflakePreparedStatementImpl stmt = newStatement();
     stmt.setObject(1, BYTES, sqlType);

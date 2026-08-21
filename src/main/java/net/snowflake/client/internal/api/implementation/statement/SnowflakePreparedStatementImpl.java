@@ -516,7 +516,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       setYearMonthInterval(parameterIndex, (String) x);
     } else if (targetSqlType == SnowflakeType.EXTRA_TYPES_DAY_TIME_INTERVAL) {
       setDayTimeInterval(parameterIndex, (String) x);
-    } else if ((targetSqlType == Types.BINARY || targetSqlType == Types.VARBINARY)
+    } else if ((targetSqlType == Types.BINARY
+            || targetSqlType == Types.VARBINARY
+            || targetSqlType == Types.LONGVARBINARY)
         && x instanceof byte[]) {
       // byte[] must be hex-encoded via setBytes, not String.valueOf'd (SNOW-3982613)
       setBytes(parameterIndex, (byte[]) x);
