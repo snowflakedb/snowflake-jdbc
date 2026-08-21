@@ -961,7 +961,8 @@ public class SnowflakeResultSetSerializableV1
     if (queryResultFormat == QueryResultFormat.ARROW
         && Runtime.getRuntime().maxMemory() < LOW_MAX_MEMORY
         && memoryLimit * 2 + maxChunkSize > Runtime.getRuntime().maxMemory()) {
-      memoryLimit = Runtime.getRuntime().maxMemory() / 2 - maxChunkSize;
+      memoryLimit =
+          Math.max(Runtime.getRuntime().maxMemory() / 2 - maxChunkSize, maxChunkSize);
       logger.debug(
           "To avoid OOM for arrow buffer allocation, "
               + "memoryLimit {} should be less than half of the "
