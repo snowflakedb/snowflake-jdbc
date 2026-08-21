@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
-  - 
+  - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
 
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
