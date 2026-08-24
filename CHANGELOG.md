@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
+  - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
   - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key (SNOW-3784426) applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend.
 
 - v4.3.3
