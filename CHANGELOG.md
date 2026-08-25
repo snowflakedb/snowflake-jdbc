@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
+  - Fixed `DatabaseMetaData.getProcedures()`, `getSchemas()`, and `getFunctions()` returning schemas that do not match the requested pattern when exact-schema matching is enabled. The client-side filter compared `schemaPattern` to itself (always true) instead of the row's schema name (SNOW-4009233).
   - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
 
 - v4.3.3
