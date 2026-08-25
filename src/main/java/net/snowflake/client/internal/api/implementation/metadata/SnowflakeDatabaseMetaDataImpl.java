@@ -1180,8 +1180,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           short procedureType = procedureReturnsResult;
           if ((compiledProcedurePattern == null
                   || compiledProcedurePattern.matcher(procedureName).matches())
-              && matchesSchemaName(
-                  compiledSchemaPattern, schemaName, isExactSchema, schemaPattern)) {
+              && matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             logger.trace("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -1927,18 +1926,21 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
 
   /**
    * Client-side schema filter used by {@code getProcedures()}, {@code getSchemas()}, and {@code
-   * getFunctions()}. The compiled wildcard pattern is the primary matcher; when exact-schema
-   * matching is enabled, also accept a literal name equals so regex-special characters in the
-   * schema are not treated as wildcards.
+   * getFunctions()}.
+   *
+   * <p>When exact-schema search is enabled, SHOW is already scoped to that schema (with {@code _}
+   * and {@code %} escaped). Those rows must be accepted: the compiled LIKE pattern treats {@code
+   * _}/{@code %} in the schema name as wildcards, and SHOW may return the name quoted (e.g. {@code
+   * "FOO%BAR"}), so neither regex matching nor {@code schemaPattern.equals(schemaName)} is
+   * reliable. The previous {@code schemaPattern.equals(schemaPattern)} check was this same bypass
+   * written as a tautology.
    */
   static boolean matchesSchemaName(
-      Pattern compiledSchemaPattern,
-      String schemaName,
-      boolean isExactSchema,
-      String schemaPattern) {
-    return compiledSchemaPattern == null
-        || compiledSchemaPattern.matcher(schemaName).matches()
-        || (isExactSchema && schemaPattern != null && schemaPattern.equals(schemaName));
+      Pattern compiledSchemaPattern, String schemaName, boolean isExactSchema) {
+    if (isExactSchema) {
+      return true;
+    }
+    return compiledSchemaPattern == null || compiledSchemaPattern.matcher(schemaName).matches();
   }
 
   static Integer getColumnSize(SnowflakeColumnMetadata columnMetadata) {
@@ -3385,7 +3387,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String schemaName = showObjectResultSet.getString(2);
           String dbName = showObjectResultSet.getString(5);
 
-          if (matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema, schemaPattern)) {
+          if (matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             nextRow[0] = schemaName;
             nextRow[1] = dbName;
             return true;
@@ -3471,8 +3473,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String specificName = functionName;
           if ((compiledFunctionPattern == null
                   || compiledFunctionPattern.matcher(functionName).matches())
-              && matchesSchemaName(
-                  compiledSchemaPattern, schemaName, isExactSchema, schemaPattern)) {
+              && matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             logger.debug("Found a matched function:" + schemaName + "." + functionName);
 
             nextRow[0] = catalogName;

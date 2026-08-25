@@ -15,33 +15,26 @@ public class SnowflakeDatabaseMetaDataImplSchemaFilterTest {
 
   @Test
   public void nullCompiledPatternAcceptsAnySchema() {
-    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(null, "ANY_SCHEMA", false, null));
+    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(null, "ANY_SCHEMA", false));
   }
 
   @Test
   public void compiledPatternMatchIsAccepted() {
     Pattern compiled = compile("FOO%");
-    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "FOOBAR", false, "FOO%"));
+    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "FOOBAR", false));
   }
 
   @Test
   public void compiledPatternMismatchIsRejectedWhenNotExactSchema() {
     Pattern compiled = compile("FOO");
-    assertFalse(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "BAR", false, "FOO"));
+    assertFalse(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "BAR", false));
   }
 
   @Test
-  public void exactSchemaAcceptsLiteralNameEqualityWhenPatternDoesNotMatch() {
-    // A schema name containing regex metacharacters will not match the compiled wildcard
-    // pattern, but exact-schema mode should still accept a literal equals.
-    String schema = "FOO.BAR";
-    Pattern compiled = compile(schema);
-    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, schema, true, schema));
-  }
-
-  @Test
-  public void exactSchemaDoesNotAcceptUnrelatedSchemaWhenPatternDoesNotMatch() {
-    Pattern compiled = compile("FOO");
-    assertFalse(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "BAR", true, "FOO"));
+  public void exactSchemaAcceptsShowRowsEvenWhenCompiledPatternDoesNotMatch() {
+    // SHOW may quote names that contain % (e.g. "FOO%BAR"), which does not match the LIKE regex
+    // compiled from the unquoted session schema. Exact-schema mode trusts the SHOW scoping.
+    Pattern compiled = compile("FOO%BAR");
+    assertTrue(SnowflakeDatabaseMetaDataImpl.matchesSchemaName(compiled, "\"FOO%BAR\"", true));
   }
 }
