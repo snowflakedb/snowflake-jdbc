@@ -122,7 +122,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     return jsonNode;
   }
 
-  private Map<String, Map<String, String>> readJsonStoreCache(JsonNode node) {
+  Map<String, Map<String, String>> readJsonStoreCache(JsonNode node) {
     Map<String, Map<String, String>> cache = new HashMap<>();
     if (node == null || !node.getNodeType().equals(JsonNodeType.OBJECT)) {
       logger.debug("Invalid cache file format.");
@@ -131,7 +131,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     cache.put(CACHE_FILE_TOKENS_OBJECT_NAME, new HashMap<>());
     JsonNode credentialsNode = node.get(CACHE_FILE_TOKENS_OBJECT_NAME);
     Map<String, String> credentialsCache = cache.get(CACHE_FILE_TOKENS_OBJECT_NAME);
-    if (credentialsNode != null && node.getNodeType().equals(JsonNodeType.OBJECT)) {
+    if (credentialsNode != null && credentialsNode.isObject()) {
       for (Iterator<Map.Entry<String, JsonNode>> itr = credentialsNode.fields(); itr.hasNext(); ) {
         Map.Entry<String, JsonNode> credential = itr.next();
         credentialsCache.put(credential.getKey(), credential.getValue().asText());
