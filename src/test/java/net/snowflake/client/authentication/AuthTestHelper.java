@@ -156,15 +156,20 @@ public class AuthTestHelper {
 
   public static void deleteOauthToken() {
     SessionUtil.deleteOAuthAccessTokenCache(
-        AuthConnectionParameters.OKTA, AuthConnectionParameters.SSO_USER);
+        AuthConnectionParameters.OKTA,
+        AuthConnectionParameters.HOST,
+        AuthConnectionParameters.SSO_USER,
+        "");
   }
 
-  public static void deleteOauthToken(String host, String user) {
-    SessionUtil.deleteOAuthAccessTokenCache(host, user);
+  public static void deleteOauthToken(
+      String idpUrl, String snowflakeHost, String user, String role) {
+    SessionUtil.deleteOAuthAccessTokenCache(idpUrl, snowflakeHost, user, role);
   }
 
-  public static void deleteOauthRefreshToken(String host, String user) {
-    SessionUtil.deleteOAuthRefreshTokenCache(host, user);
+  public static void deleteOauthRefreshToken(
+      String idpUrl, String snowflakeHost, String user, String role) {
+    SessionUtil.deleteOAuthRefreshTokenCache(idpUrl, snowflakeHost, user, role);
   }
 
   public void connectAndExecuteSimpleQuery(Properties props, String sessionParameters) {

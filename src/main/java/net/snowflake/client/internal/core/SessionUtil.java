@@ -900,7 +900,7 @@ public class SessionUtil {
           // clean id_token first
           loginInput.setIdToken(null);
           if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-            deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+            deleteIdTokenCache(loginInput);
           }
 
           logger.debug(
@@ -1289,7 +1289,7 @@ public class SessionUtil {
   }
 
   /**
-   * Delete the id token cache
+   * Delete the id token cache (default role only).
    *
    * @param host The host string
    * @param user The user
@@ -1299,23 +1299,38 @@ public class SessionUtil {
   }
 
   /**
-   * Delete the Oauth access token cache
+   * Delete the id token cache with full dimensions (including role).
    *
-   * @param host The host string
-   * @param user The user
+   * @param loginInput login input carrying host, user, and role
    */
-  public static void deleteOAuthAccessTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthAccessTokenCacheEntry(host, user);
+  public static void deleteIdTokenCache(SFLoginInput loginInput) throws SFException {
+    CredentialManager.deleteIdTokenCacheEntry(loginInput);
   }
 
   /**
-   * Delete the Oauth refresh token cache
+   * Delete the OAuth access token cache.
    *
-   * @param host The host string
+   * @param idpUrl IdP token-endpoint URL (or Snowflake server URL for native OAuth)
+   * @param snowflakeHost Snowflake account host
    * @param user The user
+   * @param role The role (empty string if none)
    */
-  public static void deleteOAuthRefreshTokenCache(String host, String user) {
-    CredentialManager.deleteOAuthRefreshTokenCacheEntry(host, user);
+  public static void deleteOAuthAccessTokenCache(
+      String idpUrl, String snowflakeHost, String user, String role) {
+    CredentialManager.deleteOAuthAccessTokenCacheEntry(idpUrl, snowflakeHost, user, role);
+  }
+
+  /**
+   * Delete the OAuth refresh token cache.
+   *
+   * @param idpUrl IdP token-endpoint URL (or Snowflake server URL for native OAuth)
+   * @param snowflakeHost Snowflake account host
+   * @param user The user
+   * @param role The role (empty string if none)
+   */
+  public static void deleteOAuthRefreshTokenCache(
+      String idpUrl, String snowflakeHost, String user, String role) {
+    CredentialManager.deleteOAuthRefreshTokenCacheEntry(idpUrl, snowflakeHost, user, role);
   }
 
   /**
