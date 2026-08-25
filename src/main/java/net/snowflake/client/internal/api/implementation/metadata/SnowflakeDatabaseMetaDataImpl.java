@@ -1810,18 +1810,8 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String schemaName = showObjectResultSet.getString(2);
           String columnName = showObjectResultSet.getString(3);
           String dataTypeStr = showObjectResultSet.getString(4);
-          String defaultValue = showObjectResultSet.getString(6);
-          defaultValue.trim();
-          if (defaultValue.isEmpty()) {
-            defaultValue = null;
-          } else if (!stringsQuoted) {
-            if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'")) {
-              // remove extra set of single quotes
-              defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
-              // scan for 2 single quotes in a row and remove one of them
-              defaultValue = defaultValue.replace("''", "'");
-            }
-          }
+          String defaultValue =
+              normalizeColumnDefaultValue(showObjectResultSet.getString(6), stringsQuoted);
           String comment = showObjectResultSet.getString(9);
           String catalogName = showObjectResultSet.getString(10);
           String autoIncrement = showObjectResultSet.getString(11);
@@ -1941,6 +1931,28 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
       return true;
     }
     return compiledSchemaPattern == null || compiledSchemaPattern.matcher(schemaName).matches();
+  }
+
+  /**
+   * Normalize a SHOW COLUMNS default value for {@code DatabaseMetaData.getColumns()}. Null-safe:
+   * SQL NULL and whitespace-only values become {@code null}. Optionally strips wrapping single
+   * quotes when the session does not keep string defaults quoted.
+   */
+  static String normalizeColumnDefaultValue(String defaultValue, boolean stringsQuoted) {
+    if (defaultValue == null) {
+      return null;
+    }
+    defaultValue = defaultValue.trim();
+    if (defaultValue.isEmpty()) {
+      return null;
+    }
+    if (!stringsQuoted && defaultValue.startsWith("'") && defaultValue.endsWith("'")) {
+      // remove extra set of single quotes
+      defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
+      // scan for 2 single quotes in a row and remove one of them
+      defaultValue = defaultValue.replace("''", "'");
+    }
+    return defaultValue;
   }
 
   static Integer getColumnSize(SnowflakeColumnMetadata columnMetadata) {
