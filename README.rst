@@ -149,10 +149,10 @@ Documentation
 
 For detailed documentation, please refer to https://docs.snowflake.net/manuals/user-guide/jdbc.html
 
-Keypair Caveat with HikariCP
-----------------------------
+Keypair Caveat with HikariCP 6.3.0 or earlier
+---------------------------------------------
 
-When using key-pair authentication with HikariCP, do not pass the ``PrivateKey`` object through the
+Fixed in 6.3.1. When using key-pair authentication with HikariCP, do not pass the ``PrivateKey`` object through the
 ``driverClassName`` + ``addDataSourceProperty("privateKey", key)`` path. HikariCP stringifies the value,
 so the driver receives a ``String`` and fails with
 ``Invalid parameter value type: java.lang.String, expected type: java.security.PrivateKey``.
