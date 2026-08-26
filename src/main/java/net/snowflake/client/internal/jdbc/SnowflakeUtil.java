@@ -1046,6 +1046,10 @@ public class SnowflakeUtil {
    * Snowflake hosts have this variant, so third-party hosts (cloud storage, OCSP responders, Duo,
    * ...) are returned unchanged.
    *
+   * <p>Callers are responsible for honouring the {@code allowUnderscoresInHost} connection
+   * property, which opts out of this normalization for deployments whose DNS only resolves the
+   * underscored name - some PrivateLink setups.
+   *
    * @param host host as listed in the connect string or allowlist file
    * @return the hyphenated form for Snowflake hosts, otherwise the host unchanged
    */

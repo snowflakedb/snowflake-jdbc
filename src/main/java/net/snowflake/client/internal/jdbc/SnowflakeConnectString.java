@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.internal.core.SFSessionProperty;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.SecretDetector;
@@ -142,10 +143,22 @@ public class SnowflakeConnectString implements Serializable {
         return INVALID_CONNECT_STRING;
       }
 
-      // Account names may contain underscores, but the JDK does not allow underscores in the host.
+      // Account names may contain underscores, but neither a URL host nor a TLS server name may.
       // Snowflake serves an equivalent host with underscores replaced by hyphens, so normalize the
-      // host to that form. The account identifier itself is left untouched.
-      host = SnowflakeUtil.normalizeSnowflakeHost(host);
+      // host to that form by default. The account identifier itself is left untouched.
+      //
+      // Only rewrite when the host actually starts with the account name: the host need not contain
+      // the account at all, for example when it is an IP address. allowUnderscoresInHost is the
+      // opt-out for deployments whose DNS only resolves the underscored name, such as some
+      // PrivateLink setups.
+      if (host.startsWith(account)
+          && !getBooleanFalseByDefault(
+              parameters.get(
+                  SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
+                      .getPropertyKey()
+                      .toUpperCase(Locale.US)))) {
+        host = SnowflakeUtil.normalizeSnowflakeHost(host);
+      }
 
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
     } catch (URISyntaxException uriEx) {
@@ -234,5 +247,16 @@ public class SnowflakeConnectString implements Serializable {
     }
     String vs = value.toString();
     return !"off".equalsIgnoreCase(vs) && !Boolean.FALSE.toString().equalsIgnoreCase(vs);
+  }
+
+  private static boolean getBooleanFalseByDefault(Object value) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    String vs = value.toString();
+    return "on".equalsIgnoreCase(vs) || Boolean.TRUE.toString().equalsIgnoreCase(vs);
   }
 }

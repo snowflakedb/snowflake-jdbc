@@ -39,6 +39,7 @@ class ProxyConfig {
   private int finalHttpProxyPort = -1;
   private int finalHttpsProxyPort = -1;
   private String finalNonProxyHosts = "";
+  private final boolean allowUnderscoresInHost;
   private boolean isProxyEnabled = false;
 
   private boolean isProxyEnabledOnJvm = false;
@@ -83,7 +84,9 @@ class ProxyConfig {
     this.nonProxyHosts = nonProxyHosts;
   }
 
-  public ProxyConfig(String proxyHost, int proxyPort, String nonProxyHosts) {
+  public ProxyConfig(
+      String proxyHost, int proxyPort, String nonProxyHosts, boolean allowUnderscoresInHost) {
+    this.allowUnderscoresInHost = allowUnderscoresInHost;
     jvmHttpProxyHost = Optional.ofNullable(systemGetProperty(JVM_HTTP_PROXY_HOST)).orElse("");
     jvmHttpsProxyHost = Optional.ofNullable(systemGetProperty(JVM_HTTPS_PROXY_HOST)).orElse("");
     jvmHttpProxyPort =
@@ -102,7 +105,18 @@ class ProxyConfig {
   }
 
   public ProxyConfig() {
-    this(null, -1, null);
+    this(null, -1, null, false);
+  }
+
+  /**
+   * Value of the {@code allowUnderscoresInHost} connection property. When set, the diagnostic
+   * checks probe allowlist hosts exactly as listed instead of normalizing Snowflake hosts to their
+   * hyphenated variant, because the customer's DNS may only resolve the underscored name.
+   *
+   * @return {@code true} when underscored hosts must be left alone
+   */
+  public boolean isAllowUnderscoresInHost() {
+    return allowUnderscoresInHost;
   }
 
   public boolean isProxyEnabled() {
