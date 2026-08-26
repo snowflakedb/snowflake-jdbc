@@ -2,7 +2,11 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
-  - 
+  - Fixed Linux credential cache parsing checking the root JSON node type a second time instead of the `tokens` child, which could fail the cache load when `tokens` was present but not an object (SNOW-4009235).
+  - Fixed `DatabaseMetaData.getColumns()` discarding `trim()` on column default values and throwing `NullPointerException` when SHOW COLUMNS returns a SQL NULL default (SNOW-4009234).
+  - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
+  - Bumped the following dependencies:
+    - jsoup to 1.23.2 (snowflakedb/snowflake-jdbc#2735).
 
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
