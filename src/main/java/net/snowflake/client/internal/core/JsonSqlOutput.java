@@ -277,6 +277,14 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeObject(SQLData sqlData) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
+          if (sqlData == null) {
+            json.put(fieldName, null);
+            BindingParameterMetadata structSchema = new BindingParameterMetadata("object");
+            structSchema.setName(fieldName);
+            structSchema.setFields(new ArrayList<>());
+            schema.getFields().add(structSchema);
+            return;
+          }
           JsonSqlOutput jsonSqlOutput = new JsonSqlOutput(sqlData, session);
           sqlData.writeSQL(jsonSqlOutput);
           json.put(fieldName, jsonSqlOutput.getJsonObject());
