@@ -25,7 +25,12 @@ class HttpAndHttpsDiagnosticCheck extends DiagnosticCheck {
 
   @Override
   protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
-    String hostname = SnowflakeUtil.normalizeSnowflakeHost(snowflakeEndpoint.getHost());
+    // The JDK cannot put an underscore in a URL host or TLS server name, so probe the hyphenated
+    // variant that Snowflake also serves for account names containing underscores.
+    String hostname = snowflakeEndpoint.getHost();
+    if (!this.proxyConf.isAllowUnderscoresInHost()) {
+      hostname = SnowflakeUtil.normalizeSnowflakeHost(hostname);
+    }
     try {
       Proxy proxy = this.proxyConf.getProxy(snowflakeEndpoint);
       StringBuilder sb = new StringBuilder();
