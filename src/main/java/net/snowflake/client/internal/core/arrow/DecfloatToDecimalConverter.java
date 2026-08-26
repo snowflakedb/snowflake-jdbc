@@ -118,7 +118,7 @@ class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-    return toBigDecimal(index).toEngineeringString();
+    return toBigDecimal(index).toString();
   }
 
   @Override
