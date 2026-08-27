@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
-  - Fixed `SQLOutput.writeObject(null)` throwing `NullPointerException` when binding a structured object with a null nested `SQLData` field (SNOW-1449489).
+  - Fixed null nested structured-type fields throwing `NullPointerException` in `JsonSqlOutput` when binding via `SQLOutput` reference writers such as `writeObject`, `writeBigDecimal`, `writeBytes`, `writeDate`, and `writeTimestamp` (SNOW-1449489).
   - Fixed `SFFormatter` omitting the associated stack trace when a log record has a thrown exception (SNOW-466174).
   - Fixed Linux credential cache parsing checking the root JSON node type a second time instead of the `tokens` child, which could fail the cache load when `tokens` was present but not an object (SNOW-4009235).
   - Fixed `DatabaseMetaData.getColumns()` discarding `trim()` on column default values and throwing `NullPointerException` when SHOW COLUMNS returns a SQL NULL default (SNOW-4009234).
