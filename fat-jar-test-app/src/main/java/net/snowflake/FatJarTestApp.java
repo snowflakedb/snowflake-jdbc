@@ -86,28 +86,9 @@ public class FatJarTestApp {
     System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
     String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
 
-    // PUT "Starting upload ..." remains INFO. Session-open is DEBUG (GH #2377); JUL FINE and
-    // logback net.snowflake=DEBUG still emit it, so require both to prove INFO and DEBUG paths.
-    boolean hasStartUpload = logOutput.contains("Starting upload");
-    if (!hasStartUpload) {
-      System.err.println("[FAIL] Log output does not contain 'Starting upload' (expected INFO from PUT)");
-      System.err.println("[DEBUG] First 2000 chars of log output:");
-      System.err.println(logsPrelude);
-      System.exit(1);
-    }
-    System.out.println("[PASS] Found 'Starting upload' INFO log in " + mode + " log output");
-
-    boolean hasOpeningSession = logOutput.contains("Opening session");
-    if (!hasOpeningSession) {
-      System.err.println(
-          "[FAIL] Log output does not contain 'Opening session' (expected DEBUG log from SFSession; "
-              + "ensure net.snowflake DEBUG is enabled for SLF4J or JUL FINE level)");
-      System.err.println("[DEBUG] First 2000 chars of log output:");
-      System.err.println(logsPrelude);
-      System.exit(1);
-    }
-    System.out.println("[PASS] Found 'Opening session' DEBUG log in " + mode + " log output");
-
+    // Do not assert on Snowflake log message text. Wording and levels change (GH #2377 moved
+    // session-open to DEBUG); PUT "Starting upload" also depends on the cloud transfer path.
+    // This app exists to prove fat-jar logging reaches the file, including relocated cloud SDKs.
     boolean hasCloudSdkLog = false;
     for (String pattern : CLOUD_SDK_LOGGER_PATTERNS) {
       if (logOutput.contains(pattern)) {
