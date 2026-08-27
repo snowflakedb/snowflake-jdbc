@@ -248,7 +248,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
 
   // used to get convert string back to normal after its special characters have been escaped to
   // send it through Wildcard regex
-  private String unescapeChars(String escapedString) {
+  private static String unescapeChars(String escapedString) {
     String unescapedString = escapedString.replace("\\_", "_");
     unescapedString = unescapedString.replace("\\%", "%");
     unescapedString = unescapedString.replace("\\\\", "\\");
@@ -258,8 +258,52 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
 
   // In SQL, double quotes must be escaped with an additional pair of double quotes. Add additional
   // quotes to avoid syntax errors with SQL queries.
-  private String escapeSqlQuotes(String originalString) {
+  private static String escapeSqlQuotes(String originalString) {
     return originalString.replace("\"", "\"\"");
+  }
+
+  /** Escape a value for use inside a single-quoted SQL string literal. */
+  static String escapeSqlStringLiteral(String value) {
+    if (value == null) {
+      return null;
+    }
+    return value.replace("'", "''");
+  }
+
+  private static boolean isMetadataPatternMatchingAll(String pattern) {
+    return pattern == null
+        || pattern.isEmpty()
+        || pattern.trim().equals("%")
+        || pattern.trim().equals(".*");
+  }
+
+  /**
+   * Build the INFORMATION_SCHEMA query for {@link #getTablePrivileges}. Table and schema names are
+   * placed in single-quoted string literals, so single quotes are doubled (SNOW-3236395).
+   */
+  static String buildTablePrivilegesQuery(
+      String catalog, String schemaPattern, String tableNamePattern, boolean isExactSchema) {
+    String showView = "select * from ";
+
+    if (!isMetadataPatternMatchingAll(catalog)) {
+      showView += "\"" + escapeSqlQuotes(catalog) + "\".";
+    }
+    showView += "information_schema.table_privileges";
+
+    if (!isMetadataPatternMatchingAll(tableNamePattern)) {
+      showView += " where table_name = '" + escapeSqlStringLiteral(tableNamePattern) + "'";
+    }
+
+    if (!isMetadataPatternMatchingAll(schemaPattern)) {
+      String unescapedSchema = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
+      if (showView.contains("where table_name")) {
+        showView += " and table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
+      } else {
+        showView += " where table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
+      }
+    }
+    showView += " order by table_catalog, table_schema, table_name, privilege_type";
+    return showView;
   }
 
   /**
@@ -2055,35 +2099,8 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     String schemaPattern = result.schema();
     boolean isExactSchema = result.isExactSchema();
 
-    String showView = "select * from ";
-
-    if (catalog != null
-        && !catalog.isEmpty()
-        && !catalog.trim().equals("%")
-        && !catalog.trim().equals(".*")) {
-      showView += "\"" + escapeSqlQuotes(catalog) + "\".";
-    }
-    showView += "information_schema.table_privileges";
-
-    if (tableNamePattern != null
-        && !tableNamePattern.isEmpty()
-        && !tableNamePattern.trim().equals("%")
-        && !tableNamePattern.trim().equals(".*")) {
-      showView += " where table_name = '" + tableNamePattern + "'";
-    }
-
-    if (schemaPattern != null
-        && !schemaPattern.isEmpty()
-        && !schemaPattern.trim().equals("%")
-        && !schemaPattern.trim().equals(".*")) {
-      String unescapedSchema = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
-      if (showView.contains("where table_name")) {
-        showView += " and table_schema = '" + unescapedSchema + "'";
-      } else {
-        showView += " where table_schema = '" + unescapedSchema + "'";
-      }
-    }
-    showView += " order by table_catalog, table_schema, table_name, privilege_type";
+    String showView =
+        buildTablePrivilegesQuery(catalog, schemaPattern, tableNamePattern, isExactSchema);
 
     final String catalogIn = catalog;
     final String schemaIn = schemaPattern;

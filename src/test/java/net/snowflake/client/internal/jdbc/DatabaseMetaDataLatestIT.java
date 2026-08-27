@@ -478,6 +478,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           // assert result set is empty
           assertFalse(resultSet.next());
         }
+
+        String tablePrivilegesSqlInjection = "x'; select 11 as bar; --";
+        try (ResultSet resultSet =
+            metaData.getTablePrivileges(
+                startingDatabase, startingSchema, tablePrivilegesSqlInjection)) {
+          assertFalse(resultSet.next());
+        }
       } finally {
         // Clean up by unsetting multistatement
         statement.execute("alter session unset MULTI_STATEMENT_COUNT");
