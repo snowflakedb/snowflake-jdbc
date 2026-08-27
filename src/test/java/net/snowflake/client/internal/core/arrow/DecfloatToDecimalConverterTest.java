@@ -55,6 +55,13 @@ public class DecfloatToDecimalConverterTest extends BaseConverterTest {
         format("1.2345678901234567890123456789012345678E+100"));
     assertEquals("-1.234e8000", format("-1.234E+8000"));
     assertEquals("0.000000123", format("1.23E-7"));
+    assertEquals("-42", format("-42"));
+    assertEquals("-1.5", format("-1.5"));
+    assertEquals("-789.012", format("-789.012"));
+    // -987 * 10^-17; sign does not count toward the 38-character budget.
+    assertEquals(
+        "-0.00000000000000987",
+        DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.valueOf(-987), 17)));
   }
 
   @Test
