@@ -4,13 +4,15 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.util.logging.LogManager;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class FatJarTestApp {
 
@@ -76,6 +78,12 @@ public class FatJarTestApp {
       try (InputStream is = FatJarTestApp.class.getResourceAsStream("/logging.properties")) {
         LogManager.getLogManager().readConfiguration(is);
       }
+      // Session-open is DEBUG (JUL FINE). Force it so the assertion below is not log-level flaky.
+      Logger snowflakeLogger = Logger.getLogger("net.snowflake");
+      snowflakeLogger.setLevel(Level.FINE);
+      if (!snowflakeLogger.isLoggable(Level.FINE)) {
+        throw new IllegalStateException("JUL net.snowflake logger is not at FINE/DEBUG");
+      }
       System.out.println("[INFO] JUL logging to: " + logFile.getAbsolutePath());
     }
   }
@@ -86,9 +94,17 @@ public class FatJarTestApp {
     System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
     String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
 
-    // Do not assert on Snowflake log message text. Wording and levels change (GH #2377 moved
-    // session-open to DEBUG); PUT "Starting upload" also depends on the cloud transfer path.
-    // This app exists to prove fat-jar logging reaches the file, including relocated cloud SDKs.
+    // Session-open is DEBUG (GH #2377). JUL setup forces FINE; SLF4J logback sets net.snowflake=DEBUG.
+    boolean hasOpeningSession = logOutput.contains("Opening session");
+    if (!hasOpeningSession) {
+      System.err.println(
+          "[FAIL] Log output does not contain 'Opening session' (DEBUG log from SFSession)");
+      System.err.println("[DEBUG] First 2000 chars of log output:");
+      System.err.println(logsPrelude);
+      System.exit(1);
+    }
+    System.out.println("[PASS] Found 'Opening session' in " + mode + " log output");
+
     boolean hasCloudSdkLog = false;
     for (String pattern : CLOUD_SDK_LOGGER_PATTERNS) {
       if (logOutput.contains(pattern)) {
