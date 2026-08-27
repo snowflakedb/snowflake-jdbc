@@ -13,6 +13,9 @@ import org.apache.arrow.vector.complex.StructVector;
 
 class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
 
+  /** DECFLOAT precision; unsigned plain form is used when it fits in this many characters. */
+  static final int MAX_PLAIN_DIGITS = 38;
+
   private StructVector vector;
 
   public DecfloatToDecimalConverter(ValueVector vector, int idx, DataConversionContext context) {
@@ -118,7 +121,86 @@ class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     }
-    return toBigDecimal(index).toString();
+    BigDecimal value = toBigDecimal(index);
+    return formatDecfloat(value.unscaledValue(), -value.scale());
+  }
+
+  /**
+   * Formats a DECFLOAT as a string, matching ODBC {@code format_decfloat}.
+   *
+   * <p>Uses plain decimal when the unsigned form fits in {@link #MAX_PLAIN_DIGITS} characters, and
+   * normalized scientific notation otherwise. Scientific notation uses a single non-zero digit
+   * before the decimal point, lowercase {@code e}, and no {@code +} on positive exponents.
+   *
+   * @param significand unscaled integer significand
+   * @param exponent power of ten such that the value is {@code significand * 10^exponent}
+   * @return formatted DECFLOAT string
+   */
+  static String formatDecfloat(BigInteger significand, int exponent) {
+    if (significand.signum() == 0) {
+      return "0";
+    }
+
+    boolean negative = significand.signum() < 0;
+    BigInteger absSig = significand.abs();
+    int exp = exponent;
+    while (absSig.mod(BigInteger.TEN).signum() == 0) {
+      absSig = absSig.divide(BigInteger.TEN);
+      exp++;
+    }
+
+    String digits = absSig.toString();
+    int n = digits.length();
+    int plainLen;
+    if (exp >= 0) {
+      plainLen = n + exp;
+    } else {
+      int absExp = -exp;
+      if (absExp < n) {
+        plainLen = n + 1;
+      } else {
+        plainLen = 2 + absExp;
+      }
+    }
+
+    StringBuilder result = new StringBuilder();
+    if (plainLen <= MAX_PLAIN_DIGITS) {
+      if (exp >= 0) {
+        result.append(digits);
+        for (int i = 0; i < exp; i++) {
+          result.append('0');
+        }
+      } else {
+        int absExp = -exp;
+        if (absExp < n) {
+          int decimalPos = n - absExp;
+          result.append(digits, 0, decimalPos);
+          result.append('.');
+          result.append(digits, decimalPos, n);
+        } else {
+          int leadingZeros = absExp - n;
+          result.append("0.");
+          for (int i = 0; i < leadingZeros; i++) {
+            result.append('0');
+          }
+          result.append(digits);
+        }
+      }
+    } else {
+      long adjustedExp = (long) exp + n - 1;
+      result.append(digits.charAt(0));
+      if (n > 1) {
+        result.append('.');
+        result.append(digits, 1, n);
+      }
+      result.append('e');
+      result.append(adjustedExp);
+    }
+
+    if (negative) {
+      result.insert(0, '-');
+    }
+    return result.toString();
   }
 
   @Override

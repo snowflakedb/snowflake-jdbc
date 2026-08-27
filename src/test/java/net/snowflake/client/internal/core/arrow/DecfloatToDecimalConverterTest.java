@@ -19,36 +19,79 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class DecfloatToDecimalConverterTest extends BaseConverterTest {
 
-  private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+  private BufferAllocator allocator;
   private StructVector structVector;
+
+  @BeforeEach
+  public void setupAllocator() {
+    allocator = new RootAllocator(Long.MAX_VALUE);
+  }
 
   @AfterEach
   public void closeVector() {
     if (structVector != null) {
       structVector.close();
+      structVector = null;
     }
-    allocator.close();
+    if (allocator != null) {
+      allocator.close();
+    }
   }
 
   @Test
-  public void testToStringUsesCanonicalScientificNotation() throws SFException {
-    BigDecimal scientificValue = new BigDecimal("1.23E-7");
-    BigDecimal plainValue = new BigDecimal("123.456");
+  public void testFormatDecfloatMatchesTicketExamples() {
+    assertEquals("0", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ZERO, 0));
+    assertEquals("123.456", formatFromLiteral("123.456"));
+    assertEquals("1.2e200", formatFromLiteral("1.2e200"));
+    assertEquals("1e16384", formatFromLiteral("1E+16384"));
+    assertEquals(
+        "1.2345678901234567890123456789012345678e100",
+        formatFromLiteral("1.2345678901234567890123456789012345678E+100"));
+    assertEquals("-1.234e8000", formatFromLiteral("-1.234E+8000"));
+    assertEquals("0.000000123", formatFromLiteral("1.23E-7"));
+  }
 
-    structVector = createDecfloatVector(scientificValue, plainValue, null);
+  @Test
+  public void testFormatDecfloatWholeNumbersStayPlain() {
+    // significand=1, exponent=2 → scale -2. BigDecimal.toString() would emit "1E+2".
+    assertEquals("100", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ONE, 2));
+    assertEquals("1000000", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ONE, 6));
+    assertEquals("100", formatFromLiteral("100"));
+    assertEquals("1000000", formatFromLiteral("1000000"));
+  }
+
+  @Test
+  public void testToStringUsesOdbcStyleFormatting() throws SFException {
+    structVector =
+        createDecfloatVector(
+            new BigDecimal("1.2e200"),
+            new BigDecimal("123.456"),
+            new BigDecimal(BigInteger.ONE, -2),
+            new BigDecimal(BigInteger.ONE, -6),
+            new BigDecimal("0"),
+            null);
     ArrowVectorConverter converter = new DecfloatToDecimalConverter(structVector, 0, this);
 
-    assertEquals("1.23E-7", converter.toString(0));
-    assertEquals("123E-9", scientificValue.toEngineeringString());
+    assertEquals("1.2e200", converter.toString(0));
     assertEquals("123.456", converter.toString(1));
-    assertNull(converter.toString(2));
-    assertEquals(scientificValue, converter.toBigDecimal(0));
-    assertEquals(plainValue, converter.toBigDecimal(1));
-    assertNull(converter.toBigDecimal(2));
+    assertEquals("100", converter.toString(2));
+    assertEquals("1000000", converter.toString(3));
+    assertEquals("0", converter.toString(4));
+    assertNull(converter.toString(5));
+    assertEquals(new BigDecimal("1.2e200"), converter.toBigDecimal(0));
+    assertEquals(new BigDecimal("123.456"), converter.toBigDecimal(1));
+    assertEquals(0, new BigDecimal("100").compareTo(converter.toBigDecimal(2)));
+    assertEquals(0, new BigDecimal("1000000").compareTo(converter.toBigDecimal(3)));
+  }
+
+  private static String formatFromLiteral(String literal) {
+    BigDecimal value = new BigDecimal(literal);
+    return DecfloatToDecimalConverter.formatDecfloat(value.unscaledValue(), -value.scale());
   }
 
   private StructVector createDecfloatVector(BigDecimal... values) {
