@@ -71,6 +71,21 @@ public class SFFormatterTest {
     }
   }
 
+  @Test
+  public void testThrownStackTraceIsIncluded() {
+    SFFormatter formatter = new SFFormatter();
+    LogRecord record = new LogRecord(Level.SEVERE, "failed to connect");
+    record.setSourceClassName(SFFormatter.CLASS_NAME_PREFIX + "TestClass");
+    record.setSourceMethodName("TestMethod");
+    record.setThrown(new RuntimeException("boom"));
+
+    String formatted = formatter.format(record);
+
+    assertTrue(formatted.contains("failed to connect"));
+    assertTrue(formatted.contains("java.lang.RuntimeException: boom"));
+    assertTrue(formatted.contains("at "));
+  }
+
   /**
    * A log generator could generate log record directly and fill in necessary field specified by
    * constructor
