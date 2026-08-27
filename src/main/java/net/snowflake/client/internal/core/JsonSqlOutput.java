@@ -362,12 +362,6 @@ public class JsonSqlOutput implements SQLOutput {
   }
 
   private void withNextValue(
-      ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
-      throws SQLException {
-    applyNextValue(action);
-  }
-
-  private void withNextValue(
       Object value,
       ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
       throws SQLException {
@@ -375,7 +369,17 @@ public class JsonSqlOutput implements SQLOutput {
       writeNullValue();
       return;
     }
-    applyNextValue(action);
+    withNextValue(action);
+  }
+
+  private void withNextValue(
+      ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
+      throws SQLException {
+    Field field = fields.next();
+    String fieldName = field.getName();
+    Optional<SnowflakeColumn> maybeColumn =
+        Optional.ofNullable(field.getAnnotation(SnowflakeColumn.class));
+    action.apply(json, fieldName, maybeColumn);
   }
 
   private void writeNullValue() {
@@ -386,16 +390,6 @@ public class JsonSqlOutput implements SQLOutput {
     nullSchema.setName(fieldName);
     nullSchema.setFields(new ArrayList<>());
     schema.getFields().add(nullSchema);
-  }
-
-  private void applyNextValue(
-      ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
-      throws SQLException {
-    Field field = fields.next();
-    String fieldName = field.getName();
-    Optional<SnowflakeColumn> maybeColumn =
-        Optional.ofNullable(field.getAnnotation(SnowflakeColumn.class));
-    action.apply(json, fieldName, maybeColumn);
   }
 
   private SnowflakeDateTimeFormat getDateTimeFormat(String format) {
