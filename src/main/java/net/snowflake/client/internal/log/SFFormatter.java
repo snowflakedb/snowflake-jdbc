@@ -1,5 +1,7 @@
 package net.snowflake.client.internal.log;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,6 +49,12 @@ public class SFFormatter extends Formatter {
     builder.append(methodName).append(":");
     builder.append(lineNumber).append(" - ");
     builder.append(formatMessage(record));
+    if (record.getThrown() != null) {
+      StringWriter stringWriter = new StringWriter();
+      record.getThrown().printStackTrace(new PrintWriter(stringWriter));
+      builder.append("\n");
+      builder.append(stringWriter);
+    }
     builder.append("\n");
     return builder.toString();
   }
