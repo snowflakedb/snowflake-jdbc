@@ -86,14 +86,26 @@ public class FatJarTestApp {
     System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
     String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
 
-    boolean hasOpeningSession = logOutput.contains("Opening session");
-    if (!hasOpeningSession) {
-      System.err.println("[FAIL] Log output does not contain 'Opening session' (expected from SFSession)");
+    // Session-open messages are DEBUG (GH #2377); SQL execution remains INFO.
+    boolean hasExecuteLog = logOutput.contains("Execute:");
+    if (!hasExecuteLog) {
+      System.err.println("[FAIL] Log output does not contain 'Execute:' (expected INFO SQL log from SFStatement)");
       System.err.println("[DEBUG] First 2000 chars of log output:");
       System.err.println(logsPrelude);
       System.exit(1);
     }
-    System.out.println("[PASS] Found 'Opening session' in " + mode + " log output");
+    System.out.println("[PASS] Found 'Execute:' INFO log in " + mode + " log output");
+
+    boolean hasOpeningSession = logOutput.contains("Opening session");
+    if (!hasOpeningSession) {
+      System.err.println(
+          "[FAIL] Log output does not contain 'Opening session' (expected DEBUG log from SFSession; "
+              + "ensure net.snowflake DEBUG is enabled for SLF4J or JUL FINE level)");
+      System.err.println("[DEBUG] First 2000 chars of log output:");
+      System.err.println(logsPrelude);
+      System.exit(1);
+    }
+    System.out.println("[PASS] Found 'Opening session' DEBUG log in " + mode + " log output");
 
     boolean hasCloudSdkLog = false;
     for (String pattern : CLOUD_SDK_LOGGER_PATTERNS) {

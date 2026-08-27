@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
+  - Changed session-open property dump, GLOBAL/CHINA domain connection, and OAuth authentication-flow start messages from INFO to DEBUG to reduce log noise (snowflakedb/snowflake-jdbc#2377).
   - Fixed `SFFormatter` omitting the associated stack trace when a log record has a thrown exception (SNOW-466174).
   - Fixed Linux credential cache parsing checking the root JSON node type a second time instead of the `tokens` child, which could fail the cache load when `tokens` was present but not an object (SNOW-4009235).
   - Fixed `DatabaseMetaData.getColumns()` discarding `trim()` on column default values and throwing `NullPointerException` when SHOW COLUMNS returns a SQL NULL default (SNOW-4009234).
