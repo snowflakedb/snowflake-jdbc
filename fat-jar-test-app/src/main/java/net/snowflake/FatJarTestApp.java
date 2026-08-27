@@ -86,15 +86,16 @@ public class FatJarTestApp {
     System.out.println("[INFO] Verifying " + mode + " log output (" + logOutput.length() + " chars)");
     String logsPrelude = logOutput.substring(0, Math.min(2000, logOutput.length()));
 
-    // Session-open messages are DEBUG (GH #2377); SQL execution remains INFO.
-    boolean hasExecuteLog = logOutput.contains("Execute:");
-    if (!hasExecuteLog) {
-      System.err.println("[FAIL] Log output does not contain 'Execute:' (expected INFO SQL log from SFStatement)");
+    // PUT "Starting upload ..." remains INFO. Session-open is DEBUG (GH #2377); JUL FINE and
+    // logback net.snowflake=DEBUG still emit it, so require both to prove INFO and DEBUG paths.
+    boolean hasStartUpload = logOutput.contains("Starting upload");
+    if (!hasStartUpload) {
+      System.err.println("[FAIL] Log output does not contain 'Starting upload' (expected INFO from PUT)");
       System.err.println("[DEBUG] First 2000 chars of log output:");
       System.err.println(logsPrelude);
       System.exit(1);
     }
-    System.out.println("[PASS] Found 'Execute:' INFO log in " + mode + " log output");
+    System.out.println("[PASS] Found 'Starting upload' INFO log in " + mode + " log output");
 
     boolean hasOpeningSession = logOutput.contains("Opening session");
     if (!hasOpeningSession) {
