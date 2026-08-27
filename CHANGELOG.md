@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
-  - Fixed DECFLOAT `ResultSet.getString()` using engineering notation (`120E+198`) instead of ODBC-style formatting: plain decimal when the unsigned form fits in 38 characters (e.g. `100`), otherwise normalized scientific notation (`1.2e200`) (SNOW-3229469).
+  - Fixed DECFLOAT `ResultSet.getString()` using engineering notation (`120E+198`) instead of normalized scientific notation (`1.2e200`); values whose unsigned plain form fits in 38 characters stay in plain decimal (SNOW-3229469).
   - Fixed `SFFormatter` omitting the associated stack trace when a log record has a thrown exception (SNOW-466174).
   - Fixed Linux credential cache parsing checking the root JSON node type a second time instead of the `tokens` child, which could fail the cache load when `tokens` was present but not an object (SNOW-4009235).
   - Fixed `DatabaseMetaData.getColumns()` discarding `trim()` on column default values and throwing `NullPointerException` when SHOW COLUMNS returns a SQL NULL default (SNOW-4009234).

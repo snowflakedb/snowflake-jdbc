@@ -44,29 +44,49 @@ public class DecfloatToDecimalConverterTest extends BaseConverterTest {
   }
 
   @Test
-  public void testFormatDecfloatMatchesTicketExamples() {
-    assertEquals("0", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ZERO, 0));
-    assertEquals("123.456", formatFromLiteral("123.456"));
-    assertEquals("1.2e200", formatFromLiteral("1.2e200"));
-    assertEquals("1e16384", formatFromLiteral("1E+16384"));
+  public void testFormatDecfloatMatchesJiraExamples() {
+    assertEquals("0", DecfloatToDecimalConverter.formatDecfloat(BigDecimal.ZERO));
+    assertEquals("123.456", format("123.456"));
+    // Coefficient is 1.2 (not 12); exponent is e200 (not e199).
+    assertEquals("1.2e200", format("1.2e200"));
+    assertEquals("1e16384", format("1E+16384"));
     assertEquals(
         "1.2345678901234567890123456789012345678e100",
-        formatFromLiteral("1.2345678901234567890123456789012345678E+100"));
-    assertEquals("-1.234e8000", formatFromLiteral("-1.234E+8000"));
-    assertEquals("0.000000123", formatFromLiteral("1.23E-7"));
+        format("1.2345678901234567890123456789012345678E+100"));
+    assertEquals("-1.234e8000", format("-1.234E+8000"));
+    assertEquals("0.000000123", format("1.23E-7"));
   }
 
   @Test
   public void testFormatDecfloatWholeNumbersStayPlain() {
     // significand=1, exponent=2 → scale -2. BigDecimal.toString() would emit "1E+2".
-    assertEquals("100", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ONE, 2));
-    assertEquals("1000000", DecfloatToDecimalConverter.formatDecfloat(BigInteger.ONE, 6));
-    assertEquals("100", formatFromLiteral("100"));
-    assertEquals("1000000", formatFromLiteral("1000000"));
+    assertEquals(
+        "100", DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, -2)));
+    assertEquals(
+        "1000000", DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, -6)));
+    assertEquals("100", format("100"));
+    assertEquals("1000000", format("1000000"));
   }
 
   @Test
-  public void testToStringUsesOdbcStyleFormatting() throws SFException {
+  public void testFormatDecfloatUsesScientificWhenPlainExceeds38Digits() {
+    // 123 followed by 35 zeros is 38 characters → plain; one more zero → scientific.
+    assertEquals(
+        "12300000000000000000000000000000000000",
+        DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.valueOf(123), -35)));
+    assertEquals(
+        "1.23e38",
+        DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.valueOf(123), -36)));
+    // 0. followed by 36 zeros and 1 is 38 characters → plain; one more zero → scientific.
+    assertEquals(
+        "0.000000000000000000000000000000000001",
+        DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, 36)));
+    assertEquals(
+        "1e-37", DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, 37)));
+  }
+
+  @Test
+  public void testToStringUsesNormalizedScientificOrPlainDecimal() throws SFException {
     structVector =
         createDecfloatVector(
             new BigDecimal("1.2e200"),
@@ -89,9 +109,8 @@ public class DecfloatToDecimalConverterTest extends BaseConverterTest {
     assertEquals(0, new BigDecimal("1000000").compareTo(converter.toBigDecimal(3)));
   }
 
-  private static String formatFromLiteral(String literal) {
-    BigDecimal value = new BigDecimal(literal);
-    return DecfloatToDecimalConverter.formatDecfloat(value.unscaledValue(), -value.scale());
+  private static String format(String literal) {
+    return DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(literal));
   }
 
   private StructVector createDecfloatVector(BigDecimal... values) {
