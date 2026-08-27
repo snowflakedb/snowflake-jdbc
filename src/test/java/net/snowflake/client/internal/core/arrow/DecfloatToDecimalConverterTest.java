@@ -83,6 +83,17 @@ public class DecfloatToDecimalConverterTest extends BaseConverterTest {
         DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, 36)));
     assertEquals(
         "1e-37", DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(BigInteger.ONE, 37)));
+    // 38-character budget includes '.': 38-digit integer stays plain; 38 significant digits
+    // with a fraction (the '.' makes 39 chars) go scientific.
+    BigDecimal thirtyEightDigitInteger = new BigDecimal(BigInteger.TEN.pow(37));
+    assertEquals(
+        thirtyEightDigitInteger.toPlainString(),
+        DecfloatToDecimalConverter.formatDecfloat(thirtyEightDigitInteger));
+    BigDecimal thirtyEightSigWithFraction =
+        new BigDecimal(BigInteger.TEN.pow(37).add(BigInteger.valueOf(8)), 1);
+    assertEquals(
+        "1." + zeros(36) + "8e36",
+        DecfloatToDecimalConverter.formatDecfloat(thirtyEightSigWithFraction));
   }
 
   @Test
@@ -111,6 +122,14 @@ public class DecfloatToDecimalConverterTest extends BaseConverterTest {
 
   private static String format(String literal) {
     return DecfloatToDecimalConverter.formatDecfloat(new BigDecimal(literal));
+  }
+
+  private static String zeros(int count) {
+    StringBuilder out = new StringBuilder(count);
+    for (int i = 0; i < count; i++) {
+      out.append('0');
+    }
+    return out.toString();
   }
 
   private StructVector createDecfloatVector(BigDecimal... values) {

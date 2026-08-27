@@ -13,7 +13,12 @@ import org.apache.arrow.vector.complex.StructVector;
 
 class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
 
-  /** DECFLOAT precision; unsigned plain form is used when it fits in this many characters. */
+  /**
+   * Max unsigned plain-decimal <em>characters</em> (including {@code '.'} and a leading {@code
+   * "0."}), matching ODBC {@code format_decfloat}. This is not "38 significant digits": a 38-digit
+   * integer stays plain, but the same digits with a fraction (the {@code '.'} makes 39 chars) go
+   * scientific.
+   */
   static final int MAX_PLAIN_DIGITS = 38;
 
   private StructVector vector;
@@ -147,10 +152,22 @@ class DecfloatToDecimalConverter extends AbstractArrowVectorConverter {
     return toNormalizedScientific(stripped);
   }
 
-  /** True when the unsigned plain-decimal form is at most {@link #MAX_PLAIN_DIGITS} characters. */
+  /**
+   * True when the unsigned plain-decimal form is at most {@link #MAX_PLAIN_DIGITS} characters.
+   * Length is computed from {@code precision}/{@code scale} so large-exponent values (e.g. {@code
+   * 1e16384}) do not allocate a multi-kilobyte {@code toPlainString()} just to measure it.
+   */
   private static boolean fitsInPlainDecimal(BigDecimal value) {
-    String plain = value.toPlainString();
-    int unsignedLength = value.signum() < 0 ? plain.length() - 1 : plain.length();
+    int precision = value.precision();
+    int scale = value.scale();
+    int unsignedLength;
+    if (scale <= 0) {
+      unsignedLength = precision - scale;
+    } else if (precision > scale) {
+      unsignedLength = precision + 1;
+    } else {
+      unsignedLength = scale + 2;
+    }
     return unsignedLength <= MAX_PLAIN_DIGITS;
   }
 
