@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 public class SnowflakeDatabaseMetaDataImplTablePrivilegesQueryTest {
 
   @Test
-  public void escapeSqlStringLiteralDoublesSingleQuotes() {
+  public void escapeSqlStringLiteralDoublesQuotesAndBackslashes() {
     assertNull(SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral(null));
     assertEquals("ORDERS", SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral("ORDERS"));
     assertEquals("O''Brien", SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral("O'Brien"));
@@ -19,5 +19,10 @@ public class SnowflakeDatabaseMetaDataImplTablePrivilegesQueryTest {
     assertEquals(
         "x''; select 11 as bar; --",
         SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral("x'; select 11 as bar; --"));
+    // Snowflake reads \' as an escaped quote; backslash must be doubled first.
+    assertEquals(
+        "foo\\\\'' OR 1=1 --",
+        SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral("foo\\' OR 1=1 --"));
+    assertEquals("foo\\\\", SnowflakeDatabaseMetaDataImpl.escapeSqlStringLiteral("foo\\"));
   }
 }
