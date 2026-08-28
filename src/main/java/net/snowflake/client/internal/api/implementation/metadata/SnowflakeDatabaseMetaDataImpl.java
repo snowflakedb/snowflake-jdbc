@@ -263,6 +263,17 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
   }
 
   /**
+   * Escape a value for a single-quoted Snowflake SQL string literal. Backslashes are doubled first
+   * so {@code \'} cannot close the string; then {@code '} is doubled.
+   */
+  static String escapeSqlStringLiteral(String value) {
+    if (value == null) {
+      return null;
+    }
+    return value.replace("\\", "\\\\").replace("'", "''");
+  }
+
+  /**
    * This guards against SQL injections by ensuring that any single quote is escaped properly.
    *
    * @param arg the original schema
@@ -2065,11 +2076,13 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     }
     showView += "information_schema.table_privileges";
 
+    boolean hasTablePredicate = false;
     if (tableNamePattern != null
         && !tableNamePattern.isEmpty()
         && !tableNamePattern.trim().equals("%")
         && !tableNamePattern.trim().equals(".*")) {
-      showView += " where table_name = '" + tableNamePattern + "'";
+      showView += " where table_name = '" + escapeSqlStringLiteral(tableNamePattern) + "'";
+      hasTablePredicate = true;
     }
 
     if (schemaPattern != null
@@ -2077,10 +2090,10 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
       String unescapedSchema = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
-      if (showView.contains("where table_name")) {
-        showView += " and table_schema = '" + unescapedSchema + "'";
+      if (hasTablePredicate) {
+        showView += " and table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
       } else {
-        showView += " where table_schema = '" + unescapedSchema + "'";
+        showView += " where table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
       }
     }
     showView += " order by table_catalog, table_schema, table_name, privilege_type";

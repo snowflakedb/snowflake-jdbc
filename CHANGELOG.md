@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
+  - Fixed `DatabaseMetaData.getTablePrivileges()` concatenating unescaped table and schema names into SQL string literals, which allowed a quote character to break out of the query (SNOW-3236395).
   - Fixed DECFLOAT `ResultSet.getString()` using engineering notation (`120E+198`) instead of normalized scientific notation (`1.2e200`); values whose unsigned plain form fits in 38 characters stay in plain decimal (SNOW-3229469).
   - Fixed null nested structured-type fields throwing `NullPointerException` in `JsonSqlOutput` when binding via `SQLOutput` reference writers such as `writeObject`, `writeBigDecimal`, `writeBytes`, `writeDate`, and `writeTimestamp` (SNOW-1449489).
   - Changed session-open property dump, GLOBAL/CHINA domain connection, and OAuth authentication-flow start messages from INFO to DEBUG to reduce log noise (snowflakedb/snowflake-jdbc#2377).
