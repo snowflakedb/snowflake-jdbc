@@ -3,6 +3,7 @@ package net.snowflake.client.internal.core;
 import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty;
 
 import java.util.Optional;
+import java.util.Set;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /*
@@ -24,6 +25,19 @@ public final class Constants {
   public static final int OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE = 390318;
 
   public static final int OAUTH_ACCESS_TOKEN_INVALID_GS_CODE = 390303;
+
+  // GitHub #2681: server (GS) error codes that represent credential/authentication rejection.
+  // These must surface as SQLState 28000 (INVALID_AUTHORIZATION_SPECIFICATION), not 08001.
+  public static final Set<Integer> AUTH_REJECTION_GS_CODES =
+      Set.of(
+          390100, // INCORRECT_USERNAME_PASSWORD
+          390144, // JWT_TOKEN_INVALID
+          394300, // JWT_TOKEN_INVALID_USER_IN_ISSUER
+          394301, // JWT_TOKEN_MISSING_ISSUE_OR_EXPIRATION_TIME
+          394304, // JWT_TOKEN_INVALID_PUBLIC_KEY_FINGERPRINT_MISMATCH
+          394305, // JWT_TOKEN_INVALID_ALGORITHM
+          394306, // JWT_TOKEN_INVALID_SIGNATURE
+          390303); // OAUTH_ACCESS_TOKEN_INVALID
 
   // Error message for IOException when no space is left for GET
   public static final String NO_SPACE_LEFT_ON_DEVICE_ERR = "No space left on device";

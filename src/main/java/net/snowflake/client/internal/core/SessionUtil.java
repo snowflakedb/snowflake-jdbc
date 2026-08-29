@@ -937,11 +937,11 @@ public class SessionUtil {
             loginInput.getUserName(),
             loginInput.getHostFromServerUrl(),
             errorMessage);
-        throw new SnowflakeSQLException(
-            NO_QUERY_ID,
-            errorMessage,
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            errorCode);
+        String sqlState =
+            Constants.AUTH_REJECTION_GS_CODES.contains(errorCode)
+                ? SqlState.INVALID_AUTHORIZATION_SPECIFICATION
+                : SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION;
+        throw new SnowflakeSQLException(NO_QUERY_ID, errorMessage, sqlState, errorCode);
       }
 
       // session token is in the data field of the returned json response
