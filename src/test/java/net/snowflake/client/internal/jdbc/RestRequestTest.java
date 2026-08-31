@@ -768,6 +768,35 @@ public class RestRequestTest {
     }
   }
 
+  // SNOW-4036693: a timeout-trimmed previous backoff below min must not throw on the non-login path.
+  @Test
+  public void getNewBackoffInMilliHandlesPreviousBackoffBelowMin() {
+    long minBackoffInMilli = 1000;
+    long maxBackoffInMilli = 16000;
+    DecorrelatedJitterBackoff decorrelatedJitterBackoff =
+        new DecorrelatedJitterBackoff(minBackoffInMilli, maxBackoffInMilli);
+    long retryTimeoutInMilli = 5 * 60 * 1000L;
+    long elapsedMilliForTransientIssues = 0;
+
+    for (long previousBackoffInMilli : new long[] {0, 1, 100, 200, 333}) {
+      long backoffInMilli =
+          assertDoesNotThrow(
+              () ->
+                  RestRequest.getNewBackoffInMilli(
+                      previousBackoffInMilli,
+                      false,
+                      decorrelatedJitterBackoff,
+                      10,
+                      retryTimeoutInMilli,
+                      elapsedMilliForTransientIssues));
+      assertTrue(
+          backoffInMilli >= minBackoffInMilli && backoffInMilli <= maxBackoffInMilli,
+          String.format(
+              "previousBackoff=%dms: next backoff %dms should be within [%d, %d]",
+              previousBackoffInMilli, backoffInMilli, minBackoffInMilli, maxBackoffInMilli));
+    }
+  }
+
   /**
    * Test that IllegalStateException during HTTP request execution triggers a rebuild of the HTTP
    * client.

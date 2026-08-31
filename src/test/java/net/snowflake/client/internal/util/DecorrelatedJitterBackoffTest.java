@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class DecorrelatedJitterBackoffTest {
 
@@ -66,6 +67,24 @@ public class DecorrelatedJitterBackoffTest {
           String.format(
               "Retry %d, iteration %d: Result %dms should be <= %dms (min(cap=%d, sleep*3=%d)) for currentSleepTime=%dms",
               attemptNumber, i, result, expectedMax, cap, currentSleepTime * 3, currentSleepTime));
+    }
+  }
+
+  // SNOW-4036693: a previous sleep below base must not throw "bound must be greater than origin".
+  @ParameterizedTest(name = "previousSleep={0}ms stays within [base, cap]")
+  @ValueSource(longs = {0L, 1L, 100L, 200L, 333L, 334L, 500L, 999L, 1000L})
+  public void nextSleepTimeHandlesPreviousSleepBelowBase(long previousSleep) {
+    long base = 1000L;
+    long cap = 16000L;
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(base, cap);
+
+    for (int i = 0; i < 1000; i++) {
+      long result = backoff.nextSleepTime(previousSleep);
+      assertTrue(
+          result >= base && result <= cap,
+          String.format(
+              "previousSleep=%dms, iteration %d: result %dms must stay within [%d, %d]",
+              previousSleep, i, result, base, cap));
     }
   }
 }
