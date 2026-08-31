@@ -768,7 +768,8 @@ public class RestRequestTest {
     }
   }
 
-  // SNOW-4036693: a timeout-trimmed previous backoff below min must not throw on the non-login path.
+  // SNOW-4036693: a timeout-trimmed previous backoff below min must not throw on the non-login
+  // path.
   @Test
   public void getNewBackoffInMilliHandlesPreviousBackoffBelowMin() {
     long minBackoffInMilli = 1000;
