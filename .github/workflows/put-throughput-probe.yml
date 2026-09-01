@@ -57,9 +57,15 @@ jobs:
           WORKSPACE: ${{ github.workspace }}/probe-ws
           AWS_EC2_METADATA_DISABLED: "true"
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          PARAMS="$WORKSPACE/parameters.json"
+          # Diagnostics (safe: names/structure only, never values).
+          echo "params file: $PARAMS ($(wc -c < "$PARAMS") bytes)"
+          echo "top-level keys: $(jq -r 'keys | join(",")' "$PARAMS" 2>&1)"
+          echo "testconnection keys: $(jq -r '.testconnection // {} | keys | join(",")' "$PARAMS" 2>&1)"
           # Export SNOWFLAKE_TEST_* from the decrypted params, exactly like ci/container/test_component.sh.
-          eval "$(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' "$WORKSPACE/parameters.json")"
+          eval "$(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' "$PARAMS")"
+          echo "SNOWFLAKE_TEST_HOST set: $([ -n "${SNOWFLAKE_TEST_HOST:-}" ] && echo yes || echo NO)"
           # Point key-pair auth at the decrypted key (resolved against WORKSPACE by the probe).
           export SNOWFLAKE_TEST_PRIVATE_KEY_FILE=rsa_key_jdbc.p8
           unset SNOWFLAKE_TEST_PASSWORD || true   # force JWT path
