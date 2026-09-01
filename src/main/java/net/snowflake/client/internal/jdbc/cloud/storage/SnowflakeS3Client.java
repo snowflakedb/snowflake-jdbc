@@ -6,7 +6,6 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.systemGetProperty
 import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
 import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -701,9 +700,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                       .putObjectRequest(request)
                       .requestBody(
                           AsyncRequestBody.fromInputStream(
-                              // wrapping with BufferedInputStream to mitigate
-                              // https://github.com/aws/aws-sdk-java-v2/issues/6174
-                              new BufferedInputStream(uploadStreamInfo.left),
+                              // The encrypting CipherInputStream returns ~512 bytes per read and
+                              // the async request body reads once per demand; coalesce into
+                              // full-size reads so upload throughput does not collapse.
+                              new FullReadInputStream(uploadStreamInfo.left),
                               request.contentLength(),
                               executorService))
                       .build());
