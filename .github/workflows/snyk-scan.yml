@@ -1,9 +1,7 @@
 name: Snyk Scan
 
+# SNOW-4039899 scratch branch: PR trigger disabled (see put-throughput-probe.yml).
 on:
-  pull_request:
-    branches:
-      - master
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:

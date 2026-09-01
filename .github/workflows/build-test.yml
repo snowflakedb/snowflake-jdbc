@@ -1,17 +1,8 @@
 name: Build and Test
 
+# SNOW-4039899 scratch branch: heavy matrix disabled so only the PUT throughput
+# probe runs. Restore this on: block before merging anything real.
 on:
-    push:
-        branches:
-            - master
-        tags:
-            - v*
-    pull_request:
-        branches:
-            - master
-            - SNOW-**
-            - NO-SNOW-**
-        types: [opened, synchronize, reopened, labeled, unlabeled]
     workflow_dispatch:
         inputs:
           logLevel:

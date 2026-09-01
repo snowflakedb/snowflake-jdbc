@@ -1,0 +1,67 @@
+name: SNOW-4039899 PUT throughput probe
+
+# Scratch workflow for the SNOW-4039899 investigation. Runs ONLY the three-mode
+# encrypted-PUT throughput probe on a GitHub-hosted runner (fast uplink), to test
+# whether the CipherInputStream 512-byte trickle is the real throughput limiter.
+# The heavy build-test matrix is disabled on this branch (see the other workflows'
+# on: blocks, trimmed to workflow_dispatch only for this PR).
+
+on:
+  push:
+    branches:
+      - SNOW-4039899-put-throughput
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  put-probe:
+    name: 20MB encrypted PUT — default vs coalesce vs tempfile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Decrypt AWS test parameters and key (same mechanism as build-test)
+        shell: bash
+        env:
+          PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+          JDBC_PRIVATE_KEY_SECRET: ${{ secrets.JDBC_PRIVATE_KEY_SECRET }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/probe-ws"
+          gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" \
+            --output "$GITHUB_WORKSPACE/probe-ws/parameters.json" \
+            .github/workflows/parameters_aws.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase="$JDBC_PRIVATE_KEY_SECRET" \
+            --output "$GITHUB_WORKSPACE/probe-ws/rsa_key_jdbc.p8" \
+            .github/workflows/rsa_keys/rsa_key_jdbc_aws.p8.gpg
+          echo "decrypted parameters + key"
+
+      - name: Build patched fat jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./mvnw -B -q -DskipTests -Dossrh-deploy=false -Pself-contained-jar clean package
+          ls -la target/snowflake-jdbc.jar
+
+      - name: Run PUT throughput probe (all three modes)
+        shell: bash
+        env:
+          WORKSPACE: ${{ github.workspace }}/probe-ws
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: |
+          set -euo pipefail
+          # Export SNOWFLAKE_TEST_* from the decrypted params, exactly like ci/container/test_component.sh.
+          eval "$(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' "$WORKSPACE/parameters.json")"
+          # Point key-pair auth at the decrypted key (resolved against WORKSPACE by the probe).
+          export SNOWFLAKE_TEST_PRIVATE_KEY_FILE=rsa_key_jdbc.p8
+          unset SNOWFLAKE_TEST_PASSWORD || true   # force JWT path
+          javac -d probe-ws ci/probe/PutThroughputProbe.java
+          java -cp "target/snowflake-jdbc.jar:probe-ws" PutThroughputProbe 20M

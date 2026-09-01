@@ -2,11 +2,9 @@ name: Changelog Check
 permissions:
   contents: read
 
+# SNOW-4039899 scratch branch: disabled (see put-throughput-probe.yml).
 on:
-  pull_request:
-    types: [opened, synchronize, labeled, unlabeled]
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   check_change_log:

@@ -1,9 +1,9 @@
 ---
 name: Run semgrep checks
 
+# SNOW-4039899 scratch branch: disabled (see put-throughput-probe.yml).
 on:
-  pull_request:
-    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read

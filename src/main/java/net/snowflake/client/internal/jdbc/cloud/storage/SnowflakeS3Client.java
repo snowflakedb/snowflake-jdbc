@@ -10,6 +10,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -695,18 +696,45 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         PutObjectRequest request = putRequestBuilder.build();
 
         if (uploadStreamInfo.right) {
+          // SNOW-4039899 prototype switch: -Dsf.uploadFix=coalesce|tempfile|<default>
+          //  default   : current behaviour — bare BufferedInputStream over the CipherInputStream,
+          //              which trickles ~512 B per read into the async pipeline.
+          //  coalesce  : a read-fully wrapper that fills each SDK read to its requested length,
+          //              collapsing ~32 async onNext events into 1 while staying fully streamed.
+          //  tempfile  : drain the (already-encrypted) stream to a temp file and fromFile() it,
+          //              giving the SDK a seekable source (real parallelism, no trickle).
+          String uploadFix = System.getProperty("sf.uploadFix", "");
+          AsyncRequestBody body;
+          if ("tempfile".equals(uploadFix)) {
+            File encTmp = File.createTempFile("sf-upload-", ".enc");
+            encTmp.deleteOnExit();
+            try (InputStream in = uploadStreamInfo.left) {
+              java.nio.file.Files.copy(
+                  in, encTmp.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            logger.info(
+                "sf.uploadFix=tempfile: encrypted stream drained to {} ({} bytes)",
+                encTmp.getAbsolutePath(),
+                encTmp.length());
+            body = AsyncRequestBody.fromFile(encTmp);
+          } else if ("coalesce".equals(uploadFix)) {
+            body =
+                AsyncRequestBody.fromInputStream(
+                    new CoalescingInputStream(uploadStreamInfo.left),
+                    request.contentLength(),
+                    executorService);
+          } else {
+            body =
+                AsyncRequestBody.fromInputStream(
+                    // wrapping with BufferedInputStream to mitigate
+                    // https://github.com/aws/aws-sdk-java-v2/issues/6174
+                    new BufferedInputStream(uploadStreamInfo.left),
+                    request.contentLength(),
+                    executorService);
+          }
           myUpload =
               tx.upload(
-                  UploadRequest.builder()
-                      .putObjectRequest(request)
-                      .requestBody(
-                          AsyncRequestBody.fromInputStream(
-                              // wrapping with BufferedInputStream to mitigate
-                              // https://github.com/aws/aws-sdk-java-v2/issues/6174
-                              new BufferedInputStream(uploadStreamInfo.left),
-                              request.contentLength(),
-                              executorService))
-                      .build());
+                  UploadRequest.builder().putObjectRequest(request).requestBody(body).build());
         } else {
           myUpload =
               tx.upload(
@@ -1095,6 +1123,33 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (ReflectiveOperationException ex) {
         logger.warn("Reflective shutdown of SdkEventLoopGroup failed (SDK shape changed?)", ex);
       }
+    }
+  }
+
+  /**
+   * SNOW-4039899 prototype (sf.uploadFix=coalesce): fills each {@code read(byte[],off,len)} to its
+   * requested length by looping over the underlying stream. The client-side-encryption path hands
+   * the SDK a {@link javax.crypto.CipherInputStream}, whose {@code read} returns at most one cipher
+   * block (~512 B) regardless of the length asked for; the async upload publisher then emits one
+   * {@code onNext} per ~512 B, throttling a multi-MB part to a trickle. Coalescing here keeps the
+   * reads synchronous and cheap while presenting the SDK with full-size buffers.
+   */
+  private static final class CoalescingInputStream extends FilterInputStream {
+    CoalescingInputStream(InputStream in) {
+      super(in);
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+      int total = 0;
+      while (total < len) {
+        int n = in.read(b, off + total, len - total);
+        if (n < 0) {
+          return total == 0 ? -1 : total;
+        }
+        total += n;
+      }
+      return total;
     }
   }
 }
