@@ -37,10 +37,13 @@ public class PutThroughputProbe {
     }
     System.out.println("[probe] payload=" + src + " size=" + src.length());
 
-    String host = req("SNOWFLAKE_TEST_HOST");
+    // CI's testconnection provides only ACCOUNT (no HOST/PORT); mirror AbstractDriverIT and
+    // derive host = <account>.snowflakecomputing.com, port 443, when they are absent.
+    String account = req("SNOWFLAKE_TEST_ACCOUNT");
+    String host = env("SNOWFLAKE_TEST_HOST", account + ".snowflakecomputing.com");
     String port = env("SNOWFLAKE_TEST_PORT", "443");
     Properties p = new Properties();
-    p.put("account", req("SNOWFLAKE_TEST_ACCOUNT"));
+    p.put("account", account);
     p.put("user", req("SNOWFLAKE_TEST_USER"));
     p.put("db", req("SNOWFLAKE_TEST_DATABASE"));
     p.put("schema", env("SNOWFLAKE_TEST_SCHEMA", "public"));
