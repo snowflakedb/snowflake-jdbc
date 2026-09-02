@@ -330,11 +330,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     if (host == null) {
       return false;
     }
-    String normalized = host.toLowerCase();
-    if (normalized.startsWith("ocsp.")) {
-      return PrivateLinkDetector.isSnowflakeHost(normalized.substring("ocsp.".length()));
+    String normalized = PrivateLinkDetector.normalizeHost(host);
+    if (!PrivateLinkDetector.isLdhHost(normalized)) {
+      return false;
     }
-    return PrivateLinkDetector.isSnowflakeHost(normalized);
+    String toCheck =
+        normalized.startsWith("ocsp.") ? normalized.substring("ocsp.".length()) : normalized;
+    return PrivateLinkDetector.hasRecognizedSnowflakeSuffix(toCheck);
   }
 
   static void setOCSPResponseCacheServerURL(String serverURL) {
@@ -874,7 +876,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               throw new CertificateException(ex.getMessage(), ex);
             }
           } catch (SFOCSPException ex) {
-            if (ex.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED) {
+            // A definitive OCSP result is authoritative even in fail-open mode; only the
+            // inability to obtain a response is tolerated (SNOW-3649698).
+            if (isDefinitiveRevocationResult(ex.getErrorCode())) {
+              OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
               throw ex;
             } else {
               throw new CertificateException(ex.getMessage(), ex);
@@ -930,6 +935,30 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         logger.debug(ocspLog, false);
         throw error;
       }
+    }
+  }
+
+  /**
+   * A definitive OCSP result is authoritative even in fail-open mode. That covers a REVOKED
+   * verdict, a CertID mismatch, and an untrusted response or signing-certificate signature.
+   * CERTIFICATE_STATUS_UNKNOWN is not in this set: signature verification and CertID binding both
+   * run before the unknown branch, so unknown is only reachable for a signature-verified response
+   * bound to the requested certificate — a genuine responder statement, tolerated under fail-open
+   * (matching Python and Node; SNOW-3649698).
+   *
+   * @param errorCode the OCSP error code produced while validating the response
+   * @return true if the result is definitive and must be propagated regardless of OCSP mode
+   */
+  // Package-private for testing (see SFTrustManagerOcspResponseValidationTest).
+  static boolean isDefinitiveRevocationResult(OCSPErrorCode errorCode) {
+    switch (errorCode) {
+      case CERTIFICATE_STATUS_REVOKED:
+      case CERTIFICATE_ID_MISMATCH:
+      case INVALID_OCSP_RESPONSE_SIGNATURE:
+      case INVALID_CERTIFICATE_SIGNATURE:
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -1271,7 +1300,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             ex);
       }
 
-      validateBasicOcspResponse(currentTime, basicOcspResp);
+      // Ensure the response corresponds to the certificate being validated (SNOW-3649698).
+      CertificateID requestedCertId =
+          createRequest(pairIssuerSubject).getRequestList()[0].getCertID();
+      validateBasicOcspResponse(currentTime, basicOcspResp, requestedCertId);
     } catch (IOException | OCSPException ex) {
       throw new SFOCSPException(
           OCSPErrorCode.REVOCATION_CHECK_FAILURE, "Failed to check revocation status.", ex);
@@ -1298,11 +1330,19 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    *
    * @param currentTime the current timestamp.
    * @param basicOcspResp BasicOcspResponse data.
+   * @param requestedCertId the CertID of the certificate being validated.
    * @throws SFOCSPException raises if any failure occurs.
    */
-  private void validateBasicOcspResponse(Date currentTime, BasicOCSPResp basicOcspResp)
+  private void validateBasicOcspResponse(
+      Date currentTime, BasicOCSPResp basicOcspResp, CertificateID requestedCertId)
       throws SFOCSPException {
     for (SingleResp singleResps : basicOcspResp.getResponses()) {
+      // Ensure the response corresponds to the certificate being validated (SNOW-3649698).
+      if (!certIdMatches(requestedCertId, singleResps.getCertID())) {
+        throw new SFOCSPException(
+            OCSPErrorCode.CERTIFICATE_ID_MISMATCH,
+            "The OCSP response does not correspond to the certificate being validated.");
+      }
       checkCertUnknownTestParameter();
       CertificateStatus certStatus = singleResps.getCertStatus();
       if (certStatus != CertificateStatus.GOOD) {
@@ -1347,6 +1387,24 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       }
     }
     logger.debug("OK. Verified the certificate revocation status.", false);
+  }
+
+  /**
+   * Ensures a single OCSP response entry describes the certificate that was requested. The issuer
+   * name hash, issuer key hash, and serial number must all match (SNOW-3649698).
+   *
+   * @param requested the CertID built for the certificate being validated
+   * @param responded the CertID reported by a single OCSP response entry
+   * @return true if the two CertIDs identify the same certificate
+   */
+  private static boolean certIdMatches(CertificateID requested, CertificateID responded) {
+    if (requested == null || responded == null) {
+      return false;
+    }
+    return Arrays.equals(requested.getIssuerNameHash(), responded.getIssuerNameHash())
+        && Arrays.equals(requested.getIssuerKeyHash(), responded.getIssuerKeyHash())
+        && requested.getSerialNumber() != null
+        && requested.getSerialNumber().equals(responded.getSerialNumber());
   }
 
   private void checkCertUnknownTestParameter() throws SFOCSPException {

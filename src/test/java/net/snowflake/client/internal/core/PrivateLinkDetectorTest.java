@@ -25,8 +25,8 @@ public class PrivateLinkDetectorTest {
           Arguments.of("snowhouse.privatelink.snowflakecomputing.cn", true),
           Arguments.of("snowhouse.PRIVATELINK.snowflakecomputing.cn", true),
           Arguments.of("snowhouse.snowflakecomputing.xyz", false),
-          Arguments.of("snowhouse.privatelink.snowflakecomputing.xyz", true),
-          Arguments.of("snowhouse.PRIVATELINK.snowflakecomputing.xyz", true));
+          Arguments.of("snowhouse.privatelink.snowflakecomputing.xyz", false),
+          Arguments.of("snowhouse.PRIVATELINK.snowflakecomputing.xyz", false));
     }
   }
 

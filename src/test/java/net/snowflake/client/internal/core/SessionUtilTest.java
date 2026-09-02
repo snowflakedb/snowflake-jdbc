@@ -178,16 +178,6 @@ public class SessionUtilTest {
     assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
-
-    resetOcspConfiguration();
-
-    SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.xyz");
-    assertEquals(
-        "http://ocsp.test.privatelink.snowflakecomputing.xyz/ocsp_response_cache.json",
-        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    assertEquals(
-        "http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s",
-        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
   }
 
   @Test

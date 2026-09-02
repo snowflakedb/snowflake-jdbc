@@ -2083,7 +2083,7 @@ public class SessionUtil {
     if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
-      String host = url.getHost();
+      String host = PrivateLinkDetector.normalizeHost(url.getHost());
       logger.debug("HOST: {}", host);
       String ocspCacheServerUrl =
           String.format("http://ocsp.%s/%s", host, SFTrustManager.CACHE_FILE_NAME);
