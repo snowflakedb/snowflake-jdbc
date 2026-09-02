@@ -710,7 +710,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                               // object. FullReadInputStream must stay outermost: the async body
                               // marks the stream for the whole upload, and a BufferedInputStream
                               // on the outside would hand back short (buffer-sized) reads.
-                              new FullReadInputStream(new BufferedInputStream(uploadStreamInfo.left)),
+                              new FullReadInputStream(
+                                  new BufferedInputStream(uploadStreamInfo.left)),
                               request.contentLength(),
                               executorService))
                       .build());
