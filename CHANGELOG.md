@@ -14,6 +14,7 @@
   - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
   - Fixed slow PUT uploads to client-side-encrypted (internal/temporary) stages on the AWS SDK v2 async upload path — S3, and the GCS `GCSAccessStrategyAwsSdk` strategy (`useVirtualUrl`); the default GCP path (`GCSDefaultAccessStrategy`) is unchanged — where the `CipherInputStream` source's ~512-byte reads throttled the transfer; the encrypted stream is now wrapped to fill each read fully (snowflakedb/snowflake-jdbc#2746).
   - Bumped the following dependencies:
+    - grpc-java to 1.84.0 (snowflakedb/snowflake-jdbc#2747).
     - jsoup to 1.23.2 (snowflakedb/snowflake-jdbc#2735).
 
 - v4.3.3
