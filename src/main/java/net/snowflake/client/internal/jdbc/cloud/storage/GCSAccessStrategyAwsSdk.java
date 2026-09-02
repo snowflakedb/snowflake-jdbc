@@ -4,6 +4,7 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.createDefaultExec
 import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.retryRequestWithExponentialBackoff;
 import static net.snowflake.client.internal.jdbc.cloud.storage.S3ErrorHandler.throwIfClientExceptionOrMaxRetryReached;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
@@ -261,8 +262,14 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
                       AsyncRequestBody.fromInputStream(
                           // The encrypting CipherInputStream returns ~512 bytes per read and the
                           // async request body reads once per demand; coalesce into full-size
-                          // reads so upload throughput does not collapse.
-                          new FullReadInputStream(content),
+                          // reads so upload throughput does not collapse. The inner
+                          // BufferedInputStream restores mark/reset (CipherInputStream has none),
+                          // so the SDK can rewind and replay the body on a retry instead of
+                          // re-reading a drained stream and uploading a truncated object.
+                          // FullReadInputStream must stay outermost: the async body marks the
+                          // stream for the whole upload, and a BufferedInputStream on the outside
+                          // would hand back short (buffer-sized) reads.
+                          new FullReadInputStream(new BufferedInputStream(content)),
                           request.contentLength(),
                           executorService))
                   .build());
