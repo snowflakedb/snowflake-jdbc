@@ -13,6 +13,7 @@
   - Fixed `DatabaseMetaData.getColumns()` discarding `trim()` on column default values and throwing `NullPointerException` when SHOW COLUMNS returns a SQL NULL default (SNOW-4009234).
   - Fixed `PreparedStatement.setObject(parameterIndex, byte[], Types.BINARY)` (and `Types.VARBINARY`/`Types.LONGVARBINARY`) binding the array's object reference (`[B@..`) instead of its hex value, causing a server-side `Invalid bind value ... for type (BINARY)` error; `byte[]` is now hex-encoded as `setBytes` does (snowflakedb/snowflake-jdbc#2731).
   - Bumped the following dependencies:
+    - grpc-java to 1.84.0 (snowflakedb/snowflake-jdbc#XXXX).
     - jsoup to 1.23.2 (snowflakedb/snowflake-jdbc#2735).
 
 - v4.3.3

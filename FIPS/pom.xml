@@ -664,7 +664,7 @@
                     </filter>
                     <filter>
                       <!-- dev.cel (CEL runtime, common, protobuf) are pulled in transitively by
-                           grpc-xds 1.83.0. grpc-xds is itself a pre-shaded fat jar that already
+                           grpc-xds. grpc-xds is itself a pre-shaded fat jar that already
                            embeds these classes under io.grpc.xds.shaded.dev.cel.*, which our
                            io.grpc relocation handles correctly. The separate dev.cel Maven artifacts
                            are therefore redundant in the fat jar and must be excluded to avoid
