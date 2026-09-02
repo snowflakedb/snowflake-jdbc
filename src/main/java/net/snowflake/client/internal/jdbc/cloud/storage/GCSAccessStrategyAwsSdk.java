@@ -260,9 +260,16 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
                   .putObjectRequest(request)
                   .requestBody(
                       AsyncRequestBody.fromInputStream(
-                          // wrapping with BufferedInputStream to mitigate
-                          // https://github.com/aws/aws-sdk-java-v2/issues/6174
-                          new BufferedInputStream(content),
+                          // The encrypting CipherInputStream returns ~512 bytes per read and the
+                          // async request body reads once per demand; coalesce into full-size
+                          // reads so upload throughput does not collapse. The inner
+                          // BufferedInputStream restores mark/reset (CipherInputStream has none),
+                          // so the SDK can rewind and replay the body on a retry instead of
+                          // re-reading a drained stream and uploading a truncated object.
+                          // FullReadInputStream must stay outermost: the async body marks the
+                          // stream for the whole upload, and a BufferedInputStream on the outside
+                          // would hand back short (buffer-sized) reads.
+                          new FullReadInputStream(new BufferedInputStream(content)),
                           request.contentLength(),
                           executorService))
                   .build());
