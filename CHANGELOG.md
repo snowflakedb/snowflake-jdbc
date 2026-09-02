@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.4-SNAPSHOT
+  - Fixed `PrivateLinkDetector.isPrivateLink()` accepting any hostname that merely contained `.privatelink.snowflakecomputing.` as a substring, so a host such as `evil.privatelink.snowflakecomputing.attacker.com` was classified as a PrivateLink Snowflake host; a hostname must now actually end with `.snowflakecomputing.<tld>`. The OCSP response cache server URL, which is held in a JVM-wide static field, is now rejected when its host is not a Snowflake host (SNOW-3649698).
   - Fixed `DecorrelatedJitterBackoff.nextSleepTime` throwing `IllegalArgumentException: bound must be greater than origin` during HTTP request retries when the retry-timeout branch trimmed the backoff below the minimum and that value was fed back into the next jitter calculation; the previous sleep is now clamped to at least the minimum backoff (snowflakedb/snowflake-jdbc#2744).
   - Fixed `DatabaseMetaData.getTablePrivileges()` concatenating unescaped table and schema names into SQL string literals, which allowed a quote character to break out of the query (SNOW-3236395).
   - Fixed DECFLOAT `ResultSet.getString()` using engineering notation (`120E+198`) instead of normalized scientific notation (`1.2e200`); values whose unsigned plain form fits in 38 characters stay in plain decimal (SNOW-3229469).

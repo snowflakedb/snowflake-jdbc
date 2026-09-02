@@ -301,9 +301,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     if (ocspCacheServerUrl == null || SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
       return;
     }
+    URL url = new URL(ocspCacheServerUrl);
+    if (!isAllowedOcspHost(url.getHost())) {
+      logger.debug("Rejected OCSP cache server URL with non-Snowflake host: {}", url.getHost());
+      return;
+    }
     SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheServerUrl;
     if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE.startsWith(DEFAULT_OCSP_CACHE_HOST_PREFIX)) {
-      URL url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
       if (url.getPort() > 0) {
         SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
             String.format(
@@ -316,6 +320,21 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           "Reset OCSP response cache server URL to: {}",
           SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
     }
+  }
+
+  /**
+   * Checks whether the given host is an allowed OCSP cache server host. Allowed hosts must either
+   * start with "ocsp." followed by a valid Snowflake host, or be a Snowflake host itself.
+   */
+  static boolean isAllowedOcspHost(String host) {
+    if (host == null) {
+      return false;
+    }
+    String normalized = host.toLowerCase();
+    if (normalized.startsWith("ocsp.")) {
+      return PrivateLinkDetector.isSnowflakeHost(normalized.substring("ocsp.".length()));
+    }
+    return PrivateLinkDetector.isSnowflakeHost(normalized);
   }
 
   static void setOCSPResponseCacheServerURL(String serverURL) {
@@ -1481,10 +1500,12 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     void resetOCSPResponseCacheServer(String host) {
       String ocspCacheServerUrl;
-      if (host.toLowerCase().contains(".global.snowflakecomputing.")) {
+      if (PrivateLinkDetector.isSnowflakeHost(host)
+          && host.toLowerCase().contains(".global.snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
-      } else if (host.toLowerCase().contains(".snowflakecomputing.")) {
+      } else if (PrivateLinkDetector.isSnowflakeHost(host)
+          && host.toLowerCase().contains(".snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
       } else {
