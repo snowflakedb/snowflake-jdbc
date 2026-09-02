@@ -46,6 +46,7 @@ import net.snowflake.client.internal.core.auth.wif.GcpIdentityAttestationCreator
 import net.snowflake.client.internal.core.auth.wif.OidcIdentityAttestationCreator;
 import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityAttestation;
 import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityAttestationProvider;
+import net.snowflake.client.internal.core.auth.wif.WorkloadIdentityUtil;
 import net.snowflake.client.internal.core.crl.CertRevocationCheckMode;
 import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
@@ -403,6 +404,15 @@ public class SessionUtil {
 
   private static WorkloadIdentityAttestation getWorkloadIdentityAttestation(SFLoginInput loginInput)
       throws SFException {
+    String host = loginInput.getHostFromServerUrl();
+    // Verify the host is a recognized Snowflake endpoint before fetching cloud credentials.
+    if (!WorkloadIdentityUtil.isSnowflakeHostForWorkloadIdentity(host)) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "WORKLOAD_IDENTITY requires a recognized Snowflake host"
+              + " (*.snowflakecomputing.com, .cn or .mil). Got: "
+              + host);
+    }
     WorkloadIdentityAttestationProvider attestationProvider =
         new WorkloadIdentityAttestationProvider(
             new AwsIdentityAttestationCreator(new AwsAttestationService(), loginInput),
