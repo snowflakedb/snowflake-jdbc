@@ -19,6 +19,8 @@ public class URLUtilTest {
     assertTrue(URLUtil.isValidURL("https://ssoTestURL.okta.com"));
     assertTrue(URLUtil.isValidURL("https://ssoTestURL.okta.com:8080"));
     assertTrue(URLUtil.isValidURL("https://ssoTestURL.okta.com/testpathvalue"));
+    assertTrue(URLUtil.isValidURL("https://my_account.snowflakecomputing.com"));
+    assertTrue(URLUtil.isValidURL("https://my_account.snowflakecomputing.com:443/ocsp"));
   }
 
   @Test

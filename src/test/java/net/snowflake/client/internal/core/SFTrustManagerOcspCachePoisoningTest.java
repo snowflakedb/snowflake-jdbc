@@ -129,4 +129,25 @@ public class SFTrustManagerOcspCachePoisoningTest {
   public void isAllowedOcspHost_acceptsPlainSnowflakeHost() {
     assertTrue(SFTrustManager.isAllowedOcspHost("account.snowflakecomputing.com"));
   }
+
+  @Test
+  public void isAllowedOcspHost_acceptsApexOcspDotCom() {
+    assertTrue(
+        SFTrustManager.isAllowedOcspHost("ocsp.snowflakecomputing.com"),
+        "Apex OCSP host (no account label) must be accepted for non-PrivateLink OCSP validation");
+  }
+
+  @Test
+  public void isAllowedOcspHost_acceptsApexOcspDotMil() {
+    assertTrue(
+        SFTrustManager.isAllowedOcspHost("ocsp.snowflakecomputing.mil"),
+        "Apex OCSP host on .mil must be accepted");
+  }
+
+  @Test
+  public void isAllowedOcspHost_acceptsApexOcspDotCn() {
+    assertTrue(
+        SFTrustManager.isAllowedOcspHost("ocsp.snowflakecomputing.cn"),
+        "Apex OCSP host on .cn must be accepted");
+  }
 }
