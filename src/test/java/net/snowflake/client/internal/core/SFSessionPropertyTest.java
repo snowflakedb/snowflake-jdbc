@@ -16,10 +16,15 @@ import static org.mockito.Mockito.mock;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.api.exception.ErrorCode;
+import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class SFSessionPropertyTest {
   private static final String SF_ENABLE_WIF_AWS_EXTERNAL_ID = "SF_ENABLE_WIF_AWS_EXTERNAL_ID";
@@ -61,6 +66,82 @@ public class SFSessionPropertyTest {
               });
       assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
     }
+  }
+
+  /**
+   * The strict per-label allow-list that guards the account-&gt;host synthesis site
+   * (SFConnectionConfigParser.createUrl) must NOT be applied here. checkPropertyValue runs on every
+   * connection path, and on the ordinary URL path ACCOUNT is auto-derived from the host's first
+   * label (SnowflakeConnectString:130-138) rather than supplied by the user. Every value that
+   * derivation can produce has to keep passing.
+   */
+  @ParameterizedTest
+  @CsvSource({
+    // ordinary forms
+    "jdbc:snowflake://abc.us-east-1.snowflakecomputing.com, abc",
+    "jdbc:snowflake://abc_test.us-east-1.snowflakecomputing.com, abc_test",
+    "jdbc:snowflake://a--b.us-east-1.snowflakecomputing.com, a--b",
+    "jdbc:snowflake://myorg-myaccount.snowflakecomputing.com, myorg-myaccount",
+    // IP-address host: the first label is a bare number
+    "jdbc:snowflake://192.168.1.10:8080, 192",
+    // .global. URL: the account is truncated at the last '-'
+    "jdbc:snowflake://myacct-1234567.global.snowflakecomputing.com, myacct",
+    // internal/regression host
+    "jdbc:snowflake://snowflake.reg.local:8082, snowflake",
+    // userinfo in the authority survives into the derived account
+    "jdbc:snowflake://user@myacct.snowflakecomputing.com, user@myacct",
+    // percent-escapes are preserved: getRawAuthority() is not decoded
+    "jdbc:snowflake://my%5Facct.snowflakecomputing.com, my%5Facct",
+    // registry-based authority characters that URI permits
+    "jdbc:snowflake://a+b.snowflakecomputing.com, a+b",
+    "jdbc:snowflake://a=b.snowflakecomputing.com, a=b",
+    "jdbc:snowflake://a~b.snowflakecomputing.com, a~b",
+    "jdbc:snowflake://a$b.snowflakecomputing.com, a$b",
+    "jdbc:snowflake://a!b.snowflakecomputing.com, a!b",
+    "jdbc:snowflake://a*b.snowflakecomputing.com, a*b",
+    "jdbc:snowflake://a(b).snowflakecomputing.com, a(b)",
+    "jdbc:snowflake://a;b.snowflakecomputing.com, a;b",
+  })
+  public void testAutoDerivedAccountFromUrlHostAlwaysPassesValidation(
+      String url, String expectedAccount) throws SFException {
+    SnowflakeConnectString cs = SnowflakeConnectString.parse(url, new Properties());
+    assertTrue(cs.isValid(), "connect string did not parse: " + url);
+    Object derived =
+        cs.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase());
+    assertEquals(expectedAccount, derived, "auto-derivation changed for " + url);
+
+    // must not throw: this value was produced by the driver, not by the user
+    assertEquals(derived, SFSessionProperty.checkPropertyValue(SFSessionProperty.ACCOUNT, derived));
+  }
+
+  /**
+   * Defense in depth for the property path: an account value carrying a URL-authority delimiter is
+   * rejected. None of these can be produced by the auto-derivation above.
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "other.example.com?x",
+        "other.example.com#x",
+        "other.example.com:8080",
+        "other.example.com/x",
+        "other.example.com\\x",
+        "other example com",
+        "acct\t",
+        "[::1]",
+      })
+  public void testAccountWithUrlAuthorityDelimiterIsRejected(String account) {
+    SFException e =
+        assertThrows(
+            SFException.class,
+            () -> SFSessionProperty.checkPropertyValue(SFSessionProperty.ACCOUNT, account));
+    assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
+  }
+
+  @Test
+  public void testNullAndEmptyAccountAreLeftToTheirExistingHandling() throws SFException {
+    assertEquals(null, SFSessionProperty.checkPropertyValue(SFSessionProperty.ACCOUNT, null));
+    assertEquals("", SFSessionProperty.checkPropertyValue(SFSessionProperty.ACCOUNT, ""));
   }
 
   @Test

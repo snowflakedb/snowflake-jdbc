@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.ConnectionIdentifierShape;
 import net.snowflake.client.internal.core.SFException;
@@ -49,6 +50,12 @@ public class SFConnectionConfigParser {
 
   private static final List<PosixFilePermission> REQUIRED_PERMISSIONS =
       Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
+
+  /** One dot-separated label of an account identifier. See {@link #validateAccountIdentifier}. */
+  private static final Pattern ACCOUNT_LABEL_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
+
+  /** Bounded so {@link Integer#parseInt} in {@link #validatePort} cannot overflow. */
+  private static final Pattern PORT_PATTERN = Pattern.compile("[0-9]{1,5}");
 
   public static ConnectionParameters buildConnectionParameters(String connectionUrl)
       throws SnowflakeSQLException {
@@ -337,6 +344,19 @@ public class SFConnectionConfigParser {
       throws SnowflakeSQLException {
     Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
     Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
+
+    // This is the only place in the driver where a network authority is synthesized from
+    // `account`, and it is reached before the OAuth token file is read and before any network
+    // I/O. `account` must therefore not be able to introduce URL-significant characters: a value
+    // such as "other.example.com?x" would produce the authority "other.example.com" once the
+    // resulting connect string is re-parsed, and a credential-bearing login would be sent there.
+    // Values reaching here can be percent-decoded from the auto-configuration URL query
+    // (parseAutoConfigJdbcUrlParameters), so "%3F"/"%23" arrive as raw '?'/'#'. Validate every
+    // interpolated component before any URL text is built.
+    validateAccountIdentifier(maybeAccount.orElse(null));
+    validateProtocol(fileConnectionConfiguration.get("protocol"));
+    validatePort(fileConnectionConfiguration.get("port"));
+
     if (maybeAccount.isPresent()
         && maybeHost.isPresent()
         && !maybeHost.get().contains(maybeAccount.get())) {
@@ -369,6 +389,77 @@ public class SFConnectionConfigParser {
   private static void putPropertyIfNotNull(Properties props, Object key, Object value) {
     if (key != null && value != null) {
       props.put(key, value);
+    }
+  }
+
+  /**
+   * Rejects an account identifier that could escape the host synthesized in {@link
+   * #createUrl(Map)}. Each dot-separated label must consist only of ASCII letters, digits,
+   * underscores and hyphens, mirroring the Python connector's {@code is_valid_account_identifier}
+   * (util_text.py). Dots stay legal as label separators, so regional and org-qualified forms
+   * ({@code acct.us-east-1}, {@code a.b.c}), underscores ({@code my_acct}) and consecutive hyphens
+   * ({@code a--b}) are all still accepted. An absent or empty account is not validated here: it
+   * means "not specified" and keeps falling through to the existing host/account resolution in
+   * {@link #createUrl(Map)}.
+   */
+  private static void validateAccountIdentifier(String account) throws SnowflakeSQLException {
+    if (isNullOrEmpty(account)) {
+      return;
+    }
+    // -1 keeps trailing empty labels so "acct." and "a..b" are rejected rather than silently
+    // truncated.
+    for (String label : account.split("\\.", -1)) {
+      if (!ACCOUNT_LABEL_PATTERN.matcher(label).matches()) {
+        logger.error("Invalid account identifier in connection configuration file");
+        throw new SnowflakeSQLException(
+            String.format(
+                "Invalid account '%s' in connection parameters. Each dot-separated part of an"
+                    + " account identifier may contain only letters, digits, underscores and"
+                    + " hyphens.",
+                account));
+      }
+    }
+  }
+
+  /**
+   * Rejects a protocol other than http/https. The protocol is not itself interpolated into the
+   * connect string (it only selects between two fixed prefixes), so this is a fail-fast check that
+   * surfaces a typo such as "htpps" instead of silently falling through to https. An absent or
+   * empty protocol keeps its existing meaning of "use the https form".
+   */
+  private static void validateProtocol(String protocol) throws SnowflakeSQLException {
+    if (isNullOrEmpty(protocol)) {
+      return;
+    }
+    if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+      logger.error("Invalid protocol in connection configuration file");
+      throw new SnowflakeSQLException(
+          String.format(
+              "Invalid protocol '%s' in connection parameters. Expected 'http' or 'https'.",
+              protocol));
+    }
+  }
+
+  /**
+   * Rejects a port that is not a decimal number in 1-65535. The port is interpolated into the
+   * connect string, so a value like "443&x" would otherwise be pasted into the authority. An absent
+   * or empty port keeps its existing meaning of "use the protocol default".
+   */
+  private static void validatePort(String port) throws SnowflakeSQLException {
+    if (isNullOrEmpty(port)) {
+      return;
+    }
+    boolean valid = PORT_PATTERN.matcher(port).matches();
+    if (valid) {
+      int portNumber = Integer.parseInt(port);
+      valid = portNumber >= 1 && portNumber <= 65535;
+    }
+    if (!valid) {
+      logger.error("Invalid port in connection configuration file");
+      throw new SnowflakeSQLException(
+          String.format(
+              "Invalid port '%s' in connection parameters. Expected a number between 1 and 65535.",
+              port));
     }
   }
 }
