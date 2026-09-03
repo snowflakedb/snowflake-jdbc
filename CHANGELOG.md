@@ -1,6 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.3.5-SNAPSHOT
+  - 
+
 - v4.3.4
   - Added validation of `account`, `port` and `protocol` in the auto-configuration (`connections.toml`) path, where the connect string's host is synthesized from `account`, so that none of the interpolated components can alter the resulting URL authority. Each dot-separated label of `account` may contain only letters, digits, underscores and hyphens (mirroring the Python connector), `port` must be a number in 1-65535, and `protocol` must be `http` or `https`. Absent or empty values keep their existing "not specified" meaning. As defense in depth, the `ACCOUNT` connection property now also rejects values containing a URL-authority delimiter (snowflakedb/snowflake-jdbc#2752).
   - Reduced sensitive detail in debug and response logging: the chunk result-master key is logged as a presence flag instead of its value, HTTP response header values are no longer logged (only header names), and chunk-download responses are rendered as a status line plus header names instead of `HttpResponse.toString()`, which would render every header value. `SecretDetector` additionally masks the `X-Amz-Credential` and `X-Amz-Security-Token` URL parameters, `qrmk`-labelled values and the SSE-C customer key header, and the connection-token pattern now covers session tokens of every minted version (snowflakedb/snowflake-jdbc#2751).
