@@ -69,9 +69,38 @@ public class SecretDetector {
           "\"privateKeyData\": \"([a-z0-9/+=\\\\n]{10,})\"",
           Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
+  // The third group is the token value. ':' must stay in that character class: every Snowflake
+  // session token is minted with a "ver:<n>-" prefix (GlobalServices SecurityToken.java:60-66
+  // defines "ver:1-hint:<keyId>-<encrypted>", "ver:2-hint:<keyId>-did:<deployId>-<encrypted>" and
+  // the V3/V4 equivalents, where V2/V4 carry a second ':' in "-did:"). Without ':' the value match
+  // stops after "ver", which is three characters and therefore below the 8-character minimum, so
+  // the whole pattern matches no session token of any version and the value survives masking.
   private static final Pattern CONNECTION_TOKEN_PATTERN =
       Pattern.compile(
-          "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
+          "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+:]{8,})",
+          Pattern.CASE_INSENSITIVE);
+
+  // Masks the X-Amz-Credential / X-Amz-Security-Token query params
+  // (X-Amz-Signature is covered by the "signature=" alternative in SAS_TOKEN_PATTERN).
+  private static final Pattern SIGV4_PARAM_PATTERN =
+      Pattern.compile(
+          "(x-amz-credential|x-amz-security-token)=([a-z0-9%/+=._-]{8,})",
+          Pattern.CASE_INSENSITIVE);
+
+  // Masks a qrmk-labelled value, keeping the label and separator.
+  private static final Pattern QRMK_PATTERN =
+      Pattern.compile("(qrmk)" + "([\'\"\\s:=]+)" + "([a-z0-9/+=]{16,})", Pattern.CASE_INSENSITIVE);
+
+  // The same key that QRMK_PATTERN covers also travels as the SSE-C customer key HTTP header, in
+  // which case the label is the header name rather than "qrmk". Defence in depth: keep the value
+  // masked in whichever of the two forms a message happens to carry. The optional ", value" arm
+  // covers "header name: <name>, value: <v>" style messages; the separator arm covers "<name>:
+  // <v>" and "<name>=<v>". The value is base64 with optional '=' padding.
+  private static final Pattern SSE_C_CUSTOMER_KEY_PATTERN =
+      Pattern.compile(
+          "(x-amz-server-side-encryption-customer-key)"
+              + "((?:\\s*,\\s*value)?[\'\"\\s:=]+)"
+              + "([a-z0-9+/]{16,}={0,2})",
           Pattern.CASE_INSENSITIVE);
 
   private static final Pattern ENCRYPTION_MATERIAL_PATTERN =
@@ -187,18 +216,52 @@ public class SecretDetector {
     return text;
   }
 
-  private static String filterConnectionTokens(String text) {
+  /**
+   * Replace the value captured by a "label, separator, value" pattern with the redaction marker,
+   * keeping the label and separator so the message stays readable. Shared by every filter whose
+   * pattern captures those three groups in that order.
+   *
+   * @param text text which may contain a labelled value
+   * @param pattern pattern capturing the label, the separator and the value, in that order
+   * @return the text with each matched value replaced, or the input unchanged if it does not match
+   */
+  private static String filterLabelledValue(String text, Pattern pattern) {
     if (text == null) {
       return null;
     }
     Matcher matcher =
-        CONNECTION_TOKEN_PATTERN.matcher(
-            text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+        pattern.matcher(text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     if (matcher.find()) {
       return matcher.replaceAll("$1$2****");
     }
     return text;
+  }
+
+  private static String filterConnectionTokens(String text) {
+    return filterLabelledValue(text, CONNECTION_TOKEN_PATTERN);
+  }
+
+  private static String filterSigV4Params(String text) {
+    if (text == null) {
+      return null;
+    }
+    Matcher matcher =
+        SIGV4_PARAM_PATTERN.matcher(
+            text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    if (matcher.find()) {
+      return matcher.replaceAll("$1=****");
+    }
+    return text;
+  }
+
+  private static String filterQrmk(String text) {
+    return filterLabelledValue(text, QRMK_PATTERN);
+  }
+
+  private static String filterSseCustomerKey(String text) {
+    return filterLabelledValue(text, SSE_C_CUSTOMER_KEY_PATTERN);
   }
 
   /**
@@ -233,11 +296,18 @@ public class SecretDetector {
     if (text == null) {
       return null;
     }
+    // The filters are chained, so each one sees what the previous one produced. Filters whose label
+    // is a specific literal (the SSE-C customer key header name, the X-Amz-* query parameters,
+    // "qrmk") run before the filters that key off a generic label ("token", "password", "sig"), so
+    // that a generic filter cannot consume part of a more specific label or value first.
     return filterAccessTokens(
         filterConnectionTokens(
             filterPassword(
                 filterSASTokens(
-                    filterAWSKeys(filterOAuthTokens(filterEncryptionMaterial(text)))))));
+                    filterAWSKeys(
+                        filterOAuthTokens(
+                            filterEncryptionMaterial(
+                                filterQrmk(filterSigV4Params(filterSseCustomerKey(text))))))))));
   }
 
   /**

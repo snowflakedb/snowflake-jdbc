@@ -6,6 +6,7 @@ import java.io.PushbackInputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -23,6 +24,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -56,7 +58,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
           ErrorCode.NETWORK_ERROR.getMessageCode(),
           SqlState.IO_ERROR,
           "Error encountered when request a result chunk URL: "
-              + context.getResultChunk().getUrl()
+              + context.getResultChunk().getScrubbedUrl()
               + " "
               + ex.getLocalizedMessage());
     }
@@ -86,19 +88,57 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
       inputStream =
           compressedStreamFactory.createBasedOnEncodingHeader(entity.getContent(), encoding);
     } catch (Exception ex) {
-      logger.error("Failed to decompress data: {}", response);
+      logger.error(
+          "Failed to decompress data: {}", (ArgSupplier) () -> describeForLogging(response));
 
       throw new SnowflakeSQLLoggedException(
           context.getSession(),
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Failed to decompress data: " + response.toString());
+          "Failed to decompress data: " + describeForLogging(response));
     }
 
     // trace the response if requested
-    logger.debug("Json response: {}", response);
+    logger.debug("Json response: {}", (ArgSupplier) () -> describeForLogging(response));
 
     return inputStream;
+  }
+
+  /**
+   * Renders a response for a log message using its status line and its header names. Header values
+   * are omitted: a response can carry the chunk encryption key and other credential material in its
+   * headers, and {@link org.apache.http.HttpResponse#toString()} would render every one of them.
+   *
+   * @param response the response to describe, may be null
+   * @return a description safe to place in a log message
+   */
+  private static String describeForLogging(HttpResponse response) {
+    if (response == null) {
+      return "null response";
+    }
+
+    StringBuilder description = new StringBuilder();
+    StatusLine statusLine = response.getStatusLine();
+    if (statusLine != null) {
+      description
+          .append("status: ")
+          .append(statusLine.getStatusCode())
+          .append(" ")
+          .append(statusLine.getReasonPhrase());
+    } else {
+      description.append("status: unknown");
+    }
+
+    Header[] headers = response.getAllHeaders();
+    if (headers != null) {
+      StringJoiner headerNames = new StringJoiner(", ", "[", "]");
+      for (Header header : headers) {
+        headerNames.add(header.getName());
+      }
+      description.append(", header names: ").append(headerNames);
+    }
+
+    return description.toString();
   }
 
   private HttpResponse getResultChunk(ChunkDownloadContext context) throws Exception {
@@ -163,7 +203,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
         Thread.currentThread().getId(),
         context.getChunkIndex(),
         (ArgSupplier) () -> SecretDetector.maskSASToken(context.getResultChunk().getUrl()),
-        response);
+        (ArgSupplier) () -> describeForLogging(response));
     return response;
   }
 

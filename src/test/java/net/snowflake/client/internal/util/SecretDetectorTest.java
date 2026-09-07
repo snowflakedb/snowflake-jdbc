@@ -271,7 +271,11 @@ public class SecretDetectorTest {
             + "  \"refresh_token\":\"****\",\n"
             + "  \"token_type\" : \"Bearer\",\n"
             + "  \"username\" : \"OAUTH_TEST_AUTH_CODE\",\n"
-            + "  \"scope\" : \"refresh_token session:role:ANALYST\",\n"
+            // The scope value follows a "token" label and now contains characters the token value
+            // class accepts, so it is redacted along with real token values. Over-masking a scope
+            // string costs some log detail; under-masking a session token does not have an
+            // equivalent cheap remedy.
+            + "  \"scope\" : \"refresh_token ****\",\n"
             + "  \"expires_in\" : 600,\n"
             + "  \"refresh_token_expires_in\" : 86399,\n"
             + "  \"idpInitiated\" : false\n"
@@ -443,5 +447,157 @@ public class SecretDetectorTest {
     String result = SecretDetector.filterEncryptionMaterial(messageText);
 
     assertEquals(filteredMessageText, result);
+  }
+
+  @Test
+  public void testMaskQrmk() {
+    // A qrmk-labelled value is masked.
+    final String qrmk = "3dOoaBhkBOv1L15q1QYdz6z5Rzg1qEQTsm2ANFcaZ8I="; // pragma: allowlist secret
+    final String message = "qrmk: " + qrmk;
+
+    final String masked = SecretDetector.maskSecrets(message);
+
+    assertThat("qrmk value should not be present after masking", !masked.contains(qrmk));
+    assertThat("qrmk redaction marker should be present", masked.contains("****"));
+    assertEquals("qrmk: ****", masked);
+  }
+
+  @Test
+  public void testMaskSigV4Params() {
+    // X-Amz-Credential / X-Amz-Security-Token are masked (X-Amz-Signature via SAS masking).
+    // pragma: allowlist nextline secret
+    final String credential = "AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request";
+    // pragma: allowlist nextline secret
+    final String securityToken = "FQoGZXIvYXdzEBYaDHRlc3RzZWN1cml0eT1234567890abcdefGHIJKLMNOP%3D";
+    final String signature = "zFiRkdB9RtRRYomppVes4fQ%2ByWw%3D"; // pragma: allowlist secret
+    final String url =
+        "https://bucket.s3.amazonaws.com/path?"
+            + "X-Amz-Credential="
+            + credential
+            + "&X-Amz-Security-Token="
+            + securityToken
+            + "&X-Amz-Signature="
+            + signature;
+
+    final String masked = SecretDetector.maskSecrets(url);
+
+    assertThat(
+        "X-Amz-Credential value should not be present after masking", !masked.contains(credential));
+    assertThat(
+        "X-Amz-Security-Token value should not be present after masking",
+        !masked.contains(securityToken));
+    assertThat(
+        "X-Amz-Signature value should not be present after masking", !masked.contains(signature));
+    assertThat("redaction marker should be present", masked.contains("****"));
+    assertEquals(
+        "https://bucket.s3.amazonaws.com/path?"
+            + "X-Amz-Credential=****&X-Amz-Security-Token=****&X-Amz-Signature=****",
+        masked);
+  }
+
+  /**
+   * Every Snowflake session token carries a "ver:&lt;n&gt;-" prefix, and the V2/V4 formats carry a
+   * second colon in their "-did:" segment, so the token value class has to accept ':'. Cover all
+   * four minted formats in the label shapes that show up in logs.
+   */
+  @Test
+  public void testMaskSessionTokenOfEveryVersion() {
+    // Placeholder standing in for the encrypted portion of a real token.
+    final String encrypted = "AAAABBBBCCCCDDDDEEEEFFFF";
+    final String[] tokens = {
+      "ver:1-hint:1234-" + encrypted,
+      "ver:2-hint:1234-did:5678-" + encrypted,
+      "ver:3-hint:1234-" + encrypted,
+      "ver:4-hint:1234-did:5678-" + encrypted,
+    };
+
+    for (String token : tokens) {
+      // quoted, as it appears in a JSON response body
+      assertEquals("Token=\"****\"", SecretDetector.maskSecrets("Token=\"" + token + "\""));
+      // bare, as it appears in a query string or a connection property dump
+      assertEquals("token=****", SecretDetector.maskSecrets("token=" + token));
+      // colon separated, as it appears in a header dump
+      assertEquals("token: ****", SecretDetector.maskSecrets("token: " + token));
+
+      assertThat(
+          "token value should not survive masking in any shape",
+          !SecretDetector.maskSecrets("Token=\"" + token + "\"").contains(encrypted)
+              && !SecretDetector.maskSecrets("token=" + token).contains(encrypted)
+              && !SecretDetector.maskSecrets("token: " + token).contains(encrypted));
+    }
+  }
+
+  /**
+   * SessionUtil logs the whole login response body when the response is unsuccessful. Both the
+   * session token and the master token have to be gone by the time it reaches the log.
+   */
+  @Test
+  public void testMaskLoginResponseBody() {
+    final String sessionToken = "ver:3-hint:1234-SESSIONAAAABBBBCCCC";
+    final String masterToken = "ver:3-hint:1234-MASTERDDDDEEEEFFFF";
+    final String responseBody =
+        "{\"data\":{"
+            + "\"masterToken\":\""
+            + masterToken
+            + "\","
+            + "\"token\":\""
+            + sessionToken
+            + "\","
+            + "\"validityInSeconds\":3600,"
+            + "\"masterValidityInSeconds\":14400,"
+            + "\"displayUserName\":\"TESTUSER\","
+            + "\"serverVersion\":\"8.0.0\","
+            + "\"firstLogin\":false,"
+            + "\"remMeToken\":null,"
+            + "\"remMeValidityInSeconds\":0,"
+            + "\"healthCheckInterval\":45,"
+            + "\"sessionId\":1234567890,"
+            + "\"idToken\":null,"
+            + "\"idTokenValidityInSeconds\":0,"
+            + "\"sessionInfo\":{\"databaseName\":\"TESTDB\",\"schemaName\":\"PUBLIC\","
+            + "\"warehouseName\":\"TESTWH\",\"roleName\":\"ANALYST\"}"
+            + "},\"code\":null,\"message\":null,\"success\":true}";
+
+    final String masked = SecretDetector.maskSecrets(responseBody);
+
+    assertThat("session token should not survive masking", !masked.contains(sessionToken));
+    assertThat("master token should not survive masking", !masked.contains(masterToken));
+    assertThat("session token should be redacted", masked.contains("\"token\":\"****\""));
+    assertThat("master token should be redacted", masked.contains("\"masterToken\":\"****\""));
+    // The rest of the body stays readable.
+    assertThat("non secret fields should be kept", masked.contains("\"success\":true"));
+    assertThat("non secret fields should be kept", masked.contains("\"sessionId\":1234567890"));
+  }
+
+  /**
+   * The chunk encryption key travels both as a qrmk-labelled value and as the SSE-C customer key
+   * header. Cover the header-name form in each separator shape the pattern supports.
+   */
+  @Test
+  public void testMaskSseCustomerKeyHeader() {
+    // pragma: allowlist nextline secret
+    final String customerKey = "3dOoaBhkBOv1L15q1QYdz6z5Rzg1qEQTsm2ANFcaZ8I=";
+    final String header = "x-amz-server-side-encryption-customer-key";
+
+    assertEquals(header + ": ****", SecretDetector.maskSecrets(header + ": " + customerKey));
+    assertEquals(header + "=****", SecretDetector.maskSecrets(header + "=" + customerKey));
+    assertEquals(
+        "Adding header name: " + header + ", value: ****",
+        SecretDetector.maskSecrets("Adding header name: " + header + ", value: " + customerKey));
+    assertEquals(
+        "\"" + header + "\":\"****\"",
+        SecretDetector.maskSecrets("\"" + header + "\":\"" + customerKey + "\""));
+
+    assertThat(
+        "customer key should not survive masking in any shape",
+        !SecretDetector.maskSecrets(header + ": " + customerKey).contains(customerKey)
+            && !SecretDetector.maskSecrets(header + "=" + customerKey).contains(customerKey)
+            && !SecretDetector.maskSecrets(
+                    "Adding header name: " + header + ", value: " + customerKey)
+                .contains(customerKey));
+
+    // A list of header names on its own carries no value to redact.
+    final String headerNamesOnly = "status: 200 OK, header names: [" + header + ", Content-Length]";
+    assertEquals(headerNamesOnly, SecretDetector.maskSecrets(headerNamesOnly));
   }
 }

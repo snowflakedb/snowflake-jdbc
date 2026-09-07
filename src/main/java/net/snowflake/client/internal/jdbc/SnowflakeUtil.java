@@ -600,7 +600,7 @@ public class SnowflakeUtil {
     Header[] headers = response.getAllHeaders();
     if (headers != null) {
       for (Header header : headers) {
-        logger.debug("Header name: {}, value: {}", header.getName(), header.getValue());
+        logger.debug("Header name: {}", header.getName());
       }
     }
 

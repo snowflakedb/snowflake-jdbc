@@ -263,6 +263,17 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
   }
 
   /**
+   * Escape a value for a single-quoted Snowflake SQL string literal. Backslashes are doubled first
+   * so {@code \'} cannot close the string; then {@code '} is doubled.
+   */
+  static String escapeSqlStringLiteral(String value) {
+    if (value == null) {
+      return null;
+    }
+    return value.replace("\\", "\\\\").replace("'", "''");
+  }
+
+  /**
    * This guards against SQL injections by ensuring that any single quote is escaped properly.
    *
    * @param arg the original schema
@@ -1180,9 +1191,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           short procedureType = procedureReturnsResult;
           if ((compiledProcedurePattern == null
                   || compiledProcedurePattern.matcher(procedureName).matches())
-              && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches()
-                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
+              && matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             logger.trace("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -1812,18 +1821,8 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String schemaName = showObjectResultSet.getString(2);
           String columnName = showObjectResultSet.getString(3);
           String dataTypeStr = showObjectResultSet.getString(4);
-          String defaultValue = showObjectResultSet.getString(6);
-          defaultValue.trim();
-          if (defaultValue.isEmpty()) {
-            defaultValue = null;
-          } else if (!stringsQuoted) {
-            if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'")) {
-              // remove extra set of single quotes
-              defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
-              // scan for 2 single quotes in a row and remove one of them
-              defaultValue = defaultValue.replace("''", "'");
-            }
-          }
+          String defaultValue =
+              normalizeColumnDefaultValue(showObjectResultSet.getString(6), stringsQuoted);
           String comment = showObjectResultSet.getString(9);
           String catalogName = showObjectResultSet.getString(10);
           String autoIncrement = showObjectResultSet.getString(11);
@@ -1924,6 +1923,47 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         return false;
       }
     };
+  }
+
+  /**
+   * Client-side schema filter used by {@code getProcedures()}, {@code getSchemas()}, and {@code
+   * getFunctions()}.
+   *
+   * <p>When exact-schema search is enabled, SHOW is already scoped to that schema (with {@code _}
+   * and {@code %} escaped). Those rows must be accepted: the compiled LIKE pattern treats {@code
+   * _}/{@code %} in the schema name as wildcards, and SHOW may return the name quoted (e.g. {@code
+   * "FOO%BAR"}), so neither regex matching nor {@code schemaPattern.equals(schemaName)} is
+   * reliable. The previous {@code schemaPattern.equals(schemaPattern)} check was this same bypass
+   * written as a tautology.
+   */
+  static boolean matchesSchemaName(
+      Pattern compiledSchemaPattern, String schemaName, boolean isExactSchema) {
+    if (isExactSchema) {
+      return true;
+    }
+    return compiledSchemaPattern == null || compiledSchemaPattern.matcher(schemaName).matches();
+  }
+
+  /**
+   * Normalize a SHOW COLUMNS default value for {@code DatabaseMetaData.getColumns()}. Null-safe:
+   * SQL NULL and whitespace-only values become {@code null}. Optionally strips wrapping single
+   * quotes when the session does not keep string defaults quoted.
+   */
+  static String normalizeColumnDefaultValue(String defaultValue, boolean stringsQuoted) {
+    if (defaultValue == null) {
+      return null;
+    }
+    defaultValue = defaultValue.trim();
+    if (defaultValue.isEmpty()) {
+      return null;
+    }
+    if (!stringsQuoted && defaultValue.startsWith("'") && defaultValue.endsWith("'")) {
+      // remove extra set of single quotes
+      defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
+      // scan for 2 single quotes in a row and remove one of them
+      defaultValue = defaultValue.replace("''", "'");
+    }
+    return defaultValue;
   }
 
   static Integer getColumnSize(SnowflakeColumnMetadata columnMetadata) {
@@ -2036,11 +2076,13 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
     }
     showView += "information_schema.table_privileges";
 
+    boolean hasTablePredicate = false;
     if (tableNamePattern != null
         && !tableNamePattern.isEmpty()
         && !tableNamePattern.trim().equals("%")
         && !tableNamePattern.trim().equals(".*")) {
-      showView += " where table_name = '" + tableNamePattern + "'";
+      showView += " where table_name = '" + escapeSqlStringLiteral(tableNamePattern) + "'";
+      hasTablePredicate = true;
     }
 
     if (schemaPattern != null
@@ -2048,10 +2090,10 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
       String unescapedSchema = isExactSchema ? schemaPattern : unescapeChars(schemaPattern);
-      if (showView.contains("where table_name")) {
-        showView += " and table_schema = '" + unescapedSchema + "'";
+      if (hasTablePredicate) {
+        showView += " and table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
       } else {
-        showView += " where table_schema = '" + unescapedSchema + "'";
+        showView += " where table_schema = '" + escapeSqlStringLiteral(unescapedSchema) + "'";
       }
     }
     showView += " order by table_catalog, table_schema, table_name, privilege_type";
@@ -3370,9 +3412,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String schemaName = showObjectResultSet.getString(2);
           String dbName = showObjectResultSet.getString(5);
 
-          if (compiledSchemaPattern == null
-              || compiledSchemaPattern.matcher(schemaName).matches()
-              || isExactSchema && schemaPattern.equals(schemaPattern)) {
+          if (matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             nextRow[0] = schemaName;
             nextRow[1] = dbName;
             return true;
@@ -3458,9 +3498,7 @@ public class SnowflakeDatabaseMetaDataImpl implements SnowflakeDatabaseMetaData 
           String specificName = functionName;
           if ((compiledFunctionPattern == null
                   || compiledFunctionPattern.matcher(functionName).matches())
-              && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches()
-                  || isExactSchema && schemaPattern.equals(schemaPattern))) {
+              && matchesSchemaName(compiledSchemaPattern, schemaName, isExactSchema)) {
             logger.debug("Found a matched function:" + schemaName + "." + functionName);
 
             nextRow[0] = catalogName;

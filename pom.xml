@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>4.3.4-SNAPSHOT</version>
+    <version>4.3.5-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>4.3.4-SNAPSHOT</version>
+  <version>4.3.5-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -1132,7 +1132,7 @@
                     </filter>
                     <filter>
                       <!-- dev.cel (CEL runtime, common, protobuf) are pulled in transitively by
-                           grpc-xds 1.83.0. grpc-xds is itself a pre-shaded fat jar that already
+                           grpc-xds. grpc-xds is itself a pre-shaded fat jar that already
                            embeds these classes under io.grpc.xds.shaded.dev.cel.*, which our
                            io.grpc relocation handles correctly. The separate dev.cel Maven artifacts
                            are therefore redundant in the fat jar and must be excluded to avoid
