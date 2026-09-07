@@ -138,7 +138,7 @@ jobs:
                 java-version: ${{ matrix.runConfig.javaVersion }}
                 distribution: 'temurin'
                 cache: maven
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v7
               with:
                 python-version: '3.12'
                 architecture: 'x64'
@@ -194,7 +194,7 @@ jobs:
                 java-version: ${{ matrix.runConfig.javaVersion }}
                 distribution: 'zulu'
                 cache: maven
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v7
               with:
                 python-version: '3.12'
             - name: Install Homebrew Bash

@@ -41,7 +41,7 @@ public class OAuthClientCredentialsAccessTokenProvider implements AccessTokenPro
   private TokenResponseDTO exchangeClientCredentialsForAccessToken(
       SFLoginInput loginInput, String dpopNonce, boolean retried) throws SFException {
     try {
-      logger.info("Starting OAuth client credentials authentication flow...");
+      logger.debug("Starting OAuth client credentials authentication flow...");
       HttpRequestBase tokenRequest = buildTokenRequest(loginInput, dpopNonce);
       return OAuthUtil.sendTokenRequest(tokenRequest, loginInput);
     } catch (SnowflakeUseDPoPNonceException e) {

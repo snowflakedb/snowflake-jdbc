@@ -51,7 +51,8 @@ public class OauthLatestIT {
     properties.put("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
     authTestHelper.verifyExceptionIsThrown(
-        "The user you were trying to authenticate as differs from the user tied to the access token.");
+        containsString(
+            "The user you were trying to authenticate as differs from the user tied to the access token."));
   }
 
   private String getToken() throws IOException {

@@ -82,6 +82,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeString(String value) throws SQLException {
     withNextValue(
+        value,
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
           schema.getFields().add(FieldSchemaCreator.buildSchemaForText(fieldName, maybeColumn));
@@ -162,6 +163,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeBigDecimal(BigDecimal value) throws SQLException {
     withNextValue(
+        value,
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
           schema
@@ -175,6 +177,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeBytes(byte[] value) throws SQLException {
     withNextValue(
+        value,
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, new SFBinary(value).toHex());
           schema
@@ -186,6 +189,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeDate(Date value) throws SQLException {
     withNextValue(
+        value,
         ((json, fieldName, maybeColumn) -> {
           json.put(
               fieldName,
@@ -197,6 +201,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeTime(Time x) throws SQLException {
     withNextValue(
+        x,
         ((json, fieldName, maybeColumn) -> {
           long nanosSinceMidnight;
           if (session.getTreatTimeAsWallClockTime()) {
@@ -221,6 +226,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeTimestamp(Timestamp value) throws SQLException {
     withNextValue(
+        value,
         ((json, fieldName, maybeColumn) -> {
           String timestampSessionType =
               (String)
@@ -276,6 +282,7 @@ public class JsonSqlOutput implements SQLOutput {
   @Override
   public void writeObject(SQLData sqlData) throws SQLException {
     withNextValue(
+        sqlData,
         ((json, fieldName, maybeColumn) -> {
           JsonSqlOutput jsonSqlOutput = new JsonSqlOutput(sqlData, session);
           sqlData.writeSQL(jsonSqlOutput);
@@ -355,6 +362,17 @@ public class JsonSqlOutput implements SQLOutput {
   }
 
   private void withNextValue(
+      Object value,
+      ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
+      throws SQLException {
+    if (value == null) {
+      writeNullValue();
+      return;
+    }
+    withNextValue(action);
+  }
+
+  private void withNextValue(
       ThrowingTriCallable<JSONObject, String, Optional<SnowflakeColumn>, SQLException> action)
       throws SQLException {
     Field field = fields.next();
@@ -362,6 +380,16 @@ public class JsonSqlOutput implements SQLOutput {
     Optional<SnowflakeColumn> maybeColumn =
         Optional.ofNullable(field.getAnnotation(SnowflakeColumn.class));
     action.apply(json, fieldName, maybeColumn);
+  }
+
+  private void writeNullValue() {
+    Field field = fields.next();
+    String fieldName = field.getName();
+    json.put(fieldName, null);
+    BindingParameterMetadata nullSchema = new BindingParameterMetadata("object");
+    nullSchema.setName(fieldName);
+    nullSchema.setFields(new ArrayList<>());
+    schema.getFields().add(nullSchema);
   }
 
   private SnowflakeDateTimeFormat getDateTimeFormat(String format) {

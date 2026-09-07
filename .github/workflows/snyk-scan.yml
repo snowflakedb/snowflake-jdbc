@@ -45,7 +45,7 @@ jobs:
     if: needs.detect-changes.outputs.any-pom == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk aggregate project test
         uses: snyk/actions/maven@master
@@ -63,7 +63,7 @@ jobs:
     if: needs.detect-changes.outputs.parent-pom == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk parent-pom test
         uses: snyk/actions/maven@master
@@ -81,7 +81,7 @@ jobs:
     if: needs.detect-changes.outputs.public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk public-pom test
         uses: snyk/actions/maven@master
@@ -99,7 +99,7 @@ jobs:
     if: needs.detect-changes.outputs.thin-public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk thin-public-pom test
         uses: snyk/actions/maven@master
@@ -117,7 +117,7 @@ jobs:
     if: needs.detect-changes.outputs.fips-public-pom == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk FIPS public-pom test
         uses: snyk/actions/maven@master
@@ -148,7 +148,7 @@ jobs:
           - ci/wif/azure-function/pom.xml
           - ci/wif/gcp-function/pom.xml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Snyk monitor ${{ matrix.pom }}
         uses: snyk/actions/maven@master

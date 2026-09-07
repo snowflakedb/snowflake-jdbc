@@ -3,6 +3,7 @@ package net.snowflake.client.internal.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -14,11 +15,13 @@ import net.snowflake.client.api.datasource.SnowflakeDataSource;
 import net.snowflake.client.api.datasource.SnowflakeDataSourceFactory;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
+import net.snowflake.client.internal.api.implementation.datasource.SnowflakeBasicDataSource;
 import net.snowflake.client.internal.core.SFSessionProperty;
 import org.junit.jupiter.api.Test;
 
 /** Data source unit test */
 public class SnowflakeBasicDataSourceTest {
+
   /** snow-37186 */
   @Test
   public void testSetLoginTimeout() throws SQLException {
@@ -124,15 +127,32 @@ public class SnowflakeBasicDataSourceTest {
     ds.setAccount("testaccount");
     ds.setAuthenticator("snowflake");
     Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertEquals(
-        "Cannot create connection because username is missing in DataSource properties.",
-        e.getMessage());
+    assertEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
 
     ds.setUser("testuser");
     e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
-    assertEquals(
-        "Cannot create connection because password is missing in DataSource properties.",
-        e.getMessage());
+    assertEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
+  }
+
+  @Test
+  public void testWorkloadIdentityAuthenticatorDoesNotRequirePasswordOrUsername() {
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
+    ds.setUrl("jdbc:snowflake://testaccount.snowflakecomputing.com");
+    ds.setAuthenticator("WORKLOAD_IDENTITY");
+    Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
+  }
+
+  @Test
+  public void testProgrammaticAccessTokenAuthenticatorDoesNotRequirePassword() {
+    SnowflakeDataSource ds = SnowflakeDataSourceFactory.createDataSource();
+    ds.setUrl("jdbc:snowflake://testaccount.snowflakecomputing.com");
+    ds.setAuthenticator("PROGRAMMATIC_ACCESS_TOKEN");
+    ds.setUser("testuser");
+    Exception e = assertThrows(SnowflakeSQLException.class, ds::getConnection);
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_USERNAME_MSG, e.getMessage());
+    assertNotEquals(SnowflakeBasicDataSource.MISSING_PASSWORD_MSG, e.getMessage());
   }
 
   @Test

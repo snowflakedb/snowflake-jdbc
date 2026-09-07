@@ -156,7 +156,7 @@ public abstract class SFBaseResultSet {
   }
 
   public boolean wasNull() {
-    logger.trace("boolean wasNull() returning {}", wasNull);
+    logger.trace("boolean wasNull() returning {}", (Object) wasNull);
 
     return wasNull;
   }

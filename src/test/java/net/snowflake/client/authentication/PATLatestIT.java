@@ -5,6 +5,7 @@ import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWF
 import static net.snowflake.client.authentication.AuthConnectionParameters.SNOWFLAKE_USER;
 import static net.snowflake.client.authentication.AuthConnectionParameters.getOktaConnectionParameters;
 import static net.snowflake.client.authentication.AuthConnectionParameters.getPATConnectionParameters;
+import static org.hamcrest.CoreMatchers.containsString;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -45,7 +46,7 @@ public class PATLatestIT {
     Properties properties = getPATConnectionParameters();
     properties.put("token", "invalidToken");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
-    authTestHelper.verifyExceptionIsThrown("Programmatic access token is invalid.");
+    authTestHelper.verifyExceptionIsThrown(containsString("Programmatic access token is invalid."));
   }
 
   @Test
@@ -54,7 +55,7 @@ public class PATLatestIT {
     properties.put("token", getPAT());
     properties.put("user", "differentUsername");
     authTestHelper.connectAndExecuteSimpleQuery(properties, null);
-    authTestHelper.verifyExceptionIsThrown("Programmatic access token is invalid.");
+    authTestHelper.verifyExceptionIsThrown(containsString("Programmatic access token is invalid."));
     removePAT();
   }
 

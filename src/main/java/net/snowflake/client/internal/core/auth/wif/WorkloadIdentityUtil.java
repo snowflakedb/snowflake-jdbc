@@ -3,13 +3,18 @@ package net.snowflake.client.internal.core.auth.wif;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.HttpUtil;
+import net.snowflake.client.internal.core.PrivateLinkDetector;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFLoginInput;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -30,6 +35,72 @@ public class WorkloadIdentityUtil {
 
   public static final String SNOWFLAKE_AUDIENCE_HEADER_NAME = "X-Snowflake-Audience";
   public static final String SNOWFLAKE_AUDIENCE = "snowflakecomputing.com";
+
+  // Escape hatch for additional allowed host suffixes (e.g. for local/test proxies). Read only
+  // from the process environment - never from the DSN, connection parameters or configuration
+  // files - so connection configuration cannot influence the allowlist. Entries are additive:
+  // they extend the recognized-host list and cannot disable it. The built-in suffixes live on
+  // PrivateLinkDetector; this hatch is applied here so it cannot widen OCSP host checks.
+  public static final String SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES_ENV_VAR =
+      "SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES";
+
+  /**
+   * Determines whether {@code host} is a recognized Snowflake host that WORKLOAD_IDENTITY is
+   * permitted to send the ambient cloud credential to.
+   *
+   * <p>Uses {@link PrivateLinkDetector} for normalization and the built-in suffix list, then
+   * optionally accepts extra suffixes from {@value #SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES_ENV_VAR}.
+   *
+   * @param host the host component of the URL the driver is about to talk to.
+   * @return true if the host is a Snowflake host (or matches an additional suffix configured via
+   *     {@value #SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES_ENV_VAR}), false otherwise.
+   */
+  public static boolean isSnowflakeHostForWorkloadIdentity(String host) {
+    return isSnowflakeHostForWorkloadIdentity(
+        host, SnowflakeUtil.systemGetEnv(SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES_ENV_VAR));
+  }
+
+  /**
+   * Same as {@link #isSnowflakeHostForWorkloadIdentity(String)} but takes the raw escape-hatch env
+   * value explicitly. Package-private so tests can exercise the escape-hatch behaviour without
+   * mutating the real process environment.
+   */
+  static boolean isSnowflakeHostForWorkloadIdentity(
+      String host, String allowedHostSuffixesEnvValue) {
+    String normalizedHost = PrivateLinkDetector.normalizeHost(host);
+    if (normalizedHost.isEmpty() || !PrivateLinkDetector.isLdhHost(normalizedHost)) {
+      return false;
+    }
+    if (PrivateLinkDetector.hasRecognizedSnowflakeSuffix(normalizedHost)) {
+      return true;
+    }
+    for (String extraSuffix : parseAdditionalAllowedHostSuffixes(allowedHostSuffixesEnvValue)) {
+      if (PrivateLinkDetector.matchesHostSuffix(normalizedHost, extraSuffix)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static List<String> parseAdditionalAllowedHostSuffixes(String envValue) {
+    if (envValue == null || envValue.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    List<String> extraSuffixes = new ArrayList<>();
+    for (String rawSuffix : envValue.split(",")) {
+      String normalizedSuffix = PrivateLinkDetector.normalizeHost(rawSuffix);
+      if (!normalizedSuffix.isEmpty()) {
+        extraSuffixes.add(normalizedSuffix);
+      }
+    }
+    if (!extraSuffixes.isEmpty()) {
+      logger.info(
+          "{} is set; additional WORKLOAD_IDENTITY host suffixes are allowed: {}",
+          SNOWFLAKE_WIF_ALLOWED_HOST_SUFFIXES_ENV_VAR,
+          extraSuffixes);
+    }
+    return extraSuffixes;
+  }
 
   /**
    * Performs an HTTP request for WIF identity token retrieval. This method is used by WIF

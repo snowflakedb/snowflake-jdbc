@@ -199,6 +199,28 @@ public enum SFSessionProperty {
   // application name matcher
   public static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
 
+  /**
+   * Account identifier matcher: defense in depth for the property path, deliberately narrower than
+   * the per-label allow-list enforced at the single account-&gt;host synthesis site
+   * (SFConnectionConfigParser.createUrl). It only forbids the characters that terminate a URL
+   * authority, so no account value can be pasted into a host and steer it elsewhere.
+   *
+   * <p>It cannot be the strict per-label allow-list, because checkPropertyValue is on every
+   * connection path and on the ordinary URL path {@code account} is auto-derived from the host's
+   * first label (SnowflakeConnectString:130-138) rather than supplied by the user. That derivation
+   * takes a raw substring of {@code URI.getRawAuthority()}, so it legitimately yields values
+   * containing {@code ! $ % & ' ( ) * + , ; = @ ~} (userinfo and percent-escaped authorities), plus
+   * bare numeric labels such as "192" for an IP-address host. Rejecting those here would break
+   * existing connections. The characters forbidden below provably never survive that derivation:
+   * {@code ? #} are split off as query/fragment, {@code /} as the path, {@code :} by the host/port
+   * split, {@code \} and whitespace are rejected by {@code new URI(...)}, and {@code [ ]} only
+   * appear in IPv6 authorities that the host/port split already rejects.
+   *
+   * <p>An empty value is accepted here so this check is purely additive; emptiness is already
+   * handled by the callers.
+   */
+  public static Pattern ACCOUNT_REGEX = Pattern.compile("^[^\\s/\\\\?#:\\[\\]]*$");
+
   public boolean isRequired() {
     return required;
   }
@@ -339,6 +361,12 @@ public enum SFSessionProperty {
       switch (property) {
         case APPLICATION:
           if (APPLICATION_REGEX.matcher((String) propertyValue).find()) {
+            return propertyValue;
+          } else {
+            throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE, propertyValue, property);
+          }
+        case ACCOUNT:
+          if (ACCOUNT_REGEX.matcher((String) propertyValue).matches()) {
             return propertyValue;
           } else {
             throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE, propertyValue, property);

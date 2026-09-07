@@ -17,7 +17,9 @@ public class DecorrelatedJitterBackoff {
   }
 
   public long nextSleepTime(long sleep) {
-    return Math.min(cap, ThreadLocalRandom.current().nextLong(base, sleep * 3));
+    // A caller may feed back a timeout-trimmed value below base; clamp so the bound stays > origin.
+    long boundedSleep = Math.max(sleep, base);
+    return Math.min(cap, ThreadLocalRandom.current().nextLong(base, boundedSleep * 3));
   }
 
   public long getJitterForLogin(long currentTime) {

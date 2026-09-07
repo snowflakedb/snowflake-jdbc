@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,6 +79,7 @@ public class MaskedExceptionLoggerIntegrationTest {
     SLF4JLogger logger = new SLF4JLogger(MaskedExceptionLoggerIntegrationTest.class.getName());
 
     org.slf4j.Logger mockLogger = mock(org.slf4j.Logger.class);
+    when(mockLogger.isErrorEnabled()).thenReturn(true);
     injectSlf4jLogger(logger, mockLogger);
 
     logger.error(SECRET_MSG, new Exception(SECRET_MSG));

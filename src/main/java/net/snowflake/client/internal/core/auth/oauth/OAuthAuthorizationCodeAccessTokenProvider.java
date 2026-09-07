@@ -65,7 +65,7 @@ public class OAuthAuthorizationCodeAccessTokenProvider implements AccessTokenPro
   @Override
   public TokenResponseDTO getAccessToken(SFLoginInput loginInput) throws SFException {
     try {
-      logger.info("Starting OAuth authorization code authentication flow...");
+      logger.debug("Starting OAuth authorization code authentication flow...");
       CodeVerifier pkceVerifier = new CodeVerifier();
       URI redirectUri = OAuthUtil.buildRedirectUri(loginInput.getOauthLoginInput());
       AuthorizationCode authorizationCode =

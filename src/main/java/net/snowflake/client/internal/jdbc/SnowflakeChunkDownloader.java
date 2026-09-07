@@ -227,7 +227,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.maxHttpRetries = resultSetSerializable.getMaxHttpRetries();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
-    logger.debug("qrmk: {}", this.qrmk);
+    logger.debug("qrmk present: {}", this.qrmk != null);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
     // session may be null. Its only use is for in-band telemetry in this class
     this.session =
