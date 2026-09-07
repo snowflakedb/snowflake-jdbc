@@ -1,5 +1,5 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
-
+..
 # Changelog
 - v4.3.5-SNAPSHOT
   - 
