@@ -10,6 +10,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 
@@ -26,7 +27,12 @@ class CertificateDiagnosticCheck extends DiagnosticCheck {
 
   @Override
   protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
+    // The JDK cannot put an underscore in a URL host or TLS server name, so probe the hyphenated
+    // variant that Snowflake also serves for account names containing underscores.
     String hostname = snowflakeEndpoint.getHost();
+    if (!this.proxyConf.isAllowUnderscoresInHost()) {
+      hostname = SnowflakeUtil.normalizeSnowflakeHost(hostname);
+    }
     String port = Integer.toString(snowflakeEndpoint.getPort());
     if (snowflakeEndpoint.isSslEnabled()) {
       String urlString = "https://" + hostname + ":" + port;

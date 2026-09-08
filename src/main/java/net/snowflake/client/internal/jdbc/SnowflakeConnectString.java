@@ -143,26 +143,21 @@ public class SnowflakeConnectString implements Serializable {
         return INVALID_CONNECT_STRING;
       }
 
-      // By default, don't allow underscores in host name unless the property is set to true via
-      // connection properties.
-      boolean allowUnderscoresInHost = false;
-      if ("true"
-          .equalsIgnoreCase(
-              (String)
-                  parameters.get(
-                      SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
-                          .getPropertyKey()
-                          .toUpperCase()))) {
-        allowUnderscoresInHost = true;
-      }
-      if (account.contains("_") && !allowUnderscoresInHost && host.startsWith(account)) {
-        // The account needs to have underscores in it and the host URL needs to start
-        // with the account name. There are cases where the host URL might not have the
-        // the account name in it, ex - ip address instead of host name.
-        // The property allowUnderscoresInHost needs to be set to false.
-        // Update the Host URL to remove underscores if there are any
-        String account_wo_uscores = account.replaceAll("_", "-");
-        host = host.replaceFirst(account, account_wo_uscores);
+      // Account names may contain underscores, but neither a URL host nor a TLS server name may.
+      // Snowflake serves an equivalent host with underscores replaced by hyphens, so normalize the
+      // host to that form by default. The account identifier itself is left untouched.
+      //
+      // Only rewrite when the host actually starts with the account name: the host need not contain
+      // the account at all, for example when it is an IP address. allowUnderscoresInHost is the
+      // opt-out for deployments whose DNS only resolves the underscored name, such as some
+      // PrivateLink setups.
+      if (host.startsWith(account)
+          && !getBooleanFalseByDefault(
+              parameters.get(
+                  SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
+                      .getPropertyKey()
+                      .toUpperCase(Locale.US)))) {
+        host = SnowflakeUtil.normalizeSnowflakeHost(host);
       }
 
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
@@ -252,5 +247,16 @@ public class SnowflakeConnectString implements Serializable {
     }
     String vs = value.toString();
     return !"off".equalsIgnoreCase(vs) && !Boolean.FALSE.toString().equalsIgnoreCase(vs);
+  }
+
+  private static boolean getBooleanFalseByDefault(Object value) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    String vs = value.toString();
+    return "on".equalsIgnoreCase(vs) || Boolean.TRUE.toString().equalsIgnoreCase(vs);
   }
 }

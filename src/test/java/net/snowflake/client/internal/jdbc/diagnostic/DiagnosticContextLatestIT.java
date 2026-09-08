@@ -69,6 +69,8 @@ public class DiagnosticContextLatestIT {
     List<SnowflakeEndpoint> endpointsFromTestFile = diagnosticContext.getEndpoints();
     List<SnowflakeEndpoint> mockEndpoints = new ArrayList<>();
 
+    // Keep this list in lockstep with allowlist.json; the assertion below compares the two. Only
+    // Snowflake hosts may carry underscores here - see testRunDiagnosticContextMethods for why.
     mockEndpoints.add(
         new SnowflakeEndpoint("SNOWFLAKE_DEPLOYMENT", "account_name.snowflakecomputing.com", 443));
     mockEndpoints.add(
@@ -85,16 +87,16 @@ public class DiagnosticContextLatestIT {
         new SnowflakeEndpoint(
             "OUT_OF_BAND_TELEMETRY", "out_of_band_telemetry.snowflakecomputing.com", 443));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_CACHE", "ocsp_cache.snowflakecomputing.com", 80));
-    mockEndpoints.add(new SnowflakeEndpoint("DUO_SECURITY", "duo_security.duosecurity.com", 443));
+    mockEndpoints.add(new SnowflakeEndpoint("DUO_SECURITY", "duo-security.duosecurity.com", 443));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.rootg2.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "o.ss2.us", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.sca1b.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.r2m01.amazontrust.com", 80));
     mockEndpoints.add(new SnowflakeEndpoint("OCSP_RESPONDER", "ocsp.rootca1.amazontrust.com", 80));
     mockEndpoints.add(
-        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight_deployment.snowflake.com", 443));
+        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight-deployment.snowflake.com", 443));
     mockEndpoints.add(
-        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight_deployment_2.snowflake.com", 443));
+        new SnowflakeEndpoint("SNOWSIGHT_DEPLOYMENT", "snowsight-deployment-2.snowflake.com", 443));
 
     String testFailedMessage =
         "The lists of SnowflakeEndpoints in mockEndpoints and endpointsFromTestFile should be identical";
@@ -355,7 +357,25 @@ public class DiagnosticContextLatestIT {
     }
   }
 
-  /** Test added in version > 3.16.1 */
+  /**
+   * Runs every check against every endpoint in allowlist.json, which means this test opens real
+   * DNS, TCP, TLS and HTTP connections to whatever that file lists.
+   *
+   * <p>Because of that, <strong>third-party hosts in the fixture must not contain
+   * underscores.</strong> An underscore is not a Letter-Digit-Hyphen character (RFC 952), so {@code
+   * SNIHostName} rejects such a host and the JDK completes the handshake with no {@code
+   * server_name} extension. Snowflake hosts are rewritten to their hyphenated variant before being
+   * probed, but third-party hosts are deliberately never rewritten - only Snowflake serves an
+   * equivalent hyphenated name - so nothing rescues them. Where such a name resolves through a
+   * wildcard (duosecurity.com does), CI emits a genuine SNI-less handshake to a third party on
+   * every run.
+   *
+   * <p>Underscored third-party names are also fiction: a real SYSTEM$ALLOWLIST carries underscores
+   * only in the Snowflake account identifier. The Snowflake hosts in the fixture keep theirs on
+   * purpose, since they are what exercises the normalization.
+   *
+   * <p>Test added in version > 3.16.1
+   */
   @Test
   public void testRunDiagnosticContextMethods() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();

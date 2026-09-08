@@ -24,6 +24,7 @@
   - Bumped the following dependencies:
     - grpc-java to 1.84.0 (snowflakedb/snowflake-jdbc#2747).
     - jsoup to 1.23.2 (snowflakedb/snowflake-jdbc#2735).
+  - Fixed `CertificateDiagnosticCheck` completing its TLS probe without SNI for allowlist hosts containing underscores (Snowflake account names): such hosts are rejected by `SNIHostName` per the RFC 952 Letter-Digit-Hyphen rule, causing the JDK to silently send no `server_name` extension and the check to report on a default certificate rather than the one a real client would be served. The check now probes the hyphenated host variant that Snowflake also serves. Host normalization is unified across the diagnostic checks and connect-string parsing in a single `SnowflakeUtil.normalizeSnowflakeHost` helper and is scoped to Snowflake hosts, so third-party allowlist hosts (cloud storage, OCSP responders, Duo, ...) are left unchanged. The `allowUnderscoresInHost` connection property opts out of normalization, and now does so for the diagnostic checks too, so a deployment whose DNS only resolves the underscored name is diagnosed against the host it actually connects to (snowflakedb/snowflake-jdbc#2729).
 
 - v4.3.3
   - Fixed GCS stage uploads corrupting files on virtual-hosted-style GCP accounts (`useVirtualUrl=true`, e.g. SPCS on GCP) (snowflakedb/snowflake-jdbc#2716).
