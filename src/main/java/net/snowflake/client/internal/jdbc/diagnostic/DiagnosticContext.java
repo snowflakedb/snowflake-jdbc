@@ -72,7 +72,27 @@ public class DiagnosticContext {
             ? -1
             : Integer.parseInt((String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT));
     String nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
-    proxyConf = new ProxyConfig(proxyHost, proxyPort, nonProxyHosts);
+    proxyConf =
+        new ProxyConfig(
+            proxyHost,
+            proxyPort,
+            nonProxyHosts,
+            getAllowUnderscoresInHost(connectionPropertiesMap));
+  }
+
+  /**
+   * A customer who set {@code allowUnderscoresInHost} is telling us their DNS only resolves the
+   * underscored name, so the diagnostics must probe that host rather than the hyphenated variant -
+   * otherwise the report describes an endpoint they never connect to.
+   */
+  static boolean getAllowUnderscoresInHost(Map<SFSessionProperty, Object> connectionPropertiesMap) {
+    Object value = connectionPropertiesMap.get(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST);
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    // SFSessionProperty.checkPropertyValue normally coerces this to a Boolean before it reaches the
+    // map, but the map can also be assembled directly, so accept a string form too.
+    return value != null && Boolean.parseBoolean(value.toString());
   }
 
   public void runDiagnostics() {

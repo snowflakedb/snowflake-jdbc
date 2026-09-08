@@ -35,7 +35,8 @@ public class ConnectStringParseTest {
         is("abc-test"));
     assertThat(cstring.getHost(), is("abc-test.us-east-1.snowflakecomputing.com"));
 
-    //  Host name should be updated if the parameter is set and it has underscores in it.
+    //  Host name is normalized to the hyphenated form Snowflake serves, while the account
+    //  identifier keeps its underscores.
     jdbcConnectString = "jdbc:snowflake://abc_test.us-east-1.snowflakecomputing.com";
     info.setProperty(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey(), "false");
     cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
@@ -59,6 +60,78 @@ public class ConnectStringParseTest {
         cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),
         is("abc_test"));
     assertThat(cstring.getHost(), is("abc-test.us-east-1.snowflakecomputing.com"));
+  }
+
+  /**
+   * allowUnderscoresInHost is the escape hatch for deployments whose DNS only resolves the
+   * underscored host, such as some PrivateLink setups. When it is set, the host must be left
+   * exactly as the connect string gave it.
+   */
+  @Test
+  public void testAllowUnderscoresInHostPreservesHost() {
+    Properties info = new Properties();
+    info.setProperty("username", "test");
+    info.setProperty(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey(), "true");
+
+    SnowflakeConnectString cstring =
+        SnowflakeConnectString.parse(
+            "jdbc:snowflake://abc_test.us-east-1.snowflakecomputing.com", info);
+    assertThat(
+        cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),
+        is("abc_test"));
+    assertThat(cstring.getHost(), is("abc_test.us-east-1.snowflakecomputing.com"));
+
+    cstring =
+        SnowflakeConnectString.parse(
+            "jdbc:snowflake://abc_test.privatelink.snowflakecomputing.com", info);
+    assertThat(cstring.getHost(), is("abc_test.privatelink.snowflakecomputing.com"));
+  }
+
+  /**
+   * The flag defaults to false, so an underscored Snowflake host is normalized when it is absent.
+   */
+  @Test
+  public void testHostIsNormalizedWhenAllowUnderscoresInHostIsAbsent() {
+    Properties info = new Properties();
+    info.setProperty("username", "test");
+
+    SnowflakeConnectString cstring =
+        SnowflakeConnectString.parse(
+            "jdbc:snowflake://abc_test.privatelink.snowflakecomputing.com", info);
+    assertThat(cstring.getHost(), is("abc-test.privatelink.snowflakecomputing.com"));
+  }
+
+  /**
+   * Only Snowflake is known to serve a hyphenated variant of an underscored host, so a
+   * non-Snowflake host is never rewritten regardless of the flag.
+   */
+  @Test
+  public void testNonSnowflakeHostIsNeverNormalized() {
+    Properties info = new Properties();
+    info.setProperty("username", "test");
+    info.setProperty("account", "abc_test");
+
+    SnowflakeConnectString cstring =
+        SnowflakeConnectString.parse("jdbc:snowflake://abc_test.internal.example.com", info);
+    assertThat(cstring.getHost(), is("abc_test.internal.example.com"));
+  }
+
+  /**
+   * The host does not have to contain the account identifier at all - it may be an IP address, or
+   * some other name that merely routes to the account. Rewriting a host we cannot tie to the
+   * account would point the driver at a name Snowflake never promised to serve, so leave those
+   * alone.
+   */
+  @Test
+  public void testHostNotStartingWithAccountIsNotNormalized() {
+    Properties info = new Properties();
+    info.setProperty("username", "test");
+    info.setProperty("account", "abc_test");
+
+    SnowflakeConnectString cstring =
+        SnowflakeConnectString.parse(
+            "jdbc:snowflake://some_gateway.us-east-1.snowflakecomputing.com", info);
+    assertThat(cstring.getHost(), is("some_gateway.us-east-1.snowflakecomputing.com"));
   }
 
   @Test
