@@ -687,6 +687,16 @@
                       </excludes>
                     </filter>
                     <filter>
+                      <!-- org.conscrypt (conscrypt-openjdk-uber) is transitive via google-cloud-storage but unused
+                           (TLS is BouncyCastle; GCS is HTTP-only, no gRPC/ALTS). As a JNI library that hardcodes
+                           org/conscrypt/* it cannot be shaded; bundling it unshaded collides with a caller's own
+                           conscrypt, causing a native abort, notably on Apple Silicon. See snowflakedb/snowflake-jdbc#2756. -->
+                      <artifact>org.conscrypt:conscrypt-openjdk-uber</artifact>
+                      <excludes>
+                        <exclude>**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
                       <artifact>org.apache.arrow:arrow-vector</artifact>
                       <excludes>
                         <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
