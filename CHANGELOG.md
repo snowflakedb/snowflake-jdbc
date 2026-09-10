@@ -3,6 +3,8 @@
 # Changelog
 - v4.3.5-SNAPSHOT
   - Removed the unused Conscrypt library (`org.conscrypt:conscrypt-openjdk-uber`) from the self-contained (fat) and FIPS JARs. It was only transitive weight from `google-cloud-storage` and is never used by the driver (SNOW-4071987).
+  - Bumped the following dependencies:
+    - netty to 4.1.138.Final from 4.1.137.Final.
 
 - v4.3.4
   - Added validation of `account`, `port` and `protocol` in the auto-configuration (`connections.toml`) path, where the connect string's host is synthesized from `account`, so that none of the interpolated components can alter the resulting URL authority. Each dot-separated label of `account` may contain only letters, digits, underscores and hyphens (mirroring the Python connector), `port` must be a number in 1-65535, and `protocol` must be `http` or `https`. Absent or empty values keep their existing "not specified" meaning. As defense in depth, the `ACCOUNT` connection property now also rejects values containing a URL-authority delimiter (snowflakedb/snowflake-jdbc#2752).
