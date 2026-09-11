@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -24,9 +25,21 @@ public class PlatformDetector {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(PlatformDetector.class);
 
-  private static final int DEFAULT_DETECTION_TIMEOUT_MS = 200;
+  private static final List<String> DISABLED_RESULT = Collections.singletonList("disabled");
 
-  private static List<String> cachedDetectedPlatforms = null;
+  /**
+   * Detection results keyed by the effective per-detector timeout. Keying by timeout means a
+   * connection that configures a different timeout gets a result actually produced with that
+   * timeout, rather than inheriting whatever the first connection in the JVM happened to use.
+   */
+  private static final Map<Integer, List<String>> cachedDetectedPlatforms = new HashMap<>();
+
+  /**
+   * The cache key is an application-supplied value, so a caller deriving the timeout per datasource
+   * could otherwise grow this map for the lifetime of the classloader. Past this many distinct
+   * timeouts, detection still runs but its result is not retained.
+   */
+  private static final int MAX_CACHED_TIMEOUTS = 8;
 
   // AWS platform detection constants
   private static final String AWS_LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT";
@@ -116,36 +129,71 @@ public class PlatformDetector {
     TIMEOUT
   }
 
-  /**
-   * Get cached platform detection results. If platform detection has not been performed yet,
-   * initializes the cache.
-   *
-   * @return list of detected platform strings
-   */
+  /** Retained for callers that hold no connection properties, such as other Snowflake clients. */
   public static synchronized List<String> getCachedPlatformDetection() {
-    if (cachedDetectedPlatforms != null) {
-      return cachedDetectedPlatforms;
+    return getCachedPlatformDetection(PlatformDetectionConfig.fromGlobalConfig());
+  }
+
+  /**
+   * When {@code config} disables detection, no metadata request is issued at all -- this is the
+   * guarantee air-gapped deployments rely on, so keep the disabled branch ahead of everything else.
+   */
+  public static synchronized List<String> getCachedPlatformDetection(
+      PlatformDetectionConfig config) {
+    return getCachedPlatformDetection(config, null, null);
+  }
+
+  /**
+   * Visible-for-testing overload, so tests can assert that the disabled path performs no detection
+   * at all rather than merely returning the right value. Null arguments mean "build the production
+   * one", and are only consulted on a cache miss.
+   */
+  @VisibleForTesting
+  static synchronized List<String> getCachedPlatformDetection(
+      PlatformDetectionConfig config,
+      PlatformDetector detectorOrNull,
+      AwsAttestationService attestationServiceOrNull) {
+    if (config.isDisabled()) {
+      logger.debug("Platform detection is disabled");
+      return DISABLED_RESULT;
     }
 
-    logger.debug(
-        "Platform detection cache miss. Initializing with default timeout: {}ms",
-        DEFAULT_DETECTION_TIMEOUT_MS);
+    int timeoutMs = config.getTimeoutMs();
+    List<String> cached = cachedDetectedPlatforms.get(timeoutMs);
+    if (cached != null) {
+      return cached;
+    }
 
-    PlatformDetector detector = new PlatformDetector();
-    AwsAttestationService attestationService = new AwsAttestationService();
-    List<String> result = detectPlatformsAndCache(detector, attestationService);
+    logger.debug("Platform detection cache miss. Initializing with timeout: {}ms", timeoutMs);
+
+    PlatformDetector detector = detectorOrNull != null ? detectorOrNull : new PlatformDetector();
+    AwsAttestationService attestationService =
+        attestationServiceOrNull != null ? attestationServiceOrNull : new AwsAttestationService();
+    List<String> result = detectPlatformsAndCache(detector, attestationService, timeoutMs);
 
     logger.debug("Platform detection cache initialized: {}", result);
     return result;
   }
 
   static synchronized List<String> detectPlatformsAndCache(
-      PlatformDetector detector, AwsAttestationService attestationService) {
-    List<String> detectedPlatforms =
-        detector.detectPlatforms(DEFAULT_DETECTION_TIMEOUT_MS, attestationService);
+      PlatformDetector detector, AwsAttestationService attestationService, int timeoutMs) {
+    List<String> detectedPlatforms = detector.detectPlatforms(timeoutMs, attestationService);
 
-    cachedDetectedPlatforms = Collections.unmodifiableList(detectedPlatforms);
-    return cachedDetectedPlatforms;
+    List<String> result = Collections.unmodifiableList(detectedPlatforms);
+    if (cachedDetectedPlatforms.size() < MAX_CACHED_TIMEOUTS) {
+      cachedDetectedPlatforms.put(timeoutMs, result);
+    } else {
+      logger.debug(
+          "Not caching platform detection for timeout {}ms; already holding {} distinct timeouts",
+          timeoutMs,
+          cachedDetectedPlatforms.size());
+    }
+    return result;
+  }
+
+  /** Visible for testing. */
+  static synchronized void resetCacheForTesting() {
+    cachedDetectedPlatforms.clear();
   }
 
   /**
@@ -153,8 +201,9 @@ public class PlatformDetector {
    * exceptions and returns an empty list if any exception occurs.
    *
    * @param platformDetectionTimeoutMs Timeout value for platform detection requests in
-   *     milliseconds. If null, defaults to DEFAULT_DETECTION_TIMEOUT_MS. If 0, skips
-   *     network-dependent checks.
+   *     milliseconds. If null, defaults to {@link
+   *     PlatformDetectionConfig#DEFAULT_DETECTION_TIMEOUT_MS}. If 0, skips network-dependent
+   *     checks.
    * @return List of detected platform names. Platforms that timed out will have "_timeout" suffix
    *     appended to their name. Returns empty list if any exception occurs during detection.
    */
@@ -164,7 +213,7 @@ public class PlatformDetector {
       int timeoutMs =
           platformDetectionTimeoutMs != null
               ? platformDetectionTimeoutMs
-              : DEFAULT_DETECTION_TIMEOUT_MS;
+              : PlatformDetectionConfig.DEFAULT_DETECTION_TIMEOUT_MS;
 
       // Run environment-only checks synchronously (no network calls)
       Map<Platform, DetectionState> platforms = new HashMap<>();
@@ -174,7 +223,9 @@ public class PlatformDetector {
       platforms.put(Platform.IS_GCE_CLOUD_RUN_JOB, isGcpCloudRunJob());
       platforms.put(Platform.IS_GITHUB_ACTION, isGithubAction());
 
-      if (timeoutMs != 0) {
+      // Not "!= 0": a negative value must skip the network too. PlatformDetectionConfig already
+      // clamps, but detectPlatformsAndCache takes a raw int, so the invariant is enforced here.
+      if (timeoutMs > 0) {
         ExecutorService executor = Executors.newFixedThreadPool(6);
         try {
           Map<Platform, CompletableFuture<DetectionState>> futures = new HashMap<>();

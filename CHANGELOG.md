@@ -3,6 +3,8 @@
 # Changelog
 - v4.3.5-SNAPSHOT
   - Removed the unused Conscrypt library (`org.conscrypt:conscrypt-openjdk-uber`) from the self-contained (fat) and FIPS JARs. It was only transitive weight from `google-cloud-storage` and is never used by the driver (SNOW-4071987).
+  - Fixed the `platformDetectionTimeoutMs` connection property having no effect: platform detection always ran with the hardcoded 200 ms default, so the documented `platformDetectionTimeoutMs=0` setting, which skips the instance-metadata probes and keeps only the environment-variable checks, was unreachable from configuration (snowflakedb/snowflake-jdbc#9).
+  - Added JVM-wide fallbacks for both platform-detection settings, so air-gapped deployments can suppress instance-metadata probes for the whole process instead of per connection: `disablePlatformDetection` now also reads the `net.snowflake.jdbc.disablePlatformDetection` system property and the `SNOWFLAKE_DISABLE_PLATFORM_DETECTION` environment variable (both accepting only a case-insensitive `true`), and `platformDetectionTimeoutMs` reads `net.snowflake.jdbc.platformDetectionTimeoutMs` / `SNOWFLAKE_PLATFORM_DETECTION_TIMEOUT_MS`; the connection property takes precedence over the system property, which takes precedence over the environment variable. A negative timeout is now treated as `0` instead of still issuing the requests, and a timeout above 5000 ms is clamped to that maximum, since detection holds a process-wide lock and an unbounded value would stall every other connection attempt for its full duration. When detection is disabled the driver reports `PLATFORM=["disabled"]` rather than omitting the field (snowflakedb/snowflake-jdbc#9).
   - Bumped the following dependencies:
     - netty to 4.1.138.Final from 4.1.137.Final.
 

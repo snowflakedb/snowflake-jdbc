@@ -16,13 +16,16 @@ import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.SystemPropertyOverrider;
 import net.snowflake.client.api.auth.AuthenticatorType;
 import net.snowflake.client.internal.core.minicore.MinicoreLoadResult;
 import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.internal.jdbc.MockConnectionTest;
+import net.snowflake.client.internal.util.PlatformDetectionConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -178,6 +181,38 @@ public class SessionUtilTest {
     assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+  }
+
+  @Test
+  public void shouldReportDisabledPlatformWhenDetectionIsDisabledByConnectionProperty() {
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setOCSPMode(OCSPMode.FAIL_OPEN);
+    loginInput.setDisablePlatformDetection(true);
+
+    Map<String, Object> clientEnv =
+        SessionUtil.createClientEnvironmentInfo(
+            loginInput, new HashMap<>(), "OFF", AuthenticatorType.SNOWFLAKE);
+
+    assertEquals(Collections.singletonList("disabled"), clientEnv.get("PLATFORM"));
+  }
+
+  @Test
+  public void shouldReportDisabledPlatformWhenDetectionIsDisabledBySystemProperty() {
+    SystemPropertyOverrider overrider =
+        new SystemPropertyOverrider(PlatformDetectionConfig.DISABLE_SYSTEM_PROPERTY, "true");
+    try {
+      // No connection property set, so the JVM-wide fallback has to be what takes effect.
+      SFLoginInput loginInput = new SFLoginInput();
+      loginInput.setOCSPMode(OCSPMode.FAIL_OPEN);
+
+      Map<String, Object> clientEnv =
+          SessionUtil.createClientEnvironmentInfo(
+              loginInput, new HashMap<>(), "OFF", AuthenticatorType.SNOWFLAKE);
+
+      assertEquals(Collections.singletonList("disabled"), clientEnv.get("PLATFORM"));
+    } finally {
+      overrider.rollback();
+    }
   }
 
   @Test

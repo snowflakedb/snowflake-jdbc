@@ -56,8 +56,11 @@ public class SFLoginInput {
   private String privateKeyBase64;
   private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
-  private int platformDetectionTimeoutMs = 200; // Default 200ms timeout for platform detection
-  private boolean disablePlatformDetection = false; // Default false - platform detection enabled
+  // Both null when the corresponding connection property was not supplied, so that
+  // PlatformDetectionConfig can fall back to the system property / environment variable. A
+  // primitive default would make "explicitly set to the default" indistinguishable from "unset".
+  private Integer platformDetectionTimeoutMs;
+  private Boolean disablePlatformDetection;
   private int maxRetryCount;
 
   private SFOauthLoginInput oauthLoginInput;
@@ -666,20 +669,20 @@ public class SFLoginInput {
     this.browserHandler = browserHandler;
   }
 
-  public int getPlatformDetectionTimeoutMs() {
+  public Integer getPlatformDetectionTimeoutMs() {
     return platformDetectionTimeoutMs;
   }
 
-  public SFLoginInput setPlatformDetectionTimeoutMs(int platformDetectionTimeoutMs) {
+  public SFLoginInput setPlatformDetectionTimeoutMs(Integer platformDetectionTimeoutMs) {
     this.platformDetectionTimeoutMs = platformDetectionTimeoutMs;
     return this;
   }
 
-  public boolean isDisablePlatformDetection() {
+  public Boolean getDisablePlatformDetection() {
     return disablePlatformDetection;
   }
 
-  public SFLoginInput setDisablePlatformDetection(boolean disablePlatformDetection) {
+  public SFLoginInput setDisablePlatformDetection(Boolean disablePlatformDetection) {
     this.disablePlatformDetection = disablePlatformDetection;
     return this;
   }

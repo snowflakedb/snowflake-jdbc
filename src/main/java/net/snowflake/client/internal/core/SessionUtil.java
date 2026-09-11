@@ -64,6 +64,7 @@ import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.LibcDetails;
 import net.snowflake.client.internal.util.LibcInfo;
 import net.snowflake.client.internal.util.OsReleaseDetails;
+import net.snowflake.client.internal.util.PlatformDetectionConfig;
 import net.snowflake.client.internal.util.PlatformDetector;
 import net.snowflake.client.internal.util.SecretDetector;
 import net.snowflake.client.internal.util.Stopwatch;
@@ -1218,18 +1219,18 @@ public class SessionUtil {
     clientEnv.put("JDBC_JAR_NAME", DriverUtil.getJdbcJarname());
     clientEnv.put("LOGGING_IMPLEMENTATION", SFLoggerFactory.getLoggerImplementationName());
 
-    // Add platform detection (if not disabled)
-    if (!loginInput.isDisablePlatformDetection()) {
-      try {
-        // Use cached platform detection results (initialized once on first use)
-        List<String> detectedPlatforms = PlatformDetector.getCachedPlatformDetection();
-        clientEnv.put("PLATFORM", detectedPlatforms);
-      } catch (Exception e) {
-        logger.debug("Platform detection failed: {}", e.getMessage());
-        // Continue without platform information
-      }
-    } else {
-      logger.debug("Platform detection is disabled");
+    // Resolved here rather than in SFSession so that every SFLoginInput construction path picks up
+    // the JVM-wide fallbacks, not just SFSession.open().
+    try {
+      PlatformDetectionConfig platformDetectionConfig =
+          PlatformDetectionConfig.resolve(
+              loginInput.getDisablePlatformDetection(), loginInput.getPlatformDetectionTimeoutMs());
+      List<String> detectedPlatforms =
+          PlatformDetector.getCachedPlatformDetection(platformDetectionConfig);
+      clientEnv.put("PLATFORM", detectedPlatforms);
+    } catch (Exception e) {
+      logger.debug("Platform detection failed: {}", e.getMessage());
+      // Continue without platform information
     }
 
     // OAuth metrics data
