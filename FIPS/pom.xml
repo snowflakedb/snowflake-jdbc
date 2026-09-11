@@ -327,6 +327,12 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <!-- not bound to any lifecycle phase; invoked explicitly by ci/scripts/generate_sbom.sh -->
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>${version.plugin.cyclonedx}</version>
+      </plugin>
     </plugins>
   </build>
   <reporting>

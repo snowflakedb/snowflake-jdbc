@@ -203,6 +203,12 @@
           <version>${version.plugin.exec}</version>
         </plugin>
         <plugin>
+          <!-- not bound to any lifecycle phase; invoked explicitly by ci/scripts/generate_sbom.sh -->
+          <groupId>org.cyclonedx</groupId>
+          <artifactId>cyclonedx-maven-plugin</artifactId>
+          <version>${version.plugin.cyclonedx}</version>
+        </plugin>
+        <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${version.plugin.jacoco}</version>

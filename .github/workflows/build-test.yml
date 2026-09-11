@@ -50,6 +50,18 @@ jobs:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
 
+    sbom:
+        name: Generate and Validate SBOM
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Generate SBOM
+              shell: bash
+              run: mkdir -p target && ./ci/scripts/generate_sbom.sh > target/bom.json
+            - name: Validate SBOM
+              shell: bash
+              run: ./ci/scripts/check_sbom.sh target/bom.json
+
     unit-test-linux:
         name: Unit Tests Linux java 8
         runs-on: ubuntu-latest
