@@ -157,8 +157,20 @@ public enum SFSessionProperty {
   ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS(
       "ENABLE_WILDCARDS_IN_SHOW_METADATA_COMMANDS", false, Boolean.class),
 
+  /**
+   * @deprecated Use the {@code jdk.tls.client.protocols} system property instead. It takes
+   *     precedence over this property and, unlike it, also applies to PUT/GET stage transfers,
+   *     which are performed by the cloud storage SDKs rather than by the driver's own HTTP client.
+   *     This property is honoured only when that system property is not set.
+   */
+  @Deprecated
   MIN_TLS_VERSION("MIN_TLS_VERSION", false, String.class),
 
+  /**
+   * @deprecated Use the {@code jdk.tls.client.protocols} system property instead. See {@link
+   *     #MIN_TLS_VERSION}.
+   */
+  @Deprecated
   MAX_TLS_VERSION("MAX_TLS_VERSION", false, String.class),
 
   CERT_REVOCATION_CHECK_MODE("CERT_REVOCATION_CHECK_MODE", false, String.class),

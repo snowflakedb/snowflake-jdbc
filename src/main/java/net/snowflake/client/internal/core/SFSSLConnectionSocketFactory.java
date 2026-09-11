@@ -8,8 +8,7 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.EnumSet;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -23,42 +22,88 @@ import org.apache.http.protocol.HttpContext;
 public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
-  private static TlsVersion minTlsVersion = TlsVersion.TLS_1_2;
-  private static TlsVersion maxTlsVersion = TlsVersion.TLS_1_3;
+
+  /**
+   * Standard JSSE system property listing the protocols enabled by default for client connections.
+   * When set it governs every JSSE client in the JVM, including the cloud storage SDKs used for
+   * PUT/GET, so it takes precedence over the deprecated per-connection TLS version properties.
+   */
+  static final String JDK_TLS_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
+
   private final boolean socksProxyDisabled;
 
   public SFSSLConnectionSocketFactory(TrustManager[] trustManagers, boolean socksProxyDisabled)
       throws NoSuchAlgorithmException, KeyManagementException {
+    this(trustManagers, socksProxyDisabled, TlsVersion.DEFAULT_MIN, TlsVersion.DEFAULT_MAX);
+  }
+
+  public SFSSLConnectionSocketFactory(
+      TrustManager[] trustManagers,
+      boolean socksProxyDisabled,
+      TlsVersion minTlsVersion,
+      TlsVersion maxTlsVersion)
+      throws NoSuchAlgorithmException, KeyManagementException {
     super(
         initSSLContext(trustManagers),
-        getSupportedTlsVersions(),
+        resolveEnabledProtocols(minTlsVersion, maxTlsVersion),
         decideCipherSuites(),
         SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     this.socksProxyDisabled = socksProxyDisabled;
   }
 
-  private static String[] getSupportedTlsVersions() {
-    if (minTlsVersion.compareTo(maxTlsVersion) > 0) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Minimum TLS version %s cannot be greater than the maximum TLS version %s",
-              minTlsVersion.getProtocolName(), maxTlsVersion.getProtocolName()));
-    }
-    List<String> supported =
-        Arrays.stream(TlsVersion.values())
-            .filter(TlsVersion::isAvailable)
-            .filter(v -> v.compareTo(minTlsVersion) >= 0)
-            .filter(v -> v.compareTo(maxTlsVersion) <= 0)
-            .map(TlsVersion::getProtocolName)
-            .collect(Collectors.toList());
+  /**
+   * Decide which TLS versions this socket factory offers.
+   *
+   * <p>When {@value #JDK_TLS_CLIENT_PROTOCOLS} is set it takes precedence over the deprecated
+   * per-connection properties. The versions it names are still intersected with the range this
+   * driver models, so the property can tighten the handshake but cannot lower the driver's TLS 1.2
+   * floor. Deferring to the JSSE defaults instead would let an externally configured {@code TLSv1}
+   * or {@code TLSv1.1} be offered to Snowflake, since Apache only strips {@code SSL*} names of its
+   * own accord.
+   *
+   * @return protocol names to enable, never null or empty
+   * @throws IllegalStateException if no supported version remains
+   */
+  static String[] resolveEnabledProtocols(TlsVersion minTlsVersion, TlsVersion maxTlsVersion) {
+    TlsVersion min = minTlsVersion;
+    TlsVersion max = maxTlsVersion;
 
-    if (supported.isEmpty()) {
-      throw new IllegalStateException(
-          String.format(
-              "No TLS versions match constraints: min=%s, max=%s",
-              minTlsVersion.getProtocolName(), maxTlsVersion.getProtocolName()));
+    String jdkClientProtocols = configuredJdkClientProtocols();
+    if (jdkClientProtocols != null) {
+      EnumSet<TlsVersion> fromJvm = TlsVersion.parseProtocolList(jdkClientProtocols);
+      if (fromJvm.isEmpty()) {
+        throw new IllegalStateException(
+            String.format(
+                "System property %s is set to '%s', which names no TLS version supported by this"
+                    + " driver (%s)",
+                JDK_TLS_CLIENT_PROTOCOLS, jdkClientProtocols, TlsVersion.supportedValues()));
+      }
+      // EnumSet iterates in declaration order, so the first is the oldest and the last the newest
+      min = fromJvm.iterator().next();
+      for (TlsVersion version : fromJvm) {
+        max = version;
+      }
+      logger.debug(
+          "System property {} is set to '{}'; offering {} to {}",
+          JDK_TLS_CLIENT_PROTOCOLS,
+          jdkClientProtocols,
+          min.getProtocolName(),
+          max.getProtocolName());
     }
-    return supported.toArray(new String[0]);
+
+    String[] protocols = TlsVersion.protocolsInRange(min, max);
+    logger.debug("TLS versions offered: {}", (ArgSupplier) () -> Arrays.toString(protocols));
+    return protocols;
+  }
+
+  /**
+   * @return the value of {@value #JDK_TLS_CLIENT_PROTOCOLS}, or null when unset or blank. Shared so
+   *     that the precedence decision here and the deprecation warnings in {@code SFBaseSession}
+   *     cannot disagree about whether the property counts as configured.
+   */
+  static String configuredJdkClientProtocols() {
+    String value = systemGetProperty(JDK_TLS_CLIENT_PROTOCOLS);
+    return value == null || value.trim().isEmpty() ? null : value;
   }
 
   private static SSLContext initSSLContext(TrustManager[] trustManagers)
@@ -97,52 +142,5 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
     logger.trace("Cipher suites used: {}", (ArgSupplier) () -> Arrays.toString(cipherSuites));
 
     return cipherSuites;
-  }
-
-  public static void setMinTlsVersion(String minTlsVersion) {
-    logger.debug("Setting minimum TLS version to: {}", minTlsVersion);
-    SFSSLConnectionSocketFactory.minTlsVersion = TlsVersion.fromString(minTlsVersion);
-  }
-
-  public static void setMaxTlsVersion(String maxTlsVersion) {
-    logger.debug("Setting maximum TLS version to: {}", maxTlsVersion);
-    SFSSLConnectionSocketFactory.maxTlsVersion = TlsVersion.fromString(maxTlsVersion);
-  }
-
-  private enum TlsVersion {
-    TLS_1_2("TLSv1.2"),
-    TLS_1_3("TLSv1.3");
-
-    private final String protocolName;
-
-    TlsVersion(String protocolName) {
-      this.protocolName = protocolName;
-    }
-
-    String getProtocolName() {
-      return protocolName;
-    }
-
-    boolean isAvailable() {
-      try {
-        SSLContext.getInstance(this.protocolName);
-        return true;
-      } catch (NoSuchAlgorithmException e) {
-        logger.debug("TLS protocol {} is not available", this.protocolName);
-        return false;
-      }
-    }
-
-    static TlsVersion fromString(String text) {
-      if (text == null) {
-        return null;
-      }
-      for (TlsVersion v : TlsVersion.values()) {
-        if (v.protocolName.equalsIgnoreCase(text)) {
-          return v;
-        }
-      }
-      throw new IllegalArgumentException("Unsupported TLS version: " + text);
-    }
   }
 }

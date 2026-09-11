@@ -185,6 +185,8 @@ public abstract class SFBaseSession {
 
   private boolean allowCertificatesWithoutCrlUrl = false;
 
+  private final AtomicBoolean tlsVersionDeprecationWarned = new AtomicBoolean(false);
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -715,7 +717,122 @@ public abstract class SFBaseSession {
     }
     ocspAndProxyAndGzipKey.setRevocationCheckMode(certRevocationCheckMode);
     ocspAndProxyAndGzipKey.setAllowCertificatesWithoutCrlUrl(allowCertificatesWithoutCrlUrl);
+    TlsVersion[] tlsVersions = resolveTlsVersions();
+    ocspAndProxyAndGzipKey.setTlsVersions(tlsVersions[0], tlsVersions[1]);
     return ocspAndProxyAndGzipKey;
+  }
+
+  /**
+   * Resolve the minimum TLS version for the Snowflake API connection.
+   *
+   * @return the configured minimum, or {@link TlsVersion#DEFAULT_MIN} when unset
+   * @throws SnowflakeSQLException if the configuration is invalid
+   */
+  public TlsVersion getMinTlsVersion() throws SnowflakeSQLException {
+    return resolveTlsVersions()[0];
+  }
+
+  /**
+   * Resolve the maximum TLS version for the Snowflake API connection.
+   *
+   * @return the configured maximum, or {@link TlsVersion#DEFAULT_MAX} when unset
+   * @throws SnowflakeSQLException if the configuration is invalid
+   */
+  public TlsVersion getMaxTlsVersion() throws SnowflakeSQLException {
+    return resolveTlsVersions()[1];
+  }
+
+  /**
+   * Resolve the TLS version bounds for the Snowflake API connection, validating them together so an
+   * inverted range is rejected here rather than when the socket factory is built.
+   *
+   * <p>These bounds apply only when {@code jdk.tls.client.protocols} is unset; see {@link
+   * SFSessionProperty#MIN_TLS_VERSION}.
+   *
+   * @return a two-element array holding the minimum and the maximum
+   * @throws SnowflakeSQLException if either value is not a known TLS version, or the minimum is
+   *     newer than the maximum
+   */
+  private TlsVersion[] resolveTlsVersions() throws SnowflakeSQLException {
+    String configuredMin = (String) connectionPropertiesMap.get(SFSessionProperty.MIN_TLS_VERSION);
+    String configuredMax = (String) connectionPropertiesMap.get(SFSessionProperty.MAX_TLS_VERSION);
+
+    String jdkClientProtocols = SFSSLConnectionSocketFactory.configuredJdkClientProtocols();
+
+    if ((configuredMin != null || configuredMax != null)
+        && tlsVersionDeprecationWarned.compareAndSet(false, true)) {
+      logger.warn(
+          "The 'MIN_TLS_VERSION' and 'MAX_TLS_VERSION' connection properties are deprecated."
+              + " Please use the 'jdk.tls.client.protocols' system property instead, which also"
+              + " applies to PUT/GET stage transfers.");
+      if (jdkClientProtocols != null) {
+        logger.warn(
+            "The 'jdk.tls.client.protocols' system property is set to '{}' and takes precedence,"
+                + " so the configured TLS version connection properties are ignored.",
+            jdkClientProtocols);
+      }
+    }
+
+    if (jdkClientProtocols != null) {
+      // The system property governs, so the connection properties are inert. Do not validate them:
+      // failing a connection over an ignored value would be surprising, and an unavailable version
+      // named there is irrelevant. Reporting the driver defaults also keeps connections that differ
+      // only in these ignored values sharing one HTTP client, since they all negotiate identically.
+      //
+      // The property itself is validated, through the same code path that will consume it, so a bad
+      // value surfaces here as INVALID_TLS_VERSION rather than escaping socket factory construction
+      // as an unwrapped runtime exception.
+      try {
+        SFSSLConnectionSocketFactory.resolveEnabledProtocols(
+            TlsVersion.DEFAULT_MIN, TlsVersion.DEFAULT_MAX);
+      } catch (IllegalStateException | IllegalArgumentException invalid) {
+        throw new SnowflakeSQLException(ErrorCode.INVALID_TLS_VERSION, invalid.getMessage());
+      }
+      return new TlsVersion[] {TlsVersion.DEFAULT_MIN, TlsVersion.DEFAULT_MAX};
+    }
+
+    TlsVersion min =
+        parseTlsVersion(SFSessionProperty.MIN_TLS_VERSION, configuredMin, TlsVersion.DEFAULT_MIN);
+    TlsVersion max =
+        parseTlsVersion(SFSessionProperty.MAX_TLS_VERSION, configuredMax, TlsVersion.DEFAULT_MAX);
+
+    if (min.compareTo(max) > 0) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_TLS_VERSION,
+          String.format(
+              "minimum %s cannot be greater than maximum %s",
+              min.getProtocolName(), max.getProtocolName()));
+    }
+
+    // Check availability here rather than leaving it to socket factory construction: that happens
+    // inside HttpUtil, which catches only NoSuchAlgorithmException/KeyManagementException, so the
+    // failure would escape DriverManager.getConnection as a raw IllegalStateException instead of a
+    // SQLException. Reaching this for TLSv1.3 means a JDK older than 8u261, or the version disabled
+    // through the jdk.tls.disabledAlgorithms security property.
+    try {
+      TlsVersion.protocolsInRange(min, max);
+    } catch (IllegalStateException unsupported) {
+      throw new SnowflakeSQLException(ErrorCode.INVALID_TLS_VERSION, unsupported.getMessage());
+    }
+    return new TlsVersion[] {min, max};
+  }
+
+  private TlsVersion parseTlsVersion(
+      SFSessionProperty property, String configured, TlsVersion defaultValue)
+      throws SnowflakeSQLException {
+    if (configured == null) {
+      return defaultValue;
+    }
+    try {
+      return TlsVersion.fromString(configured);
+    } catch (IllegalArgumentException ex) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_TLS_VERSION,
+          "the value passed for "
+              + property.getPropertyKey()
+              + " is invalid. Possible values are "
+              + TlsVersion.supportedValues());
+    }
   }
 
   private void logHttpClientInitInfo(HttpClientSettingsKey key) {

@@ -25,6 +25,7 @@
 
   <properties>
     <artifactId>snowflake-jdbc</artifactId>
+    <surefire.excludedGroups>arcReactor</surefire.excludedGroups>
   </properties>
 
   <dependencies>
@@ -175,6 +176,14 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.plugin.surefire}</version>
+          <configuration>
+            <!-- Tests tagged arcReactor need JVM flags that only the arcReactorTests profile supplies,
+                 so they must never be picked up by an ordinary test run. Excluded here rather than
+                 only in UnitTestSuite's @ExcludeTags, because that applies solely when surefire is
+                 pointed at that suite (the jenkinsIT profile); any other invocation would run them
+                 without the flags. The arcReactorTests profile clears this. -->
+            <excludedGroups>${surefire.excludedGroups}</excludedGroups>
+          </configuration>
           <dependencies>
             <dependency>
               <groupId>org.apache.maven.surefire</groupId>
@@ -1248,9 +1257,7 @@
                          but SLF4JLogger must reference the user's real org.slf4j for SLF4J opt-in.
                          SLF4JJCLWrapper is left shaded since it also implements the shaded
                          org.apache.commons.logging.Log interface. -->
-                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class"
-                          todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"
-                          overwrite="true"/>
+                    <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class" overwrite="true" todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1308,6 +1315,58 @@
               <skipTests>${skip.unitTests}</skipTests>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
             </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!--
+      Tests needing Arc Reactor / Top Secret region JVM configuration that cannot be set from within
+      a test. jdk.tls.client.protocols is read at the first JSSE use and cached, so it must arrive as
+      a real -D at JVM launch; surefire systemPropertyVariables would be order-dependent.
+
+      Add future Arc Reactor flags to arcReactor.jvmFlags. If two requirements ever need mutually
+      exclusive JVM states, add a second surefire execution rather than combining them here.
+
+      Note: these flags do not include the add-opens/add-exports arguments that the java-9 profile
+      adds, so run this profile on Java 8 (as the unit-test CI jobs do). On a newer JDK, append
+      those arguments to arcReactor.jvmFlags.
+    -->
+    <profile>
+      <id>arcReactorTests</id>
+      <activation>
+        <property>
+          <name>arcReactorTests</name>
+        </property>
+      </activation>
+      <properties>
+        <arcReactor.jvmFlags>-Djdk.tls.client.protocols=TLSv1.3</arcReactor.jvmFlags>
+        <!-- clear the global exclusion: this profile exists to run exactly those tests -->
+        <surefire.excludedGroups/>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <test>ArcReactorTestSuite</test>
+              <skipTests>false</skipTests>
+              <argLine>${arcReactor.jvmFlags}</argLine>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.plugin.surefire}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
