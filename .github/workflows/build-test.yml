@@ -66,6 +66,26 @@ jobs:
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
               run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
 
+    arc-reactor-test-linux:
+        name: Arc Reactor Tests Linux java 8
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: actions/setup-java@v5
+              with:
+                java-version: '8'
+                distribution: 'temurin'
+                cache: maven
+            # Arc Reactor region JVM configuration cannot be set from within a test:
+            # jdk.tls.client.protocols is read at the first JSSE use and cached. The arcReactorTests
+            # profile supplies it as a real -D at JVM launch. No Snowflake credentials needed -- the
+            # tests run against a loopback TLS server.
+            - name: Arc Reactor Tests
+              shell: bash
+              env:
+                JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
+              run: ./mvnw -B -DarcReactorTests -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+
     unit-test-windows:
         name: Unit Tests Windows java 8
         runs-on: windows-latest

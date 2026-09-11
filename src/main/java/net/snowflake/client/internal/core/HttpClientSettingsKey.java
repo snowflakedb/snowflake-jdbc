@@ -35,6 +35,8 @@ public class HttpClientSettingsKey implements Serializable {
 
   private Boolean gzipDisabled = false;
   private Integer ocspTimeout = null;
+  private TlsVersion minTlsVersion = TlsVersion.DEFAULT_MIN;
+  private TlsVersion maxTlsVersion = TlsVersion.DEFAULT_MAX;
 
   public HttpClientSettingsKey(
       OCSPMode mode,
@@ -77,8 +79,9 @@ public class HttpClientSettingsKey implements Serializable {
       HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) obj;
       if (comparisonKey.ocspMode.getValue() == this.ocspMode.getValue()) {
         if (comparisonKey.revocationCheckMode == this.revocationCheckMode
-            && comparisonKey.allowCertificatesWithoutCrlUrl
-                == this.allowCertificatesWithoutCrlUrl) {
+            && comparisonKey.allowCertificatesWithoutCrlUrl == this.allowCertificatesWithoutCrlUrl
+            && comparisonKey.minTlsVersion == this.minTlsVersion
+            && comparisonKey.maxTlsVersion == this.maxTlsVersion) {
           if (comparisonKey.gzipDisabled.equals(this.gzipDisabled)) {
             if (comparisonKey.userAgentSuffix.equalsIgnoreCase(this.userAgentSuffix)) {
               if (Objects.equals(comparisonKey.ocspTimeout, this.ocspTimeout)) {
@@ -114,7 +117,11 @@ public class HttpClientSettingsKey implements Serializable {
                 + this.proxyProtocol)
             .hashCode()
         + Objects.hash(
-            this.revocationCheckMode, this.allowCertificatesWithoutCrlUrl, this.ocspTimeout);
+            this.revocationCheckMode,
+            this.allowCertificatesWithoutCrlUrl,
+            this.ocspTimeout,
+            this.minTlsVersion,
+            this.maxTlsVersion);
   }
 
   public OCSPMode getOcspMode() {
@@ -178,6 +185,19 @@ public class HttpClientSettingsKey implements Serializable {
     this.allowCertificatesWithoutCrlUrl = allowCertificatesWithoutCrlUrl;
   }
 
+  public TlsVersion getMinTlsVersion() {
+    return minTlsVersion;
+  }
+
+  public TlsVersion getMaxTlsVersion() {
+    return maxTlsVersion;
+  }
+
+  public void setTlsVersions(TlsVersion minTlsVersion, TlsVersion maxTlsVersion) {
+    this.minTlsVersion = minTlsVersion;
+    this.maxTlsVersion = maxTlsVersion;
+  }
+
   public int getOcspTimeout() {
     return ocspTimeout;
   }
@@ -230,6 +250,10 @@ public class HttpClientSettingsKey implements Serializable {
         + gzipDisabled
         + ", ocspTimeout="
         + ocspTimeout
+        + ", minTlsVersion="
+        + minTlsVersion
+        + ", maxTlsVersion="
+        + maxTlsVersion
         + ']';
   }
 }

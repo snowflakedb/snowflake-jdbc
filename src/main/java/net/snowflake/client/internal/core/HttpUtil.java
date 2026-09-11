@@ -335,10 +335,15 @@ public class HttpUtil {
               + "connection socket factory",
           socksProxyDisabled);
 
+      TlsVersion minTlsVersion = key != null ? key.getMinTlsVersion() : TlsVersion.DEFAULT_MIN;
+      TlsVersion maxTlsVersion = key != null ? key.getMaxTlsVersion() : TlsVersion.DEFAULT_MAX;
+
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register(
-                  "https", new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
+                  "https",
+                  new SFSSLConnectionSocketFactory(
+                      trustManagers, socksProxyDisabled, minTlsVersion, maxTlsVersion))
               .register("http", new SFConnectionSocketFactory())
               .build();
       PoolingHttpClientConnectionManager connectionManager =

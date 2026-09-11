@@ -17,6 +17,7 @@ import org.junit.platform.suite.api.ExcludeTags;
   TestTags.RESULT_SET,
   TestTags.STATEMENT,
   TestTags.AUTHENTICATION,
-  TestTags.WIF
+  TestTags.WIF,
+  TestTags.ARC_REACTOR
 })
 public class UnitTestSuite {}
