@@ -99,6 +99,7 @@
     <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
     <version.plugin.clean>3.2.0</version.plugin.clean>
     <version.plugin.compiler>3.11.0</version.plugin.compiler>
+    <version.plugin.cyclonedx>2.9.3</version.plugin.cyclonedx>
     <version.plugin.dependency>3.5.0</version.plugin.dependency>
     <version.plugin.deploy>3.1.1</version.plugin.deploy>
     <version.plugin.enforcer>3.0.0-M3</version.plugin.enforcer>
@@ -1065,4 +1066,16 @@
       <artifactId>wiremock-standalone</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <!-- not bound to any lifecycle phase; invoked explicitly by ci/scripts/generate_sbom.sh
+             to aggregate the SBOM for the whole reactor (snowflake-jdbc + FIPS) into one BOM -->
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>${version.plugin.cyclonedx}</version>
+      </plugin>
+    </plugins>
+  </build>
 </project>
