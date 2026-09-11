@@ -35,6 +35,9 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     // Default behavior for AWS attestation service (return null/empty unless overridden)
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(null);
 
+    // The detection cache is a static keyed by timeout, so it survives across tests in this class.
+    PlatformDetector.resetCacheForTesting();
+
     resetWiremock();
   }
 
@@ -319,9 +322,9 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
   public void testDetectAwsIdentity() {
     // Arrange - Mock AWS attestation service to return valid credentials and ARN
     AwsBasicCredentials awsCredentials =
-        // pragma: allowlist nextline secret
         AwsBasicCredentials.create(
-            "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+            "AKIAIOSFODNN7EXAMPLE", // pragma: allowlist secret
+            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
     when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 200))
         .thenReturn("arn:aws:iam::123456789012:user/testuser");
@@ -357,9 +360,9 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
     importMapping(azureMetadataUnavailable);
 
     AwsBasicCredentials awsCredentials =
-        // pragma: allowlist nextline secret
         AwsBasicCredentials.create(
-            "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+            "AKIAIOSFODNN7EXAMPLE", // pragma: allowlist secret
+            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
     when(mockAwsAttestationService.getAWSCredentials()).thenReturn(awsCredentials);
     when(mockAwsAttestationService.getCallerIdentityArn(awsCredentials, 500))
         .thenReturn("arn:aws:sts::123456789012:assumed-role/test-role/session");
@@ -502,17 +505,25 @@ public class PlatformDetectorLatestIT extends BaseWiremockTest {
         new PlatformDetector(
             getBaseUrl(), getBaseUrl(), getBaseUrl(), getBaseUrl(), mockEnvironmentProvider);
 
+    // Both connection values are supplied, so no ambient system property or environment variable is
+    // consulted. Reading through the no-arg getter here would let an unrelated global in the
+    // environment miss the cache key and issue a real metadata probe from this wiremocked test.
+    PlatformDetectionConfig config =
+        PlatformDetectionConfig.resolve(
+            false, PlatformDetectionConfig.DEFAULT_DETECTION_TIMEOUT_MS);
+
     long startTime1 = System.currentTimeMillis();
     List<String> platforms1 =
-        PlatformDetector.detectPlatformsAndCache(detector, mockAwsAttestationService);
+        PlatformDetector.detectPlatformsAndCache(
+            detector, mockAwsAttestationService, config.getTimeoutMs());
     long duration1 = System.currentTimeMillis() - startTime1;
 
     long startTime2 = System.currentTimeMillis();
-    List<String> platforms2 = PlatformDetector.getCachedPlatformDetection();
+    List<String> platforms2 = PlatformDetector.getCachedPlatformDetection(config);
     long duration2 = System.currentTimeMillis() - startTime2;
 
     long startTime3 = System.currentTimeMillis();
-    List<String> platforms3 = PlatformDetector.getCachedPlatformDetection();
+    List<String> platforms3 = PlatformDetector.getCachedPlatformDetection(config);
     long duration3 = System.currentTimeMillis() - startTime3;
 
     assertSame(platforms1, platforms2, "Second call should return cached instance");

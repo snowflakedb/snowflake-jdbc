@@ -148,8 +148,6 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
-  private int defaultPlatformDetectionTimeoutMs = 200;
-
   private boolean enableClientStoreTemporaryCredential = true;
   private boolean enableClientRequestMfaToken = true;
 
@@ -803,13 +801,14 @@ public class SFSession extends SFBaseSession {
         .setBrowserResponseTimeout(browserResponseTimeout)
         .setPlatformDetectionTimeoutMs(
             connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS) != null
-                ? (int) connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
-                : defaultPlatformDetectionTimeoutMs)
+                ? (Integer)
+                    connectionPropertiesMap.get(SFSessionProperty.PLATFORM_DETECTION_TIMEOUT_MS)
+                : null)
         .setDisablePlatformDetection(
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_PLATFORM_DETECTION))
-                : false) // Default to false (platform detection enabled)
+                : null)
         .setMaxRetryCount(maxHttpRetries);
 
     logger.debug(
