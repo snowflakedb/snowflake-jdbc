@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
@@ -54,6 +55,9 @@ import software.amazon.awssdk.transfer.s3.model.UploadRequest;
 
 class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSAccessStrategyAwsSdk.class);
+
+  private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
+
   private final S3AsyncClient amazonClient;
 
   GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
@@ -175,11 +179,11 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
         localFile.getAbsolutePath());
 
     logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
-    try (S3TransferManager tx =
-        S3TransferManager.builder()
-            .s3Client(amazonClient)
-            .executor(createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism))
-            .build()) {
+    ThreadPoolExecutor executorService =
+        createDefaultExecutorService("s3-transfer-manager-downloader-", parallelism);
+    S3TransferManager tx = null;
+    try {
+      tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
       // download files from s3
 
       FileDownload fileDownload =
@@ -199,6 +203,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
       fileDownload.completionFuture().join();
       return metaMap;
+    } finally {
+      closeTransferManagerShutdownExecutor("download", tx, executorService);
     }
   }
 
@@ -251,8 +257,9 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     logger.debug("Creating executor service for transfer manager with {} threads", parallelism);
     ThreadPoolExecutor executorService =
         createDefaultExecutorService("s3-transfer-manager-uploader-", parallelism);
-    try (S3TransferManager tx =
-        S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build()) {
+    S3TransferManager tx = null;
+    try {
+      tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
       // upload files to s3
       final Upload upload =
           tx.upload(
@@ -276,6 +283,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       upload.completionFuture().join();
 
       logger.info("Uploaded data from input stream to S3 location: {}.", destFileName);
+    } finally {
+      closeTransferManagerShutdownExecutor("upload", tx, executorService);
     }
   }
 
@@ -318,6 +327,38 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
       return true;
     } else {
       return false;
+    }
+  }
+
+  private static void closeTransferManagerShutdownExecutor(
+      String name, S3TransferManager tx, ThreadPoolExecutor executor) {
+    try {
+      if (tx != null) {
+        tx.close();
+      }
+    } catch (Exception e) {
+      logger.warn("Failed to close S3 {} transfer manager", name, e);
+    } finally {
+      if (executor != null) {
+        try {
+          executor.shutdown();
+          if (!executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            logger.warn(
+                "S3 {} executor did not terminate within {} seconds, forcing shutdown",
+                name,
+                EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS);
+            executor.shutdownNow();
+          }
+        } catch (InterruptedException e) {
+          // The only checked exception from awaitTermination so need to reset the interrupt flag
+          logger.warn("S3 {} executor shutdown interrupted, forcing shutdown", name);
+          executor.shutdownNow();
+          Thread.currentThread().interrupt();
+        } catch (Exception e) {
+          logger.warn("Failed to shut down S3 {} executor, forcing shutdown", name, e);
+          executor.shutdownNow();
+        }
+      }
     }
   }
 
