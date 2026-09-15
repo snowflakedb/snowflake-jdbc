@@ -2,6 +2,7 @@ package net.snowflake.client.internal.core;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -17,11 +18,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 public class SFSSLConnectionSocketFactoryTest {
 
   private String originalJdkClientProtocols;
+  private String originalHttpsCipherSuites;
 
   @BeforeEach
   public void rememberJdkProperty() {
     originalJdkClientProtocols =
         System.getProperty(SFSSLConnectionSocketFactory.JDK_TLS_CLIENT_PROTOCOLS);
+    originalHttpsCipherSuites =
+        System.getProperty(SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES);
   }
 
   /**
@@ -35,6 +39,12 @@ public class SFSSLConnectionSocketFactoryTest {
     } else {
       System.setProperty(
           SFSSLConnectionSocketFactory.JDK_TLS_CLIENT_PROTOCOLS, originalJdkClientProtocols);
+    }
+    if (originalHttpsCipherSuites == null) {
+      System.clearProperty(SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES);
+    } else {
+      System.setProperty(
+          SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES, originalHttpsCipherSuites);
     }
   }
 
@@ -171,6 +181,15 @@ public class SFSSLConnectionSocketFactoryTest {
     return new SFSSLConnectionSocketFactory(null, false, min, max);
   }
 
+  private static String[] supportedCipherSuitesOf(SFSSLConnectionSocketFactory factory)
+      throws Exception {
+    Field field =
+        org.apache.http.conn.ssl.SSLConnectionSocketFactory.class.getDeclaredField(
+            "supportedCipherSuites");
+    field.setAccessible(true);
+    return (String[]) field.get(factory);
+  }
+
   private static String[] supportedProtocolsOf(SFSSLConnectionSocketFactory factory)
       throws Exception {
     Field field =
@@ -178,6 +197,38 @@ public class SFSSLConnectionSocketFactoryTest {
             "supportedProtocols");
     field.setAccessible(true);
     return (String[]) field.get(factory);
+  }
+
+  // ── Cipher suites ────────────────────────────────────────────────────────
+
+  /**
+   * Null means Apache takes the socket's enabled suites, strips weak ones, and applies the rest --
+   * so jdk.tls.client.cipherSuites and jdk.tls.disabledAlgorithms reach this connection. Previously
+   * an explicit server-side default list was passed, discarding both.
+   */
+  @Test
+  public void shouldDeferCipherSuitesToJsseWhenPropertyUnset() throws Exception {
+    System.clearProperty(SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES);
+
+    assertNull(supportedCipherSuitesOf(newFactory(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)));
+  }
+
+  @Test
+  public void shouldTreatBlankCipherSuitePropertyAsUnset() throws Exception {
+    System.setProperty(SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES, "   ");
+
+    assertNull(supportedCipherSuitesOf(newFactory(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)));
+  }
+
+  @Test
+  public void shouldUseAndTrimConfiguredCipherSuites() throws Exception {
+    System.setProperty(
+        SFSSLConnectionSocketFactory.HTTPS_CIPHER_SUITES,
+        " TLS_AES_256_GCM_SHA384 , TLS_AES_128_GCM_SHA256 ");
+
+    assertArrayEquals(
+        new String[] {"TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256"},
+        supportedCipherSuitesOf(newFactory(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)));
   }
 
   private boolean isTls13Available() {
