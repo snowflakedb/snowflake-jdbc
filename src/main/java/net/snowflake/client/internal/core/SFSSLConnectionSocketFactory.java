@@ -10,7 +10,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.internal.log.ArgSupplier;
 import net.snowflake.client.internal.log.SFLogger;
@@ -29,6 +28,13 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
    * PUT/GET, so it takes precedence over the deprecated per-connection TLS version properties.
    */
   static final String JDK_TLS_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
+
+  /**
+   * Legacy per-JVM cipher suite override. Not a JSSE-wide property -- it is honoured here only
+   * because this class reads it explicitly, and it does not reach the cloud storage SDKs used for
+   * PUT/GET.
+   */
+  static final String HTTPS_CIPHER_SUITES = "https.cipherSuites";
 
   private final boolean socksProxyDisabled;
 
@@ -123,24 +129,40 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
   }
 
   /**
-   * Decide cipher suites that will be passed into the SSLConnectionSocketFactory
+   * Decide which cipher suites this socket factory offers.
    *
-   * @return List of cipher suites.
+   * <p>Returning null hands selection to JSSE. {@link SSLConnectionSocketFactory} then reads the
+   * socket's enabled suites, strips the ones it considers weak, and applies the remainder -- so the
+   * JVM-wide {@code jdk.tls.client.cipherSuites} and {@code jdk.tls.disabledAlgorithms} settings
+   * take effect for this connection, and weak suites are filtered on top.
+   *
+   * <p>This previously returned {@code SSLServerSocketFactory}'s default suites: a server-side list
+   * applied to a client socket, which both discarded those JVM settings and bypassed the weak-suite
+   * filtering. The explicit list existed as a JDK 1.7 workaround, and the driver has required Java
+   * 8 for a long time.
+   *
+   * <p>Note this differs from {@link #resolveEnabledProtocols}, which deliberately does
+   * <em>not</em> defer to JSSE: for protocols the equivalent Apache branch only strips {@code SSL*}
+   * names, so deferring there could let TLS 1.0/1.1 be offered. The cipher branch filters weak
+   * suites, so deferring is safe.
+   *
+   * @return the suites named by {@code https.cipherSuites}, or null to defer to JSSE
    */
   private static String[] decideCipherSuites() {
-    String sysCipherSuites = systemGetProperty("https.cipherSuites");
+    String sysCipherSuites = systemGetProperty(HTTPS_CIPHER_SUITES);
+    if (sysCipherSuites == null || sysCipherSuites.trim().isEmpty()) {
+      logger.trace("Cipher suite selection left to JSSE");
+      return null;
+    }
 
-    String[] cipherSuites =
-        sysCipherSuites != null
-            ? sysCipherSuites.split(",")
-            :
-            // use jdk default cipher suites
-            ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault()).getDefaultCipherSuites();
-
-    // cipher suites need to be picked up in code explicitly for jdk 1.7
-    // https://stackoverflow.com/questions/44378970/
-    logger.trace("Cipher suites used: {}", (ArgSupplier) () -> Arrays.toString(cipherSuites));
-
+    String[] cipherSuites = sysCipherSuites.split(",");
+    for (int i = 0; i < cipherSuites.length; i++) {
+      cipherSuites[i] = cipherSuites[i].trim();
+    }
+    logger.trace(
+        "Cipher suites from {}: {}",
+        HTTPS_CIPHER_SUITES,
+        (ArgSupplier) () -> Arrays.toString(cipherSuites));
     return cipherSuites;
   }
 }

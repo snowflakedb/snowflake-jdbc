@@ -28,6 +28,7 @@ final class LocalTlsServer implements AutoCloseable {
 
   private final SSLServerSocket serverSocket;
   private final BlockingQueue<String> outcomes = new LinkedBlockingQueue<>();
+  private final BlockingQueue<String> ciphers = new LinkedBlockingQueue<>();
   private volatile boolean running = true;
 
   LocalTlsServer(String... enabledProtocols) throws Exception {
@@ -64,6 +65,14 @@ final class LocalTlsServer implements AutoCloseable {
     return outcomes.poll(15, TimeUnit.SECONDS);
   }
 
+  /**
+   * @return the cipher suite negotiated for the next connection, or null if none arrived or the
+   *     handshake failed before a session existed
+   */
+  String awaitNegotiatedCipher() throws InterruptedException {
+    return ciphers.poll(15, TimeUnit.SECONDS);
+  }
+
   private void acceptLoop() {
     while (running) {
       try (SSLSocket socket = (SSLSocket) serverSocket.accept()) {
@@ -71,6 +80,7 @@ final class LocalTlsServer implements AutoCloseable {
         try {
           socket.startHandshake();
           outcome = socket.getSession().getProtocol();
+          ciphers.put(socket.getSession().getCipherSuite());
         } catch (IOException handshakeFailure) {
           outcome = HANDSHAKE_FAILED;
         }
