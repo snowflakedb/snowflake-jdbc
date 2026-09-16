@@ -20,7 +20,7 @@
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <zstd-jni.version>1.5.6-5</zstd-jni.version>
+    <zstd-jni.version>1.5.7-16</zstd-jni.version>
     <arrow.version>17.0.0</arrow.version>
     <asm.version>9.7.1</asm.version>
     <avro.version>1.8.1</avro.version>
