@@ -71,7 +71,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>2.0.16</slf4j.version>
-    <zstd-jni.version>1.5.6-5</zstd-jni.version>
+    <zstd-jni.version>1.5.7-16</zstd-jni.version>
   </properties>
 
   <dependencyManagement>
