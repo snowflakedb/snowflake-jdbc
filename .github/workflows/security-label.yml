@@ -1,0 +1,161 @@
+# Keyword + path net for the pre-disclosure sign-off gate.
+#
+# Scans each PR's title and body against the action's built-in keyword net
+# (plus repo-specific keyword-patterns below) and matches changed filenames
+# against path-patterns. Adds `security-signoff-required` on either hit.
+#
+# This is the complement to .github/workflows/security-signoff.yml, not a
+# replacement for it: the gate is authoritative once the label is present, and
+# this raises recall so that clearing a change for public disclosure depends
+# less on someone remembering to label it.
+#
+# Two properties worth knowing:
+#   - Add-only. It never removes the label, so a human escalation is never
+#     stripped out from under a reviewer.
+#   - Fail-open. A false positive costs one extra partner review; a miss risks
+#     premature disclosure. The net therefore favours recall over precision,
+#     and an unnecessary label is cheap to drop by hand.
+name: Security label
+
+on:
+  # pull_request_target, not pull_request, so the token can write labels on
+  # PRs from forks. This is safe because the action only reads the PR title,
+  # body, and filenames as text through the API; it never checks out or
+  # executes PR head code.
+  pull_request_target:
+    # ready_for_review is required because drafts are skipped below: without
+    # it, marking a PR ready would not scan until the next push or edit.
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write # to add the label
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  keyword-net:
+    name: Keyword net
+    # Belt-and-braces; this file is excluded from the mirror in
+    # ci/mirroring/copy.bara.sky. See security-signoff.yml for the rationale.
+    # Labeling a draft would engage the gate (reviewer request, sticky
+    # comment) before the PR is ready for disclosure review.
+    if: github.repository_owner != 'snowflakedb' && github.event.pull_request.draft == false
+    # ubuntu-latest, not ubuntu-slim: Docker container action, built at run
+    # time, so it needs a Docker-capable runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: snowflake-eng/security-signoff-action@v0
+        with:
+          mode: label
+          # scan-diff stays off: title/body + filenames only.
+          keyword-patterns: |
+            patterns:
+              - 'secret\s*detector'
+              - '\bredact'
+              - '(mask|redact).{0,40}(secret|password|token|credential|key)'
+              - '(secret|password|token|credential).{0,40}(mask|redact)'
+              - 'private_key_file'
+              - 'programmatic\s*access\s*token'
+              # Not bare 'allowlist': that substring hits Actions-allowlist
+              # docs and this workflow's own comments. WIF host files are
+              # also on the path net.
+              - '(host|domain|url|endpoint|ocsp|proxy)\s*allowlist'
+              - '\bGHSA-'
+              - 'proxy\s*(credential|password)'
+              - 'threat\s*model'
+          path-patterns: |
+            paths:
+              # Authentication
+              - 'src/main/java/net/snowflake/client/internal/core/auth/**'
+              - 'src/main/java/net/snowflake/client/api/auth/**'
+              - '**/SessionUtil.java'
+              - '**/SessionUtilExternalBrowser.java'
+              - '**/SessionUtilKeyPair.java'
+              - '**/SFOauthLoginInput.java'
+              - '**/ClientAuthnParameter.java'
+              - '**/ClientAuthnDTO.java'
+              - '**/SnowflakeReauthenticationRequest.java'
+              - '**/AuthenticatorType.java'
+              - '**/SFSession.java'
+              - '**/SFBaseSession.java'
+              - 'src/test/java/net/snowflake/client/authentication/**'
+              # OAuth
+              - '**/oauth/**'
+              - '**/SnowflakeUseDPoPNonceException.java'
+              # Workload identity federation
+              - '**/auth/wif/**'
+              - 'ci/wif/**'
+              - 'src/test/java/net/snowflake/client/wif/**'
+              - 'src/test/resources/wiremock/mappings/wif/**'
+              # TLS / OCSP / CRL / HTTP transport
+              - '**/HttpUtil.java'
+              - '**/HttpClientSettingsKey.java'
+              - '**/TlsVersion.java'
+              - '**/SFSSLConnectionSocketFactory.java'
+              - '**/SFTrustManager.java'
+              - '**/SFBasicCrlTrustManager.java'
+              - '**/SFExtendedCrlTrustManager.java'
+              - '**/SFCrlTrustManagerFactory.java'
+              - '**/crl/**'
+              - '**/OCSPMode.java'
+              - '**/SFOCSPException.java'
+              - '**/OCSPTelemetryData.java'
+              - '**/OCSPErrorCode.java'
+              - '**/CertRevocationCheckMode.java'
+              - '**/RevocationCheckTelemetryData.java'
+              - '**/RestRequest.java'
+              - '**/*OCSP*'
+              - '**/*TrustManager*'
+              - '**/*Tls*Test*'
+              - 'src/test/resources/ssl-tests/**'
+              # Secret detection and logging
+              - '**/SecretDetector.java'
+              - '**/*SecretDetector*'
+              - '**/*secret_detector*'
+              - 'src/main/java/net/snowflake/client/internal/log/**'
+              - 'src/main/java-fat-jar/net/snowflake/client/internal/log/**'
+              - 'src/test/java/net/snowflake/client/internal/log/**'
+              - '**/MaskedException.java'
+              - '**/StmtUtil.java'
+              - 'src/main/java/net/snowflake/client/internal/jdbc/telemetry/**'
+              - 'src/main/java/net/snowflake/client/internal/jdbc/telemetryOOB/**'
+              # Private keys and credential storage
+              - '**/CachedCredentialType.java'
+              - '**/*private_key*'
+              - '**/*privateKey*'
+              - '**/CredentialManager.java'
+              - '**/SecureStorageManager.java'
+              - '**/SecureStorageWindowsManager.java'
+              - '**/SecureStorageLinuxManager.java'
+              - '**/SecureStorageAppleManager.java'
+              # Connection config and tokens
+              - '**/SFConnectionConfigParser.java'
+              - '**/SnowflakeConnectString.java'
+              - '**/SFSessionProperty.java'
+              - '**/SFLoginInput.java'
+              - '**/SpcsTokenReader.java'
+              - 'src/test/resources/wiremock/mappings/pat/**'
+              - 'src/test/resources/wiremock/mappings/session/**'
+              # File transfer and encryption
+              - '**/SnowflakeFileTransferAgent.java'
+              - '**/SFBaseFileTransferAgent.java'
+              - '**/SnowflakeFileTransferConfig.java'
+              - '**/SnowflakeFileTransferMetadata.java'
+              - '**/SnowflakeFileTransferMetadataV1.java'
+              - '**/GcmEncryptionProvider.java'
+              - '**/EncryptionProvider.java'
+              - 'src/main/java/net/snowflake/client/internal/jdbc/cloud/storage/**'
+              - 'src/test/java/net/snowflake/client/internal/jdbc/cloud/storage/**'
+              # Platform detection and diagnostics
+              - '**/PlatformDetector.java'
+              - '**/PrivateLinkDetector.java'
+              - '**/SecurityUtil.java'
+              - 'src/main/java/net/snowflake/client/internal/jdbc/diagnostic/**'
+              # Gate + outbound publish policy: these decide what becomes public.
+              - 'ci/mirroring/**'
+              - '.github/security-partners.yml'
+              - '.github/workflows/security-*.yml'
