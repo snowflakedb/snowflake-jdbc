@@ -1232,7 +1232,6 @@
                 <configuration>
                   <target>
                     <unzip dest="${project.build.directory}/relocate" src="${project.build.directory}/${project.build.finalName}.jar"/>
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
@@ -1240,9 +1239,9 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/22/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/25/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
-                    <!-- this below list must mirror META-INF/versions/* in bcprov-jdk18on-<version>.jar - re-check on every BC bump!
-                         also verify the mkdir  (above) and delete (below) directives; and add there too if there's a new version -->
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <!-- re-check on every BC bump! the move list (below) needs one entry per META-INF/versions/<N>/ that
+                         contains an org/ subtree in bcprov-jdk18on; dirs without an org/ subtree need none. each move needs a
+                         matching mkdir (above) and delete (further below) - add or remove entries in all three to match the jar. -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/org" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
@@ -1265,7 +1264,6 @@
                          org.apache.commons.logging.Log interface. -->
                     <copy file="${project.build.outputDirectory}/net/snowflake/client/internal/log/SLF4JLogger.class" overwrite="true" todir="${project.build.directory}/relocate/net/snowflake/client/internal/log"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
