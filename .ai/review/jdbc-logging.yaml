@@ -1,0 +1,262 @@
+id: jdbc-logging-rules
+friendly_name: Snowflake JDBC Logging Guidelines (general)
+status: enabled
+allowed_folders:
+- src/main/java
+excluded_folders: []
+allowed_file_extensions:
+- .java
+rules:
+- id: jdbc-log-never-log-secrets
+  rule: |
+    **OBJECTIVE**: Secrets must never leave the process via logs — on any log level, in any code path, in the core or any wrapper. See the JDBC logging guidelines § "What to never log".
+
+    **REQUIREMENT**: No logging call (any level) may emit the value of a sensitive parameter. Sensitive parameters that must NEVER be logged:
+    - tokens (`id_token`, `id_token_password`, `master_token`, `mfa_token`, `session_token`, `token`, ...),
+    - passcodes (`passcode`, TOTP, ...),
+    - passwords (any — `password`, `private_key_file_pwd`, `proxy_password`, ...),
+    - private key contents and their passphrase (`private_key`, `private_key_file_pwd`, ...),
+    - HTTP headers that carry credentials or session state (`Authorization`, `Proxy-Authorization`, `Set-Cookie`, ...),
+    - URL query strings and fragments that can embed any of the above (the host and path are safe — see `jdbc-log-every-http-call-at-info`),
+    - presigned URLs, stage master keys, and encryption IVs.
+
+    Logging a **hash** of a sensitive value is permitted when correlation is needed during debugging.
+
+    Flag, in any language's logging call (`tracing`/`log` macros, `logger.info/debug/...`, `System.out`, `console.log`, `printf`, etc.):
+    1. A variable, field, getter, or dict/map entry whose name matches the sensitive list above being interpolated/concatenated into the message or a structured field.
+    2. Serializing a whole request / options / config object (`{req:?}`, `str(config)`, `connection_params`, `options.toString()`) that can carry the sensitive values above without a redacting representation.
+    3. Logging a URL's query string or fragment, which may carry sensitive identifiers (see `jdbc-log-every-http-call-at-info`). The host and path are safe.
+
+    Values that ARE safe to log (per the guidelines): `authenticator`, `oktaUrl` (generic, no identifiers), `oktausername`, `account`, `database`, `host`/`serverUrl`, `protocol`, `role`, `schema`, `tokenValidityTime`, `user`, `warehouse`, `nonProxyHosts`, `passcodeInPassword` (boolean), `private_key_file` (path), `proxyHost`, `proxyPort`, `proxyProtocol`, `proxyUser`, `useProxy`, `queryId`, `requestId`, `sessionId`.
+
+    ❌ **BAD:**
+    ```rust
+    info!("login user={user} password={}", password);          // Rust
+    ```
+    ```python
+    logger.debug("auth request: %s", auth_request)             # Python — may hold token
+    ```
+    ```java
+    logger.info("connecting with token " + sessionToken);      // Java
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    info!(%user, %authenticator, "login attempt");
+    ```
+    ```python
+    logger.info("login attempt", extra={"user": user, "authenticator": authenticator})
+    ```
+    ```java
+    logger.info("login attempt for user={} authenticator={}", user, authenticator);
+    ```
+- id: jdbc-log-every-http-call-at-info
+  rule: |
+    **OBJECTIVE**: Every HTTP call made by the driver MUST be logged at the INFO level so that the traffic the driver generates is always visible — and only the URL **host and path** are logged, with the query string and fragment stripped (they can carry sensitive identifiers). Every HTTP response code must also be logged at the appropriate level. See the JDBC logging guidelines § "HTTP traffic".
+
+    **REQUIREMENT**:
+    1. **Request presence** — wherever the driver issues an outbound HTTP request (e.g. `client.get/post/put/send/execute`, `request(...)`, `HttpClient.send`, `requests.request`, `fetch`), there MUST be an accompanying log at the **INFO** level recording that the call happened. A request issued with no INFO log is a violation.
+    2. **Host and path only** — the log may include the request method and the URL **host and path**. It must NOT interpolate the query string or fragment.
+    3. **Response code logging** — every HTTP response code MUST be logged regardless of whether it is retried or further handled, at the appropriate level for the outcome.
+
+    Flag: (a) an HTTP request site with no INFO-level log nearby, (b) any HTTP log that emits the query string or fragment (host and path are allowed), and (c) a response code that is received but not logged.
+
+    ❌ **BAD:**
+    ```rust
+    let resp = client.post(url).body(payload).send().await?;     // no INFO log — traffic invisible
+    info!("GET {}", url);                                        // full URL incl. query string / fragment
+    // resp.status() checked but never logged
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    info!(method = "POST", host = url.host_str().unwrap_or("<none>"), path = url.path(), "outbound HTTP call");
+    let resp = client.post(url).body(payload).send().await?;
+    info!(status = resp.status().as_u16(), "HTTP response");
+    ```
+- id: jdbc-log-query-text-and-params-gated
+  rule: |
+    **OBJECTIVE**: Query text and query parameters are confidential and OFF by default; they may only be logged when explicitly opted in. See the JDBC logging guidelines § "Query logging".
+
+    **REQUIREMENT**: Logging of query text must be gated behind `log_query_text` (default `false`) and logging of query parameters/bindings behind `log_query_parameters` (default `false`). When gated logging fires:
+    - it MUST be at the **INFO** level,
+    - the driver MUST have emitted a warning about the confidentiality risk when the flag was enabled.
+
+    Flag any logging call that emits the SQL statement text or the bound parameter values without first checking the corresponding flag, and any flag default that is not `false`.
+
+    ❌ **BAD:**
+    ```rust
+    debug!("executing query: {sql}");           // unconditional, wrong level
+    info!("bindings: {bindings:?}");            // not gated
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    if config.log_query_text {
+        info!(query = %sql, "executing query");
+    }
+    if config.log_query_parameters {
+        info!(?bindings, "query bindings");
+    }
+    ```
+- id: jdbc-log-never-log-client-data
+  rule: |
+    **OBJECTIVE**: Query result data is customer data and must never appear in logs — on any log level, in any code path, with no opt-in flag. See the JDBC logging guidelines § "Query result data". Query text and bindings are **not** result data; they are opt-in separately (see `jdbc-log-query-text-and-params-gated` and the guidelines § "Query logging").
+
+    **REQUIREMENT**: No logging call (any level) may emit query **result** payloads: row/cell values, Arrow/JSON rowsets, record batches, base64 chunk bodies, file-transfer result bodies, or result-set schema metadata (column names, types, rowtype/field descriptors returned with a result). Metadata about a result (row/column counts, `queryId`, chunk count, rowset variant/type) is safe.
+
+    **EXCEPTIONS** (this rule does not apply — see `jdbc-log-query-text-and-params-gated` instead):
+    - **Query text**, including column names that appear in the SQL statement, may be logged when gated behind `log_query_text`.
+    - **Query parameter/bindings** values may be logged when gated behind `log_query_parameters`.
+
+    Flag, in any language's logging call:
+    1. Interpolating or formatting a variable/field whose name or type indicates result payload (`rowset`, `batch`, `batches`, `record_batch`, `chunk_base64`, `rowtype`, `RowsetData`, `results` holding rows, etc.) with `:?`, `%`, `str()`, `toString()`, or equivalent — unless the value is query text or bindings and the corresponding `log_query_text` / `log_query_parameters` flag is checked.
+    2. Logging a whole result/rowset/chunk/result-schema object without a redacting representation that omits cell values and result column/field names.
+    3. Any opt-in flag or DEBUG-level rationale that would dump **result payloads** — there is no supported opt-in for result data. (Query text and bindings are opt-in via `log_query_text` / `log_query_parameters`; that is a separate rule.)
+
+    ❌ **BAD:**
+    ```rust
+    debug!("read_batches called {:?}", data);              // RowsetData holds row values / chunk bodies
+    info!("fetched rows: {rowset:?}");                       // JSON rowset cell values
+    debug!(?rowtype, "parsed result schema");                // result column names and types
+    ```
+    ```python
+    logger.debug("record batch: %s", batch.to_pydict())     # column values
+    logger.debug("columns: %s", [f.name for f in schema])   # result column names
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    debug!(variant = ?std::mem::discriminant(data), "read_batches called");
+    info!(row_count, column_count, %query_id, "fetched result");
+    if config.log_query_text {
+        info!(query = %sql, "executing query");              // query text — gated opt-in
+    }
+    if config.log_query_parameters {
+        info!(?bindings, "query bindings");                  // bindings — gated opt-in
+    }
+    ```
+- id: jdbc-log-public-api-entry-and-exit
+  rule: |
+    **OBJECTIVE**: Public API entry points are logged on both entry and exit so a single call can be traced end to end. Wrapper entry/exit is a diagnostic trace, not a default-INFO operational event — high-frequency APIs (fetch, getData) would flood logs at INFO. See the JDBC logging guidelines § "Public API".
+
+    **REQUIREMENT**:
+    - In a **wrapper**, a public API entry point (the methods the host application calls — `connect`, `execute`, `fetch`, `close`, `SQLExecDirect`, `SQLFetch`, etc.) MUST log on entry AND on exit at **TRACE** in Rust (`tracing::trace!`) or **DEBUG** in Python, Java, and JS (`logger.debug` / equivalent). Do not use INFO for this pair.
+    - In the **core**, a procedure defined and exposed across the boundary MUST log entry AND exit at the **DEBUG** level.
+
+    Flag a newly added public API entry point / exposed core procedure that logs only on entry (or only on exit), or at INFO (or any level coarser than TRACE/DEBUG) for wrapper entry/exit. Entry/exit logs must of course obey `jdbc-log-never-log-secrets` (do not dump arguments).
+
+    ❌ **BAD:**
+    ```python
+    def execute(self, sql, params=None):
+        logger.info("execute: entry")          # INFO floods at default verbosity
+        try:
+            return self._run(sql, params)
+        finally:
+            logger.info("execute: exit")
+    ```
+    ```rust
+    tracing::info!("SQLFetch: entry");         // wrapper public API at INFO
+    ```
+
+    ✅ **GOOD:**
+    ```python
+    def execute(self, sql, params=None):
+        logger.debug("execute: entry")
+        try:
+            return self._run(sql, params)
+        finally:
+            logger.debug("execute: exit")
+    ```
+    ```rust
+    tracing::trace!("SQLExecDirect: entry");
+    let _api_exit = ApiExitLog("SQLExecDirect"); // Drop logs "SQLExecDirect: exit" at TRACE
+    ```
+- id: jdbc-log-underlying-error-cause-type-only
+  rule: |
+    **OBJECTIVE**: Errors we did NOT author (e.g. `reqwest`, OS/TLS libraries, JDK exceptions, third-party SDKs) may embed secrets in their message, so only their type / class name is logged by default. Errors we author are safe to log in full. See the JDBC logging guidelines § "Exceptions".
+
+    **REQUIREMENT**:
+    - The exception **type / class name** must always be logged.
+    - For an **underlying / foreign** cause (an error we did not author), log only its type/class name at the default level (WARN/ERROR). Its raw message may be logged only at **DEBUG**, as an explicit opt-in.
+    - For errors **we author** (e.g. core `snafu` errors, our own wrapper exception classes), the full message is safe to log because we control the wording and secrets are wrapped (`SensitiveString`).
+
+    Flag a WARN/ERROR log that emits the message / `Display` / `toString()` / `str()` / `repr()` of a foreign error or a caught third-party exception at a non-DEBUG level.
+
+    ❌ **BAD:**
+    ```rust
+    error!("request failed: {source}");          // foreign reqwest error, full message at ERROR
+    ```
+    ```java
+    logger.error("io failure: " + e.getMessage());  // third-party exception message at ERROR
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    error!(cause = std::any::type_name_of_val(&source), "request failed");
+    debug!("request failed (full cause): {source}");  // verbose, opt-in
+    ```
+    ```java
+    logger.error("io failure: {}", e.getClass().getName());
+    logger.debug("io failure detail", e);             // full detail at DEBUG only
+    ```
+- id: jdbc-log-stack-trace-unhandled-only
+  rule: |
+    **OBJECTIVE**: Stack traces are logged only for exceptions that propagate out unhandled, and never include captured argument / local-variable values (which may hold secrets). See the JDBC logging guidelines § "Stack traces".
+
+    **REQUIREMENT**:
+    1. Log a stack trace / backtrace only for an error that is NOT reacted to — one that propagates out of a flow or terminates it. Exceptions caught and handled as normal control flow (recover, fall back, retry, return Ok) must NOT log a stack trace.
+    2. Log only the structure of the trace — frame function name, file, line. Never enable a trace-rendering mode that also captures local-variable or argument values (e.g. `RUST_BACKTRACE=full` capturing locals, JVM `-XX:+ShowCodeDetailsInExceptionMessages`, Python `traceback` with `locals=True`).
+    3. The stack trace must be logged at the same level as the exception it accompanies (WARN/ERROR), never below.
+
+    Flag: a stack trace / backtrace logged inside a branch that subsequently recovers, a trace logged below WARN, and any trace-rendering mode that includes locals/arguments.
+
+    ❌ **BAD:**
+    ```python
+    try:
+        do_work()
+    except RetryableError:
+        logger.error("failed", exc_info=True)   # full trace, but error is handled below
+        return fallback()
+    ```
+    ```python
+    # propagates unhandled but captures locals — may expose secrets:
+    traceback.print_exc(file=log_stream, locals=True)
+    ```
+
+    ✅ **GOOD:**
+    ```python
+    try:
+        do_work()
+    except RetryableError:
+        logger.debug("retrying after transient failure")   # handled: no stack trace
+        return fallback()
+    # only when it propagates unhandled, frames only (no locals), at ERROR:
+    logger.error("unhandled error", exc_info=True)  # standard exc_info, no locals=True
+    ```
+- id: jdbc-log-url-in-error-host-and-path
+  rule: |
+    **OBJECTIVE**: When a URL appears in an error message, only the host and path may be included. URL query strings and fragments can carry tokens, passcodes, and other sensitive identifiers and must not appear in error messages. See the JDBC logging guidelines § "Error messages".
+
+    **REQUIREMENT**: Whenever a URL is included in a core error message (e.g. a `snafu` display string, a wrapper exception message, or any log line that carries a URL), only the **host and path** portions may be included. The query string and fragment must be stripped before including in the message.
+
+    Flag any error or log message that interpolates a URL's query string or fragment. Host and path are allowed. This applies to all languages and layers.
+
+    ❌ **BAD:**
+    ```rust
+    #[snafu(display("request to {url} failed"))]
+    RequestFailed { url: Url },              // full URL including query string / fragment in the message
+    ```
+    ```python
+    raise DriverError(f"HTTP call to {url} failed")   # full URL with potential query string / fragment
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    #[snafu(display("request to {}{} failed", url.host_str().unwrap_or("<unknown>"), url.path()))]
+    RequestFailed { url: Url },              // host and path only, no query / fragment
+    ```
+    ```python
+    parsed = urlparse(url)
+    raise DriverError(f"HTTP call to {parsed.netloc}{parsed.path} failed")
+    ```

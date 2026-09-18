@@ -1,0 +1,116 @@
+id: jdbc-excluded-path-leak
+friendly_name: Snowflake JDBC Excluded-Path Leak Prevention
+status: enabled
+allowed_folders:
+- .
+- src
+- TestOnly
+- FIPS
+- dependencies
+- prober
+- fat-jar-test-app
+- codecov
+excluded_folders:
+- NOMIRROR
+- .ai
+- .cursor
+- .claude
+- .security
+- .buildkite
+- .ci
+- .github
+- ci
+- scripts
+- tests/bugs_analysis
+allowed_file_extensions:
+- .java
+- .md
+- .mdc
+- .rst
+- .txt
+- .yaml
+- .yml
+- .toml
+- .sh
+rules:
+- id: jdbc-no-excluded-mirror-path-in-pr-facing-text
+  scope: full-pr
+  rule: |
+    **OBJECTIVE**: Keep the exact name of the Copybara-excluded internal-only
+    directory (`NOMIRROR`) and any path under it (`NOMIRROR/...`,
+    `**/NOMIRROR/**`) out of every PR-facing surface. Naming that directory in
+    a public comment, branch, commit, or PR description advertises the
+    internal layout to anyone who can see the PR (including the public mirror
+    of PR metadata).
+
+    **FORBIDDEN TOKEN**: The case-sensitive directory name `NOMIRROR`, alone or
+    as any path segment (examples the bot must catch):
+    - `NOMIRROR`
+    - `NOMIRROR/`
+    - `NOMIRROR/mirroring.md`
+    - `features/auth/NOMIRROR/oauth.md`
+    - `**/NOMIRROR/**`
+    - backtick-wrapped or quoted forms of the same (`NOMIRROR`, "NOMIRROR/", etc.)
+
+    Case variants (`nomirror`, `NoMirror`) are NOT the exclusion directory and
+    need not be flagged unless they clearly intend the same path.
+
+    **REQUIREMENT**: Flag **any** occurrence of the forbidden token in:
+
+    1. **Code comments** — inline `//`, `#`, block `/* */`, `/** */`, doc
+       comments, docstrings, and module-level documentation inside reviewed
+       (public) files.
+    2. **Branch name** — the head branch of the PR under review.
+    3. **Commit subject and body** — every commit included in the PR.
+    4. **PR title and PR description** — including Summary, Context, Test plan,
+       Changelog, and any other section.
+
+    There are **no** "documentation" or "educational" exceptions on these
+    surfaces. Maintainers who need to discuss the convention must do so in
+    internal-only locations (trees already on Copybara's denylist), not in
+    PR-facing text.
+
+    **WHAT IS FINE**:
+    - Referring to Copybara, `ci/mirroring/copy.bara.sky`, or `EXCLUDED_PATHS`
+      without naming the forbidden directory.
+    - Saying "internal-only directory", "Copybara-excluded path", or "path on
+      the mirror denylist" without the forbidden token.
+    - Changes whose file paths themselves live under the excluded directory
+      (those paths are filtered from the public mirror by Copybara); this rule
+      is about *text that names* the directory on PR-facing surfaces.
+
+    **HOW TO FLAG**: Comment with a short finding that does **not** repeat the
+    forbidden token. Example wording:
+
+    "PR-facing text names a Copybara-excluded internal directory. Remove that
+    path/token from comments, the branch name, commit messages, and the PR
+    title/description. Refer to `ci/mirroring/copy.bara.sky` / EXCLUDED_PATHS
+    or say 'internal-only / Copybara-excluded path' instead."
+
+    ❌ **BAD — code comment:**
+    ```rust
+    // Internal notes live under NOMIRROR/; do not mirror this.
+    // See NOMIRROR/mirroring.md for the boundary.
+    ```
+
+    ❌ **BAD — branch / commit / PR:**
+    ```
+    branch: user/move-docs-to-NOMIRROR
+    commit: NO-SNOW: relocate runbook under NOMIRROR/
+    PR title: Document NOMIRROR convention for internal files
+    PR body: Put secrets in NOMIRROR/security/…
+    ```
+
+    ✅ **GOOD — code comment:**
+    ```rust
+    // Internal-only material must live on a Copybara-excluded path.
+    // See ci/mirroring/copy.bara.sky (EXCLUDED_PATHS).
+    ```
+
+    ✅ **GOOD — branch / commit / PR:**
+    ```
+    branch: user/move-docs-to-excluded-path
+    commit: NO-SNOW: relocate runbook under Copybara-excluded path
+    PR title: Document internal-only file placement for the public mirror
+    PR body: Put secrets on a path listed in EXCLUDED_PATHS.
+    ```

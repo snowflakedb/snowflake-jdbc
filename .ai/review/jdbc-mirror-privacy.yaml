@@ -1,0 +1,95 @@
+id: jdbc-mirror-privacy
+friendly_name: Snowflake JDBC Mirror Privacy Check
+status: enabled
+allowed_folders:
+- .
+- src
+- TestOnly
+- FIPS
+- dependencies
+- prober
+- fat-jar-test-app
+- codecov
+excluded_folders:
+- NOMIRROR
+- .ai
+- .cursor
+- .claude
+- .security
+- .buildkite
+- .ci
+- .github
+- ci
+- scripts
+- tests/bugs_analysis
+allowed_file_extensions:
+- .md
+- .mdc
+- .rst
+- .txt
+- .yaml
+- .yml
+- .toml
+- .sh
+rules:
+- id: jdbc-potentially-private-file-placement
+  rule: |
+    **OBJECTIVE**: Catch files added to public (mirrored) directories that contain
+    Snowflake-internal information that belongs on a Copybara-excluded path and
+    should not reach the public mirror at snowflakedb/snowflake-jdbc.
+
+    **CONTEXT**: This repo is mirrored publicly via Copybara. The
+    authoritative denylist of internal-only paths lives in
+    `ci/mirroring/copy.bara.sky` (`EXCLUDED_PATHS`). Read it before reviewing —
+    anything not listed there is public-by-default and reaches the
+    mirror on the next run. Prefer placing new internal-only material on a
+    path already covered by that denylist rather than expanding the denylist.
+
+    **REQUIREMENT**: Flag any new or substantially changed file in a public directory
+    when it shows one or more of the following signals:
+
+    1. **Internal org or repo references** — mentions `snowflake-eng/<repo>`,
+       snowflake-eng GitHub URLs, or internal-only Snowflake repositories.
+
+    2. **Internal hostnames or endpoints** — references to
+       `*.snowflakecomputing.internal`, `*.corp.snowflake`, `snowhouse.*`, or
+       other non-public Snowflake infrastructure.
+
+    3. **Internal process documentation** — runbooks, on-call guides, incident
+       postmortems, deployment procedures, or any content describing
+       Snowflake-internal workflows rather than the driver's public API or
+       usage. (Public-style ADRs and design docs in `adr/` and `docs/` are
+       fine — flag only when the content names internal systems or
+       processes.)
+
+    4. **Security-sensitive descriptions** — documents describing internal
+       auth flows, internal token formats, internal key management, or
+       security architecture that has not been publicly disclosed.
+
+    5. **AI assistant configuration referencing internal context** — flag
+       files like `CLAUDE.md`, `AGENTS.md`, or `.cursor/.claude` rule files
+       ONLY when they reference Snowflake-internal infrastructure, internal
+       repos, internal processes, or non-public tooling. A generic
+       `CLAUDE.md` describing public coding conventions, code style, or
+       language-specific guidance is fine in a public repo and should NOT
+       be flagged.
+
+    6. **Name-based signals in a public path** — automatic flag for any file
+       in a public directory whose name contains "internal", "private",
+       "confidential", "security_notes", "security_assessment", or
+       "security_audit". With the denylist no longer carrying name-based
+       catch-alls, this signal is the primary safety net for those file
+       names slipping into a public path.
+
+    **EXCEPTIONS**: Public-facing documentation (README, CHANGELOG, API guides,
+    usage examples), open-source license files, and test fixtures are fine in
+    public directories. Apply the standard: "Would this be appropriate content
+    in a public open-source driver repository?"
+
+    **HOW TO FLAG**: If a file triggers any signal above, comment without naming
+    specific excluded directory tokens (those must stay out of PR-facing text;
+    see `jdbc-excluded-path-leak`):
+    "This file may contain Snowflake-internal information. Consider moving it
+    onto a Copybara-excluded / internal-only path listed in
+    `ci/mirroring/copy.bara.sky` (`EXCLUDED_PATHS`), or rewriting the content
+    so it is appropriate for the public mirror."

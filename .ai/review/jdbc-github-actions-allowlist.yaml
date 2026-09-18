@@ -1,0 +1,60 @@
+id: jdbc-github-actions-allowlist
+friendly_name: Snowflake JDBC GitHub Actions snowflakedb Allowlist
+status: enabled
+allowed_folders:
+- .github
+excluded_folders: []
+allowed_file_extensions:
+- .yml
+- .yaml
+rules:
+- id: jdbc-gha-action-tag-requires-snowflakedb-allowlist
+  rule: |
+    **OBJECTIVE**: Every change to a GitHub Action version tag must call out
+    that the new `owner/repo@ref` has to be on the snowflakedb org allowlist.
+    If it is missing, workflows that depend on the action fail in
+    snowflakedb even when they pass in this repo.
+
+    **REQUIREMENT**: Flag when the PR changes a remote `uses:` ref — a new
+    action, a tag bump (`@v6` → `@v7`, `@v4.1.0` → `@v4.2.0`), a move to a
+    different tag, or a pin/unpin of a commit SHA. That includes `uses:`
+    inside workflow YAML and inside composite `action.yml` files.
+
+    **HOW TO FLAG**: Post **one** comment per PR (not per file) that:
+    1. Lists each changed remote action as `old-ref` → `new-ref` (or "added
+       `owner/repo@ref`" for a newly introduced action).
+    2. States that snowflakedb workflows will not run the new ref until it
+       is on the org allowlist.
+    3. Tells the author to update
+       https://github.com/snowflakedb/self-serve-snowflakedb/blob/26ecbd5af4827db3e40fe9cdbad9777d7abd3e35/configs/snowflakedb/default/default_actions.yml
+       (`configs/snowflakedb/default/default_actions.yml` in
+       `snowflakedb/self-serve-snowflakedb`).
+
+    Example comment body:
+
+    ```
+    This PR changes GitHub Action version tag(s):
+    - `actions/checkout@v6` → `actions/checkout@v7`
+
+    snowflakedb org CI only runs allowlisted action refs. Workflows that
+    depend on these tags will fail in snowflakedb until the new refs are
+    added to the org allowlist:
+
+    https://github.com/snowflakedb/self-serve-snowflakedb/blob/26ecbd5af4827db3e40fe9cdbad9777d7abd3e35/configs/snowflakedb/default/default_actions.yml
+    ```
+
+    **EXEMPTIONS** — do NOT flag if ALL changed `uses:` lines are:
+    - Local composite actions or reusable workflows (`uses: ./...`).
+    - Unchanged `@ref` (only `with:`, `if:`, `id:`, or surrounding comments
+      moved).
+    - The PR already documents the allowlist update (link to a
+      `self-serve-snowflakedb` PR, or an explicit note that the new tag is
+      already on `default_actions.yml`).
+
+    **CONSOLIDATION**: One comment per PR covering every changed remote
+    action. Do not post a separate finding per workflow file.
+
+    ❌ **BAD (reviewer behavior):** silent on `actions/checkout@v6` → `@v7`.
+
+    ✅ **GOOD:** one comment listing the tag change and the
+    `default_actions.yml` update link.

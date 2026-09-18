@@ -1,0 +1,164 @@
+id: jdbc-java-impl
+friendly_name: Snowflake JDBC Java/JDBC Source Guidelines
+status: enabled
+allowed_folders:
+- src/main/java
+excluded_folders: []
+allowed_file_extensions:
+- .java
+rules:
+- id: jdbc-java-no-public-mutable-static-seam
+  rule: |
+    **OBJECTIVE**: Keep JDBC source free of public mutable static test/source seams.
+
+    **REQUIREMENT**: Do not introduce `public static` mutable fields that source and tests share
+    as a process-wide override (`ProtobufApis.coreDriverApi = …`). Prefer constructor or factory
+    injection. A `private static final` default singleton plus a package-private constructor
+    on the consumer is acceptable.
+
+    **EXEMPTIONS**: JDBC driver self-registration (`DriverManager.registerDriver` in a static block),
+    one-time native-library loaders, and immutable constants.
+
+    ❌ **BAD:**
+    ```java
+    public class ProtobufApis {
+      public static CoreDriverApi coreDriverApi = new CoreDriverApiImpl(...);
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    public final class ProtobufApis {
+      private static final CoreDriverApi PRODUCTION = new CoreDriverApiImpl(...);
+      public static CoreDriverApi coreDriverApi() { return PRODUCTION; }
+    }
+    SnowflakeConnectionImpl(String url, Properties info, CoreDriverApi api) { ... }
+    ```
+
+    **PRIORITY**: High for a new public mutable static. Medium when tightening an existing seam
+    in the same PR that already touches it.
+- id: jdbc-java-no-thread-unsafe-jdk-dateformat
+  rule: |
+    **OBJECTIVE**: Prevent data races in shared date/time formatters.
+
+    **REQUIREMENT**: Never store `SimpleDateFormat`, `DateFormat`, or `Calendar` in a `static`
+    field used from more than one thread. Use `DateTimeFormatter` (immutable) or a
+    `ThreadLocal` / per-call clone.
+
+    ❌ **BAD:**
+    ```java
+    private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    builder.append(DF.format(new Date(record.getMillis())));
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    private static final DateTimeFormatter DF =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneOffset.UTC);
+    builder.append(DF.format(Instant.ofEpochMilli(record.getMillis())));
+    ```
+
+    **PRIORITY**: High.
+- id: jdbc-java-catch-specific-or-translate
+  rule: |
+    **OBJECTIVE**: Preserve error discriminants instead of collapsing every failure to one sentinel.
+
+    **REQUIREMENT**: New or modified `catch (Exception)` / `catch (Throwable)` in `src/main/java`
+    is a finding unless the site is one of:
+    - a documented JNI / native-bridge swallow that logs and continues;
+    - a close/abort/log delivery path that must not mask the primary failure (`addSuppressed`);
+    - `isValid()` mapping transport failure to `false` (JDBC contract), provided the failure is logged.
+
+    Catch the types the callee actually throws. Unexpected `RuntimeException` should propagate
+    (or become a carrier via `SqlExceptionMapper`), not become a generic invalid/false result.
+
+    ❌ **BAD:**
+    ```java
+    } catch (Exception ex) {
+      return INVALID_CONNECT_STRING;
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    } catch (IllegalArgumentException | NumberFormatException | SFSQLException ex) {
+      logger.warn("Unparseable Snowflake connect string", ex);
+      return INVALID_CONNECT_STRING;
+    }
+    ```
+
+    **PRIORITY**: Medium. Do not flag an untouched existing catch unless the PR already edits that method.
+- id: jdbc-java-resource-close-aggregates
+  rule: |
+    **OBJECTIVE**: Multi-resource close must not drop secondary failures.
+
+    **REQUIREMENT**: When closing more than one AutoCloseable / native / Arrow resource in one
+    method, keep the first exception and `addSuppressed` subsequent ones (see `ArrowResources`).
+    Do not empty-catch close failures unless the method is already handling a primary failure
+    and logs the secondary one.
+
+    **PRIORITY**: Medium. Flag only newly added or modified close paths.
+- id: jdbc-java-arrow-allocator-must-be-bounded
+  rule: |
+    **OBJECTIVE**: Process-wide Arrow allocators must have a finite budget.
+
+    **REQUIREMENT**: `new RootAllocator(Long.MAX_VALUE)` (or any unbounded max) is a finding.
+    Reuse of one allocator is fine; the cap must be a named constant or derived from
+    `Runtime.getRuntime().maxMemory()`.
+
+    ❌ **BAD:**
+    ```java
+    static final RootAllocator SHARED_ALLOCATOR = new RootAllocator(Long.MAX_VALUE);
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    static final long MAX_BIND_ALLOCATION_BYTES = 4L * 1024 * 1024 * 1024;
+    static final RootAllocator SHARED_ALLOCATOR = new RootAllocator(MAX_BIND_ALLOCATION_BYTES);
+    ```
+
+    **PRIORITY**: High for a new unbounded allocator. Medium when tightening an existing one.
+- id: jdbc-java-property-alias-declared-order
+  rule: |
+    **OBJECTIVE**: When a JDBC connection property has more than one spelling, the declared
+    alias list is precedence — not `Properties` hash order.
+
+    **REQUIREMENT**: Any multi-alias connection property lookup (for example `useProxy` /
+    `use_proxy`, `proxyHost` / `proxy_host`) must walk the declared name list (canonical
+    name first) and probe the `Properties` for each name. Do not iterate `entrySet()` and
+    then match names: that makes the winner depend on hash order when both spellings are
+    present.
+
+    Presence-only helpers (`hasProperty`) may keep an `entrySet()` scan when the boolean
+    result does not depend on which alias matched.
+
+    **EXAMPLES / NOT EXCLUSIVE**: `useProxy` / `use_proxy` are samples of multi-alias
+    lookups, not the only aliases. Flag the same hash-order defect for any property whose
+    declared alias list has more than one name.
+
+    **DIFF SCOPE**: Newly added or modified multi-alias lookups. Stay silent on single-name
+    lookups and on loops that scan every entry for a reason other than alias precedence.
+
+    ❌ **BAD:**
+    ```java
+    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+      for (String name : names) {
+        if (entry.getKey().toString().equalsIgnoreCase(name)) {
+          return entry.getValue();
+        }
+      }
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    for (String name : names) {
+      for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+        if (entry.getKey().toString().equalsIgnoreCase(name)) {
+          return entry.getValue();
+        }
+      }
+    }
+    ```
+
+    **PRIORITY**: Medium. This is a correctness defect when both aliases can be set.

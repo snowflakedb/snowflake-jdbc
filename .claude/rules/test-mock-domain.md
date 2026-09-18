@@ -1,0 +1,19 @@
+# Test Mock Domain Convention
+
+When sending requests to mock servers or using HTTP interception in tests, always use `snowflake.com` hosts — not externally-owned domains (`test.com`) or placeholder domains (`example.com`). If request interception ever fails, escaped traffic hits Snowflake-controlled infrastructure, not someone else's.
+
+❌ `https://test.com/api/endpoint`
+❌ `https://example.com/api/endpoint`
+✅ `https://snowflake.com/api/endpoint`
+
+```java
+// ❌ BAD
+wireMock.stubFor(post(urlEqualTo("/session/v1/login-request"))
+    .withHost(equalTo("test.com")).willReturn(aResponse().withBody(body)));
+
+// ✅ GOOD
+wireMock.stubFor(post(urlEqualTo("/session/v1/login-request"))
+    .withHost(equalTo("snowflake.com")).willReturn(aResponse().withBody(body)));
+```
+
+Arctic Owl: `.ai/review/jdbc-test-mock-domain.yaml`.

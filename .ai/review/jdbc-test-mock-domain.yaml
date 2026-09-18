@@ -1,0 +1,46 @@
+id: jdbc-test-mock-domain
+friendly_name: Snowflake JDBC Test Mock-Domain Rules
+status: enabled
+allowed_folders:
+- src/test
+excluded_folders: []
+allowed_file_extensions:
+- .java
+rules:
+- id: jdbc-test-mock-domain
+  rule: |
+    **OBJECTIVE**: If request interception ever fails in a test, escaped traffic should hit infrastructure Snowflake controls, not someone else's domain.
+
+    **REQUIREMENT**: Mock-server and intercepted HTTP request URLs in tests must use a `snowflake.com` host, not an externally-owned domain (`test.com`) or a placeholder domain (`example.com`).
+
+    This rule applies across all test languages (TypeScript, Python, Java, Rust, C++, Go, C#, etc.).
+
+    ❌ **BAD:**
+    ```typescript
+    // TypeScript/Node.js
+    nock('https://test.com').post('/session/v1/login-request').reply(200, body);
+    ```
+    ```python
+    # Python
+    responses.add(responses.POST, 'https://example.com/session/v1/login-request', json=body)
+    ```
+    ```java
+    // Java
+    wireMock.stubFor(post(urlEqualTo("/session/v1/login-request"))
+        .withHost(equalTo("test.com")).willReturn(aResponse().withBody(body)));
+    ```
+
+    ✅ **GOOD:**
+    ```typescript
+    // TypeScript/Node.js
+    nock('https://snowflake.com').post('/session/v1/login-request').reply(200, body);
+    ```
+    ```python
+    # Python
+    responses.add(responses.POST, 'https://snowflake.com/session/v1/login-request', json=body)
+    ```
+    ```java
+    // Java
+    wireMock.stubFor(post(urlEqualTo("/session/v1/login-request"))
+        .withHost(equalTo("snowflake.com")).willReturn(aResponse().withBody(body)));
+    ```

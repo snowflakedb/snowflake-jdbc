@@ -1,0 +1,217 @@
+id: jdbc-security-disclosure
+friendly_name: Snowflake JDBC Security Disclosure Rules
+status: enabled
+allowed_folders:
+- .
+- src
+- TestOnly
+- FIPS
+- dependencies
+- prober
+- fat-jar-test-app
+- codecov
+excluded_folders:
+- NOMIRROR
+- .ai
+- .cursor
+- .claude
+- .security
+- .buildkite
+- .ci
+- .github
+- ci
+- scripts
+allowed_file_extensions:
+- .rs
+- .java
+- .py
+- .js
+- .ts
+- .cpp
+- .c
+- .h
+- .go
+- .toml
+- .md
+- .rst
+- .txt
+- .yaml
+- .yml
+rules:
+- id: jdbc-no-security-issue-disclosure-in-comments
+  rule: |
+    **OBJECTIVE**: Prevent public text from materially lowering the effort
+    required to exploit an unpublished weakness or identify affected releases,
+    while preserving the technical invariants and limitations maintainers need.
+
+    **REQUIREMENT**: Flag a source comment, docstring, or changed documentation
+    passage only when it contains one or more of:
+
+    1. An actionable exploitation or bypass procedure: concrete attacker-
+       controlled inputs, prerequisites, operation ordering, payloads, or
+       expected results sufficient to reproduce or abuse the weakness.
+    2. A weakness trigger combined with an externally observable security
+       outcome, such as unauthorized access to, disclosure of, or committed
+       modification of protected data. An immediate internal consequence
+       needed to explain an invariant or current limitation is not by itself
+       a concrete security outcome.
+    3. An affected-release window: specific versions, releases, dates, commits,
+       or "before/after this PR" language that identifies vulnerable builds.
+
+    **DO NOT FLAG**:
+    - Descriptions of current required behavior or invariants.
+    - Explanations of atomicity, ordering, isolation, resource identity, or
+      concurrency assumptions needed to maintain the code safely.
+    - Known current limitations, their technical cause, immediate internal
+      consequences, and required follow-up, provided they do not include an
+      exploitation procedure, externally observable security outcome, or
+      affected-release window.
+    - Neutral terminology such as `TOCTOU`, race condition, replay, SSRF,
+      injection, or constant-time when used to name a test, invariant, code
+      pattern, or review category.
+    - SNOW tracking references allowed by
+      `jdbc-security-fix-snow-ticket-only`.
+
+    A phrase such as "deterministic block IDs can collide across concurrent
+    multipart writers to the same object; include a per-upload nonce" is
+    maintainability context and is acceptable. A sequence explaining how to
+    schedule writes, select inputs, and obtain a corrupted or unauthorized
+    result is actionable and must be flagged.
+
+    **SCOPE**: Source comments, docstrings, and changed documentation.
+    PR-facing metadata is owned by `jdbc-security-fix-minimal-comments`.
+    PR-description `## Changelog` bullets are owned by
+    `jdbc-security-fix-changelog-toned-language`. Committed `CHANGELOG.md`
+    files remain changed documentation covered by this rule.
+- id: jdbc-no-cwe-cve-vulnerability-descriptions
+  rule: |
+    **OBJECTIVE**: Keep unapproved public advisory identifiers and links out
+    of the public codebase without suppressing precise technical terminology
+    that maintainers need.
+
+    **REQUIREMENT**: Flag:
+
+    1. CVE identifiers matching `CVE-\d{4}-\d+` case-insensitively.
+    2. CWE identifiers matching `CWE-\d+` case-insensitively.
+    3. GHSA identifiers matching `GHSA-[a-z0-9-]+` case-insensitively,
+       NVD or MITRE vulnerability links, and Snyk, OSV, or equivalent
+       public-advisory identifiers or links.
+
+    **EXCEPTIONS**:
+    - Authoritative workflow metadata explicitly marks the reference as
+      approved for public disclosure.
+    - The reference appears only in recognized machine-generated dependency
+      or license metadata.
+
+    **DO NOT FLAG**:
+    - Neutral category or mechanism names such as `TOCTOU`, race condition,
+      replay, SSRF, injection, SQL injection, XSS, buffer overflow, or
+      constant-time — including in test file paths, test function names
+      (`test_should_prevent_sql_injection`), comments that describe
+      *preventing* or *testing for* those classes of bug, and defensive
+      secure-coding vocabulary. A word such as "vulnerability" or
+      "injection" without a `CVE-…` / `CWE-\d+` / `GHSA-` token is not
+      a finding.
+    - Descriptions of current invariants, technical causes, and known
+      limitations that contain no public advisory identifier or link.
+    - Bare `SNOW-\d+` references.
+
+    **TEST AND DEFENSIVE CONTEXT**: Stay silent when the only hit is
+    standard security-testing terminology (not an advisory identifier)
+    in `**/test/**`, `**/tests/**`, `*Test.java`, `*_test.rs`,
+    `test_*.py`, `*.feature`, or wording about preventing, detecting,
+    or testing for a weakness. Still flag a literal `CVE-\d{4}-\d+`,
+    `CWE-\d+`, or `GHSA-` token — including in tests — because those
+    identifiers map a weakness to a public advisory.
+
+    This rule owns advisory identifiers only. Actionable descriptions and
+    affected-release windows are owned by
+    `jdbc-no-security-issue-disclosure-in-comments` and
+    `jdbc-security-fix-minimal-comments`.
+
+    **SCOPE**: Source, tests, documentation, committed `CHANGELOG.md` files,
+    PR titles and descriptions excluding PR-description `## Changelog`
+    bullets, and commit messages. Advisory identifiers in PR-description
+    changelog bullets are owned by
+    `jdbc-security-fix-changelog-toned-language`, whose stricter wording policy
+    applies even to approved advisories.
+- id: jdbc-security-fix-snow-ticket-only
+  rule: |
+    **OBJECTIVE**: Keep security-relevant tracking anchored in Snowflake Jira
+    without accepting alternate internal tracker identifiers or publishing
+    restricted tracker details.
+
+    **ALLOWED INTERNAL REFERENCE**:
+    - A Snowflake Jira identifier in the form `SNOW-\d+`.
+
+    **REQUIREMENT**: Outside PR-description `## Changelog` bullets, when code,
+    documentation, commit messages, or PR metadata track security remediation
+    or a security-relevant known limitation:
+
+    1. Require a `SNOW-\d+` Jira reference.
+    2. Flag alternate internal tracker identifiers, including `DRV-\d+`.
+    3. Flag internal references expanded with restricted issue titles,
+       exploitation details, or affected-version information.
+
+    Do not infer that a change is security remediation solely from neutral
+    terminology such as `TOCTOU`, race condition, replay, SSRF, injection, or
+    constant-time. Use explicit change context, tracking language, or
+    authoritative workflow metadata.
+
+    A bare `SNOW-12345` is acceptable. `DRV-8` is not acceptable in this
+    context. Public advisory identifiers and links are owned by
+    `jdbc-no-cwe-cve-vulnerability-descriptions`.
+
+    **SCOPE**: Source comments, documentation, PR titles and descriptions
+    excluding `## Changelog`, and commit messages. Tracker references in
+    PR-description changelog bullets are governed by the changelog ruleset.
+- id: jdbc-security-fix-minimal-comments
+  scope: full-pr
+  rule: |
+    **OBJECTIVE**: Evaluate the changed material as a whole so individually
+    reasonable comments do not combine into an exploitation guide or
+    affected-release disclosure, while retaining the technical explanation
+    maintainers need.
+
+    **SCOPE**: Review the full diff context: source comments, test names and
+    descriptions, documentation, commit messages, and PR title and
+    description. PR-description `## Changelog` wording remains governed by
+    `jdbc-security-fix-changelog-toned-language`, but may still contribute
+    context to a disclosure assembled across multiple surfaces.
+
+    **REQUIREMENT**: Flag when the changed material, considered together:
+
+    1. Provides an actionable exploitation or bypass procedure, even when its
+       prerequisites, controlled inputs, operation sequence, and expected
+       result are distributed across separate comments or metadata.
+    2. Combines a concrete weakness trigger with an externally observable
+       security outcome. An immediate internal consequence needed to explain
+       an invariant or current limitation is not by itself such an outcome.
+    3. Identifies affected versions, releases, commits, dates, or a vulnerable
+       before/after boundary.
+
+    **DO NOT FLAG**:
+    - Neutral descriptions of the behavior being enforced.
+    - Technical explanations of atomicity, retry, isolation, concurrency, or
+      ordering needed for review.
+    - Current known limitations, their technical causes, immediate internal
+      consequences, and follow-up requirements without an attack procedure,
+      externally observable security outcome, or affected-release window.
+    - Neutral security or concurrency terminology by itself.
+    - Bare `SNOW-\d+` references.
+    - DRV references in clearly non-security product work; do not classify
+      such work as security-related solely from neutral technical terminology.
+
+    **DEDUPLICATION**: Do not repeat a finding already emitted for one passage
+    by a source-specific or advisory-identifier rule. Use this full-diff rule
+    when the risky disclosure emerges from combined context or from a surface
+    not otherwise covered.
+
+    Words such as "security", "race", "TOCTOU", "attack", or "patch" are not
+    independently sufficient for a finding. Evaluate whether the surrounding
+    text actually discloses an actionable method or affected population.
+
+    Prefer neutral summaries such as:
+    - "Enforced conditional creation at the multipart commit boundary."
+    - "Deterministic block IDs remain a concurrency limitation tracked by
+      SNOW-12345."

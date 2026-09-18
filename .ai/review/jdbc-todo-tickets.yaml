@@ -1,0 +1,52 @@
+id: jdbc-todo-tickets
+friendly_name: Snowflake JDBC TODO Jira Ticket Requirement
+status: enabled
+allowed_folders:
+- .
+- src
+- TestOnly
+- FIPS
+- dependencies
+- prober
+- fat-jar-test-app
+- codecov
+excluded_folders:
+- NOMIRROR
+- .ai
+- .cursor
+- .claude
+- .buildkite
+rules:
+- id: jdbc-todo-requires-jira-ticket
+  rule: |+
+    **OBJECTIVE**: A `TODO`/`FIXME` with no ticket has no path back into planning — it will never resurface until someone happens to grep for it. Every one left in shipped code must be trackable.
+
+    **REQUIREMENT**: Every `TODO` or `FIXME` comment introduced by the PR MUST reference a Jira ticket in the `SNOW-XXXXXX` format, e.g. `TODO(SNOW-123456): ...` or `// TODO SNOW-123456: ...`. A bare `TODO` with no ticket — or one that only names a person, a vague "later", or a non-Jira reference (a GitHub issue, an internal doc link) — does not satisfy this rule. If the work doesn't have a Jira ticket yet, create one before landing the TODO; that is the entire point of the rule.
+
+    This applies uniformly across languages (Rust, Python, Java, TypeScript, C/C++, Go, C#) and to `.feature`/config files — the requirement is about traceability, not syntax.
+
+    ❌ **BAD:**
+    ```rust
+    // TODO: revisit this once the retry policy is finalized
+    fn should_retry(err: &Error) -> bool { ... }
+    ```
+    ```python
+    # TODO(jsmith): this is a hack, clean up later
+    def parse_legacy_format(raw: str) -> dict: ...
+    ```
+
+    ✅ **GOOD:**
+    ```rust
+    // TODO(SNOW-482913): revisit this once the retry policy is finalized
+    fn should_retry(err: &Error) -> bool { ... }
+    ```
+    ```python
+    # TODO(SNOW-482913): this is a hack — replace once legacy format is retired
+    def parse_legacy_format(raw: str) -> dict: ...
+    ```
+
+    **EXEMPTIONS** — do NOT flag if ANY hold:
+    - The `TODO`/`FIXME` line predates this PR and the PR did not modify or move it (only flag TODOs the diff actually introduces).
+    - It appears inside a fenced code example in a `.md` design/rule doc that is illustrating format conventions rather than leaving real work behind (e.g. this file, or `code-review-design-discipline.md`'s `TODO(TICKET-N)` placeholder examples).
+
+...

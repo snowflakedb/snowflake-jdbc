@@ -1,0 +1,116 @@
+id: jdbc-changelog
+friendly_name: Snowflake JDBC Changelog Rules
+status: enabled
+allowed_folders: []
+excluded_folders: []
+rules:
+- id: jdbc-pr-description-changelog-required
+  scope: full-pr
+  rule: |
+    **OBJECTIVE**: Every PR that introduces a user-visible change must include a `## Changelog` section at the **end** of the PR description. This section is the source of truth for release notes and must describe what changed from the user's perspective.
+
+    **REQUIREMENT**:
+    1. The PR description MUST contain a `## Changelog` section.
+    2. It MUST be the **last section** in the PR description (nothing follows it except optional blank lines).
+    3. It MUST contain at least one bullet point written in user-facing language: what the user gains, what was fixed, or what changed in behavior — not how the code works internally.
+    4. Bullet points MUST start with a past-tense verb: `Added`, `Fixed`, `Removed`, `Improved`, `Changed`.
+    5. Avoid: Jira ticket numbers, PR numbers, internal module names, implementation details, or references to code structure.
+
+    **EXEMPTIONS** — Do NOT flag if ALL of the following are true:
+    - The PR touches only CI/CD config, tooling, tests, build scripts, or internal documentation with no effect on the shipped driver.
+    - Even then, an empty `## Changelog` section is acceptable but not required.
+
+    **POSITION RULE**: The `## Changelog` section must be last. If other sections (e.g., `## Test plan`, `## Summary`) appear after it, that is a violation.
+
+    ❌ **BAD — No Changelog section:**
+    ```
+    ## Summary
+    Fixes a connection reset bug.
+
+    ## Test plan
+    - Ran integration tests.
+    ```
+
+    ❌ **BAD — Changelog is not the last section:**
+    ```
+    ## Summary
+    Fixes a connection reset bug.
+
+    ## Changelog
+    - Fixed connection reset on idle timeout.
+
+    ## Test plan
+    - Ran integration tests.
+    ```
+
+    ❌ **BAD — Internal/implementation language:**
+    ```
+    ## Changelog
+    - Refactored `SessionManager::reset_idle_state()` to call `flush_pending_ops` before closing.
+    ```
+
+    ✅ **GOOD:**
+    ```
+    ## Summary
+    Fixes a connection reset bug on idle timeout.
+
+    ## Test plan
+    - Ran integration tests.
+
+    ## Changelog
+    - Fixed an issue where connections were unexpectedly reset after an idle timeout period.
+    ```
+
+    ✅ **GOOD (multiple components):**
+    ```
+    ## Summary
+    Adds OAuth token refresh support.
+
+    ## Test plan
+    - Added integration tests for token refresh flow.
+
+    ## Changelog
+    - Added automatic OAuth token refresh to prevent authentication failures on long-running sessions.
+    - Improved error messages when OAuth configuration is invalid.
+    ```
+- id: jdbc-security-fix-changelog-toned-language
+  scope: full-pr
+  rule: |
+    **OBJECTIVE**: Changelog entries for security fixes must use neutral, toned
+    language that describes the correct behavior — not the vulnerability, risk,
+    or attack class that was addressed. A changelog bullet that discloses a
+    security issue is as damaging as a PR description that does the same.
+
+    **REQUIREMENT**: Flag any `## Changelog` bullet in a security-related PR that:
+
+    1. **Names the class of issue** — phrases like "security vulnerability",
+       "authentication bypass", "injection flaw", "privilege escalation",
+       "remote code execution", "data exfiltration".
+    2. **Uses prohibited terms** — "security", "vulnerability", "CVE", "CWE",
+       "exploit", "attack", "patch", or any attack-class name.
+    3. **Frames the entry as a fix to something dangerous** — e.g. "Patched a
+       critical flaw…", "Fixed a security issue in…", "Resolved an exploit…".
+
+    **TONING TEMPLATE**: Write changelog entries as toned improvements or bug
+    fixes using the same past-tense verb pattern as the rest of the changelog:
+
+    ```
+    Use the form: "[Fixed|Improved] [neutral behavior description]."
+    - "Fixed an issue where OAuth tokens were accepted without full validation."
+    - "Improved session handling to enforce consistent authentication checks."
+    Do NOT use: "security fix", "vulnerability", "exploit", "attack", "patch".
+    ```
+
+    ❌ **BAD:**
+    ```markdown
+    ## Changelog
+    - Fixed a security vulnerability in the OAuth token validation flow.
+    - Patched an authentication bypass in the session handler.
+    ```
+
+    ✅ **GOOD:**
+    ```markdown
+    ## Changelog
+    - Fixed an issue where OAuth tokens were accepted without full validation.
+    - Improved session handling to enforce consistent authentication checks.
+    ```

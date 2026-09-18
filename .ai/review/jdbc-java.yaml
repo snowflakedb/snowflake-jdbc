@@ -1,0 +1,841 @@
+id: jdbc-java
+friendly_name: Snowflake JDBC Java/JDBC Guidelines
+status: enabled
+allowed_folders:
+- src/test/java
+- src/main/java
+excluded_folders: []
+allowed_file_extensions:
+- .java
+rules:
+- id: jdbc-java-method-single-abstraction-level
+  rule: |
+    **OBJECTIVE**: Keep changed Java methods readable as cohesive units while preserving their observable behavior.
+
+    **REQUIREMENT**: Flag a newly added or materially expanded method when it mixes several distinct domain phases inline — for example input guards, parsing/resolution, validation, credential decisions, result construction, and side effects — and named helpers would make the entry method read as orchestration at one abstraction level.
+
+    Method length alone is never a finding. Before commenting, identify at least two concrete responsibilities that can be extracted into cohesive, accurately named helpers. Recommend the narrowest useful boundary: a `private static` helper for stateless class-local logic, or a package-private collaborator only when logic owns dependencies/state, is reused, or merits focused tests. Do not recommend widening visibility merely for tests.
+
+    **ESTABLISHED UTILITIES**: During a refactor, reuse existing project utilities for repeated canonical predicates and conversions when their semantics match exactly. In JDBC code, prefer `net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty(value)` over spelling `value == null || value.isEmpty()` repeatedly. Do not suggest adding Apache Commons or another dependency for an operation already covered by the repository. Do not replace null-or-empty behavior with whitespace-aware `isBlank` behavior.
+
+    **BEHAVIOR-PRESERVATION GATE**: The proposed extraction MUST preserve public signatures, validation and exception precedence, side-effect and cleanup order, null/empty handling, and input mutation. If those guarantees cannot be established from the diff and tests, ask for characterization tests instead of proposing a mechanical extraction.
+
+    **DIFF SCOPE**: Review only methods added or materially expanded by the PR. Do not flag untouched existing methods or refactors that already leave the entry method as clear orchestration.
+
+    **CONSOLIDATION**: Emit at most one finding per method. Describe the mixed responsibilities and one cohesive extraction plan; do not create separate comments for each candidate helper.
+
+    ❌ **BAD:**
+    ```java
+    DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        // resolve and parse properties inline
+        // validate every supported property inline
+        // apply credential and proxy rules inline
+        // construct the result inline
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        Properties resolved = resolveProperties(url, info);
+        validate(resolved);
+        return findMissingProperties(resolved);
+    }
+    ```
+
+    **DO NOT FLAG**:
+    - A long but cohesive table, switch, or protocol mapping where extraction would hide rather than clarify the contract.
+    - Small helpers whose further extraction would create trivial forwarding methods.
+    - Methods with multiple branches that all implement one domain decision at the same abstraction level.
+    - Pure formatting or generated code.
+
+    **PRIORITY**: Medium when mixed responsibilities materially obscure control flow or make behavior-preserving review difficult; otherwise stay silent.
+- id: jdbc-java-extract-testable-helpers-to-package-owner
+  rule: |
+    **OBJECTIVE**: Keep public JDBC classes as orchestration boundaries and put testable domain helpers on a cohesive package-level owner.
+
+    **REQUIREMENT**: When a newly added or materially expanded public JDBC class accumulates `private static` helpers that encode domain decisions (resolution, validation, credential rules, result construction) and those helpers merit unit tests, extract them to a cohesive owner in the proper package. In JDBC, that package is `net.snowflake.client.internal.util`, next to `UrlUtils` and `StringUtil`. Name the class after the domain (`DriverPropertyInfoUtil`), not a generic `Utils` dump.
+
+    Keep the public entry point as a thin delegate. Keep extracted helpers package-private when same-package tests are enough. Do not widen visibility solely so a test in another package can call them.
+
+    ❌ **BAD:**
+    ```java
+    public class SnowflakeDriver implements Driver {
+        public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+            return findMissingProperties(resolveAndValidate(url, info));
+        }
+
+        private static Properties resolveAndValidate(String url, Properties info) { ... }
+        private static DriverPropertyInfo[] findMissingProperties(Properties resolved) { ... }
+        private static boolean requiresPasswordCredentials(String authenticator) { ... }
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        return DriverPropertyInfoUtil.getPropertyInfo(url, info);
+    }
+
+    // net.snowflake.client.internal.util.DriverPropertyInfoUtil
+    static boolean requiresPasswordCredentials(String authenticator) { ... }
+    ```
+
+    **DO NOT FLAG**:
+    - A one-line `private static` predicate that is not independently tested and does not mix domain phases.
+    - Helpers that must stay private because they close over instance state or a test seam already exists through the public API.
+    - Suggestions to dump unrelated helpers into `SnowflakeUtil` or another catch-all class.
+    - Suggestions to make helpers public only to satisfy a test in a different package.
+
+    **DIFF SCOPE**: Review only methods added or materially expanded by the PR.
+
+    **CONSOLIDATION**: Emit at most one finding per public class and propose one cohesive owner.
+
+    **PRIORITY**: Medium when private static helpers on a public JDBC class block focused unit tests; otherwise stay silent.
+- id: jdbc-java-prefer-direct-bulk-collection-operation
+  rule: |
+    **OBJECTIVE**: Express unchanged collection copies with the Java collection API instead of manual population code.
+
+    **REQUIREMENT**: In newly added or modified code, when a loop or multi-statement sequence does nothing except copy every source entry or element unchanged into a destination, prefer the direct bulk operation:
+    - `target.putAll(source)` for maps;
+    - `target.addAll(source)` for collections;
+    - `new ArrayList<>(source)`, `new LinkedHashSet<>(source)`, or the matching copy constructor when creating a defensive copy.
+
+    ❌ **BAD:**
+    ```java
+    Properties resolved = new Properties();
+    for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+        resolved.put(entry.getKey(), entry.getValue());
+    }
+
+    Set<ResultSet> snapshot = new LinkedHashSet<>();
+    snapshot.addAll(openResultSets);
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    Properties resolved = new Properties();
+    resolved.putAll(parameters);
+
+    Set<ResultSet> snapshot = new LinkedHashSet<>(openResultSets);
+    ```
+
+    **SEMANTIC-EQUIVALENCE GATE**: Stay silent when the loop filters, transforms, validates, accumulates failures, performs per-item side effects, or depends on iteration order. Before commenting, verify compatible null handling, duplicate-key behavior, destination type and ordering, synchronization scope, and failure semantics. Do not replace a loop when partial destination mutation on failure is observable.
+
+    **DIFF SCOPE**: Flag only newly added or modified code. Do not report equivalent existing loops outside the PR diff.
+
+    **CONSOLIDATION**: Emit at most one finding per copy operation and propose the single direct replacement.
+
+    **PRIORITY**: Low. This is a readability improvement; never present it as a correctness defect.
+- id: jdbc-java-try-with-resources-required
+  rule: |
+    **OBJECTIVE**: Prevent JDBC resource leaks and connection blocking in tests and source.
+
+    **REQUIREMENT**: Every `Connection`, `Statement`, `PreparedStatement`, `CallableStatement`, and `ResultSet` acquired in JDBC test code MUST be managed with try-with-resources (or an equivalent RAII helper that closes on all exit paths). Manual `close()` in `finally` is acceptable only when try-with-resources cannot express the control flow — and must still close in reverse acquisition order.
+
+    Flag bare field-level `Statement` / `ResultSet` left open across test methods on a shared connection. This mirrors ODBC RAII expectations in `odbc-tests-cpp.yaml` and the resource-management category in `.cursor/rules/jdbc-test-reviewer.mdc`.
+
+    ❌ **BAD:**
+    ```java
+    Statement stmt = conn.createStatement();
+    ResultSet rs = stmt.executeQuery("SELECT 1");
+    assertTrue(rs.next());
+    // stmt and rs never closed — blocks shared connection for later tests
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    try (Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
+    }
+    ```
+- id: jdbc-java-sqlexception-must-assert-sqlstate-and-errorcode
+  rule: |
+    **OBJECTIVE**: Ensure JDBC error-path tests validate stable diagnostic fields, not brittle message strings.
+
+    **REQUIREMENT**: When asserting that JDBC API calls throw `SQLException`, tests MUST:
+    1. Use `assertThrows(SQLException.class, …)` (or capture the exception in a variable),
+    2. Assert `getSQLState()` when the driver documents an expected SQLSTATE,
+    3. Assert `getErrorCode()` when Snowflake error codes are part of the contract under test.
+
+    Message-only assertions (`assertTrue(e.getMessage().contains("…"))`) are Medium findings unless no SQLSTATE is defined. This parallels ODBC return-code checking in `odbc-tests-cpp.yaml`.
+
+    ❌ **BAD:**
+    ```java
+    assertThrows(SQLException.class, () -> stmt.execute("SELECT * FROM missing_table"));
+    // no SQLSTATE / error code validation
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    SQLException ex = assertThrows(SQLException.class, () -> stmt.execute("SELECT * FROM missing_table"));
+    assertEquals("42S02", ex.getSQLState());
+    assertEquals(2003, ex.getErrorCode());
+    ```
+- id: jdbc-java-select-multirow-requires-order-by
+  rule: |
+    **OBJECTIVE**: Prevent flaky or false-negative assertions caused by Snowflake's non-deterministic row order.
+
+    **REQUIREMENT**: Any `SELECT` that may return more than one row AND whose results are asserted positionally (by row index, list equality, or ordered collection) MUST include an `ORDER BY` that fully determines row order. Single-row queries and aggregates without `GROUP BY` are exempt. `LIMIT` without `ORDER BY` is non-deterministic and must include `ORDER BY`.
+
+    Adapted from `jdbc-py-deterministic-select-order-by` in `jdbc-python.yaml`.
+
+    ❌ **BAD:**
+    ```java
+    try (ResultSet rs = stmt.executeQuery("SELECT id, name FROM users WHERE active = TRUE")) {
+        List<String> names = new ArrayList<>();
+        while (rs.next()) {
+            names.add(rs.getString("name"));
+        }
+        assertEquals(List.of("alice", "bob"), names);
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    try (ResultSet rs = stmt.executeQuery(
+            "SELECT id, name FROM users WHERE active = TRUE ORDER BY id")) {
+        List<String> names = new ArrayList<>();
+        while (rs.next()) {
+            names.add(rs.getString("name"));
+        }
+        assertEquals(List.of("alice", "bob"), names);
+    }
+    ```
+- id: jdbc-java-wasnull-after-nullable-getter
+  rule: |
+    **OBJECTIVE**: Catch incorrect NULL handling in JDBC data-retrieval tests.
+
+    **REQUIREMENT**: Immediately after calling a nullable getter (`getString`, `getObject`, `getInt`, etc.) on a column that may be SQL NULL, tests MUST call `ResultSet.wasNull()` and assert the expected nullability. Do not infer NULL from sentinel values alone.
+
+    **CONSOLIDATION**: Emit at most ONE comment per file per PR. If multiple violations exist in the same file, consolidate them into a single finding that lists every affected line number. Do not post separate comments for each `assertNull()` / getter call on the same file.
+
+    **COMMENT TEMPLATE** (use when multiple instances exist in one file):
+    "This file has N instances of nullable getter assertions without `wasNull()` verification. Affected lines: [line1, line2, ...]. After each `assertNull(rs.getX(...))` (or equivalent nullable read), add `assertTrue(rs.wasNull())` (or `assertFalse` when the column is non-null)."
+
+    ❌ **BAD:**
+    ```java
+    assertTrue(rs.next());
+    assertNull(rs.getString("nullable_col"));
+    // missing wasNull() — JDBC spec requires explicit check
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    assertTrue(rs.next());
+    assertNull(rs.getString("nullable_col"));
+    assertTrue(rs.wasNull());
+    ```
+- id: jdbc-java-test-method-should-prefix
+  rule: |
+    **OBJECTIVE**: Enforce consistent, behavior-oriented JDBC test naming (aligned with Gherkin `should` conventions in `jdbc-tests.yaml`).
+
+    **REQUIREMENT**: JUnit 5 `@Test` method names MUST start with `should` and describe the behavior under test (`shouldReturnEmptyResultSetWhenNoRowsMatch`, not `testEmptyResultSet` or `emptyResultSetTest`). `@ParameterizedTest` display names should follow the same convention.
+
+    **SCOPE — NEW OR RENAMED METHODS ONLY**: Flag only `@Test` / `@ParameterizedTest` methods whose **method name** is newly added or renamed in the current PR diff. Do NOT trigger when the method name is unchanged and only the body, annotations, parameters, return type, or `throws` clause changed. If the same method name existed on the base branch, stay silent — a pre-existing naming violation is not introduced by the PR.
+
+    **SIBLING-CONVENTION SUPPRESSION — do NOT flag when the class already uses a different pattern**: Before commenting, scan other `@Test` / `@ParameterizedTest` methods in the same test class. If **≥3** sibling test methods in that class do **not** start with `should` (e.g. `readDateParity`, `writeDateParity`, `testGetDate`), treat the class as having an established alternate naming convention and suppress the finding for new methods that follow it. Optionally note at Low priority: "This matches the existing naming pattern in `<ClassName>`; consider renaming the whole class in a follow-up." Do not flag isolated new methods that match an established local pattern.
+
+    **OPT-OUT MARKER**: Suppress findings for a test class when the file or class contains `// ArcticOwl: legacy-naming` (or `@SuppressWarnings` with that exact string in a comment on the class). Owners use this for parity/integration suites that intentionally keep historical names.
+
+    **SEVERITY NOTE**: Pure naming-style findings are Low priority. Never raise above Low for a missing `should` prefix alone.
+
+    ❌ **BAD** (new method in a class that otherwise uses `should`):
+    ```java
+    @Test
+    void testNullColumn() throws Exception { ... }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @Test
+    void shouldReturnNullForNullableColumn() throws Exception { ... }
+    ```
+
+    ✅ **ALSO FINE — do NOT flag** (new method follows ≥3 sibling parity methods without `should`):
+    ```java
+    // readDateParity, writeDateParity, getDateNullTimezoneParity already in this class
+    @ParameterizedTest
+    void jvmDefaultTimezoneParity(...) { ... }
+    ```
+
+    ✅ **ALSO FINE — do NOT flag** (method name unchanged; only throws clause updated):
+    ```java
+    // base branch already had testGetDate — PR only changes SFException → SFSQLException
+    @Test
+    void testGetDate() throws SFSQLException { ... }
+    ```
+- id: jdbc-java-junit5-per-test-setup-teardown
+  rule: |
+    **OBJECTIVE**: Prevent test-order dependencies from shared mutable state between `@Test` methods.
+
+    **REQUIREMENT**: Per-test setup and teardown MUST use `@BeforeEach` / `@AfterEach` (or try-with-resources inside each test). `@BeforeAll` / `@AfterAll` mutable state shared across tests requires `@TestInstance(Lifecycle.PER_CLASS)` justification and per-test reset — otherwise flag as High flakiness risk.
+
+    Do not rely on test execution order. See also `jdbc-no-global-mutable-test-state` in `jdbc-flaky-tests.yaml`.
+
+    ❌ **BAD:**
+    ```java
+    private Connection sharedConn;
+
+    @BeforeAll
+    static void connect() { ... }  // mutates sharedConn used by all tests without reset
+
+    @Test
+    void shouldDisableAutoCommit() throws Exception {
+        sharedConn.setAutoCommit(false);
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @BeforeEach
+    void setUp() throws Exception {
+        conn = openConnection();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (conn != null) {
+            conn.close();
+        }
+    }
+    ```
+- id: jdbc-java-extract-duplicated-setup-to-beforeeach
+  rule: |
+    **OBJECTIVE**: Reduce DRY violations that hide setup bugs and make flakiness harder to diagnose.
+
+    **REQUIREMENT**: Identical setup blocks copy-pasted across multiple `@Test` methods (connection properties, schema creation SQL, WireMock stub wiring) SHOULD be extracted to `@BeforeEach`, a test base class, or a package-private fixture helper. Duplicated SQL literals SHOULD become `private static final String` constants with descriptive names.
+
+    ❌ **BAD:**
+    ```java
+    @Test
+    void shouldInsertRow() throws Exception {
+        stmt.execute("CREATE TABLE IF NOT EXISTS t (id INT)");
+        stmt.execute("INSERT INTO t VALUES (1)");
+    }
+
+    @Test
+    void shouldDeleteRow() throws Exception {
+        stmt.execute("CREATE TABLE IF NOT EXISTS t (id INT)");
+        ...
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @BeforeEach
+    void createTable() throws Exception {
+        stmt.execute("CREATE TEMP TABLE " + tableName + " (id INT)");
+    }
+    ```
+- id: jdbc-java-no-bare-thread-sleep-for-async-wait
+  rule: |
+    **OBJECTIVE**: Prevent timing-based flakiness in JDBC async and background operations.
+
+    **REQUIREMENT**: Never use bare `Thread.sleep(N)` as the sole wait for query completion, connection establishment, or async side-effects. Use `Awaitility.await().atMost(...).until(...)`, poll `Statement.isStillRunning()` / query status APIs, or a deadline loop with short intervals.
+
+    A sleep is acceptable only when the delay itself is the behavior under test — document with an inline comment and ticket reference. See also `jdbc-no-bare-sleep-for-async-wait` and `jdbc-async-query-must-poll-status` in `jdbc-flaky-tests.yaml`.
+
+    ❌ **BAD:**
+    ```java
+    stmt.executeAsync("SELECT seq8() FROM TABLE(GENERATOR(ROWCOUNT => 1000000))");
+    Thread.sleep(2000);
+    try (ResultSet rs = stmt.getResultSet()) { ... }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    stmt.executeAsync("SELECT seq8() FROM TABLE(GENERATOR(ROWCOUNT => 1000000))");
+    Awaitility.await()
+        .atMost(60, TimeUnit.SECONDS)
+        .pollInterval(200, TimeUnit.MILLISECONDS)
+        .until(() -> !stmt.isStillRunning());
+    try (ResultSet rs = stmt.getResultSet()) { ... }
+    ```
+- id: jdbc-java-no-shared-default-connection-mutation
+  rule: |
+    **OBJECTIVE**: Prevent session pollution when tests share `getDefaultConnection()` from integration base classes.
+
+    **REQUIREMENT**: Tests using `getDefaultConnection()` or any shared singleton `Connection` MUST NOT leave session-altering side effects for sibling tests:
+    - `ALTER SESSION`, `USE DATABASE` / `USE SCHEMA`, DDL on permanent objects
+    - `setAutoCommit(false)` without restore
+    - Open `ResultSet`s on the shared connection
+
+    Prefer `openConnection()` in try-with-resources per test, or restore state in `@AfterEach`. Same intent as `jdbc-no-shared-connection-mutation-without-isolation` in `jdbc-flaky-tests.yaml`.
+
+    ❌ **BAD:**
+    ```java
+    @Test
+    void shouldAlterSession() throws Exception {
+        getDefaultConnection().createStatement().execute("ALTER SESSION SET TIMEZONE = 'UTC'");
+    }
+    // next test inherits altered session
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @Test
+    void shouldAlterSession() throws Exception {
+        try (Connection conn = openConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("ALTER SESSION SET TIMEZONE = 'UTC'");
+        }
+    }
+    ```
+- id: jdbc-java-unique-snowflake-object-names
+  rule: |
+    **OBJECTIVE**: Prevent parallel CI collisions on Snowflake tables, stages, schemas, and warehouses.
+
+    **REQUIREMENT**: Tests that create named **account-persistent** Snowflake objects MUST generate unique names per test invocation (UUID suffix, `@TempDir`-style token, or fixture-provided name). Hardcoded names like `TEST_TABLE`, `ms_dml_test`, or `test_stage` collide across Gradle workers or leftover crashed runs.
+
+    Clean up in `@AfterEach` / try-with-resources teardown, not only at test start (start-only cleanup hides prior failures). See `jdbc-no-hardcoded-shared-table-names` and `jdbc-multistatement-hardcoded-object-names` in `jdbc-flaky-tests.yaml`.
+
+    **SESSION-SCOPED / TEMPORARY OBJECT EXCEPTION — do NOT flag**: same parse as `jdbc-no-hardcoded-shared-table-names` (TEMP as a CREATE keyword, not a substring). Unique names are not required for TEMP objects on a **per-test** connection. Do not suppress `CREATE TABLE` / `CREATE TRANSIENT TABLE`. Still flag hardcoded TEMP names on `getDefaultConnection()` / `@TestInstance(PER_CLASS)` — including `CREATE OR REPLACE TEMPORARY TABLE ms_dml_test`. Unique interpolated names (`"CREATE TEMP TABLE " + tableName`) remain fine.
+
+    ❌ **BAD:**
+    ```java
+    private static final String TABLE = "FLAKY_TEST_TABLE";
+
+    @Test
+    void shouldInsertRows() throws Exception {
+        stmt.execute("CREATE TABLE " + TABLE + " (id INT)");
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    private String table;
+
+    @BeforeEach
+    void createTable() throws Exception {
+        table = "TEST_TABLE_" + UUID.randomUUID().toString().replace("-", "");
+        stmt.execute("CREATE TABLE " + table + " (id INT)");
+    }
+
+    @AfterEach
+    void dropTable() throws Exception {
+        stmt.execute("DROP TABLE IF EXISTS " + table);
+    }
+    ```
+
+    ✅ **ALSO FINE — do NOT flag (TEMP TABLE with a unique name, even on a shared connection):**
+    ```java
+    stmt.execute("CREATE TEMP TABLE " + tableName + " (id INT)");
+    ```
+- id: jdbc-java-resultset-close-or-fully-consume
+  rule: |
+    **OBJECTIVE**: Prevent connection blocking from open `ResultSet`s on shared JDBC connections.
+
+    **REQUIREMENT**: Every `executeQuery()` / `getResultSet()` MUST either use try-with-resources on the `ResultSet` or fully consume all rows and close before issuing another query on the same `Statement`/`Connection`. Critical for multistatement tests using `getMoreResults()`.
+
+    ❌ **BAD:**
+    ```java
+    ResultSet rs = stmt.executeQuery("SELECT 1");
+    assertTrue(rs.next());
+    stmt.execute("INSERT INTO t VALUES (1)");  // may block — rs still open
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    try (ResultSet rs = stmt.executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
+    }
+    stmt.execute("INSERT INTO t VALUES (1)");
+    ```
+- id: jdbc-java-wiremock-dynamic-port-and-reset
+  rule: |
+    **OBJECTIVE**: Prevent WireMock port collisions and stale stub interference when Gradle runs JDBC test classes in parallel.
+
+    **REQUIREMENT**: WireMock tests under `src/test/java/net/snowflake/jdbc/wiremock/` MUST:
+    - Bind a dynamic port (`wireMockConfig().dynamicPort()`, `new ServerSocket(0)`, or extend `BaseWiremockTest` / `WiremockClient`),
+    - Reset stubs in `@AfterEach` (`wireMockServer.resetAll()` or `resetWiremock()` — prefer `resetAll()` over `resetMappings()`),
+    - Skip cleanly on Java 8 with `Assumptions.assumeTrue(...)` when WireMock 3.x requires JRE 11+.
+
+    ❌ **BAD:**
+    ```java
+    @BeforeAll
+    void startWiremock() {
+        wiremock = new WireMockServer(options().port(8080));
+        wiremock.start();
+    }
+    // no @AfterEach reset
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    public class LogoutTest extends BaseWiremockTest {
+        // dynamic port + @AfterEach resetWiremock() from base class
+    }
+    ```
+- id: jdbc-java-no-weak-null-assertions
+  rule: |
+    **OBJECTIVE**: Use expressive JUnit assertions that produce actionable failure messages.
+
+    **SELF-CHECK BEFORE COMMENTING (mandatory)**: This rule is ONLY about the *phrasing* of an assertion, never about the values inside it. Before emitting a finding, confirm your suggested fix is one of the exact transformations listed below and that it rewrites `assertTrue`/`assertFalse`/`assertEquals` into a more expressive assertion form. If your comment is really about replacing a magic number/string with a named constant, deduplicating constants, or removing a vacuous check, it is NOT this rule — stay silent here (see OUT OF SCOPE). A finding whose subject is a literal like `200041` is a misfire and must not be posted under `jdbc-java-no-weak-null-assertions`.
+
+    **SCOPE**: This rule covers ONLY assertion-style anti-patterns — the way a condition is asserted, not what it asserts about. Flag exactly these transformations:
+    - `assertTrue(x != null)` / `assertTrue(null != x)` → `assertNotNull(x)`
+    - `assertTrue(x == null)` / `assertTrue(null == x)` → `assertNull(x)`
+    - `assertTrue(!condition)` → `assertFalse(condition)` (and `assertFalse(!condition)` → `assertTrue(condition)`)
+    - `assertTrue(a.equals(b))` → `assertEquals(b, a)`
+    - `assertEquals(true, x)` / `assertEquals(false, x)` → `assertTrue(x)` / `assertFalse(x)`
+    - Compound conditions buried in a single `assertTrue`/`assertFalse` (e.g. `assertTrue(msg != null && !msg.isEmpty())`) → split into separate typed assertions so a failure identifies which condition failed.
+
+    **OUT OF SCOPE** — do NOT raise these under this rule:
+    - Magic numeric/string literals or constant duplication in assertions. This is a distinct concern (named-constant hygiene); if a dedicated rule for it exists, defer to that rule, otherwise stay silent here. Replacing `200041` with `ErrorCode.X.getMessageCode()` is NOT a weak-assertion finding — even when the literal appears inside an `assertEquals(...)`, the *phrasing* is already correct and only the value is in question, so this rule does not apply. This has been a recurring misfire; when tempted to comment on a literal, re-read the SELF-CHECK above and stay silent.
+    - Redundant or vacuous assertions (e.g. `assertNotNull` on a value that cannot be null). See `jdbc-java-no-redundant-assertions`.
+
+    **SEVERITY NOTE**: `assertTrue(x != null)`, `assertTrue(!cond)`, `assertTrue(a.equals(b))`, and compound-condition assertions are Medium — they materially degrade CI failure messages. `assertEquals(true/false, x)` is a Low-priority style suggestion: prefix the comment with "Style suggestion:" and never raise it above Low.
+
+    ❌ **BAD:**
+    ```java
+    assertTrue(rs.getString(1) != null);
+    assertTrue(!rs.next());
+    assertTrue(msg != null && !msg.isEmpty());
+    assertEquals(true, conn.isValid(0));
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    assertNotNull(rs.getString(1));
+    assertFalse(rs.next());
+    assertNotNull(msg);
+    assertFalse(msg.isEmpty());
+    assertTrue(conn.isValid(0));
+    ```
+- id: jdbc-java-no-redundant-assertions
+  rule: |
+    **OBJECTIVE**: Remove assertions that can never fail so tests express real invariants, not noise.
+
+    **REQUIREMENT**: Flag assertions that are vacuous given the surrounding control flow. This is a scope split from `jdbc-java-no-weak-null-assertions`: those checks are not "weak" phrasings of a real condition — they are unnecessary. Common cases:
+    - `assertNotNull(e)` on the value returned by `assertThrows(...)`. JUnit 5's `assertThrows` never returns null, so the check adds nothing — assert a meaningful property of the exception instead (`getSQLState()`, `getErrorCode()`, message content).
+    - `assertNotNull(x)` immediately after `x` was created with `new` or returned by an API contractually guaranteed non-null (e.g. a method whose body is `return new ByteArrayInputStream(...)` and which throws rather than returning null on failure).
+    - Duplicate assertions on the same expression with no intervening state change.
+    - A whole `@Test` whose only assertion is `assertNotNull` (or an equivalent existence check) on a return value that other tests in the same class already call and inspect. Delete the test; do not invent a replacement assertion.
+
+    **HOW TO FIX — decide in this order (do NOT skip to inventing a replacement):**
+    1. **Prefer removal when the value is already exercised.** If a later assertion in the same test already dereferences or compares the value (e.g. `assertArrayEquals(expected, readAll(stream))` reads the stream, `assertEquals(x, obj.field())` uses the object), the non-null / existence property is already covered. Recommend deleting the redundant assertion outright and say which existing assertion already covers it. Do NOT manufacture an extra assertion in this case. The same applies to a whole test that only asserts existence when sibling tests already inspect that API.
+    2. **Only suggest a replacement when the value is otherwise unasserted.** If nothing else in the test inspects the value, suggest one assertion on a property that could realistically fail (`getSQLState()`, `getErrorCode()`, message content, field values, byte contents).
+
+    **CONSTRAINTS ON ANY SUGGESTED REPLACEMENT** (a bad suggestion is worse than staying silent — the LLM judge penalizes it):
+    - The replacement MUST itself comply with `jdbc-java-no-weak-null-assertions`. Never suggest `assertFalse(x == 0)`, `assertTrue(x != 0)`, or `assertTrue(!cond)` — use the direct typed form (`assertTrue(x > 0)`, `assertNotEquals(0, x)`, `assertFalse(cond)`).
+    - Do NOT base a replacement on APIs that don't reliably reflect the property being tested. In particular, `InputStream.available()` is only a hint (it may legally return `0` for a non-empty stream), so never suggest `available()`-based checks to prove a stream is non-empty — compare the actual bytes read instead.
+    - Suggest exactly one replacement, not a menu. If removal is the right fix (case 1 above), recommend removal only and do not also offer a replacement.
+
+    **SEVERITY NOTE**: Medium — vacuous assertions mislead readers about coverage but never cause an incorrect pass.
+
+    ❌ **BAD (vacuous assertion):**
+    ```java
+    SQLException e = assertThrows(SQLException.class, () -> stmt.execute("SELECT * FROM missing"));
+    assertNotNull(e);  // assertThrows already guarantees a non-null return
+    ```
+
+    ✅ **GOOD (replace — value was otherwise unasserted):**
+    ```java
+    SQLException e = assertThrows(SQLException.class, () -> stmt.execute("SELECT * FROM missing"));
+    assertEquals("42S02", e.getSQLState());
+    ```
+
+    ❌ **BAD (vacuous assertion whose value is already exercised below):**
+    ```java
+    InputStream result = conn.downloadStream(stage, file, false);  // never returns null; throws on failure
+    assertNotNull(result);                                         // redundant
+    assertArrayEquals(expected, result.readAllBytes());            // already reads/verifies the stream
+    ```
+
+    ✅ **GOOD (remove — do not invent a replacement):**
+    ```java
+    InputStream result = conn.downloadStream(stage, file, false);
+    assertArrayEquals(expected, result.readAllBytes());  // covers non-null and contents
+    ```
+
+    ❌ **BAD (reviewer suggestion that violates a sibling rule / uses an unreliable API):**
+    ```java
+    // "Replace assertNotNull(result) with assertFalse(result.available() == 0)"
+    // — assertFalse(x == 0) is a weak assertion, and available() may return 0 for a non-empty stream.
+    ```
+
+    ❌ **BAD (whole test redundant given siblings):**
+    ```java
+    @Test
+    void testGetPropertyInfo() throws SQLException {
+        DriverPropertyInfo[] props = driver.getPropertyInfo(url, new Properties());
+        assertNotNull(props);
+    }
+    // sibling tests already call getPropertyInfo and inspect the array
+    ```
+
+    ✅ **GOOD:** delete the test. The siblings already cover the API.
+
+    **EXAMPLES / NOT EXCLUSIVE**: The `getPropertyInfo` sample is one illustration of a
+    redundant whole-test existence check. Flag the same pattern for any API whose siblings
+    already inspect the return value — not only `getPropertyInfo`.
+
+    **DO NOT FLAG**: a first/smoke test in a class that has no sibling coverage of that API yet; a test that uses a distinct input even if it also checks non-null.
+- id: jdbc-java-no-bare-system-out-println
+  rule: |
+    **OBJECTIVE**: Keep test output clean and actionable (aligned with `test-diagnostic-output` in `odbc-tests-cpp.yaml`).
+
+    **REQUIREMENT**: Do not add bare `System.out.println` / `System.err.println` debug logging in JDBC tests or test utilities. Attach diagnostic context via assertion messages, JUnit `@DisplayName`, or structured logging that only emits on failure.
+
+    ❌ **BAD:**
+    ```java
+    System.out.println("SQLState: " + ex.getSQLState());
+    assertEquals("08001", ex.getSQLState());
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    assertEquals("08001", ex.getSQLState(),
+        () -> "Unexpected SQLState after connection failure: " + ex.getSQLState());
+    ```
+- id: jdbc-java-test-name-matches-behavior
+  rule: |
+    **OBJECTIVE**: Ensure test names accurately describe assertions (from `test-naming-accuracy` in `odbc-tests-cpp.yaml`).
+
+    **REQUIREMENT**: If a test name claims idempotency, success, or a specific error code, the assertions MUST match. When assertions change, update the method name and `@DisplayName`. Misleading names cause engineers to misunderstand coverage.
+
+    ❌ **BAD:**
+    ```java
+    @Test
+    void shouldAllowRepeatedCloseWithoutError() throws Exception {
+        conn.close();
+        assertThrows(SQLException.class, conn::close);  // name says "without error"
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @Test
+    void shouldThrowSQLExceptionOnSecondClose() throws Exception {
+        conn.close();
+        assertThrows(SQLException.class, conn::close);
+    }
+    ```
+- id: jdbc-java-empty-connection-property-via-properties
+  rule: |
+    **OBJECTIVE**: Tests that claim to exercise an empty connection-property value must actually
+    send that empty value, not the unspecified-property path.
+
+    **REQUIREMENT**: When a test name or assertion is about any empty connection-property
+    value a test claims to exercise (for example `authenticator=""`, `user=""`), put the
+    empty string on the `Properties` argument. Do not encode it as a URL query pair
+    (`?authenticator=` or `?key=`). `ConnectionString.applyQueryParameters` skips empty
+    query values today, so `?key=` never lands in the resolved parameters and the test
+    runs the unspecified/absent path instead.
+
+    If the empty query pair is what you meant to test (parser skip), name the test for
+    unspecified or absent, not empty.
+
+    **EXAMPLES / NOT EXCLUSIVE**: `authenticator=""` is a sample empty property, not the
+    only one. Flag the same URL-vs-Properties fixture for any empty connection-property
+    value the test claims to exercise, regardless of the property name or the JDBC method
+    under test (`Driver.getPropertyInfo` in the sample is one call site).
+
+    **DIFF SCOPE**: New or renamed tests, or tests whose URL / `Properties` fixture changed in
+    this PR. Do not flag an untouched test whose name already says unspecified/absent.
+
+    **PRIORITY**: Medium — a misleading empty-value fixture hides a real coverage gap.
+
+    ❌ **BAD:**
+    ```java
+    @Test
+    void shouldReportMissingCredentialsForEmptyAuthenticator() throws SQLException {
+        DriverPropertyInfo[] properties =
+            driver.getPropertyInfo(
+                "jdbc:snowflake://test.snowflakecomputing.com?authenticator=",
+                new Properties());
+        ...
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @Test
+    void shouldReportMissingCredentialsForEmptyAuthenticator() throws SQLException {
+        Properties info = new Properties();
+        info.setProperty("authenticator", "");
+        DriverPropertyInfo[] properties =
+            driver.getPropertyInfo("jdbc:snowflake://test.snowflakecomputing.com", info);
+        ...
+    }
+    ```
+- id: jdbc-java-parameterized-test-includes-edge-cases
+  rule: |
+    **OBJECTIVE**: Ensure parameterized JDBC tests exercise boundary inputs, not only happy paths.
+
+    **REQUIREMENT**: `@ParameterizedTest` sources (`@CsvSource`, `@MethodSource`, `@EnumSource`) SHOULD include edge cases relevant to the JDBC API under test: empty string, zero-length binary, NULL bind values, max/min numeric bounds, and invalid type coercion inputs where applicable.
+
+    ❌ **BAD:**
+    ```java
+    @ParameterizedTest
+    @CsvSource({"1", "2", "3"})
+    void shouldBindInteger(String value) { ... }
+    // no NULL / empty / overflow cases
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    static Stream<Arguments> bindValues() {
+        return Stream.of(
+            Arguments.of(1, false),
+            Arguments.of(0, false),
+            Arguments.of(null, true));
+    }
+    ```
+- id: jdbc-java-test-coverage-error-paths
+  rule: |
+    **OBJECTIVE**: Encourage tests that cover failure modes and JDBC edge cases (aligned with `test-coverage-gap` in `odbc-tests-cpp.yaml`).
+
+    **REQUIREMENT**: When adding JDBC API coverage, include tests for:
+    - Documented error paths (`SQLException` with expected SQLSTATE),
+    - Empty result sets and NULL column values,
+    - Invalid handle/state usage where the spec defines behavior (closed connection, closed statement),
+    - Both supported and `@SkipNewDriver`-documented unsupported code paths.
+
+    Flag PRs that add happy-path-only tests for complex APIs (async queries, multistatement, metadata, batch) without any negative or boundary case.
+
+    ❌ **BAD:**
+    ```java
+    @Test
+    void shouldExecuteBatch() throws Exception {
+        stmt.addBatch("INSERT INTO t VALUES (1)");
+        assertArrayEquals(new int[] {1}, stmt.executeBatch());
+        // no test for empty batch, failed statement in batch, or closed statement
+    }
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    @Test
+    void shouldRejectBatchAfterStatementClosed() throws Exception {
+        stmt.addBatch("INSERT INTO t VALUES (1)");
+        stmt.close();
+        assertThrows(SQLException.class, stmt::executeBatch);
+    }
+    ```
+- id: jdbc-java-no-hardcoded-credentials-in-tests
+  rule: |
+    **OBJECTIVE**: Prevent accidental commit of secrets in JDBC test fixtures (spirit of `jdbc-security.yaml`, adapted for Java tests).
+
+    **REQUIREMENT**: Test code MUST NOT contain hardcoded passwords, PATs, private keys, or session tokens that look like *real* secrets (high-entropy strings, PEM blocks, JWTs, base64 tokens). Load real credentials from environment variables, CI-injected secrets, or existing test parameter files (`parameters.json` via test harness).
+
+    **PLACEHOLDER ALLOWLIST — do NOT flag these**: obvious throwaway test values are fine when the credential is never expected to authenticate. Treat as allowed any string that is (case-insensitively) or contains a recognizable test-placeholder token: `dummy`, `invalid`, `test`, `test_password`, `password`, `fake`, `mock`, `example`, `changeme`, `xxx`, `redacted`, or the empty string. A short, low-entropy, human-readable literal like `"test_password"` is a placeholder, not a leaked secret.
+
+    **MOCK-CONTEXT SUPPRESSION — do NOT flag when auth is not real**: suppress the finding entirely when the surrounding test never sends the credential to a live server, e.g.:
+    - the test class name contains `Mock`, `Wiremock`, `Stub`, or `Fake`, or the file lives under a `wiremock`/`mock` test package;
+    - the method wires up mocked authentication (WireMock stubs, mocked `HttpClient`/session, injected fake token endpoint) so the literal is only ever matched against a stub;
+    - the value is a `private static final` constant with a placeholder-style name (`INVALID_TOKEN`, `TEST_PASSWORD`, `FAKE_PAT`).
+
+    Only raise a finding when a plausibly-real secret is set on a connection/session that reaches a real Snowflake endpoint. When unsure whether a value is a real secret, weigh entropy and format — flag PEM/JWT/base64/high-entropy strings; stay silent on short dictionary-word placeholders.
+
+    ❌ **BAD (real-looking secret on a live connection):**
+    ```java
+    props.setProperty("password", "MySecretP@ssw0rd");
+    props.setProperty("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+    ```
+
+    ✅ **GOOD (real credential injected):**
+    ```java
+    props.setProperty("password", System.getenv("SNOWFLAKE_TEST_PASSWORD"));
+    props.setProperty("token", INVALID_TOKEN_PLACEHOLDER);  // exercises auth rejection
+    ```
+
+    ✅ **ALSO FINE — do NOT flag (placeholder in a fully-mocked test):**
+    ```java
+    // class WiremockLoginTest — auth is stubbed, value never reaches a server
+    props.setProperty("password", "test_password");
+    ```
+- id: jdbc-java-nullable-getter-file-audit
+  rule: |
+    **OBJECTIVE** (alternative to per-line `jdbc-java-wasnull-after-nullable-getter`): Audit JDBC test files for systematic NULL-handling gaps instead of flagging each getter call independently.
+
+    **REQUIREMENT**: When reviewing a test file, scan all `ResultSet` nullable getter usages (`getString`, `getObject`, `getInt`, `getLong`, `getDouble`, etc.). If any read lacks a subsequent `wasNull()` assertion, produce exactly one file-level finding.
+
+    **COMMENT TEMPLATE**:
+    "This file has N nullable getter reads without `wasNull()` verification at lines [list]. JDBC requires explicit nullability checks — add `assertTrue(rs.wasNull())` after NULL reads and `assertFalse(rs.wasNull())` after non-null reads. Patterns include `assertNull(rs.getString(...))`, `assertEquals(sentinel, rs.getInt(...))`, and similar."
+
+    **PRIORITY**: High when N >= 3 (systematic gap); Medium when N is 1-2.
+
+    Do not emit per-line comments for the same file in the same PR.
+- id: jdbc-java-sql-parameterization
+  rule: |
+    **OBJECTIVE**: Never interpolate variable values into SQL strings via `+` concatenation or
+    `String.format()`. Every variable value must reach the server as a binding, not as part of
+    the query text.
+
+    **REQUIREMENT**: Any `Statement.execute()`, `Statement.executeQuery()`,
+    `Statement.executeUpdate()`, `Connection.prepareStatement()`, or similar JDBC call that
+    includes a non-constant variable value in the SQL string is a finding. The correction
+    depends on position:
+
+    **Identifiers** (table, schema, stage, view, column name) in source (`src/main/java`):
+    Use `IDENTIFIER(?)` with `PreparedStatement.setString(n, name)`.
+
+    **Data values** (WHERE clause values, INSERT data, option arguments):
+    Use `PreparedStatement` with `?` placeholders and `setString()` / `setInt()` / etc.
+
+    **Mixed case** — `PreparedStatement` already used for data `?` but a table/schema name is
+    still concatenated:
+    Flag the identifier concatenation; the data binding is correct but the fix is incomplete.
+
+    **When binding is not possible** (syntax does not support it — e.g. `PUT`/`GET` stage-path
+    arguments, `@stage` references in `COPY INTO FROM`):
+    Leave the interpolation in place but add an inline comment explaining why binding cannot
+    be used and noting the mitigating factor (e.g. internally-generated name, escaping
+    applied). Do not silently interpolate without justification.
+
+    **Exemptions** — raw interpolation is acceptable without a comment when:
+    - The interpolated token is a hard-coded string literal constant defined in the same file.
+    - A SQL structural keyword assembled purely from hard-coded string fragments with no
+      variable interpolation (e.g. `IF NOT EXISTS`, `CREATE TEMPORARY`).
+    - **Test code only** (`src/test/java`): an identifier produced by a test-harness helper
+      such as `generateUniqueName()` or `uniqueStageName()`. These are internally controlled
+      names with no user-supplied input; SQL injection is not the threat model for test
+      fixtures.
+
+    ❌ **BAD:**
+    ```java
+    // Identifier concatenated directly
+    stmt.executeQuery("SELECT COUNT(*), SUM(v) FROM " + tableName);
+    stmt.executeQuery("SELECT n, s FROM " + tableName + " ORDER BY n");
+    ddl.execute("CREATE TEMP TABLE " + table + " (col VECTOR(INT, 3))");
+
+    // Mixed: data values bound correctly, but identifier is still concatenated
+    conn.prepareStatement("INSERT INTO " + tableName + " (n, s) VALUES (?, ?)");
+
+    // String.format with variable
+    stmt.executeQuery(String.format("SELECT * FROM %s WHERE id = %d", tableName, userId));
+
+    // Session parameter name from a variable — flag unless the variable is a hard-coded constant
+    alter.execute("ALTER SESSION SET " + formatParam + " = '" + formatValue + "'");
+    ```
+
+    ✅ **GOOD:**
+    ```java
+    // Identifier via IDENTIFIER(?)
+    try (PreparedStatement ps = conn.prepareStatement(
+            "SELECT COUNT(*), SUM(v) FROM IDENTIFIER(?)")) {
+        ps.setString(1, tableName);
+        try (ResultSet rs = ps.executeQuery()) { ... }
+    }
+
+    // Mixed fix: bind the identifier too
+    try (PreparedStatement ps = conn.prepareStatement(
+            "INSERT INTO IDENTIFIER(?) (n, s) VALUES (?, ?)")) {
+        ps.setString(1, tableName);
+        ps.setInt(2, n);
+        ps.setString(3, s);
+        ps.executeBatch();
+    }
+
+    // DDL with hard-coded parameter name — exempt, no variable interpolation
+    stmt.execute("ALTER SESSION SET ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = TRUE");
+
+    // PUT: binding not supported — comment required
+    stmt.execute("PUT 'file://" + escapedUri + "' @" + stageName + " PARALLEL=4 ...");
+    // PUT syntax does not support IDENTIFIER(?) or ? bindings for stage paths or file URIs.
+    // stageName is a connector-internal name produced by generateUniqueName();
+    // escapedUri is produced by escapePathForSql() which escapes backslashes and quotes.
+    ```
