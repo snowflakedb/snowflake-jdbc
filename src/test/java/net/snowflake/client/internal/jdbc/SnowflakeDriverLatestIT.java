@@ -1931,6 +1931,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           assertTrue(rs.next(), "Warmup GET returned no rows");
           assertEquals("DOWNLOADED", rs.getString("status"));
         }
+        File downloadedFile = new File(destFolder, testFile.getName());
+        assertTrue(
+            FileUtils.contentEquals(testFile, downloadedFile),
+            "Downloaded content does not equal uploaded content");
         waitForTransferThreadCount(getParallelism);
 
         long baselineTransferThreads = countTransferManagerThreads();
