@@ -6,7 +6,15 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
-MVNW_EXE=$SOURCE_ROOT/mvnw
+# Linux test images already install Maven (see ci/image Dockerfiles). Use it so
+# GitHub Actions does not download apache-maven from Maven Central (HTTP 429).
+# Mac/host jobs still use the wrapper.
+if [[ -x /usr/local/bin/mvn ]]; then
+    MVN_EXE=/usr/local/bin/mvn
+else
+    MVN_EXE=$SOURCE_ROOT/mvnw
+fi
+echo "[INFO] Using Maven: $MVN_EXE"
 
 source "$SOURCE_ROOT/ci/maven_jenkins_settings.sh"
 
@@ -79,7 +87,7 @@ cd $SOURCE_ROOT
 # Retry dependency:go-offline up to 3 times if it fails
 for attempt in 1 2 3; do
     echo "[INFO] maven dependency:go-offline attempt $attempt/3"
-    if "$MVNW_EXE" $MVN_SETTINGS_ARG --batch-mode --show-version dependency:go-offline; then
+    if "$MVN_EXE" $MVN_SETTINGS_ARG --batch-mode --show-version dependency:go-offline; then
         break
     fi
     if [ $attempt -eq 3 ]; then
@@ -91,9 +99,9 @@ done
 
 if [[ "$is_old_driver" == "true" ]]; then
     pushd TestOnly >& /dev/null
-        JDBC_VERSION=$($MVNW_EXE $MVN_SETTINGS_ARG org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+        JDBC_VERSION=$($MVN_EXE $MVN_SETTINGS_ARG org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
         echo "[INFO] Run JDBC $JDBC_VERSION tests"
-        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+        $MVN_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
             -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
@@ -105,7 +113,7 @@ if [[ "$is_old_driver" == "true" ]]; then
 elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
-        $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+        $MVN_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
             -Dskip.unitTests=true \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
@@ -117,7 +125,7 @@ elif [[ "$JDBC_TEST_SUITES" == "FipsTestSuite" ]]; then
     popd >& /dev/null
 else
     echo "[INFO] Run $JDBC_TEST_SUITES tests"
-    $MVNW_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
+    $MVN_EXE $MVN_SETTINGS_ARG -DjenkinsIT \
         -Dskip.unitTests=true \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \
