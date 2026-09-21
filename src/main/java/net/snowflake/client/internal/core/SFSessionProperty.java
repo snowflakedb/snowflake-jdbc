@@ -40,6 +40,7 @@ public enum SFSessionProperty {
   WORKLOAD_IDENTITY_AWS_EXTERNAL_ID("workloadIdentityAwsExternalId", false, String.class),
   WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN(
       "workloadIdentityAwsUseOutboundToken", false, Boolean.class),
+  WORKLOAD_IDENTITY_HOST("workloadIdentityHost", false, String.class, "workload_identity_host"),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),

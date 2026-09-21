@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.5-SNAPSHOT
+  - Added `workloadIdentityHost` connection property that overrides the STS host used by AWS Workload Identity Federation, for endpoints the driver cannot derive from the region (such as an interface VPC endpoint). The default STS host is now resolved via the AWS SDK so partitions that do not use `amazonaws.com` (ISO, European Sovereign Cloud, ...) get the correct hostname. A privately routed host cannot be reached by Snowflake on the default GetCallerIdentity path, so a VPC or PrivateLink STS endpoint also requires `workloadIdentityAwsUseOutboundToken=true` (SNOW-4017201).
   - Added `ci/scripts/generate_sbom.sh`, which generates a CycloneDX SBOM (`target/bom.json`) covering both the driver and FIPS JAR dependency trees; not part of the release artifacts.
   - Removed the unused Conscrypt library (`org.conscrypt:conscrypt-openjdk-uber`) from the self-contained (fat) and FIPS JARs. It was only transitive weight from `google-cloud-storage` and is never used by the driver (SNOW-4071987).
   - Fixed the `platformDetectionTimeoutMs` connection property having no effect: platform detection always ran with the hardcoded 200 ms default, so the documented `platformDetectionTimeoutMs=0` setting, which skips the instance-metadata probes and keeps only the environment-variable checks, was unreachable from configuration (snowflakedb/snowflake-jdbc#9).

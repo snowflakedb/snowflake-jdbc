@@ -764,6 +764,10 @@
       <artifactId>sts</artifactId>
     </dependency>
     <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>endpoints-spi</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-core</artifactId>
       <version>${azure.core.version}</version>

@@ -77,6 +77,7 @@ public class SFLoginInput {
   private List<String> workloadIdentityImpersonationPath = Collections.emptyList();
   private String workloadIdentityAwsExternalId;
   private boolean workloadIdentityAwsUseOutboundToken = false;
+  private String workloadIdentityHost;
 
   // OAuth
   private int redirectUriPort = -1;
@@ -657,6 +658,15 @@ public class SFLoginInput {
   public SFLoginInput setWorkloadIdentityAwsUseOutboundToken(
       boolean workloadIdentityAwsUseOutboundToken) {
     this.workloadIdentityAwsUseOutboundToken = workloadIdentityAwsUseOutboundToken;
+    return this;
+  }
+
+  public String getWorkloadIdentityHost() {
+    return workloadIdentityHost;
+  }
+
+  public SFLoginInput setWorkloadIdentityHost(String workloadIdentityHost) {
+    this.workloadIdentityHost = workloadIdentityHost;
     return this;
   }
 

@@ -35,6 +35,7 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
 
   @Override
   public WorkloadIdentityAttestation createAttestation() throws SFException {
+    attestationService.setLoginInput(loginInput);
     attestationService.initializeSignerRegion();
     AwsCredentials awsCredentials;
 
@@ -63,8 +64,9 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
     }
 
     logger.debug("Using AWS STS GetCallerIdentity for WIF attestation");
-    String stsHostname = getStsHostname(region.id());
-    SdkHttpRequest request = createStsRequest(stsHostname);
+    AwsStsEndpoint endpoint =
+        AwsStsEndpoint.resolve(loginInput.getWorkloadIdentityHost(), region.id());
+    SdkHttpRequest request = createStsRequest(endpoint);
     SdkHttpRequest signedRequest = attestationService.signRequestWithSigV4(request, awsCredentials);
 
     String credential = createBase64EncodedRequestCredential(signedRequest);
@@ -72,21 +74,17 @@ public class AwsIdentityAttestationCreator implements WorkloadIdentityAttestatio
         WorkloadIdentityProviderType.AWS, credential, Collections.emptyMap());
   }
 
-  private String getStsHostname(String region) {
-    String domain = region.startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
-    return String.format("sts.%s.%s", region, domain);
-  }
-
-  private SdkHttpRequest createStsRequest(String hostname) {
+  private SdkHttpRequest createStsRequest(AwsStsEndpoint endpoint) {
     String url =
         String.format(
-            "https://%s?Action=%s&Version=%s", hostname, GET_CALLER_IDENTITY_ACTION, API_VERSION);
+            "%s?Action=%s&Version=%s",
+            endpoint.getBaseUrl(), GET_CALLER_IDENTITY_ACTION, API_VERSION);
 
     SdkHttpFullRequest.Builder requestBuilder =
         SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.POST)
             .uri(URI.create(url))
-            .putHeader("Host", hostname)
+            .putHeader("Host", endpoint.getAuthority())
             .putHeader(
                 WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE_HEADER_NAME,
                 WorkloadIdentityUtil.SNOWFLAKE_AUDIENCE)

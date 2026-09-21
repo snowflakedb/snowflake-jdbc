@@ -22,6 +22,7 @@ import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.StsClientBuilder;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
 import software.amazon.awssdk.services.sts.model.Credentials;
@@ -36,6 +37,13 @@ public class AwsAttestationService {
   private static Region region;
 
   private volatile AwsV4HttpSigner aws4Signer;
+  private SFLoginInput loginInput;
+  private AwsStsEndpoint stsEndpointOverride;
+
+  void setLoginInput(SFLoginInput loginInput) {
+    this.loginInput = loginInput;
+    this.stsEndpointOverride = null;
+  }
 
   private AwsV4HttpSigner getSigner() {
     if (aws4Signer == null) {
@@ -120,6 +128,8 @@ public class AwsAttestationService {
       return AwsSessionCredentials.create(
           credentials.accessKeyId(), credentials.secretAccessKey(), credentials.sessionToken());
 
+    } catch (SFException e) {
+      throw e;
     } catch (Exception e) {
       logger.error("Failed to assume role: {} - {}", roleArn, e.getMessage());
       throw new SFException(
@@ -175,7 +185,7 @@ public class AwsAttestationService {
 
       return callerIdentity.arn();
 
-    } catch (Exception e) {
+    } catch (SFException | Exception e) {
       logger.debug("Failed to get caller identity ARN: {}", e.getMessage());
       return null;
     }
@@ -196,6 +206,8 @@ public class AwsAttestationService {
             "AWS STS GetWebIdentityToken returned an empty token");
       }
       return jwt;
+    } catch (SFException e) {
+      throw e;
     } catch (Exception e) {
       logger.debug("AWS STS GetWebIdentityToken call failed", e);
       throw new SFException(
@@ -205,11 +217,37 @@ public class AwsAttestationService {
     }
   }
 
-  StsClient createStsClient(AwsCredentials credentials, int timeoutMs) {
-    return StsClient.builder()
-        .credentialsProvider(StaticCredentialsProvider.create(credentials))
-        .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofMillis(timeoutMs)))
-        .region(getAWSRegion())
-        .build();
+  StsClient createStsClient(AwsCredentials credentials, int timeoutMs) throws SFException {
+    StsClientBuilder builder =
+        StsClient.builder()
+            .credentialsProvider(StaticCredentialsProvider.create(credentials))
+            .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofMillis(timeoutMs)))
+            .region(getAWSRegion());
+    applyStsEndpointOverride(builder);
+    return builder.build();
+  }
+
+  /**
+   * Pins the SDK STS client to {@code workloadIdentityHost} when set. FIPS and dualstack
+   * preferences are endpoint-selection inputs, not crypto settings; leaving them enabled would make
+   * the SDK resolver reject a custom host. When the host is unset the SDK continues to honour
+   * {@code AWS_USE_FIPS_ENDPOINT} and {@code AWS_USE_DUALSTACK_ENDPOINT}.
+   */
+  void applyStsEndpointOverride(StsClientBuilder builder) throws SFException {
+    if (loginInput == null || SnowflakeUtil.isNullOrEmpty(loginInput.getWorkloadIdentityHost())) {
+      return;
+    }
+    if (stsEndpointOverride == null) {
+      stsEndpointOverride =
+          AwsStsEndpoint.parseWorkloadIdentityHost(loginInput.getWorkloadIdentityHost());
+    }
+    builder
+        .endpointOverride(stsEndpointOverride.getBaseUri())
+        .fipsEnabled(false)
+        .dualstackEnabled(false);
+    if (!SnowflakeUtil.isNullOrEmpty(SnowflakeUtil.systemGetEnv("AWS_USE_FIPS_ENDPOINT"))
+        || !SnowflakeUtil.isNullOrEmpty(SnowflakeUtil.systemGetEnv("AWS_USE_DUALSTACK_ENDPOINT"))) {
+      logger.warn("workloadIdentityHost is set; FIPS/dualstack preferences no longer apply to STS");
+    }
   }
 }
