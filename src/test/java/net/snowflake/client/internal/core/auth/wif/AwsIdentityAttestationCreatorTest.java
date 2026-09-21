@@ -65,6 +65,60 @@ public class AwsIdentityAttestationCreatorTest {
         Region.CN_NORTHWEST_1, "sts.cn-northwest-1.amazonaws.com.cn");
   }
 
+  @Test
+  public void shouldReturnProperAttestationWithIsoRegion()
+      throws JsonProcessingException, SFException {
+    shouldReturnProperAttestationWithSignedRequestCredential(
+        Region.of("us-iso-east-1"), "sts.us-iso-east-1.c2s.ic.gov");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldReturnProperAttestationWithConfiguredHost()
+      throws JsonProcessingException, SFException {
+    AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
+        .when(attestationServiceSpy)
+        .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
+    Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityHost("sts.custom.example.com");
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceSpy, loginInput);
+    WorkloadIdentityAttestation attestation = attestationCreator.createAttestation();
+
+    assertNotNull(attestation);
+    Base64.Decoder decoder = Base64.getDecoder();
+    String json = new String(decoder.decode(attestation.getCredential()));
+    Map<String, Object> credentialMap = new ObjectMapper().readValue(json, HashMap.class);
+    assertEquals(
+        "https://sts.custom.example.com?Action=GetCallerIdentity&Version=2011-06-15",
+        credentialMap.get("url"));
+    Map<String, String> headersMap = (Map<String, String>) credentialMap.get("headers");
+    assertEquals("sts.custom.example.com", headersMap.get("Host"));
+  }
+
+  @Test
+  public void shouldRejectInvalidWorkloadIdentityHostScheme() {
+    AwsAttestationService attestationServiceSpy = Mockito.spy(AwsAttestationService.class);
+    Mockito.doReturn(AwsSessionCredentials.create("abc", "abc", "aws-session-token"))
+        .when(attestationServiceSpy)
+        .getAWSCredentials();
+    Mockito.doNothing().when(attestationServiceSpy).initializeSignerRegion();
+    Mockito.doReturn(Region.US_EAST_1).when(attestationServiceSpy).getAWSRegion();
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput.setWorkloadIdentityHost("ftp://sts.custom.example.com");
+
+    AwsIdentityAttestationCreator attestationCreator =
+        new AwsIdentityAttestationCreator(attestationServiceSpy, loginInput);
+    SFException thrown = assertThrows(SFException.class, attestationCreator::createAttestation);
+    assertTrue(thrown.getMessage().contains("must use https or http"));
+  }
+
   @SuppressWarnings("unchecked")
   private void shouldReturnProperAttestationWithSignedRequestCredential(
       Region region, String expectedStsUrl) throws JsonProcessingException, SFException {

@@ -33,6 +33,7 @@ import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.http.HttpHeadersCustomizer;
 import net.snowflake.client.api.resultset.QueryStatus;
 import net.snowflake.client.internal.config.SFClientConfig;
+import net.snowflake.client.internal.core.auth.wif.AwsStsEndpoint;
 import net.snowflake.client.internal.core.crl.CRLValidator;
 import net.snowflake.client.internal.core.minicore.MinicoreTelemetry;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
@@ -617,6 +618,33 @@ public class SFSession extends SFBaseSession {
     }
   }
 
+  /**
+   * {@code workloadIdentityHost} is an AWS STS override. An empty provider means the value is
+   * unused — a host left in a shared profile must not break non-WIF connections. Only a provider
+   * explicitly set to something other than AWS is a conflict. The host string itself is parsed only
+   * when this connection is using WORKLOAD_IDENTITY, so a typo fails at {@code getConnection}
+   * rather than later in attestation.
+   */
+  @VisibleForTesting
+  static void checkWorkloadIdentityHostSupported(Map<SFSessionProperty, Object> props)
+      throws SFException {
+    String host = (String) props.get(SFSessionProperty.WORKLOAD_IDENTITY_HOST);
+    if (isNullOrEmpty(host)) {
+      return;
+    }
+    String provider = (String) props.get(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER);
+    if (!isNullOrEmpty(provider) && !"aws".equalsIgnoreCase(provider)) {
+      throw new SFException(
+          ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR,
+          "Connection property workloadIdentityHost is supported only for AWS");
+    }
+    if (AuthenticatorType.WORKLOAD_IDENTITY
+        .name()
+        .equalsIgnoreCase((String) props.get(SFSessionProperty.AUTHENTICATOR))) {
+      AwsStsEndpoint.parseWorkloadIdentityHost(host);
+    }
+  }
+
   public synchronized void open() throws SFException, SnowflakeSQLException {
     open(null);
   }
@@ -691,6 +719,7 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getProxyHttpProtocol());
 
     checkAwsExternalIdEnabled(connectionPropertiesMap);
+    checkWorkloadIdentityHostSupported(connectionPropertiesMap);
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
@@ -763,6 +792,8 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(
                         SFSessionProperty.WORKLOAD_IDENTITY_AWS_USE_OUTBOUND_TOKEN))
                 : false)
+        .setWorkloadIdentityHost(
+            (String) connectionPropertiesMap.get(SFSessionProperty.WORKLOAD_IDENTITY_HOST))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(

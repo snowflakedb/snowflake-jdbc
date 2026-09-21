@@ -298,4 +298,63 @@ public class SFSessionPropertyTest {
     // Should not throw — empty string is treated the same as not provided
     SFSession.checkAwsExternalIdEnabled(props);
   }
+
+  @Test
+  public void testWorkloadIdentityHostPropertyRegistered() {
+    SFSessionProperty prop = SFSessionProperty.lookupByKey("workloadIdentityHost");
+    assertNotNull(prop);
+    assertEquals(SFSessionProperty.WORKLOAD_IDENTITY_HOST, prop);
+    assertEquals(String.class, prop.getValueType());
+    assertEquals(
+        SFSessionProperty.WORKLOAD_IDENTITY_HOST,
+        SFSessionProperty.lookupByKey("workload_identity_host"));
+  }
+
+  @Test
+  public void shouldThrowWhenWorkloadIdentityHostSetForNonAwsProvider() {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_HOST, "sts.custom.example.com");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER, "GCP");
+
+    SFException e =
+        assertThrows(SFException.class, () -> SFSession.checkWorkloadIdentityHostSupported(props));
+    assertThat(e.getVendorCode(), is(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR.getMessageCode()));
+  }
+
+  @Test
+  public void shouldAcceptWorkloadIdentityHostForAwsProvider() throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_HOST, "sts.custom.example.com");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER, "AWS");
+    SFSession.checkWorkloadIdentityHostSupported(props);
+  }
+
+  @Test
+  public void shouldAcceptWorkloadIdentityHostWhenProviderUnset() throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_HOST, "sts.custom.example.com");
+    SFSession.checkWorkloadIdentityHostSupported(props);
+  }
+
+  @Test
+  public void shouldRejectMalformedWorkloadIdentityHostWhenWifAuthenticator() {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.AUTHENTICATOR, "WORKLOAD_IDENTITY");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_PROVIDER, "AWS");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_HOST, "ftp://sts.custom.example.com");
+
+    SFException e =
+        assertThrows(SFException.class, () -> SFSession.checkWorkloadIdentityHostSupported(props));
+    assertThat(e.getVendorCode(), is(ErrorCode.WORKLOAD_IDENTITY_FLOW_ERROR.getMessageCode()));
+    assertTrue(e.getMessage().contains("must use https or http"));
+  }
+
+  @Test
+  public void shouldIgnoreMalformedWorkloadIdentityHostWhenNotWifAuthenticator()
+      throws SFException {
+    Map<SFSessionProperty, Object> props = new HashMap<>();
+    props.put(SFSessionProperty.AUTHENTICATOR, "snowflake");
+    props.put(SFSessionProperty.WORKLOAD_IDENTITY_HOST, "ftp://sts.custom.example.com");
+    SFSession.checkWorkloadIdentityHostSupported(props);
+  }
 }
