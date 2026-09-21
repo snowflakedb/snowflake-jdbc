@@ -58,6 +58,8 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
 
   private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
+  private static final String GCS_METADATA_PREFIX = "x-goog-meta-";
+
   private final S3AsyncClient amazonClient;
 
   GCSAccessStrategyAwsSdk(StageInfo stage, SFBaseSession session) throws SnowflakeSQLException {
@@ -156,16 +158,28 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
             .join();
 
     S3ObjectMetadata metadata = new S3ObjectMetadata(response);
-
-    Map<String, String> userMetadata =
-        response.metadata().entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith("x-goog-meta-"))
-            .collect(
-                Collectors.toMap(
-                    e -> e.getKey().replaceFirst("x-goog-meta-", ""), Map.Entry::getValue));
-
-    metadata.setUserMetadata(userMetadata);
+    metadata.setUserMetadata(userMetadata(response));
     return metadata;
+  }
+
+  /**
+   * Reads the user metadata GCS returns as {@code x-goog-meta-*} response headers, keyed without
+   * that prefix.
+   *
+   * <p>The raw headers are the only place this metadata is readable on this path: the S3 model maps
+   * only {@code x-amz-meta-*} into {@link HeadObjectResponse#metadata()}, which GCS never sends, so
+   * that map is always empty here. An empty result silently disables client-side decryption in
+   * {@code SnowflakeGCSClient.download}, which then writes ciphertext to the destination file and
+   * reports the GET as successful.
+   */
+  static Map<String, String> userMetadata(HeadObjectResponse response) {
+    return response.sdkHttpResponse().headers().entrySet().stream()
+        .filter(entry -> entry.getKey().toLowerCase().startsWith(GCS_METADATA_PREFIX))
+        .filter(entry -> !entry.getValue().isEmpty())
+        .collect(
+            Collectors.toMap(
+                entry -> entry.getKey().substring(GCS_METADATA_PREFIX.length()),
+                entry -> entry.getValue().get(0)));
   }
 
   @Override
@@ -222,7 +236,7 @@ class GCSAccessStrategyAwsSdk implements GCSAccessStrategy {
     HeadObjectResponse meta = metaFuture.join();
     InputStream stream = streamFuture.join();
 
-    Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.metadata());
+    Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(userMetadata(meta));
 
     return SFPair.of(stream, metaMap);
   }
