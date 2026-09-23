@@ -351,6 +351,15 @@ public class SessionUtilExternalBrowserTest {
     assertEquals("slash_token", result.token);
   }
 
+  @Test
+  public void testAuthenticateAcceptsUnderscoreHostOrigin() throws Throwable {
+    CallbackResult result =
+        driveRealSocketCallbacks(
+            "https://foo_bar.snowflakecomputing.com/",
+            postRequest("underscore_token", "https://foo_bar.snowflakecomputing.com", "\r\n"));
+    assertEquals("underscore_token", result.token);
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {

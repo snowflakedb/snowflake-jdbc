@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -590,15 +592,18 @@ public class SessionUtilExternalBrowser {
 
   private static boolean originMatchesServer(String requestOrigin, String serverUrl) {
     try {
-      URI origin = new URI(requestOrigin);
-      URI server = new URI(serverUrl);
+      URL origin = new URL(requestOrigin);
+      URL server = new URL(serverUrl);
       return isSerializedHttpOrigin(origin)
-          && isHttpScheme(server.getScheme())
-          && origin.getScheme().equalsIgnoreCase(server.getScheme())
+          && isHttpScheme(server.getProtocol())
+          && origin.getProtocol().equalsIgnoreCase(server.getProtocol())
+          && origin.getHost() != null
+          && !origin.getHost().isEmpty()
           && server.getHost() != null
+          && !server.getHost().isEmpty()
           && origin.getHost().equalsIgnoreCase(server.getHost())
           && effectivePort(origin) == effectivePort(server);
-    } catch (URISyntaxException ex) {
+    } catch (MalformedURLException ex) {
       return false;
     }
   }
@@ -607,16 +612,16 @@ public class SessionUtilExternalBrowser {
    * A request Origin is scheme, host, and optional port only. Path may be empty or {@code /}; the
    * account URL may still carry its own path.
    */
-  private static boolean isSerializedHttpOrigin(URI origin) {
-    if (!isHttpScheme(origin.getScheme()) || origin.getHost() == null) {
+  private static boolean isSerializedHttpOrigin(URL origin) {
+    if (!isHttpScheme(origin.getProtocol())
+        || origin.getHost() == null
+        || origin.getHost().isEmpty()) {
       return false;
     }
-    if (origin.getRawUserInfo() != null
-        || origin.getRawQuery() != null
-        || origin.getRawFragment() != null) {
+    if (origin.getUserInfo() != null || origin.getQuery() != null || origin.getRef() != null) {
       return false;
     }
-    String path = origin.getRawPath();
+    String path = origin.getPath();
     return path == null || path.isEmpty() || "/".equals(path);
   }
 
@@ -624,11 +629,11 @@ public class SessionUtilExternalBrowser {
     return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
   }
 
-  private static int effectivePort(URI uri) {
-    if (uri.getPort() >= 0) {
-      return uri.getPort();
+  private static int effectivePort(URL url) {
+    if (url.getPort() >= 0) {
+      return url.getPort();
     }
-    return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+    return "https".equalsIgnoreCase(url.getProtocol()) ? 443 : 80;
   }
 
   private static String extractHeader(String request, String headerName) {
