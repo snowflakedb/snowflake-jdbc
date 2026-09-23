@@ -592,14 +592,32 @@ public class SessionUtilExternalBrowser {
     try {
       URI origin = new URI(requestOrigin);
       URI server = new URI(serverUrl);
-      return isHttpScheme(origin.getScheme())
+      return isSerializedHttpOrigin(origin)
+          && isHttpScheme(server.getScheme())
           && origin.getScheme().equalsIgnoreCase(server.getScheme())
-          && origin.getHost() != null
+          && server.getHost() != null
           && origin.getHost().equalsIgnoreCase(server.getHost())
           && effectivePort(origin) == effectivePort(server);
     } catch (URISyntaxException ex) {
       return false;
     }
+  }
+
+  /**
+   * A request Origin is scheme, host, and optional port only. Path may be empty or {@code /}; the
+   * account URL may still carry its own path.
+   */
+  private static boolean isSerializedHttpOrigin(URI origin) {
+    if (!isHttpScheme(origin.getScheme()) || origin.getHost() == null) {
+      return false;
+    }
+    if (origin.getRawUserInfo() != null
+        || origin.getRawQuery() != null
+        || origin.getRawFragment() != null) {
+      return false;
+    }
+    String path = origin.getRawPath();
+    return path == null || path.isEmpty() || "/".equals(path);
   }
 
   private static boolean isHttpScheme(String scheme) {

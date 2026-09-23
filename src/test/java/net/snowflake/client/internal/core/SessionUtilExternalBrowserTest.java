@@ -342,13 +342,27 @@ public class SessionUtilExternalBrowserTest {
     assertEquals("default_port_token", defaultPort.token);
   }
 
+  @Test
+  public void testAuthenticateAcceptsOriginWithDefaultPath() throws Throwable {
+    CallbackResult result =
+        driveRealSocketCallbacks(
+            "https://testaccount.snowflakecomputing.com/session/authenticator-request",
+            postRequest("slash_token", "https://testaccount.snowflakecomputing.com/", "\r\n"));
+    assertEquals("slash_token", result.token);
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {
         "http://testaccount.snowflakecomputing.com",
         "https://other.snowflakecomputing.com",
         "https://testaccount.snowflakecomputing.com:8443",
-        "https://testaccount.snowflakecomputing.com.invalid"
+        "https://testaccount.snowflakecomputing.com.invalid",
+        "https://user@testaccount.snowflakecomputing.com",
+        "https://testaccount.snowflakecomputing.com/extra",
+        "https://testaccount.snowflakecomputing.com?q=1",
+        "https://testaccount.snowflakecomputing.com#frag",
+        "ftp://testaccount.snowflakecomputing.com"
       })
   public void testAuthenticateIgnoresForeignOriginThenAcceptsValidCallback(String foreignOrigin)
       throws Throwable {
