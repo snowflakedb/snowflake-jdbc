@@ -23,6 +23,7 @@ public class SnowflakeFileTransferConfig {
   private String streamingIngestClientName;
   private String streamingIngestClientKey;
   private boolean silentException;
+  private int fileBackedBufferThreshold;
 
   public SnowflakeFileTransferConfig(Builder builder) {
     this.metadata = builder.metadata;
@@ -39,6 +40,7 @@ public class SnowflakeFileTransferConfig {
     this.streamingIngestClientKey = builder.streamingIngestClientKey;
     this.streamingIngestClientName = builder.streamingIngestClientName;
     this.silentException = builder.silentException;
+    this.fileBackedBufferThreshold = builder.fileBackedBufferThreshold;
   }
 
   public SnowflakeFileTransferMetadata getSnowflakeFileTransferMetadata() {
@@ -97,6 +99,16 @@ public class SnowflakeFileTransferConfig {
     return silentException;
   }
 
+  /**
+   * Gets the threshold in bytes at which the internal buffer switches from heap memory to a temp
+   * file on disk during compression and digest computation.
+   *
+   * @return the threshold in bytes (always positive)
+   */
+  public int getFileBackedBufferThreshold() {
+    return fileBackedBufferThreshold;
+  }
+
   // Builder class
   public static class Builder {
     private SnowflakeFileTransferMetadata metadata = null;
@@ -113,6 +125,8 @@ public class SnowflakeFileTransferConfig {
     private String streamingIngestClientName;
     private String streamingIngestClientKey;
     private boolean silentException = false;
+    private int fileBackedBufferThreshold =
+        SnowflakeFileTransferAgent.DEFAULT_FILE_BACKED_BUFFER_THRESHOLD;
 
     public static Builder newInstance() {
       return new Builder();
@@ -224,6 +238,28 @@ public class SnowflakeFileTransferConfig {
      */
     public Builder setSilentException(boolean silentException) {
       this.silentException = silentException;
+      return this;
+    }
+
+    /**
+     * Sets the threshold in bytes at which the internal buffer switches from heap memory to a temp
+     * file on disk during compression and digest computation.
+     *
+     * <p>Below this threshold, stream data is held entirely in JVM heap memory. Above it, the data
+     * spills to a temporary file on local disk, which reduces heap pressure at the cost of disk
+     * I/O.
+     *
+     * <p>The default is 128 MiB ({@code 1 << 27}).
+     *
+     * @param fileBackedBufferThreshold the threshold in bytes; must be positive
+     * @return this builder
+     * @throws IllegalArgumentException if the value is not positive
+     */
+    public Builder setFileBackedBufferThreshold(int fileBackedBufferThreshold) {
+      if (fileBackedBufferThreshold <= 0) {
+        throw new IllegalArgumentException("fileBackedBufferThreshold must be positive");
+      }
+      this.fileBackedBufferThreshold = fileBackedBufferThreshold;
       return this;
     }
   }

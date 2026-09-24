@@ -88,9 +88,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
-  // We will allow buffering of upto 128M data before spilling to disk during
-  // compression and digest computation
-  static final int MAX_BUFFER_SIZE = 1 << 27;
+  // Default threshold (128 MiB) for FileBackedOutputStream: data is held in heap memory below this
+  // size and spills to a temp file on disk once exceeded.
+  static final int DEFAULT_FILE_BACKED_BUFFER_THRESHOLD = 1 << 27;
   public static final String SRC_FILE_NAME_FOR_STREAM = "stream";
 
   private static final String FILE_PROTOCOL = "file://";
@@ -327,13 +327,17 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * Compress an input stream with GZIP and return the result size, digest and compressed stream.
    *
    * @param inputStream data input
-   * @param session the session
+   * @param session the session (may be {@code null})
+   * @param queryId last executed query id (for forwarding in possible exceptions)
+   * @param fileBackedBufferThreshold bytes held in heap before the backing {@link
+   *     FileBackedOutputStream} spills to a temp file on disk; must be positive
    * @return result size, digest and compressed stream
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-      InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
-    FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+      InputStream inputStream, SFBaseSession session, String queryId, int fileBackedBufferThreshold)
+      throws SnowflakeSQLException {
+    FileBackedOutputStream tempStream = new FileBackedOutputStream(fileBackedBufferThreshold, true);
 
     try {
 
@@ -385,15 +389,21 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * Compress an input stream with GZIP and return the result size, digest and compressed stream.
    *
    * @param inputStream The input stream to compress
+   * @param session the session (may be {@code null})
+   * @param queryId last executed query id (for forwarding in possible exceptions)
+   * @param fileBackedBufferThreshold bytes held in heap before the backing {@link
+   *     FileBackedOutputStream} spills to a temp file on disk; must be positive
    * @return the compressed stream
    * @throws SnowflakeSQLException Will be thrown if there is a problem with compression
    * @deprecated Can be removed when all accounts are encrypted
    */
   @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-      InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
+      InputStream inputStream, SFBaseSession session, String queryId, int fileBackedBufferThreshold)
+      throws SnowflakeSQLException {
     try {
-      FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+      FileBackedOutputStream tempStream =
+          new FileBackedOutputStream(fileBackedBufferThreshold, true);
 
       CountingOutputStream countingStream = new CountingOutputStream(tempStream);
 
@@ -430,11 +440,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
   }
 
-  private static InputStreamWithMetadata computeDigest(InputStream is, boolean resetStream)
+  private static InputStreamWithMetadata computeDigest(
+      InputStream is, boolean resetStream, int fileBackedBufferThreshold)
       throws NoSuchAlgorithmException, IOException {
     MessageDigest md = MessageDigest.getInstance("SHA-256");
     if (resetStream) {
-      FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+      FileBackedOutputStream tempStream =
+          new FileBackedOutputStream(fileBackedBufferThreshold, true);
 
       CountingOutputStream countingOutputStream = new CountingOutputStream(tempStream);
 
@@ -540,6 +552,36 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       final File srcFile,
       final RemoteStoreFileEncryptionMaterial encMat,
       final String queryId) {
+    return getUploadFileCallable(
+        stage,
+        srcFilePath,
+        metadata,
+        client,
+        session,
+        command,
+        inputStream,
+        sourceFromStream,
+        parallel,
+        srcFile,
+        encMat,
+        queryId,
+        DEFAULT_FILE_BACKED_BUFFER_THRESHOLD);
+  }
+
+  private static Callable<Void> getUploadFileCallable(
+      final StageInfo stage,
+      final String srcFilePath,
+      final FileMetadata metadata,
+      final SnowflakeStorageClient client,
+      final SFSession session,
+      final String command,
+      final InputStream inputStream,
+      final boolean sourceFromStream,
+      final int parallel,
+      final File srcFile,
+      final RemoteStoreFileEncryptionMaterial encMat,
+      final String queryId,
+      final int fileBackedBufferThreshold) {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
@@ -599,8 +641,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
                 (encMat == null
-                    ? compressStreamWithGZIPNoDigest(uploadStream, session, queryId)
-                    : compressStreamWithGZIP(uploadStream, session, queryId));
+                    ? compressStreamWithGZIPNoDigest(
+                        uploadStream, session, queryId, fileBackedBufferThreshold)
+                    : compressStreamWithGZIP(
+                        uploadStream, session, queryId, fileBackedBufferThreshold));
 
             fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -617,7 +661,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             // If it's not local_fs, we store our digest in the metadata
             // In local_fs, we don't need digest, and if we turn it on, we will consume whole
             // uploadStream, which local_fs uses.
-            InputStreamWithMetadata result = computeDigest(uploadStream, sourceFromStream);
+            InputStreamWithMetadata result =
+                computeDigest(uploadStream, sourceFromStream, fileBackedBufferThreshold);
             digest = result.digest;
             fileBackedOutputStream = result.fileBackedOutputStream;
             uploadSize = result.size;
@@ -1688,7 +1733,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                     parallel,
                     null,
                     encMat,
-                    queryID));
+                    queryID,
+                    fileBackedBufferThreshold));
       } else if (commandType == CommandType.DOWNLOAD) {
         throw new SnowflakeSQLLoggedException(
             queryID, session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR);
@@ -2310,6 +2356,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     Properties proxyProperties = config.getProxyProperties();
     String streamingIngestClientName = config.getStreamingIngestClientName();
     String streamingIngestClientKey = config.getStreamingIngestClientKey();
+    int fileBackedBufferThreshold = config.getFileBackedBufferThreshold();
 
     // Create HttpClient key
     HttpClientSettingsKey key =
@@ -2340,8 +2387,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       if (requireCompress) {
         InputStreamWithMetadata compressedSizeAndStream =
             (encMat == null
-                ? compressStreamWithGZIPNoDigest(uploadStream, /* session= */ null, null)
-                : compressStreamWithGZIP(uploadStream, /* session= */ null, encMat.getQueryId()));
+                ? compressStreamWithGZIPNoDigest(
+                    uploadStream, /* session= */ null, null, fileBackedBufferThreshold)
+                : compressStreamWithGZIP(
+                    uploadStream,
+                    /* session= */ null,
+                    encMat.getQueryId(),
+                    fileBackedBufferThreshold));
 
         fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -2358,7 +2410,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // If it's not local_fs, we store our digest in the metadata
         // In local_fs, we don't need digest, and if we turn it on,
         // we will consume whole uploadStream, which local_fs uses.
-        InputStreamWithMetadata result = computeDigest(uploadStream, true);
+        InputStreamWithMetadata result =
+            computeDigest(uploadStream, true, fileBackedBufferThreshold);
         digest = result.digest;
         fileBackedOutputStream = result.fileBackedOutputStream;
         uploadSize = result.size;
@@ -2776,13 +2829,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
             logger.debug("Compressing stream for digest check");
 
-            InputStreamWithMetadata res = compressStreamWithGZIP(localFileStream, session, queryID);
+            InputStreamWithMetadata res =
+                compressStreamWithGZIP(
+                    localFileStream, session, queryID, fileBackedBufferThreshold);
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
             localFileStream = res.fileBackedOutputStream.asByteSource().openStream();
           }
 
-          InputStreamWithMetadata res = computeDigest(localFileStream, false);
+          InputStreamWithMetadata res =
+              computeDigest(localFileStream, false, fileBackedBufferThreshold);
           localFileHashText = res.digest;
           fileBackedOutputStreams.add(res.fileBackedOutputStream);
         } catch (IOException | NoSuchAlgorithmException ex) {
@@ -2812,7 +2868,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           // calculate digest for stage file
           stageFileStream = new FileInputStream(stageFilePath);
 
-          InputStreamWithMetadata res = computeDigest(stageFileStream, false);
+          InputStreamWithMetadata res =
+              computeDigest(stageFileStream, false, fileBackedBufferThreshold);
           stageFileHashText = res.digest;
           fileBackedOutputStream = res.fileBackedOutputStream;
 
@@ -2960,7 +3017,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
             logger.debug("Compressing stream for digest check");
 
-            InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session, queryID);
+            InputStreamWithMetadata res =
+                compressStreamWithGZIP(fileStream, session, queryID, fileBackedBufferThreshold);
 
             fileStream = res.fileBackedOutputStream.asByteSource().openStream();
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
@@ -2974,7 +3032,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           // Otherwise (remote file is encrypted, but has no sfc-digest),
           // no comparison is performed
           if (objDigest != null) {
-            InputStreamWithMetadata res = computeDigest(fileStream, false);
+            InputStreamWithMetadata res =
+                computeDigest(fileStream, false, fileBackedBufferThreshold);
             hashText = res.digest;
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
