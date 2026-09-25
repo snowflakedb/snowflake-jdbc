@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.api.datasource.SnowflakeDataSource;
@@ -426,6 +427,94 @@ public class SessionUtilExternalBrowserTest {
   }
 
   @Test
+  public void testAuthenticateKeepsListeningAfterOriginAllowedGetWithoutToken() throws Throwable {
+    CallbackResult result =
+        driveRealSocketCallbacks(
+            "https://testaccount.snowflakecomputing.com/",
+            "GET / HTTP/1.1\r\n"
+                + "Host: localhost\r\n"
+                + "Origin: https://testaccount.snowflakecomputing.com\r\n\r\n",
+            getRequest("after_tokenless_get", null, "\r\n"));
+
+    assertEquals("after_tokenless_get", result.token);
+    assertTrue(result.responses.get(0).isEmpty());
+    assertTrue(result.responses.get(1).contains("Your identity was confirmed"));
+  }
+
+  @Test
+  public void testAuthenticateKeepsListeningAfterFaviconThenAcceptsToken() throws Throwable {
+    CallbackResult result =
+        driveRealSocketCallbacks(
+            "https://testaccount.snowflakecomputing.com/",
+            "GET /favicon.ico HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            getRequest("after_favicon", null, "\r\n"));
+
+    assertEquals("after_favicon", result.token);
+    assertTrue(result.responses.get(0).isEmpty());
+  }
+
+  @Test
+  public void testAuthenticateKeepsListeningAfterJsonPostWithoutToken() throws Throwable {
+    String emptyJson = "{}";
+    String emptyPost =
+        "POST / HTTP/1.1\r\n"
+            + "Host: localhost\r\n"
+            + "Origin: https://testaccount.snowflakecomputing.com\r\n"
+            + "Content-Type: application/json\r\n"
+            + "Content-Length: "
+            + emptyJson.getBytes(StandardCharsets.UTF_8).length
+            + "\r\n\r\n"
+            + emptyJson;
+
+    CallbackResult result =
+        driveRealSocketCallbacks(
+            "https://testaccount.snowflakecomputing.com/",
+            emptyPost,
+            getRequest("after_empty_json", null, "\r\n"));
+
+    assertEquals("after_empty_json", result.token);
+    assertTrue(result.responses.get(0).isEmpty());
+  }
+
+  @Test
+  public void testAuthenticateAcceptsMatchingOriginJsonPost() throws Throwable {
+    String body = "{\"token\":\"json_token\",\"consent\":true}";
+    String request =
+        "POST / HTTP/1.1\r\n"
+            + "Host: localhost\r\n"
+            + "Origin: https://testaccount.snowflakecomputing.com\r\n"
+            + "Content-Type: application/json\r\n"
+            + "Content-Length: "
+            + body.getBytes(StandardCharsets.UTF_8).length
+            + "\r\n\r\n"
+            + body;
+
+    CallbackResult result =
+        driveRealSocketCallbacks("https://testaccount.snowflakecomputing.com/", request);
+
+    assertEquals("json_token", result.token);
+    assertTrue(result.responses.get(0).contains("Access-Control-Allow-Origin"));
+  }
+
+  @Test
+  public void testCallbackSocketBacklogIsFive() {
+    assertEquals(5, SessionUtilExternalBrowser.CALLBACK_SOCKET_BACKLOG);
+  }
+
+  @Test
+  public void testRemainingTimeoutMillisIsZeroAfterDeadline() {
+    assertEquals(0, SessionUtilExternalBrowser.remainingTimeoutMillis(System.nanoTime() - 1));
+  }
+
+  @Test
+  public void testRemainingTimeoutMillisIsPositiveBeforeDeadline() {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+    int remaining = SessionUtilExternalBrowser.remainingTimeoutMillis(deadline);
+    assertTrue(remaining > 0);
+    assertTrue(remaining <= 30_000);
+  }
+
+  @Test
   public void testAuthenticateParsesLfHeaders() throws Throwable {
     CallbackResult result =
         driveRealSocketCallbacks(
@@ -669,6 +758,7 @@ public class SessionUtilExternalBrowserTest {
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);
+    when(loginInput.getBrowserResponseTimeout()).thenReturn(Duration.ofSeconds(120));
     return loginInput;
   }
 

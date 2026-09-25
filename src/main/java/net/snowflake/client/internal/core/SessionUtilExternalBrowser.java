@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.api.exception.ErrorCode;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.internal.core.auth.ClientAuthnDTO;
@@ -109,6 +110,8 @@ public class SessionUtilExternalBrowser {
   // request (SSO token plus headers) is a few KB; this only guards against a misbehaving local
   // client that advertises a huge Content-Length or never sends the end-of-headers marker.
   private static final int MAX_REQUEST_LENGTH = 1 << 20; // 1 MiB
+  // Queue depth so a CORS OPTIONS preflight and the following POST can both sit in accept().
+  static final int CALLBACK_SOCKET_BACKLOG = 5;
   private static Charset UTF8_CHARSET;
 
   static {
@@ -136,7 +139,7 @@ public class SessionUtilExternalBrowser {
     try {
       return new ServerSocket(
           0, // free port
-          0, // default number of connections
+          CALLBACK_SOCKET_BACKLOG,
           InetAddress.getByName("localhost"));
     } catch (IOException ex) {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
@@ -260,6 +263,22 @@ public class SessionUtilExternalBrowser {
   }
 
   /**
+   * Milliseconds left before {@code deadlineNanos}. Returns {@code 0} when the deadline has already
+   * passed. {@code ServerSocket.setSoTimeout(0)} waits forever, so the listen loop treats {@code 0}
+   * as an expired deadline instead of passing it through.
+   */
+  static int remainingTimeoutMillis(long deadlineNanos) {
+    long remaining = TimeUnit.NANOSECONDS.toMillis(deadlineNanos - System.nanoTime());
+    if (remaining <= 0L) {
+      return 0;
+    }
+    if (remaining >= Integer.MAX_VALUE) {
+      return Integer.MAX_VALUE;
+    }
+    return (int) remaining;
+  }
+
+  /**
    * Authenticate
    *
    * @throws SFException if any error occurs
@@ -268,7 +287,8 @@ public class SessionUtilExternalBrowser {
   void authenticate() throws SFException, SnowflakeSQLException {
     ServerSocket ssocket = this.getServerSocket();
     try {
-      ssocket.setSoTimeout(getBrowserResponseTimeout());
+      long deadlineNanos =
+          System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(getBrowserResponseTimeout());
       // main procedure
       int port = this.getLocalPort(ssocket);
       logger.debug("Listening localhost: {}", port);
@@ -294,9 +314,19 @@ public class SessionUtilExternalBrowser {
       }
 
       while (true) {
+        int remaining = remainingTimeoutMillis(deadlineNanos);
+        if (remaining <= 0) {
+          throw new SocketTimeoutException("External browser authentication deadline exceeded");
+        }
+        ssocket.setSoTimeout(remaining);
         try (Socket socket = ssocket.accept()) {
-          // Bound reads so a client that connects then stalls mid-request cannot hang the server.
-          socket.setSoTimeout(getBrowserResponseTimeout());
+          remaining = remainingTimeoutMillis(deadlineNanos);
+          if (remaining <= 0) {
+            throw new SocketTimeoutException("External browser authentication deadline exceeded");
+          }
+          // Bound reads so a client that connects then stalls mid-request cannot hang the server
+          // past the same overall SSO deadline.
+          socket.setSoTimeout(remaining);
           BufferedReader in =
               new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
           String request = readRequest(in);
@@ -314,8 +344,9 @@ public class SessionUtilExternalBrowser {
             logger.debug("Ignoring localhost callback whose Origin does not match the server URL.");
             continue;
           }
-          processSamlToken(request, socket, getResponseOrigin(requestOrigin));
-          break;
+          if (processSamlToken(request, socket, getResponseOrigin(requestOrigin))) {
+            break;
+          }
         }
       }
     } catch (SocketTimeoutException e) {
@@ -445,14 +476,14 @@ public class SessionUtilExternalBrowser {
   }
 
   /**
-   * Receives SAML token from Snowflake via web browser
+   * Receives SAML token from Snowflake via web browser.
    *
-   * @param socket socket
+   * @return {@code true} when a token was received and the success response was written; {@code
+   *     false} when the request carried no token so the listen loop continues
    * @throws IOException if any IO error occurs
-   * @throws SFException if a HTTP request from browser is invalid
    */
-  private void processSamlToken(String request, Socket socket, String responseOrigin)
-      throws IOException, SFException {
+  private boolean processSamlToken(String request, Socket socket, String responseOrigin)
+      throws IOException {
     String targetLine = null;
     String method = getRequestMethod(request);
     boolean isPost = "POST".equalsIgnoreCase(method);
@@ -463,8 +494,8 @@ public class SessionUtilExternalBrowser {
     }
     String userAgent = extractHeader(request, "User-Agent");
     if (targetLine == null) {
-      throw new SFException(
-          ErrorCode.NETWORK_ERROR, "Invalid HTTP request. No token is given from the browser.");
+      logger.debug("Ignoring localhost callback with no token.");
+      return false;
     }
     if (userAgent != null) {
       logger.debug("USER-AGENT: {}", userAgent);
@@ -474,8 +505,16 @@ public class SessionUtilExternalBrowser {
       // attempt to get JSON response
       extractJsonTokenFromPostRequest(targetLine);
     } catch (IOException ex) {
-      String parameters =
-          isPost ? extractTokenFromPostRequest(targetLine) : extractTokenFromGetRequest(targetLine);
+      String parameters;
+      try {
+        parameters =
+            isPost
+                ? extractTokenFromPostRequest(targetLine)
+                : extractTokenFromGetRequest(targetLine);
+      } catch (SFException ex0) {
+        logger.debug("Ignoring localhost callback that is not a token request.");
+        return false;
+      }
       try {
         URI inputParameter = new URI(parameters);
         for (NameValuePair urlParam : URLEncodedUtils.parse(inputParameter, UTF8_CHARSET)) {
@@ -485,26 +524,26 @@ public class SessionUtilExternalBrowser {
           }
         }
       } catch (URISyntaxException ex0) {
-        throw new SFException(
-            ErrorCode.NETWORK_ERROR,
-            String.format(
-                "Invalid HTTP request. No token is given from the browser. %s, err: %s",
-                targetLine, ex0));
+        logger.debug("Ignoring localhost callback with unparseable token parameters.");
+        return false;
       }
     }
     if (this.token == null) {
-      throw new SFException(
-          ErrorCode.NETWORK_ERROR,
-          String.format(
-              "Invalid HTTP request. No token is given from the browser: %s", targetLine));
+      logger.debug("Ignoring localhost callback with no token.");
+      return false;
     }
 
     returnToBrowser(socket, responseOrigin);
+    return true;
   }
 
   private void extractJsonTokenFromPostRequest(String targetLine) throws IOException {
     JsonNode jsonNode = mapper.readTree(targetLine);
-    this.token = jsonNode.get("token").asText();
+    JsonNode tokenNode = jsonNode.get("token");
+    if (tokenNode == null || tokenNode.isNull()) {
+      throw new IOException("JSON callback has no token");
+    }
+    this.token = tokenNode.asText();
     this.consentCacheIdToken = jsonNode.get("consent").asBoolean();
   }
 
