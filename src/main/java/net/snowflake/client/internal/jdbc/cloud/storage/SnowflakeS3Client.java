@@ -68,7 +68,6 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
@@ -685,12 +684,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         tx = S3TransferManager.builder().s3Client(amazonClient).executor(executorService).build();
 
         final Upload myUpload;
-
-        if (!this.isClientSideEncrypted) {
-          // since we're not client-side encrypting, make sure we're server-side encrypting with
-          // SSE-S3
-          putRequestBuilder.serverSideEncryption(ServerSideEncryption.AES256);
-        }
 
         PutObjectRequest request = putRequestBuilder.build();
 
