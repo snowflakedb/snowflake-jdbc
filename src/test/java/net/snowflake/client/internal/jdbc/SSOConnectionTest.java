@@ -3,9 +3,9 @@ package net.snowflake.client.internal.jdbc;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.nullable;
@@ -90,8 +90,7 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
   private static ServerSocket initMockServerSocket() throws IOException {
     final byte[] requestBytes =
         String.format(
-                "GET /?token=%s HTTP/1.1\r\nUSER-AGENT: snowflake client\r\n\r\n",
-                MOCK_SAML_TOKEN)
+                "GET /?token=%s HTTP/1.1\r\nUSER-AGENT: snowflake client\r\n\r\n", MOCK_SAML_TOKEN)
             .getBytes(StandardCharsets.UTF_8);
 
     final Socket fakeSocket =
