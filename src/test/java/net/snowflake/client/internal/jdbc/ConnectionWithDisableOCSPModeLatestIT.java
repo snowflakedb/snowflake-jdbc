@@ -1,14 +1,16 @@
 package net.snowflake.client.internal.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.internal.api.implementation.connection.SnowflakeConnectionImpl;
+import net.snowflake.client.internal.core.OCSPMode;
 import net.snowflake.client.internal.core.SFTrustManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,10 +19,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-/** Tests for connection with DisableOCSPchecks and insecuremode settings. */
+/** disableOCSPChecks / insecureMode combinations after OCSP defaulted off. */
 @Tag(TestTags.CONNECTION)
 public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
-  private static final int DISABLE_OCSP_INSECURE_MODE_MISMATCH = 200064;
 
   @BeforeEach
   public void setUp() {
@@ -32,36 +33,35 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
     SFTrustManager.cleanTestSystemParameters();
   }
 
-  private static Stream<Arguments> testParameters() {
-    return Stream.of(Arguments.of(true, true), Arguments.of(true, null), Arguments.of(null, true));
+  private static Stream<Arguments> connectingParameters() {
+    return Stream.of(
+        Arguments.of(true, true),
+        Arguments.of(true, null),
+        Arguments.of(true, false),
+        Arguments.of(null, true),
+        Arguments.of(false, true));
   }
 
   @ParameterizedTest
-  @MethodSource("testParameters")
-  public void shouldConnectIfDisableOCSPChecksAndInsecureModeAreSet(
+  @MethodSource("connectingParameters")
+  public void shouldConnectForDisableAndInsecureCombinations(
       Boolean disableOCSPChecks, Boolean insecureMode) throws SQLException {
     Properties properties = getProperties(disableOCSPChecks, insecureMode);
     connectAndVerifySimpleQuery(properties);
   }
 
-  private static Stream<Arguments> testParametersMismatch() {
-    return Stream.of(Arguments.of(true, false), Arguments.of(false, true));
-  }
-
   @ParameterizedTest
-  @MethodSource("testParametersMismatch")
-  public void shouldThrowWhenThereIsMismatchInDisableOCSPChecksAndInsecureMode(
-      Boolean disableOCSPChecks, Boolean insecureMode) {
+  @MethodSource("connectingParameters")
+  public void mismatchNoLongerThrowsAndOcspStaysOff(Boolean disableOCSPChecks, Boolean insecureMode)
+      throws SQLException {
     Properties properties = getProperties(disableOCSPChecks, insecureMode);
-    SQLException e =
-        assertThrows(
-            SQLException.class,
-            () ->
-                DriverManager.getConnection(
-                    String.format(
-                        "jdbc:snowflake://%s:%s", properties.get("host"), properties.get("port")),
-                    properties));
-    assertEquals(DISABLE_OCSP_INSECURE_MODE_MISMATCH, e.getErrorCode());
+    try (Connection con =
+        DriverManager.getConnection(
+            String.format("jdbc:snowflake://%s:%s", properties.get("host"), properties.get("port")),
+            properties)) {
+      OCSPMode mode = con.unwrap(SnowflakeConnectionImpl.class).getSfSession().getOCSPMode();
+      assertEquals(OCSPMode.DISABLE_OCSP_CHECKS, mode);
+    }
   }
 
   private Properties getProperties(Boolean disableOCSPChecks, Boolean insecureMode) {
@@ -73,7 +73,6 @@ public class ConnectionWithDisableOCSPModeLatestIT extends BaseJDBCTest {
     props.put("user", params.get("user"));
     props.put("role", params.get("role"));
 
-    // Handle authentication - prioritize private key, fallback to password
     if (params.get("private_key_file") != null) {
       props.put("private_key_file", params.get("private_key_file"));
       props.put("authenticator", params.get("authenticator"));

@@ -344,7 +344,6 @@ public class AbstractDriverIT {
     properties.put("ssl", params.get("ssl"));
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
-    properties.put("insecureMode", false); // use OCSP for all tests.
 
     if (injectSocketTimeout > 0) {
       properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));

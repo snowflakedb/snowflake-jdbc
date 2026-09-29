@@ -118,6 +118,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       "SF_OCSP_TEST_INVALID_SIGNING_CERT";
   public static final String SF_OCSP_TEST_NO_OCSP_RESPONDER_URL =
       "SF_OCSP_TEST_NO_OCSP_RESPONDER_URL";
+  /** System property name to specify cache directory. */
+  static final String CACHE_DIR_PROP = "net.snowflake.jdbc.ocspResponseCacheDir";
+  /** Environment name to specify the cache directory. Used if system property not set. */
+  static final String CACHE_DIR_ENV = "SF_OCSP_RESPONSE_CACHE_DIR";
+
+  static final String SF_OCSP_ACTIVATE_NEW_ENDPOINT = "SF_OCSP_ACTIVATE_NEW_ENDPOINT";
+  static final String SF_OCSP_ACTIVATE_NEW_ENDPOINT_JVM =
+      "net.snowflake.jdbc.ocsp_activate_new_endpoint";
   /** OCSP response cache file name. Should be identical to other driver's cache file name. */
   static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
@@ -136,10 +144,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final String ALGORITHM_SHA1_NAME = "SHA-1";
   /** Object mapper for JSON encoding and decoding */
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
-  /** System property name to specify cache directory. */
-  private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.ocspResponseCacheDir";
-  /** Environment name to specify the cache directory. Used if system property not set. */
-  private static final String CACHE_DIR_ENV = "SF_OCSP_RESPONSE_CACHE_DIR";
   /** OCSP response cache entry expiration time (s) */
   private static final long CACHE_EXPIRATION_IN_SECONDS = 432000L;
   /** OCSP response cache lock file expiration time (s) */
@@ -613,11 +617,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private void checkNewOCSPEndpointAvailability() {
     String new_ocsp_ept;
     try {
-      new_ocsp_ept = systemGetEnv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
+      new_ocsp_ept = systemGetEnv(SF_OCSP_ACTIVATE_NEW_ENDPOINT);
     } catch (Throwable ex) {
       logger.debug(
           "Could not get environment variable to check for New OCSP Endpoint Availability", false);
-      new_ocsp_ept = systemGetProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+      new_ocsp_ept = systemGetProperty(SF_OCSP_ACTIVATE_NEW_ENDPOINT_JVM);
     }
     ocspCacheServer.new_endpoint_enabled = new_ocsp_ept != null;
   }

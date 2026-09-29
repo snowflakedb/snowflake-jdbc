@@ -67,7 +67,7 @@ public class SFTrustManagerProxyWiremockIT extends BaseWiremockTest {
     String ocspUrl = "http://dummy-host" + OCSP_CACHE_PATH;
     System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL, ocspUrl);
     SFTrustManager.setOCSPResponseCacheServerURL(ocspUrl);
-    System.clearProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+    System.clearProperty(SFTrustManager.SF_OCSP_ACTIVATE_NEW_ENDPOINT_JVM);
     X509Certificate[] chain = generateLeafChain();
     addMappingOnPort(OCSP_MAPPING_BODY, wiremockHttpPort);
 

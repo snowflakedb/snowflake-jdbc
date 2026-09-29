@@ -127,6 +127,7 @@ public abstract class SFBaseSession {
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
   private HttpClientSettingsKey ocspAndProxyAndGzipKey = null;
+  private OCSPMode cachedOcspMode;
   // Default value for memory limit in SFBaseSession
   public static long MEMORY_LIMIT_UNSET = -1;
   // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
@@ -869,44 +870,28 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Get OCSP mode
+   * Get OCSP mode. Default is {@link OCSPMode#DISABLE_OCSP_CHECKS}. OCSP is enabled only when
+   * {@code ocspFailOpen} is set (connection property or {@code -Dnet.snowflake.jdbc.ocspFailOpen}
+   * copied onto the session). {@code disableOCSPChecks=false} and {@code insecureMode=false} are
+   * not opt-ins. {@code disableOCSPChecks=true} and the deprecated {@code insecureMode=true} always
+   * turn OCSP off, including when {@code ocspFailOpen} is set.
    *
    * @return {@link OCSPMode}
-   * @throws SnowflakeSQLException
    */
   public OCSPMode getOCSPMode() throws SnowflakeSQLException {
-    OCSPMode ret;
-
-    Boolean disableOCSPChecks =
-        (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS);
-    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
-    if (insecureMode != null && insecureMode) {
-      logger.warn(
-          "The 'insecureMode' connection property is deprecated. Please use 'disableOCSPChecks' instead.");
+    if (cachedOcspMode != null) {
+      return cachedOcspMode;
     }
-
-    if ((disableOCSPChecks != null && insecureMode != null)
-        && (disableOCSPChecks != insecureMode)) {
-      logger.error(
-          "The values for 'disableOCSPChecks' and 'insecureMode' must be identical. "
-              + "Please unset insecureMode.");
-      throw new SnowflakeSQLException(
-          ErrorCode.DISABLEOCSP_INSECUREMODE_VALUE_MISMATCH,
-          "The values for 'disableOCSPChecks' and 'insecureMode' " + "must be identical.");
+    OcspModeResolver.Result resolved =
+        OcspModeResolver.resolve(
+            (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_OCSP_CHECKS),
+            (Boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN),
+            (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE));
+    for (String warning : resolved.warnings) {
+      logger.warn(warning);
     }
-    if ((disableOCSPChecks != null && disableOCSPChecks)
-        || (insecureMode != null && insecureMode)) {
-      // skip OCSP checks
-      ret = OCSPMode.DISABLE_OCSP_CHECKS;
-    } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
-        || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
-      // fail open (by default, not set)
-      ret = OCSPMode.FAIL_OPEN;
-    } else {
-      // explicitly set ocspFailOpen=false
-      ret = OCSPMode.FAIL_CLOSED;
-    }
-    return ret;
+    cachedOcspMode = resolved.mode;
+    return cachedOcspMode;
   }
 
   public CertRevocationCheckMode getCertRevocationCheckMode() throws SnowflakeSQLException {

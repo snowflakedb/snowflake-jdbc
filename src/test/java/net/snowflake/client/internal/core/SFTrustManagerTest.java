@@ -77,7 +77,7 @@ public class SFTrustManagerTest {
   @Test
   public void testBuildNewRetryURL() {
     try {
-      System.setProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint", Boolean.TRUE.toString());
+      System.setProperty(SFTrustManager.SF_OCSP_ACTIVATE_NEW_ENDPOINT_JVM, Boolean.TRUE.toString());
 
       SFTrustManager tManager =
           new SFTrustManager(
@@ -143,7 +143,7 @@ public class SFTrustManagerTest {
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
           equalTo("https://ocspssd.us-east-1.privatelink.snowflakecomputing.cn/ocsp/retry"));
     } finally {
-      System.clearProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+      System.clearProperty(SFTrustManager.SF_OCSP_ACTIVATE_NEW_ENDPOINT_JVM);
     }
   }
 
