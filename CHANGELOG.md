@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.3.5-SNAPSHOT
+  - Removed the SSE-S3 (`AES256`) header from PUT to unencrypted S3 stages so objects inherit the bucket default encryption instead of overriding it; client-side-encrypted stages are unchanged (SNOW-3701700).
   - Added `workloadIdentityHost` connection property that overrides the STS host used by AWS Workload Identity Federation, for endpoints the driver cannot derive from the region (such as an interface VPC endpoint). The default STS host is now resolved via the AWS SDK so partitions that do not use `amazonaws.com` (ISO, European Sovereign Cloud, ...) get the correct hostname. A privately routed host cannot be reached by Snowflake on the default GetCallerIdentity path, so a VPC or PrivateLink STS endpoint also requires `workloadIdentityAwsUseOutboundToken=true` (SNOW-4017201).
   - Added `ci/scripts/generate_sbom.sh`, which generates a CycloneDX SBOM (`target/bom.json`) covering both the driver and FIPS JAR dependency trees; not part of the release artifacts.
   - Removed the unused Conscrypt library (`org.conscrypt:conscrypt-openjdk-uber`) from the self-contained (fat) and FIPS JARs. It was only transitive weight from `google-cloud-storage` and is never used by the driver (SNOW-4071987).

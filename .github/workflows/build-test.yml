@@ -133,7 +133,7 @@ jobs:
     test-windows:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
         name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
-        runs-on: windows-latest
+        runs-on: ${{ matrix.category.runner }}
         strategy:
             fail-fast: false
             matrix:
@@ -156,12 +156,12 @@ jobs:
                               ]'
                         )
                     }}
-                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet'},
-                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader'},
-                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
-                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData'},
-                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
-                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
+                category: [{suites: 'ResultSetTestSuite', name: 'TestCategoryResultSet', runner: 'windows-latest'},
+                           {suites: 'StatementTestSuite,LoaderTestSuite', name: 'TestCategoryStatement,TestCategoryLoader', runner: 'windows-latest'},
+                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers', runner: 'windows-latest'},
+                           {suites: 'DatabaseMetaDataTestSuite', name: 'TestCategoryDatabaseMetaData', runner: 'windows-latest'},
+                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic', runner: 'windows-latest-8-cores'},
+                           {suites: 'FipsTestSuite', name: "TestCategoryFips", runner: 'windows-latest'}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v5
