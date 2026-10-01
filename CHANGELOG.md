@@ -1,6 +1,9 @@
 #### For all official JDBC Release Notes please refer to https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 # Changelog
+- v4.4.1-SNAPSHOT
+  - 
+
 - v4.4.0
   - Hardened external-browser callback handling by checking the `Origin` header against the connected Snowflake account endpoint, accepting matching-Origin POST token callbacks, and keeping the listener open for incomplete or unrelated requests (snowflakedb/snowflake-jdbc#27).
   - OCSP revocation checking is now off by default. Enable it by setting `ocspFailOpen` (`true` = fail-open, `false` = fail-closed). `disableOCSPChecks=false` and `insecureMode=false` are the old default values and do not opt in. `disableOCSPChecks=true` and the deprecated `insecureMode=true` always turn OCSP off, including when `ocspFailOpen` is set; the ignored fail-open is logged at warn. The deprecated `insecureMode` property no longer selects the OCSP mode and no longer throws when it disagrees with `disableOCSPChecks`; leftover OCSP cache/server settings are logged at warn as ignored while OCSP is off.
