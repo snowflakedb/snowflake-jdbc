@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -99,6 +100,11 @@ public class HttpUtilTest {
     TrustManager[] result = HttpUtil.configureTrustManagerIfNeeded(key, null);
     assertNotNull(result);
     assertInstanceOf(SFExtendedCrlTrustManager.class, result[0]);
+  }
+
+  @Test
+  void testValidateAfterInactivityIsTwoSecondsInMilliseconds() {
+    assertEquals(2_000, HttpUtil.DEFAULT_VALIDATE_AFTER_INACTIVITY_MILLIS);
   }
 
   @Test

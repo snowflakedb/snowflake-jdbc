@@ -72,6 +72,13 @@ public class HttpUtil {
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS = 300000; // ms
   static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 30; // secs
+  /**
+   * Stale-check interval for pooled connections, in milliseconds. Apache HttpClient's default, and
+   * the effective JDBC 3.28.0 interval. Independent of {@link #DEFAULT_IDLE_CONNECTION_TIMEOUT},
+   * which only controls eviction.
+   */
+  static final int DEFAULT_VALIDATE_AFTER_INACTIVITY_MILLIS = 2_000;
+
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
@@ -312,14 +319,14 @@ public class HttpUtil {
   private static PoolingHttpClientConnectionManager initHttpClientConnectionManager(
       HttpClientSettingsKey key, File ocspCacheFile) {
     int timeToLiveSeconds = SystemUtil.convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
-    long validateAfterInactivitySeconds =
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_IDLE_CONNECTION_PROPERTY, DEFAULT_IDLE_CONNECTION_TIMEOUT);
     long connectTimeout = getConnectionTimeout().toMillis();
     long socketTimeout = getSocketTimeout().toMillis();
     logger.debug(
-        "Connection pooling manager connect timeout: {} ms, socket timeout: {} ms, ttl: {} s, validate after inactivity: %s",
-        connectTimeout, socketTimeout, timeToLiveSeconds, validateAfterInactivitySeconds);
+        "Connection pooling manager connect timeout: {} ms, socket timeout: {} ms, ttl: {} s, validate after inactivity: {} ms",
+        connectTimeout,
+        socketTimeout,
+        timeToLiveSeconds,
+        DEFAULT_VALIDATE_AFTER_INACTIVITY_MILLIS);
 
     // Create default request config without proxy since different connections could use different
     // proxies in multi tenant environments
@@ -361,7 +368,7 @@ public class HttpUtil {
           maxConnectionsPerRoute);
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
-      connectionManager.setValidateAfterInactivity((int) validateAfterInactivitySeconds);
+      connectionManager.setValidateAfterInactivity(DEFAULT_VALIDATE_AFTER_INACTIVITY_MILLIS);
       return connectionManager;
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
@@ -1480,7 +1487,7 @@ public class HttpUtil {
     PoolingHttpClientConnectionManager connectionManager =
         new PoolingHttpClientConnectionManager(registry);
     connectionManager.setMaxTotal(1);
-    connectionManager.setValidateAfterInactivity(idleConnectionTimeout);
+    connectionManager.setValidateAfterInactivity(DEFAULT_VALIDATE_AFTER_INACTIVITY_MILLIS);
 
     HttpClientBuilder httpClientBuilder =
         HttpClientBuilder.create()

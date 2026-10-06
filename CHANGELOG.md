@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.4.1-SNAPSHOT
-  - 
+  - Fixed pooled HTTP connections being checked for closure after 30 milliseconds by default, because the idle-connection timeout in seconds was passed to an API that expects milliseconds. Connections are now checked after 2 seconds, matching JDBC 3.28.0. `net.snowflake.jdbc.idle_connection_timeout` still controls only how long an idle connection stays in the pool (SNOW-4242824, snowflakedb/snowflake-jdbc#39).
 
 - v4.4.0
   - Hardened external-browser callback handling by checking the `Origin` header against the connected Snowflake account endpoint, accepting matching-Origin POST token callbacks, and keeping the listener open for incomplete or unrelated requests (snowflakedb/snowflake-jdbc#27).
