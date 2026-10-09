@@ -404,6 +404,10 @@ public class CredentialManager {
    * but rather IdP-specific
    */
   static String getHostForOAuthCacheKey(SFLoginInput loginInput) throws SFException {
+    if (loginInput.getOauthLoginInput() == null) {
+      throw new SFException(
+          ErrorCode.INTERNAL_ERROR, "OAuth configuration is not initialized for this connection");
+    }
     String oauthTokenRequestUrl = loginInput.getOauthLoginInput().getTokenRequestUrl();
     if (oauthTokenRequestUrl != null) {
       URI parsedUrl = URI.create(oauthTokenRequestUrl);
