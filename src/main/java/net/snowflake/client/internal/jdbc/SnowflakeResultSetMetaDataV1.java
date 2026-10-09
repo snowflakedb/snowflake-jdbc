@@ -7,6 +7,7 @@ import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFResultSetMetaData;
@@ -123,6 +124,9 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
     int colType = getColumnType(column);
+    if (colType == SnowflakeType.EXTRA_TYPES_VECTOR) {
+      colType = Types.VARCHAR;
+    }
 
     switch (colType) {
         // Note: SF types GEOGRAPHY, GEOMETRY are also represented as VARCHAR.
@@ -177,6 +181,9 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
     logger.trace("String getColumnClassName(int column)", false);
 
     int type = this.getColumnType(column);
+    if (type == SnowflakeType.EXTRA_TYPES_VECTOR) {
+      type = Types.VARCHAR;
+    }
 
     return SnowflakeTypeUtil.javaTypeToClassName(type);
   }
