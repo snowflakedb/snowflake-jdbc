@@ -15,6 +15,7 @@ package net.snowflake.client.api.connection;
  *   UploadStreamConfig config = UploadStreamConfig.builder()
  *       .setDestPrefix("data/2024")
  *       .setCompressData(true)
+ *       .setFileBackedBufferThreshold(1024 * 1024 * 1024) // 1 GiB
  *       .build();
  *
  *   connection.uploadStream("@my_stage", "uploaded_data.csv", dataStream, config);
@@ -26,6 +27,7 @@ package net.snowflake.client.api.connection;
 public class UploadStreamConfig {
   private final String destPrefix;
   private final boolean compressData;
+  private final int fileBackedBufferThreshold;
 
   /**
    * Private constructor. Use {@link Builder} to create instances.
@@ -35,6 +37,7 @@ public class UploadStreamConfig {
   private UploadStreamConfig(Builder builder) {
     this.destPrefix = builder.destPrefix;
     this.compressData = builder.compressData;
+    this.fileBackedBufferThreshold = builder.fileBackedBufferThreshold;
   }
 
   /**
@@ -53,6 +56,16 @@ public class UploadStreamConfig {
    */
   public boolean isCompressData() {
     return compressData;
+  }
+
+  /**
+   * Gets the threshold in bytes at which the internal buffer switches from heap memory to a temp
+   * file on disk during compression and digest computation.
+   *
+   * @return the threshold in bytes (always positive; default is 128 MiB)
+   */
+  public int getFileBackedBufferThreshold() {
+    return fileBackedBufferThreshold;
   }
 
   /**
@@ -76,12 +89,14 @@ public class UploadStreamConfig {
    * UploadStreamConfig config = UploadStreamConfig.builder()
    *     .setDestPrefix("data/2024")
    *     .setCompressData(true)
+   *     .setFileBackedBufferThreshold(1024 * 1024 * 1024) // 1 GiB
    *     .build();
    * }</pre>
    */
   public static class Builder {
     private String destPrefix;
     private boolean compressData = true;
+    private int fileBackedBufferThreshold = 1 << 27; // 128 MiB
 
     /** Private constructor. Use {@link UploadStreamConfig#builder()} instead. */
     private Builder() {}
@@ -127,6 +142,29 @@ public class UploadStreamConfig {
     }
 
     /**
+     * Sets the threshold in bytes at which the internal buffer switches from heap memory to a temp
+     * file on disk during compression and digest computation.
+     *
+     * <p>Below this threshold, stream data is held entirely in JVM heap memory. Above it, the data
+     * spills to a temporary file on local disk, which reduces heap pressure at the cost of disk
+     * I/O.
+     *
+     * <p>The default is 128 MiB ({@code 1 << 27}). Lower values reduce heap usage at the cost of
+     * disk I/O; higher values keep more data in memory and avoid temp file creation.
+     *
+     * @param fileBackedBufferThreshold the threshold in bytes; must be positive
+     * @return this builder instance
+     * @throws IllegalArgumentException if the value is not positive
+     */
+    public Builder setFileBackedBufferThreshold(int fileBackedBufferThreshold) {
+      if (fileBackedBufferThreshold <= 0) {
+        throw new IllegalArgumentException("fileBackedBufferThreshold must be positive");
+      }
+      this.fileBackedBufferThreshold = fileBackedBufferThreshold;
+      return this;
+    }
+
+    /**
      * Builds the {@link UploadStreamConfig} instance.
      *
      * @return a new {@link UploadStreamConfig} instance
@@ -144,6 +182,8 @@ public class UploadStreamConfig {
         + '\''
         + ", compressData="
         + compressData
+        + ", fileBackedBufferThreshold="
+        + fileBackedBufferThreshold
         + '}';
   }
 }
