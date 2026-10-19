@@ -54,7 +54,7 @@
     <google.cloud.storage.version>2.69.0</google.cloud.storage.version>
     <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
     <google.gax.version>2.81.0</google.gax.version>
-    <google.guava.version>33.5.0-jre</google.guava.version>
+    <google.guava.version>33.7.2-jre</google.guava.version>
     <google.http.client.version>2.1.0</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>4.33.5</google.protobuf.java.version>

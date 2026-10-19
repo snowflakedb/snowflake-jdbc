@@ -8,6 +8,7 @@
     - asm to 9.11 from 9.7.1.
     - grpc-java to 1.85.0 from 1.84.0.
     - netty to 4.1.139.Final from 4.1.138.Final.
+    - guava to 33.7.2-jre from 33.5.0-jre.
 
 - v4.4.0
   - Hardened external-browser callback handling by checking the `Origin` header against the connected Snowflake account endpoint, accepting matching-Origin POST token callbacks, and keeping the listener open for incomplete or unrelated requests (snowflakedb/snowflake-jdbc#27).

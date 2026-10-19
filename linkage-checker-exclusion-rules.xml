@@ -179,7 +179,7 @@
     <LinkageError>
         <Target><Package name="java.lang.invoke"/></Target>
         <Source><Package name="com.google.common"/></Source>
-        <Reason>VarHandle @PolymorphicSignature methods are valid at runtime; false positive in linkage checker 1.5.13 with guava 33.5.0-jre</Reason>
+        <Reason>VarHandle @PolymorphicSignature methods are valid at runtime; false positive in linkage checker 1.5.13 with guava 33.7.2-jre</Reason>
     </LinkageError>
     <LinkageError>
         <Target><Package name="java.lang.invoke"/></Target>
@@ -189,12 +189,17 @@
     <LinkageError>
         <Target><Package name="java.util.zip"/></Target>
         <Source><Package name="com.google.common.hash"/></Source>
-        <Reason>guava 33.5.0-jre uses CRC32C (Java 9+) with a runtime version check; safe on Java 8</Reason>
+        <Reason>guava 33.7.2-jre uses CRC32C (Java 9+) with a runtime version check; safe on Java 8</Reason>
     </LinkageError>
     <LinkageError>
         <Target><Package name="java.util"/></Target>
         <Source><Package name="com.google.common.primitives"/></Source>
-        <Reason>guava 33.5.0-jre uses Arrays.compareUnsigned (Java 9+) with a runtime version check; safe on Java 8</Reason>
+        <Reason>guava 33.7.2-jre uses Arrays.compareUnsigned (Java 9+) with a runtime version check; safe on Java 8</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Method className="java.lang.ref.Reference" name="reachabilityFence"/></Target>
+        <Source><Package name="com.google.common"/></Source>
+        <Reason>guava 33.7.2-jre calls Reference.reachabilityFence (Java 9+) behind a runtime availability check; safe on Java 8</Reason>
     </LinkageError>
     <!--
     <LinkageError>

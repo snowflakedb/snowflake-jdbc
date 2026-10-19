@@ -244,7 +244,7 @@
     <dependency>
        <groupId>com.google.guava</groupId>
        <artifactId>guava</artifactId>
-       <version>32.0.0-jre</version>
+       <version>33.7.2-jre</version>
     </dependency>
     <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna -->
     <dependency>
