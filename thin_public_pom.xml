@@ -36,6 +36,7 @@
     <animal.sniffer.annotations.version>1.27</animal.sniffer.annotations.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
+    <asm.version>9.11</asm.version>
     <awssdk.version>2.45.1</awssdk.version>
     <azure.core.version>1.58.1</azure.core.version>
     <azure.core.http.netty.version>1.16.5</azure.core.http.netty.version>
@@ -129,6 +130,11 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-annotations</artifactId>
         <version>${animal.sniffer.annotations.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${asm.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
