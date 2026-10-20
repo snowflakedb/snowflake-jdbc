@@ -22,7 +22,7 @@
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <zstd-jni.version>1.5.7-16</zstd-jni.version>
     <arrow.version>17.0.0</arrow.version>
-    <asm.version>9.11</asm.version>
+    <asm.version>9.11.1</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>2.45.1</awssdk.version>
@@ -64,7 +64,7 @@
     <grpc.version>1.85.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.18.11</jackson.version>
+    <jackson.version>2.18.12</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>

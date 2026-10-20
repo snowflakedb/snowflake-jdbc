@@ -6,10 +6,11 @@
   - Fixed pooled HTTP connections being checked for closure after 30 milliseconds by default, because the idle-connection timeout in seconds was passed to an API that expects milliseconds. Connections are now checked after 2 seconds, matching JDBC 3.28.0. `net.snowflake.jdbc.idle_connection_timeout` still controls only how long an idle connection stays in the pool (SNOW-4242824, snowflakedb/snowflake-jdbc#39).
   - Added an agent skill that walks an application from JDBC 3.x to 4.x, including the public API move and the 4.0 behavior that later releases repaired (`.claude/skills/jdbc-3-to-4-migration/`). Not part of the release artifacts.
   - Bumped the following dependencies:
-    - asm to 9.11 from 9.7.1.
+    - asm to 9.11.1 from 9.7.1.
     - grpc-java to 1.85.0 from 1.84.0.
     - netty to 4.1.139.Final from 4.1.138.Final.
     - guava to 33.7.2-jre from 33.5.0-jre.
+    - jackson-databind to 2.18.12 from 2.18.11.
 
 - v4.4.0
   - Hardened external-browser callback handling by checking the `Origin` header against the connected Snowflake account endpoint, accepting matching-Origin POST token callbacks, and keeping the listener open for incomplete or unrelated requests (snowflakedb/snowflake-jdbc#27).
