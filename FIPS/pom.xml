@@ -719,6 +719,8 @@
                         <include>com/google/common/graph/**</include>
                         <include>com/google/common/math/**</include>
                         <include>com/google/common/util/concurrent/**</include>
+                        <include>com/google/common/html/**</include>
+                        <include>com/google/common/escape/**</include>
                       </includes>
                     </filter>
                     <filter>
