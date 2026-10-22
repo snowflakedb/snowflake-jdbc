@@ -1,7 +1,12 @@
 package net.snowflake.client.internal.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
+import java.util.TreeMap;
 import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 
 /**
@@ -9,31 +14,134 @@ import net.snowflake.client.internal.jdbc.SnowflakeUtil;
  * manager on Windows
  */
 interface SecureStorageManager {
-  int COLON_CHAR_LENGTH = 1;
 
-  SecureStorageStatus setCredential(String host, String user, String type, String token);
+  SecureStorageStatus setCredential(String cacheKey, String token);
 
-  String getCredential(String host, String user, String type);
+  String getCredential(String cacheKey);
 
-  SecureStorageStatus deleteCredential(String host, String user, String type);
+  SecureStorageStatus deleteCredential(String cacheKey);
 
-  static String buildCredentialsKey(String host, String user, String type) {
-    StringBuilder target =
-        new StringBuilder(host.length() + user.length() + type.length() + 3 * COLON_CHAR_LENGTH);
+  /**
+   * Builds a versioned, SHA-256-hashed canonical-JSON cache key from {@code input}.
+   *
+   * <p>Key form: {@code SnowflakeTokenCache.v2.<TokenType>.<hex>} where {@code TokenType} is the
+   * PascalCase token type and {@code hex} is the lowercase SHA-256 of the canonical JSON of {@code
+   * keyData}.
+   *
+   * <p>{@code keyData} is flow-specific and never contains token_type:
+   *
+   * <ul>
+   *   <li>OAuth flows ({@code OauthAccessToken}, {@code OauthRefreshToken}, {@code
+   *       DpopBundledAccessToken}): idp, role, snowflake, username.
+   *   <li>MFA and ID token flows ({@code MfaToken}, {@code IdToken}): snowflake, username.
+   * </ul>
+   *
+   * @param input the pre-normalization key dimensions
+   * @return the versioned cache key string
+   * @throws IllegalArgumentException if {@code input.snowflake} or {@code input.username} is empty,
+   *     or if {@code input.idp} is empty for an OAuth credential type
+   */
+  static String buildCacheKey(CacheKeyInput input) {
+    if (input.snowflake == null || input.snowflake.isEmpty()) {
+      throw new IllegalArgumentException("snowflake URL must not be empty");
+    }
+    if (input.username == null || input.username.isEmpty()) {
+      throw new IllegalArgumentException("username must not be empty");
+    }
+    if (input.credentialType.isOAuth() && (input.idp == null || input.idp.isEmpty())) {
+      throw new IllegalArgumentException("idp URL must not be empty for OAuth cache keys");
+    }
 
-    target.append(host.toUpperCase());
-    target.append(":");
-    target.append(user.toUpperCase());
-    target.append(":");
-    target.append(type.toUpperCase());
+    TreeMap<String, String> keyData = new TreeMap<>();
+    if (input.credentialType.isOAuth()) {
+      keyData.put("idp", normalizeUrl(input.idp));
+      keyData.put("role", normalizeIdentifier(input.role));
+      keyData.put("snowflake", normalizeUrl(input.snowflake));
+      keyData.put("username", normalizeIdentifier(input.username));
+    } else {
+      keyData.put("snowflake", normalizeUrl(input.snowflake));
+      keyData.put("username", normalizeIdentifier(input.username));
+    }
+
+    String json;
+    try {
+      json = new ObjectMapper().writeValueAsString(keyData);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to serialize cache key to JSON", e);
+    }
 
     try {
-      MessageDigest md = MessageDigest.getInstance("SHA-256");
-      byte[] hash = md.digest(target.toString().getBytes());
-      return SnowflakeUtil.byteToHexString(hash);
+      byte[] hash =
+          MessageDigest.getInstance("SHA-256").digest(json.getBytes(StandardCharsets.UTF_8));
+      return "SnowflakeTokenCache.v2."
+          + input.credentialType.getValue()
+          + "."
+          + SnowflakeUtil.byteToHexStringLower(hash);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Normalizes a URL for inclusion in a cache key, operating on the raw string.
+   *
+   * <ol>
+   *   <li>Strips the scheme, removing everything up to and including the first {@code ://}.
+   *   <li>Strips optional userinfo ({@code user:pass@}) from the authority only. The authority ends
+   *       at the first {@code /}; an {@code @} later in the path is preserved.
+   *   <li>Drops the query string (everything from the first {@code ?}).
+   *   <li>Drops the fragment (everything from the first {@code #}).
+   *   <li>Strips all trailing slashes.
+   *   <li>Lowercases the remainder.
+   * </ol>
+   *
+   * <p>An explicitly written port, including {@code :443}, stays in the result.
+   */
+  static String normalizeUrl(String url) {
+    if (url == null) {
+      return "";
+    }
+    String s = url;
+    int scheme = s.indexOf("://");
+    if (scheme >= 0) {
+      s = s.substring(scheme + 3);
+    }
+    int slash = s.indexOf('/');
+    int authorityEnd = slash >= 0 ? slash : s.length();
+    int at = s.indexOf('@');
+    if (at >= 0 && at < authorityEnd) {
+      s = s.substring(at + 1);
+    }
+    int query = s.indexOf('?');
+    if (query >= 0) {
+      s = s.substring(0, query);
+    }
+    int fragment = s.indexOf('#');
+    if (fragment >= 0) {
+      s = s.substring(0, fragment);
+    }
+    while (s.endsWith("/")) {
+      s = s.substring(0, s.length() - 1);
+    }
+    return s.toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * Normalizes a Snowflake identifier (username or role) for inclusion in a cache key.
+   *
+   * <p>If the value contains at least one double-quote character it is returned verbatim (quoted
+   * identifiers carry case-sensitive SQL semantics that must be preserved exactly). Otherwise the
+   * entire value is lowercased (unquoted Snowflake identifiers are case-insensitive, so lowercasing
+   * yields a stable canonical form).
+   */
+  static String normalizeIdentifier(String id) {
+    if (id == null) {
+      return "";
+    }
+    if (id.indexOf('"') >= 0) {
+      return id;
+    }
+    return id.toLowerCase(Locale.ROOT);
   }
 
   enum SecureStorageStatus {

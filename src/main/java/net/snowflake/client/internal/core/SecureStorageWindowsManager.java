@@ -34,7 +34,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return new SecureStorageWindowsManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String type, String token) {
+  public SecureStorageStatus setCredential(String cacheKey, String token) {
     if (isNullOrEmpty(token)) {
       logger.warn("No token provided", false);
       return SecureStorageStatus.SUCCESS;
@@ -44,15 +44,13 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     Memory credBlobMem = new Memory(credBlob.length);
     credBlobMem.write(0, credBlob, 0, credBlob.length);
 
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
-
     SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential();
     cred.Type = SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType();
-    cred.TargetName = new WString(target);
+    cred.TargetName = new WString(cacheKey);
     cred.CredentialBlobSize = (int) credBlobMem.size();
     cred.CredentialBlob = credBlobMem;
     cred.Persist = SecureStorageWindowsCredentialPersistType.CRED_PERSIST_LOCAL_MACHINE.getType();
-    cred.UserName = new WString(user.toUpperCase());
+    cred.UserName = new WString(cacheKey);
 
     boolean ret = false;
     synchronized (advapi32Lib) {
@@ -71,16 +69,15 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user, String type) {
+  public String getCredential(String cacheKey) {
     PointerByReference pCredential = new PointerByReference();
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
 
     try {
       boolean ret = false;
       synchronized (advapi32Lib) {
         ret =
             advapi32Lib.CredReadW(
-                target,
+                cacheKey,
                 SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(),
                 0,
                 pCredential);
@@ -123,14 +120,12 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.buildCredentialsKey(host, user, type);
-
+  public SecureStorageStatus deleteCredential(String cacheKey) {
     boolean ret = false;
     synchronized (advapi32Lib) {
       ret =
           advapi32Lib.CredDeleteW(
-              target, SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(), 0);
+              cacheKey, SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(), 0);
     }
 
     if (!ret) {

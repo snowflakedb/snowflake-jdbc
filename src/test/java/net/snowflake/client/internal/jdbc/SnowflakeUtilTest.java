@@ -402,4 +402,11 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     assertEquals(null, normalizeSnowflakeHost(null));
     assertEquals("", normalizeSnowflakeHost(""));
   }
+
+  @Test
+  public void shouldRenderLowerHexWithoutSignExtension() {
+    byte[] bytes = new byte[] {0x00, (byte) 0x0A, (byte) 0xFF, (byte) 0xAB};
+    assertEquals("000AFFAB", SnowflakeUtil.byteToHexString(bytes));
+    assertEquals("000affab", SnowflakeUtil.byteToHexStringLower(bytes));
+  }
 }
