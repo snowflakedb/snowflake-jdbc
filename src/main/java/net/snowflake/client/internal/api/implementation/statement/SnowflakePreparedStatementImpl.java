@@ -452,7 +452,8 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
         x == null
             ? null
             : String.valueOf(
-                BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x)) / 1000)
+                BigDecimal.valueOf(
+                        Math.floorDiv(x.getTime() - ResultUtil.msDiffJulianToGregorian(x), 1000L))
                     .scaleByPowerOfTen(9)
                     .add(BigDecimal.valueOf(x.getNanos())));
     String bindingTypeName;
@@ -857,7 +858,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       if (sfType == SnowflakeType.TIMESTAMP_TZ) {
         value =
             String.valueOf(
-                BigDecimal.valueOf(milliSecSinceEpoch / 1000)
+                BigDecimal.valueOf(Math.floorDiv(milliSecSinceEpoch, 1000L))
                     .scaleByPowerOfTen(9)
                     .add(BigDecimal.valueOf(x.getNanos())));
 
@@ -868,7 +869,7 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
 
         value =
             String.valueOf(
-                BigDecimal.valueOf(milliSecSinceEpoch / 1000)
+                BigDecimal.valueOf(Math.floorDiv(milliSecSinceEpoch, 1000L))
                     .scaleByPowerOfTen(9)
                     .add(BigDecimal.valueOf(x.getNanos())));
       }

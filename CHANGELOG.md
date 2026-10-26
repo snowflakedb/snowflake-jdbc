@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.4.1-SNAPSHOT
+  - Fixed `PreparedStatement.setTimestamp` and `setObject` binding a `java.sql.Timestamp` that is before 1970-01-01 and has a fractional second of at least 1 millisecond exactly one second late. `setTimestamp(int, Timestamp, Calendar)` was affected the same way, including values that fall before 1970 only after the calendar offset is applied (SNOW-4352287).
   - Fixed token cache key collisions for multi-account (shared IdP) and multi-role scenarios by switching to a versioned, SHA256-hashed canonical-JSON key with the token type in the key prefix and flow-specific keyData (OAuth: idp/role/snowflake/username; MFA/ID: snowflake/username only), applied uniformly across macOS Keychain, Windows Credential Manager, and the Linux file backend (SNOW-3784426).
   - Fixed token cache key normalization to use lowercase for consistency with case-insensitive Snowflake identifiers (quoted identifiers are preserved verbatim); the token type in the key prefix now uses PascalCase (`MfaToken`, `OauthAccessToken`) instead of `SCREAMING_SNAKE_CASE` (SNOW-3784426).
   - Changed the token cache to a new key namespace, `SnowflakeTokenCache.v2.<PascalCaseTokenType>.<hash>` (`IdToken`, `MfaToken`, `OauthAccessToken`, `OauthRefreshToken`, `DpopBundledAccessToken`). Existing macOS Keychain, Windows Credential Manager, and Linux credential-file entries are not read and are not migrated; the next connection re-authenticates and writes a new entry. There is no v1 dual-read (SNOW-3784426).
