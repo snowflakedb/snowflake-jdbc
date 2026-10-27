@@ -46,6 +46,8 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
+    <!-- TODO(SNOW-4368409): drop this pin once google-cloud-storage pulls google-api-client 2.9.2 or later itself. -->
+    <google.api.client.version>2.9.2</google.api.client.version>
     <google.api.grpc.version>2.72.0</google.api.grpc.version>
     <google.auth.library.oauth2.http.version>1.48.0</google.auth.library.oauth2.http.version>
     <google.cloud.core.version>2.71.0</google.cloud.core.version>
@@ -181,6 +183,12 @@
         <groupId>com.google.api</groupId>
         <artifactId>gax</artifactId>
         <version>${google.gax.version}</version>
+      </dependency>
+      <!-- TODO(SNOW-4368409): drop this pin once google-cloud-storage pulls google-api-client 2.9.2 or later itself. -->
+      <dependency>
+        <groupId>com.google.api-client</groupId>
+        <artifactId>google-api-client</artifactId>
+        <version>${google.api.client.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
