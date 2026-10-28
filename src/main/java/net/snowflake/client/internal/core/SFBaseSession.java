@@ -234,6 +234,33 @@ public abstract class SFBaseSession {
   }
 
   /**
+   * Looks up a session parameter in the most recent parameter block applied by login or a query
+   * response. This block includes parameters the driver also copies into dedicated fields (for
+   * example {@code AUTOCOMMIT}), and drops names that the latest block no longer contains.
+   *
+   * <p>Subclasses whose parameters come from another source override this method.
+   *
+   * @param name the parameter name, matched case-insensitively
+   * @return the parameter value, or {@code null} if the current block does not contain it
+   */
+  public Object getSessionParameterValue(String name) {
+    Map<String, Object> parameters = this.commonParameters;
+    if (parameters == null) {
+      return null;
+    }
+    Object value = parameters.get(name);
+    if (value != null) {
+      return value;
+    }
+    for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+      if (name.equalsIgnoreCase(entry.getKey())) {
+        return entry.getValue();
+      }
+    }
+    return null;
+  }
+
+  /**
    * Gets the Property associated with the key 'name' in the ClientInfo map.
    *
    * @param name The key from which to fetch the Property.

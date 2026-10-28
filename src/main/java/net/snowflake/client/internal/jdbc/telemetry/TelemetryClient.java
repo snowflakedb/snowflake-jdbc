@@ -340,8 +340,6 @@ public class TelemetryClient implements Telemetry {
       // session shared with JDBC
       String payload = logsToString(tmpList);
 
-      logger.debugNoMask("Payload of telemetry is : " + payload);
-
       HttpPost post = new HttpPost(this.telemetryUrl);
       post.setEntity(new StringEntity(payload));
       post.setHeader("Content-type", "application/json");

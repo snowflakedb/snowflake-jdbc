@@ -3,6 +3,7 @@ package net.snowflake.client.api.connection;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import net.snowflake.client.api.resultset.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for Connection */
@@ -164,4 +165,80 @@ public interface SnowflakeConnection {
    * @throws SQLException if the connection is closed or an error occurs
    */
   String getDatabase() throws SQLException;
+
+  /**
+   * Return the value of a Snowflake session parameter as a {@link String}.
+   *
+   * <p>Session parameters are the key-value pairs the server returns at login and refreshes with
+   * query responses (e.g. {@code QUERY_TAG}, {@code TIMEZONE}, {@code AUTOCOMMIT}). The lookup
+   * reflects the most recent parameter block and matches the name case-insensitively.
+   *
+   * <p>Values are converted with {@link Object#toString()}, so a boolean parameter returns {@code
+   * "true"} or {@code "false"} and a numeric parameter returns its decimal form.
+   *
+   * <p><b>Default implementation:</b> rejects a {@code null} name, then throws {@link
+   * SQLFeatureNotSupportedException} so that third-party or mock implementors that have not yet
+   * added this capability fail explicitly rather than silently returning {@code null}.
+   * Implementations backed by a live Snowflake session must override this method.
+   *
+   * @param parameterName the session parameter name; case-insensitive, must not be {@code null}
+   * @return the parameter value as a {@link String} (booleans and numbers in their {@code
+   *     toString()} form), or {@code null} if the current session state does not contain the
+   *     parameter
+   * @throws SQLFeatureNotSupportedException if called on an implementation that has not overridden
+   *     this method
+   * @throws SQLException if the connection is closed; this check comes before argument validation
+   * @throws IllegalArgumentException if {@code parameterName} is {@code null}
+   * @since 4.4.1
+   */
+  default String getSessionParameter(String parameterName) throws SQLException {
+    if (parameterName == null) {
+      throw new IllegalArgumentException("parameterName must not be null");
+    }
+    throw new SQLFeatureNotSupportedException(
+        "getSessionParameter is not supported by this SnowflakeConnection implementation."
+            + " Override this method to provide session-parameter access.");
+  }
+
+  /**
+   * Submit a JSON-encoded telemetry event to the Snowflake in-band telemetry service.
+   *
+   * <p>This is a <em>best-effort, fire-and-forget</em> call:
+   *
+   * <ul>
+   *   <li>Each call results in its own asynchronous HTTP request. The event is queued in a
+   *       dedicated application-telemetry batch that is <em>separate</em> from the JDBC driver's
+   *       own diagnostic batch, so a server rejection of an application payload cannot disable
+   *       driver-internal telemetry.
+   *   <li>The driver injects (or overwrites) a {@code "source"} key into the submitted object so
+   *       server-side consumers can distinguish application events from driver events. Do not rely
+   *       on round-tripping the value of that key.
+   *   <li>Payloads longer than 64 KiB (measured in UTF-16 code units) are silently discarded.
+   *   <li>If in-band telemetry is disabled for the session, the event is dropped without an error.
+   *   <li>Send failures are handled on the telemetry thread and are not reported to the caller.
+   *   <li>{@code jsonPayload} must be a JSON object. Payloads that are not valid JSON, or are a
+   *       JSON array or scalar, are discarded.
+   * </ul>
+   *
+   * <p><b>Default implementation:</b> rejects a {@code null} payload, then throws {@link
+   * SQLFeatureNotSupportedException} so that third-party or mock implementors that have not yet
+   * added telemetry support fail explicitly rather than silently dropping events. Implementations
+   * backed by a live Snowflake session must override this method.
+   *
+   * @param jsonPayload a JSON object string to submit as the telemetry payload; must not be {@code
+   *     null}
+   * @throws SQLFeatureNotSupportedException if called on an implementation that has not overridden
+   *     this method
+   * @throws SQLException if the connection is closed; this check comes before argument validation
+   * @throws IllegalArgumentException if {@code jsonPayload} is {@code null}
+   * @since 4.4.1
+   */
+  default void submitTelemetry(String jsonPayload) throws SQLException {
+    if (jsonPayload == null) {
+      throw new IllegalArgumentException("jsonPayload must not be null");
+    }
+    throw new SQLFeatureNotSupportedException(
+        "submitTelemetry is not supported by this SnowflakeConnection implementation."
+            + " Override this method to submit telemetry through the session telemetry client.");
+  }
 }

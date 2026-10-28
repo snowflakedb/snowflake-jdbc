@@ -17,6 +17,14 @@ public class TelemetryUtil {
   @Deprecated public static final String VALUE = "value";
 
   /**
+   * JSON key injected into every event submitted through {@link
+   * net.snowflake.client.api.connection.SnowflakeConnection#submitTelemetry(String)} so that
+   * server-side consumers can distinguish application-submitted events from driver-internal
+   * diagnostic events.
+   */
+  public static final String SOURCE_KEY = "source";
+
+  /**
    * Create a simple TelemetryData instance for Job metrics using given parameters
    *
    * @param queryId the id of the query

@@ -715,6 +715,8 @@ public class MockConnectionTest extends BaseJDBCTest {
 
   public static class MockSnowflakeSFSession extends SFBaseSession {
     private final List<String> errorsEncountered = new ArrayList<>();
+    private final List<TelemetryData> telemetryLogs = new ArrayList<>();
+    private int telemetryFlushCount;
 
     protected MockSnowflakeSFSession(SFConnectionHandler sfConnectionHandler) {
       super(sfConnectionHandler);
@@ -722,6 +724,14 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     public List<String> getErrorsEncountered() {
       return errorsEncountered;
+    }
+
+    public List<TelemetryData> getTelemetryLogs() {
+      return telemetryLogs;
+    }
+
+    public int getTelemetryFlushCount() {
+      return telemetryFlushCount;
     }
 
     @Override
@@ -745,13 +755,16 @@ public class MockConnectionTest extends BaseJDBCTest {
     private Telemetry mockTelemetryClient() {
       return new Telemetry() {
         @Override
-        public void addLogToBatch(TelemetryData log) {}
+        public void addLogToBatch(TelemetryData log) {
+          telemetryLogs.add(log);
+        }
 
         @Override
         public void close() {}
 
         @Override
         public Future<Boolean> sendBatchAsync() {
+          telemetryFlushCount++;
           return null;
         }
 

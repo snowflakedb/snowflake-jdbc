@@ -6,7 +6,10 @@ import static net.snowflake.client.internal.jdbc.SnowflakeUtil.isNullOrEmpty;
 import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.internalCallMarker;
 import static net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.recordIfExternal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -63,6 +66,9 @@ import net.snowflake.client.internal.jdbc.SnowflakeClob;
 import net.snowflake.client.internal.jdbc.SnowflakeConnectString;
 import net.snowflake.client.internal.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.internal.jdbc.telemetry.InternalApiTelemetryTracker.InternalCallMarker;
+import net.snowflake.client.internal.jdbc.telemetry.Telemetry;
+import net.snowflake.client.internal.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.internal.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.log.SFLoggerUtil;
@@ -110,6 +116,33 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   private boolean showStatementParameters;
 
   private ObjectMapper objectMapper;
+
+  /**
+   * Dedicated telemetry client for events submitted through {@link
+   * net.snowflake.client.api.connection.SnowflakeConnection#submitTelemetry(String)}. Kept separate
+   * from the driver's own telemetry client so that a server-rejected application payload cannot
+   * disable in-band driver diagnostics. Lazily initialized on the first {@code submitTelemetry}
+   * call; access is guarded by {@link #appTelemetryClientLock}.
+   */
+  private Telemetry appTelemetryClient;
+
+  private final Object appTelemetryClientLock = new Object();
+
+  /**
+   * Maximum accepted size (in UTF-16 code units, a close proxy for bytes on ASCII-heavy JSON) of
+   * the {@code jsonPayload} argument passed to {@link
+   * net.snowflake.client.api.connection.SnowflakeConnection#submitTelemetry(String)}. Payloads
+   * exceeding this limit are logged at DEBUG and discarded.
+   */
+  public static final int SUBMIT_TELEMETRY_MAX_PAYLOAD_LENGTH = 64 * 1024; // 64 KiB
+
+  /**
+   * Value injected into every telemetry event submitted via {@link
+   * net.snowflake.client.api.connection.SnowflakeConnection#submitTelemetry(String)} under the key
+   * {@value TelemetryUtil#SOURCE_KEY}. Allows the server-side telemetry stream to distinguish
+   * application-submitted events from driver-internal diagnostic events.
+   */
+  public static final String SUBMIT_TELEMETRY_SOURCE_VALUE = "SnowflakeConnection.submitTelemetry";
 
   /**
    * Instantiates a SnowflakeConnectionImpl with the passed-in SnowflakeConnectionImpl.
@@ -340,6 +373,129 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
   public String getDatabase() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getDatabase();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates to {@link
+   * net.snowflake.client.internal.core.SFBaseSession#getSessionParameterValue(String)} and converts
+   * the value with {@link Object#toString()}.
+   */
+  @Override
+  public String getSessionParameter(String parameterName) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    if (parameterName == null) {
+      throw new IllegalArgumentException("parameterName must not be null");
+    }
+    // sfSession is guaranteed non-null when the connection is open (set in initConnectionWithImpl
+    // and nulled only in close() after marking isClosed=true).
+    Object value = sfSession.getSessionParameterValue(parameterName);
+    return value == null ? null : value.toString();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Implementation notes:
+   *
+   * <ul>
+   *   <li><b>Isolation</b>: the event is queued in a <em>dedicated, per-connection</em> telemetry
+   *       client that is separate from the JDBC driver's own diagnostic client. A server-side
+   *       rejection of an application payload therefore cannot disable the driver's in-band
+   *       telemetry (e.g. CRL-validator stats).
+   *   <li><b>Source marker</b>: the key {@value TelemetryUtil#SOURCE_KEY} is injected (or
+   *       overwritten) with the value {@value #SUBMIT_TELEMETRY_SOURCE_VALUE} so that server-side
+   *       consumers can distinguish application-submitted events from driver-internal events.
+   *   <li><b>Size limit</b>: payloads longer than {@value #SUBMIT_TELEMETRY_MAX_PAYLOAD_LENGTH}
+   *       UTF-16 code units are logged at DEBUG level and discarded.
+   *   <li><b>Parse errors</b>: payloads that are not valid JSON, or are not a JSON object, are
+   *       logged at DEBUG level and discarded.
+   *   <li><b>Send failures</b>: handled asynchronously on the telemetry thread; not reported to the
+   *       caller.
+   * </ul>
+   */
+  @Override
+  public void submitTelemetry(String jsonPayload) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    if (jsonPayload == null) {
+      throw new IllegalArgumentException("jsonPayload must not be null");
+    }
+    if (jsonPayload.length() > SUBMIT_TELEMETRY_MAX_PAYLOAD_LENGTH) {
+      logger.debug(
+          "submitTelemetry: discarded payload exceeding {} code units (actual: {})",
+          SUBMIT_TELEMETRY_MAX_PAYLOAD_LENGTH,
+          jsonPayload.length());
+      return;
+    }
+    JsonNode node;
+    try {
+      node = objectMapper.readTree(jsonPayload);
+    } catch (JsonProcessingException ex) {
+      // The exception message quotes part of the payload, so log only its type.
+      logger.debug(
+          "submitTelemetry: discarded payload that is not valid JSON: {}",
+          ex.getClass().getSimpleName());
+      return;
+    }
+    if (!(node instanceof ObjectNode)) {
+      logger.debug("submitTelemetry: discarded payload that is not a JSON object");
+      return;
+    }
+    ObjectNode objectNode = (ObjectNode) node;
+    // Inject a source marker so server-side consumers can distinguish application-submitted
+    // events from driver-internal diagnostic events.
+    objectNode.put(TelemetryUtil.SOURCE_KEY, SUBMIT_TELEMETRY_SOURCE_VALUE);
+
+    Telemetry client = getOrCreateAppTelemetryClient();
+    if (client == null) {
+      logger.debug("submitTelemetry: no telemetry client available, dropping event");
+      return;
+    }
+    client.addLogToBatch(TelemetryUtil.buildJobData(objectNode));
+    client.sendBatchAsync();
+  }
+
+  /**
+   * Returns the dedicated application-telemetry client for this connection, creating it lazily on
+   * the first call.
+   *
+   * <p>In production (session is a real {@link net.snowflake.client.internal.core.SFSession}), a
+   * fresh {@link TelemetryClient} is created so that application events are isolated from the
+   * driver's own diagnostic batch. A server-side rejection of an application payload therefore only
+   * disables the application client, not the driver's telemetry.
+   *
+   * <p>When the session does not extend {@code SFSession} (e.g. unit-test mocks backed by {@link
+   * net.snowflake.client.internal.core.SFBaseSession}), {@link TelemetryClient#createTelemetry}
+   * will throw or return {@code null}. In that case we fall back to the session's own telemetry
+   * client so that unit tests remain testable.
+   *
+   * @return the application telemetry client, or {@code null} if no client is available
+   */
+  private Telemetry getOrCreateAppTelemetryClient() {
+    if (appTelemetryClient != null) {
+      return appTelemetryClient;
+    }
+    synchronized (appTelemetryClientLock) {
+      if (appTelemetryClient == null) {
+        Telemetry newClient = null;
+        try {
+          // Creates a fresh TelemetryClient backed by the same session but independent of the
+          // driver's own diagnostic client (isolation: rejection can't disable driver telemetry).
+          newClient = TelemetryClient.createTelemetry(this);
+        } catch (Exception ex) {
+          // Session does not extend SFSession (e.g. unit-test mocks). Fall through to the
+          // session-client fallback.
+          logger.debug(
+              "submitTelemetry: could not create dedicated app telemetry client ({}), "
+                  + "falling back to session client",
+              ex.getClass().getSimpleName());
+        }
+        appTelemetryClient =
+            (newClient != null) ? newClient : sfSession.getTelemetryClient(internalCallMarker());
+      }
+      return appTelemetryClient;
+    }
   }
 
   @Override
