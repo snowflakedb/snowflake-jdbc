@@ -41,7 +41,9 @@ jobs:
 
     build:
         name: Build
-        runs-on: ubuntu-latest
+        # ubuntu-latest is 26.04 and defaults to Java 25. Byte Buddy in
+        # this job supports through Java 23. ubuntu-24.04 still defaults to 17.
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v5
             - name: Build

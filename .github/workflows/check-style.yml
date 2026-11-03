@@ -7,7 +7,9 @@ on:
 jobs:
     check-style:
         name: Check Style
-        runs-on: ubuntu-latest
+        # ubuntu-latest is 26.04 and defaults to Java 25. fmt-maven-plugin
+        # 2.19 crashes there. ubuntu-24.04 still defaults to Java 17.
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7
             - name: Check Style
