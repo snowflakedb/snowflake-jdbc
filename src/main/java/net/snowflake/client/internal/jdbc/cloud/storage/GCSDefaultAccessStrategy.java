@@ -20,8 +20,10 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.nio.channels.Channels;
+import java.util.Locale;
 import java.util.Map;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
+import net.snowflake.client.internal.core.HttpClientSettingsKey;
 import net.snowflake.client.internal.core.SFSession;
 import net.snowflake.client.internal.exception.SnowflakeSQLLoggedException;
 import net.snowflake.client.internal.jdbc.SnowflakeFileTransferAgent;
@@ -29,19 +31,23 @@ import net.snowflake.client.internal.jdbc.SnowflakeUtil;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
 import net.snowflake.client.internal.util.SFPair;
+import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpStatus;
 
 class GCSDefaultAccessStrategy implements GCSAccessStrategy {
   private static final SFLogger logger = SFLoggerFactory.getLogger(GCSDefaultAccessStrategy.class);
   private Storage gcsClient = null;
+  private final boolean gzipDisabled;
 
   GCSDefaultAccessStrategy(StageInfo stage, SFSession session) throws SnowflakeSQLException {
     HttpTransportFactory transportFactory;
     if (session != null) {
-      transportFactory =
-          CloudStorageProxyFactory.createHttpTransportForGCS(session.getHttpClientKey());
+      HttpClientSettingsKey settings = session.getHttpClientKey();
+      gzipDisabled = Boolean.TRUE.equals(settings.getGzipDisabled());
+      transportFactory = CloudStorageProxyFactory.createHttpTransportForGCS(settings);
     } else {
+      gzipDisabled = false;
       transportFactory =
           CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(stage.getProxyProperties());
     }
@@ -192,8 +198,23 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
             .setMetadata(metadata)
             .build();
 
-    // Upload media may already be compressed and client-side encrypted.
-    gcsClient.create(blobInfo, content, Storage.BlobWriteOption.disableGzipContent());
+    boolean isEncrypted =
+        metadata != null && metadata.containsKey(SnowflakeGCSClient.GCS_ENCRYPTIONDATAPROP);
+    // Parquet and ORC are containers and may contain uncompressed data.
+    boolean isCompressed =
+        contentEncoding != null
+            && FileCompressionType.lookupByMimeSubType(contentEncoding.toLowerCase(Locale.ROOT))
+                .filter(
+                    type ->
+                        type.isSupported()
+                            && type != FileCompressionType.PARQUET
+                            && type != FileCompressionType.ORC)
+                .isPresent();
+    if (gzipDisabled || isEncrypted || isCompressed) {
+      gcsClient.create(blobInfo, content, Storage.BlobWriteOption.disableGzipContent());
+    } else {
+      gcsClient.create(blobInfo, content);
+    }
   }
 
   @Override

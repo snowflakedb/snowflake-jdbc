@@ -65,7 +65,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
       "net.snowflake.jdbc.disableGcsDefaultCredentials";
 
-  private static final String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
+  static final String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String GCS_METADATA_PREFIX = "x-goog-meta-";
   private static final String GCS_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
