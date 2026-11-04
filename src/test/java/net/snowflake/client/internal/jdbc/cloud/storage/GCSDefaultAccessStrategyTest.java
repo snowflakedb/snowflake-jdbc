@@ -1,17 +1,41 @@
 package net.snowflake.client.internal.jdbc.cloud.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.http.HttpMediaType;
+import com.google.api.client.http.LowLevelHttpResponse;
+import com.google.api.client.testing.http.MockHttpTransport;
+import com.google.api.client.testing.http.MockLowLevelHttpRequest;
+import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+import com.google.auth.http.HttpTransportFactory;
 import com.google.cloud.storage.StorageException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 
 class GCSDefaultAccessStrategyTest {
 
@@ -34,6 +58,73 @@ class GCSDefaultAccessStrategyTest {
     when(mockGcsClient.getMaxRetries()).thenReturn(1);
     when(mockGcsClient.getRetryBackoffMin()).thenReturn(0);
     when(mockGcsClient.getRetryBackoffMaxExponent()).thenReturn(0);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void testUploadDoesNotGzipHttpRequest(boolean hasAccessToken) throws Exception {
+    byte[] content = new byte[4096];
+    new Random(0).nextBytes(content);
+    ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
+    MockLowLevelHttpRequest request =
+        new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() throws IOException {
+            getStreamingContent().writeTo(requestBody);
+            return super.execute();
+          }
+        };
+    request.setResponse(
+        new MockLowLevelHttpResponse()
+            .setContentType("application/json")
+            .setContent("{\"bucket\":\"test-bucket\",\"name\":\"file.gz\"}"));
+    MockHttpTransport transport =
+        new MockHttpTransport.Builder().setLowLevelHttpRequest(request).build();
+    HttpTransportFactory transportFactory = () -> transport;
+    Map<String, String> credentials = new HashMap<>();
+    if (hasAccessToken) {
+      credentials.put("GCS_ACCESS_TOKEN", "test-token");
+    }
+    StageInfo stage =
+        StageInfo.createStageInfo(
+            "GCS", "test-bucket/path", credentials, "US-CENTRAL1", null, null, true);
+
+    try (MockedStatic<CloudStorageProxyFactory> proxyFactory =
+        mockStatic(CloudStorageProxyFactory.class)) {
+      proxyFactory
+          .when(() -> CloudStorageProxyFactory.createSessionlessHttpTransportForGCS(null))
+          .thenReturn(transportFactory);
+      GCSDefaultAccessStrategy uploadStrategy = new GCSDefaultAccessStrategy(stage, null);
+      uploadStrategy.uploadWithDownScopedToken(
+          1,
+          "test-bucket",
+          "file.gz",
+          "gzip",
+          Collections.singletonMap("encryptiondata", "test-encryption-metadata"),
+          content.length,
+          new ByteArrayInputStream(content),
+          "query-id");
+    }
+
+    assertNull(
+        request.getContentEncoding(), "Already encrypted/compressed media must not be gzipped");
+    String multipart = new String(requestBody.toByteArray(), StandardCharsets.ISO_8859_1);
+    String boundary = new HttpMediaType(request.getContentType()).getParameter("boundary");
+    int metadataStart = multipart.indexOf("\r\n\r\n") + 4;
+    int metadataEnd = multipart.indexOf("\r\n--" + boundary, metadataStart);
+    assertTrue(metadataStart >= 4 && metadataEnd > metadataStart);
+    JsonNode metadata =
+        new ObjectMapper().readTree(multipart.substring(metadataStart, metadataEnd));
+    assertEquals("test-bucket", metadata.get("bucket").asText());
+    assertEquals("file.gz", metadata.get("name").asText());
+    assertEquals("gzip", metadata.get("contentEncoding").asText());
+    assertEquals(
+        "test-encryption-metadata", metadata.get("metadata").get("encryptiondata").asText());
+    int contentStart = multipart.indexOf("\r\n\r\n", metadataEnd) + 4;
+    int contentEnd = multipart.lastIndexOf("\r\n--" + boundary + "--");
+    assertTrue(contentStart > metadataEnd && contentEnd > contentStart);
+    assertArrayEquals(
+        content, Arrays.copyOfRange(requestBody.toByteArray(), contentStart, contentEnd));
   }
 
   // A direct StorageException(503) below the max retry threshold must not be thrown — the handler

@@ -192,7 +192,8 @@ class GCSDefaultAccessStrategy implements GCSAccessStrategy {
             .setMetadata(metadata)
             .build();
 
-    gcsClient.create(blobInfo, content);
+    // Upload media may already be compressed and client-side encrypted.
+    gcsClient.create(blobInfo, content, Storage.BlobWriteOption.disableGzipContent());
   }
 
   @Override
