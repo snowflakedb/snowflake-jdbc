@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.net.InetAddress;
 import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLInput;
@@ -21,10 +22,12 @@ import net.snowflake.client.internal.core.arrow.StructObjectWrapper;
 import net.snowflake.client.internal.core.json.Converters;
 import net.snowflake.client.internal.log.SFLogger;
 import net.snowflake.client.internal.log.SFLoggerFactory;
+import net.snowflake.client.internal.util.IpAddressParser;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
+  private static final String IPADDRESS_TYPE_NAME = SnowflakeType.IPADDRESS.name();
 
   protected final Converters converters;
   protected final ObjectMapper objectMapper;
@@ -87,6 +90,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.BOOLEAN:
         return getBoolean(columnIndex);
 
+      case Types.OTHER:
+        if (IPADDRESS_TYPE_NAME.equals(resultSetMetaData.getColumnTypeName(columnIndex))) {
+          return getIpAddress(columnIndex);
+        }
+        throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
+
       case Types.STRUCT:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
           return new StructObjectWrapper((String) obj, getSqlInput((String) obj, columnIndex));
@@ -107,6 +116,19 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Object getObjectWithoutString(int columnIndex) throws SFException {
     return getObject(columnIndex);
+  }
+
+  private InetAddress getIpAddress(int columnIndex) throws SFException {
+    String text = getString(columnIndex);
+    InetAddress address = IpAddressParser.parse(text);
+    if (address == null) {
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT,
+          IPADDRESS_TYPE_NAME,
+          IpAddressParser.INET_ADDRESS_STR,
+          text);
+    }
+    return address;
   }
   /**
    * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type

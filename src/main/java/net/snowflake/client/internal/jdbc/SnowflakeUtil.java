@@ -232,6 +232,9 @@ public class SnowflakeUtil {
       case DECFLOAT:
         columnTypeInfo = new ColumnTypeInfo(Types.DECIMAL, "DECFLOAT", baseType);
         break;
+      case IPADDRESS:
+        columnTypeInfo = new ColumnTypeInfo(Types.OTHER, "IPADDRESS", baseType);
+        break;
       case FIXED:
         if (isVectorType) {
           columnTypeInfo =

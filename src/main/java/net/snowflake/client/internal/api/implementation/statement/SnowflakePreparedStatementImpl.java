@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -523,6 +524,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
         && x instanceof byte[]) {
       // byte[] must be hex-encoded via setBytes, not String.valueOf'd (SNOW-3982613)
       setBytes(parameterIndex, (byte[]) x);
+    } else if (x instanceof InetAddress) {
+      // Bound as text; the server casts it to IPADDRESS.
+      setString(parameterIndex, ((InetAddress) x).getHostAddress());
     } else {
       logger.trace(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -580,6 +584,9 @@ public class SnowflakePreparedStatementImpl extends SnowflakeStatementImpl
       setNull(parameterIndex, Types.NULL);
     } else if (x instanceof String) {
       setString(parameterIndex, (String) x);
+    } else if (x instanceof InetAddress) {
+      // Bound as text; the server casts it to IPADDRESS.
+      setString(parameterIndex, ((InetAddress) x).getHostAddress());
     } else if (x instanceof BigDecimal) {
       setBigDecimal(parameterIndex, (BigDecimal) x);
     } else if (x instanceof Short) {

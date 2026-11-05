@@ -58,6 +58,9 @@ public final class SnowflakeTypeHelper {
       case "decfloat":
         retval = SnowflakeType.EXTRA_TYPES_DECFLOAT;
         break;
+      case "ipaddress":
+        retval = Types.OTHER;
+        break;
       case "decimal":
         retval = Types.DECIMAL;
         break;

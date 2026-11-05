@@ -1,5 +1,6 @@
 package net.snowflake.client.internal.jdbc;
 
+import java.net.InetAddress;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -7,6 +8,7 @@ import java.util.List;
 import net.snowflake.client.api.exception.SnowflakeSQLException;
 import net.snowflake.client.api.resultset.FieldMetadata;
 import net.snowflake.client.api.resultset.SnowflakeResultSetMetaData;
+import net.snowflake.client.api.resultset.SnowflakeType;
 import net.snowflake.client.internal.core.SFBaseSession;
 import net.snowflake.client.internal.core.SFException;
 import net.snowflake.client.internal.core.SFResultSetMetaData;
@@ -25,6 +27,7 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
+  private static final String IPADDRESS_TYPE_NAME = SnowflakeType.IPADDRESS.name();
 
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;
@@ -177,6 +180,9 @@ public class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, Snowflak
     logger.trace("String getColumnClassName(int column)", false);
 
     int type = this.getColumnType(column);
+    if (type == Types.OTHER && IPADDRESS_TYPE_NAME.equals(getColumnTypeName(column))) {
+      return InetAddress.class.getName();
+    }
 
     return SnowflakeTypeUtil.javaTypeToClassName(type);
   }

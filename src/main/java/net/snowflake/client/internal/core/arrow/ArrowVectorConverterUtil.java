@@ -145,6 +145,9 @@ public final class ArrowVectorConverterUtil {
         case DECFLOAT:
           return new DecfloatToDecimalConverter(vector, idx, context);
 
+        case IPADDRESS:
+          return new IpAddressConverter(vector, idx, context);
+
         case INTERVAL_YEAR_MONTH:
           return new IntervalYearMonthToPeriodConverter(vector, idx, context);
 

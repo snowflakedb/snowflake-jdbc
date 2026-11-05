@@ -88,7 +88,9 @@ public enum SnowflakeType {
   /** Represents a GEOMETRY type */
   GEOMETRY,
   /** Represents a VECTOR type */
-  VECTOR;
+  VECTOR,
+  /** Represents an IPADDRESS (IPv4 or IPv6 address) type */
+  IPADDRESS;
 
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
   public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;

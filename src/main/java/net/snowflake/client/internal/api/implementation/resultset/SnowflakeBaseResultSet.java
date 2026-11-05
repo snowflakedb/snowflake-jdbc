@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.net.InetAddress;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -1480,6 +1481,15 @@ public abstract class SnowflakeBaseResultSet implements ResultSet, SnowflakeResu
             "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
                 + type.getName());
       }
+    } else if (InetAddress.class.isAssignableFrom(type)) {
+      // Only native IPADDRESS columns convert; IPADDRESS returned as TEXT stays a String.
+      Object object = getObject(columnIndex);
+      if (object == null || type.isInstance(object)) {
+        return (T) object;
+      }
+      throw new SQLException(
+          "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+              + type.getName());
     } else {
       logger.debug(
           "Unsupported type passed to getObject(int columnIndex,Class<T> type): " + type.getName());

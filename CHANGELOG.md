@@ -2,7 +2,7 @@
 
 # Changelog
 - v4.4.2-SNAPSHOT
-  - 
+  - Added native IPADDRESS support: `ResultSetMetaData` reports `Types.OTHER` with type name `IPADDRESS` and class name `java.net.InetAddress`, `getObject` returns a `java.net.Inet4Address` or `java.net.Inet6Address` for Arrow and JSON results, `getObject(column, InetAddress.class)` returns the same value, `getString` returns the canonical text, and `setObject` accepts `InetAddress` values (SNOW-4345125, snowflakedb/snowflake-jdbc#52).
 
 - v4.4.1
   - Fixed `PreparedStatement.setTimestamp` and `setObject` binding a `java.sql.Timestamp` that is before 1970-01-01 and has a fractional second of at least 1 millisecond exactly one second late. `setTimestamp(int, Timestamp, Calendar)` was affected the same way, including values that fall before 1970 only after the calendar offset is applied (SNOW-4352287).

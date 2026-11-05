@@ -52,6 +52,14 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   @Test
+  public void testIpAddressMapsToJdbcOtherWithIpAddressTypeName() throws Throwable {
+    ColumnTypeInfo info = getSnowflakeType("ipaddress", null, null, null, 0, false, false);
+    assertEquals(Types.OTHER, info.getColumnType());
+    assertEquals("IPADDRESS", info.getExtColTypeName());
+    assertEquals(SnowflakeType.IPADDRESS, info.getSnowflakeType());
+  }
+
+  @Test
   public void testCreateMetadata() throws Throwable {
     // given
     ObjectNode rootNode = createRootNode();
