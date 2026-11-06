@@ -313,6 +313,21 @@ class SnowflakeConnectionPublicContractTest {
     }
 
     /**
+     * Injects a tracking {@link net.snowflake.client.internal.jdbc.telemetry.Telemetry} directly
+     * into the connection so that {@code submitTelemetry} does not depend on the fallback path. The
+     * {@link MockSnowflakeSFSession} cannot produce a real dedicated {@link
+     * net.snowflake.client.internal.jdbc.telemetry.TelemetryClient} (it extends {@link
+     * net.snowflake.client.internal.core.SFBaseSession}, not {@code SFSession}), so without
+     * injection the event would be silently dropped.
+     */
+    @BeforeEach
+    void injectTrackingTelemetryClient() throws SQLException {
+      rawConnection
+          .unwrap(SnowflakeConnectionImpl.class)
+          .setAppTelemetryClientForTesting(session().newTrackingTelemetryClient());
+    }
+
+    /**
      * A valid JSON object payload must reach the telemetry client, be flushed, and carry the
      * driver-injected {@value TelemetryUtil#SOURCE_KEY} marker.
      */

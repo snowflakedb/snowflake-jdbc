@@ -776,6 +776,16 @@ public class MockConnectionTest extends BaseJDBCTest {
       };
     }
 
+    /**
+     * Returns a {@link Telemetry} backed by this session's internal tracking state. Use this in
+     * tests that inject the client via {@code
+     * SnowflakeConnectionImpl#setAppTelemetryClientForTesting} rather than relying on the fallback
+     * path.
+     */
+    public Telemetry newTrackingTelemetryClient() {
+      return mockTelemetryClient();
+    }
+
     @Override
     public Telemetry getTelemetryClient(InternalCallMarker internalCallMarker) {
       return mockTelemetryClient();

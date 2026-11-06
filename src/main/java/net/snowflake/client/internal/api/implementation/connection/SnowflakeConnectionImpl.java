@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -123,10 +124,26 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
    * from the driver's own telemetry client so that a server-rejected application payload cannot
    * disable in-band driver diagnostics. Lazily initialized on the first {@code submitTelemetry}
    * call; access is guarded by {@link #appTelemetryClientLock}.
+   *
+   * <p>Once set this field is never cleared (the client may be disabled internally by the telemetry
+   * layer, but the reference stays). {@code null} means "not yet initialized".
    */
-  private Telemetry appTelemetryClient;
+  private volatile Telemetry appTelemetryClient;
 
   private final Object appTelemetryClientLock = new Object();
+
+  /**
+   * Overrides the dedicated application-telemetry client used by {@link #submitTelemetry(String)}.
+   * Intended for unit tests that cannot supply a real {@link
+   * net.snowflake.client.internal.core.SFSession}. Must not be called after the first {@link
+   * #submitTelemetry(String)} invocation.
+   */
+  @VisibleForTesting
+  public void setAppTelemetryClientForTesting(Telemetry client) {
+    synchronized (appTelemetryClientLock) {
+      this.appTelemetryClient = client;
+    }
+  }
 
   /**
    * Maximum accepted size (in UTF-16 code units, a close proxy for bytes on ASCII-heavy JSON) of
@@ -467,8 +484,9 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
    *
    * <p>When the session does not extend {@code SFSession} (e.g. unit-test mocks backed by {@link
    * net.snowflake.client.internal.core.SFBaseSession}), {@link TelemetryClient#createTelemetry}
-   * will throw or return {@code null}. In that case we fall back to the session's own telemetry
-   * client so that unit tests remain testable.
+   * will throw or return {@code null}. In that case this method returns {@code null} and the caller
+   * silently drops the event. Use {@link #setAppTelemetryClientForTesting(Telemetry)} to inject a
+   * mock client in tests.
    *
    * @return the application telemetry client, or {@code null} if no client is available
    */
@@ -484,15 +502,20 @@ public class SnowflakeConnectionImpl implements Connection, SnowflakeConnection 
           // driver's own diagnostic client (isolation: rejection can't disable driver telemetry).
           newClient = TelemetryClient.createTelemetry(this);
         } catch (Exception ex) {
-          // Session does not extend SFSession (e.g. unit-test mocks). Fall through to the
-          // session-client fallback.
+          // Session does not extend SFSession (e.g. unit-test mocks not injected via
+          // setAppTelemetryClientForTesting). Log and leave appTelemetryClient null so that
+          // submitTelemetry drops the event rather than risk the session-level client.
           logger.debug(
               "submitTelemetry: could not create dedicated app telemetry client ({}), "
-                  + "falling back to session client",
+                  + "dropping event",
               ex.getClass().getSimpleName());
         }
-        appTelemetryClient =
-            (newClient != null) ? newClient : sfSession.getTelemetryClient(internalCallMarker());
+        // Only assign when a real client was created. A null here means submitTelemetry will
+        // drop the event on this and all future calls (no retry — if creation fails once the
+        // session cannot support a dedicated client).
+        if (newClient != null) {
+          appTelemetryClient = newClient;
+        }
       }
       return appTelemetryClient;
     }
