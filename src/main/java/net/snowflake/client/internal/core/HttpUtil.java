@@ -354,8 +354,7 @@ public class HttpUtil {
               .register("http", new SFConnectionSocketFactory())
               .build();
       PoolingHttpClientConnectionManager connectionManager =
-          new PoolingHttpClientConnectionManager(
-              registry, null, null, null, timeToLiveSeconds, TimeUnit.SECONDS);
+          new TrackedConnectionManager(registry, timeToLiveSeconds);
       int maxConnections =
           SystemUtil.convertSystemPropertyToIntValue(
               JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
@@ -492,6 +491,7 @@ public class HttpUtil {
       File ocspCacheFile,
       List<HttpHeadersCustomizer> httpHeadersCustomizers) {
     updateRoutePlanner(key);
+    removeHttpClientsIfPoolShutDown(key);
     return httpClientWithoutDecompression.computeIfAbsent(
         key, k -> buildHttpClient(key, ocspCacheFile, true, httpHeadersCustomizers));
   }
@@ -509,9 +509,72 @@ public class HttpUtil {
       File ocspCacheFile,
       List<HttpHeadersCustomizer> httpHeadersCustomizers) {
     updateRoutePlanner(key);
+    removeHttpClientsIfPoolShutDown(key);
     return httpClient.computeIfAbsent(
         key,
         k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled(), httpHeadersCustomizers));
+  }
+
+  /**
+   * Apache HttpClient shuts the pool down when an Error, e.g. OutOfMemoryError, escapes a request,
+   * and every later request on it fails with IllegalStateException.
+   */
+  private static void removeHttpClientsIfPoolShutDown(HttpClientSettingsKey key) {
+    if (isPoolShutDown(key)) {
+      synchronized (HttpUtil.class) {
+        if (isPoolShutDown(key)) {
+          logger.warn("HTTP connection pool was shut down, replacing it and its HTTP clients");
+          removeHttpClients(key);
+        }
+      }
+    }
+  }
+
+  private static boolean isPoolShutDown(HttpClientSettingsKey key) {
+    PoolingHttpClientConnectionManager connectionManager = connectionManagers.get(key);
+    return connectionManager instanceof TrackedConnectionManager
+        && ((TrackedConnectionManager) connectionManager).isShutDown();
+  }
+
+  /** Removes and closes the HTTP clients cached for {@code key} and the pool they share. */
+  @VisibleForTesting
+  static synchronized void removeHttpClients(HttpClientSettingsKey key) {
+    // pool first, so that clients built concurrently get a new one
+    PoolingHttpClientConnectionManager connectionManager = connectionManagers.remove(key);
+    closeHttpClient(httpClient.remove(key));
+    closeHttpClient(httpClientWithoutDecompression.remove(key));
+    if (connectionManager != null) {
+      connectionManager.close();
+    }
+  }
+
+  private static void closeHttpClient(CloseableHttpClient client) {
+    if (client != null) {
+      try {
+        client.close();
+      } catch (IOException e) {
+        logger.warn("Cannot close HTTP client", e);
+      }
+    }
+  }
+
+  /** Records shutdown, which PoolingHttpClientConnectionManager does not expose. */
+  static class TrackedConnectionManager extends PoolingHttpClientConnectionManager {
+    private volatile boolean shutDown;
+
+    TrackedConnectionManager(Registry<ConnectionSocketFactory> registry, int timeToLiveSeconds) {
+      super(registry, null, null, null, timeToLiveSeconds, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void shutdown() {
+      shutDown = true;
+      super.shutdown();
+    }
+
+    boolean isShutDown() {
+      return shutDown;
+    }
   }
 
   /**

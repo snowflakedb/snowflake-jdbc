@@ -85,6 +85,9 @@ public class RestRequest {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
+  // retry cap for requests failing with IllegalStateException, applied even without retry limits
+  public static final int MAX_ILLEGAL_STATE_EXCEPTION_RETRIES = 2;
+
   static final String ERROR_FIELD_NAME = "error";
   static final String ERROR_USE_DPOP_NONCE = "use_dpop_nonce";
   static final String DPOP_NONCE_HEADER_NAME = "dpop-nonce";
@@ -949,6 +952,7 @@ public class RestRequest {
 
     execTimeData.setExecuteToSendQueryEnd();
 
+    int illegalStateExceptions = 0;
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug(
@@ -988,27 +992,22 @@ public class RestRequest {
         execTimeData.setHttpClientEnd();
       } catch (Exception ex) {
         if (ex instanceof IllegalStateException) {
-          // if exception is caused by illegal state, e.g shutdown of http client
-          // because of closing of connection, then recreate the http client and remove existing
-          // from the cache.
+          // Typically "Connection pool shut down": Apache HttpClient shuts the pool down when an
+          // Error, e.g. OutOfMemoryError, escapes a request. HttpUtil then replaces the cached
+          // client; a client on a healthy pool is returned unchanged.
+          illegalStateExceptions++;
           logger.warn(
-              "IllegalStateException encountered while processing the HTTP request."
-                  + " The HttpClient was shut down due to connection closure. "
-                  + "Attempting to rebuild the HttpClient and retry the request.");
-          // Clear the httpClient cache.
-          try {
-            httpClient.close();
-          } catch (IOException e) {
-            logger.warn("Cannot close http client", e);
+              httpExecutingContext.getRequestId()
+                  + "HTTP request failed with IllegalStateException, request: "
+                  + httpExecutingContext.getRequestInfoScrubbed(),
+              ex);
+          if (key != null) {
+            httpClient =
+                isHttpClientWithoutDecompression
+                    ? HttpUtil.getHttpClientWithoutDecompression(key, httpHeaderCustomizer)
+                    : HttpUtil.getHttpClient(key, httpHeaderCustomizer);
           }
-          HttpUtil.httpClient.remove(key);
-          // rebuild the http client.
-          if (isHttpClientWithoutDecompression) {
-            httpClient = HttpUtil.getHttpClientWithoutDecompression(key, httpHeaderCustomizer);
-          } else {
-            httpClient = HttpUtil.getHttpClient(key, httpHeaderCustomizer);
-          }
-          continue;
+          responseDto.setSavedEx(ex);
         } else if (ex instanceof SSLHandshakeException && isTransientHandshakeEOF(ex)) {
           // Treat transient EOF during TLS handshake as retryable:
           // set saved exception for logging/telemetry and allow the retry loop to proceed.
@@ -1030,6 +1029,15 @@ public class RestRequest {
       }
       boolean shouldSkipRetry =
           shouldSkipRetryWithLoggedReason(httpRequest, responseDto, httpExecutingContext);
+      if (!shouldSkipRetry && illegalStateExceptions > MAX_ILLEGAL_STATE_EXCEPTION_RETRIES) {
+        logger.error(
+            "{}Stop retrying after {} IllegalStateExceptions for request: {}",
+            httpExecutingContext.getRequestId(),
+            illegalStateExceptions,
+            httpExecutingContext.getRequestInfoScrubbed());
+        httpExecutingContext.setBreakRetryReason("too many IllegalStateExceptions");
+        shouldSkipRetry = true;
+      }
       httpExecutingContext.setShouldRetry(!shouldSkipRetry);
 
       if (httpExecutingContext.isUnpackResponse()
@@ -1265,7 +1273,7 @@ public class RestRequest {
               httpExecutingContext.isIncludeRetryParameters(),
               httpExecutingContext.isIncludeSnowflakeHeaders(),
               dto.getHttpResponse(),
-              dto.getSavedEx(),
+              exceptionForTelemetry(dto.getSavedEx()),
               httpExecutingContext.getBreakRetryReason(),
               httpExecutingContext.getRetryTimeout(),
               httpExecutingContext.getRetryCount(),
@@ -1304,12 +1312,17 @@ public class RestRequest {
             httpExecutingContext.isIncludeRetryParameters(),
             httpExecutingContext.isIncludeSnowflakeHeaders(),
             response,
-            savedEx,
+            exceptionForTelemetry(savedEx),
             httpExecutingContext.getBreakRetryReason(),
             httpExecutingContext.getRetryTimeout(),
             httpExecutingContext.getRetryCount(),
             null,
             0);
+  }
+
+  // IllegalStateException may be thrown by application code, e.g. an HttpHeadersCustomizer
+  private static Exception exceptionForTelemetry(Exception savedEx) {
+    return savedEx instanceof IllegalStateException ? null : savedEx;
   }
 
   private static void sleepForBackoffAndPrepareNext(
@@ -1561,7 +1574,7 @@ public class RestRequest {
             httpExecutingContext.isIncludeRetryParameters(),
             httpExecutingContext.isIncludeSnowflakeHeaders(),
             response,
-            savedEx,
+            exceptionForTelemetry(savedEx),
             httpExecutingContext.getBreakRetryReason(),
             httpExecutingContext.getRetryTimeout(),
             httpExecutingContext.getRetryCount(),
