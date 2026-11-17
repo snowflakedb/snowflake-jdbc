@@ -7,7 +7,7 @@
   
   - Bumped the following dependencies:
     - guava to 33.8.0-jre from 33.7.2-jre.
-    - netty to 4.1.140.Final from 4.1.139.Final.
+    - netty to 4.1.141.Final from 4.1.139.Final.
     - json-smart to 2.6.1 from 2.5.2.
     - commons-codec to 1.23.0 from 1.19.0.
     - BouncyCastle to 1.87 from 1.86.
