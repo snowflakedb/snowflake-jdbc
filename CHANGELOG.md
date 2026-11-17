@@ -3,11 +3,14 @@
 # Changelog
 - v4.4.2-SNAPSHOT
   - Added native IPADDRESS support: `ResultSetMetaData` reports `Types.OTHER` with type name `IPADDRESS` and class name `java.net.InetAddress`, `getObject` returns a `java.net.Inet4Address` or `java.net.Inet6Address` for Arrow and JSON results, `getObject(column, InetAddress.class)` returns the same value, `getString` returns the canonical text, and `setObject` accepts `InetAddress` values (SNOW-4345125, snowflakedb/snowflake-jdbc#52).
+  - Fixed requests that looped forever without reaching Snowflake after the driver's HTTP connection pool was shut down, for example by an `OutOfMemoryError` during a request. The driver now rebuilds the pool and retries within the configured retry limits (SNOW-4446238). 
   
   - Bumped the following dependencies:
     - guava to 33.8.0-jre from 33.7.2-jre.
-    - netty to 4.1.140.Final from 4.1.139.Final.
+    - netty to 4.1.141.Final from 4.1.139.Final.
     - json-smart to 2.6.1 from 2.5.2.
+    - commons-codec to 1.23.0 from 1.19.0.
+    - BouncyCastle to 1.87 from 1.86.
 
 - v4.4.1
   - Fixed `PreparedStatement.setTimestamp` and `setObject` binding a `java.sql.Timestamp` that is before 1970-01-01 and has a fractional second of at least 1 millisecond exactly one second late. `setTimestamp(int, Timestamp, Calendar)` was affected the same way, including values that fall before 1970 only after the calendar offset is applied (SNOW-4352287).
