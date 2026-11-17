@@ -10,6 +10,7 @@
     - netty to 4.1.140.Final from 4.1.139.Final.
     - json-smart to 2.6.1 from 2.5.2.
     - commons-codec to 1.23.0 from 1.19.0.
+    - BouncyCastle to 1.87 from 1.86.
 
 - v4.4.1
   - Fixed `PreparedStatement.setTimestamp` and `setObject` binding a `java.sql.Timestamp` that is before 1970-01-01 and has a fractional second of at least 1 millisecond exactly one second late. `setTimestamp(int, Timestamp, Calendar)` was affected the same way, including values that fall before 1970 only after the calendar offset is applied (SNOW-4352287).
