@@ -1,3 +1,4 @@
+# Coverage xml is stashed as an artifact for the internal coverage pipeline.
 name: Build and Test
 
 on:
@@ -78,7 +79,13 @@ jobs:
               shell: bash
               env:
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
-              run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+              run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Djacoco.skip.instrument=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: unit-linux
+                path: target/jacoco-ut/jacoco.xml
 
     arc-reactor-test-linux:
         name: Arc Reactor Tests Linux java 8
@@ -98,7 +105,13 @@ jobs:
               shell: bash
               env:
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
-              run: ./mvnw -B -DarcReactorTests -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+              run: ./mvnw -B -DarcReactorTests -Dskip.unitTests=false -Djacoco.skip.instrument=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: arc-reactor
+                path: target/jacoco-ut/jacoco.xml
 
     unit-test-windows:
         name: Unit Tests Windows java 8
@@ -114,7 +127,13 @@ jobs:
               shell: cmd
               env:
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
-              run: .\mvnw.cmd -B -DjenkinsIT -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+              run: .\mvnw.cmd -B -DjenkinsIT -Dskip.unitTests=false -Djacoco.skip.instrument=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: unit-windows
+                path: target/jacoco-ut/jacoco.xml
 
     unit-test-mac:
         name: Unit Tests Mac java 8
@@ -130,7 +149,13 @@ jobs:
               shell: bash
               env:
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx2g"
-              run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+              run: ./mvnw -B -DjenkinsIT -Dskip.unitTests=false -Djacoco.skip.instrument=false -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test --batch-mode --show-version
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: unit-mac
+                path: target/jacoco-ut/jacoco.xml
 
     test-windows:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
@@ -186,6 +211,12 @@ jobs:
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ci\\test_windows.bat
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: it-windows-${{ matrix.runConfig.cloud }}-java${{ matrix.runConfig.javaVersion }}-${{ matrix.category.name }}
+                path: target/jacoco-it/jacoco.xml
 
     test-mac:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
@@ -244,6 +275,12 @@ jobs:
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g" # Increase surefire memory because arm64 macOS machines have not enough memory by default
               run: /opt/homebrew/bin/bash ./ci/test_mac.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: it-mac-${{ matrix.runConfig.cloud }}-java${{ matrix.runConfig.javaVersion }}-${{ matrix.category.name }}
+                path: target/jacoco-it/jacoco.xml
 
     test-rocky:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
@@ -289,6 +326,12 @@ jobs:
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: it-rocky-${{ matrix.runConfig.cloud }}-java${{ matrix.runConfig.javaVersion }}-${{ matrix.category.name }}
+                path: target/jacoco-it/jacoco.xml
 
     test-linux:
         needs: [build, unit-test-linux, unit-test-windows, unit-test-mac]
@@ -352,6 +395,12 @@ jobs:
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.runConfig.additionalMavenProfile }}
                 JAVA_TOOL_OPTIONS: "-Xms1g -Xmx4g"
               run: ./ci/test.sh
+            - name: Upload coverage artifact
+              if: ${{ !cancelled() && github.repository_owner != 'snowflakedb' }}
+              uses: ./.github/actions/upload-coverage-artifact
+              with:
+                name: it-linux-${{ matrix.runConfig.image }}-${{ matrix.runConfig.cloud }}-${{ matrix.category.name }}${{ matrix.runConfig.additionalMavenProfile }}
+                path: target/jacoco-it/jacoco.xml
 
     test-fat-jar-slf4j:
         name: ${{ matrix.cloud }} Fat Jar SLF4J (${{ matrix.variant }}) Test App

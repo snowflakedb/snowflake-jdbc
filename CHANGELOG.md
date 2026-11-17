@@ -2,6 +2,7 @@
 
 # Changelog
 - v4.4.2-SNAPSHOT
+  - Upload GHA coverage reports to Dedicated Codecov (`snowflake.codecov.io`) from Jenkins snowos instead of uploading from GitHub-hosted runners (SNOW-4248610).
   - Added native IPADDRESS support: `ResultSetMetaData` reports `Types.OTHER` with type name `IPADDRESS` and class name `java.net.InetAddress`, `getObject` returns a `java.net.Inet4Address` or `java.net.Inet6Address` for Arrow and JSON results, `getObject(column, InetAddress.class)` returns the same value, `getString` returns the canonical text, and `setObject` accepts `InetAddress` values (SNOW-4345125, snowflakedb/snowflake-jdbc#52).
   - Fixed requests that looped forever without reaching Snowflake after the driver's HTTP connection pool was shut down, for example by an `OutOfMemoryError` during a request. The driver now rebuilds the pool and retries within the configured retry limits (SNOW-4446238). 
   
